@@ -1,0 +1,46 @@
+services:
+  postgres:
+    restart: always
+    ports: !reset []
+
+  redis:
+    restart: always
+    ports: !reset []
+
+  minio:
+    restart: always
+    ports: !reset []
+
+  meilisearch:
+    restart: always
+    ports: !reset []
+
+  chromadb:
+    restart: always
+    ports: !reset []
+
+  backend:
+    image: ghcr.io/kalamdreamlabs/kdl-starter-kit/backend:${IMAGE_TAG:-latest}
+    restart: always
+    environment:
+      NODE_ENV: production
+    ports: !reset []
+
+  frontend:
+    image: ghcr.io/kalamdreamlabs/kdl-starter-kit/frontend:${IMAGE_TAG:-latest}
+    restart: always
+    environment:
+      NODE_ENV: production
+    ports: !reset []
+
+  ai-services:
+    image: ghcr.io/kalamdreamlabs/kdl-starter-kit/ai-services:${IMAGE_TAG:-latest}
+    restart: always
+    environment:
+      NODE_ENV: production
+    ports: !reset []
+
+  nginx:
+    restart: always
+    ports:
+      - "80:80"

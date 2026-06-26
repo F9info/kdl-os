@@ -1,0 +1,31 @@
+{
+  "name": "kdl-ai-services",
+  "version": "1.0.0",
+  "description": "KDL AI Services Layer — two-brain orchestration with LangChain.js + ChromaDB",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.0",
+    "@langchain/anthropic": "^0.3.0",
+    "@langchain/community": "^0.3.0",
+    "@langchain/core": "^0.3.0",
+    "@langchain/openai": "^0.3.0",
+    "chromadb": "^1.9.0",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "express-rate-limit": "^7.0.0",
+    "helmet": "^8.0.0",
+    "dotenv": "^16.4.0",
+    "express": "^5.0.0",
+    "ioredis": "^5.4.0",
+    "jsonwebtoken": "^9.0.0",
+    "langchain": "^0.3.0",
+    "openai": "^4.60.0",
+    "zod": "^3.23.0"
+  }
+}
