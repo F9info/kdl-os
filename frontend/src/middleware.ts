@@ -20,8 +20,15 @@ export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
   if (pathname.startsWith(ADMIN_PREFIX)) {
-    const token = req.cookies.get('kdl-auth-token')?.value
-    if (!token || !isValidToken(token)) {
+    // The access cookie is short-lived (15m). On a hard refresh it is often
+    // expired, so also accept a still-valid refresh token as proof of an active
+    // session — the admin layout restores the access token on mount, and the API
+    // re-verifies every request. Without this, every reload after 15m logs out.
+    const accessToken = req.cookies.get('kdl-auth-token')?.value
+    const refreshToken = req.cookies.get('kdl-refresh-token')?.value
+    const sessionAlive =
+      (accessToken && isValidToken(accessToken)) || (refreshToken && isValidToken(refreshToken))
+    if (!sessionAlive) {
       return NextResponse.redirect(new URL('/login', req.url))
     }
   }

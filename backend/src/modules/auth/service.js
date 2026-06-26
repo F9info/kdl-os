@@ -19,7 +19,13 @@ export const signAccessToken = (payload) =>
   jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY });
 
 export const signRefreshToken = (payload) =>
-  jwt.sign(payload, refreshSecret(), { expiresIn: REFRESH_TOKEN_EXPIRY });
+  // Include a unique jti so two refresh tokens for the same user are never
+  // byte-identical (JWT iat has only second precision). Without it, login +
+  // an immediate refresh in the same second produce the same token_hash and
+  // the unique-constrained insert in storeRefreshToken fails.
+  jwt.sign({ ...payload, jti: crypto.randomUUID() }, refreshSecret(), {
+    expiresIn: REFRESH_TOKEN_EXPIRY,
+  });
 
 export const verifyRefreshToken = (token) =>
   jwt.verify(token, refreshSecret());

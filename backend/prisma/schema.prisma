@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -54,6 +53,65 @@ model AppSetting {
   updated_at  DateTime @updatedAt
 
   @@map("app_settings")
+}
+
+model Type {
+  id             String         @id @default(cuid())
+  name           String
+  slug           String         @unique
+  is_active      Boolean        @default(true)
+  created_at     DateTime       @default(now())
+  updated_at     DateTime       @updatedAt
+  categories     Category[]
+  setting_fields SettingField[]
+
+  @@index([is_active])
+  @@index([name])
+  @@map("types")
+}
+
+model Category {
+  id             String         @id @default(cuid())
+  name           String
+  slug           String         @unique
+  type_id        String?
+  is_active      Boolean        @default(true)
+  created_at     DateTime       @default(now())
+  updated_at     DateTime       @updatedAt
+  type           Type?          @relation(fields: [type_id], references: [id], onDelete: SetNull)
+  setting_fields SettingField[]
+
+  @@index([is_active])
+  @@index([type_id])
+  @@index([name])
+  @@map("categories")
+}
+
+// Dynamic "Application Settings" field definitions. Each row is one admin-defined
+// field (textbox, color, file, switch, ...) grouped under a Type (one settings
+// screen) and an optional Category. `value` holds the saved value; for file inputs
+// it stores the MinIO object path (never a presigned URL), and for multiple-files a
+// JSON array of object paths.
+model SettingField {
+  id          String    @id @default(cuid())
+  field_name  String
+  slug        String    @unique
+  input_type  String
+  value       String?
+  alt_text    String?
+  options     String?
+  type_id     String
+  category_id String?
+  sort        Int       @default(0)
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  type        Type      @relation(fields: [type_id], references: [id], onDelete: Cascade)
+  category    Category? @relation(fields: [category_id], references: [id], onDelete: SetNull)
+
+  @@index([type_id])
+  @@index([category_id])
+  @@index([sort])
+  @@map("setting_fields")
 }
 
 model Media {

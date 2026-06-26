@@ -1,4 +1,4 @@
-import { minio } from '../../config/minio.js';
+import { minio, minioPublic } from '../../config/minio.js';
 
 const BUCKET = process.env.MINIO_BUCKET;
 
@@ -14,7 +14,8 @@ export const deleteFile = async (objectName) => {
 };
 
 export const getFileUrl = async (objectName, expiry = 7 * 24 * 60 * 60) => {
-  return minio.presignedGetObject(BUCKET, objectName, expiry);
+  // Generated against the public endpoint so the returned URL is browser-reachable.
+  return minioPublic.presignedGetObject(BUCKET, objectName, expiry);
 };
 
 export const ensureBucketExists = async () => {

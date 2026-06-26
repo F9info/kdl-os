@@ -15,6 +15,22 @@ export function formatRelative(date: string | Date) {
   return formatDistanceToNow(new Date(date), { addSuffix: true })
 }
 
+/**
+ * Mirror of the backend slug generator (backend/src/shared/utils/slug.js).
+ * Used for the read-only live preview in forms — the backend remains the
+ * authoritative source for the persisted, uniqueness-checked slug.
+ * "New Clients" -> "new-clients"
+ */
+export function slugify(input: string): string {
+  return input
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
 export function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B'
   const k = 1024

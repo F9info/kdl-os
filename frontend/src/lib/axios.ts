@@ -13,6 +13,12 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`
   }
+  // For file uploads, drop the JSON default so the browser sets
+  // multipart/form-data with the correct boundary — otherwise the server
+  // receives application/json and parses no file.
+  if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+    config.headers.delete('Content-Type')
+  }
   return config
 })
 

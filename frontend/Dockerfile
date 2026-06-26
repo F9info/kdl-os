@@ -10,6 +10,13 @@ RUN corepack enable
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+# NEXT_PUBLIC_* and rewrites() are baked at build time, and .env.local is .dockerignored,
+# so set them here. Same-origin /api keeps the auth cookie first-party; next.config.ts
+# rewrites proxy /api to the backend over the internal Docker network.
+ARG NEXT_PUBLIC_API_URL=/api
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ARG BACKEND_INTERNAL_URL=http://backend:4000
+ENV BACKEND_INTERNAL_URL=$BACKEND_INTERNAL_URL
 RUN pnpm build
 
 FROM node:22-alpine AS runner
