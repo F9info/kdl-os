@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../../middleware/auth.js';
-import { requireRole } from '../../middleware/rbac.js';
+import { requirePermission } from '../../middleware/permission.js';
 import { validate } from '../../middleware/validate.js';
 import { upload } from '../../middleware/upload.js';
 import {
@@ -32,21 +32,21 @@ import {
 
 const router = Router();
 
-router.use(authenticate, requireRole('ADMIN', 'SUPER_ADMIN'));
+router.use(authenticate);
 
 // Static / specific routes first so they are not shadowed by '/:id'.
-router.get('/input-types', listInputTypes);
-router.get('/by-type/:slug', validate(byTypeSchema), getFieldsByTypeSlug);
-router.get('/value/:slug', validate(valueBySlugSchema), getValueBySlug);
-router.post('/values', validate(saveValuesSchema), saveValues);
-router.post('/upload', upload.single('file'), uploadFile);
-router.patch('/reorder', validate(reorderFieldsSchema), reorderFields);
-router.delete('/gallery-item/:id/:index', validate(removeGalleryItemSchema), removeGalleryItem);
+router.get('/input-types', requirePermission('setting-fields', 'view'), listInputTypes);
+router.get('/by-type/:slug', requirePermission('setting-fields', 'view'), validate(byTypeSchema), getFieldsByTypeSlug);
+router.get('/value/:slug', requirePermission('setting-fields', 'view'), validate(valueBySlugSchema), getValueBySlug);
+router.post('/values', requirePermission('setting-fields', 'edit'), validate(saveValuesSchema), saveValues);
+router.post('/upload', requirePermission('setting-fields', 'edit'), upload.single('file'), uploadFile);
+router.patch('/reorder', requirePermission('setting-fields', 'edit'), validate(reorderFieldsSchema), reorderFields);
+router.delete('/gallery-item/:id/:index', requirePermission('setting-fields', 'delete'), validate(removeGalleryItemSchema), removeGalleryItem);
 
-router.get('/', validate(listFieldsSchema), listFields);
-router.post('/', validate(createFieldSchema), createField);
-router.get('/:id', validate(getFieldSchema), getField);
-router.patch('/:id', validate(updateFieldSchema), updateField);
-router.delete('/:id', validate(deleteFieldSchema), deleteField);
+router.get('/', requirePermission('setting-fields', 'view'), validate(listFieldsSchema), listFields);
+router.post('/', requirePermission('setting-fields', 'add'), validate(createFieldSchema), createField);
+router.get('/:id', requirePermission('setting-fields', 'view'), validate(getFieldSchema), getField);
+router.patch('/:id', requirePermission('setting-fields', 'edit'), validate(updateFieldSchema), updateField);
+router.delete('/:id', requirePermission('setting-fields', 'delete'), validate(deleteFieldSchema), deleteField);
 
 export default router;

@@ -1,10 +1,20 @@
 import * as authService from './service.js';
 import { successResponse, errorResponse } from '../../shared/utils/response.js';
+import { resolvePermissions } from '../user-management/shared/permission-resolver.js';
 
 const IS_PROD = process.env.NODE_ENV === 'production';
 
 const AUTH_COOKIE = 'kdl-auth-token';
 const REFRESH_COOKIE = 'kdl-refresh-token';
+
+function buildAccessTokenPayload(user, roleSlugs = []) {
+  return {
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+    roles: roleSlugs.length ? roleSlugs : (user.roles || []),
+  };
+}
 
 function setAuthCookies(res, accessToken, refreshToken) {
   res.cookie(AUTH_COOKIE, accessToken, {
@@ -60,7 +70,7 @@ export const register = async (req, res, next) => {
     const existing = await authService.findUserByEmail(email);
     if (existing) return errorResponse(res, 'Email already in use', 409);
     const user = await authService.createUser({ name, email, password });
-    const accessToken = authService.signAccessToken({ userId: user.id, email: user.email, role: user.role });
+    const accessToken = authService.signAccessToken(buildAccessTokenPayload(user));
     const refreshToken = authService.signRefreshToken({ userId: user.id });
     await authService.storeRefreshToken(user.id, refreshToken);
     setAuthCookies(res, accessToken, refreshToken);
@@ -73,12 +83,18 @@ export const register = async (req, res, next) => {
 export const login = async (req, res, next) => {
   try {
     const { email, password } = req.validated.body;
-    const user = await authService.findUserByEmail(email);
-    if (!user || !user.is_active) return errorResponse(res, 'Invalid credentials', 401);
+    const user = await authService.findUserWithRolesByEmail(email);
+    if (!user || !user.is_active || user.status === 'SUSPENDED' || user.deleted_at) {
+      return errorResponse(res, 'Invalid credentials', 401);
+    }
     const valid = await authService.comparePassword(password, user.password_hash);
     if (!valid) return errorResponse(res, 'Invalid credentials', 401);
-    const { password_hash: _ignored, ...safeUser } = user;
-    const accessToken = authService.signAccessToken({ userId: user.id, email: user.email, role: user.role });
+
+    const roleSlugs = user.roles?.map((ur) => ur.role?.slug).filter(Boolean) || [];
+    const { password_hash: _ignored, roles: _rolesIgnored, ...safeUser } = user;
+    safeUser.roles = roleSlugs;
+
+    const accessToken = authService.signAccessToken(buildAccessTokenPayload(user, roleSlugs));
     const refreshToken = authService.signRefreshToken({ userId: user.id });
     await authService.storeRefreshToken(user.id, refreshToken);
     setAuthCookies(res, accessToken, refreshToken);
@@ -104,7 +120,7 @@ export const refresh = async (req, res, next) => {
         continue;
       }
       const found = await authService.findValidRefreshToken(token);
-      if (found && found.user.is_active) {
+      if (found && found.user.is_active && found.user.status !== 'SUSPENDED' && !found.user.deleted_at) {
         record = found;
         usedToken = token;
         break;
@@ -112,11 +128,10 @@ export const refresh = async (req, res, next) => {
     }
     if (!record) return errorResponse(res, 'Invalid or expired refresh token', 401);
 
-    const accessToken = authService.signAccessToken({
-      userId: record.user.id,
-      email: record.user.email,
-      role: record.user.role,
-    });
+    const roleSlugs = await authService.getUserRoleSlugs(record.user.id);
+    const accessToken = authService.signAccessToken(
+      buildAccessTokenPayload(record.user, roleSlugs),
+    );
     await authService.revokeRefreshToken(usedToken);
     const newRefreshToken = authService.signRefreshToken({ userId: record.user.id });
     await authService.storeRefreshToken(record.user.id, newRefreshToken);
@@ -156,6 +171,20 @@ export const resetPassword = async (req, res, next) => {
     const user = await authService.resetPassword(token, password);
     if (!user) return errorResponse(res, 'Invalid or expired reset token', 400);
     return successResponse(res, { message: 'Password reset successfully' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getMyPermissions = async (req, res, next) => {
+  try {
+    const result = await resolvePermissions(req.user.id);
+    const roles = await authService.getUserRoleSlugs(req.user.id);
+    return successResponse(res, {
+      permissions: result.permissions,
+      roles,
+      bypass: result.bypass,
+    });
   } catch (err) {
     next(err);
   }

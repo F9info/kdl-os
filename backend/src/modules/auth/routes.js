@@ -15,7 +15,9 @@ import {
   logout,
   forgotPassword,
   resetPassword,
+  getMyPermissions,
 } from './controller.js';
+import { authenticate } from '../../middleware/auth.js';
 
 const router = Router();
 
@@ -25,5 +27,6 @@ router.post('/refresh', validate(refreshSchema), refresh);
 router.post('/logout', validate(logoutSchema), logout);
 router.post('/forgot-password', validate(forgotPasswordSchema), forgotPassword);
 router.post('/reset-password', validate(resetPasswordSchema), resetPassword);
+router.get('/me/permissions', authenticate, getMyPermissions);
 
 export default router;

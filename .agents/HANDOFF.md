@@ -1,5 +1,77 @@
 ## Handoff — 2026-07-03
 Agent: Backend Coder (Agent 3)
+Issue: KDL-37 KDLOS-10 Step 5 — Replace `requireRole` call sites with `requirePermission`; keep enum in sync
+
+Completed:
+- Replaced all legacy `requireRole` route guards with `requirePermission(module, action)`:
+  - `backend/src/modules/types/routes.js` → `types:view/add/edit/delete`
+  - `backend/src/modules/categories/routes.js` → `categories:view/add/edit/delete`
+  - `backend/src/modules/setting-fields/routes.js` → `setting-fields:view/add/edit/delete` (static routes mapped to view/edit/delete as appropriate)
+  - `backend/src/modules/users/routes.js` → `users:view/add/edit/delete`; reset-password uses `users:edit`; overrides uses `permissions:edit` per architecture.
+  - `backend/src/modules/settings/routes.js` → `settings:add/edit/delete` for write endpoints; read endpoints still use `optionalAuthenticate`.
+- Imported `requirePermission` from `backend/src/middleware/permission.js` in each route file; removed imports of `requireRole` from `rbac.js`.
+- Added `types`, `categories`, and `setting-fields` to the RBAC seeder (`backend/prisma/seeders/user-management.seed.js`) so the `admin` system role receives all actions on these modules automatically.
+- Fixed `backend/src/middleware/auth.js` to attach `id` (from the DB user record) to `req.user` alongside the existing JWT `userId`, so `requirePermission` and downstream controllers use a consistent identifier without breaking `req.user.userId` consumers (e.g. media module).
+- Updated `backend/tests/regression/users.privilege.test.js` to mock `resolvePermissions` for the new permission-based route guards while preserving the existing controller-level privilege assertions.
+- Kept the legacy `users.role` enum column untouched; `requireRole` middleware remains exported from `permission.js` for Step 10 removal.
+
+Verification:
+- `npm test` in `backend/` → 15 files / 87 tests passing ✅
+- `node --check` on all changed source + test files ✅
+- `npx prisma validate` ✅
+
+Next:
+- Independent Code Reviewer session (Maker ≠ Grader) per Auto-Approval Protocol.
+- Gate Verifier re-runs `npm test`, `node --check`, `npx prisma validate` in a clean checkout.
+- KDLOS-10 Step 6 (KDL-38 — Frontend RBAC UI) is unblocked.
+
+Do not touch:
+- `users.role` enum column — dropped only in Step 10.
+- Legacy `requireRole` middleware — removed in Step 10.
+
+Blockers: None.
+
+---
+
+## Handoff — 2026-07-03
+Agent: Backend Coder (Agent 3)
+Issue: KDL-36 KDLOS-10 Step 4 — Users module extension: multi-role, status, soft delete, reset-password, overrides + JWT roles claim
+
+Completed:
+- Extended `backend/src/modules/users/`:
+  - `schema.js` — added `status`, `role` slug filter, `search`, `role_ids`, `avatar_media_id`, reset-password, and permission overrides schemas.
+  - `service.js` — multi-role create/update/sync via `user_roles`, status filtering, soft delete (`deleted_at`), admin reset-password with refresh-token revocation, per-user permission overrides, role-slug helper. Default `user` role is assigned automatically when no roles are provided.
+  - `controller.js` — create/update/list/get/delete now work with multi-role and status; guards prevent non-Super-Admin elevation/tampering with Super-Admin users; delete rejects self-deletion; reset-password and overrides invalidate permission cache and log activity.
+  - `routes.js` — wired `POST /`, `POST /:id/reset-password`, `PUT /:id/overrides`.
+- JWT `roles` claim:
+  - `backend/src/modules/auth/service.js` — `findUserWithRolesByEmail`, `getUserRoleSlugs`, default role assignment on register, status/deleted guards on login/refresh/forgot/reset.
+  - `backend/src/modules/auth/controller.js` — login, register, and refresh now include `roles: string[]` in the access token payload alongside legacy `role`.
+  - New endpoint `GET /api/auth/me/permissions` returns effective permission strings, role slugs, and bypass flag.
+- `authenticate` / `optionalAuthenticate` middleware now validates the user record and rejects suspended or soft-deleted accounts with 403.
+- Tests:
+  - Rewrote `backend/tests/users.controller.test.js` to mock shared logger/resolver dependencies and added 9 new controller tests for Step 4 behavior.
+  - Updated `backend/tests/auth.controller.test.js` and `backend/tests/auth.service.test.js` mocks for new service functions.
+  - Updated `backend/tests/regression/auth.security.test.js` and `backend/tests/regression/users.privilege.test.js` mocks for new dependencies.
+- Verification:
+  - `npm test` in `backend/` → 15 files / 87 tests passing ✅
+  - `node --check` on changed source files ✅
+  - `npx prisma validate` ✅
+
+Next:
+- Independent Code Reviewer session (Maker ≠ Grader) per Auto-Approval Protocol.
+- Gate Verifier re-runs `npm test`, `node --check`, `npx prisma validate` in a clean checkout.
+- KDLOS-10 Step 5 (KDL-37 — Replace `requireRole` call sites with `requirePermission`) is unblocked.
+
+Do not touch:
+- `users.role` enum column — dropped only in Step 10.
+- Legacy `requireRole` middleware remains in use until Step 5 replaces call sites.
+
+Blockers: None.
+
+---
+
+## Handoff — 2026-07-03
+Agent: Backend Coder (Agent 3)
 Issue: KDL-35 KDLOS-10 Step 3 — Roles + Permissions + Activity Log endpoints
 
 Completed:
@@ -48,7 +120,7 @@ Issue: KDL-34 KDLOS-10 Step 2 — permission-resolver + activity-logger + requir
 
 Completed:
 - `backend/src/modules/user-management/shared/permission-resolver.js` — resolves effective RBAC permissions:
-  - Super Admin role slug bypasses all checks.
+  - Super Admin role slug bypasses all permission checks.
   - Collects permissions from assigned roles via `user_roles → roles → role_permissions → permissions`.
   - Applies user-level `GRANT`/`DENY` overrides; `DENY` wins.
   - Inactive / soft-deleted users resolve to empty permission set.

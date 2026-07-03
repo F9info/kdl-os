@@ -5,6 +5,7 @@ import { agent, bearer } from '../helpers/app.js';
 
 vi.mock('../../src/config/database.js', () => ({
   prisma: {
+    user: { findUnique: vi.fn() },
     appSetting: { findMany: vi.fn(), findUnique: vi.fn() },
   },
 }));
@@ -13,6 +14,8 @@ const makeApp = () => agent([{ path: '/api/settings', router: settingsRoutes }])
 
 const publicSetting = { key: 'site.name', value: 'KDL', type: 'STRING', is_public: true };
 const privateSetting = { key: 'api.secret', value: 's3cr3t', type: 'STRING', is_public: false };
+
+const activeAdmin = { id: 'usr_admin', role: 'ADMIN', status: 'ACTIVE', deleted_at: null };
 
 describe('settings optional authentication regression', () => {
   beforeEach(() => {
@@ -31,6 +34,7 @@ describe('settings optional authentication regression', () => {
   });
 
   it('admin users see all settings in list (regression KDL-15)', async () => {
+    prisma.user.findUnique.mockResolvedValue(activeAdmin);
     prisma.appSetting.findMany.mockResolvedValue([publicSetting, privateSetting]);
 
     const res = await makeApp()

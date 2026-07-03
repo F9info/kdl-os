@@ -8,6 +8,9 @@ const MODULES = [
   { name: 'settings', label: 'Settings' },
   { name: 'media', label: 'Media' },
   { name: 'activity-log', label: 'Activity Log' },
+  { name: 'types', label: 'Types' },
+  { name: 'categories', label: 'Categories' },
+  { name: 'setting-fields', label: 'Setting Fields' },
 ];
 
 const ACTIONS = ['view', 'add', 'edit', 'delete', 'publish'];

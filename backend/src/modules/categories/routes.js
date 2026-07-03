@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../../middleware/auth.js';
-import { requireRole } from '../../middleware/rbac.js';
+import { requirePermission } from '../../middleware/permission.js';
 import { validate } from '../../middleware/validate.js';
 import {
   listCategoriesSchema,
@@ -19,12 +19,12 @@ import {
 
 const router = Router();
 
-router.use(authenticate, requireRole('ADMIN', 'SUPER_ADMIN'));
+router.use(authenticate);
 
-router.get('/', validate(listCategoriesSchema), listCategories);
-router.get('/:id', validate(getCategorySchema), getCategory);
-router.post('/', validate(createCategorySchema), createCategory);
-router.patch('/:id', validate(updateCategorySchema), updateCategory);
-router.delete('/:id', validate(deleteCategorySchema), deleteCategory);
+router.get('/', requirePermission('categories', 'view'), validate(listCategoriesSchema), listCategories);
+router.get('/:id', requirePermission('categories', 'view'), validate(getCategorySchema), getCategory);
+router.post('/', requirePermission('categories', 'add'), validate(createCategorySchema), createCategory);
+router.patch('/:id', requirePermission('categories', 'edit'), validate(updateCategorySchema), updateCategory);
+router.delete('/:id', requirePermission('categories', 'delete'), validate(deleteCategorySchema), deleteCategory);
 
 export default router;

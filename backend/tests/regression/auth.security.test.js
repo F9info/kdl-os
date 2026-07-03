@@ -10,6 +10,7 @@ import { agent, cookieAttributes, cookieValue } from '../helpers/app.js';
 vi.mock('../../src/config/database.js', () => ({
   prisma: {
     user: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
+    userRole: { findMany: vi.fn(() => Promise.resolve([])) },
     refreshToken: { findFirst: vi.fn(), create: vi.fn(), updateMany: vi.fn() },
     passwordResetToken: { create: vi.fn(), findFirst: vi.fn(), update: vi.fn() },
     $transaction: vi.fn((ops) => Promise.all(ops)),

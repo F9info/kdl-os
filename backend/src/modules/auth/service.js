@@ -35,11 +35,46 @@ export const verifyRefreshToken = (token) =>
 export const findUserByEmail = (email) =>
   prisma.user.findUnique({ where: { email } });
 
+export const findUserWithRolesByEmail = (email) =>
+  prisma.user.findUnique({
+    where: { email, deleted_at: null },
+    include: {
+      roles: {
+        select: {
+          role: { select: { slug: true } },
+        },
+      },
+    },
+  });
+
+export const getUserRoleSlugs = async (userId) => {
+  const rows = await prisma.userRole.findMany({
+    where: { user_id: userId },
+    select: { role: { select: { slug: true } } },
+  });
+  return rows.map((ur) => ur.role.slug);
+};
+
 export const createUser = async ({ name, email, password }) => {
   const password_hash = await hashPassword(password);
-  return prisma.user.create({
-    data: { name, email, password_hash },
-    select: { id: true, name: true, email: true, role: true, is_active: true, created_at: true },
+  return prisma.$transaction(async (tx) => {
+    const user = await tx.user.create({
+      data: { name, email, password_hash },
+      select: { id: true, name: true, email: true, role: true, is_active: true, created_at: true },
+    });
+
+    const defaultRole = await tx.rbacRole.findUnique({
+      where: { slug: 'user' },
+      select: { id: true },
+    });
+
+    if (defaultRole) {
+      await tx.userRole.create({
+        data: { user_id: user.id, role_id: defaultRole.id },
+      });
+    }
+
+    return { ...user, roles: defaultRole ? ['user'] : [] };
   });
 };
 
@@ -54,7 +89,7 @@ export const findValidRefreshToken = (token) => {
   return prisma.refreshToken.findFirst({
     where: { token_hash, revoked: false, expires_at: { gt: new Date() } },
     include: {
-      user: { select: { id: true, email: true, role: true, is_active: true } },
+      user: { select: { id: true, email: true, role: true, is_active: true, status: true, deleted_at: true } },
     },
   });
 };
@@ -64,10 +99,13 @@ export const revokeRefreshToken = (token) => {
   return prisma.refreshToken.updateMany({ where: { token_hash }, data: { revoked: true } });
 };
 
+export const revokeAllRefreshTokensForUser = (userId) =>
+  prisma.refreshToken.updateMany({ where: { user_id: userId }, data: { revoked: true } });
+
 export const createPasswordResetToken = async (email) => {
   const user = await findUserByEmail(email);
   // Always return the same shape so the endpoint doesn't leak whether the email exists.
-  if (!user || !user.is_active) {
+  if (!user || !user.is_active || user.status === 'SUSPENDED' || user.deleted_at) {
     return { user: null, token: null };
   }
 
@@ -108,7 +146,7 @@ export const findValidPasswordResetToken = (token) => {
 
 export const resetPassword = async (token, password) => {
   const record = await findValidPasswordResetToken(token);
-  if (!record || !record.user.is_active) return null;
+  if (!record || !record.user.is_active || record.user.status === 'SUSPENDED' || record.user.deleted_at) return null;
 
   const password_hash = await hashPassword(password);
 

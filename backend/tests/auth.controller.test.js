@@ -1,11 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+vi.mock('../src/modules/user-management/shared/permission-resolver.js', () => ({
+  __esModule: true,
+  resolvePermissions: vi.fn(),
+}));
+
 process.env.JWT_SECRET = 'test-jwt-secret-min-32-characters-long';
 process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-min-32-characters';
 
 vi.mock('../src/modules/auth/service.js', () => {
   const mocks = {
     findUserByEmail: vi.fn(),
+    findUserWithRolesByEmail: vi.fn(),
     comparePassword: vi.fn(),
     signAccessToken: vi.fn(() => 'access-token'),
     signRefreshToken: vi.fn(() => 'refresh-token'),
@@ -14,6 +20,7 @@ vi.mock('../src/modules/auth/service.js', () => {
     verifyRefreshToken: vi.fn(),
     findValidRefreshToken: vi.fn(),
     revokeRefreshToken: vi.fn(),
+    getUserRoleSlugs: vi.fn(() => Promise.resolve([])),
     createPasswordResetToken: vi.fn(),
     resetPassword: vi.fn(),
     createUser: vi.fn(),
@@ -28,6 +35,7 @@ import {
   refresh,
   forgotPassword,
   resetPassword,
+  getMyPermissions,
 } from '../src/modules/auth/controller.js';
 
 const serviceMock = vi.mocked(authService, { deep: true });
@@ -84,7 +92,7 @@ describe('auth controller regression', () => {
 
   describe('login', () => {
     it('rejects invalid credentials', async () => {
-      serviceMock.findUserByEmail.mockResolvedValue(null);
+      serviceMock.findUserWithRolesByEmail.mockResolvedValue(null);
       const req = mockReq({ validated: { body: { email: 'x@kdl.com', password: 'x' } } });
       const res = mockRes();
       const next = vi.fn();
@@ -94,7 +102,7 @@ describe('auth controller regression', () => {
     });
 
     it('issues httpOnly cookies on successful login', async () => {
-      serviceMock.findUserByEmail.mockResolvedValue(okUser);
+      serviceMock.findUserWithRolesByEmail.mockResolvedValue(okUser);
       serviceMock.comparePassword.mockResolvedValue(true);
       const req = mockReq({ validated: { body: { email: okUser.email, password: 'pass' } } });
       const res = mockRes();
@@ -108,6 +116,18 @@ describe('auth controller regression', () => {
       expect(authCookie[2].sameSite).toBe('lax');
       expect(refreshCookie[2].httpOnly).toBe(true);
       expect(refreshCookie[2].sameSite).toBe('strict');
+    });
+
+    it('rejects suspended users', async () => {
+      serviceMock.findUserWithRolesByEmail.mockResolvedValue({
+        ...okUser,
+        status: 'SUSPENDED',
+      });
+      const req = mockReq({ validated: { body: { email: okUser.email, password: 'pass' } } });
+      const res = mockRes();
+      await login(req, res, vi.fn());
+      expect(res.statusCode).toBe(401);
+      expect(serviceMock.comparePassword).not.toHaveBeenCalled();
     });
   });
 

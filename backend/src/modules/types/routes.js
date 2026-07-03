@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../../middleware/auth.js';
-import { requireRole } from '../../middleware/rbac.js';
+import { requirePermission } from '../../middleware/permission.js';
 import { validate } from '../../middleware/validate.js';
 import {
   listTypesSchema,
@@ -13,12 +13,12 @@ import { listTypes, getType, createType, updateType, deleteType } from './contro
 
 const router = Router();
 
-router.use(authenticate, requireRole('ADMIN', 'SUPER_ADMIN'));
+router.use(authenticate);
 
-router.get('/', validate(listTypesSchema), listTypes);
-router.get('/:id', validate(getTypeSchema), getType);
-router.post('/', validate(createTypeSchema), createType);
-router.patch('/:id', validate(updateTypeSchema), updateType);
-router.delete('/:id', validate(deleteTypeSchema), deleteType);
+router.get('/', requirePermission('types', 'view'), validate(listTypesSchema), listTypes);
+router.get('/:id', requirePermission('types', 'view'), validate(getTypeSchema), getType);
+router.post('/', requirePermission('types', 'add'), validate(createTypeSchema), createType);
+router.patch('/:id', requirePermission('types', 'edit'), validate(updateTypeSchema), updateType);
+router.delete('/:id', requirePermission('types', 'delete'), validate(deleteTypeSchema), deleteType);
 
 export default router;
