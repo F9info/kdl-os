@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../src/config/database.js';
+import { seedUserManagement } from './seeders/user-management.seed.js';
 
 async function main() {
   const password_hash = await bcrypt.hash('Admin@123', 12);
@@ -18,6 +19,8 @@ async function main() {
   });
 
   console.log('Seeded SUPER_ADMIN:', admin.email);
+
+  await seedUserManagement(prisma);
 }
 
 main()
