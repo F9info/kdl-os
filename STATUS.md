@@ -1,3 +1,17 @@
+## 2026-07-03 — KDL-32 KDLOS-10 Step 1 RBAC schema + migration + seeder COMPLETE, awaiting Gate Verifier + Code Review (Backend Architect)
+
+**RBAC foundation landed in commit 9f4eb23. Gate green: `npx prisma validate` exit 0, `npx prisma migrate dev` exit 0. Seeder idempotent (verified double-run).**
+
+- `.env.example`: `MEILISEARCH_API_KEY` → `MEILI_MASTER_KEY` (kickoff fix from foundation review)
+- `backend/prisma/schema.prisma`: +`RbacRole`, `PermissionModule`, `Permission`, `RolePermission`, `UserRole`, `UserPermission`, `ActivityLog`, enums `UserStatus`/`OverrideMode`; `User` +`status`/`avatar_media_id`/`last_login_at`/`deleted_at` + RBAC relations; legacy `users.role` enum kept until Step 10
+  - Model named `RbacRole` (table `roles`) — legacy `enum Role` still occupies the `Role` identifier; renamed in Step 10
+- Migrations: new baseline `20260601000000_init` (history was db-push-only and failed in shadow DB) + `20260703071437_user_management_rbac_schema`
+- `backend/prisma/seeders/user-management.seed.js` (wired into `seed.js`): 6 modules × 5 actions = 30 permissions; super-admin (bypass, 0 rows) / admin (24 rows, no `roles:delete`, no `permissions:*`) / user (0 rows); `admin@kdl.com` → super-admin
+- DB after seed: roles=3, modules=6, permissions=30, role_permissions=24, user_roles=1
+- Next: Gate Verifier re-run (separate session) + independent Code Reviewer PASS per Auto-Approval Protocol; then KDLOS-10 Step 2 (permission resolver + middleware)
+
+---
+
 ## 2026-07-03 — KDL-22 KDLOS-7 Test harness + regression tests COMPLETE, awaiting review (Backend Coder)
 
 **Vitest harness set up for backend, ai-services, and frontend; regression test suite passes (23 backend + 15 ai-services + 38 frontend = 76 tests). CI updated. Waiting on Code Reviewer (KDL-28).**
