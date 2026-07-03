@@ -7,6 +7,9 @@
     "postinstall": "prisma generate",
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
@@ -32,12 +35,14 @@
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.0",
     "pg": "^8.11.0",
+    "prisma": "^7.0.0",
     "winston": "^3.13.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.0",
-    "prisma": "^7.0.0"
+    "supertest": "^7.0.0",
+    "vitest": "^2.1.0"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

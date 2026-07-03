@@ -3,9 +3,11 @@ import { ragChain } from '../chains/rag-chain.js';
 import { scrubMessages } from '../governance/compliance.js';
 import { successResponse, errorResponse } from '../utils/response.js';
 import { appendFile } from 'fs/promises';
+import { fileURLToPath } from 'url';
 import { join } from 'path';
 
-const MANUAL_TASKS_PATH = join(process.cwd(), '..', 'MANUAL_TASKS.md');
+const __dir = fileURLToPath(new URL('.', import.meta.url));
+const MANUAL_TASKS_PATH = join(__dir, '../../../MANUAL_TASKS.md');
 
 const chatSchema = z.object({
   message: z.string().min(1).max(32768),
@@ -26,7 +28,7 @@ export async function chatController(req, res) {
     const response = await ragChain(scrubbed, sessionId, priority);
 
     if (response.error === 'BUDGET_EXHAUSTED') {
-      const line = `\n- [${new Date().toISOString()}] Chat task deferred (budget exhausted). Session: ${sessionId}. Message: ${message.slice(0, 100)}\n`;
+      const line = `\n- [${new Date().toISOString()}] Chat task deferred (budget exhausted). Session: ${sessionId}. Message: ${scrubbed.slice(0, 100)}\n`;
       await appendFile(MANUAL_TASKS_PATH, line).catch(() => {});
       return errorResponse(res, 'AI budget exhausted for today. Task logged to MANUAL_TASKS.md.', 503);
     }

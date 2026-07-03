@@ -170,8 +170,8 @@ All 6 phases are complete. The following are known open items from code reviews:
 - M7 — `jwt.verify` missing `{ algorithms: ['HS256'] }` in `ai-services/middleware/auth.js`
 
 **Not yet implemented:**
-- Dockerfiles for backend/frontend/ai-services
-- CI/CD workflows (`.github/workflows/`)
+
+
 - Whisper transcription (`POST /api/ai/transcribe` returns 501)
 - Forgot-password backend endpoint (`/api/auth/forgot-password` — frontend shows static stub)
 

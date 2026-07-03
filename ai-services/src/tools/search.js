@@ -1,7 +1,7 @@
 import { DynamicTool } from '@langchain/core/tools';
 
 const MEILI_HOST = process.env.MEILISEARCH_HOST ?? 'http://localhost:7700';
-const MEILI_KEY = process.env.MEILI_MASTER_KEY ?? '';
+const MEILI_KEY = process.env.MEILI_SEARCH_API_KEY ?? '';
 
 export function createSearchTool(index = 'all') {
   return new DynamicTool({

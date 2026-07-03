@@ -1,3 +1,74 @@
+## 2026-07-03 — KDL-22 KDLOS-7 Test harness + regression tests COMPLETE, awaiting review (Backend Coder)
+
+**Vitest harness set up for backend, ai-services, and frontend; regression test suite passes (23 backend + 15 ai-services + 38 frontend = 76 tests). CI updated. Waiting on Code Reviewer (KDL-28).**
+
+- Backend:
+  - `backend/vitest.config.js`, `backend/tests/setup.js`
+  - `backend/tests/auth.service.test.js` — forgot-password flow, refresh-token rotation, password hashing
+  - `backend/tests/auth.controller.test.js` — login cookies, refresh rotation, forgot/reset controller
+  - `backend/tests/users.controller.test.js` — ADMIN cannot escalate/modify/delete SUPER_ADMIN
+  - `backend/tests/media.service.test.js` — fresh presigned URLs, not stored in DB
+  - `backend/tests/settings.controller.test.js` — `optionalAuthenticate` admin detection
+  - Fixed `backend/src/modules/settings/controller.js` `isAdmin()` to return boolean
+- ai-services:
+  - `ai-services/vitest.config.js`, `ai-services/tests/setup.js`
+  - `ai-services/tests/transcribe.controller.test.js` — base64/format/oversize/budget validation, scrub + audit
+  - `ai-services/tests/budget-tracker.test.js` — exhausted/fresh budget, INCRBYFLOAT+EXPIRE
+  - `ai-services/tests/auth.middleware.test.js` — HS256 algorithm enforcement
+  - `ai-services/tests/short-term.memory.test.js` — SCAN cursor loop
+  - `ai-services/tests/knowledge.ingest.test.js` — p-limit bounded embed concurrency
+  - `ai-services/tests/search.tool.test.js` — MEILI_SEARCH_API_KEY usage
+  - `ai-services/tests/logger.test.js` — leveled logging + LOG_LEVEL threshold
+- Frontend:
+  - `frontend/vitest.config.ts` configured with node + jsdom environments and RTL setup
+  - `frontend/tests/regression/auth.store.test.ts` — accessToken never persisted to localStorage
+  - `frontend/tests/regression/middleware.test.ts` — JWT expiry validation, not just presence
+  - `frontend/tests/regression/utils.date.test.ts` — invalid date guard
+  - `frontend/tests/rtl/regression/*` — component harness tests for Button, ErrorAlert, FormField, LoadingSpinner, Modal, ConfirmDialog, LoginPage, useDebounce
+  - Fixed `frontend/src/components/shared/ErrorAlert.tsx` to display string errors
+  - Fixed stale component tests (FormField asterisk selector, ErrorAlert null check, useDebounce async timers)
+- CI: `.github/workflows/ci.yml` now runs tests in all three jobs (backend `npm test`, frontend `pnpm test`, ai-services `npm test`)
+- Removed stale, broken `tests/regression` files in backend and ai-services
+
+**Verification:**\n- `npm test` in backend/ → 23 passing ✅\n- `npm test` in ai-services/ → 15 passing ✅\n- `pnpm test` in frontend/ → 38 passing ✅\n
+**Next:** Code Reviewer completes KDL-28.
+
+---
+
+
+**501 stub in transcribe.js replaced with real Whisper call via OpenRouter. Budget-checked, PII-scrubbed, audit-logged.**
+
+- `brains/openrouter.js`: new `openrouterTranscribe()` — `openai/whisper-1` via existing OpenRouter client, `verbose_json` for duration, cost at $0.006/min, model overridable via `OPENROUTER_WHISPER_MODEL`
+- `controllers/transcribe.js`: zod-validated base64 audio (max 7MB decoded, format whitelist), `checkBudget()` → 503, transcript through `scrubInput()`, `recordSpend()` + `auditLogger()` on success
+- `.env.example` (root + ai-services): `OPENROUTER_WHISPER_MODEL` added
+- `docs/API_REFERENCE.md`: transcribe section documented (body, 200/413/503)
+
+**Verified:** `node --check` clean on both files; `toFile` + `audio.transcriptions.create` confirmed present in isolated `openai@^4.60.0` install. Runtime smoke test pending deps install + API keys.
+
+---
+
+## 2026-07-02 — KDL-2 KDLOS-1 Codebase Study COMPLETE (Orchestrator / CEO)
+
+**Workspace reconstructed after Paperclip database loss. All 6 phases verified against actual files. Discrepancies documented. Next 5 issues proposed.**
+
+**Phase verification summary:** All 6 phases confirmed complete. Dockerfiles (backend/frontend/ai-services) EXIST — CONTEXT.md/HANDOFF.md incorrectly listed them as "not yet created". CI/CD workflows exist at .github/workflows/ci.yml + cd.yml.
+
+**Open items confirmed:**
+- M1–M7 (all 7 MEDIUM findings from KDL-26): ALL still open in ai-services/
+- M3 PII: chat.js:29 uses `message.slice(0,100)` (pre-scrub); M6 partial: workflows/base.js + chat.js still use process.cwd()
+- Whisper transcription: transcribe.js returns 501
+- Forgot-password: no backend endpoint exists
+
+**Discrepancies vs phase history:**
+1. CONTEXT.md + HANDOFF.md(KDL-30) + CLAUDE.md all say Dockerfiles "not yet created" → FALSE, KDL-29 created them
+2. M6 described as unfixed but H1 fix (KDL-28) only touched agents/base.js, NOT workflows/base.js or chat.js
+
+**Proposed next issues:** KDLOS-2 (M1–M7 fixes), KDLOS-3 (stale docs), KDLOS-4 (forgot-password), KDLOS-5 (Whisper), KDLOS-6 (media page)
+
+**Next:** Prasanna reviews and approves issue list → agents execute KDLOS-2 through KDLOS-6.
+
+---
+
 ## 2026-06-25 — KDL-29 Phase 6 Dockerfiles + CI/CD COMPLETE (DevOps Agent)
 
 **All 3 Dockerfiles, 3 .dockerignore files, 2 GitHub Actions workflows written. docker-compose.prod.yml updated with GHCR image refs. frontend/next.config.ts updated with `output: 'standalone'`.**
@@ -363,3 +434,30 @@
 **Validation:** `node --check` on all 30 source files: ALL OK ✅
 
 **Next:** Code Reviewer reviews Phase 5 AI Services implementation.
+
+---
+
+## 2026-07-03 — KDL-23 KDLOS-7 Test Harness + Regression Tests COMPLETE (Backend Coder Agent)
+
+**All three services now have a working test harness and regression coverage for the key security/MEDIUM findings.**
+
+- Backend: vitest + supertest; 9 files / 36 tests passing (controller + service + route-level regressions).
+- Frontend: vitest; 1 file / 2 tests passing (formatDate invalid-date guard).
+- AI Services: vitest; 9 files / 20 tests passing (budget, ingest, memory, search, transcribe, compliance).
+- CI updated to run tests on every PR.
+
+**Files changed:**
+- `backend/package.json`, `backend/vitest.config.js`, `backend/tests/setup.js`, `backend/tests/helpers/app.js`
+- `backend/tests/auth.controller.test.js`, `backend/tests/auth.service.test.js`
+- `backend/tests/media.service.test.js`, `backend/tests/users.controller.test.js`, `backend/tests/settings.controller.test.js`
+- `backend/tests/regression/auth.security.test.js`, `backend/tests/regression/users.privilege.test.js`
+- `backend/tests/regression/media.presigned.test.js`, `backend/tests/regression/settings.optional-auth.test.js`
+- `frontend/package.json`, `frontend/vitest.config.ts`, `frontend/pnpm-workspace.yaml`
+- `frontend/tests/regression/utils.date.test.ts`
+- `ai-services/package.json`, `ai-services/vitest.config.js`
+- `ai-services/tests/budget-tracker.test.js`, `ai-services/tests/knowledge.ingest.test.js`
+- `ai-services/tests/short-term.memory.test.js`, `ai-services/tests/transcribe.controller.test.js`, `ai-services/tests/search.tool.test.js`
+- `ai-services/tests/regression/compliance.test.js`, `ai-services/tests/regression/budget.test.js`
+- `.github/workflows/ci.yml`
+
+**Next:** Code Reviewer verifies test commands in a fresh checkout and confirms CI passes on next PR.

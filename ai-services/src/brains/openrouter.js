@@ -1,4 +1,4 @@
-import OpenAI from 'openai';
+import OpenAI, { toFile } from 'openai';
 
 const client = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
@@ -39,6 +39,30 @@ export async function openrouterBrain(messages, options = {}) {
     },
     cost: totalTokens * COST_PER_TOKEN,
     model: response.model ?? MODEL,
+  };
+}
+
+const WHISPER_MODEL = process.env.OPENROUTER_WHISPER_MODEL ?? 'openai/whisper-1';
+const WHISPER_COST_PER_MINUTE = 0.006;
+
+export async function openrouterTranscribe(audioBuffer, filename, options = {}) {
+  const file = await toFile(audioBuffer, filename);
+
+  const response = await client.audio.transcriptions.create({
+    model: WHISPER_MODEL,
+    file,
+    response_format: 'verbose_json',
+    ...(options.language ? { language: options.language } : {}),
+  });
+
+  const durationSeconds = response.duration ?? 0;
+
+  return {
+    text: response.text ?? '',
+    language: response.language ?? options.language ?? null,
+    duration: durationSeconds,
+    cost: (durationSeconds / 60) * WHISPER_COST_PER_MINUTE,
+    model: WHISPER_MODEL,
   };
 }
 

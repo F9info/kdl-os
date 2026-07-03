@@ -1,8 +1,8 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Trash2, Upload, FileImage, FileText, File } from 'lucide-react'
+import { Trash2, FileImage, FileText, File } from 'lucide-react'
 import type { ColumnDef } from '@tanstack/react-table'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
@@ -10,8 +10,10 @@ import { usePagination } from '@/hooks/usePagination'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { DataTable } from '@/components/shared/DataTable'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
+import { FileUpload } from '@/components/shared/FileUpload'
+import { ErrorAlert } from '@/components/shared/ErrorAlert'
 import { Button } from '@/components/ui/button'
-import { formatDate } from '@/lib/utils'
+import { formatDate, formatBytes } from '@/lib/utils'
 import type { Media } from '@/types/models.types'
 
 function fileIcon(mimeType: string) {
@@ -20,19 +22,13 @@ function fileIcon(mimeType: string) {
   return <File className="h-4 w-4 text-muted-foreground" />
 }
 
-function formatBytes(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
-
 export default function MediaPage() {
   const queryClient = useQueryClient()
   const { page, setPage } = usePagination()
   const [deleteId, setDeleteId] = useState<string | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploadKey, setUploadKey] = useState(0)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['media', page],
     queryFn: () =>
       api
@@ -44,14 +40,12 @@ export default function MediaPage() {
     mutationFn: (file: File) => {
       const fd = new FormData()
       fd.append('file', file)
-      return api.post('/media/upload', fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      return api.post('/media/upload', fd)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['media'] })
       toast({ title: 'File uploaded' })
-      if (fileInputRef.current) fileInputRef.current.value = ''
+      setUploadKey((k) => k + 1)
     },
     onError: () => {
       toast({ title: 'Upload failed', variant: 'destructive' })
@@ -65,12 +59,11 @@ export default function MediaPage() {
       toast({ title: 'File deleted' })
       setDeleteId(null)
     },
+    onError: () => {
+      toast({ title: 'Delete failed', variant: 'destructive' })
+      setDeleteId(null)
+    },
   })
-
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (file) uploadMutation.mutate(file)
-  }
 
   const columns: ColumnDef<Media>[] = [
     {
@@ -145,27 +138,26 @@ export default function MediaPage() {
     <div>
       <PageHeader title="Media" />
 
-      <div className="mb-6 flex items-center gap-3">
-        <input
-          ref={fileInputRef}
-          type="file"
-          className="hidden"
-          onChange={handleFileChange}
-          accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt"
-        />
-        <Button
-          onClick={() => fileInputRef.current?.click()}
+      <div className="mb-6 space-y-4">
+        <FileUpload
+          key={uploadKey}
+          onFile={(file) => uploadMutation.mutate(file)}
+          accept="image/*,application/pdf"
+          maxSizeMB={10}
           disabled={uploadMutation.isPending}
-        >
-          <Upload className="h-4 w-4 mr-2" />
-          {uploadMutation.isPending ? 'Uploading…' : 'Upload File'}
-        </Button>
+        />
         {data && (
-          <span className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             {data.pagination.total} file{data.pagination.total !== 1 ? 's' : ''}
-          </span>
+          </p>
         )}
       </div>
+
+      {error && (
+        <div className="mb-4">
+          <ErrorAlert error={error} />
+        </div>
+      )}
 
       <DataTable
         columns={columns}

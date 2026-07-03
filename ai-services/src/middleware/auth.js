@@ -10,7 +10,7 @@ export function authenticate(req, res, next) {
 
     if (!token) return errorResponse(res, 'Unauthorized', 401);
 
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const payload = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
     req.user = payload;
     next();
   } catch {

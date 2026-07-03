@@ -25,6 +25,13 @@ jobs:
         working-directory: backend
         run: node --check src/index.js
 
+      - name: Run tests
+        working-directory: backend
+        env:
+          JWT_SECRET: ci-jwt-secret-must-be-at-least-32-characters-long
+          JWT_REFRESH_SECRET: ci-refresh-secret-must-be-at-least-32-characters
+        run: npm test
+
   frontend-check:
     runs-on: ubuntu-latest
     steps:
@@ -48,6 +55,10 @@ jobs:
         working-directory: frontend
         run: pnpm build
 
+      - name: Run tests
+        working-directory: frontend
+        run: pnpm test
+
   ai-services-check:
     runs-on: ubuntu-latest
     steps:
@@ -66,3 +77,9 @@ jobs:
       - name: Syntax check
         working-directory: ai-services
         run: node --check src/index.js
+
+      - name: Run tests
+        working-directory: ai-services
+        env:
+          JWT_SECRET: ci-jwt-secret-must-be-at-least-32-characters-long
+        run: npm test

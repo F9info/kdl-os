@@ -1,7 +1,9 @@
 import { writeFile, readFile } from 'fs/promises';
+import { fileURLToPath } from 'url';
 import { join } from 'path';
 
-const BLOCKERS_PATH = join(process.cwd(), '..', 'BLOCKERS.md');
+const __dir = fileURLToPath(new URL('.', import.meta.url));
+const BLOCKERS_PATH = join(__dir, '../../../BLOCKERS.md');
 
 export class BaseWorkflow {
   constructor({ name, steps = [], maxIterations = 20 }) {

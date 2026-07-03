@@ -339,7 +339,41 @@ Generate embeddings via OpenRouter (`openai/text-embedding-3-small`).
 
 #### `POST /api/ai/transcribe`
 
-**Response 501:**
+Transcribe audio via Whisper on OpenRouter (`openai/whisper-1`, override with `OPENROUTER_WHISPER_MODEL`). Budget-checked against the shared OpenRouter daily budget; transcript is PII-scrubbed before return; call is audit-logged.
+
+**Body:**
 ```json
-{ "success": false, "message": "Transcription not implemented. Whisper integration planned." }
+{
+  "audio": "<base64-encoded audio>",
+  "filename": "meeting.mp3",
+  "language": "en",
+  "sessionId": "abc-123"
+}
+```
+
+- `audio` (required) — base64-encoded audio, max 7MB decoded
+- `filename` (optional, default `audio.webm`) — extension determines format; allowed: flac, m4a, mp3, mp4, mpeg, mpga, oga, ogg, wav, webm
+- `language` (optional) — ISO language hint passed to Whisper
+- `sessionId` (optional) — recorded in the audit log
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "data": {
+    "transcript": "Hello, this is the transcribed text.",
+    "language": "english",
+    "duration": 12.4
+  }
+}
+```
+
+**Response 413** (audio too large):
+```json
+{ "success": false, "message": "Audio exceeds 7MB limit" }
+```
+
+**Response 503** (daily budget exhausted):
+```json
+{ "success": false, "message": "AI budget exhausted for today. Try again tomorrow." }
 ```

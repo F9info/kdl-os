@@ -9,6 +9,7 @@ import { embedController } from './controllers/embed.js';
 import { transcribeController } from './controllers/transcribe.js';
 import { authenticate } from './middleware/auth.js';
 import { successResponse, errorResponse } from './utils/response.js';
+import { logger } from './utils/logger.js';
 
 const app = express();
 const PORT = process.env.AI_PORT ?? 5000;
@@ -32,7 +33,7 @@ app.post('/api/ai/transcribe', authenticate, transcribeController);
 app.use((req, res) => errorResponse(res, 'Not found', 404));
 
 app.use((err, req, res, _next) => {
-  console.error(err);
+  logger.error(err);
   const message = process.env.NODE_ENV !== 'development'
     ? 'Internal server error'
     : (err.message ?? 'Internal server error');
@@ -40,7 +41,7 @@ app.use((err, req, res, _next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`[ai-services] Running on port ${PORT}`);
+  logger.info(`Running on port ${PORT}`);
 });
 
 export default app;

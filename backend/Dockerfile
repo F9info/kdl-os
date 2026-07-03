@@ -21,6 +21,7 @@ COPY --from=builder --chown=nodeuser:nodejs /app/node_modules/.prisma ./node_mod
 COPY --from=builder --chown=nodeuser:nodejs /app/src ./src
 COPY --from=builder --chown=nodeuser:nodejs /app/prisma ./prisma
 COPY --chown=nodeuser:nodejs package.json ./
+COPY --chown=nodeuser:nodejs prisma.config.ts ./
 USER nodeuser
 EXPOSE 4000
-CMD ["node", "src/index.js"]
+CMD ["sh", "-c", "node_modules/.bin/prisma db push && node src/index.js"]

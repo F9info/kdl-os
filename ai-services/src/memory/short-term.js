@@ -16,6 +16,10 @@ export async function deleteMemory(sessionId, key) {
 }
 
 export async function clearSessionMemory(sessionId) {
-  const keys = await redis.keys(`mem:short:${sessionId}:*`);
-  if (keys.length > 0) await redis.del(keys);
+  let cursor = '0';
+  do {
+    const [next, keys] = await redis.scan(cursor, 'MATCH', `mem:short:${sessionId}:*`, 'COUNT', 100);
+    cursor = next;
+    if (keys.length > 0) await redis.del(keys);
+  } while (cursor !== '0');
 }

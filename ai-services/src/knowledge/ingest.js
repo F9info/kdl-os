@@ -1,3 +1,4 @@
+import pLimit from 'p-limit';
 import { chroma } from '../config/chroma.js';
 import { openrouterEmbed } from '../brains/openrouter.js';
 import { randomUUID } from 'crypto';
@@ -5,6 +6,7 @@ import { randomUUID } from 'crypto';
 const COLLECTION = 'kdl_knowledge';
 const CHUNK_SIZE = 512;
 const CHUNK_OVERLAP = 64;
+const EMBED_CONCURRENCY = 10;
 
 let col = null;
 
@@ -29,7 +31,8 @@ export async function ingestDocument(content, metadata = {}) {
   const c = await getCollection();
   const chunks = chunkText(content);
   const ids = chunks.map(() => randomUUID());
-  const embeddings = await Promise.all(chunks.map(openrouterEmbed));
+  const limit = pLimit(EMBED_CONCURRENCY);
+  const embeddings = await Promise.all(chunks.map((chunk) => limit(() => openrouterEmbed(chunk))));
 
   await c.upsert({
     ids,

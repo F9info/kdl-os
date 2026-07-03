@@ -1,6 +1,6 @@
 # KDL Starter Kit — Project Context
 
-Last updated: 2026-06-25
+Last updated: 2026-07-03
 Current phase: Phase 6 COMPLETE — All phases done
 
 ---
@@ -65,8 +65,7 @@ Current phase: Phase 6 COMPLETE — All phases done
 
 ## What Has NOT Been Done
 
-- Dockerfiles for backend/frontend/ai-services (not yet created)
-- CI/CD workflows (`.github/workflows/`)
+
 - Whisper transcription (501 stub)
 - Forgot-password backend endpoint
 

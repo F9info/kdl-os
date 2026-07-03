@@ -8,6 +8,7 @@ interface ErrorAlertProps {
 }
 
 function getErrorMessage(error: unknown): string {
+  if (typeof error === 'string') return error
   if (!error) return 'An unexpected error occurred'
   const e = error as { response?: { data?: { message?: string } }; message?: string }
   return e.response?.data?.message ?? e.message ?? 'An unexpected error occurred'
