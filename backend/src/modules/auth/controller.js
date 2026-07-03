@@ -138,3 +138,25 @@ export const logout = async (req, res, next) => {
     next(err);
   }
 };
+
+export const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.validated.body;
+    await authService.createPasswordResetToken(email);
+    // Return a generic message regardless of whether the email exists to prevent enumeration.
+    return successResponse(res, { message: 'If an account exists, a reset link has been sent.' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const resetPassword = async (req, res, next) => {
+  try {
+    const { token, password } = req.validated.body;
+    const user = await authService.resetPassword(token, password);
+    if (!user) return errorResponse(res, 'Invalid or expired reset token', 400);
+    return successResponse(res, { message: 'Password reset successfully' });
+  } catch (err) {
+    next(err);
+  }
+};
