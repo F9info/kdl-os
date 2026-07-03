@@ -20,7 +20,7 @@
     "dotenv": "^16.4.0",
     "@prisma/client": "^7.0.0",
     "@prisma/adapter-pg": "^7.0.0",
-    "@sentry/node": "^8.0.0",
+    "@sentry/node": "^10.63.0",
     "bcryptjs": "^2.4.3",
     "bullmq": "^5.0.0",
     "chromadb": "^1.9.0",
