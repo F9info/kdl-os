@@ -475,3 +475,20 @@
 - `.github/workflows/ci.yml`
 
 **Next:** Code Reviewer verifies test commands in a fresh checkout and confirms CI passes on next PR.
+
+---
+
+## 2026-07-03 — KDL-46 Step 1 verification PASS (Code Reviewer Agent)
+
+**Gate Verifier re-run + independent review of KDL-32 (commits `9f4eb23` + `cdb9b73`): PASS — zero CRITICAL/HIGH. Step 2 unblocked.**
+
+- Gate: `npx prisma validate` exit 0; `npx prisma migrate dev` exit 0 ("Already in sync").
+- Schema: RBAC models match USER_MANAGEMENT_ARCH.md exactly (incl. approved `RbacRole` → `roles` table deviation; legacy `Role` enum kept for Step 10).
+- Migrations: `20260601000000_init` baseline correctly reconstructs the pre-RBAC db-push schema (no status/deleted_at columns, no password_reset_tokens — that lives in `20260702000000`); `20260703071437` matches schema 1:1 (FKs, indexes, composite PKs all correct).
+- Seeder idempotency verified live: double run → roles=3, permissions=30, role_permissions=24. Admin set correct (30 − permissions:*×5 − roles:delete = 24).
+
+**Queued findings (non-blocking per Auto-Approval Protocol):**
+- MEDIUM: `backend/src/config/meilisearch.js:5` still reads `MEILISEARCH_API_KEY`, but `.env.example` renamed that key to `MEILI_MASTER_KEY` (rename itself was mandated by arch-doc kickoff #4). Fresh installs copying `.env.example` get `apiKey: undefined` → backend search 401s against the master-key-protected MeiliSearch container. Fix in a later step: read `MEILI_MASTER_KEY` (fallback to legacy var). Live root `.env` has both keys, so dev unaffected.
+- LOW: `docs/ENV_REFERENCE.md:113` still documents `MEILISEARCH_API_KEY` — stale after the rename.
+
+**Next:** Step 2 (permission-resolver + activity-logger + `requirePermission` middleware, Backend Coder).
