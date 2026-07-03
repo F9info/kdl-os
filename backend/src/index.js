@@ -20,6 +20,9 @@ import mediaRoutes from './modules/media/routes.js';
 import typeRoutes from './modules/types/routes.js';
 import categoryRoutes from './modules/categories/routes.js';
 import settingFieldRoutes from './modules/setting-fields/routes.js';
+import roleRoutes from './modules/user-management/roles/routes.js';
+import permissionRoutes from './modules/user-management/permissions/routes.js';
+import activityLogRoutes from './modules/user-management/activity/routes.js';
 
 const app = express();
 const PORT = process.env.APP_PORT || 4000;
@@ -49,6 +52,9 @@ app.use('/api/media', mediaRoutes);
 app.use('/api/types', typeRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/setting-fields', settingFieldRoutes);
+app.use('/api/roles', roleRoutes);
+app.use('/api/permissions', permissionRoutes);
+app.use('/api/activity-log', activityLogRoutes);
 
 app.use((req, res) => errorResponse(res, 'Not found', 404));
 app.use(errorHandler);

@@ -1,3 +1,47 @@
+## 2026-07-03 — KDL-35 KDLOS-10 Step 3 Roles + Permissions + Activity Log endpoints DONE ✅
+
+**Step 3 implementation complete. Awaiting Code Reviewer + Gate Verifier per Auto-Approval Protocol.**
+
+- New backend modules:
+  - `backend/src/modules/user-management/roles/` — schema/service/controller/routes for `/api/roles`
+  - `backend/src/modules/user-management/permissions/` — schema/service/controller/routes for `/api/permissions`
+  - `backend/src/modules/user-management/activity/` — schema/service/controller/routes for `/api/activity-log`
+- `backend/src/index.js` — wired `/api/roles`, `/api/permissions`, `/api/permissions/matrix`, `/api/permissions/modules`, `/api/activity-log`
+- Security + audit:
+  - All routes protected by `authenticate` + `requirePermission('<module>:<action>')`
+  - Super-admin bypass handled by existing `permission-resolver.js`
+  - Mutations write PII-scrubbed `ActivityLog` entries and invalidate `perm:user:*` Redis cache
+  - 409 guards: system role/module rename/delete, role with assigned users, module with referenced permissions
+- Tests:
+  - `backend/tests/user-management/roles.controller.test.js` (10)
+  - `backend/tests/user-management/permissions.controller.test.js` (8)
+  - `backend/tests/user-management/activity.service.test.js` (2)
+  - Removed stale `backend/tests/user-management-step3.test.js`
+- Final verification:
+  - `npm test` in backend/ → 15 files / 77 tests passing ✅
+  - `npx prisma validate` ✅
+  - `node --check` on all new files + `src/index.js` ✅
+  - DB seed succeeded and database was available during seeding; Redis/Postgres stack stopped before live curl smoke, so gate evidence is the passing test suite + syntax/schema validation.
+
+**Next:** Independent Code Reviewer PASS + Gate Verifier re-run → unblock KDLOS-10 Step 4.
+
+---
+
+## 2026-07-03 — KDL-34 KDLOS-10 Step 2 permission-resolver + activity-logger + requirePermission middleware DONE ✅
+
+**Step 2 complete. Board confirmed continuation; both review interactions accepted.**
+
+- Files delivered and current:
+  - `backend/src/modules/user-management/shared/permission-resolver.js`
+  - `backend/src/modules/user-management/shared/activity-logger.js`
+  - `backend/src/middleware/permission.js`
+- Tests: `backend/tests/permission-resolver.test.js` (9), `activity-logger.test.js` (6), `permission-middleware.test.js` (6).
+- Final verification: `npm test` → 12 files / 57 tests passing ✅; `npx prisma validate` ✅; `node --check` on new source files ✅.
+
+**Next:** KDLOS-10 Step 3 (KDL-35 — Roles + Permissions + Activity Log endpoints) is now unblocked.
+
+---
+
 ## 2026-07-03 — KDL-32 KDLOS-10 Step 1 RBAC schema + migration + seeder COMPLETE, awaiting Gate Verifier + Code Review (Backend Architect)
 
 **RBAC foundation landed in commit 9f4eb23. Gate green: `npx prisma validate` exit 0, `npx prisma migrate dev` exit 0. Seeder idempotent (verified double-run).**
