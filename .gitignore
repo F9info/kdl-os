@@ -1,2 +1,42 @@
+# dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+ai-services/node_modules/
+package-lock.json.bak
 
+# env
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# build output
+frontend/.next/
+frontend/out/
 frontend/tsconfig.tsbuildinfo
+backend/dist/
+ai-services/dist/
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+logs/
+backend/logs/
+
+# test / coverage
+coverage/
+frontend/playwright-report/
+frontend/test-results/
+
+# OS
+.DS_Store
+**/.DS_Store
+
+# editor
+.vscode/
+.idea/
+
+# misc
+*.pem
