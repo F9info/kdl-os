@@ -1500,3 +1500,39 @@ MEDIUM issues M1–M7 should be addressed in the Phase 5 fix pass or bundled int
 ---
 
 *Reviewed by Code Reviewer Agent (KDL-26) on 2026-06-25*
+
+---
+
+# KDLOS-10 Step 5 Code Review — KDL-56 (reviewing KDL-37)
+
+**Reviewer:** Code Reviewer Agent (ab90a50b) — independent session (Maker ≠ Grader)
+**Date:** 2026-07-04
+**Scope:** commit e4ab1f8 — replace `requireRole` call sites with `requirePermission`; seeder module sync; auth middleware `req.user.id`; users/auth extensions carried in the same commit
+**Summary:** **REVIEW_PASS** — zero CRITICAL, zero HIGH. 3 MEDIUM, 6 LOW (non-blocking, fold into Step 6+ or Step 10).
+
+## Gate verification (re-run independently)
+
+- `npm test` (backend): 15 files / 87 tests passed ✅
+- `npx prisma validate`: valid ✅
+- Route-by-route mapping audit: old `requireRole('ADMIN','SUPER_ADMIN')` guards on types/categories/setting-fields/users are equivalent under the new model (admin role seeded with all module actions except `roles:delete`/`permissions:*`; `user` role seeded with zero permissions — no unintended broadening) ✅
+- `PUT /users/:id/overrides` correctly gated on `permissions:edit` (super-admin only under default seed) per arch doc ✅
+- `DELETE /api/settings/:key` broadened from SUPER_ADMIN-only to admin role — **intended** per USER_MANAGEMENT_ARCH.md:208 (admin = all actions except roles:delete, permissions:*). Note for changelog.
+
+## Findings
+
+### MEDIUM
+1. `backend/src/middleware/auth.js:39,61` — `authenticate`/`optionalAuthenticate` check `status`/`deleted_at` but not `is_active`; login/refresh/forgot/reset all enforce `is_active`, and the permission resolver ignores it too. A user with `is_active=false` but `status='ACTIVE'` keeps a working access token (and passing `requirePermission`) for up to 15 min. Not a regression (old middleware did no DB check), but account-disable semantics are now split across two fields. Fix: one shared `isUserActive(user)` predicate used by middleware, resolver, and auth service.
+2. `backend/src/modules/users/controller.js` (`actorIsSuperAdmin`) — trusts the JWT `roles` claim, which cannot be revoked; for up to 15 min after a super-admin role is removed, an actor who retains `users:edit` passes the controller-level super-admin guards (e.g. could assign super-admin). Bounded by token TTL and consistent with the approved JWT design, but the guard could instead use `req.userPermissions.bypass` (already attached by `requirePermission`, DB/cache-backed and invalidated on role change).
+3. `backend/src/modules/users/controller.js` — `invalidatePermissionCache()` is called with no argument on every update/delete/reset-password, flushing the entire `perm:user:*` keyspace (full Redis SCAN + fleet-wide re-resolution stampede). Password reset changes no permissions at all. Fix: pass the affected user's key; drop the call from resetPassword.
+
+### LOW
+4. `backend/src/middleware/auth.js` — catch block swallows Prisma/DB errors and returns 401 "Invalid or expired token"; a DB outage masquerades as mass token expiry. Separate JWT verify from the DB lookup.
+5. `backend/src/modules/users/service.js` (`softDeleteUser`) — only service function returning an unflattened `roles` shape (no `flattenUser`); DELETE response shape differs from every other endpoint.
+6. Duplication cluster (drift risk): `getUserRoleSlugs` copied in auth + users service; the inactive-user boolean chain repeated at 5 sites; `revokeAllRefreshTokensForUser` exported but never called while users `resetPassword` inlines the same query; `SALT_ROUNDS`/bcrypt hashing duplicated in users service vs auth `hashPassword`; `optionalAuthenticate` duplicates `authenticate`'s lookup block with inverted polarity.
+7. `backend/src/modules/users/controller.js` (`updateOverrides`) — no super-admin-target guard, unlike its siblings update/delete/resetPassword. Inert today (bypass ignores overrides) but inconsistent; add the guard or a comment.
+8. `backend/src/middleware/auth.js` + settings routes — per-request uncached user lookup added to every authenticated request and to public settings GETs when a token is present; duplicates the status check the cached resolver already does on permission-guarded routes. Consider short-TTL caching.
+9. `frontend/e2e/smoke.spec.ts` — login/reset tests assert placeholder text ("Replace with actual welcome text") and will fail against the real app; not part of the backend gate. Stray untracked `frontend/e2e/dummy.txt`.
+
+## Verdict
+
+Gate is zero CRITICAL/HIGH → **REVIEW_PASS**. KDL-38 (Step 6, Frontend RBAC UI) may proceed. MEDIUM items 1–3 should be picked up before Step 10 removes the legacy paths.
