@@ -601,6 +601,175 @@ Required permission: `permissions:delete`
 
 ---
 
+### Modules — `/api/modules`
+
+Manages the module plugin lifecycle. All endpoints require authentication. Super Admin bypasses permission checks.
+
+**Module status flow:** `AVAILABLE` (manifest on disk, no DB row) → `INSTALLED` → `ENABLED` ↔ `DISABLED`.
+
+**Cache:** Module enabled/disabled status is Redis-cached for up to 60 seconds. Edge enforcement lags toggle by at most 60 s.
+
+#### `GET /api/modules`
+
+Required permission: `modules:view`
+
+Returns all modules — those with a manifest on disk merged with installed DB rows. Manifests with no DB row appear as `AVAILABLE`.
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "data": {
+    "modules": [
+      {
+        "slug": "example",
+        "name": "Example",
+        "description": "Example module",
+        "version": "1.0.0",
+        "core": false,
+        "apiPrefix": "/api/example",
+        "status": "ENABLED",
+        "installed_at": "2026-07-06T10:00:00.000Z",
+        "enabled_at": "2026-07-06T10:00:00.000Z",
+        "settings": null
+      }
+    ]
+  }
+}
+```
+
+`status` values: `AVAILABLE` | `INSTALLED` | `ENABLED` | `DISABLED`. Orphaned DB rows (manifest deleted from disk) include `"_orphaned": true`.
+
+---
+
+#### `GET /api/modules/enabled`
+
+Required permission: authenticated (any active user).
+
+Returns only `ENABLED` modules with their nav entries. Used by the frontend to build the dynamic sidebar.
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "data": {
+    "modules": [
+      {
+        "slug": "example",
+        "name": "Example",
+        "nav": [
+          { "label": "Example", "path": "/example", "icon": "Package", "permission": "example:view" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+---
+
+#### `POST /api/modules/:slug/install`
+
+Required permission: `modules:add`
+
+Installs a module: validates env vars, registers permission modules (upsert), creates a DB row with `status: INSTALLED`.
+
+**Response 201:**
+```json
+{
+  "success": true,
+  "data": {
+    "module": {
+      "id": "...",
+      "slug": "example",
+      "name": "Example",
+      "version": "1.0.0",
+      "is_core": false,
+      "status": "INSTALLED",
+      "installed_at": "2026-07-06T10:00:00.000Z",
+      "enabled_at": null,
+      "settings": null
+    }
+  }
+}
+```
+
+**Error conditions:**
+- `404` — no manifest found for `slug`
+- `409` — already installed
+- `409` — a declared `dependsOn` module is not installed
+- `422` — one or more required `env` vars are missing from the environment
+
+---
+
+#### `POST /api/modules/:slug/enable`
+
+Required permission: `modules:edit`
+
+Transitions the module from `INSTALLED` or `DISABLED` to `ENABLED`. Invalidates the Redis module-status cache.
+
+**Response 200:** `{ "module": { ..., "status": "ENABLED" } }`
+
+**Error conditions:**
+- `404` — module not installed
+- `409` — already enabled
+- `409` — a `dependsOn` module is not `ENABLED`
+
+---
+
+#### `POST /api/modules/:slug/disable`
+
+Required permission: `modules:edit`
+
+Transitions the module from `ENABLED` to `DISABLED`. Invalidates cache. Core modules cannot be disabled.
+
+**Response 200:** `{ "module": { ..., "status": "DISABLED" } }`
+
+**Error conditions:**
+- `404` — module not installed
+- `409` — module is core (`is_core: true`)
+- `409` — module is not currently enabled
+- `409` — one or more other `ENABLED` modules list this slug in their `dependsOn`
+
+---
+
+#### `DELETE /api/modules/:slug`
+
+Required permission: `modules:delete`
+
+Uninstalls a module: deregisters its permission modules (blocked if any roles or users reference them), deletes the DB row. **Tables created by the module are never dropped** — data purge is a manual, Prasanna-approved operation.
+
+**Response 200:**
+```json
+{ "success": true, "data": { "message": "Module \"example\" uninstalled" } }
+```
+
+**Error conditions:**
+- `404` — module not installed
+- `409` — module is core
+- `409` — module is not `DISABLED` (must disable before uninstalling)
+- `409` — module's permission entries are still referenced by roles or user overrides
+
+---
+
+#### `PATCH /api/modules/:slug/settings`
+
+Required permission: `modules:edit`
+
+Merges the supplied key/value pairs into the module's `settings` JSON field (shallow merge — existing keys not in the body are preserved).
+
+**Body:**
+```json
+{ "settings": { "someKey": "someValue" } }
+```
+
+**Response 200:** `{ "module": { ..., "settings": { "someKey": "someValue" } } }`
+
+**Error conditions:**
+- `404` — module not installed
+
+---
+
 ### Activity Log — `/api/activity-log`
 
 Read-only. No write, edit, or delete endpoints.

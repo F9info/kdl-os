@@ -90,6 +90,16 @@ Creates the default SUPER_ADMIN account:
 
 The seed uses `upsert` — safe to re-run.
 
+### Module plugin system
+
+The module seeder runs automatically as part of `node prisma/seed.js`. It scans every `backend/src/modules/*/module.json` where `core: true` and upserts a DB row with `status: ENABLED`, then registers the module's permission entries. Re-running seed is safe (all operations use `upsert`).
+
+When the backend starts (`npm run dev` or `node src/index.js`), `loadModules(app)` scans `backend/src/modules/*/module.json` for non-core modules and auto-mounts each one's `routes.js` at the declared `apiPrefix` behind a `moduleGate` middleware. A broken manifest is logged and skipped — it never takes the backend down.
+
+Core modules (auth, users, settings, media, modules, user-management, types, setting-fields, categories) are always mounted directly in `index.js`; they do not go through `loadModules`.
+
+---
+
 ### Create log directory
 
 ```bash
