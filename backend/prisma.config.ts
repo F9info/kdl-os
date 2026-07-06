@@ -10,11 +10,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 export default defineConfig({
-  schema: path.join('prisma', 'schema.prisma'),
+  schema: path.join('prisma', 'schema'),
   datasource: {
     url: process.env.DATABASE_URL,
   },
   migrations: {
+    path: path.join('prisma', 'migrations'),
     seed: 'node prisma/seed.js',
   },
   adapter: async () => {

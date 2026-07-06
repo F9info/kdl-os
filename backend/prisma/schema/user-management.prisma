@@ -1,0 +1,104 @@
+enum OverrideMode {
+  GRANT
+  DENY
+}
+
+model RbacRole {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  is_system   Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  users       UserRole[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model PermissionModule {
+  id         String   @id @default(cuid())
+  name       String   @unique
+  label      String
+  is_system  Boolean  @default(false)
+  sort_order Int      @default(0)
+  created_at DateTime @default(now())
+
+  permissions Permission[]
+
+  @@map("permission_modules")
+}
+
+model Permission {
+  id         String   @id @default(cuid())
+  module_id  String
+  action     String
+  created_at DateTime @default(now())
+
+  module PermissionModule @relation(fields: [module_id], references: [id], onDelete: Cascade)
+  roles  RolePermission[]
+  users  UserPermission[]
+
+  @@unique([module_id, action])
+  @@index([module_id])
+  @@map("permissions")
+}
+
+model RolePermission {
+  role_id       String
+  permission_id String
+
+  role       RbacRole   @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
+
+  @@id([role_id, permission_id])
+  @@index([permission_id])
+  @@map("role_permissions")
+}
+
+model UserRole {
+  user_id String
+  role_id String
+
+  user User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  role RbacRole @relation(fields: [role_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, role_id])
+  @@index([role_id])
+  @@map("user_roles")
+}
+
+model UserPermission {
+  user_id       String
+  permission_id String
+  mode          OverrideMode
+
+  user       User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, permission_id])
+  @@index([permission_id])
+  @@map("user_permissions")
+}
+
+model ActivityLog {
+  id           String   @id @default(cuid())
+  actor_id     String?
+  module       String
+  action       String
+  subject_type String?
+  subject_id   String?
+  description  String
+  properties   Json?
+  ip_address   String?
+  created_at   DateTime @default(now())
+
+  actor User? @relation(fields: [actor_id], references: [id], onDelete: SetNull)
+
+  @@index([actor_id])
+  @@index([module])
+  @@index([created_at])
+  @@map("activity_logs")
+}

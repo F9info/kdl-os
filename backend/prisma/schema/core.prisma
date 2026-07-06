@@ -1,0 +1,149 @@
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING
+}
+
+model User {
+  id              String    @id @default(cuid())
+  name            String
+  email           String    @unique
+  password_hash   String
+  is_active       Boolean   @default(true)
+  status          UserStatus @default(ACTIVE)
+  avatar_media_id String?
+  last_login_at   DateTime?
+  deleted_at      DateTime?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  refresh_tokens       RefreshToken[]
+  password_reset_tokens PasswordResetToken[]
+  media                Media[]
+  roles                UserRole[]
+  permission_overrides UserPermission[]
+  activity             ActivityLog[]
+
+  @@index([status])
+  @@index([deleted_at])
+  @@map("users")
+}
+
+model RefreshToken {
+  id         String   @id @default(cuid())
+  user_id    String
+  token_hash String   @unique
+  expires_at DateTime
+  revoked    Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([expires_at, revoked])
+  @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  id         String   @id @default(cuid())
+  user_id    String
+  token_hash String   @unique
+  expires_at DateTime
+  used       Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([expires_at, used])
+  @@map("password_reset_tokens")
+}
+
+model AppSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  type        String   @default("string")
+  description String?
+  is_public   Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("app_settings")
+}
+
+model Type {
+  id             String         @id @default(cuid())
+  name           String
+  slug           String         @unique
+  is_active      Boolean        @default(true)
+  created_at     DateTime       @default(now())
+  updated_at     DateTime       @updatedAt
+
+  categories     Category[]
+  setting_fields SettingField[]
+
+  @@index([is_active])
+  @@index([name])
+  @@map("types")
+}
+
+model Category {
+  id             String         @id @default(cuid())
+  name           String
+  slug           String         @unique
+  type_id        String?
+  is_active      Boolean        @default(true)
+  created_at     DateTime       @default(now())
+  updated_at     DateTime       @updatedAt
+
+  type           Type?          @relation(fields: [type_id], references: [id], onDelete: SetNull)
+  setting_fields SettingField[]
+
+  @@index([is_active])
+  @@index([type_id])
+  @@index([name])
+  @@map("categories")
+}
+
+model SettingField {
+  id          String    @id @default(cuid())
+  field_name  String
+  slug        String    @unique
+  input_type  String
+  value       String?
+  alt_text    String?
+  options     String?
+  type_id     String
+  category_id String?
+  sort        Int       @default(0)
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  type     Type      @relation(fields: [type_id], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [category_id], references: [id], onDelete: SetNull)
+
+  @@index([type_id])
+  @@index([category_id])
+  @@index([sort])
+  @@map("setting_fields")
+}
+
+model Media {
+  id            String   @id @default(cuid())
+  user_id       String
+  filename      String
+  original_name String
+  mime_type     String
+  size          Int
+  bucket        String
+  path          String
+  url           String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("media")
+}
