@@ -1,2 +1,25 @@
 // Module Plugin System (MODULE_PLUGIN_ARCH)
-// Module model and ModuleStatus enum will be added in Step 2.
+
+enum ModuleStatus {
+  INSTALLED
+  ENABLED
+  DISABLED
+}
+
+model Module {
+  id           String       @id @default(cuid())
+  slug         String       @unique
+  name         String
+  description  String?
+  version      String
+  is_core      Boolean      @default(false)
+  status       ModuleStatus @default(INSTALLED)
+  installed_at DateTime     @default(now())
+  enabled_at   DateTime?
+  settings     Json?
+  created_at   DateTime     @default(now())
+  updated_at   DateTime     @updatedAt
+
+  @@index([status])
+  @@map("modules")
+}
