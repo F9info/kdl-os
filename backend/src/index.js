@@ -23,6 +23,8 @@ import settingFieldRoutes from './modules/setting-fields/routes.js';
 import roleRoutes from './modules/user-management/roles/routes.js';
 import permissionRoutes from './modules/user-management/permissions/routes.js';
 import activityLogRoutes from './modules/user-management/activity/routes.js';
+import moduleRoutes from './modules/modules/routes.js';
+import { loadModules } from './shared/modules/module-loader.js';
 
 const app = express();
 const PORT = process.env.APP_PORT || 4000;
@@ -55,6 +57,10 @@ app.use('/api/setting-fields', settingFieldRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/permissions', permissionRoutes);
 app.use('/api/activity-log', activityLogRoutes);
+app.use('/api/modules', moduleRoutes);
+
+// Mount plugin modules (those with module.json + routes.js) behind moduleGate
+await loadModules(app);
 
 app.use((req, res) => errorResponse(res, 'Not found', 404));
 app.use(errorHandler);
