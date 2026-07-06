@@ -18,6 +18,7 @@ import {
   updateUser,
   deleteUser,
   resetPassword,
+  getOverrides,
   updateOverrides,
 } from './controller.js';
 
@@ -31,6 +32,7 @@ router.post('/', requirePermission('users', 'add'), validate(createUserSchema), 
 router.patch('/:id', requirePermission('users', 'edit'), validate(updateUserSchema), updateUser);
 router.delete('/:id', requirePermission('users', 'delete'), validate(deleteUserSchema), deleteUser);
 router.post('/:id/reset-password', requirePermission('users', 'edit'), validate(resetPasswordSchema), resetPassword);
+router.get('/:id/overrides', requirePermission('permissions', 'view'), validate(getUserSchema), getOverrides);
 router.put('/:id/overrides', requirePermission('permissions', 'edit'), validate(updateOverridesSchema), updateOverrides);
 
 export default router;

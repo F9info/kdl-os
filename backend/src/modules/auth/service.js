@@ -41,7 +41,7 @@ export const findUserWithRolesByEmail = (email) =>
     include: {
       roles: {
         select: {
-          role: { select: { slug: true } },
+          role: { select: { id: true, name: true, slug: true } },
         },
       },
     },

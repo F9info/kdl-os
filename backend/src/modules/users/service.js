@@ -232,6 +232,22 @@ export async function updateUserOverrides(id, overrides) {
   });
 }
 
+export async function getUserOverrides(id) {
+  const result = await prisma.userPermission.findMany({
+    where: { user_id: id },
+    select: {
+      permission: { select: { id: true, module_id: true, action: true } },
+      mode: true,
+    },
+  });
+  return result.map((up) => ({
+    permission_id: up.permission.id,
+    module_id: up.permission.module_id,
+    action: up.permission.action,
+    mode: up.mode,
+  }));
+}
+
 export async function getUserRoleSlugs(userId) {
   const userRoles = await prisma.userRole.findMany({
     where: { user_id: userId },

@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Pencil, Trash2, Search, KeyRound } from 'lucide-react'
+import { Pencil, Trash2, Search, KeyRound, Plus } from 'lucide-react'
 import type { ColumnDef } from '@tanstack/react-table'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
@@ -32,8 +32,10 @@ import {
 } from '@/components/ui/select'
 import { formatDate } from '@/lib/utils'
 import { cn } from '@/lib/utils'
-import type { User, UserStatus, RbacRole, PermissionModuleMatrix, OverrideMode } from '@/types/models.types'
+import type { User, UserStatus, RbacRole, PermissionModuleMatrix, OverrideMode, UserPermissionOverride } from '@/types/models.types'
 import {
+  createUserSchema,
+  type CreateUserFormData,
   updateUserSchema,
   type UpdateUserFormData,
   resetPasswordSchema,
@@ -52,6 +54,7 @@ export default function UsersPage() {
   const { page, setPage } = usePagination()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<UserStatus | ''>('')
+  const [createOpen, setCreateOpen] = useState(false)
   const [editUser, setEditUser] = useState<User | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null)
@@ -93,6 +96,26 @@ export default function UsersPage() {
     enabled: editTab === 'overrides' && !!editUser,
   })
 
+  const { data: existingOverrides } = useQuery({
+    queryKey: ['user-overrides', editUser?.id],
+    queryFn: () =>
+      api.get(`/users/${editUser!.id}/overrides`).then(
+        (r) => r.data.data.overrides as UserPermissionOverride[]
+      ),
+    enabled: editTab === 'overrides' && !!editUser,
+  })
+
+  const createMutation = useMutation({
+    mutationFn: (data: Omit<CreateUserFormData, 'confirm_password'>) =>
+      api.post('/users', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      toast({ title: 'User created' })
+      setCreateOpen(false)
+      createForm.reset()
+    },
+  })
+
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateUserFormData }) =>
       api.patch(`/users/${id}`, data),
@@ -113,6 +136,7 @@ export default function UsersPage() {
     }) => api.put(`/users/${id}/overrides`, { overrides: overrideList }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
+      queryClient.invalidateQueries({ queryKey: ['user-overrides'] })
       toast({ title: 'Permission overrides saved' })
       setEditUser(null)
     },
@@ -148,6 +172,15 @@ export default function UsersPage() {
 
   const resetForm = useForm<ResetPasswordFormData>({ resolver: zodResolver(resetPasswordSchema) })
 
+  const createForm = useForm<CreateUserFormData>({
+    resolver: zodResolver(createUserSchema),
+    defaultValues: { status: 'ACTIVE', is_active: true, role_ids: [] },
+  })
+
+  const createSelectedRoleIds = createForm.watch('role_ids') ?? []
+  const createIsActive = createForm.watch('is_active')
+  const createStatus = createForm.watch('status')
+
   const selectedRoleIds = watch('role_ids') ?? []
   const isActiveValue = watch('is_active')
   const statusValue = watch('status')
@@ -163,6 +196,22 @@ export default function UsersPage() {
       status: user.status ?? 'ACTIVE',
       is_active: user.is_active,
     })
+  }
+
+  useEffect(() => {
+    if (existingOverrides && editTab === 'overrides') {
+      const seed: OverrideState = {}
+      existingOverrides.forEach((o) => { seed[o.permission_id] = o.mode })
+      setOverrides(seed)
+    }
+  }, [existingOverrides, editTab])
+
+  function toggleCreateRoleId(roleId: string) {
+    const current = createSelectedRoleIds
+    const next = current.includes(roleId)
+      ? current.filter((id) => id !== roleId)
+      : [...current, roleId]
+    createForm.setValue('role_ids', next, { shouldValidate: true })
   }
 
   function toggleRoleId(roleId: string) {
@@ -291,7 +340,15 @@ export default function UsersPage() {
 
   return (
     <div>
-      <PageHeader title="Users" />
+      <PageHeader
+        title="Users"
+        action={
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add user
+          </Button>
+        }
+      />
 
       <div className="flex items-center gap-4 mb-6">
         <div className="relative flex-1 max-w-sm">
@@ -333,6 +390,110 @@ export default function UsersPage() {
             : undefined
         }
       />
+
+      {/* Create user modal */}
+      <Modal
+        open={createOpen}
+        onClose={() => {
+          setCreateOpen(false)
+          createForm.reset()
+        }}
+        title="Add User"
+        size="lg"
+        footer={
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCreateOpen(false)
+                createForm.reset()
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={createForm.handleSubmit(({ confirm_password: _cp, ...data }) =>
+                createMutation.mutate(data)
+              )}
+              disabled={createMutation.isPending}
+            >
+              {createMutation.isPending && <LoadingSpinner size="sm" />}
+              Create user
+            </Button>
+          </div>
+        }
+      >
+        <form className="space-y-4">
+          <FormField label="Name" error={createForm.formState.errors.name?.message} required>
+            <Input {...createForm.register('name')} />
+          </FormField>
+          <FormField label="Email" error={createForm.formState.errors.email?.message} required>
+            <Input type="email" {...createForm.register('email')} />
+          </FormField>
+          <FormField label="Password" error={createForm.formState.errors.password?.message} required>
+            <Input type="password" {...createForm.register('password')} autoComplete="new-password" />
+          </FormField>
+          <FormField label="Confirm password" error={createForm.formState.errors.confirm_password?.message} required>
+            <Input type="password" {...createForm.register('confirm_password')} autoComplete="new-password" />
+          </FormField>
+
+          <FormField label="Roles" error={createForm.formState.errors.role_ids?.message} required>
+            <div className="border rounded-md p-3 space-y-2 max-h-48 overflow-y-auto">
+              {(roles ?? []).map((role) => {
+                if (!isSuperAdmin && role.slug === 'super-admin') return null
+                const checked = createSelectedRoleIds.includes(role.id)
+                return (
+                  <label key={role.id} className="flex items-center gap-3 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleCreateRoleId(role.id)}
+                      className="h-4 w-4 rounded border-input accent-primary cursor-pointer"
+                    />
+                    <span className="text-sm font-medium">{role.name}</span>
+                    {role.is_system && (
+                      <span className="text-xs text-muted-foreground">(system)</span>
+                    )}
+                  </label>
+                )
+              })}
+              {!roles?.length && (
+                <p className="text-sm text-muted-foreground">Loading roles…</p>
+              )}
+            </div>
+          </FormField>
+
+          <FormField label="Status" required>
+            <Select
+              value={createStatus}
+              onValueChange={(v) => createForm.setValue('status', v as UserStatus, { shouldValidate: true })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ACTIVE">Active</SelectItem>
+                <SelectItem value="SUSPENDED">Suspended</SelectItem>
+                <SelectItem value="PENDING">Pending</SelectItem>
+              </SelectContent>
+            </Select>
+          </FormField>
+
+          <FormField label="Active">
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={createIsActive}
+                onCheckedChange={(v) => createForm.setValue('is_active', v)}
+              />
+              <span className="text-sm text-muted-foreground">
+                {createIsActive ? 'Active' : 'Inactive'}
+              </span>
+            </div>
+          </FormField>
+
+          {createMutation.error && <ErrorAlert error={createMutation.error} />}
+        </form>
+      </Modal>
 
       {/* Edit user modal */}
       <Modal

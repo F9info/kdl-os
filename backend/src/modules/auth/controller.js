@@ -90,8 +90,9 @@ export const login = async (req, res, next) => {
     if (!valid) return errorResponse(res, 'Invalid credentials', 401);
 
     const roleSlugs = user.roles?.map((ur) => ur.role?.slug).filter(Boolean) || [];
+    const roleObjects = user.roles?.map((ur) => ur.role).filter(Boolean) || [];
     const { password_hash: _ignored, roles: _rolesIgnored, ...safeUser } = user;
-    safeUser.roles = roleSlugs;
+    safeUser.roles = roleObjects;
 
     const accessToken = authService.signAccessToken(buildAccessTokenPayload(user, roleSlugs));
     const refreshToken = authService.signRefreshToken({ userId: user.id });
