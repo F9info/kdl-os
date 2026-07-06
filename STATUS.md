@@ -731,3 +731,19 @@ Still open (non-blocking, carried forward):
 Note: `backend/Dockerfile`, `StatusBadge.tsx` fallback, and `frontend/e2e/module-plugin.spec.ts` (KDL-83 Step 8 prep) were present uncommitted in the tree and intentionally left out of the Step 7 fix commit.
 
 **Next:** Step 8 E2E gate (KDL-83) — remember: rebuild docker images + re-seed before running E2E (containers bake code at build).
+
+---
+
+## 2026-07-06 — KDL-82/KDL-78 MODULE_PLUGIN_ARCH Step 8 E2E gate: PASS (Code Reviewer Agent)
+
+**Playwright E2E gate exit 0 — 15/15 tests passed on freshly rebuilt docker images + re-seeded DB.**
+
+Procedure (per the stale-image lesson from KDL-39): `docker compose build backend frontend` → `up -d` → `node prisma/seed.js` in the backend container → `E2E_BASE_URL=http://localhost:3001 pnpm e2e`.
+
+- `module-plugin.spec.ts` 5/5: install example → INSTALLED, enable → ENABLED, nav item appears + `/admin/example` renders, disable → DISABLED, nav gone + API 404.
+- Full suite green: smoke 2/2, rbac 8/8, module-plugin 5/5.
+- Committed the previously untracked Step 8 artifacts: `frontend/e2e/module-plugin.spec.ts`, `backend/Dockerfile` (`prisma.config.ts` copied into both stages), `StatusBadge.tsx` unknown-variant fallback.
+
+Note: image freshness was ambiguous before this run (frontend image finished building 29s after the last `StatusBadge.tsx` edit) — rebuild removed the doubt; results above are from clean images.
+
+**Next:** MODULE_PLUGIN_ARCH steps complete (Step 7 review PASS, Step 8 gate PASS, Step 9 docs done). Parent KDL-76 in_review awaits human approval. Carried-forward non-blocking findings: M6 permission-format mismatch, L1-L6.

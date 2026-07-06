@@ -17,7 +17,7 @@ const variantConfig: Record<StatusBadgeProps['variant'], { classes: string; defa
 }
 
 export function StatusBadge({ variant, label }: StatusBadgeProps) {
-  const config = variantConfig[variant]
+  const config = variantConfig[variant] ?? { classes: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300', defaultLabel: variant }
   return (
     <span
       className={cn(
