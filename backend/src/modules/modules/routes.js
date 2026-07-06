@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { authenticate } from '../../middleware/auth.js';
 import { requirePermission } from '../../middleware/permission.js';
+import { validate } from '../../middleware/validate.js';
+import { settingsPatchSchema } from './schema.js';
 import {
   getModules,
   getEnabledModules,
@@ -19,6 +21,6 @@ router.post('/:slug/install', authenticate, requirePermission('modules', 'add'),
 router.post('/:slug/enable', authenticate, requirePermission('modules', 'edit'), postEnable);
 router.post('/:slug/disable', authenticate, requirePermission('modules', 'edit'), postDisable);
 router.delete('/:slug', authenticate, requirePermission('modules', 'delete'), deleteModule);
-router.patch('/:slug/settings', authenticate, requirePermission('modules', 'edit'), patchSettings);
+router.patch('/:slug/settings', authenticate, requirePermission('modules', 'edit'), validate(settingsPatchSchema), patchSettings);
 
 export default router;

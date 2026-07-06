@@ -8,6 +8,7 @@ import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
 import { usePagination } from '@/hooks/usePagination'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { PermissionGuard } from '@/components/shared/PermissionGuard'
 import { DataTable } from '@/components/shared/DataTable'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { FileUpload } from '@/components/shared/FileUpload'
@@ -135,6 +136,7 @@ export default function MediaPage() {
   ]
 
   return (
+    <PermissionGuard permission="media.view">
     <div>
       <PageHeader title="Media" />
 
@@ -184,5 +186,6 @@ export default function MediaPage() {
         isLoading={deleteMutation.isPending}
       />
     </div>
+    </PermissionGuard>
   )
 }

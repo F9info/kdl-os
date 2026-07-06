@@ -7,6 +7,7 @@ import { Save, Settings2 } from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { PermissionGuard } from '@/components/shared/PermissionGuard'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { ErrorAlert } from '@/components/shared/ErrorAlert'
 import { Button } from '@/components/ui/button'
@@ -75,6 +76,7 @@ export default function TypeSettingsPage() {
   })
 
   return (
+    <PermissionGuard permission="setting-fields.view">
     <div>
       <PageHeader
         title={data?.type?.name ?? 'Settings'}
@@ -123,5 +125,6 @@ export default function TypeSettingsPage() {
         </form>
       )}
     </div>
+    </PermissionGuard>
   )
 }

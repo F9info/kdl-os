@@ -11,7 +11,7 @@ interface PermissionsResponse {
 export function usePermissions() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
 
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['me-permissions'],
     queryFn: () =>
       api.get('/auth/me/permissions').then((r) => r.data.data as PermissionsResponse),
@@ -27,6 +27,7 @@ export function usePermissions() {
     permissions,
     roles,
     bypass,
+    isLoading,
     can: (permission: string) => bypass || permissions.includes(permission),
     hasRole: (role: string) => roles.includes(role),
   }

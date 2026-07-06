@@ -17,12 +17,33 @@ import {
   Shield,
   KeyRound,
   ClipboardList,
+  Package,
+  Box,
+  FileText,
+  Settings,
+  Activity,
+  Lock,
 } from 'lucide-react'
 import { useUiStore } from '@/stores/ui.store'
 import { useAuth } from '@/hooks/useAuth'
+import { usePermissions } from '@/hooks/usePermissions'
+import { useModules } from '@/hooks/useModules'
 import api from '@/lib/axios'
 import { cn } from '@/lib/utils'
 import type { Type, SettingField } from '@/types/models.types'
+
+const MODULE_ICON_MAP: Record<string, React.ElementType> = {
+  Image,
+  Package,
+  Box,
+  FileText,
+  Settings,
+  Activity,
+  Lock,
+  Shield,
+  Users,
+  Cog,
+}
 
 // Slug of the setting field that holds the app logo (set under any Type).
 const LOGO_SLUG = 'logo'
@@ -31,40 +52,38 @@ interface NavLeaf {
   label: string
   href: string
   icon: React.ElementType
+  permission?: string
 }
 
 interface NavGroup {
   label: string
   icon: React.ElementType
-  adminOnly?: boolean
   children: NavLeaf[]
 }
 
-const FLAT_ITEMS: (NavLeaf & { adminOnly?: boolean })[] = [
+const FLAT_ITEMS: NavLeaf[] = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-  { label: 'Users', href: '/admin/users', icon: Users, adminOnly: true },
-  { label: 'Media', href: '/admin/media', icon: Image, adminOnly: true },
+  { label: 'Users', href: '/admin/users', icon: Users, permission: 'users.view' },
+  { label: 'Media', href: '/admin/media', icon: Image, permission: 'media.view' },
 ]
 
 const GROUPS: NavGroup[] = [
   {
     label: 'Access Control',
     icon: Shield,
-    adminOnly: true,
     children: [
-      { label: 'Roles', href: '/admin/roles', icon: Shield },
-      { label: 'Permissions', href: '/admin/permissions', icon: KeyRound },
-      { label: 'Activity Log', href: '/admin/activity-log', icon: ClipboardList },
+      { label: 'Roles', href: '/admin/roles', icon: Shield, permission: 'roles.view' },
+      { label: 'Permissions', href: '/admin/permissions', icon: KeyRound, permission: 'permissions.view' },
+      { label: 'Activity Log', href: '/admin/activity-log', icon: ClipboardList, permission: 'activity-log.view' },
     ],
   },
   {
     label: 'Application Settings',
     icon: UserCog,
-    adminOnly: true,
     children: [
-      { label: 'Types', href: '/admin/settings/types', icon: ListChecks },
-      { label: 'Categories', href: '/admin/settings/categories', icon: Briefcase },
-      { label: 'Fields', href: '/admin/settings/fields', icon: SlidersHorizontal },
+      { label: 'Types', href: '/admin/settings/types', icon: ListChecks, permission: 'types.view' },
+      { label: 'Categories', href: '/admin/settings/categories', icon: Briefcase, permission: 'categories.view' },
+      { label: 'Fields', href: '/admin/settings/fields', icon: SlidersHorizontal, permission: 'setting-fields.view' },
     ],
   },
 ]
@@ -72,8 +91,12 @@ const GROUPS: NavGroup[] = [
 export function AdminSidebar() {
   const { sidebarOpen } = useUiStore()
   const { isAdmin } = useAuth()
+  const { can } = usePermissions()
+  const { nonCoreNav } = useModules()
   const pathname = usePathname()
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
+
+  const canViewSettings = can('types.view') || can('categories.view') || can('setting-fields.view')
 
   // Active types become top-level menu items automatically — one per type,
   // each linking to its own settings page. New types appear as soon as created.
@@ -113,8 +136,18 @@ export function AdminSidebar() {
   const toggleGroup = (label: string) =>
     setOpenGroups((prev) => ({ ...prev, [label]: !(prev[label] ?? false) }))
 
-  const visibleFlat = FLAT_ITEMS.filter((item) => !item.adminOnly || isAdmin)
-  const visibleGroups = GROUPS.filter((group) => !group.adminOnly || isAdmin)
+  const visibleFlat = FLAT_ITEMS.filter((item) => !item.permission || can(item.permission))
+
+  // Non-core module nav items — appear/disappear as modules are enabled/disabled.
+  // Permission string from manifest uses colon format (e.g. 'example:view'); convert
+  // to dot format to match can() expectations consistent with FLAT_ITEMS.
+  const dynamicModuleItems = nonCoreNav.filter(
+    (item) => !item.permission || can(item.permission.replace(':', '.'))
+  )
+  const visibleGroups = GROUPS.map((group) => ({
+    ...group,
+    children: group.children.filter((c) => !c.permission || can(c.permission)),
+  })).filter((group) => group.children.length > 0)
 
   return (
     <aside
@@ -160,8 +193,30 @@ export function AdminSidebar() {
           )
         })}
 
+        {/* Module-driven nav — non-core modules add items here when enabled */}
+        {dynamicModuleItems.map((item) => {
+          const active = isLeafActive(item.path) || pathname.startsWith(item.path + '/')
+          const Icon = (item.icon ? MODULE_ICON_MAP[item.icon] : null) ?? Package
+          return (
+            <Link
+              key={item.path}
+              href={item.path}
+              className={cn(
+                'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                active
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+              )}
+              title={!sidebarOpen ? item.label : undefined}
+            >
+              <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+              {sidebarOpen && <span>{item.label}</span>}
+            </Link>
+          )
+        })}
+
         {/* Per-type settings screens — top-level items, right after the flat items */}
-        {isAdmin &&
+        {canViewSettings &&
           typeLeaves.map((item) => {
             const active = isLeafActive(item.href)
             const Icon = item.icon

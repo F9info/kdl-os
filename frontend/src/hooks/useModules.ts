@@ -21,6 +21,7 @@ export function useModules() {
   }
 
   const nav = enabledModules.flatMap((m) => m.nav)
+  const nonCoreNav = enabledModules.filter((m) => !m.core).flatMap((m) => m.nav)
 
-  return { enabledModules, isEnabled, nav, isLoading }
+  return { enabledModules, isEnabled, nav, nonCoreNav, isLoading }
 }

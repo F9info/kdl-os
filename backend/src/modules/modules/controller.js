@@ -1,5 +1,4 @@
 import { successResponse, errorResponse } from '../../shared/utils/response.js';
-import { settingsPatchSchema } from './schema.js';
 import {
   listModules,
   listEnabledModules,
@@ -70,8 +69,7 @@ export const deleteModule = async (req, res, next) => {
 
 export const patchSettings = async (req, res, next) => {
   try {
-    const { settings } = settingsPatchSchema.parse(req.body);
-    const mod = await patchModuleSettings(req.params.slug, settings, req.user?.id);
+    const mod = await patchModuleSettings(req.params.slug, req.validated.body.settings, req.user?.id);
     successResponse(res, { module: mod });
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);

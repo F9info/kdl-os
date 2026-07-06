@@ -10,6 +10,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { PermissionGuard } from '@/components/shared/PermissionGuard'
 import { DataTable } from '@/components/shared/DataTable'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Modal } from '@/components/shared/Modal'
@@ -141,6 +142,7 @@ export default function PermissionsPage() {
   const deletingModule = matrix?.find((m) => m.id === deleteId)
 
   return (
+    <PermissionGuard permission="permissions.view">
     <div>
       <PageHeader
         title="Permissions"
@@ -269,5 +271,6 @@ export default function PermissionsPage() {
         isLoading={deleteMutation.isPending}
       />
     </div>
+    </PermissionGuard>
   )
 }

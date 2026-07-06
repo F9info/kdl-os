@@ -72,7 +72,7 @@ await write(join(moduleDir, 'module.json'), JSON.stringify({
   apiPrefix: `/api/${slug}`,
   permissions: [`${slug}`],
   nav: [
-    { label: name, path: `/${slug}`, icon: 'Package', permission: `${slug}:view` },
+    { label: name, path: `/admin/${slug}`, icon: 'Package', permission: `${slug}:view` },
   ],
   dependsOn: [],
   queues: [],

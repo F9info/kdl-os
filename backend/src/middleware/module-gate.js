@@ -4,15 +4,23 @@ import { errorResponse } from '../shared/utils/response.js';
 const MODULE_CACHE_TTL = 60; // seconds
 
 export async function getModuleStatus(slug) {
-  const cached = await redis.get(`module:status:${slug}`);
-  if (cached !== null) return cached;
+  try {
+    const cached = await redis.get(`module:status:${slug}`);
+    if (cached !== null) return cached;
+  } catch {
+    // Redis unavailable — fall through to DB
+  }
 
   const { prisma } = await import('../config/database.js');
   const mod = await prisma.module.findUnique({ where: { slug }, select: { status: true } });
   const status = mod?.status ?? null;
 
   if (status !== null) {
-    await redis.set(`module:status:${slug}`, status, 'EX', MODULE_CACHE_TTL);
+    try {
+      await redis.set(`module:status:${slug}`, status, 'EX', MODULE_CACHE_TTL);
+    } catch {
+      // Redis unavailable — skip cache write
+    }
   }
   return status;
 }

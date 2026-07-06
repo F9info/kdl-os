@@ -26,6 +26,7 @@ export interface Module {
 export interface EnabledModule {
   slug: string
   name: string
+  core: boolean
   nav: ModuleNavItem[]
 }
 

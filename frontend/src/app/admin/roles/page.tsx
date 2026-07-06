@@ -8,6 +8,7 @@ import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
 import { usePagination } from '@/hooks/usePagination'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { PermissionGuard } from '@/components/shared/PermissionGuard'
 import { DataTable } from '@/components/shared/DataTable'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
@@ -154,6 +155,7 @@ export default function RolesPage() {
   const deletingRole = data?.roles.find((r) => r.id === deleteId)
 
   return (
+    <PermissionGuard permission="roles.view">
     <div>
       <PageHeader
         title="Roles"
@@ -210,5 +212,6 @@ export default function RolesPage() {
         isLoading={deleteMutation.isPending}
       />
     </div>
+    </PermissionGuard>
   )
 }

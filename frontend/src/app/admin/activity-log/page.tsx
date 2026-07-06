@@ -8,6 +8,7 @@ import api from '@/lib/axios'
 import { usePagination } from '@/hooks/usePagination'
 import { useDebounce } from '@/hooks/useDebounce'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { PermissionGuard } from '@/components/shared/PermissionGuard'
 import { DataTable } from '@/components/shared/DataTable'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -116,6 +117,7 @@ export default function ActivityLogPage() {
   const hasFilters = actorSearch || moduleFilter || fromDate || toDate
 
   return (
+    <PermissionGuard permission="activity-log.view">
     <div>
       <PageHeader title="Activity Log" />
 
@@ -185,5 +187,6 @@ export default function ActivityLogPage() {
         emptyMessage="No activity logged yet."
       />
     </div>
+    </PermissionGuard>
   )
 }

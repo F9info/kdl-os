@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
 export const settingsPatchSchema = z.object({
-  settings: z.record(z.unknown()),
+  body: z.object({
+    settings: z.record(z.unknown()),
+  }),
 });

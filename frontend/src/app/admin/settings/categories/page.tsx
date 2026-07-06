@@ -11,6 +11,7 @@ import { toast } from '@/hooks/use-toast'
 import { usePagination } from '@/hooks/usePagination'
 import { useDebounce } from '@/hooks/useDebounce'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { PermissionGuard } from '@/components/shared/PermissionGuard'
 import { DataTable } from '@/components/shared/DataTable'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Modal } from '@/components/shared/Modal'
@@ -245,6 +246,7 @@ export default function CategoriesPage() {
   }
 
   return (
+    <PermissionGuard permission="categories.view">
     <div>
       <PageHeader
         title="Categories"
@@ -386,5 +388,6 @@ export default function CategoriesPage() {
         isLoading={deleteMutation.isPending}
       />
     </div>
+    </PermissionGuard>
   )
 }

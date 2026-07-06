@@ -11,6 +11,7 @@ import { toast } from '@/hooks/use-toast'
 import { usePagination } from '@/hooks/usePagination'
 import { useDebounce } from '@/hooks/useDebounce'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { PermissionGuard } from '@/components/shared/PermissionGuard'
 import { DataTable } from '@/components/shared/DataTable'
 import { Modal } from '@/components/shared/Modal'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
@@ -250,6 +251,7 @@ export default function FieldsPage() {
   const formCategories = categoryOptions.filter((c) => !typeId || !c.type_id || c.type_id === typeId)
 
   return (
+    <PermissionGuard permission="setting-fields.view">
     <div>
       <PageHeader
         title="Fields"
@@ -438,5 +440,6 @@ export default function FieldsPage() {
         isLoading={deleteMutation.isPending}
       />
     </div>
+    </PermissionGuard>
   )
 }

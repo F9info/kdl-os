@@ -1,7 +1,13 @@
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { existsSync } from 'node:fs';
 import { prisma } from '../../config/database.js';
 import { loadedManifests } from '../../shared/modules/module-loader.js';
 import { invalidateModuleCache } from '../../middleware/module-gate.js';
 import { writeActivityAsync } from '../user-management/shared/activity-logger.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const MODULES_DIR = join(__dirname, '..');
 
 function checkEnvVars(manifest) {
   const missing = (manifest.env ?? []).filter((key) => !process.env[key]);
@@ -12,7 +18,7 @@ function checkEnvVars(manifest) {
   }
 }
 
-async function registerPermissions(manifest) {
+async function registerPermissions(manifest, tx = prisma) {
   const ACTIONS = ['view', 'add', 'edit', 'delete', 'publish'];
   for (const name of manifest.permissions ?? []) {
     const label = name
@@ -20,14 +26,14 @@ async function registerPermissions(manifest) {
       .map((w) => w[0].toUpperCase() + w.slice(1))
       .join(' ');
 
-    const pm = await prisma.permissionModule.upsert({
+    const pm = await tx.permissionModule.upsert({
       where: { name },
       create: { name, label, is_system: false },
       update: {},
     });
 
     for (const action of ACTIONS) {
-      await prisma.permission.upsert({
+      await tx.permission.upsert({
         where: { module_id_action: { module_id: pm.id, action } },
         create: { module_id: pm.id, action },
         update: {},
@@ -36,15 +42,15 @@ async function registerPermissions(manifest) {
   }
 }
 
-async function deregisterPermissions(manifest) {
+async function deregisterPermissions(manifest, tx = prisma) {
   for (const name of manifest.permissions ?? []) {
-    const pm = await prisma.permissionModule.findUnique({ where: { name } });
+    const pm = await tx.permissionModule.findUnique({ where: { name } });
     if (!pm) continue;
 
-    const refCount = await prisma.rolePermission.count({
+    const refCount = await tx.rolePermission.count({
       where: { permission: { module_id: pm.id } },
     });
-    const userRefCount = await prisma.userPermission.count({
+    const userRefCount = await tx.userPermission.count({
       where: { permission: { module_id: pm.id } },
     });
 
@@ -56,7 +62,7 @@ async function deregisterPermissions(manifest) {
       throw err;
     }
 
-    await prisma.permissionModule.delete({ where: { id: pm.id } });
+    await tx.permissionModule.delete({ where: { id: pm.id } });
   }
 }
 
@@ -88,17 +94,28 @@ export async function installModule(slug, actorId) {
   }
 
   checkEnvVars(manifest);
-  await registerPermissions(manifest);
 
-  const mod = await prisma.module.create({
-    data: {
-      slug: manifest.slug,
-      name: manifest.name,
-      description: manifest.description ?? null,
-      version: manifest.version,
-      is_core: manifest.core ?? false,
-      status: 'INSTALLED',
-    },
+  const mod = await prisma.$transaction(async (tx) => {
+    await registerPermissions(manifest, tx);
+
+    // H3: run module seed.js if present (idempotent; errors abort the transaction)
+    const seedPath = join(MODULES_DIR, slug, 'seed.js');
+    if (existsSync(seedPath)) {
+      const seedMod = await import(seedPath);
+      const seedFn = seedMod.default ?? Object.values(seedMod).find((v) => typeof v === 'function');
+      if (typeof seedFn === 'function') await seedFn();
+    }
+
+    return tx.module.create({
+      data: {
+        slug: manifest.slug,
+        name: manifest.name,
+        description: manifest.description ?? null,
+        version: manifest.version,
+        is_core: manifest.core ?? false,
+        status: 'INSTALLED',
+      },
+    });
   });
 
   writeActivityAsync({
@@ -229,10 +246,11 @@ export async function uninstallModule(slug, actorId) {
     throw err;
   }
 
-  const manifest = loadedManifests.get(slug);
-  if (manifest) await deregisterPermissions(manifest);
-
-  await prisma.module.delete({ where: { slug } });
+  await prisma.$transaction(async (tx) => {
+    const manifest = loadedManifests.get(slug);
+    if (manifest) await deregisterPermissions(manifest, tx);
+    await tx.module.delete({ where: { slug } });
+  });
 
   writeActivityAsync({
     actor: actorId,
@@ -309,6 +327,7 @@ export async function listEnabledModules() {
     return {
       slug: m.slug,
       name: m.name,
+      core: manifest?.core ?? false,
       nav: manifest?.nav ?? [],
     };
   });

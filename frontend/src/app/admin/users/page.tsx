@@ -12,6 +12,7 @@ import { usePagination } from '@/hooks/usePagination'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useAuth } from '@/hooks/useAuth'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { PermissionGuard } from '@/components/shared/PermissionGuard'
 import { DataTable } from '@/components/shared/DataTable'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Modal } from '@/components/shared/Modal'
@@ -339,6 +340,7 @@ export default function UsersPage() {
   const flatMatrix = matrix ?? []
 
   return (
+    <PermissionGuard permission="users.view">
     <div>
       <PageHeader
         title="Users"
@@ -751,5 +753,6 @@ export default function UsersPage() {
         isLoading={deleteMutation.isPending}
       />
     </div>
+    </PermissionGuard>
   )
 }

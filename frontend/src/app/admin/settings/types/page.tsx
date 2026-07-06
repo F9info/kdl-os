@@ -11,6 +11,7 @@ import { toast } from '@/hooks/use-toast'
 import { usePagination } from '@/hooks/usePagination'
 import { useDebounce } from '@/hooks/useDebounce'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { PermissionGuard } from '@/components/shared/PermissionGuard'
 import { DataTable } from '@/components/shared/DataTable'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Modal } from '@/components/shared/Modal'
@@ -214,6 +215,7 @@ export default function TypesPage() {
   }
 
   return (
+    <PermissionGuard permission="types.view">
     <div>
       <PageHeader
         title="Types"
@@ -318,5 +320,6 @@ export default function TypesPage() {
         isLoading={deleteMutation.isPending}
       />
     </div>
+    </PermissionGuard>
   )
 }

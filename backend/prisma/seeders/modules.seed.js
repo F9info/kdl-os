@@ -2,6 +2,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
+import { manifestSchema } from '../../src/shared/modules/manifest-schema.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MODULES_DIR = join(__dirname, '../../src/modules');
@@ -22,13 +23,21 @@ export async function seedCoreModules(prisma) {
     const manifestPath = join(MODULES_DIR, entry.name, 'module.json');
     if (!existsSync(manifestPath)) continue;
 
-    let manifest;
+    let raw;
     try {
-      manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+      raw = JSON.parse(await readFile(manifestPath, 'utf8'));
     } catch {
       console.warn(`modules.seed: failed to parse ${manifestPath}, skipping`);
       continue;
     }
+
+    const parsed = manifestSchema.safeParse(raw);
+    if (!parsed.success) {
+      console.warn(`modules.seed: invalid manifest for "${entry.name}": ${parsed.error.message}`);
+      continue;
+    }
+
+    const manifest = parsed.data;
 
     if (!manifest.core) continue;
 

@@ -11,7 +11,7 @@
   "nav": [
     {
       "label": "Example",
-      "path": "/example",
+      "path": "/admin/example",
       "icon": "Package",
       "permission": "example:view"
     }

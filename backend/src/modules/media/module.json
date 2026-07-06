@@ -7,7 +7,7 @@
   "apiPrefix": "/api/media",
   "permissions": ["media"],
   "nav": [
-    { "label": "Media", "path": "/media", "icon": "Image", "permission": "media:view" }
+    { "label": "Media", "path": "/admin/media", "icon": "Image", "permission": "media:view" }
   ],
   "dependsOn": [],
   "queues": [],
