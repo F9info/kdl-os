@@ -673,3 +673,37 @@ Step 7: Code Reviewer (independent session, not the maker) + Gate Verifier re-ru
 - LOW: `docs/ENV_REFERENCE.md:113` still documents `MEILISEARCH_API_KEY` — stale after the rename.
 
 **Next:** Step 2 (permission-resolver + activity-logger + `requirePermission` middleware, Backend Coder).
+
+---
+
+## 2026-07-06 — KDL-77 MODULE_PLUGIN_ARCH Step 7 code review: FAIL (Code Reviewer Agent)
+
+**Independent review of Steps 1-6 (commits `ab85167`..`290d403`): FAIL — 0 CRITICAL, 3 HIGH open. Gate requires zero CRITICAL/HIGH. Fix issue created; re-review after remediation.**
+
+Verified during review: `vitest run tests/module-plugin.test.js` 11/11 pass; user-management manifest Zod failure reproduced empirically; multi-file schema + `20260706100806_add_modules_table` migration match spec; moduleGate correctly mounted before `authenticate`; all 409 guards (is_core, dependents, DISABLED-before-uninstall, role-referenced permissions) present; `modules/page.tsx` correctly uses colon permission format matching backend resolver.
+
+### HIGH (blocking)
+
+- **H1 — AdminSidebar is not module-driven** (`frontend/src/components/layout/AdminSidebar.tsx`). Nav is hardcoded (`FLAT_ITEMS` + `GROUPS`); `useModules()` merged nav is never rendered. Spec Frontend §2 requires sidebar nav from `useModules()`. Consequence: enabling/disabling a module never changes nav — Step 8 E2E gate ("enable → nav appears → disable → nav gone") will fail as written. Generator also emits no `frontend/src/modules/<slug>.ts` manifest (spec anatomy).
+- **H2 — `user-management/module.json` fails manifest validation** (`apiPrefix: "/api"` violates `startsWith('/api/')`). Loader logs an error and skips it at every boot; module absent from `loadedManifests` → `GET /api/modules` reports it only as `_orphaned` (seeder bypasses Zod and creates the DB row), and its 3 nav items (Roles, Permissions, Activity Log) are permanently missing from `/api/modules/enabled`. Core-module retrofit is broken for this module. Reproduced: `manifestSchema.safeParse` → `apiPrefix: Invalid input: must start with "/api/"`.
+- **H3 — `installModule` never runs the module's `seed.js`** (`backend/src/modules/modules/service.js`). Spec install sequence: validate → register permissions → **run module seed.js** → create row. The step is absent; generator scaffolds `seed.js` and the UI confirm dialog promises "register its permissions and seed data", but seeding silently never happens. Future modules install without their seed data.
+
+### MEDIUM (logged, non-blocking)
+
+- M1: No transaction around install (`registerPermissions` + `module.create`) or uninstall (`deregisterPermissions` loop + `module.delete`) — a mid-sequence failure (e.g. 409 on the second of two permission modules) leaves partial state (`service.js`).
+- M2: `patchSettings` calls `settingsPatchSchema.parse()` directly in the controller; ZodError has no `.status`/`ValidationError` name → global handler returns **500** for invalid bodies instead of 422. KDL's `validate` middleware pattern is bypassed (`controller.js`).
+- M3: `moduleGate` has no Redis-outage fallback — `redis.get` throw → `next(err)` → 500 on every plugin-module route. Degrade to DB lookup instead (`module-gate.js`).
+- M4: Manifest `nav.path` values don't match real frontend routes (`/media` vs `/admin/media`, `/example` vs page at `app/admin/example`) — dynamic nav will produce dead links the moment H1 is fixed.
+- M5: `modules.seed.js` duplicates `registerPermissions` logic and parses manifests **without** Zod — seeder and loader already disagree (seeder accepted the invalid user-management manifest the loader rejects). Single-source the manifest read+validate.
+- M6 (pre-existing, outside Steps 1-6 range — separate issue recommended): frontend permission checks use dot format (`users.view`, all pre-existing pages + sidebar) while backend `resolvePermissions` emits colon (`users:view`) — non-bypass users fail every `PermissionGuard`/`can()` check; UI currently works only via super-admin bypass. The new modules page (colon) is correct.
+
+### LOW (logged, non-blocking)
+
+- L1: `getModuleStatus` doesn't cache negative lookups — every request to a non-installed module's prefix hits the DB (pre-auth).
+- L2: permission label builder `w[0].toUpperCase()` crashes on empty split segments (e.g. `"a--b"`) (`service.js`, `modules.seed.js`).
+- L3: concurrent install race → Prisma P2002 surfaces as 500, not 409.
+- L4: `uninstallModule` doesn't invalidate `module:status:<slug>` (benign — cached DISABLED still 404s; stale ≤60s).
+- L5: generator prints the New Module Checklist to console; spec says append to the module's README.
+- L6: no unit tests for lifecycle service (install/enable/disable/uninstall guard matrix) — only manifest schema + gate covered.
+
+**Next:** Backend/Frontend Coder fixes H1-H3 (+ M1-M5 opportunistically), then Code Reviewer re-reviews. M6 → separate issue outside MODULE_PLUGIN_ARCH.
