@@ -1,3 +1,17 @@
+## 2026-07-06 — KDL-79 MODULE_PLUGIN_ARCH Step 9: DONE ✅
+
+**Documentation complete. Commit ee42bd4.**
+
+| File | Change |
+|---|---|
+| `docs/API_REFERENCE.md` | Added `/api/modules` section — all 7 endpoints with request/response shapes and error conditions |
+| `CLAUDE.md` | Added 'How to add a module' section — scaffold usage, module anatomy, module.json format, checklist |
+| `docs/SETUP.md` | Added module seeder note — core modules auto-registered at seed time; non-core auto-mounted at startup |
+
+Gate: docs cross-referenced to routes.js, controller.js, service.js, manifest-schema.js, modules.seed.js ✅
+
+---
+
 ## 2026-07-06 — KDL-76 MODULE_PLUGIN_ARCH Steps 1–6: COMPLETE ✅
 
 **Steps 1–6 of MODULE_PLUGIN_ARCH fully committed. Awaiting Step 7 (Code Review, Maker ≠ Grader).**

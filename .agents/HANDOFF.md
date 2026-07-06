@@ -1,3 +1,25 @@
+## Handoff — 2026-07-06 (KDL-79 MODULE_PLUGIN_ARCH Step 9 DONE ✅)
+Agent: Documentation (KDL-79)
+Issue: KDL-79
+
+Step 9 documentation complete. Commit ee42bd4 (master).
+
+### What was written
+- `docs/API_REFERENCE.md`: full `/api/modules` section — 7 endpoints, all request/response shapes, error conditions cross-referenced to code
+- `CLAUDE.md`: 'How to add a module' — scaffold generator usage, module anatomy, annotated module.json format, New Module Checklist
+- `docs/SETUP.md`: module seeder note — `seedCoreModules` at `db:seed`; `loadModules` auto-mounts plugins at startup
+
+### Gate
+All doc content cross-referenced to live code: routes.js, service.js, manifest-schema.js, module-gate.js, modules.seed.js ✅
+
+### Note
+Pre-existing uncommitted frontend changes remain in working tree (AdminSidebar, page.tsx files, PermissionGuard components) — not part of KDL-79; belong to a prior step.
+
+### Next
+MODULE_PLUGIN_ARCH all 9 steps done. Parent KDL-76 can close.
+
+---
+
 ## Handoff — 2026-07-06 (MODULE_PLUGIN_ARCH Steps 1–6 COMPLETE ✅)
 Agent: CEO Orchestrator (KDL-76)
 Issue: KDL-76 MODULE_PLUGIN_ARCH
