@@ -1,33 +1,30 @@
-## Handoff — 2026-07-06 (STEP 10 COMPLETE ✅)
-Agent: Backend Coder
+## Handoff — 2026-07-06 (STEP 10 COMPLETE ✅ — all committed)
+Agent: Backend Coder (Agent 3)
 Issue: KDL-42 KDLOS-10 Step 10 — DONE
 
-Prasanna approved via request_confirmation interaction 0792df9d (accepted 2026-07-06T05:58:00Z, local-board).
+KDLOS-10 User Management RBAC — all 10 steps complete. All work committed.
 
-### Actions taken
-- pg_dump backup: `backups/kdl_db_before_step10_20260706_113121.sql` (78K, non-zero ✅)
-- Migration created: `prisma/migrations/20260706113200_drop_users_role_column/migration.sql`
-- `prisma migrate deploy` — exit 0 ✅ — `role` column dropped, `Role` enum dropped
-- `npx prisma generate` — Prisma client regenerated ✅
+Prasanna approved via request_confirmation interaction 0792df9d (2026-07-06T05:58:00Z).
 
-### Code removed
-- `enum Role { SUPER_ADMIN, ADMIN, USER }` from schema.prisma
-- `role Role @default(USER)` + `@@index([role])` from User model
-- `requireRole` function from `middleware/rbac.js` (file emptied)
-- `requireRole` re-export removed from `middleware/permission.js`
-- `role: true` removed from Prisma selects in auth middleware + auth service
-- `role: user.role` removed from JWT payload (auth/controller.js buildAccessTokenPayload)
-- `role: true` removed from USER_SELECT in users/service.js
-- Legacy `role` checks removed from users/controller.js (`userIsSuperAdmin`, `actorIsSuperAdmin`, updateUser body check)
-- `role: z.enum(...)` removed from updateUserSchema in users/schema.js
-- `isAdmin` in settings/controller.js updated to use `req.user.roles` array
+### Backend (commit 5940b07)
+- pg_dump backup: `backups/kdl_db_before_step10_20260706_113121.sql` (78K ✅, not in git)
+- Migration `20260706113200_drop_users_role_column` — `role` column + `Role` enum dropped ✅
+- Removed: `Role` enum, `role` field, `requireRole`, legacy JWT `role` field, role checks in users/settings controllers
+- 15 files / 85 tests ✅
 
-### Test results
-- 15 files / 85 tests — all pass ✅
+### Frontend (commit 2776c34)
+- Removed `Role` type + `role: Role` from `User` interface in `models.types.ts`
+- `useAuth.ts` `isAdmin`/`isSuperAdmin` → RBAC slug checks on `user.roles`
+- Dashboard role column → `roles[0].slug` (hyphen→underscore for StatusBadge)
+- `UsersPage.test.tsx` → slug-based store setup (KDL-20 H4 gating preserved)
+- Also committed outstanding Steps 6+9 frontend files (RBAC UI pages, E2E suite)
+- `tsc --noEmit` exit 0, `pnpm test` 45/45 ✅, `pnpm build` exit 0 ✅
 
-### DB verification
-- `\d users` — no `role` column present ✅
-- `SELECT typname FROM pg_type WHERE typname = 'Role'` → 0 rows ✅
+### DB state
+- `role` column: gone ✅
+- `Role` pg type: gone ✅
+
+Blockers: None.
 
 ---
 

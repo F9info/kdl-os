@@ -1,15 +1,14 @@
 ## 2026-07-06 — KDL-42 KDLOS-10 Step 10: DONE ✅
 
-**All 10 RBAC steps complete. `users.role` enum column dropped. `requireRole` removed.**
+**All 10 RBAC steps complete. `users.role` enum column dropped. `requireRole` removed. All work committed.**
 
 - Prasanna approved via `request_confirmation` interaction `0792df9d` (accepted 2026-07-06T05:58:00Z).
 - Backup: `backups/kdl_db_before_step10_20260706_113121.sql` (78K ✅).
-- Migration `20260706113200_drop_users_role_column` applied — `prisma migrate deploy` exit 0 ✅.
-- Code removed: `Role` enum, `users.role` column, `requireRole` function, legacy JWT `role` field, legacy `role` checks in controllers/services.
-- `settings/controller.js` `isAdmin` updated to use RBAC `roles` slugs array.
-- All test mocks updated to RBAC-only auth (no `role` field in user objects or JWT payloads).
-- Backend test suite: **15 files / 85 tests — all pass ✅**.
-- DB: `role` column gone, `Role` type gone (verified via psql).
+- Migration `20260706113200_drop_users_role_column` applied — `prisma migrate dev` exit 0 ✅.
+- Backend: `Role` enum, `users.role` column, `requireRole` function, legacy JWT `role` field removed. 15 files / 85 tests ✅.
+- Frontend: `Role` type + `role` field removed from `User` interface; `useAuth.ts` → RBAC slugs; dashboard role column → `roles[0].slug`; `UsersPage.test.tsx` → slug-based gating (KDL-20 H4 preserved). `tsc --noEmit` exit 0, `pnpm test` 45/45 ✅, `pnpm build` exit 0 ✅.
+- Steps 6 + 9 frontend files (RBAC UI pages, E2E suite) committed in same run.
+- Commits: `5940b07` (backend), `0dd4d09` (docs), `2776c34` (frontend).
 
 ---
 
