@@ -1,3 +1,22 @@
+## Handoff — 2026-07-06
+Agent: Backend Coder (Agent 3)
+Issue: KDL-36 KDLOS-10 Step 4 — Spec compliance fixes (restarted)
+
+Completed:
+- Fixed error message: `'You cannot delete your own account'` → `'You can not delete your own account'` (matches spec exactly) in `backend/src/modules/users/controller.js`.
+- Fixed `findValidPasswordResetToken` in `backend/src/modules/auth/service.js` to include `status: true, deleted_at: true` in the user select so the suspended/deleted-user check in `resetPassword` actually works (fields were missing, causing the check to silently pass for suspended/deleted users).
+
+Verification:
+- `npm test` in `backend/` → 15 files / 87 tests passing ✅
+- `node --check` on changed files ✅
+- `npx prisma validate` ✅
+
+Full Step 4 feature set was already complete (committed in `e4ab1f8` alongside Step 5). These are targeted spec-compliance fixes only.
+
+Next: KDL-38 — Frontend RBAC UI.
+
+---
+
 ## Handoff — 2026-07-03
 Agent: Backend Coder (Agent 3)
 Issue: KDL-37 KDLOS-10 Step 5 — Replace `requireRole` call sites with `requirePermission`; keep enum in sync

@@ -9,7 +9,7 @@ Last updated: 2026-07-03
 | 1 | KDL-32 — Prisma schema + migrations + seeder | ✅ Complete | `prisma validate` + `prisma migrate dev` exit 0; seeder idempotent |
 | 2 | KDL-34 — permission-resolver + activity-logger + requirePermission middleware | ✅ Complete | `npm test` 57 passing |
 | 3 | KDL-35 — Roles + Permissions + Activity Log endpoints | ✅ Complete | `npm test` 69 passing; new files wired in `index.js` |
-| 4 | KDL-36 — Users module extension (multi-role, status, soft delete, reset-password, overrides, JWT roles) | ✅ Complete | `npm test` 87 passing; `node --check` + `prisma validate` exit 0 |
+| 4 | KDL-36 — Users module extension (multi-role, status, soft delete, reset-password, overrides, JWT roles) | ✅ Complete | `npm test` 87 passing; `node --check` + `prisma validate` exit 0; spec fixes applied 2026-07-06 |
 | 5 | KDL-37 — Replace `requireRole` call sites | ✅ Complete | `npm test` 87 passing; `node --check` + `npx prisma validate` exit 0 |
 | 6 | KDL-38 — Frontend RBAC UI (PermissionMatrix, pages, usePermissions) | ⏳ Not started | — |
 | 7 | Code Review | ⏳ Not started | — |

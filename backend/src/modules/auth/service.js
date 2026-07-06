@@ -140,7 +140,7 @@ export const findValidPasswordResetToken = (token) => {
       used: false,
       expires_at: { gt: new Date() },
     },
-    include: { user: { select: { id: true, email: true, is_active: true } } },
+    include: { user: { select: { id: true, email: true, is_active: true, status: true, deleted_at: true } } },
   });
 };
 

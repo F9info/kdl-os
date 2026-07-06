@@ -120,7 +120,7 @@ export const deleteUser = async (req, res, next) => {
   try {
     const { id } = req.validated.params;
     if (id === req.user?.id) {
-      return errorResponse(res, 'You cannot delete your own account', 409);
+      return errorResponse(res, 'You can not delete your own account', 409);
     }
 
     const exists = await userService.getUserById(id);
