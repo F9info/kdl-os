@@ -1,3 +1,20 @@
+## 2026-07-06 — KDL-76 MODULE_PLUGIN_ARCH Steps 1–6: COMPLETE ✅
+
+**Steps 1–6 of MODULE_PLUGIN_ARCH fully committed. Awaiting Step 7 (Code Review, Maker ≠ Grader).**
+
+| Step | Commit | Gate Evidence |
+|---|---|---|
+| 1 — Multi-file Prisma schema | ab85167 | `prisma validate` ✅, migrate empty diff ✅ |
+| 2 — Module model + loader + gate | 9c877bf | 11 unit tests pass, 96/96 total ✅ |
+| 3 — Lifecycle service + /api/modules | 8ebb9ee | 96/96 tests pass ✅ |
+| 4 — Core module.json manifests + seeder | 7e1d9bb | 96/96 tests pass ✅ |
+| 5 — Frontend: useModules, ModuleGuard, modules page | dccb225 | `tsc --noEmit` exit 0 ✅ |
+| 6 — Scaffold generator + example module | 290d403 | manifest Zod valid ✅, prisma validate ✅, tsc ✅ |
+
+Next: KDL-77 (Code Reviewer, Step 7) — zero CRITICAL/HIGH required before Step 8.
+
+---
+
 ## 2026-07-06 — KDL-42 KDLOS-10 Step 10: DONE ✅
 
 **All 10 RBAC steps complete. `users.role` enum column dropped. `requireRole` removed. All work committed.**
