@@ -1,6 +1,34 @@
 export type UserStatus = 'ACTIVE' | 'SUSPENDED' | 'PENDING'
 export type OverrideMode = 'GRANT' | 'DENY'
 
+export type ModuleStatus = 'AVAILABLE' | 'INSTALLED' | 'ENABLED' | 'DISABLED'
+
+export interface ModuleNavItem {
+  label: string
+  path: string
+  icon?: string
+  permission?: string
+}
+
+export interface Module {
+  slug: string
+  name: string
+  description: string | null
+  version: string
+  core: boolean
+  apiPrefix: string
+  status: ModuleStatus
+  installed_at: string | null
+  enabled_at: string | null
+  settings: Record<string, unknown> | null
+}
+
+export interface EnabledModule {
+  slug: string
+  name: string
+  nav: ModuleNavItem[]
+}
+
 export interface User {
   id: string
   name: string
