@@ -49,13 +49,13 @@ const recentColumns: ColumnDef<User>[] = [
     ),
   },
   {
-    accessorKey: 'role',
+    accessorKey: 'roles',
     header: 'Role',
-    cell: ({ row }) => (
-      <StatusBadge
-        variant={row.original.role.toLowerCase() as 'user' | 'admin' | 'super_admin'}
-      />
-    ),
+    cell: ({ row }) => {
+      const slug = row.original.roles?.[0]?.slug ?? 'user'
+      const variant = slug.replace('-', '_') as 'user' | 'admin' | 'super_admin'
+      return <StatusBadge variant={variant} />
+    },
   },
   {
     accessorKey: 'is_active',

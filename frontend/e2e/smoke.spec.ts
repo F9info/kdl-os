@@ -1,25 +1,29 @@
+// Rewritten for KDL-41: the original scaffold spec targeted routes and copy that
+// never existed in this app (/auth/login, "Welcome", "Password reset email sent.").
 import { test, expect } from '@playwright/test';
 
 test.describe('Smoke Tests', () => {
-  test('should navigate to the home page', async ({ page }) => {
+  test('root redirects to the login page', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('h1')).toContainText('KDL Starter Kit');
+    await expect(page).toHaveURL(/\/login$/);
+    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
   });
 
-  test('should allow a user to log in', async ({ page }) => {
-    await page.goto('/auth/login');
-    await page.fill('input[name="email"]', 'admin@kdl.com');
-    await page.fill('input[name="password"]', 'Admin@123');
-    await page.click('button[type="submit"]');
-    // Assuming successful login redirects to the dashboard or shows a welcome message
-    await expect(page.url()).toContain('/dashboard'); 
-    await expect(page.locator('text="Welcome"')).toBeVisible(); // Replace with actual welcome text or element
+  test('seeded super admin can log in and reach the dashboard', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByPlaceholder('admin@kdl.com').fill('admin@kdl.com');
+    await page.getByPlaceholder('••••••••').fill('Admin@123');
+    await page.getByRole('button', { name: 'Sign in' }).click();
+    await expect(page).toHaveURL(/\/admin\/dashboard/);
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
   });
 
-  test('should allow a user to reset password', async ({ page }) => {
-    await page.goto('/auth/forgot-password');
-    await page.fill('input[name="email"]', 'admin@kdl.com'); // Use a valid email for testing
-    await page.click('button[type="submit"]');
-    await expect(page.locator('text="Password reset email sent."')).toBeVisible(); // Replace with actual success message
+  test('forgot password shows the neutral confirmation', async ({ page }) => {
+    await page.goto('/forgot-password');
+    await page.getByPlaceholder('you@example.com').fill('admin@kdl.com');
+    await page.getByRole('button', { name: 'Send reset link' }).click();
+    await expect(
+      page.getByText('If an account exists for that address, we have sent a password reset link.'),
+    ).toBeVisible();
   });
 });

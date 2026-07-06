@@ -14,10 +14,21 @@ const baseUser = {
   id: 'u1',
   name: 'Test User',
   email: 'test@kdl.com',
-  role: 'USER',
   is_active: true,
   created_at: '2026-01-01T00:00:00.000Z',
+  status: 'ACTIVE' as const,
+  avatar_media_id: null,
+  last_login_at: null,
+  deleted_at: null,
+  updated_at: '2026-01-01T00:00:00.000Z',
+  roles: [{ id: 'r1', name: 'User', slug: 'user' }],
 };
+
+const mockRoles = [
+  { id: 'r1', name: 'User', slug: 'user', description: null, is_system: true, created_at: '', updated_at: '' },
+  { id: 'r2', name: 'Admin', slug: 'admin', description: null, is_system: true, created_at: '', updated_at: '' },
+  { id: 'r3', name: 'Super Admin', slug: 'super-admin', description: null, is_system: true, created_at: '', updated_at: '' },
+];
 
 describe('UsersPage regression — SUPER_ADMIN role option gating (KDL-20 H4)', () => {
   beforeEach(() => {
@@ -25,22 +36,41 @@ describe('UsersPage regression — SUPER_ADMIN role option gating (KDL-20 H4)', 
     localStorage.clear();
   });
 
-  function setupStore(role: string) {
+  function setupStore(slug: 'admin' | 'super-admin') {
+    const roleMap: Record<string, { id: string; name: string; slug: string }[]> = {
+      'admin': [{ id: 'r2', name: 'Admin', slug: 'admin' }],
+      'super-admin': [{ id: 'r3', name: 'Super Admin', slug: 'super-admin' }],
+    }
     useAuthStore.setState({
-      user: { ...baseUser, id: 'current', role: role as any },
+      user: { ...baseUser, id: 'current', roles: roleMap[slug]! },
       accessToken: 'access-token',
       isAuthenticated: true,
       isLoading: false,
     });
   }
 
-  function mockUsers() {
-    vi.mocked(api.get).mockResolvedValue({
-      data: { data: { users: [baseUser], pagination: { total: 1, pages: 1 } } },
-    } as any);
+  function mockApis() {
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (url === '/users') {
+        return Promise.resolve({
+          data: { data: { users: [baseUser], pagination: { total: 1, pages: 1 } } },
+        } as any);
+      }
+      if (url === '/roles') {
+        return Promise.resolve({
+          data: { data: { roles: mockRoles } },
+        } as any);
+      }
+      if (url === '/permissions/matrix') {
+        return Promise.resolve({
+          data: { data: { matrix: [] } },
+        } as any);
+      }
+      return Promise.resolve({ data: { data: {} } } as any);
+    });
   }
 
-  async function openRoleSelect(user: ReturnType<typeof userEvent.setup>) {
+  async function openEditDialog(user: ReturnType<typeof userEvent.setup>) {
     await waitFor(() => {
       expect(screen.getByText('Test User')).toBeInTheDocument();
     });
@@ -48,39 +78,40 @@ describe('UsersPage regression — SUPER_ADMIN role option gating (KDL-20 H4)', 
     await user.click(screen.getByRole('button', { name: /edit test user/i }));
 
     await waitFor(() => {
-      expect(screen.getByText('Edit User')).toBeInTheDocument();
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
-
-    const comboboxes = screen.getAllByRole('combobox');
-    const roleSelect = comboboxes[comboboxes.length - 1]!;
-    await user.click(roleSelect);
-
-    return screen.getByRole('listbox');
   }
 
   it('hides SUPER_ADMIN role option for non-super admin users', async () => {
     const user = userEvent.setup();
-    setupStore('ADMIN');
-    mockUsers();
+    setupStore('admin');
+    mockApis();
     render(<UsersPage />);
 
-    const listbox = await openRoleSelect(user);
+    await openEditDialog(user);
 
-    expect(within(listbox).queryByText('Super Admin')).not.toBeInTheDocument();
-    expect(within(listbox).getByText('User')).toBeInTheDocument();
-    expect(within(listbox).getByText('Admin')).toBeInTheDocument();
+    await waitFor(() => {
+      const dialog = screen.getByRole('dialog');
+      expect(within(dialog).getByText('User')).toBeInTheDocument();
+    });
+
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).queryByText('Super Admin')).not.toBeInTheDocument();
+    expect(within(dialog).getByText('User')).toBeInTheDocument();
+    expect(within(dialog).getByText('Admin')).toBeInTheDocument();
   });
 
   it('shows SUPER_ADMIN role option for super admin users', async () => {
     const user = userEvent.setup();
-    setupStore('SUPER_ADMIN');
-    mockUsers();
+    setupStore('super-admin');
+    mockApis();
     render(<UsersPage />);
 
-    const listbox = await openRoleSelect(user);
+    await openEditDialog(user);
 
     await waitFor(() => {
-      expect(within(listbox).getByText('Super Admin')).toBeInTheDocument();
+      const dialog = screen.getByRole('dialog');
+      expect(within(dialog).getByText('Super Admin')).toBeInTheDocument();
     });
   });
 });

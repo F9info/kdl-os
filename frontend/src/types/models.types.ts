@@ -1,12 +1,67 @@
-export type Role = 'USER' | 'ADMIN' | 'SUPER_ADMIN'
+export type UserStatus = 'ACTIVE' | 'SUSPENDED' | 'PENDING'
+export type OverrideMode = 'GRANT' | 'DENY'
 
 export interface User {
   id: string
   name: string
   email: string
-  role: Role
   is_active: boolean
+  status: UserStatus
+  avatar_media_id: string | null
+  last_login_at: string | null
+  deleted_at: string | null
   created_at: string
+  updated_at: string
+  roles: { id: string; name: string; slug: string }[]
+}
+
+export interface RbacRole {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  is_system: boolean
+  created_at: string
+  updated_at: string
+  user_count?: number
+  permission_count?: number
+  permission_matrix?: Record<string, string>
+}
+
+export interface PermissionModuleMatrix {
+  id: string
+  name: string
+  label: string
+  is_system: boolean
+  sort_order: number
+  created_at: string
+  actions: {
+    view: string | null
+    add: string | null
+    edit: string | null
+    delete: string | null
+    publish: string | null
+  }
+}
+
+export interface ActivityLog {
+  id: string
+  module: string
+  action: string
+  subject_type: string | null
+  subject_id: string | null
+  description: string | null
+  properties: Record<string, unknown>
+  ip_address: string | null
+  created_at: string
+  actor: { id: string; name: string; email: string } | null
+}
+
+export interface UserPermissionOverride {
+  permission_id: string
+  module_id: string
+  action: string
+  mode: OverrideMode
 }
 
 export interface Setting {

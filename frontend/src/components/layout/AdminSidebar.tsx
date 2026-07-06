@@ -14,6 +14,9 @@ import {
   SlidersHorizontal,
   Cog,
   ChevronDown,
+  Shield,
+  KeyRound,
+  ClipboardList,
 } from 'lucide-react'
 import { useUiStore } from '@/stores/ui.store'
 import { useAuth } from '@/hooks/useAuth'
@@ -44,6 +47,16 @@ const FLAT_ITEMS: (NavLeaf & { adminOnly?: boolean })[] = [
 ]
 
 const GROUPS: NavGroup[] = [
+  {
+    label: 'Access Control',
+    icon: Shield,
+    adminOnly: true,
+    children: [
+      { label: 'Roles', href: '/admin/roles', icon: Shield },
+      { label: 'Permissions', href: '/admin/permissions', icon: KeyRound },
+      { label: 'Activity Log', href: '/admin/activity-log', icon: ClipboardList },
+    ],
+  },
   {
     label: 'Application Settings',
     icon: UserCog,

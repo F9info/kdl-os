@@ -22,8 +22,8 @@ export function useAuth() {
     user,
     isAuthenticated,
     isLoading,
-    isAdmin: user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN',
-    isSuperAdmin: user?.role === 'SUPER_ADMIN',
+    isAdmin: user?.roles?.some((r) => r.slug === 'admin' || r.slug === 'super-admin') ?? false,
+    isSuperAdmin: user?.roles?.some((r) => r.slug === 'super-admin') ?? false,
     logout,
     isLoggingOut,
   }
