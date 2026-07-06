@@ -1627,3 +1627,32 @@ MEDIUM/LOW findings (M1–M3, L1–L3) remain logged in `.agents/STATUS.md`, non
 Backend Architect re-ran all 5 gate commands from a separate session: backend `npm test` 87/87, `prisma validate`, `tsc --noEmit`, frontend `pnpm test` 45/45, `pnpm build` — **all exit 0** — and confirmed verdict consistency (zero open CRITICAL/HIGH; M1–M3/L1–L3 logged non-blocking).
 
 **KDL-39 Step 7 FINAL: PASS, verified. Auto-Approval Protocol satisfied (reviewer PASS + Gate Verifier confirmation). Pipeline proceeds to Step 8 (Docs).**
+
+---
+
+# KDL-50 — Code review gate: KDL-36 Step 4 + KDL-37 Step 5 (closure)
+
+**Reviewer:** Code Reviewer agent (ab90a50b) — independent session (Maker ≠ Grader)
+**Date:** 2026-07-06
+**Verdict: PASS (scope already fully reviewed; gates re-verified on current tree).**
+
+KDL-50 was created 2026-07-03 as the review gate for Steps 4+5. Its review substance has since been delivered twice and gate-verified:
+
+1. **KDL-56 (2026-07-04, this section above):** full review of commit `e4ab1f8` — Step 5 requireRole→requirePermission migration route-by-route, plus the Step 4 users/auth extensions carried in the same commit. REVIEW_PASS, zero CRITICAL/HIGH; 3 MEDIUM / 6 LOW logged.
+2. **KDL-39 Step 7 (2026-07-06):** independent deep review of Steps 1–6 — Step 4 verified clean (endpoints, permission strings, 409 guards, JWT `roles` claim with backward compat, suspended/soft-deleted rejection on login/refresh/authenticate) and Step 5 verified clean (zero `requireRole` call sites remaining). Final PASS confirmed by Gate Verifier (KDL-67, Backend Architect, all 5 gate commands exit 0 from separate session).
+
+**Delta since KDL-56 review, verified this session:**
+- KDL-36 spec-compliance fixes (commit `8c62f1d`) present and correct: `users/controller.js:116` error message matches spec exactly ("You can not delete your own account"); `auth/service.js` `findValidPasswordResetToken` now selects `status`/`deleted_at` so `resetPassword`'s suspended/deleted guard (service.js:149) actually evaluates — previously silently passed.
+- Step 10 (commit `5940b07`) subsequently removed `requireRole`, the `users.role` column, and legacy JWT `role` field — reviewed under KDL-42's own gate.
+
+**Gates re-run on current tree (2026-07-06):**
+
+| Command | Result |
+|---|---|
+| `backend: npm test` | 15 files / **85/85, exit 0** |
+| `node --check` auth.js, auth/controller.js, users/service.js | exit 0 |
+| `npx prisma validate` | exit 0 |
+
+Issue text expected "15 files / 87 tests" — that baseline predates Step 10, which removed 2 legacy-role tests. 85/85 is the correct current count (matches Step 10 handoff).
+
+**Noted, out of scope:** uncommitted working-tree changes on `auth/controller.js` + `auth/service.js` (login response `user.roles` slugs → `{id,name,slug}` objects) — another agent's in-flight post-Step-10 work; left untouched; current suite passes with them present.

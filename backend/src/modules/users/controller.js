@@ -153,6 +153,18 @@ export const resetPassword = async (req, res, next) => {
   }
 };
 
+export const getOverrides = async (req, res, next) => {
+  try {
+    const { id } = req.validated.params;
+    const exists = await userService.getUserById(id);
+    if (!exists) return errorResponse(res, 'User not found', 404);
+    const overrides = await userService.getUserOverrides(id);
+    return successResponse(res, { overrides });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const updateOverrides = async (req, res, next) => {
   try {
     const { id } = req.validated.params;
