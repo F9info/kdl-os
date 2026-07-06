@@ -38,7 +38,6 @@ export const updateUserSchema = z.object({
   body: z.object({
     name: z.string().min(2).max(100).optional(),
     email: z.string().email().toLowerCase().optional(),
-    role: z.enum(['SUPER_ADMIN', 'ADMIN', 'USER']).optional(),
     is_active: z.boolean().optional(),
     status: userStatusEnum.optional(),
     role_ids: z.array(z.string().min(1)).optional(),

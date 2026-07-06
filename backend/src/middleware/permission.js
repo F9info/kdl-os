@@ -1,20 +1,6 @@
 import { errorResponse } from '../shared/utils/response.js';
-import { requireRole as rbacRequireRole } from './rbac.js';
 import { resolvePermissions, hasPermission } from '../modules/user-management/shared/permission-resolver.js';
 import { writeActivityAsync, getClientIp } from '../modules/user-management/shared/activity-logger.js';
-
-export { rbacRequireRole as requireRole };
-
-/**
- * Express middleware factory that requires the current user to hold a
- * specific RBAC permission (`module:action`).
- *
- * Super Admin bypasses all checks.
- *
- * On success the resolved permission map is attached to `req.userPermissions`
- * so downstream handlers can make optional permission decisions without
- * re-querying.
- */
 export const requirePermission = (moduleName, action, options = {}) => {
   const { logDenials = true } = options;
 

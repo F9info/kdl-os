@@ -5,15 +5,11 @@ import { invalidatePermissionCache } from '../user-management/shared/permission-
 
 function userIsSuperAdmin(user) {
   if (!user) return false;
-  if (user.role === 'SUPER_ADMIN') return true;
-  if (Array.isArray(user.roles) && user.roles.some((r) => r.slug === 'super-admin')) {
-    return true;
-  }
+  if (Array.isArray(user.roles) && user.roles.some((r) => r.slug === 'super-admin')) return true;
   return false;
 }
 
 function actorIsSuperAdmin(req) {
-  if (req.user?.role === 'SUPER_ADMIN') return true;
   if (Array.isArray(req.user?.roles) && req.user.roles.includes('super-admin')) return true;
   return false;
 }
@@ -90,9 +86,6 @@ export const updateUser = async (req, res, next) => {
     if (!actorIsSuperAdmin(req)) {
       if (userIsSuperAdmin(exists)) {
         return errorResponse(res, 'ADMIN cannot modify Super Admin users', 403);
-      }
-      if (req.validated.body.role === 'SUPER_ADMIN') {
-        return errorResponse(res, 'ADMIN cannot assign SUPER_ADMIN role', 403);
       }
       if (req.validated.body.role_ids?.length) {
         const hasSuperAdmin = await userService.roleIdsIncludeSuperAdmin(req.validated.body.role_ids);

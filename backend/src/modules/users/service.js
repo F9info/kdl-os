@@ -14,7 +14,6 @@ const USER_SELECT = {
   id: true,
   name: true,
   email: true,
-  role: true,
   is_active: true,
   status: true,
   avatar_media_id: true,

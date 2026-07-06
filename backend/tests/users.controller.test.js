@@ -54,7 +54,7 @@ function mockRes() {
 
 function mockReq(overrides = {}) {
   return {
-    user: { id: 'admin1', role: 'ADMIN' },
+    user: { id: 'admin1', roles: ['admin'] },
     validated: { params: {}, body: {}, query: {} },
     headers: {},
     ...overrides,
@@ -66,20 +66,8 @@ beforeEach(() => {
 });
 
 describe('users controller regression', () => {
-  it('ADMIN cannot assign SUPER_ADMIN role (KDL-14 HIGH)', async () => {
-    serviceMock.getUserById.mockResolvedValue({ id: 'u2', role: 'USER', roles: [] });
-    const req = mockReq({ validated: { params: { id: 'u2' }, body: { role: 'SUPER_ADMIN' } } });
-    const res = mockRes();
-    await updateUser(req, res, vi.fn());
-
-    expect(res.statusCode).toBe(403);
-    expect(res.jsonBody.success).toBe(false);
-    expect(res.jsonBody.message).toMatch(/ADMIN cannot assign SUPER_ADMIN/i);
-    expect(serviceMock.updateUser).not.toHaveBeenCalled();
-  });
-
   it('ADMIN cannot modify an existing SUPER_ADMIN user (KDL-14 HIGH)', async () => {
-    serviceMock.getUserById.mockResolvedValue({ id: 'u3', role: 'SUPER_ADMIN', roles: [] });
+    serviceMock.getUserById.mockResolvedValue({ id: 'u3', roles: [{ slug: 'super-admin' }] });
     const req = mockReq({ validated: { params: { id: 'u3' }, body: { name: 'X' } } });
     const res = mockRes();
     await updateUser(req, res, vi.fn());
@@ -88,22 +76,22 @@ describe('users controller regression', () => {
     expect(serviceMock.updateUser).not.toHaveBeenCalled();
   });
 
-  it('SUPER_ADMIN can assign SUPER_ADMIN role', async () => {
-    serviceMock.getUserById.mockResolvedValue({ id: 'u2', role: 'USER', roles: [] });
-    serviceMock.updateUser.mockResolvedValue({ id: 'u2', role: 'SUPER_ADMIN', roles: [] });
+  it('SUPER_ADMIN can update any user', async () => {
+    serviceMock.getUserById.mockResolvedValue({ id: 'u2', roles: [] });
+    serviceMock.updateUser.mockResolvedValue({ id: 'u2', roles: [] });
     const req = mockReq({
-      user: { id: 'super1', role: 'SUPER_ADMIN' },
-      validated: { params: { id: 'u2' }, body: { role: 'SUPER_ADMIN' } },
+      user: { id: 'super1', roles: ['super-admin'] },
+      validated: { params: { id: 'u2' }, body: { name: 'Updated' } },
     });
     const res = mockRes();
     await updateUser(req, res, vi.fn());
 
     expect(res.statusCode).toBe(200);
-    expect(serviceMock.updateUser).toHaveBeenCalledWith('u2', { role: 'SUPER_ADMIN' });
+    expect(serviceMock.updateUser).toHaveBeenCalledWith('u2', { name: 'Updated' });
   });
 
   it('ADMIN cannot delete a SUPER_ADMIN user (KDL-14 HIGH)', async () => {
-    serviceMock.getUserById.mockResolvedValue({ id: 'u3', role: 'SUPER_ADMIN', roles: [] });
+    serviceMock.getUserById.mockResolvedValue({ id: 'u3', roles: [{ slug: 'super-admin' }] });
     const req = mockReq({ validated: { params: { id: 'u3' }, body: {} } });
     const res = mockRes();
     await deleteUser(req, res, vi.fn());
@@ -165,7 +153,7 @@ describe('users controller — Step 4 extensions', () => {
   });
 
   it('blocks non-super-admin from assigning super-admin role via role_ids', async () => {
-    serviceMock.getUserById.mockResolvedValue({ id: 'u2', role: 'USER', roles: [] });
+    serviceMock.getUserById.mockResolvedValue({ id: 'u2', roles: [] });
     serviceMock.roleIdsIncludeSuperAdmin.mockResolvedValue(true);
     const req = mockReq({
       validated: { params: { id: 'u2' }, body: { role_ids: ['r1'] } },
@@ -178,7 +166,7 @@ describe('users controller — Step 4 extensions', () => {
   });
 
   it('prevents a user from deleting their own account', async () => {
-    const req = mockReq({ user: { id: 'u1', role: 'SUPER_ADMIN' }, validated: { params: { id: 'u1' } } });
+    const req = mockReq({ user: { id: 'u1', roles: ['super-admin'] }, validated: { params: { id: 'u1' } } });
     const res = mockRes();
     await deleteUser(req, res, vi.fn());
 
@@ -187,8 +175,8 @@ describe('users controller — Step 4 extensions', () => {
   });
 
   it('soft-deletes a user and invalidates permission cache', async () => {
-    serviceMock.getUserById.mockResolvedValue({ id: 'u2', role: 'USER', roles: [] });
-    serviceMock.softDeleteUser.mockResolvedValue({ id: 'u2', role: 'USER', roles: [] });
+    serviceMock.getUserById.mockResolvedValue({ id: 'u2', roles: [] });
+    serviceMock.softDeleteUser.mockResolvedValue({ id: 'u2', roles: [] });
     const req = mockReq({ validated: { params: { id: 'u2' } } });
     const res = mockRes();
     await deleteUser(req, res, vi.fn());
@@ -199,8 +187,8 @@ describe('users controller — Step 4 extensions', () => {
   });
 
   it('resets a user password and invalidates permission cache', async () => {
-    serviceMock.getUserById.mockResolvedValue({ id: 'u2', role: 'USER', roles: [] });
-    serviceMock.resetPassword.mockResolvedValue({ id: 'u2', role: 'USER', roles: [] });
+    serviceMock.getUserById.mockResolvedValue({ id: 'u2', roles: [] });
+    serviceMock.resetPassword.mockResolvedValue({ id: 'u2', roles: [] });
     const req = mockReq({ validated: { params: { id: 'u2' }, body: { password: 'NewPass1!' } } });
     const res = mockRes();
     await resetPassword(req, res, vi.fn());
@@ -211,8 +199,8 @@ describe('users controller — Step 4 extensions', () => {
   });
 
   it('updates user overrides and invalidates permission cache', async () => {
-    serviceMock.getUserById.mockResolvedValue({ id: 'u2', role: 'USER', roles: [] });
-    serviceMock.updateUserOverrides.mockResolvedValue({ id: 'u2', role: 'USER', roles: [] });
+    serviceMock.getUserById.mockResolvedValue({ id: 'u2', roles: [] });
+    serviceMock.updateUserOverrides.mockResolvedValue({ id: 'u2', roles: [] });
     const overrides = [{ permission_id: 'p1', mode: 'GRANT' }];
     const req = mockReq({ validated: { params: { id: 'u2' }, body: { overrides } } });
     const res = mockRes();

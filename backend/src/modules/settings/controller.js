@@ -1,7 +1,7 @@
 import * as settingsService from './service.js';
 import { successResponse, errorResponse } from '../../shared/utils/response.js';
 
-const isAdmin = (req) => !!(req.user && ['ADMIN', 'SUPER_ADMIN'].includes(req.user.role));
+const isAdmin = (req) => !!(req.user?.roles?.some((r) => r === 'admin' || r === 'super-admin'));
 
 export const listSettings = async (req, res, next) => {
   try {

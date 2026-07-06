@@ -11,7 +11,6 @@ function buildAccessTokenPayload(user, roleSlugs = []) {
   return {
     userId: user.id,
     email: user.email,
-    role: user.role,
     roles: roleSlugs.length ? roleSlugs : (user.roles || []),
   };
 }

@@ -55,7 +55,7 @@ describe('settings controller regression — optionalAuthenticate (KDL-14 HIGH)'
 
   it('lists settings with isAdmin=true for authenticated ADMIN requests', async () => {
     settingsServiceMock.listSettings.mockResolvedValue([{ key: 'public' }, { key: 'private' }]);
-    const req = mockReq({ user: { id: 'a1', role: 'ADMIN' } });
+    const req = mockReq({ user: { id: 'a1', roles: ['admin'] } });
     const res = mockRes();
     await listSettings(req, res, vi.fn());
 

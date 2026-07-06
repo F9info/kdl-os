@@ -11,6 +11,9 @@ vi.mock('../../src/config/database.js', () => ({
       count: vi.fn(),
       update: vi.fn(),
     },
+    rbacRole: {
+      findFirst: vi.fn(),
+    },
   },
 }));
 
@@ -34,46 +37,50 @@ const mockUser = (overrides = {}) => ({
   id: overrides.id || 'usr_2',
   name: 'Bob',
   email: 'bob@example.com',
-  role: overrides.role || 'USER',
   status: 'ACTIVE',
   deleted_at: null,
   is_active: true,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
+  roles: overrides.roles || [],
 });
 
-const actorAdmin = { id: 'usr_admin', role: 'ADMIN', status: 'ACTIVE', deleted_at: null };
+const superAdminRoles = [{ role: { id: 'r-super', name: 'Super Admin', slug: 'super-admin' } }];
+
+const actorAdmin = { id: 'usr_admin', status: 'ACTIVE', deleted_at: null };
 const adminPermissions = { bypass: false, permissions: ['users:view', 'users:add', 'users:edit', 'users:delete'] };
 
 describe('user privilege escalation regressions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resolvePermissions.mockResolvedValue(adminPermissions);
+    prisma.rbacRole.findFirst.mockResolvedValue(null);
     prisma.user.findUnique.mockImplementation(({ where }) => {
       if (where.id === actorAdmin.id) return Promise.resolve(actorAdmin);
       return Promise.resolve(null);
     });
   });
 
-  it('ADMIN cannot assign SUPER_ADMIN role (regression KDL-15)', async () => {
-    const target = mockUser({ id: 'usr_target', role: 'USER' });
+  it('ADMIN cannot assign super-admin role via role_ids (regression KDL-15)', async () => {
+    const target = mockUser({ id: 'usr_target' });
     prisma.user.findUnique.mockImplementation(({ where }) => {
       if (where.id === actorAdmin.id) return Promise.resolve(actorAdmin);
       if (where.id === target.id) return Promise.resolve(target);
       return Promise.resolve(null);
     });
+    prisma.rbacRole.findFirst.mockResolvedValue({ id: 'r-super' });
 
     const res = await makeApp()
       .patch(`/api/users/${target.id}`)
-      .set('Authorization', bearer({ userId: 'usr_admin', email: 'admin@kdl.com', role: 'ADMIN' }))
-      .send({ name: 'Bob', role: 'SUPER_ADMIN' });
+      .set('Authorization', bearer({ userId: 'usr_admin', email: 'admin@kdl.com', roles: ['admin'] }))
+      .send({ role_ids: ['r-super'] });
 
     expect(res.status).toBe(403);
     expect(prisma.user.update).not.toHaveBeenCalled();
   });
 
   it('ADMIN cannot modify a SUPER_ADMIN user (regression KDL-15)', async () => {
-    const target = mockUser({ id: 'usr_super', role: 'SUPER_ADMIN' });
+    const target = mockUser({ id: 'usr_super', roles: superAdminRoles });
     prisma.user.findUnique.mockImplementation(({ where }) => {
       if (where.id === actorAdmin.id) return Promise.resolve(actorAdmin);
       if (where.id === target.id) return Promise.resolve(target);
@@ -82,7 +89,7 @@ describe('user privilege escalation regressions', () => {
 
     const res = await makeApp()
       .patch(`/api/users/${target.id}`)
-      .set('Authorization', bearer({ userId: 'usr_admin', email: 'admin@kdl.com', role: 'ADMIN' }))
+      .set('Authorization', bearer({ userId: 'usr_admin', email: 'admin@kdl.com', roles: ['admin'] }))
       .send({ name: 'Should Fail' });
 
     expect(res.status).toBe(403);
@@ -90,7 +97,7 @@ describe('user privilege escalation regressions', () => {
   });
 
   it('ADMIN cannot delete a SUPER_ADMIN user (regression KDL-15)', async () => {
-    const target = mockUser({ id: 'usr_super', role: 'SUPER_ADMIN' });
+    const target = mockUser({ id: 'usr_super', roles: superAdminRoles });
     prisma.user.findUnique.mockImplementation(({ where }) => {
       if (where.id === actorAdmin.id) return Promise.resolve(actorAdmin);
       if (where.id === target.id) return Promise.resolve(target);
@@ -99,7 +106,7 @@ describe('user privilege escalation regressions', () => {
 
     const res = await makeApp()
       .delete(`/api/users/${target.id}`)
-      .set('Authorization', bearer({ userId: 'usr_admin', email: 'admin@kdl.com', role: 'ADMIN' }));
+      .set('Authorization', bearer({ userId: 'usr_admin', email: 'admin@kdl.com', roles: ['admin'] }));
 
     expect(res.status).toBe(403);
     expect(prisma.user.update).not.toHaveBeenCalled();

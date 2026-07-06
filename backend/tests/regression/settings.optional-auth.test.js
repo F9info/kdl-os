@@ -15,7 +15,7 @@ const makeApp = () => agent([{ path: '/api/settings', router: settingsRoutes }])
 const publicSetting = { key: 'site.name', value: 'KDL', type: 'STRING', is_public: true };
 const privateSetting = { key: 'api.secret', value: 's3cr3t', type: 'STRING', is_public: false };
 
-const activeAdmin = { id: 'usr_admin', role: 'ADMIN', status: 'ACTIVE', deleted_at: null };
+const activeAdmin = { id: 'usr_admin', status: 'ACTIVE', deleted_at: null };
 
 describe('settings optional authentication regression', () => {
   beforeEach(() => {
@@ -39,7 +39,7 @@ describe('settings optional authentication regression', () => {
 
     const res = await makeApp()
       .get('/api/settings')
-      .set('Authorization', bearer({ userId: 'usr_admin', email: 'admin@kdl.com', role: 'ADMIN' }));
+      .set('Authorization', bearer({ userId: 'usr_admin', email: 'admin@kdl.com', roles: ['admin'] }));
 
     expect(res.status).toBe(200);
     expect(prisma.appSetting.findMany).toHaveBeenCalledWith(

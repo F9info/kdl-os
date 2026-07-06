@@ -106,9 +106,4 @@ describe('requirePermission middleware', () => {
     await middleware(req, res, next);
     expect(next).toHaveBeenCalledWith(err);
   });
-
-  it('re-exports requireRole from the legacy rbac middleware', async () => {
-    const { requireRole } = await import('../src/middleware/permission.js');
-    expect(typeof requireRole).toBe('function');
-  });
 });

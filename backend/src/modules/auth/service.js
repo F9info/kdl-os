@@ -60,7 +60,7 @@ export const createUser = async ({ name, email, password }) => {
   return prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
       data: { name, email, password_hash },
-      select: { id: true, name: true, email: true, role: true, is_active: true, created_at: true },
+      select: { id: true, name: true, email: true, is_active: true, created_at: true },
     });
 
     const defaultRole = await tx.rbacRole.findUnique({
@@ -89,7 +89,7 @@ export const findValidRefreshToken = (token) => {
   return prisma.refreshToken.findFirst({
     where: { token_hash, revoked: false, expires_at: { gt: new Date() } },
     include: {
-      user: { select: { id: true, email: true, role: true, is_active: true, status: true, deleted_at: true } },
+      user: { select: { id: true, email: true, is_active: true, status: true, deleted_at: true } },
     },
   });
 };
