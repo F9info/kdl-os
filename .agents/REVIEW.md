@@ -1536,3 +1536,94 @@ MEDIUM issues M1–M7 should be addressed in the Phase 5 fix pass or bundled int
 ## Verdict
 
 Gate is zero CRITICAL/HIGH → **REVIEW_PASS**. KDL-38 (Step 6, Frontend RBAC UI) may proceed. MEDIUM items 1–3 should be picked up before Step 10 removes the legacy paths.
+
+---
+
+# KDL-39 — KDLOS-10 Step 7: Independent Code Review of Steps 1–6
+
+**Date:** 2026-07-06
+**Reviewer:** Code Reviewer agent (independent — did not author any reviewed code)
+**Verdict: FAIL — 1 HIGH open finding (H1). Pipeline stopped per gate rules.**
+
+## Commands run (exit codes, not self-assessment)
+
+| Command | Result |
+|---|---|
+| `backend: npm test` | 15 files, 87/87 pass, exit 0 |
+| `frontend: pnpm build` | exit 0 |
+| `frontend: npx tsc --noEmit` | exit 0 (Step 6 gate) |
+| `frontend: pnpm test` | **exit 1 — 2/45 tests fail** (tests/rtl/regression/UsersPage.test.tsx) |
+
+## HIGH
+
+**H1 — Step 6 breaks the frontend regression suite (CI red, security regression coverage disabled).**
+`frontend/src/app/admin/users/page.tsx` now fetches `['roles-all']` (page.tsx:84, `GET /roles`) and `['permissions-matrix']`, but the pre-existing security regression test `frontend/tests/rtl/regression/UsersPage.test.tsx` (KDL-20 H4 — SUPER_ADMIN role option gating) mocks `api.get` with a single users-shaped response. The roles query resolves to `undefined` ("Query data cannot be undefined… key: ["roles-all"]"), the Edit User dialog never renders, and both gating tests fail. Effects: (1) CI frontend job (`pnpm test`, wired in KDL-23) is red; (2) the automated guard for the SUPER_ADMIN gating security behavior is dead. Manual code read shows the behavior itself is still implemented (`page.tsx:407` hides the super-admin option for non-super-admins) — the failure is test-infrastructure, but an unverified security guard + red CI is HIGH.
+**Fix:** update the test's `api.get` mock to route by URL (`/users` → users payload, `/roles` → `{ roles: [...] }`, `/permissions/matrix` → matrix) and keep both KDL-20 H4 assertions. No production code change expected.
+
+## MEDIUM (logged, non-blocking)
+
+- **M1 — bcrypt duplicated.** `backend/src/modules/users/service.js:117,180` call `bcrypt.hash(password, SALT_ROUNDS)` with a local `SALT_ROUNDS = 12` copy instead of importing `hashPassword` from `modules/auth/service.js` (arch doc: "import, don't duplicate"). Rounds match (12) so no functional divergence today; drift risk.
+- **M2 — Cache invalidation sits in controllers, not the service layer.** Arch watch item: "invalidation must be in the service layer (single choke point), not controllers." All current mutation endpoints do invalidate (users update/delete/reset/overrides; roles create/update/delete; module create/rename/delete), so behavior is correct today, but any future direct service caller bypasses invalidation. Note: `.agents/STATUS.md` previously claimed invalidation is "centralized in the service layer" — inaccurate.
+- **M3 — `jwt.verify` without `{ algorithms: ['HS256'] }`** at `backend/src/middleware/auth.js:13,34` and `backend/src/modules/auth/service.js:33` (CLAUDE.md rule). These files were touched by Steps 4–5 (status/deleted_at checks, refresh roles), so in scope. Hardening, not exploitable with current static HS256 secret.
+
+## LOW
+
+- **L1** — `invalidatePermissionCache()` defaults to nuking `perm:user:*` for ALL users on every mutation. Correct (superset of "affected keys") but coarse; fine at current scale.
+- **L2** — Seeder adds 3 modules beyond the arch doc's 6 (`types`, `categories`, `setting-fields`) — matches modules that exist in the app; Step 8 docs should record this.
+- **L3** — `users/controller.js` `resetPassword` invalidates the permission cache; password changes don't affect permission resolution. Harmless extra work.
+
+## Verified clean
+
+- **Step 1:** schema matches arch doc exactly (Role→`RbacRole` mapped to `roles` table — documented rename; all fields/indexes/uniques/cascades present; legacy `users.role` enum + `@@index([role])` retained for Step 10). Migration has no destructive statements. Seeder fully upsert-safe/idempotent; Admin exclusions exact (`roles:delete`, `permissions:*`); `admin@kdl.com` → super-admin.
+- **Step 2:** resolver implements `(∪ role perms) ∪ GRANTs − DENYs` with super-admin bypass; suspended/soft-deleted users resolve to empty set; corrupt cache entries fall through to DB; invalidation uses SCAN (no `KEYS` anywhere in backend/src). All 8 combinations unit-tested (tests 1–8 in `tests/permission-resolver.test.js`) plus suspended/deleted case; middleware fail-closed (errors → next(err), denial → 403 via errorResponse, denials activity-logged).
+- **Steps 3–4:** all arch-doc endpoints present with exact permission strings; every route behind `authenticate` + `requirePermission` + Zod `validate`. 409 guards verified: system role rename/delete, role-with-users delete, duplicate role/module name (P2002→409), system module rename/delete, module-with-references delete, own-account delete, duplicate email. Activity log: read-only routes; `writeActivity` try/catch-isolated (never breaks the request), regex PII scrub (`password|token|secret|hash|credential|auth`). JWT: `roles: string[]` slugs added on login/refresh alongside legacy `role` claim; old tokens keep working (middleware re-derives from DB; controllers fall back to `req.user.role`). Login excludes soft-deleted (`findUserWithRolesByEmail` filters `deleted_at: null`) and rejects SUSPENDED; `authenticate` rejects suspended/deleted with 403; refresh path re-checks `is_active`/status/deleted.
+- **Step 5:** zero `requireRole` call sites remain (grep: only the definition in `middleware/rbac.js` + re-export in `middleware/permission.js`, both retained by design until Step 10). All 87 backend tests pass including privilege regressions.
+- **Step 6:** `tsc --noEmit` + `pnpm build` exit 0. `usePermissions` matches spec (TanStack Query, staleTime 5 min, fail-closed while loading, `can()`/`hasRole()`, axios lib). `PermissionMatrix` is a controlled component emitting `permission_ids[]` with per-row/per-column/global select-all + indeterminate states. Users page super-admin gating implemented (page.tsx:407).
+- **CLAUDE.md compliance:** ES modules only; Zod on all inputs (`{body,query,params}` wrapper); `successResponse`/`errorResponse` everywhere (no raw `res.json` in modules/middleware); no `redis.keys()`; soft-delete filtering in all user list/get queries including auth login.
+
+## Re-review — 2026-07-06 (fix→re-review loop 1)
+
+**H1 RESOLVED → Verdict revised: PASS — zero open CRITICAL/HIGH findings.**
+
+KDL-63 (Frontend Coder) updated `frontend/tests/rtl/regression/UsersPage.test.tsx` only:
+- `api.get` mock now routes by URL (`/users`, `/roles`, `/permissions/matrix`); test interaction updated from the old combobox to Step 6's checkbox-based roles UI.
+- Both KDL-20 H4 assertions preserved: non-super-admin does NOT see "Super Admin" anywhere in the edit dialog (absence assertion is now dialog-wide — stronger than the old listbox scope); super admin DOES see it.
+- Independently verified: no production files modified after the original review (mtimes: prod files 09:37–09:41, test 10:10); diff touches the test file only.
+- Gate re-run by reviewer: `pnpm test` in `frontend/` → 15 files, **45/45 pass, exit 0**.
+
+MEDIUM/LOW findings (M1–M3, L1–L3) remain logged in `.agents/STATUS.md`, non-blocking per gate rules.
+
+Pending per Auto-Approval Protocol: Gate Verifier (Backend Architect, separate session) re-runs step-gate commands from a clean checkout and confirms zero CRITICAL/HIGH.
+
+## Gate verification + loop 2 — 2026-07-06
+
+**Gate Verifier (Backend Architect, KDL-64) did NOT confirm the loop-1 PASS: `npx tsc --noEmit` exits 1.** Verdict reverts to **FAIL — 1 HIGH open finding (H1b)** pending fix→re-review loop 2 of 2.
+
+- **H1b (HIGH):** the KDL-63 test fix satisfies vitest (45/45) but breaks the Step 6 typecheck gate: `tests/rtl/regression/UsersPage.test.tsx(36,7) error TS2740` — `baseUser` mock is missing `User` fields Step 6 added in `types/models.types.ts` (`status`, `avatar_media_id`, `last_login_at`, `deleted_at`, `updated_at`, `roles`). Reviewer independently reproduced: `tsc --noEmit` exit 1, identical error.
+- **Reviewer process gap (self-logged):** loop-1 re-review re-ran only `pnpm test` after the test-file edit; `tsc --noEmit` exit-0 in the loop-1 table predated KDL-63. Corrective rule for every future loop: re-run ALL step-gate commands after ANY file change, not just the suite that previously failed.
+- Fix delegated (test-only): add the six missing fields to `baseUser`; gate = `npx tsc --noEmit` AND `pnpm test` both exit 0 in `frontend/`, then Gate Verifier re-confirms.
+- Per Auto-Approval Protocol this is loop 2 of 2 — if this gate fails again, escalate to Prasanna (BLOCKERS.md) and stop.
+
+## Loop-2 re-review — 2026-07-06
+
+**H1b RESOLVED → Verdict: PASS — zero open CRITICAL/HIGH findings.**
+
+KDL-65 (Frontend Coder) extended the `baseUser` mock in `frontend/tests/rtl/regression/UsersPage.test.tsx` with the six missing `User` fields (`status: 'ACTIVE' as const`, `avatar_media_id`, `last_login_at`, `deleted_at`, `updated_at`, `roles`). Verified independently: diff touches the test file only; production mtimes unchanged (types 09:37, page 09:40 vs test 10:21); both KDL-20 H4 assertions and the KDL-63 URL-routed mock intact.
+
+FULL gate set re-run by reviewer after the change (per loop-1 corrective rule):
+
+| Command | Result |
+|---|---|
+| `backend: npm test` | 87/87, exit 0 |
+| `backend: npx prisma validate` | exit 0 |
+| `frontend: npx tsc --noEmit` | exit 0 |
+| `frontend: pnpm test` | 45/45, exit 0 |
+| `frontend: pnpm build` | exit 0 |
+
+MEDIUM/LOW findings (M1–M3, L1–L3) remain logged in `.agents/STATUS.md`, non-blocking. Pending: Gate Verifier (Backend Architect) re-confirmation per Auto-Approval Protocol.
+
+## Gate Verifier confirmation — 2026-07-06 (KDL-67)
+
+Backend Architect re-ran all 5 gate commands from a separate session: backend `npm test` 87/87, `prisma validate`, `tsc --noEmit`, frontend `pnpm test` 45/45, `pnpm build` — **all exit 0** — and confirmed verdict consistency (zero open CRITICAL/HIGH; M1–M3/L1–L3 logged non-blocking).
+
+**KDL-39 Step 7 FINAL: PASS, verified. Auto-Approval Protocol satisfied (reviewer PASS + Gate Verifier confirmation). Pipeline proceeds to Step 8 (Docs).**

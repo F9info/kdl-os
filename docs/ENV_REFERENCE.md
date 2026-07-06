@@ -56,6 +56,16 @@ These variables are used by `docker-compose.yml` to configure infrastructure con
 |---|---|---|---|
 | `REDIS_URL` | Yes | `redis://localhost:6380` | Redis connection string for BullMQ queues and session cache. Host port 6380 (not 6379 — F9 Tech stack occupies that). Inside Docker containers, use `redis:6379`. |
 
+### Redis key usage
+
+The User Management RBAC module writes permission resolution results to Redis:
+
+| Key pattern | TTL | Description |
+|---|---|---|
+| `perm:user:{userId}` | 600 s (10 min) | Effective permission set for a user. JSON: `{ bypass: bool, permissions: string[] }`. Written by `permission-resolver.js` on first resolution, invalidated (via SCAN) on any role, permission, or user-role/override mutation. |
+
+No new environment variables are required — the module reads `REDIS_URL`.
+
 ---
 
 ## AI Brains

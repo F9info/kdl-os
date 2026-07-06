@@ -40,9 +40,14 @@ kdl-starter-kit/
 │       ├── middleware/       auth, rbac, validate, upload, errorHandler
 │       ├── modules/
 │       │   ├── auth/         routes, controller, service, schema
-│       │   ├── users/        routes, controller, service, schema
+│       │   ├── users/        routes, controller, service, schema (RBAC-extended)
 │       │   ├── settings/     routes, controller, service
-│       │   └── media/        routes, controller, service
+│       │   ├── media/        routes, controller, service
+│       │   └── user-management/
+│       │       ├── roles/        routes, controller, service, schema
+│       │       ├── permissions/  routes, controller, service, schema
+│       │       ├── activity/     routes, controller, service, schema
+│       │       └── shared/       permission-resolver.js, activity-logger.js
 │       ├── shared/
 │       │   ├── services/     email, storage, search
 │       │   ├── queues/       email.queue.js
@@ -104,18 +109,85 @@ kdl-starter-kit/
 - API calls go through `lib/axios.ts` — never raw `fetch`
 - Background jobs go through BullMQ queues — never inline async calls for slow operations
 
+### Permission middleware
+
+Use `requirePermission(moduleName, action)` on any route that needs RBAC enforcement. It runs **after** `authenticate`.
+
+```js
+import { requirePermission } from '../../../middleware/permission.js';
+
+router.get('/', authenticate, requirePermission('users', 'view'), listUsers);
+router.post('/', authenticate, requirePermission('users', 'add'), createUser);
+```
+
+- Super Admin (`slug: 'super-admin'`) bypasses all checks — no permission rows needed.
+- Suspended users and soft-deleted users get `403` from the resolver even with a valid token.
+- On success, `req.userPermissions` is set to `{ bypass: bool, permissions: string[] }` for optional downstream use.
+- Permission denied events are activity-logged automatically.
+- Effective permission set cached in Redis (`perm:user:{id}`, TTL 600 s). Invalidated via `invalidatePermissionCache()` on any role/override mutation. Always call this in the **service layer**, not in controllers, to keep the single choke-point invariant.
+
+### Activity logging
+
+Every mutation in `user-management/` calls `writeActivity` or `writeActivityAsync` from `shared/activity-logger.js`. Always wrap in try/catch — a logging failure must never break the response.
+
+```js
+writeActivity({
+  actor: req.user.id,
+  module: 'roles',
+  action: 'created',
+  subject_type: 'RbacRole',
+  subject_id: role.id,
+  description: `Role "${role.name}" created`,
+  properties: { ... },  // PII-scrubbed — no passwords, no tokens
+  ip_address: getClientIp(req),
+});
+```
+
 ---
 
-## Database Schema (4 base tables)
+## Database Schema
+
+### Base tables
 
 ```
-users            id, name, email, password_hash, role, is_active, created_at
+users            id, name, email, password_hash, role(enum), is_active, status(UserStatus), avatar_media_id, last_login_at, deleted_at, created_at, updated_at
 refresh_tokens   id, user_id, token_hash, expires_at, revoked
+password_reset_tokens  id, user_id, token_hash, expires_at, used
 app_settings     id, key, value, type, description, is_public
 media            id, user_id, filename, original_name, mime_type, size, bucket, path, url
+types            id, name, slug, is_active
+categories       id, name, slug, type_id, is_active
+setting_fields   id, field_name, slug, input_type, value, alt_text, options, type_id, category_id, sort
 ```
 
-Seed: 1 SUPER_ADMIN → `admin@kdl.com / Admin@123`
+### RBAC tables (User Management module)
+
+```
+roles (RbacRole)       id, name, slug, description, is_system, created_at, updated_at
+permission_modules     id, name, slug, label, is_system, sort_order, created_at
+permissions            id, module_id, action(view|add|edit|delete|publish), created_at
+role_permissions       [role_id, permission_id] — composite PK
+user_roles             [user_id, role_id] — composite PK
+user_permissions       [user_id, permission_id, mode(GRANT|DENY)] — composite PK
+activity_logs          id, actor_id, module, action, subject_type, subject_id, description, properties(JSON), ip_address, created_at
+```
+
+### Enums
+
+| Enum | Values |
+|------|--------|
+| `Role` (legacy, kept until Step 10) | `SUPER_ADMIN`, `ADMIN`, `USER` |
+| `UserStatus` | `ACTIVE`, `SUSPENDED`, `PENDING` |
+| `OverrideMode` | `GRANT`, `DENY` |
+
+### Key relations
+
+- `User` → many `UserRole` → `RbacRole` (multi-role assignment)
+- `User` → many `UserPermission` (per-permission GRANT/DENY overrides)
+- `RbacRole` → many `RolePermission` → `Permission` → `PermissionModule`
+- `User` → many `ActivityLog` (as actor)
+
+Seed: 1 SUPER_ADMIN → `admin@kdl.com / Admin@123`. System roles: `super-admin`, `admin`, `user`. System modules: `users`, `roles`, `permissions`, `settings`, `media`, `activity-log`.
 
 ---
 

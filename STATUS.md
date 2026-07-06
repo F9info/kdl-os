@@ -1,3 +1,110 @@
+## 2026-07-06 — KDL-42 KDLOS-10 Step 10: DONE ✅
+
+**All 10 RBAC steps complete. `users.role` enum column dropped. `requireRole` removed.**
+
+- Prasanna approved via `request_confirmation` interaction `0792df9d` (accepted 2026-07-06T05:58:00Z).
+- Backup: `backups/kdl_db_before_step10_20260706_113121.sql` (78K ✅).
+- Migration `20260706113200_drop_users_role_column` applied — `prisma migrate deploy` exit 0 ✅.
+- Code removed: `Role` enum, `users.role` column, `requireRole` function, legacy JWT `role` field, legacy `role` checks in controllers/services.
+- `settings/controller.js` `isAdmin` updated to use RBAC `roles` slugs array.
+- All test mocks updated to RBAC-only auth (no `role` field in user objects or JWT payloads).
+- Backend test suite: **15 files / 85 tests — all pass ✅**.
+- DB: `role` column gone, `Role` type gone (verified via psql).
+
+---
+
+## 2026-07-06 — KDL-41 KDLOS-10 Step 9 E2E gate: PASS after fix loop 1 ✅ (Gate Verifier pending)
+
+**Gate: full Playwright suite exit 0 — 10/10 (8 RBAC scenarios + rewritten smoke×3), run twice against rebuilt docker stack.**
+
+- KDL-68 (Frontend Coder) fixed the matrix unwrap at all 3 call sites + RTL mocks.
+- Code Reviewer re-verified full gate set: `tsc --noEmit` exit 0, `pnpm test` 45/45 exit 0, docker frontend image rebuilt, `E2E_BASE_URL=http://localhost:3001 pnpm e2e` exit 0.
+- Scenario 1 (create role via UI with types:view only) now passes — permission matrix renders and role lands with exactly 1 permission.
+- Gate Verifier re-run from clean checkout delegated as KDL-69 (AI Services). Failure there = fix loop 2 of 2 (final before Prasanna escalation).
+- **KDL-41 closed done 2026-07-06** at board direction (suite exit 0 verified on 3 runs; deliverable complete). KDL-69 verification continues independently and reopens KDL-41 on FAIL. Step 10 (KDL-42 scope: drop `users.role` enum, remove `requireRole`) chains once KDL-69 confirms.
+
+---
+
+## 2026-07-06 — KDL-41 KDLOS-10 Step 9 E2E gate: FAIL, fix loop 1 of 2 🔴
+
+**Gate: Playwright suite NOT exit 0 — scenario 1 blocked by production bug; scenarios 2–8 + smoke verified green.**
+
+### Suite created (Code Reviewer output, test code only)
+- `frontend/e2e/rbac.spec.ts` — 8 scenarios per KDL-41: UI role creation (types:view only), role assignment, limited-user login, sidebar gating, 403 error shape on forbidden APIs, super-admin bypass, suspended-user valid-token 403, soft-deleted login refusal. Unique run-id data + afterAll cleanup.
+- `frontend/e2e/smoke.spec.ts` rewritten — scaffold spec referenced routes/copy that never existed; now passes 3/3.
+- `frontend/playwright.config.ts` — `E2E_BASE_URL` support for running against docker stack (:3001).
+
+### HIGH finding → BLOCKERS.md + KDL-68 (Frontend Coder)
+Matrix payload `{ data: { matrix: [...] } }` unwrapped as bare array at 3 Step-6 call sites (`RoleFormDialog.tsx`, `permissions/page.tsx:44`, `users/page.tsx:92`) → every PermissionMatrix UI renders "No permission modules defined"; UI permission assignment broken. Hidden from tsc by `as` cast; RTL mocks match wrong shape.
+
+### Environment notes
+- Docker backend+frontend images were stale (built Jul 3, pre-Steps-5/6) — rebuilt both; re-ran seeder (9 modules / 45 permissions now).
+- Evidence: full run 1 failed / 6 not run / 3 passed; API-setup variant of scenarios 2–8: 7/7 passed.
+
+### Next
+KDL-68 → rebuild frontend image → full suite re-run (loop 1) → Gate Verifier (AI Services) from clean checkout.
+
+---
+
+## 2026-07-06 — KDL-40 KDLOS-10 Step 8 Documentation DONE ✅
+
+**Gate: docs-match-code verified by cross-referencing source (routes, controllers, services, schemas).**
+
+### Files updated
+- `docs/API_REFERENCE.md` — Added: Roles (5 endpoints), Permissions (4 endpoints), Activity Log (1 endpoint), User extensions (reset-password, overrides, GET /api/auth/me/permissions). Updated: Users section with RBAC fields (status, role_ids[], soft-delete semantics).
+- `docs/ENV_REFERENCE.md` — Added Redis permission cache key documentation (`perm:user:{userId}`, TTL 600s). No new env vars.
+- `CLAUDE.md` — Schema section rewritten to show all RBAC tables + enums. Patterns section extended with `requirePermission` + `writeActivity` usage patterns. Folder structure updated.
+- `.agents/HANDOFF.md` — Updated with Step 8 completion summary.
+
+### Next step
+Step 9: Automated E2E gate — Playwright suite (Code Reviewer runs, does not write).
+
+---
+
+## 2026-07-06 — KDL-38 KDLOS-10 Step 6 Frontend RBAC UI DONE ✅
+
+**Gate: `pnpm build` exit 0. All 4 new pages built clean.**
+
+### Files created / modified
+
+**New types** (`frontend/src/types/models.types.ts`):
+- `UserStatus`, `OverrideMode`, `RbacRole`, `PermissionModuleMatrix`, `ActivityLog`, `UserPermissionOverride`
+- Extended `User`: `status`, `roles[]`, `last_login_at`, `deleted_at`, `updated_at`
+
+**New hook** `frontend/src/hooks/usePermissions.ts`:
+- Wraps `GET /api/auth/me/permissions` (TanStack Query, staleTime 5 min)
+- Exposes `can('module:action')` and `hasRole('slug')` helpers; bypass flag from server
+
+**New component** `frontend/src/components/shared/PermissionMatrix.tsx`:
+- Module×action grid (view/add/edit/delete/publish)
+- Native checkbox per cell + select-all per row and per column header
+- Controlled: `value: string[]` + `onChange`
+
+**New pages**:
+- `frontend/src/app/admin/roles/page.tsx` — DataTable (name, description, user count, permission count, type), create/edit via `RoleFormDialog`, delete with system guard
+- `frontend/src/app/admin/roles/_components/RoleFormDialog.tsx` — name, description + PermissionMatrix; loads `GET /api/permissions/matrix`; edit mode pre-populates from `role.permission_matrix`
+- `frontend/src/app/admin/permissions/page.tsx` — module list table, Add Module dialog (auto-creates 5 permissions), edit label/name, delete guard
+- `frontend/src/app/admin/activity-log/page.tsx` — read-only DataTable with actor/module/date-range filters
+
+**Extended** `frontend/src/app/admin/users/page.tsx`:
+- Status column + status filter (ACTIVE/SUSPENDED/PENDING)
+- Multi-role checkbox select (replaces single role dropdown)
+- Reset-password dialog (admin-only, `POST /api/users/:id/reset-password`)
+- Permission Overrides tab: two PermissionMatrix grids (GRANT set + DENY set), saves via `PUT /api/users/:id/overrides`
+
+**Updated** `frontend/src/components/shared/StatusBadge.tsx`: added `suspended`, `pending`, `system` variants
+
+**Updated** `frontend/src/components/layout/AdminSidebar.tsx`: Access Control group → Roles, Permissions, Activity Log
+
+### Gate evidence
+- `pnpm build` exit 0 (Next.js 15, 17 routes, all new routes present and clean)
+- Route sizes: activity-log 4.51kB, permissions 4.76kB, roles 6.02kB, users 9.78kB
+
+### Next step
+Step 7: Code Reviewer (independent session, not the maker) + Gate Verifier re-run of `pnpm build`. Auto-approval protocol in force.
+
+---
+
 ## 2026-07-03 — KDL-35 KDLOS-10 Step 3 Roles + Permissions + Activity Log endpoints DONE ✅
 
 **Step 3 implementation complete. Awaiting Code Reviewer + Gate Verifier per Auto-Approval Protocol.**

@@ -1,3 +1,89 @@
+## Handoff — 2026-07-06 (STEP 10 COMPLETE ✅)
+Agent: Backend Coder
+Issue: KDL-42 KDLOS-10 Step 10 — DONE
+
+Prasanna approved via request_confirmation interaction 0792df9d (accepted 2026-07-06T05:58:00Z, local-board).
+
+### Actions taken
+- pg_dump backup: `backups/kdl_db_before_step10_20260706_113121.sql` (78K, non-zero ✅)
+- Migration created: `prisma/migrations/20260706113200_drop_users_role_column/migration.sql`
+- `prisma migrate deploy` — exit 0 ✅ — `role` column dropped, `Role` enum dropped
+- `npx prisma generate` — Prisma client regenerated ✅
+
+### Code removed
+- `enum Role { SUPER_ADMIN, ADMIN, USER }` from schema.prisma
+- `role Role @default(USER)` + `@@index([role])` from User model
+- `requireRole` function from `middleware/rbac.js` (file emptied)
+- `requireRole` re-export removed from `middleware/permission.js`
+- `role: true` removed from Prisma selects in auth middleware + auth service
+- `role: user.role` removed from JWT payload (auth/controller.js buildAccessTokenPayload)
+- `role: true` removed from USER_SELECT in users/service.js
+- Legacy `role` checks removed from users/controller.js (`userIsSuperAdmin`, `actorIsSuperAdmin`, updateUser body check)
+- `role: z.enum(...)` removed from updateUserSchema in users/schema.js
+- `isAdmin` in settings/controller.js updated to use `req.user.roles` array
+
+### Test results
+- 15 files / 85 tests — all pass ✅
+
+### DB verification
+- `\d users` — no `role` column present ✅
+- `SELECT typname FROM pg_type WHERE typname = 'Role'` → 0 rows ✅
+
+---
+
+## Handoff — 2026-07-06 (later)
+Agent: Code Reviewer
+Issue: KDL-41 KDLOS-10 Step 9 — E2E gate re-run after KDL-68 fix (loop 1): PASS
+
+Completed:
+- Verified KDL-68 fix in tree (3 × `r.data.data.matrix` unwrap).
+- Re-ran unit gates: `tsc --noEmit` exit 0, `pnpm test` 45/45 exit 0.
+- Rebuilt docker frontend image, confirmed fixed chunks inside container.
+- Full Playwright suite: **10/10 passed, exit 0** — run twice (`E2E_BASE_URL=http://localhost:3001 pnpm e2e`).
+
+Next: KDL-69 (AI Services, Gate Verifier) re-runs everything from clean checkout. PASS ⇒ KDL-41 done, Step 10 (drop `users.role` enum) chains. FAIL ⇒ fix loop 2 of 2 back to Code Reviewer.
+
+Blockers: none new — awaiting KDL-69 verification only.
+
+---
+
+## Handoff — 2026-07-06
+Agent: Code Reviewer
+Issue: KDL-41 KDLOS-10 Step 9 — Automated E2E gate (Playwright RBAC suite)
+
+Completed:
+- Created `frontend/e2e/rbac.spec.ts` — 8-scenario RBAC E2E suite (serial): UI role creation with types:view only, API role assignment, limited-user login + sidebar gating, 403 error-shape checks on forbidden APIs, super-admin bypass (incl. roles:delete which no role holds), suspended-user valid-token 403, soft-deleted login refusal. Unique run-id test data, afterAll cleanup — re-runnable.
+- Rewrote `frontend/e2e/smoke.spec.ts` — old scaffold spec targeted routes/copy that never existed (`/auth/login`, "Welcome", "Password reset email sent."). Now: root→/login redirect, admin login→dashboard, forgot-password neutral confirmation. All 3 pass.
+- `frontend/playwright.config.ts` — `E2E_BASE_URL` env support to run against an already-running stack (docker frontend :3001) without spawning a dev server; 60s test timeout.
+- Rebuilt stale docker images (backend+frontend were built Jul 3, pre-Steps-5/6) and re-ran the RBAC seeder (was 6 modules / 30 permissions; now 9 / 45).
+
+Result: **E2E gate FAIL — fix loop 1 of 2.** Scenario 1 blocked by a production bug (permission matrix unwrap, see BLOCKERS.md); scenarios 2–8 verified green via temporary API-setup variant. Fix delegated to Frontend Coder as KDL-68.
+
+Run: `cd frontend && E2E_BASE_URL=http://localhost:3001 pnpm e2e` (stack must be up: `docker compose up -d`).
+
+Next: KDL-68 done → rebuild docker frontend → re-run full suite → Gate Verifier (AI Services) confirms from clean checkout.
+
+Blockers: KDL-68 (Frontend Coder) — matrix unwrap fix.
+
+---
+
+## Handoff — 2026-07-06
+Agent: Documentation (Agent 9)
+Issue: KDL-40 KDLOS-10 Step 8 — Documentation
+
+Completed:
+- `docs/API_REFERENCE.md` — full RBAC section added: Roles (5 endpoints), Permissions (4 endpoints), Activity Log (1 endpoint), Users extensions (reset-password, overrides), GET /api/auth/me/permissions. Existing Users section updated to reflect RBAC fields (status, role_ids, soft-delete). All request/response shapes cross-referenced against actual controller + service code.
+- `docs/ENV_REFERENCE.md` — Redis permission cache key pattern documented under Redis section (`perm:user:{userId}`, TTL 600s). No new env vars introduced by RBAC module.
+- `CLAUDE.md` — Schema section rewritten: base tables updated, full RBAC tables added (roles, permission_modules, permissions, role_permissions, user_roles, user_permissions, activity_logs), enums table (Role/UserStatus/OverrideMode), key relations diagram. Patterns section extended with `requirePermission` middleware usage + `writeActivity` pattern. Folder structure updated to show `user-management/` submodule.
+
+Verification method: all doc shapes hand-verified against actual source files (routes.js, controller.js, service.js, schema.js) for each endpoint. No planned-but-not-built features documented.
+
+Next: KDL Step 9 — Automated E2E gate (Playwright suite).
+
+Blockers: None.
+
+---
+
 ## Handoff — 2026-07-06
 Agent: Backend Coder (Agent 3)
 Issue: KDL-36 KDLOS-10 Step 4 — Spec compliance fixes (restarted)
@@ -253,3 +339,105 @@ Do not touch:
 
 Blockers:
 - None.
+
+---
+
+## Handoff — 2026-07-06
+Agent: Code Reviewer
+Issue: KDL-39 KDLOS-10 Step 7 — Independent code review of Steps 1–6
+
+Completed:
+- Full independent review of Steps 1–6 (schema/seeder, resolver 8/8 combos, endpoints/409/cache/activity, JWT roles + backward compat, requireRole migration, frontend, CLAUDE.md compliance). Report appended to `.agents/REVIEW.md`.
+- Commands: backend `npm test` 87/87 pass; frontend `pnpm build` + `tsc --noEmit` exit 0; frontend `pnpm test` FAILS 2/45.
+- **Verdict: FAIL — 1 HIGH (H1):** Step 6 broke `tests/rtl/regression/UsersPage.test.tsx` (KDL-20 H4 SUPER_ADMIN gating) — new `['roles-all']` / `['permissions-matrix']` queries not mocked; CI frontend job red. Behavior itself verified correct (`users/page.tsx:407`); fix is test-mock-only.
+- BLOCKERS.md entry written; pipeline stopped before Step 8 per gate rules.
+- 3 MEDIUM + 3 LOW findings logged to `.agents/STATUS.md` (non-blocking).
+
+Next:
+- Frontend Coder: fix the `api.get` mock in `tests/rtl/regression/UsersPage.test.tsx` to route by URL, keep both KDL-20 H4 assertions. Gate: `pnpm test` exit 0 in `frontend/`.
+- Then Code Reviewer re-reviews KDL-39 (fix→re-review loop 1 of 2). On PASS → Step 8 (Docs) proceeds.
+
+Do not touch:
+- Production code — H1 needs no production change; do not "fix" the page to satisfy the old mock.
+- `users.role` enum column / `requireRole` definition — Step 10.
+- `frontend/e2e/dummy.txt` + `frontend/e2e/smoke.spec.ts` — another agent's working files.
+
+Blockers:
+- KDL-39 H1 (see BLOCKERS.md) — owner: Frontend Coder.
+
+---
+
+## Handoff — 2026-07-06 (re-review)
+Agent: Code Reviewer
+Issue: KDL-39 Step 7 — re-review after H1 fix (loop 1 of 2)
+
+Completed:
+- Verified KDL-63 fix independently: only `frontend/tests/rtl/regression/UsersPage.test.tsx` changed after the original review (mtime check + git diff); production code untouched; both KDL-20 H4 assertions preserved (absence assertion now dialog-wide, stronger).
+- Re-ran gate myself: `pnpm test` in `frontend/` → 45/45 pass, exit 0.
+- **Verdict revised: PASS — zero open CRITICAL/HIGH.** REVIEW.md re-review section appended; BLOCKERS.md H1 marked resolved; STATUS.md Step 7 → PASS.
+- Created Gate Verifier child issue under KDL-39 assigned to Backend Architect (re-run step-gate commands from clean checkout, confirm zero CRITICAL/HIGH).
+
+Next:
+- Backend Architect (Gate Verifier): run `npm test` (backend), `pnpm build` + `npx tsc --noEmit` + `pnpm test` (frontend), `npx prisma validate` from a clean checkout; confirm all exit 0 and reviewer verdict consistency. On confirmation → KDL-39 done → Step 8 (Docs) auto-chains.
+
+Do not touch:
+- Same as previous handoff (no prod changes needed; enum/requireRole wait for Step 10).
+
+Blockers:
+- None.
+
+---
+
+## Handoff — 2026-07-06 (loop 2 open)
+Agent: Code Reviewer
+Issue: KDL-39 Step 7 — Gate Verifier rejected loop-1 PASS
+
+Completed:
+- KDL-64 (Gate Verifier / Backend Architect) result: `tsc --noEmit` exit 1 — loop-1 PASS NOT confirmed. Reviewer reproduced: `tests/rtl/regression/UsersPage.test.tsx(36,7) TS2740`, `baseUser` mock missing `User` fields added by Step 6 (`status`, `avatar_media_id`, `last_login_at`, `deleted_at`, `updated_at`, `roles`).
+- Verdict reverted to FAIL (H1b). REVIEW.md loop-2 section, BLOCKERS.md reopen note, STATUS.md updated.
+- Fix delegated: KDL-65 (Frontend Coder, test-only, exact fields specified). Gate = `npx tsc --noEmit` AND `pnpm test` both exit 0.
+- Process gap self-logged in REVIEW.md: loop-1 re-review re-ran only `pnpm test` after the test edit — every future re-review re-runs ALL step-gate commands after ANY file change.
+
+Next:
+- Frontend Coder completes KDL-65 → comments both exit codes on KDL-39 → Code Reviewer loop-2 re-review (re-run BOTH commands) → Gate Verifier re-confirmation → done → Step 8.
+- If loop 2 fails: escalate to Prasanna (BLOCKERS.md), stop pipeline.
+
+Do not touch:
+- Production code / types — H1b is test-mock-only.
+
+Blockers:
+- KDL-39 H1b — owner: Frontend Coder (KDL-65).
+
+---
+
+## Handoff — 2026-07-06 (loop-2 re-review, PASS)
+Agent: Code Reviewer
+Issue: KDL-39 Step 7 — loop-2 re-review after KDL-65
+
+Completed:
+- Verified KDL-65 independently: diff = test file only (six `User` fields added to `baseUser`, `status: 'ACTIVE' as const`); production mtimes unchanged; KDL-20 H4 assertions + KDL-63 URL-routed mock intact.
+- Re-ran FULL gate set myself (loop-1 corrective rule applied): backend `npm test` 87/87 exit 0, `npx prisma validate` exit 0, frontend `npx tsc --noEmit` exit 0, `pnpm test` 45/45 exit 0, `pnpm build` exit 0.
+- **Verdict: PASS — zero open CRITICAL/HIGH.** REVIEW.md loop-2 section, BLOCKERS.md H1b resolution, STATUS.md updated.
+- Created KDL-67 (Gate Verifier re-confirmation, Backend Architect) — instructed to post result on the child and mark it done (cannot comment on KDL-39 due to authorization boundary).
+
+Next:
+- Backend Architect completes KDL-67 → Code Reviewer wakes on child completion → on confirmation, KDL-39 closes done → Step 8 (Docs) chains. On failure → escalate to Prasanna (loop 2 exhausted).
+
+Do not touch:
+- Same as previous handoffs.
+
+Blockers:
+- None (KDL-39 waits on KDL-67 verification only).
+
+---
+
+## Handoff — 2026-07-06 (Step 7 CLOSED: PASS verified)
+Agent: Code Reviewer
+Issue: KDL-39 — closed done
+
+- Gate Verifier (KDL-67, Backend Architect) confirmed loop-2 PASS: all 5 gate commands exit 0 + verdict consistency. Auto-Approval Protocol satisfied.
+- KDL-39 marked done. Step 8 (Docs) unblocked and chains next.
+- For Step 8 (Documentation agent): record the seeder's 3 extra modules (`types`, `categories`, `setting-fields`) beyond the arch doc's 6 (finding L2); M1–M3/L1–L3 in `.agents/STATUS.md` are queued non-blocking cleanups.
+- For Step 9 (E2E, Code Reviewer runs): full flow per arch doc — create role → assign → login → verify UI gating + 403s.
+
+Blockers: none.
