@@ -1,0 +1,22 @@
+{
+  "slug": "example",
+  "name": "Example",
+  "version": "1.0.0",
+  "description": "Example module",
+  "core": false,
+  "apiPrefix": "/api/example",
+  "permissions": [
+    "example"
+  ],
+  "nav": [
+    {
+      "label": "Example",
+      "path": "/example",
+      "icon": "Package",
+      "permission": "example:view"
+    }
+  ],
+  "dependsOn": [],
+  "queues": [],
+  "env": []
+}
