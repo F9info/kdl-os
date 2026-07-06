@@ -1,0 +1,15 @@
+{
+  "slug": "media",
+  "name": "Media",
+  "version": "1.0.0",
+  "description": "File upload and media library",
+  "core": true,
+  "apiPrefix": "/api/media",
+  "permissions": ["media"],
+  "nav": [
+    { "label": "Media", "path": "/media", "icon": "Image", "permission": "media:view" }
+  ],
+  "dependsOn": [],
+  "queues": [],
+  "env": ["MINIO_ENDPOINT", "MINIO_ACCESS_KEY", "MINIO_SECRET_KEY", "MINIO_BUCKET"]
+}

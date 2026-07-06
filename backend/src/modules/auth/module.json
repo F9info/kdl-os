@@ -1,0 +1,13 @@
+{
+  "slug": "auth",
+  "name": "Auth",
+  "version": "1.0.0",
+  "description": "Authentication, registration, and session management",
+  "core": true,
+  "apiPrefix": "/api/auth",
+  "permissions": [],
+  "nav": [],
+  "dependsOn": [],
+  "queues": [],
+  "env": ["JWT_SECRET"]
+}

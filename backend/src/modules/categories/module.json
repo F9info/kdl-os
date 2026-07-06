@@ -1,0 +1,13 @@
+{
+  "slug": "categories",
+  "name": "Categories",
+  "version": "1.0.0",
+  "description": "Taxonomy categories grouped under types",
+  "core": true,
+  "apiPrefix": "/api/categories",
+  "permissions": ["categories"],
+  "nav": [],
+  "dependsOn": ["types"],
+  "queues": [],
+  "env": []
+}

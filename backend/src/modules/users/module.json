@@ -1,0 +1,15 @@
+{
+  "slug": "users",
+  "name": "Users",
+  "version": "1.0.0",
+  "description": "User accounts, profile management, and soft-delete",
+  "core": true,
+  "apiPrefix": "/api/users",
+  "permissions": ["users"],
+  "nav": [
+    { "label": "Users", "path": "/users", "icon": "Users", "permission": "users:view" }
+  ],
+  "dependsOn": [],
+  "queues": [],
+  "env": []
+}

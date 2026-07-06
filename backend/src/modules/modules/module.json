@@ -1,0 +1,15 @@
+{
+  "slug": "modules",
+  "name": "Modules",
+  "version": "1.0.0",
+  "description": "Module plugin lifecycle management",
+  "core": true,
+  "apiPrefix": "/api/modules",
+  "permissions": ["modules"],
+  "nav": [
+    { "label": "Modules", "path": "/modules", "icon": "Package", "permission": "modules:view" }
+  ],
+  "dependsOn": [],
+  "queues": [],
+  "env": []
+}

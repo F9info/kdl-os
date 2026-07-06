@@ -1,0 +1,13 @@
+{
+  "slug": "types",
+  "name": "Types",
+  "version": "1.0.0",
+  "description": "Taxonomy types for categories and setting fields",
+  "core": true,
+  "apiPrefix": "/api/types",
+  "permissions": ["types"],
+  "nav": [],
+  "dependsOn": [],
+  "queues": [],
+  "env": []
+}

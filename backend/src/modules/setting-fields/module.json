@@ -1,0 +1,13 @@
+{
+  "slug": "setting-fields",
+  "name": "Setting Fields",
+  "version": "1.0.0",
+  "description": "Dynamic admin-defined setting field definitions",
+  "core": true,
+  "apiPrefix": "/api/setting-fields",
+  "permissions": ["setting-fields"],
+  "nav": [],
+  "dependsOn": ["types", "settings"],
+  "queues": [],
+  "env": []
+}

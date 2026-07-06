@@ -1,0 +1,17 @@
+{
+  "slug": "user-management",
+  "name": "User Management",
+  "version": "1.0.0",
+  "description": "RBAC roles, permissions matrix, and activity log",
+  "core": true,
+  "apiPrefix": "/api",
+  "permissions": ["roles", "permissions", "activity-log"],
+  "nav": [
+    { "label": "Roles", "path": "/user-management/roles", "icon": "Shield", "permission": "roles:view" },
+    { "label": "Permissions", "path": "/user-management/permissions", "icon": "Lock", "permission": "permissions:view" },
+    { "label": "Activity Log", "path": "/user-management/activity", "icon": "Activity", "permission": "activity-log:view" }
+  ],
+  "dependsOn": [],
+  "queues": [],
+  "env": []
+}

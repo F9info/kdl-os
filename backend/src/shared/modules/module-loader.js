@@ -49,6 +49,9 @@ export async function loadModules(app) {
 
     loadedManifests.set(manifest.slug, manifest);
 
+    // Core modules are always mounted directly in index.js — skip auto-mounting.
+    if (manifest.core) continue;
+
     const routesPath = join(MODULES_DIR, entry.name, 'routes.js');
     if (!existsSync(routesPath)) {
       logger.warn(`module-loader: no routes.js for "${manifest.slug}", registered as AVAILABLE only`);

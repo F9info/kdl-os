@@ -1,0 +1,15 @@
+{
+  "slug": "settings",
+  "name": "Settings",
+  "version": "1.0.0",
+  "description": "Application settings management",
+  "core": true,
+  "apiPrefix": "/api/settings",
+  "permissions": ["settings"],
+  "nav": [
+    { "label": "Settings", "path": "/settings", "icon": "Settings", "permission": "settings:view" }
+  ],
+  "dependsOn": [],
+  "queues": [],
+  "env": []
+}
