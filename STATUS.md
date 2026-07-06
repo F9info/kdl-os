@@ -707,3 +707,27 @@ Verified during review: `vitest run tests/module-plugin.test.js` 11/11 pass; use
 - L6: no unit tests for lifecycle service (install/enable/disable/uninstall guard matrix) — only manifest schema + gate covered.
 
 **Next:** Backend/Frontend Coder fixes H1-H3 (+ M1-M5 opportunistically), then Code Reviewer re-reviews. M6 → separate issue outside MODULE_PLUGIN_ARCH.
+
+---
+
+## 2026-07-06 — KDL-77 MODULE_PLUGIN_ARCH Step 7 re-review: PASS — GATE APPROVED (Code Reviewer Agent)
+
+**Re-review of KDL-80 (backend) + KDL-81 (frontend) fixes: PASS — zero open CRITICAL/HIGH. Fixes committed as `3024112`. Step 8 (E2E gate) unblocked.**
+
+All three HIGH findings verified fixed:
+- H1 ✅ AdminSidebar renders `nonCoreNav` from `useModules()` — non-core module nav items appear/disappear with enable/disable (core nav intentionally static; acceptable hybrid, E2E-compatible). Manifest nav permission strings converted colon→dot to match existing frontend `can()` convention.
+- H2 ✅ `user-management/module.json` apiPrefix → `/api/user-management`; verified all 10 manifests now pass `manifestSchema.safeParse` + slug/folder match.
+- H3 ✅ `installModule` imports and runs `<slug>/seed.js` inside the install transaction; seed errors abort install.
+
+MEDIUM fixes verified: M1 (install/uninstall transactional), M2 (settings PATCH via `validate` middleware → 422), M3 (moduleGate DB fallback on Redis outage), M4 (nav paths `/admin/<slug>` in manifests + generator), M5 (seeder validates via shared Zod schema).
+
+Gates re-run on the fixed tree: backend vitest **96/96**, `tsc --noEmit` exit 0, `prisma validate` OK.
+
+Still open (non-blocking, carried forward):
+- M6 (pre-existing, outside MODULE_PLUGIN_ARCH): frontend permission checks use dot format (`users.view`) while backend `resolvePermissions` emits colon (`users:view`) — non-bypass users fail every frontend `can()`/`PermissionGuard` check; UI works only via super-admin bypass. Needs its own issue: pick one format end-to-end.
+- LOW L1-L6 from the original review entry (negative-status caching, label builder edge case, install race → 500, uninstall cache invalidation, checklist not appended to README, no lifecycle-service unit tests).
+- New LOW: `user-management` manifest nav paths (`/user-management/roles`) don't match real pages (`/admin/roles`) — harmless while core nav is hardcoded, fix opportunistically.
+
+Note: `backend/Dockerfile`, `StatusBadge.tsx` fallback, and `frontend/e2e/module-plugin.spec.ts` (KDL-83 Step 8 prep) were present uncommitted in the tree and intentionally left out of the Step 7 fix commit.
+
+**Next:** Step 8 E2E gate (KDL-83) — remember: rebuild docker images + re-seed before running E2E (containers bake code at build).
