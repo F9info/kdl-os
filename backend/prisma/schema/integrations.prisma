@@ -1,0 +1,59 @@
+// Integrations module schema
+// Each model must be in this file only — never mix with other modules.
+
+enum IntegrationChannel {
+  EMAIL
+  SMS
+  WHATSAPP
+}
+
+enum MessageStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+model IntegrationProvider {
+  id          String             @id @default(cuid())
+  channel     IntegrationChannel
+  driver      String // "smtp" | "msg91" | "twilio" | "meta-cloud" | "gupshup"
+  name        String // display: "MSG91 Production"
+  credentials String // AES-256-GCM encrypted JSON blob — NEVER plaintext
+  config      Json? // non-secret driver config (sender id, from address, waba number)
+  is_active   Boolean            @default(false)
+  is_default  Boolean            @default(false) // one default per channel (enforce in service)
+  is_fallback Boolean            @default(false)
+  created_at  DateTime           @default(now())
+  updated_at  DateTime           @updatedAt
+
+  logs IntegrationLog[]
+
+  @@index([channel, is_active])
+  @@map("integration_providers")
+}
+
+model IntegrationLog {
+  id           String             @id @default(cuid())
+  provider_id  String?
+  channel      IntegrationChannel
+  recipient    String // masked at write time: p***@x.com / 98*****210
+  subject      String?
+  body_preview String? // first 120 chars, PII-scrubbed
+  status       MessageStatus      @default(QUEUED)
+  provider_ref String? // provider message id (webhook correlation)
+  error        String?
+  source       String? // "notifications", "auth.password-reset", "test"
+  attempts     Int                @default(0)
+  sent_at      DateTime?
+  delivered_at DateTime?
+  created_at   DateTime           @default(now())
+
+  provider IntegrationProvider? @relation(fields: [provider_id], references: [id], onDelete: SetNull)
+
+  @@index([channel, status])
+  @@index([provider_ref])
+  @@index([created_at])
+  @@map("integration_logs")
+}

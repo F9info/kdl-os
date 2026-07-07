@@ -1,3 +1,21 @@
+## 2026-07-07 — KDL-89 INTEGRATIONS Step 1: DONE ✅
+
+**Scaffold + Prisma schema + crypto.js complete.**
+
+| Item | Result |
+|---|---|
+| Scaffold | `npm run module:create -- --slug=integrations` — module.json, routes/controller/service/schema/seed, frontend page |
+| `backend/prisma/schema/integrations.prisma` | `IntegrationChannel` + `MessageStatus` enums; `IntegrationProvider` + `IntegrationLog` models, indexes, `@@map` per INTEGRATIONS_ARCH.md |
+| Migration | `20260707065023_add_integrations_module` applied clean; `prisma validate` exit 0, `migrate dev` no drift |
+| `crypto.js` | AES-256-GCM, `APP_ENCRYPTION_KEY` env (32-byte hex), `iv:tag:ciphertext` base64, fail-fast at import |
+| Tests | `crypto.test.js` — 6/6 pass (round-trip, IV randomness, wrong-key throws, missing/malformed key, bad payload) |
+| module.json | `env: ["APP_ENCRYPTION_KEY"]`, `queues: ["integrations"]` |
+| BLOCKERS.md | APP_ENCRYPTION_KEY blocker RESOLVED — key in `.env` (gitignored); placeholder added to `.env.example` |
+
+Gate: prisma validate ✅ · migrate dev clean ✅ · vitest 6/6 ✅
+
+---
+
 ## 2026-07-06 — KDL-79 MODULE_PLUGIN_ARCH Step 9: DONE ✅
 
 **Documentation complete. Commit ee42bd4.**

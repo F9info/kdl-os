@@ -1,6 +1,46 @@
 
 ---
 
+## ~~BLOCKER~~ RESOLVED (2026-07-07): KDL-88 Prerequisite missing — APP_ENCRYPTION_KEY not in .env
+
+**Resolution:** `APP_ENCRYPTION_KEY` (64-char hex) now present in root `.env` (gitignored, not committed). Placeholder + generation command added to `.env.example`. KDL-89 (Step 1) crypto.js implemented and tested against it.
+
+**Date:** 2026-07-07
+**Issue:** KDL-88 (Integrations Module — Email/SMS/WhatsApp transport)
+**Severity:** BLOCKER (hard prerequisite per INTEGRATIONS_ARCH.md; implementation cannot start)
+
+### Finding
+
+`APP_ENCRYPTION_KEY` (32-byte hex) is absent from `.env`. This key is the AES-256-GCM master key for storing provider credentials (SMTP password, MSG91 auth key, Twilio token, Meta Cloud permanent token, Gupshup API key). Without it:
+- `backend/src/modules/integrations/shared/crypto.js` cannot be initialised
+- Provider create/update endpoints would have no encryption key to use
+- Module manifest install-check `env: ["APP_ENCRYPTION_KEY"]` would fail at runtime
+
+Per INTEGRATIONS_ARCH.md §Credential Encryption and §Overview (Prerequisite clause): **if missing, write BLOCKERS.md and stop.**
+
+### Required action (unblock owner: Prasanna — human)
+
+Generate a cryptographically random 32-byte hex string and add it to `.env`:
+
+```sh
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Add the output as:
+```
+APP_ENCRYPTION_KEY=<64-char hex string>
+```
+
+Also add the placeholder to `.env.example` (without a real value) and to `backend/.env.example`.
+
+**Important:** Do NOT commit the real key to git. Rotate `.gitignore` if `.env` is not already listed.
+
+### Unblock path
+
+Human (Prasanna) adds `APP_ENCRYPTION_KEY` to `.env` → comments on KDL-88 → CEO/agent resumes implementation.
+
+---
+
 ## BLOCKER: KDL-41 Step 9 E2E gate FAIL — permission matrix unwrap bug (fix loop 1 of 2)
 
 **Date:** 2026-07-06

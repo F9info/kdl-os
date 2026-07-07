@@ -1,3 +1,28 @@
+## Handoff — 2026-07-07 (KDL-89 INTEGRATIONS Step 1 DONE ✅)
+Agent: Backend Architect (KDL-89)
+Issue: KDL-89 (parent KDL-88)
+
+Step 1 complete: integrations module scaffolded, Prisma schema migrated, credential crypto implemented + tested.
+
+### What was built
+- Scaffold: `backend/src/modules/integrations/` (module.json, routes, controller, service, schema, seed) + `frontend/src/app/admin/integrations/page.tsx`
+- `backend/prisma/schema/integrations.prisma`: enums `IntegrationChannel`/`MessageStatus`; models `IntegrationProvider` (`integration_providers`) + `IntegrationLog` (`integration_logs`) with all indexes per INTEGRATIONS_ARCH.md §Prisma Schema
+- Migration `20260707065023_add_integrations_module` applied clean
+- `backend/src/modules/integrations/shared/crypto.js`: AES-256-GCM, 12-byte IV, key from `APP_ENCRYPTION_KEY` (64-hex validated at import — fail fast), format `iv:tag:ciphertext` base64; exports `encrypt`/`decrypt`
+- `crypto.test.js`: 6/6 pass (round-trip, IV randomness, wrong-key throws via GCM auth, missing key, malformed key, malformed payload)
+- module.json: `env: ["APP_ENCRYPTION_KEY"]` (install fails without), `queues: ["integrations"]`
+
+### Env
+- `APP_ENCRYPTION_KEY` now in root `.env` (gitignored — value NOT committed). Placeholder + gen command in `.env.example`. BLOCKERS.md entry marked RESOLVED.
+
+### Gate
+`npx prisma validate` exit 0 ✅ · `npx prisma migrate dev` no drift ✅ · vitest crypto 6/6 ✅
+
+### Next (KDL-88 Step 2+)
+Driver contract (`drivers/<driver>.js` + registry), dispatch service + BullMQ queue per arch §Driver Contract / §Dispatch Service. Scaffolded routes/controller/service are still generator stubs — replaced in later steps.
+
+---
+
 ## Handoff — 2026-07-06 (KDL-79 MODULE_PLUGIN_ARCH Step 9 DONE ✅)
 Agent: Documentation (KDL-79)
 Issue: KDL-79

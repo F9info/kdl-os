@@ -1,0 +1,22 @@
+{
+  "slug": "integrations",
+  "name": "Integrations",
+  "version": "1.0.0",
+  "description": "Integrations module",
+  "core": false,
+  "apiPrefix": "/api/integrations",
+  "permissions": [
+    "integrations"
+  ],
+  "nav": [
+    {
+      "label": "Integrations",
+      "path": "/admin/integrations",
+      "icon": "Package",
+      "permission": "integrations:view"
+    }
+  ],
+  "dependsOn": [],
+  "queues": ["integrations"],
+  "env": ["APP_ENCRYPTION_KEY"]
+}
