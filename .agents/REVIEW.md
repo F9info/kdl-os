@@ -1656,3 +1656,67 @@ KDL-50 was created 2026-07-03 as the review gate for Steps 4+5. Its review subst
 Issue text expected "15 files / 87 tests" — that baseline predates Step 10, which removed 2 legacy-role tests. 85/85 is the correct current count (matches Step 10 handoff).
 
 **Noted, out of scope:** uncommitted working-tree changes on `auth/controller.js` + `auth/service.js` (login response `user.roles` slugs → `{id,name,slug}` objects) — another agent's in-flight post-Step-10 work; left untouched; current suite passes with them present.
+
+---
+
+# KDL-85 — Permission Format Unification + LOW Cleanup
+
+**Agent:** CEO (c71ed191) via KDL-85
+**Date:** 2026-07-07
+**Scope:** Frontend colon migration (M6), module lifecycle LOW fixes, last_login_at, E2E update
+**Verdict: DONE — all gates exit 0.**
+
+## Changes
+
+### M6 — Permission string format unified to colon end-to-end
+
+**Before:** Frontend `can()` and `PermissionGuard` calls used dot format (`users.view`, `roles.view`, etc). Backend `resolvePermissions` emits colon format (`users:view`). Non-bypass users saw "Permission Denied" on every protected page.
+
+**After:** All 16 frontend call sites migrated to colon format. `dynamicModuleItems` dot-conversion hack removed. All module.json manifests already used colon — no change needed.
+
+Files changed:
+- `frontend/src/components/layout/AdminSidebar.tsx` — 10 strings (FLAT_ITEMS × 2, GROUPS × 7, canViewSettings × 3, remove `.replace(':','.')`)
+- 9 admin page files — `PermissionGuard permission="X.Y"` → `"X:Y"` in each
+
+### RTL mocks fixed
+
+`UsersPage.test.tsx` and `MediaPage.test.tsx` were blocking on `PermissionGuard` because `/auth/me/permissions` mock was absent. Both tests now mock the endpoint with colon-format permissions. MediaPage also sets auth store `isAuthenticated: true`.
+
+**Gate:** `pnpm test` → **45/45, exit 0**
+
+### E2E: non-super-admin scenario (test 4b)
+
+Added test `4b` to `rbac.spec.ts`: viewer with `types:view` navigates to `/admin/settings/types` and sees the page content (no Permission Denied). Directly proves colon format works for non-bypass users.
+
+Updated test `3+4`: assertion corrected — viewer with `types:view` now correctly sees the "Application Settings" group (this was hidden before due to the bug; correct behavior post-fix).
+
+**Gate:** full E2E → **16/16, exit 0**
+
+### last_login_at update on login
+
+`backend/src/modules/auth/controller.js` login handler: fire-and-forget `prisma.user.update({ last_login_at: new Date() })` after successful auth. No latency impact.
+
+### Manifest nav path fixes
+
+`user-management/module.json`, `users/module.json`, `modules/module.json` nav paths corrected to match real frontend routes (`/admin/roles`, `/admin/users`, `/admin/modules`).
+
+### L1–L5 module lifecycle LOW fixes
+
+| # | Fix | File |
+|---|-----|------|
+| L1 | `getModuleStatus` caches `null` (AVAILABLE) as `''` → repeat lookups skip DB | `middleware/module-gate.js` |
+| L2 | `registerPermissions` label builder guards empty split segments (`filter(w => w.length > 0)`) | `modules/service.js`, `scripts/create-module.js` |
+| L3 | `installModule` wraps P2002 → 409 for concurrent-install race | `modules/service.js` |
+| L4 | `uninstallModule` calls `invalidateModuleCache(slug)` after delete | `modules/service.js` |
+| L5 | `create-module.js` appends New Module Checklist to `README.md` instead of console | `scripts/create-module.js` |
+
+L6 (no lifecycle-service unit tests) — deferred; out of scope for opportunistic pass.
+
+## Gate Summary
+
+| Command | Result |
+|---|---|
+| `frontend: pnpm exec tsc --noEmit` | exit 0 |
+| `frontend: pnpm test` | **45/45**, exit 0 |
+| `full E2E (16 tests)` | **16/16**, exit 0 |
+| `node --check` (4 backend files) | exit 0 |
