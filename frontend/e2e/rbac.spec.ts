@@ -6,6 +6,8 @@
  *  2. Role is assigned to a fresh test user via the API
  *  3. That user logs in through the UI
  *  4. UI gating: admin-only menu items hidden, visible items accessible
+ *  4b. PermissionGuard: non-super-admin with types:view can access types page
+ *  4c. Sidebar: non-super-admin with users:view only sees Users link, not Roles
  *  5. API gating: forbidden calls return 403 with { success: false, message: 'Forbidden' }
  *  6. Super admin bypasses all permission checks (incl. roles:delete, granted to no role)
  *  7. Suspended user's still-valid token is rejected with 403 'Account is inactive'
@@ -30,14 +32,18 @@ const ROLE_NAME = `E2E Viewer ${RUN}`
 const VIEWER_EMAIL = `e2e-viewer-${RUN}@e2e.test`
 const SUSPENDED_EMAIL = `e2e-suspended-${RUN}@e2e.test`
 const DELETED_EMAIL = `e2e-deleted-${RUN}@e2e.test`
+const USERS_VIEWER_EMAIL = `e2e-users-viewer-${RUN}@e2e.test`
 
 let api: APIRequestContext
 let adminToken: string
 let typesViewPermissionId: string
+let usersViewPermissionId: string
 let roleId: string
 let viewerUserId: string
 let suspendedUserId: string
 let deletedUserId: string
+let usersViewerRoleId: string
+let usersViewerUserId: string
 
 const authHeaders = (token: string) => ({ Authorization: `Bearer ${token}` })
 
@@ -85,21 +91,28 @@ test.beforeAll(async () => {
   expect(typesModule, 'seeded "types" permission module must exist').toBeTruthy()
   typesViewPermissionId = typesModule!.actions.view!
   expect(typesViewPermissionId).toBeTruthy()
+
+  const usersModule = matrix.find((m) => m.name === 'users')
+  expect(usersModule, 'seeded "users" permission module must exist').toBeTruthy()
+  usersViewPermissionId = usersModule!.actions.view!
+  expect(usersViewPermissionId).toBeTruthy()
 })
 
 test.afterAll(async () => {
   // Best-effort cleanup so the suite is re-runnable.
-  for (const id of [viewerUserId, suspendedUserId, deletedUserId]) {
+  for (const id of [viewerUserId, suspendedUserId, deletedUserId, usersViewerUserId]) {
     if (id) {
       await api
         .delete(`${API_URL}/users/${id}`, { headers: authHeaders(adminToken) })
         .catch(() => {})
     }
   }
-  if (roleId) {
-    await api
-      .delete(`${API_URL}/roles/${roleId}`, { headers: authHeaders(adminToken) })
-      .catch(() => {})
+  for (const id of [roleId, usersViewerRoleId]) {
+    if (id) {
+      await api
+        .delete(`${API_URL}/roles/${id}`, { headers: authHeaders(adminToken) })
+        .catch(() => {})
+    }
   }
   await api.dispose()
 })
@@ -206,6 +219,40 @@ test('4b. non-super-admin with types:view can access the PermissionGuard-protect
   // The page content must render — not a "Permission Denied" screen.
   await expect(page.getByRole('heading', { name: /types/i })).toBeVisible({ timeout: 10_000 })
   await expect(page.getByText('Permission Denied')).toHaveCount(0)
+})
+
+test('4c. non-super-admin with users:view sees Users link but not Roles link', async ({
+  page,
+}) => {
+  // Create a role with users:view only via the API (role-creation UI is already covered by test 1).
+  const roleRes = await api.post(`${API_URL}/roles`, {
+    headers: authHeaders(adminToken),
+    data: { name: `E2E UsersViewer ${RUN}`, permission_ids: [usersViewPermissionId] },
+  })
+  expect(roleRes.status(), await roleRes.text()).toBe(201)
+  const roleData = (await roleRes.json()).data
+  usersViewerRoleId = (roleData.role ?? roleData).id
+
+  usersViewerUserId = await createUser({
+    name: 'E2E Users Viewer',
+    email: USERS_VIEWER_EMAIL,
+    password: PASSWORD,
+  })
+  const assignRes = await api.patch(`${API_URL}/users/${usersViewerUserId}`, {
+    headers: authHeaders(adminToken),
+    data: { role_ids: [usersViewerRoleId] },
+  })
+  expect(assignRes.status(), await assignRes.text()).toBe(200)
+
+  await loginUi(page, USERS_VIEWER_EMAIL, PASSWORD)
+  await expect(page).toHaveURL(/\/admin\/dashboard/)
+
+  const sidebar = page.locator('aside')
+  // Has users:view — Users link must be visible.
+  await expect(sidebar.getByRole('link', { name: 'Users' })).toBeVisible()
+  // No roles:view — entire Access Control group (Roles, Permissions, Activity Log) must be absent.
+  await expect(sidebar.getByText('Access Control')).toHaveCount(0)
+  await expect(sidebar.getByRole('link', { name: 'Roles' })).toHaveCount(0)
 })
 
 test('5. API gating: allowed call 200, forbidden calls 403 with correct error shape', async () => {
