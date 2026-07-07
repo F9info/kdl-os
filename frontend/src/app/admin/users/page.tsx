@@ -340,7 +340,7 @@ export default function UsersPage() {
   const flatMatrix = matrix ?? []
 
   return (
-    <PermissionGuard permission="users.view">
+    <PermissionGuard permission="users:view">
     <div>
       <PageHeader
         title="Users"

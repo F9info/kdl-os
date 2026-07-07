@@ -7,9 +7,9 @@
   "apiPrefix": "/api/user-management",
   "permissions": ["roles", "permissions", "activity-log"],
   "nav": [
-    { "label": "Roles", "path": "/user-management/roles", "icon": "Shield", "permission": "roles:view" },
-    { "label": "Permissions", "path": "/user-management/permissions", "icon": "Lock", "permission": "permissions:view" },
-    { "label": "Activity Log", "path": "/user-management/activity", "icon": "Activity", "permission": "activity-log:view" }
+    { "label": "Roles", "path": "/admin/roles", "icon": "Shield", "permission": "roles:view" },
+    { "label": "Permissions", "path": "/admin/permissions", "icon": "Lock", "permission": "permissions:view" },
+    { "label": "Activity Log", "path": "/admin/activity-log", "icon": "Activity", "permission": "activity-log:view" }
   ],
   "dependsOn": [],
   "queues": [],

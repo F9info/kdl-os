@@ -251,7 +251,7 @@ export default function FieldsPage() {
   const formCategories = categoryOptions.filter((c) => !typeId || !c.type_id || c.type_id === typeId)
 
   return (
-    <PermissionGuard permission="setting-fields.view">
+    <PermissionGuard permission="setting-fields:view">
     <div>
       <PageHeader
         title="Fields"

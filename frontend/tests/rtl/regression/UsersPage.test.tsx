@@ -66,6 +66,11 @@ describe('UsersPage regression — SUPER_ADMIN role option gating (KDL-20 H4)', 
           data: { data: { matrix: [] } },
         } as any);
       }
+      if (url === '/auth/me/permissions') {
+        return Promise.resolve({
+          data: { data: { permissions: ['users:view', 'users:edit', 'users:create', 'users:delete'], roles: ['admin'], bypass: false } },
+        } as any);
+      }
       return Promise.resolve({ data: { data: {} } } as any);
     });
   }

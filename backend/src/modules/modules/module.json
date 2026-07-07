@@ -7,7 +7,7 @@
   "apiPrefix": "/api/modules",
   "permissions": ["modules"],
   "nav": [
-    { "label": "Modules", "path": "/modules", "icon": "Package", "permission": "modules:view" }
+    { "label": "Modules", "path": "/admin/modules", "icon": "Package", "permission": "modules:view" }
   ],
   "dependsOn": [],
   "queues": [],

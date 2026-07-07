@@ -76,7 +76,7 @@ export default function TypeSettingsPage() {
   })
 
   return (
-    <PermissionGuard permission="setting-fields.view">
+    <PermissionGuard permission="setting-fields:view">
     <div>
       <PageHeader
         title={data?.type?.name ?? 'Settings'}

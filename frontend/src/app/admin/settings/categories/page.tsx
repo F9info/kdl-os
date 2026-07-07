@@ -246,7 +246,7 @@ export default function CategoriesPage() {
   }
 
   return (
-    <PermissionGuard permission="categories.view">
+    <PermissionGuard permission="categories:view">
     <div>
       <PageHeader
         title="Categories"

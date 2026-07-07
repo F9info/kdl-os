@@ -1,6 +1,7 @@
 import * as authService from './service.js';
 import { successResponse, errorResponse } from '../../shared/utils/response.js';
 import { resolvePermissions } from '../user-management/shared/permission-resolver.js';
+import { prisma } from '../../config/database.js';
 
 const IS_PROD = process.env.NODE_ENV === 'production';
 
@@ -98,6 +99,7 @@ export const login = async (req, res, next) => {
     const refreshToken = authService.signRefreshToken({ userId: user.id });
     await authService.storeRefreshToken(user.id, refreshToken);
     setAuthCookies(res, accessToken, refreshToken);
+    prisma.user.update({ where: { id: user.id }, data: { last_login_at: new Date() } }).catch(() => {});
     return successResponse(res, { user: safeUser, accessToken });
   } catch (err) {
     next(err);

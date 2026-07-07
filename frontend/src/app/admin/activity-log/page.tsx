@@ -117,7 +117,7 @@ export default function ActivityLogPage() {
   const hasFilters = actorSearch || moduleFilter || fromDate || toDate
 
   return (
-    <PermissionGuard permission="activity-log.view">
+    <PermissionGuard permission="activity-log:view">
     <div>
       <PageHeader title="Activity Log" />
 

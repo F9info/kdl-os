@@ -181,14 +181,31 @@ test('3+4. limited user logs in; restricted menu hidden, visible items accessibl
   await expect(sidebar.getByRole('link', { name: 'Users' })).toHaveCount(0)
   await expect(sidebar.getByRole('link', { name: 'Media' })).toHaveCount(0)
   await expect(sidebar.getByText('Access Control')).toHaveCount(0)
-  await expect(sidebar.getByText('Application Settings')).toHaveCount(0)
   await expect(sidebar.getByRole('link', { name: 'Roles' })).toHaveCount(0)
   await expect(sidebar.getByRole('link', { name: 'Permissions' })).toHaveCount(0)
   await expect(sidebar.getByRole('link', { name: 'Activity Log' })).toHaveCount(0)
+  // Viewer has types:view — "Application Settings" group shows with only Types visible.
+  await expect(sidebar.getByText('Application Settings')).toBeVisible()
+  await expect(sidebar.getByRole('link', { name: 'Categories' })).toHaveCount(0)
+  await expect(sidebar.getByRole('link', { name: 'Fields' })).toHaveCount(0)
 
   // The one visible item actually navigates.
   await sidebar.getByRole('link', { name: 'Dashboard' }).click()
   await expect(page).toHaveURL(/\/admin\/dashboard/)
+})
+
+test('4b. non-super-admin with types:view can access the PermissionGuard-protected types page', async ({
+  page,
+}) => {
+  await loginUi(page, VIEWER_EMAIL, PASSWORD)
+  await expect(page).toHaveURL(/\/admin\/dashboard/)
+
+  // Navigate directly to the types admin page (guarded by PermissionGuard permission="types:view").
+  await page.goto('/admin/settings/types')
+
+  // The page content must render — not a "Permission Denied" screen.
+  await expect(page.getByRole('heading', { name: /types/i })).toBeVisible({ timeout: 10_000 })
+  await expect(page.getByText('Permission Denied')).toHaveCount(0)
 })
 
 test('5. API gating: allowed call 200, forbidden calls 403 with correct error shape', async () => {

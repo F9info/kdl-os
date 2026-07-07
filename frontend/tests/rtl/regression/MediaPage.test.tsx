@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '../../rtl/utils';
 import MediaPage from '@/app/admin/media/page';
+import { useAuthStore } from '@/stores/auth.store';
 
 vi.mock('@/lib/axios', () => ({
   default: { get: vi.fn(), post: vi.fn(), delete: vi.fn() },
@@ -35,14 +36,26 @@ const nullUrlMedia = {
 };
 
 function mockMedia(media: unknown[]) {
-  vi.mocked(api.get).mockResolvedValue({
-    data: { data: { media, pagination: { total: media.length, pages: 1 } } },
-  } as any);
+  vi.mocked(api.get).mockImplementation((url: string) => {
+    if (url === '/auth/me/permissions') {
+      return Promise.resolve({
+        data: { data: { permissions: ['media:view', 'media:create', 'media:delete'], roles: ['admin'], bypass: false } },
+      } as any);
+    }
+    return Promise.resolve({
+      data: { data: { media, pagination: { total: media.length, pages: 1 } } },
+    } as any);
+  });
 }
 
 describe('MediaPage regression — nullable URL guard (KDL-20 H5)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useAuthStore.setState({
+      accessToken: 'access-token',
+      isAuthenticated: true,
+      isLoading: false,
+    });
   });
 
   it('renders image preview when URL is present', async () => {

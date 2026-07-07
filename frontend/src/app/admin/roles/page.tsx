@@ -155,7 +155,7 @@ export default function RolesPage() {
   const deletingRole = data?.roles.find((r) => r.id === deleteId)
 
   return (
-    <PermissionGuard permission="roles.view">
+    <PermissionGuard permission="roles:view">
     <div>
       <PageHeader
         title="Roles"

@@ -136,7 +136,7 @@ export default function MediaPage() {
   ]
 
   return (
-    <PermissionGuard permission="media.view">
+    <PermissionGuard permission="media:view">
     <div>
       <PageHeader title="Media" />
 

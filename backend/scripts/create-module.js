@@ -5,7 +5,7 @@
  *   OR:  npm run module:create -- --slug=blog --name="Blog"
  */
 
-import { mkdir, writeFile, access } from 'node:fs/promises';
+import { mkdir, writeFile, readFile, access } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -55,6 +55,7 @@ async function write(p, content) {
 
 const pascal = slug
   .split('-')
+  .filter((w) => w.length > 0)
   .map((w) => w[0].toUpperCase() + w.slice(1))
   .join('');
 
@@ -187,18 +188,24 @@ export default function ${pascal}Page() {
 }
 `);
 
-// ── Print new module checklist ───────────────────────────────────────────────
+// ── Append new module checklist to README ─────────────────────────────────────
 
-console.log(`
-✅ Scaffold created for module "${slug}" (${name})
+const readmePath = join(moduleDir, 'README.md');
+const checklist = `# ${name} Module
 
-New Module Checklist — satisfy before the review gate:
-  [ ] manifest valid (Zod), slug matches folder + schema file + apiPrefix
-  [ ] all models in own prisma/schema/${slug}.prisma; migration applies clean
-  [ ] all routes behind moduleGate(slug) + authenticate + requirePermission
-  [ ] permissions registered via manifest only (never manual seeder edits)
-  [ ] every mutation calls writeActivity
-  [ ] frontend pages wrapped in ModuleGuard; nav via frontend manifest only
-  [ ] module works when OTHER modules are disabled
-  [ ] disable → re-enable round-trip leaves no orphan state
-`);
+## New Module Checklist
+
+Satisfy all items before the review gate:
+
+- [ ] manifest valid (Zod), slug matches folder + schema file + apiPrefix
+- [ ] all models in own prisma/schema/${slug}.prisma; migration applies clean
+- [ ] all routes behind moduleGate(slug) + authenticate + requirePermission
+- [ ] permissions registered via manifest only (never manual seeder edits)
+- [ ] every mutation calls writeActivity
+- [ ] frontend pages wrapped in ModuleGuard; nav via frontend manifest only
+- [ ] module works when OTHER modules are disabled
+- [ ] disable → re-enable round-trip leaves no orphan state
+`;
+
+await write(readmePath, checklist);
+console.log(`\n✅ Scaffold created for module "${slug}" (${name}). See ${readmePath} for checklist.`);

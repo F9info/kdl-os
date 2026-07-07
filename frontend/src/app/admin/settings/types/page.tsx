@@ -215,7 +215,7 @@ export default function TypesPage() {
   }
 
   return (
-    <PermissionGuard permission="types.view">
+    <PermissionGuard permission="types:view">
     <div>
       <PageHeader
         title="Types"

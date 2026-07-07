@@ -23,6 +23,7 @@ async function registerPermissions(manifest, tx = prisma) {
   for (const name of manifest.permissions ?? []) {
     const label = name
       .split(/[-_]/)
+      .filter((w) => w.length > 0)
       .map((w) => w[0].toUpperCase() + w.slice(1))
       .join(' ');
 
@@ -95,28 +96,38 @@ export async function installModule(slug, actorId) {
 
   checkEnvVars(manifest);
 
-  const mod = await prisma.$transaction(async (tx) => {
-    await registerPermissions(manifest, tx);
+  let mod;
+  try {
+    mod = await prisma.$transaction(async (tx) => {
+      await registerPermissions(manifest, tx);
 
-    // H3: run module seed.js if present (idempotent; errors abort the transaction)
-    const seedPath = join(MODULES_DIR, slug, 'seed.js');
-    if (existsSync(seedPath)) {
-      const seedMod = await import(seedPath);
-      const seedFn = seedMod.default ?? Object.values(seedMod).find((v) => typeof v === 'function');
-      if (typeof seedFn === 'function') await seedFn();
-    }
+      // H3: run module seed.js if present (idempotent; errors abort the transaction)
+      const seedPath = join(MODULES_DIR, slug, 'seed.js');
+      if (existsSync(seedPath)) {
+        const seedMod = await import(seedPath);
+        const seedFn = seedMod.default ?? Object.values(seedMod).find((v) => typeof v === 'function');
+        if (typeof seedFn === 'function') await seedFn();
+      }
 
-    return tx.module.create({
-      data: {
-        slug: manifest.slug,
-        name: manifest.name,
-        description: manifest.description ?? null,
-        version: manifest.version,
-        is_core: manifest.core ?? false,
-        status: 'INSTALLED',
-      },
+      return tx.module.create({
+        data: {
+          slug: manifest.slug,
+          name: manifest.name,
+          description: manifest.description ?? null,
+          version: manifest.version,
+          is_core: manifest.core ?? false,
+          status: 'INSTALLED',
+        },
+      });
     });
-  });
+  } catch (err) {
+    if (err.code === 'P2002') {
+      const e = new Error(`Module "${slug}" is already installed`);
+      e.status = 409;
+      throw e;
+    }
+    throw err;
+  }
 
   writeActivityAsync({
     actor: actorId,
@@ -251,6 +262,8 @@ export async function uninstallModule(slug, actorId) {
     if (manifest) await deregisterPermissions(manifest, tx);
     await tx.module.delete({ where: { slug } });
   });
+
+  await invalidateModuleCache(slug);
 
   writeActivityAsync({
     actor: actorId,

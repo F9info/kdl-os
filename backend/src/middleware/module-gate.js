@@ -6,7 +6,7 @@ const MODULE_CACHE_TTL = 60; // seconds
 export async function getModuleStatus(slug) {
   try {
     const cached = await redis.get(`module:status:${slug}`);
-    if (cached !== null) return cached;
+    if (cached !== null) return cached === '' ? null : cached;
   } catch {
     // Redis unavailable — fall through to DB
   }
@@ -15,12 +15,11 @@ export async function getModuleStatus(slug) {
   const mod = await prisma.module.findUnique({ where: { slug }, select: { status: true } });
   const status = mod?.status ?? null;
 
-  if (status !== null) {
-    try {
-      await redis.set(`module:status:${slug}`, status, 'EX', MODULE_CACHE_TTL);
-    } catch {
-      // Redis unavailable — skip cache write
-    }
+  try {
+    // Cache null (module not in DB) as empty string so repeat lookups skip the DB.
+    await redis.set(`module:status:${slug}`, status ?? '', 'EX', MODULE_CACHE_TTL);
+  } catch {
+    // Redis unavailable — skip cache write
   }
   return status;
 }

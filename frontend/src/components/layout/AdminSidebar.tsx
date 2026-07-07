@@ -63,8 +63,8 @@ interface NavGroup {
 
 const FLAT_ITEMS: NavLeaf[] = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-  { label: 'Users', href: '/admin/users', icon: Users, permission: 'users.view' },
-  { label: 'Media', href: '/admin/media', icon: Image, permission: 'media.view' },
+  { label: 'Users', href: '/admin/users', icon: Users, permission: 'users:view' },
+  { label: 'Media', href: '/admin/media', icon: Image, permission: 'media:view' },
 ]
 
 const GROUPS: NavGroup[] = [
@@ -72,18 +72,18 @@ const GROUPS: NavGroup[] = [
     label: 'Access Control',
     icon: Shield,
     children: [
-      { label: 'Roles', href: '/admin/roles', icon: Shield, permission: 'roles.view' },
-      { label: 'Permissions', href: '/admin/permissions', icon: KeyRound, permission: 'permissions.view' },
-      { label: 'Activity Log', href: '/admin/activity-log', icon: ClipboardList, permission: 'activity-log.view' },
+      { label: 'Roles', href: '/admin/roles', icon: Shield, permission: 'roles:view' },
+      { label: 'Permissions', href: '/admin/permissions', icon: KeyRound, permission: 'permissions:view' },
+      { label: 'Activity Log', href: '/admin/activity-log', icon: ClipboardList, permission: 'activity-log:view' },
     ],
   },
   {
     label: 'Application Settings',
     icon: UserCog,
     children: [
-      { label: 'Types', href: '/admin/settings/types', icon: ListChecks, permission: 'types.view' },
-      { label: 'Categories', href: '/admin/settings/categories', icon: Briefcase, permission: 'categories.view' },
-      { label: 'Fields', href: '/admin/settings/fields', icon: SlidersHorizontal, permission: 'setting-fields.view' },
+      { label: 'Types', href: '/admin/settings/types', icon: ListChecks, permission: 'types:view' },
+      { label: 'Categories', href: '/admin/settings/categories', icon: Briefcase, permission: 'categories:view' },
+      { label: 'Fields', href: '/admin/settings/fields', icon: SlidersHorizontal, permission: 'setting-fields:view' },
     ],
   },
 ]
@@ -96,7 +96,7 @@ export function AdminSidebar() {
   const pathname = usePathname()
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
 
-  const canViewSettings = can('types.view') || can('categories.view') || can('setting-fields.view')
+  const canViewSettings = can('types:view') || can('categories:view') || can('setting-fields:view')
 
   // Active types become top-level menu items automatically — one per type,
   // each linking to its own settings page. New types appear as soon as created.
@@ -138,11 +138,8 @@ export function AdminSidebar() {
 
   const visibleFlat = FLAT_ITEMS.filter((item) => !item.permission || can(item.permission))
 
-  // Non-core module nav items — appear/disappear as modules are enabled/disabled.
-  // Permission string from manifest uses colon format (e.g. 'example:view'); convert
-  // to dot format to match can() expectations consistent with FLAT_ITEMS.
   const dynamicModuleItems = nonCoreNav.filter(
-    (item) => !item.permission || can(item.permission.replace(':', '.'))
+    (item) => !item.permission || can(item.permission)
   )
   const visibleGroups = GROUPS.map((group) => ({
     ...group,

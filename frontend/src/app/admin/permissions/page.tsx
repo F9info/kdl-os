@@ -142,7 +142,7 @@ export default function PermissionsPage() {
   const deletingModule = matrix?.find((m) => m.id === deleteId)
 
   return (
-    <PermissionGuard permission="permissions.view">
+    <PermissionGuard permission="permissions:view">
     <div>
       <PageHeader
         title="Permissions"
