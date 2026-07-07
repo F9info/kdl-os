@@ -13,6 +13,10 @@ export const deleteFile = async (objectName) => {
   await minio.removeObject(BUCKET, objectName);
 };
 
+export const deleteFiles = async (objectNames) => {
+  await Promise.all(objectNames.map((name) => minio.removeObject(BUCKET, name)));
+};
+
 export const getFileUrl = async (objectName, expiry = 7 * 24 * 60 * 60) => {
   // Generated against the public endpoint so the returned URL is browser-reachable.
   return minioPublic.presignedGetObject(BUCKET, objectName, expiry);

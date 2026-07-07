@@ -866,44 +866,164 @@ Requires `SUPER_ADMIN`.
 
 ### Media — `/api/media`
 
-Requires authentication (any role).
+Full media manager with folders, image variants, trash, and usage tracking. Requires authentication; all routes require `media` permission.
 
 #### `POST /api/media/upload`
 
-Upload a file. Allowed types: `image/jpeg`, `image/png`, `image/webp`, `image/gif`, `application/pdf`. Max size: 10MB.
+Upload one or more files. Allowed types and max size driven by `AppSetting` (`media.allowed_mime_types`, `media.max_file_size_mb`). Executables always rejected. Images undergo magic-byte validation (sharp) — fake images return 422. Images are asynchronously processed by the variant worker (BullMQ + sharp) to produce `thumb/small/medium/large` webp variants.
 
-**Request:** `multipart/form-data`, field name `file`.
+**Request:** `multipart/form-data`, field name `files` (up to 20 files). Single-file backward-compat alias: `POST /api/media/upload/single` with field `file`.
+
+**Body (optional):** `folder_id` — place uploads directly into a folder.
 
 **Response 201:**
 ```json
 {
   "success": true,
   "data": {
-    "id": "...",
-    "filename": "uuid.jpg",
-    "original_name": "photo.jpg",
-    "mime_type": "image/jpeg",
-    "size": 204800,
-    "url": "https://minio.../presigned-url..."
+    "media": [
+      {
+        "id": "...",
+        "original_name": "photo.jpg",
+        "mime_type": "image/jpeg",
+        "size": 204800,
+        "type": "IMAGE",
+        "width": 1920,
+        "height": 1080,
+        "url": "https://minio.../presigned-url",
+        "variants": null,
+        "folder_id": null
+      }
+    ]
   }
 }
 ```
 
-`url` is a fresh 7-day presigned URL generated on each response (not stored in DB).
+`url` and `variants.*` are fresh presigned URLs on each response (not stored in DB). `variants` is `null` until the worker completes.
 
 ---
 
 #### `GET /api/media`
 
-List the authenticated user's media files.
+List media files (excludes trashed).
 
-**Query:** `?page=1&limit=20`
+**Query:**
+| Param | Type | Description |
+|---|---|---|
+| `page` | number | Default 1 |
+| `limit` | number | Default 20 |
+| `folder_id` | string\|`null` | Filter by folder (`null` = root) |
+| `type` | `IMAGE\|VIDEO\|AUDIO\|DOCUMENT\|OTHER` | Filter by type |
+| `search` | string | Search name/title/alt_text |
+| `date_from` | ISO date | Created after |
+| `date_to` | ISO date | Created before |
+| `sort` | `created_at_desc\|created_at_asc\|name_asc\|name_desc\|size_desc` | Sort order |
+
+---
+
+#### `GET /api/media/:id`
+
+Get a single media file by ID.
+
+---
+
+#### `PATCH /api/media/:id`
+
+Update metadata.
+
+**Body:** `title`, `alt_text`, `caption`, `original_name` (all optional strings).
 
 ---
 
 #### `DELETE /api/media/:id`
 
-Delete a media file and remove from storage.
+Soft-delete (move to trash). Returns **409** if file has active usages.
+
+---
+
+#### `POST /api/media/bulk-delete`
+
+Soft-delete multiple files.
+
+**Body:** `{ "media_ids": ["id1", "id2"] }`
+
+Returns **409** with `detail` array if any files are in use.
+
+---
+
+#### `POST /api/media/move`
+
+Move files between folders.
+
+**Body:** `{ "media_ids": ["id1"], "folder_id": "folder-uuid" | null }`
+
+---
+
+### Folders — `/api/media/folders`
+
+#### `GET /api/media/folders`
+
+List all folders with child/media counts.
+
+#### `POST /api/media/folders`
+
+Create a folder.
+
+**Body:** `{ "name": "Photos", "parent_id": "parent-uuid" | null }`
+
+Max depth: 6 levels. Returns **409** if name already exists in parent.
+
+#### `PATCH /api/media/folders/:id`
+
+Rename or reparent a folder.
+
+**Body:** `{ "name": "...", "parent_id": "..." | null }` (all optional).
+
+Returns **422** on cycle or depth violation.
+
+#### `DELETE /api/media/folders/:id`
+
+Delete a folder. Returns **409** if not empty unless `?cascade=true` is passed. Cascade soft-deletes all contained media (does not hard-delete storage).
+
+---
+
+### Trash — `/api/media/trash`
+
+#### `GET /api/media/trash`
+
+List trashed files.
+
+#### `POST /api/media/trash/restore`
+
+Restore files from trash.
+
+**Body:** `{ "media_ids": ["id1"] }`
+
+#### `DELETE /api/media/trash/purge`
+
+Permanently delete all trashed files from DB and MinIO storage. Activity-logged.
+
+---
+
+### Usage Tracking — `/api/media/usage`
+
+#### `POST /api/media/usage/register`
+
+Register a file as in-use by an entity (prevents deletion).
+
+**Body:** `{ "media_id": "...", "entity": "user.avatar", "entity_id": "user-uuid" }`
+
+Idempotent (upsert).
+
+#### `POST /api/media/usage/release`
+
+Release a usage record.
+
+**Body:** `{ "media_id": "...", "entity": "user.avatar", "entity_id": "user-uuid" }`
+
+#### `GET /api/media/:id/usage`
+
+Get all usage records for a file.
 
 ---
 

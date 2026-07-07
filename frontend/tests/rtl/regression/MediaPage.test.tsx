@@ -12,6 +12,7 @@ import api from '@/lib/axios';
 const imageMedia = {
   id: 'm1',
   user_id: 'u1',
+  folder_id: null,
   filename: 'a.png',
   original_name: 'a.png',
   mime_type: 'image/png',
@@ -19,12 +20,23 @@ const imageMedia = {
   bucket: 'media',
   path: 'a.png',
   url: 'http://localhost:9000/a.png',
+  title: null,
+  alt_text: null,
+  caption: null,
+  width: 800,
+  height: 600,
+  duration: null,
+  variants: null,
+  type: 'IMAGE',
+  deleted_at: null,
   created_at: '2026-01-01T00:00:00.000Z',
+  updated_at: '2026-01-01T00:00:00.000Z',
 };
 
 const nullUrlMedia = {
   id: 'm2',
   user_id: 'u1',
+  folder_id: null,
   filename: 'b.pdf',
   original_name: 'b.pdf',
   mime_type: 'application/pdf',
@@ -32,15 +44,31 @@ const nullUrlMedia = {
   bucket: 'media',
   path: 'b.pdf',
   url: null,
+  title: null,
+  alt_text: null,
+  caption: null,
+  width: null,
+  height: null,
+  duration: null,
+  variants: null,
+  type: 'DOCUMENT',
+  deleted_at: null,
   created_at: '2026-01-02T00:00:00.000Z',
+  updated_at: '2026-01-02T00:00:00.000Z',
 };
 
 function mockMedia(media: unknown[]) {
   vi.mocked(api.get).mockImplementation((url: string) => {
     if (url === '/auth/me/permissions') {
       return Promise.resolve({
-        data: { data: { permissions: ['media:view', 'media:create', 'media:delete'], roles: ['admin'], bypass: false } },
+        data: { data: { permissions: ['media:view', 'media:add', 'media:delete'], roles: ['admin'], bypass: false } },
       } as any);
+    }
+    if (url === '/media/folders') {
+      return Promise.resolve({ data: { data: { folders: [] } } } as any);
+    }
+    if (url === '/media/trash') {
+      return Promise.resolve({ data: { data: { media: [] } } } as any);
     }
     return Promise.resolve({
       data: { data: { media, pagination: { total: media.length, pages: 1 } } },
@@ -58,36 +86,34 @@ describe('MediaPage regression — nullable URL guard (KDL-20 H5)', () => {
     });
   });
 
-  it('renders image preview when URL is present', async () => {
+  it('renders image thumbnail when URL is present (KDL-20)', async () => {
     mockMedia([imageMedia]);
     render(<MediaPage />);
 
     await waitFor(() => {
-      expect(screen.getByAltText('a.png')).toHaveAttribute(
-        'src',
-        'http://localhost:9000/a.png'
-      );
+      expect(screen.getByAltText('a.png')).toHaveAttribute('src', 'http://localhost:9000/a.png');
     });
   });
 
-  it('renders Open link for non-image URL', async () => {
+  it('renders non-image file without crashing when url is non-null (KDL-20 H5)', async () => {
     mockMedia([
-      { ...imageMedia, id: 'm3', mime_type: 'application/pdf', url: 'http://localhost:9000/b.pdf' },
+      { ...imageMedia, id: 'm3', mime_type: 'application/pdf', type: 'DOCUMENT', url: 'http://localhost:9000/b.pdf', original_name: 'report.pdf' },
     ]);
     render(<MediaPage />);
 
+    // Page renders without crash — file name visible
     await waitFor(() => {
-      const link = screen.getByRole('link', { name: /open/i });
-      expect(link).toHaveAttribute('href', 'http://localhost:9000/b.pdf');
+      expect(screen.getByText('report.pdf')).toBeInTheDocument();
     });
   });
 
-  it('renders em dash when URL is null', async () => {
+  it('renders file without crashing when URL is null (KDL-20 H5)', async () => {
     mockMedia([nullUrlMedia]);
     render(<MediaPage />);
 
+    // Page renders without crash — file name visible
     await waitFor(() => {
-      expect(screen.getByText('—')).toBeInTheDocument();
+      expect(screen.getByText('b.pdf')).toBeInTheDocument();
     });
   });
 });

@@ -21,6 +21,7 @@ export const updateUserSchema = z.object({
   role_ids: z.array(z.string()).min(1, 'Assign at least one role'),
   status: z.enum(['ACTIVE', 'SUSPENDED', 'PENDING']),
   is_active: z.boolean(),
+  avatar_media_id: z.string().nullable().optional(),
 })
 
 export type UpdateUserFormData = z.infer<typeof updateUserSchema>

@@ -12,6 +12,7 @@ import { logger } from './shared/utils/logger.js';
 import { ensureBucketExists } from './shared/services/storage.service.js';
 
 import { emailWorker } from './shared/workers/email.worker.js';
+import { mediaWorker } from './modules/media/media.worker.js';
 
 import authRoutes from './modules/auth/routes.js';
 import userRoutes from './modules/users/routes.js';
@@ -77,6 +78,7 @@ ensureBucketExists()
 const shutdown = async () => {
   logger.info('Shutting down...');
   await emailWorker.close();
+  await mediaWorker.close();
   server.close(async () => {
     await prisma.$disconnect();
     redis.disconnect();

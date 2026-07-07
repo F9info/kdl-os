@@ -228,7 +228,9 @@ users            id, name, email, password_hash, role(enum), is_active, status(U
 refresh_tokens   id, user_id, token_hash, expires_at, revoked
 password_reset_tokens  id, user_id, token_hash, expires_at, used
 app_settings     id, key, value, type, description, is_public
-media            id, user_id, filename, original_name, mime_type, size, bucket, path, url
+media            id, user_id, folder_id?, filename, original_name, mime_type, size, bucket, path, type(MediaType), title?, alt_text?, caption?, width?, height?, duration?, variants(Json?), deleted_at?
+media_folders    id, name, parent_id?(self-ref), created_by — @@unique([parent_id, name]); max depth 6
+media_usages     id, media_id, entity, entity_id — @@unique([media_id, entity, entity_id]); blocks delete when present
 types            id, name, slug, is_active
 categories       id, name, slug, type_id, is_active
 setting_fields   id, field_name, slug, input_type, value, alt_text, options, type_id, category_id, sort
@@ -348,6 +350,10 @@ All 6 phases are complete. The following are known open items from code reviews:
 - Never allow ADMIN role to set `role: 'SUPER_ADMIN'` on any user — validate that ADMIN callers cannot assign or interact with SUPER_ADMIN-level users in the users module
 - Refresh tokens MUST be revoked on use (token rotation) — issue a new refresh token and revoke the old one in the /refresh handler; reusing the same token until expiry is a 7-day replay window
 - Never store MinIO presigned URLs in the database — they expire (default 7 days); store only the object path and generate presigned URLs on demand when serving media responses
+- Media module uses a BullMQ worker (`media.worker.js`, queue name `'media'`) to generate image variants (thumb/small/medium/large as webp) — `variants` field on Media is `null` until the worker completes; clients should poll or handle null gracefully
+- Media delete is always soft (sets `deleted_at`); hard delete only via `DELETE /api/media/trash/purge`; never cascade hard-delete from folder delete
+- Files with active `MediaUsage` records cannot be soft-deleted (409); call `POST /api/media/usage/release` first
+- Multer `fileFilter` is synchronous — only reject executables there; all other MIME + size validation happens in `service.js` after the upload lands in memory
 
 - Never store access tokens or refresh tokens in `localStorage` — XSS payloads can steal them; access tokens belong in memory (Zustand non-persisted state), refresh tokens belong in httpOnly cookies set by the server
 - Never set session cookies with `document.cookie` — use httpOnly flag (server-set) so JavaScript cannot read them; middleware.ts can still read httpOnly cookies server-side

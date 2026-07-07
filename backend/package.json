@@ -18,14 +18,14 @@
     "module:create": "node scripts/create-module.js"
   },
   "dependencies": {
-    "dotenv": "^16.4.0",
-    "@prisma/client": "^7.0.0",
     "@prisma/adapter-pg": "^7.0.0",
+    "@prisma/client": "^7.0.0",
     "@sentry/node": "^8.0.0",
     "bcryptjs": "^2.4.3",
     "bullmq": "^5.0.0",
     "chromadb": "^1.9.0",
     "cors": "^2.8.5",
+    "dotenv": "^16.4.0",
     "express": "^5.0.0",
     "express-rate-limit": "^7.0.0",
     "helmet": "^8.0.0",
@@ -37,6 +37,7 @@
     "nodemailer": "^6.9.0",
     "pg": "^8.11.0",
     "prisma": "^7.0.0",
+    "sharp": "^0.35.3",
     "winston": "^3.13.0",
     "zod": "^3.23.0"
   },

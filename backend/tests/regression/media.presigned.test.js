@@ -9,8 +9,10 @@ vi.mock('../../src/config/database.js', () => ({
       findMany: vi.fn(),
       count: vi.fn(),
       findFirst: vi.fn(),
+      update: vi.fn(),
       delete: vi.fn(),
     },
+    appSetting: { findUnique: vi.fn() },
   },
 }));
 
@@ -18,6 +20,29 @@ vi.mock('../../src/shared/services/storage.service.js', () => ({
   uploadFile: vi.fn().mockResolvedValue('https://presigned-old.example.com/1'),
   getFileUrl: vi.fn().mockResolvedValue('https://presigned-fresh.example.com/2'),
   deleteFile: vi.fn().mockResolvedValue({}),
+  deleteFiles: vi.fn().mockResolvedValue({}),
+}));
+
+vi.mock('../../src/modules/media/settings.js', () => ({
+  getUploadSettings: vi.fn().mockResolvedValue({
+    maxFileSizeMb: 10,
+    maxFileSizeBytes: 10 * 1024 * 1024,
+    allowedMimes: new Set(['image/png', 'image/jpeg']),
+  }),
+}));
+
+vi.mock('sharp', () => ({
+  default: vi.fn(() => ({
+    metadata: vi.fn(async () => ({ width: 200, height: 200 })),
+  })),
+}));
+
+vi.mock('../../src/modules/media/media.queue.js', () => ({
+  enqueueVariantJob: vi.fn(),
+}));
+
+vi.mock('../../src/modules/user-management/shared/activity-logger.js', () => ({
+  writeActivityAsync: vi.fn(),
 }));
 
 const mockFile = (overrides = {}) => ({

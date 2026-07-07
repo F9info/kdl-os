@@ -21,6 +21,7 @@ import { ErrorAlert } from '@/components/shared/ErrorAlert'
 import { FormField } from '@/components/shared/FormField'
 import { PermissionMatrix } from '@/components/shared/PermissionMatrix'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { MediaPicker } from '@/components/shared/MediaPicker'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
@@ -61,6 +62,7 @@ export default function UsersPage() {
   const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null)
   const [editTab, setEditTab] = useState<EditTab>('details')
   const [overrides, setOverrides] = useState<OverrideState>({})
+  const [avatarPickerOpen, setAvatarPickerOpen] = useState(false)
   const debouncedSearch = useDebounce(search)
 
   const { data, isLoading } = useQuery({
@@ -621,9 +623,46 @@ export default function UsersPage() {
               </div>
             </FormField>
 
+            <FormField label="Avatar">
+              <div className="flex items-center gap-3">
+                {editUser?.avatar_media_id ? (
+                  <span className="text-xs text-muted-foreground">Media ID: {editUser.avatar_media_id}</span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">No avatar set</span>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAvatarPickerOpen(true)}
+                >
+                  Choose from Media
+                </Button>
+                {editUser?.avatar_media_id && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setValue('avatar_media_id', null)}
+                  >
+                    Remove
+                  </Button>
+                )}
+              </div>
+            </FormField>
+
             {updateMutation.error && <ErrorAlert error={updateMutation.error} />}
           </form>
         )}
+
+        <MediaPicker
+          open={avatarPickerOpen}
+          onClose={() => setAvatarPickerOpen(false)}
+          onSelect={(media) => {
+            if (media[0]) setValue('avatar_media_id', media[0].id)
+          }}
+          typeFilter="IMAGE"
+        />
 
         {editTab === 'overrides' && (
           <div className="space-y-4">
