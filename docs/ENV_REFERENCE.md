@@ -162,3 +162,31 @@ These variables are specific to the `ai-services/` Express process (`ai-services
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `SENTRY_DSN` | No | _(none)_ | Sentry Data Source Name. Backend and frontend both read this to send error traces. Leave blank to disable Sentry. |
+
+---
+
+## Integrations Module
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `APP_ENCRYPTION_KEY` | Yes (if Integrations installed) | _(none)_ | 32-byte encryption key for AES-256-GCM encryption of provider credentials. Must be a 64-character lowercase hex string. Required at startup — the backend crashes immediately if missing or malformed when the Integrations module is loaded. **Must not be committed to version control.** |
+
+### How to generate
+
+```bash
+openssl rand -hex 32
+```
+
+Example output (never use this value):
+```
+a3f1c2e4b5d67890abcdef1234567890abcdef1234567890abcdef1234567890
+```
+
+Set this in `.env`:
+```
+APP_ENCRYPTION_KEY=<your-64-char-hex-string>
+```
+
+### Rotation warning
+
+**Changing `APP_ENCRYPTION_KEY` orphans all stored provider credentials.** Every `IntegrationProvider` row has its `credentials` column encrypted with the current key. Rotating the key without re-encrypting existing rows means all providers fail at send time with a decryption error. After rotation, all providers must be re-entered via the Integrations UI (Settings → Integrations → edit each provider and save credentials again).

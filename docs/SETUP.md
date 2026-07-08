@@ -227,6 +227,81 @@ See `docs/ENV_REFERENCE.md` for full descriptions.
 
 ---
 
+## Integrations Module — Webhook Setup
+
+The Integrations module receives delivery status callbacks from providers at:
+
+```
+GET  /api/integrations/webhooks/:driver   (challenge verification — Meta Cloud only)
+POST /api/integrations/webhooks/:driver   (delivery status events — all drivers)
+```
+
+Replace `:driver` with the driver slug: `meta-cloud`, `msg91`, `twilio`, or `gupshup`.
+
+**Your webhook base URL must be publicly reachable** — providers cannot call `localhost`. Use a tunnel (`ngrok`/`cloudflared`) in development.
+
+```
+# Example (production)
+https://app.yourdomain.com/api/integrations/webhooks/meta-cloud
+https://app.yourdomain.com/api/integrations/webhooks/msg91
+https://app.yourdomain.com/api/integrations/webhooks/twilio
+https://app.yourdomain.com/api/integrations/webhooks/gupshup
+```
+
+---
+
+### Meta Cloud (WhatsApp Business Cloud API)
+
+1. In the [Meta for Developers console](https://developers.facebook.com), open your App → **WhatsApp → Configuration**.
+2. Under **Webhook**, click **Edit**.
+3. Set **Callback URL** to:
+   ```
+   https://app.yourdomain.com/api/integrations/webhooks/meta-cloud
+   ```
+4. Set **Verify token** to the same string stored in your provider's `config.verify_token` field (set when creating the provider in the UI).
+5. Click **Verify and Save** — Meta issues a GET request with `hub.challenge`; the server echoes it back to complete verification.
+6. Subscribe to at least the `messages` webhook field to receive delivery status updates.
+
+---
+
+### MSG91
+
+1. Log in to [MSG91 dashboard](https://control.msg91.com) → **Webhook** (under your account settings).
+2. Set the **Delivery URL** to:
+   ```
+   https://app.yourdomain.com/api/integrations/webhooks/msg91
+   ```
+3. No GET challenge step — MSG91 uses HMAC-SHA256 signature verification on POST payloads. The signature key is the API key stored in the provider's credentials.
+4. Save and send a test SMS to confirm the webhook fires.
+
+---
+
+### Twilio (SMS)
+
+1. In the [Twilio Console](https://console.twilio.com), open **Phone Numbers → Manage → Active numbers** and select your number.
+2. Under **Messaging**, set **A message comes in** → **Webhook** URL to:
+   ```
+   https://app.yourdomain.com/api/integrations/webhooks/twilio
+   ```
+   Method: `HTTP POST`.
+3. For delivery status callbacks, also set **Status callback URL** (same URL) under the Messaging section.
+4. Twilio signs requests with the `X-Twilio-Signature` header using your Auth Token. The server validates this automatically using the provider's stored credentials.
+
+---
+
+### Gupshup (WhatsApp)
+
+1. Log in to your [Gupshup dashboard](https://www.gupshup.io) → open your WhatsApp app.
+2. Navigate to **Settings → Webhooks**.
+3. Set the callback URL to:
+   ```
+   https://app.yourdomain.com/api/integrations/webhooks/gupshup
+   ```
+4. Gupshup signs POST payloads; the server verifies the signature against the stored API key.
+5. Save and use **Test Webhook** to confirm connectivity.
+
+---
+
 ## Common Issues
 
 **`prisma generate` not found**

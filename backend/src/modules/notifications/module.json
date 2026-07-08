@@ -1,0 +1,22 @@
+{
+  "slug": "notifications",
+  "name": "Notifications",
+  "version": "1.0.0",
+  "description": "Notifications module",
+  "core": false,
+  "apiPrefix": "/api/notifications",
+  "permissions": [
+    "notifications"
+  ],
+  "nav": [
+    {
+      "label": "Notifications",
+      "path": "/admin/notifications",
+      "icon": "Package",
+      "permission": "notifications:view"
+    }
+  ],
+  "dependsOn": [],
+  "queues": [],
+  "env": []
+}

@@ -1027,6 +1027,228 @@ Get all usage records for a file.
 
 ---
 
+### Integrations — `/api/integrations`
+
+Plugin module (non-core). All endpoints require the `integrations` module to be **ENABLED** — requests to a disabled module return `403 Module not enabled`. Webhook endpoints have no auth requirement (public inbound); all provider/log endpoints require `Authorization: Bearer <accessToken>`.
+
+**Provider response shape** (credentials are never returned — only `credentials_set: true`):
+```json
+{
+  "id": "clx...",
+  "channel": "SMS",
+  "driver": "msg91",
+  "name": "MSG91 Production",
+  "config": { "sender_id": "KDLAPP" },
+  "is_active": true,
+  "is_default": true,
+  "is_fallback": false,
+  "credentials_set": true,
+  "created_at": "2026-07-01T10:00:00.000Z",
+  "updated_at": "2026-07-01T10:00:00.000Z"
+}
+```
+
+---
+
+#### `GET /api/integrations/providers`
+
+Required permission: `integrations:view`
+
+List all configured providers ordered by channel then creation date.
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      { "id": "...", "channel": "SMS", "driver": "msg91", "name": "MSG91 Production", "config": {}, "is_active": true, "is_default": true, "is_fallback": false, "credentials_set": true, "created_at": "...", "updated_at": "..." }
+    ]
+  }
+}
+```
+
+---
+
+#### `POST /api/integrations/providers`
+
+Required permission: `integrations:add`
+
+Create a new integration provider. Credentials are encrypted with AES-256-GCM before storage.
+
+**Body:**
+```json
+{
+  "channel": "SMS",
+  "driver": "msg91",
+  "name": "MSG91 Production",
+  "credentials": { "api_key": "..." },
+  "config": { "sender_id": "KDLAPP" },
+  "is_active": true,
+  "is_default": true,
+  "is_fallback": false
+}
+```
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `channel` | Yes | `EMAIL` \| `SMS` \| `WHATSAPP` |
+| `driver` | Yes | `smtp` \| `msg91` \| `twilio` \| `meta-cloud` \| `gupshup` |
+| `name` | Yes | 1–100 chars. Display name. |
+| `credentials` | Yes | Driver-specific secret object — stored encrypted, never returned. |
+| `config` | No | Non-secret driver config (sender ID, from address, WABA number). Stored plaintext. |
+| `is_active` | No | Default `false`. Only active providers receive dispatched messages. |
+| `is_default` | No | Default `false`. At most one default per channel — `409` if a default already exists for this channel. |
+| `is_fallback` | No | Default `false`. Fallback provider used when the default fails. |
+
+**Response 201:** `{ "item": { ...provider } }`
+
+**Error conditions:**
+- `409` — a default provider for this channel already exists
+- `422` — unknown driver, driver/channel mismatch, invalid credentials or config schema
+
+---
+
+#### `PATCH /api/integrations/providers/:id`
+
+Required permission: `integrations:edit`
+
+Update a provider's metadata, credentials, or flags. All fields optional; only supplied fields are changed.
+
+**Body** (all optional):
+```json
+{
+  "name": "MSG91 Backup",
+  "credentials": { "api_key": "new-key" },
+  "config": { "sender_id": "KDLBKP" },
+  "is_active": false,
+  "is_default": false,
+  "is_fallback": true
+}
+```
+
+**Response 200:** `{ "item": { ...provider } }`
+
+**Error conditions:**
+- `404` — provider not found
+- `409` — setting `is_default: true` when another default already exists for this channel
+- `422` — invalid credentials or config schema
+
+---
+
+#### `DELETE /api/integrations/providers/:id`
+
+Required permission: `integrations:delete`
+
+Delete a provider. Cannot delete a default provider while jobs are queued.
+
+**Response 204:** Empty body.
+
+**Error conditions:**
+- `404` — provider not found
+- `409` — provider is the default and the integrations queue has waiting jobs
+
+---
+
+#### `POST /api/integrations/providers/:id/test`
+
+Required permission: `integrations:edit`
+
+Enqueue a test message via this specific provider (bypasses default selection). Creates an `IntegrationLog` row with `source: "test"` and returns its ID immediately — delivery is async.
+
+**Body:**
+```json
+{
+  "to": "+919876543210",
+  "subject": "Test subject (EMAIL only)",
+  "body": "Hello from KDL test send"
+}
+```
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `to` | Yes | Recipient — email address for EMAIL, E.164 phone for SMS/WHATSAPP. |
+| `subject` | No | Required for EMAIL channel; ignored for SMS/WHATSAPP. |
+| `body` | Yes | Message body. Min 1 char. |
+
+**Response 200:**
+```json
+{ "success": true, "data": { "log_id": "clx..." } }
+```
+
+**Error conditions:**
+- `404` — provider not found
+- `422` — validation failure
+
+---
+
+#### `GET /api/integrations/webhooks/:driver`
+
+No auth required. Used by some providers (currently `meta-cloud`) to verify webhook endpoint ownership via a GET challenge during provider dashboard setup.
+
+`driver` must be a registered driver name — `404` for unknown drivers. Returns `405` if the driver does not implement `verifyGetChallenge`. Returns `403` if the challenge cannot be verified against any active provider's config.
+
+Meta Cloud passes `hub.mode`, `hub.verify_token`, and `hub.challenge` as query params; a valid token returns the raw `hub.challenge` string.
+
+---
+
+#### `POST /api/integrations/webhooks/:driver`
+
+No auth required. Receives inbound delivery status callbacks from providers. The request is verified against the signature of every active provider for that driver — `401` if no signature matches. Correlated to a log entry via `provider_ref`; updates `status` (and `delivered_at` for `DELIVERED`/`READ` events). Always returns `200` to the provider after verification.
+
+`driver` must be a registered driver name — `404` for unknown.
+
+---
+
+#### `GET /api/integrations/logs`
+
+Required permission: `integrations:view`
+
+Delivery log with filters and pagination. Ordered by `created_at` descending.
+
+**Query params:**
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `page` | number | Page number (default: 1) |
+| `limit` | number | Items per page (default: 20) |
+| `channel` | `EMAIL`\|`SMS`\|`WHATSAPP` | Filter by channel |
+| `status` | `QUEUED`\|`SENT`\|`DELIVERED`\|`READ`\|`FAILED` | Filter by delivery status |
+| `source` | string | Filter by source (e.g. `test`, `notifications`, `auth.password-reset`) |
+| `from` | ISO 8601 date | Inclusive lower bound on `created_at` |
+| `to` | ISO 8601 date | Inclusive upper bound on `created_at` |
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "data": {
+    "logs": [
+      {
+        "id": "...",
+        "channel": "SMS",
+        "recipient": "98*****210",
+        "subject": null,
+        "status": "DELIVERED",
+        "source": "test",
+        "provider_ref": "msg91-msgid-abc",
+        "error": null,
+        "attempts": 1,
+        "sent_at": "2026-07-01T10:01:00.000Z",
+        "delivered_at": "2026-07-01T10:01:05.000Z",
+        "created_at": "2026-07-01T10:00:00.000Z",
+        "provider": { "id": "...", "name": "MSG91 Production", "driver": "msg91" }
+      }
+    ],
+    "pagination": { "page": 1, "limit": 20, "total": 42, "pages": 3 }
+  }
+}
+```
+
+Recipient is always masked at write time (`p***@x.com` / `98*****210`). `body_preview` is not returned in the list — first 120 chars stored PII-scrubbed.
+
+---
+
 ## AI Services — `http://localhost:5000`
 
 **Auth:** Same JWT as backend — `Authorization: Bearer <accessToken>`.

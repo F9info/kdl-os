@@ -16,6 +16,7 @@ model User {
   id              String    @id @default(cuid())
   name            String
   email           String    @unique
+  phone           String?
   password_hash   String
   is_active       Boolean   @default(true)
   status          UserStatus @default(ACTIVE)
@@ -31,6 +32,8 @@ model User {
   roles                UserRole[]
   permission_overrides UserPermission[]
   activity             ActivityLog[]
+  notifications        Notification[]
+  notification_preferences NotificationPreference[]
 
   @@index([status])
   @@index([deleted_at])

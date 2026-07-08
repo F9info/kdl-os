@@ -1,0 +1,73 @@
+// Notifications module schema
+// Each model must be in this file only — never mix with other modules.
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  SMS
+  WHATSAPP
+}
+
+model NotificationCategory {
+  id          String   @id @default(cuid())
+  slug        String   @unique // "system", "security", "account", "activity"
+  name        String
+  description String?
+  is_system   Boolean  @default(false) // seeded categories not deletable
+  created_at  DateTime @default(now())
+
+  templates   NotificationTemplate[]
+  preferences NotificationPreference[]
+
+  @@map("notification_categories")
+}
+
+model NotificationTemplate {
+  id            String   @id @default(cuid())
+  slug          String   @unique // "user.welcome", "security.password-changed"
+  category_id   String
+  name          String
+  variables     Json // ["user_name", "reset_link"] — documented placeholders
+  in_app_body   String? // {{var}} placeholders; null = channel unavailable
+  email_subject String?
+  email_body    String? // HTML allowed (sanitized on render)
+  sms_body      String?
+  whatsapp_body String?
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  category NotificationCategory @relation(fields: [category_id], references: [id])
+
+  @@map("notification_templates")
+}
+
+model Notification {
+  id            String    @id @default(cuid())
+  user_id       String
+  category_slug String
+  title         String
+  body          String
+  data          Json? // {url: "/admin/users/x", entity: ...} for click-through
+  read_at       DateTime?
+  created_at    DateTime  @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, read_at])
+  @@index([created_at])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  user_id     String
+  category_id String
+  channel     NotificationChannel
+  enabled     Boolean             @default(true)
+
+  user     User                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  category NotificationCategory @relation(fields: [category_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, category_id, channel])
+  @@map("notification_preferences")
+}
