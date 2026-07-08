@@ -1,3 +1,8 @@
+## 2026-07-08 — KDL-119 Media DAM Phase A: A5 file ops (Backend Architect)
+- Commit `8c918a5`: copy/duplicate (+checksum dedupe warning), archive flag (bulk endpoint + list filter), folder upload (relative_paths → nested folders), chunked+resumable upload (init/part/status/complete, disk-backed sessions, 512MB default cap via new `media.max_chunked_file_size_mb` setting), ZIP import (adm-zip, whitelist/zip-slip/bomb guards, folder tree from paths), URL import (SSRF guard re-applied per redirect hop, streaming size cap, MIME re-check).
+- Gates: 36 new vitest (chunk assembly, zip entry validation, url import caps) — full backend suite 394 passing. Live curl smoke on :4001 (MINIO_PORT=9002 override needed from host): chunked 2-part flow, copy dedupe warning, archive filter, zip import w/ folder creation + .exe skip, URL import happy path + private-host 422.
+- Next: A6 virus scan (clamav docker + media-scan queue + quarantine).
+
 ## 2026-07-08 — KDL-114 Notifications Step 7 E2E (Code Reviewer)
 - `frontend/e2e/notifications.spec.ts` — 13/13 pass in 8.4s against freshly rebuilt docker images (`docker compose up -d --build backend frontend nginx`), Playwright exit 0.
 - Covers: install/enable module → broadcast to all → member unread-count + TopBar bell badge (UI) → mark-all-read clears badge → system-category IN_APP opt-out strictly suppresses next broadcast (count unchanged) → EMAIL channel via `system.broadcast` template → integration log SENT + 3 messages verified in mailhog → module disable removes bell from DOM.

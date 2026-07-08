@@ -1,3 +1,9 @@
+## 2026-07-08 — KDL-119 A5 file ops (Backend Architect)
+- **A5** (8c918a5): new `file-ops.service.js` (copyMedia/setArchived/ensureFolderPath/uploadFilesWithPaths), `chunked-upload.service.js` (disk sessions under CHUNK_UPLOAD_DIR or os.tmpdir; NOT multi-replica safe — needs sticky sessions or shared volume), `import.service.js` (zip via adm-zip [new dep], url import with manual-redirect SSRF guard). `storage.service.js` gained `copyFile` (minio copyObject) — fold into A7 driver interface. `uploadMedia` now takes `opts.maxBytesOverride`; settings expose `maxChunkedSizeBytes` (setting `media.max_chunked_file_size_mb`, default 512).
+- Routes: POST /:id/copy, POST /archive, /upload/chunked/{init,:id/part,:id/status,:id/complete}, /import/{zip,url}. GET /api/media now takes `archived=true|false|all` (default false).
+- Live-gate note: from host, MinIO is on port 9002 (docker maps 9000→9002) — launch backend `DOTENV_CONFIG_PATH=../.env APP_PORT=4001 MINIO_PORT=9002 node src/index.js`.
+- Next: A6 clamav + media-scan BullMQ queue + quarantine + `media.require_scan` setting.
+
 ## 2026-07-08 — KDL-119 Media DAM Phase A: A1–A4 backend done (Backend Architect)
 
 - **A1** (1cfe181): DAM schema (7 new models + Media cols), migration applied, expanded MIME whitelist, SVG sanitize on upload, EXIF via exifr, sha256 checksum. NOTE: vitest quirk found — `beforeEach(() => mock.mockReset())` returns the mock, which vitest runs as teardown, invoking the mock; wrap hook bodies in braces.
