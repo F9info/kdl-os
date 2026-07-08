@@ -48,6 +48,36 @@ const mediaApi = {
     api.post('/media/move', { media_ids, folder_id }),
   restoreTrash: (media_ids: string[]) => api.post('/media/trash/restore', { media_ids }),
   purgeTrash: () => api.delete('/media/trash/purge'),
+  // Phase D — AI (endpoints 501/hidden when the feature has no active provider)
+  aiStatus: () =>
+    api.get('/media/ai/status').then(
+      (r) => r.data.data.features as Record<string, { configured: boolean; driver: string | null }>,
+    ),
+  analyze: (id: string) => api.post(`/media/${id}/analyze`),
+  suggestions: (id: string) =>
+    api.get(`/media/${id}/suggestions`).then((r) => r.data.data.items as MediaSuggestion[]),
+  acceptSuggestion: (id: string) => api.post(`/media/suggestions/${id}/accept`),
+  rejectSuggestion: (id: string) => api.post(`/media/suggestions/${id}/reject`),
+  transcribe: (id: string) => api.post(`/media/${id}/transcribe`),
+  transcript: (id: string) =>
+    api.get(`/media/${id}/transcript`).then(
+      (r) => r.data.data as { text: string | null; segments: TranscriptSegment[]; language: string | null },
+    ),
+}
+
+interface MediaSuggestion {
+  id: string
+  media_id: string
+  type: 'TAGS' | 'TITLE' | 'DESCRIPTION' | 'ALT_TEXT' | 'SEO_KEYWORDS'
+  value: string | string[]
+  source: string
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED'
+}
+
+interface TranscriptSegment {
+  start: number
+  end: number
+  text: string
 }
 
 // ── Folder tree ──────────────────────────────────────────────────────────────
@@ -277,6 +307,144 @@ function UploadZone({ onFiles, disabled }: { onFiles: (files: File[]) => void; d
   )
 }
 
+// ── AI panels (Phase D) ───────────────────────────────────────────────────────
+// Hidden entirely when the matching AI feature has no active provider.
+
+function formatTime(seconds: number) {
+  const m = Math.floor(seconds / 60)
+  const s = Math.floor(seconds % 60)
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
+function AiSuggestionsPanel({ item }: { item: Media }) {
+  const queryClient = useQueryClient()
+  const { data: suggestions } = useQuery({
+    queryKey: ['media-suggestions', item.id],
+    queryFn: () => mediaApi.suggestions(item.id),
+  })
+
+  const analyzeMutation = useMutation({
+    mutationFn: () => mediaApi.analyze(item.id),
+    onSuccess: () => toast({ title: 'Analysis queued', description: 'Suggestions appear here when ready.' }),
+    onError: () => toast({ title: 'Analyze failed', variant: 'destructive' }),
+  })
+
+  const decideMutation = useMutation({
+    mutationFn: ({ id, accept }: { id: string; accept: boolean }) =>
+      accept ? mediaApi.acceptSuggestion(id) : mediaApi.rejectSuggestion(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['media-suggestions', item.id] })
+      queryClient.invalidateQueries({ queryKey: ['media'] })
+    },
+    onError: () => toast({ title: 'Action failed', variant: 'destructive' }),
+  })
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">AI Suggestions</p>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => analyzeMutation.mutate()}
+          disabled={analyzeMutation.isPending}
+        >
+          {analyzeMutation.isPending ? 'Queuing…' : 'Analyze'}
+        </Button>
+      </div>
+      {(suggestions ?? []).length === 0 ? (
+        <p className="text-xs text-muted-foreground">No pending suggestions.</p>
+      ) : (
+        suggestions!.map((s) => (
+          <div key={s.id} className="rounded border p-2 text-xs space-y-1">
+            <p className="font-medium">{s.type.replace(/_/g, ' ')}</p>
+            <p className="text-muted-foreground break-words">
+              {Array.isArray(s.value) ? s.value.join(', ') : s.value}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={() => decideMutation.mutate({ id: s.id, accept: true })}
+                disabled={decideMutation.isPending}
+              >
+                Accept
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-6 px-2 text-xs"
+                onClick={() => decideMutation.mutate({ id: s.id, accept: false })}
+                disabled={decideMutation.isPending}
+              >
+                Reject
+              </Button>
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  )
+}
+
+function TranscriptPanel({ item }: { item: Media }) {
+  const queryClient = useQueryClient()
+  const { data: transcript } = useQuery({
+    queryKey: ['media-transcript', item.id],
+    queryFn: () => mediaApi.transcript(item.id).catch(() => null), // 404 until transcribed
+  })
+
+  const transcribeMutation = useMutation({
+    mutationFn: () => mediaApi.transcribe(item.id),
+    onSuccess: () => {
+      toast({ title: 'Transcription queued', description: 'The transcript appears here when ready.' })
+      // Poll once after a while so a fast job shows up without a manual refresh
+      setTimeout(() => queryClient.invalidateQueries({ queryKey: ['media-transcript', item.id] }), 15_000)
+    },
+    onError: () => toast({ title: 'Transcribe failed', variant: 'destructive' }),
+  })
+
+  const apiBase = api.defaults.baseURL ?? '/api'
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Captions</p>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => transcribeMutation.mutate()}
+          disabled={transcribeMutation.isPending}
+        >
+          {transcribeMutation.isPending ? 'Queuing…' : transcript ? 'Re-transcribe' : 'Transcribe'}
+        </Button>
+      </div>
+      {!transcript ? (
+        <p className="text-xs text-muted-foreground">No transcript yet.</p>
+      ) : (
+        <>
+          <div className="max-h-48 overflow-y-auto rounded border p-2 space-y-1">
+            {transcript.segments.map((s, i) => (
+              <p key={i} className="text-xs">
+                <span className="text-muted-foreground font-mono mr-1">{formatTime(s.start)}</span>
+                {s.text}
+              </p>
+            ))}
+          </div>
+          <div className="flex gap-3 text-xs">
+            <a className="text-primary hover:underline" href={`${apiBase}/media/${item.id}/transcript?format=srt`}>
+              Download SRT
+            </a>
+            <a className="text-primary hover:underline" href={`${apiBase}/media/${item.id}/transcript?format=vtt`}>
+              Download VTT
+            </a>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 // ── Detail drawer ─────────────────────────────────────────────────────────────
 
 function DetailDrawer({
@@ -298,6 +466,20 @@ function DetailDrawer({
     queryKey: ['media-usage', item.id],
     queryFn: () => mediaApi.usage(item.id),
   })
+
+  // Phase D: feature flags — unconfigured AI features stay hidden
+  const { data: aiStatus } = useQuery({
+    queryKey: ['media-ai-status'],
+    queryFn: () =>
+      mediaApi
+        .aiStatus()
+        .catch(() => ({} as Record<string, { configured: boolean; driver: string | null }>)),
+    staleTime: 60_000,
+  })
+  const isImage = item.mime_type.startsWith('image/')
+  const isAv = item.mime_type.startsWith('video/') || item.mime_type.startsWith('audio/')
+  const showAnalyze = isImage && aiStatus?.vision?.configured
+  const showTranscribe = isAv && aiStatus?.speech_to_text?.configured
 
   const updateMutation = useMutation({
     mutationFn: () => mediaApi.update(item.id, { title, alt_text: altText, caption }),
@@ -399,6 +581,9 @@ function DetailDrawer({
             ))}
         </div>
       )}
+
+      {showAnalyze && <AiSuggestionsPanel item={item} />}
+      {showTranscribe && <TranscriptPanel item={item} />}
 
       {usages && usages.length > 0 && (
         <div className="space-y-1">
