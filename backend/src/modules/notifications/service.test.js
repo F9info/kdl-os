@@ -7,7 +7,7 @@ vi.mock('../../config/database.js', () => ({
     notificationTemplate: { findUnique: vi.fn() },
     notificationCategory: { findUnique: vi.fn() },
     notificationPreference: { findMany: vi.fn() },
-    notification: { createMany: vi.fn(), findMany: vi.fn() },
+    notification: { create: vi.fn(), createMany: vi.fn(), findMany: vi.fn() },
     user: { findMany: vi.fn(), findUnique: vi.fn() },
     rbacRole: { findUnique: vi.fn() },
     userRole: { findMany: vi.fn() },
@@ -209,7 +209,14 @@ describe('processBatch — integrations-disabled skip path', () => {
     vi.clearAllMocks();
     prisma.notificationCategory.findUnique.mockResolvedValue({ id: 'cat-id' });
     prisma.notificationPreference.findMany.mockResolvedValue([]);
-    prisma.notification.createMany.mockResolvedValue({ count: 1 });
+    prisma.notification.create.mockResolvedValue({
+      id: 'notif-1',
+      user_id: 'user-1',
+      title: 'Test notification',
+      body: 'Test body',
+      data: null,
+      created_at: new Date(),
+    });
     prisma.notification.findMany.mockResolvedValue([]);
     prisma.user.findUnique.mockResolvedValue({ email: 'user@test.com', phone: null });
     integrationsMod.dispatchMessage.mockRejectedValue(
@@ -227,7 +234,7 @@ describe('processBatch — integrations-disabled skip path', () => {
     await processBatch(
       makeBatchArgs({ channels: ['IN_APP', 'EMAIL'], emailBody: '<p>Hi</p>' })
     );
-    expect(prisma.notification.createMany).toHaveBeenCalled();
+    expect(prisma.notification.create).toHaveBeenCalled();
   });
 
   it('only logs the disabled message once even with multiple users', async () => {
@@ -254,34 +261,52 @@ describe('processBatch — chunking', () => {
     vi.clearAllMocks();
     prisma.notificationCategory.findUnique.mockResolvedValue({ id: 'cat-id' });
     prisma.notificationPreference.findMany.mockResolvedValue([]);
-    prisma.notification.createMany.mockResolvedValue({ count: 500 });
+    // service.js creates individually to capture IDs for Redis publish
+    prisma.notification.create.mockImplementation(({ data }) =>
+      Promise.resolve({
+        id: `notif-${data.user_id}`,
+        user_id: data.user_id,
+        title: data.title,
+        body: data.body,
+        data: data.data ?? null,
+        created_at: new Date(),
+      })
+    );
     prisma.notification.findMany.mockResolvedValue([]);
   });
 
-  it('501 users results in 2 createMany calls (chunk size 500)', async () => {
+  it('501 users results in 501 create calls (one per user across 2 chunks)', async () => {
     const userIds = Array.from({ length: 501 }, (_, i) => `user-${i}`);
     await processBatch(makeBatchArgs({ userIds, channels: ['IN_APP'] }));
-    expect(prisma.notification.createMany).toHaveBeenCalledTimes(2);
+    expect(prisma.notification.create).toHaveBeenCalledTimes(501);
   });
 
-  it('first chunk contains up to 500 users', async () => {
+  it('501 users loops through 2 chunks (verified via 2 preference queries)', async () => {
     const userIds = Array.from({ length: 501 }, (_, i) => `user-${i}`);
     await processBatch(makeBatchArgs({ userIds, channels: ['IN_APP'] }));
-    const firstCall = prisma.notification.createMany.mock.calls[0][0];
-    expect(firstCall.data).toHaveLength(500);
+    // filterByPreference is called once per chunk per channel
+    expect(prisma.notificationPreference.findMany).toHaveBeenCalledTimes(2);
   });
 
-  it('second chunk contains the remaining user', async () => {
+  it('first chunk queries preferences for up to 500 users', async () => {
     const userIds = Array.from({ length: 501 }, (_, i) => `user-${i}`);
     await processBatch(makeBatchArgs({ userIds, channels: ['IN_APP'] }));
-    const secondCall = prisma.notification.createMany.mock.calls[1][0];
-    expect(secondCall.data).toHaveLength(1);
+    const firstCall = prisma.notificationPreference.findMany.mock.calls[0][0];
+    expect(firstCall.where.user_id.in).toHaveLength(500);
   });
 
-  it('exactly 500 users = 1 chunk (1 createMany)', async () => {
+  it('second chunk queries preferences for the remaining 1 user', async () => {
+    const userIds = Array.from({ length: 501 }, (_, i) => `user-${i}`);
+    await processBatch(makeBatchArgs({ userIds, channels: ['IN_APP'] }));
+    const secondCall = prisma.notificationPreference.findMany.mock.calls[1][0];
+    expect(secondCall.where.user_id.in).toHaveLength(1);
+  });
+
+  it('exactly 500 users = 1 chunk (1 preference query, 500 creates)', async () => {
     const userIds = Array.from({ length: 500 }, (_, i) => `user-${i}`);
     await processBatch(makeBatchArgs({ userIds, channels: ['IN_APP'] }));
-    expect(prisma.notification.createMany).toHaveBeenCalledTimes(1);
+    expect(prisma.notificationPreference.findMany).toHaveBeenCalledTimes(1);
+    expect(prisma.notification.create).toHaveBeenCalledTimes(500);
   });
 });
 

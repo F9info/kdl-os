@@ -1,28 +1,37 @@
-# Engineer Output — KDL-4 (KDLOS-2): M1–M7 MEDIUM fixes in ai-services
+# Engineer Output — KDL-110: NOTIFICATIONS Step 3 — User + admin API endpoints
 
-**Agent:** Agent 7 — AI Services Agent
-**Date:** 2026-07-02
-**Status:** Done — Code Reviewer approved all 7 (KDL-9 verdict)
+**Agent:** Backend Coder (b047f509)
+**Date:** 2026-07-08
+**Status:** Done — vitest exit 0 (45 tests pass)
 
-## Changes
+## Summary
 
-| Finding | Fix | Files |
+Step 3 deliverables (controller.js + routes.js) were already fully implemented by Step 2's agent. This run added the required test suite and fixed pre-existing service test failures.
+
+## Files Changed
+
+| File | Action | Description |
 |---|---|---|
-| M1 | New leveled logger module (`LOG_LEVEL` filter, scoped loggers, warn/error → stderr, Error stack handling); replaced all `console.*` calls | `ai-services/src/utils/logger.js` (new), `src/index.js`, `src/config/redis.js` |
-| M2 | `clearSessionMemory` uses `redis.scan` cursor loop (MATCH + COUNT 100, per-batch `del`) instead of O(N) `redis.keys` | `src/memory/short-term.js` |
-| M3 | Budget-exhaust line to MANUAL_TASKS.md now uses `scrubbed.slice(0,100)` instead of raw message | `src/controllers/chat.js` |
-| M4 | Embed calls wrapped in `pLimit(10)` (`EMBED_CONCURRENCY`); `p-limit@^6.1.0` added to deps. Also fixed arg leak from `chunks.map(openrouterEmbed)` | `src/knowledge/ingest.js`, `ai-services/package.json` |
-| M5 | Search tool reads scoped `MEILI_SEARCH_API_KEY` instead of `MEILI_MASTER_KEY`; documented in env files | `src/tools/search.js`, `ai-services/.env.example`, root `.env.example`, `docs/ENV_REFERENCE.md` |
-| M6 | `import.meta.url`-relative paths (pattern from `agents/base.js` H1 fix) replace `process.cwd()` | `src/workflows/base.js`, `src/controllers/chat.js` |
-| M7 | `jwt.verify(token, secret, { algorithms: ['HS256'] })` — algorithm-confusion hardening | `src/middleware/auth.js` |
+| `backend/src/modules/notifications/controller.test.js` | Created | 17 tests covering the Step 3 gate requirements |
+| `backend/src/modules/notifications/service.test.js` | Fixed | Mock mismatch: service uses `prisma.notification.create` individually, test mocked `createMany` only. Added `create` mock; rewrote 5 chunking tests to assert individual create call count and preference query count (verifies chunk loop ran twice for 501 users). |
 
-## Verification
+## Gate Tests (vitest exit 0)
 
-- `node --check` passed on all 9 changed JS files; package.json JSON-valid.
-- `grep -rn 'console\.\|MEILI_MASTER_KEY\|process\.cwd()' ai-services/src/` → zero hits.
-- Code Reviewer verified all 7 acceptance criteria on child issue KDL-9: **APPROVED**.
+```
+✓ src/modules/notifications/controller.test.js (17 tests)
+✓ src/modules/notifications/service.test.js (28 tests)
+Total: 45 tests pass
+```
 
-## Notes
+### Gate criteria coverage
 
-- `ai-services/node_modules` not installed — run `npm install` in `ai-services/` before runtime (pulls new `p-limit` dep). Verification was syntax-level per issue scope.
-- Nothing committed: working tree contained pre-existing uncommitted changes from other agents; changes live in the working tree.
+| Gate | Test | Result |
+|---|---|---|
+| own-data isolation: user A cannot read user B's notification (404) | `markOneRead — 404 on another user's notification` | ✓ |
+| own-data isolation: user A cannot delete user B's notification (404) | `deleteOwnNotification — 404 on another user's notification` | ✓ |
+| broadcast queues a job (not blocking) | `broadcast — queues a job, returns immediately` | ✓ |
+| preview renders per channel | `previewTemplate — renders each channel body` | ✓ |
+
+## Pre-existing Failure (not related to this step)
+
+`tests/auth.controller.test.js` fails with `DATABASE_URL environment variable is not set` — this file imports `database.js` without mocking it. Pre-existing before Step 3; not in scope.
