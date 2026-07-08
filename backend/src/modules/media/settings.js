@@ -6,13 +6,21 @@ const EXECUTABLES = new Set([
 ]);
 
 const DEFAULT_MIME_TYPES = [
+  // images
   'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif',
-  'video/mp4', 'video/webm',
-  'audio/mpeg', 'audio/wav',
-  'application/pdf',
+  'image/svg+xml', 'image/heic', 'image/heif',
+  // video
+  'video/mp4', 'video/webm', 'video/quicktime', 'video/x-matroska', 'video/x-msvideo',
+  // audio
+  'audio/mpeg', 'audio/wav', 'audio/aac', 'audio/ogg', 'audio/flac',
+  // documents
+  'application/pdf', 'text/plain', 'text/csv',
   'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'text/csv',
+  'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  // design
+  'image/vnd.adobe.photoshop', 'application/postscript',
+  // archives
   'application/zip',
 ];
 

@@ -1,0 +1,102 @@
+// Media DAM — Phase A foundations (tags, custom meta fields, collections, favorites)
+// See .agents/MEDIA_DAM_ARCH.md
+
+enum MediaMetaFieldType {
+  TEXT
+  NUMBER
+  DATE
+  SELECT
+}
+
+model MediaTag {
+  id         String   @id @default(cuid())
+  name       String   @unique
+  created_at DateTime @default(now())
+
+  media MediaTagPivot[]
+
+  @@map("media_tags")
+}
+
+model MediaTagPivot {
+  media_id String
+  tag_id   String
+
+  media Media    @relation(fields: [media_id], references: [id], onDelete: Cascade)
+  tag   MediaTag @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@id([media_id, tag_id])
+  @@index([tag_id])
+  @@map("media_tag_pivot")
+}
+
+// Admin-defined custom fields: project, client, campaign, copyright, license...
+model MediaMetaField {
+  id         String             @id @default(cuid())
+  slug       String             @unique
+  label      String
+  field_type MediaMetaFieldType @default(TEXT)
+  options    Json?
+  is_system  Boolean            @default(false)
+  created_at DateTime           @default(now())
+  updated_at DateTime           @updatedAt
+
+  values MediaMetaValue[]
+
+  @@map("media_meta_fields")
+}
+
+model MediaMetaValue {
+  media_id String
+  field_id String
+  value    String
+
+  media Media          @relation(fields: [media_id], references: [id], onDelete: Cascade)
+  field MediaMetaField @relation(fields: [field_id], references: [id], onDelete: Cascade)
+
+  @@id([media_id, field_id])
+  @@index([field_id])
+  @@map("media_meta_values")
+}
+
+// Smart collections: is_smart=true → rules holds saved search filter json, evaluated at read
+model MediaCollection {
+  id         String   @id @default(cuid())
+  name       String
+  created_by String?
+  is_smart   Boolean  @default(false)
+  rules      Json?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  items MediaCollectionItem[]
+
+  @@index([created_by])
+  @@map("media_collections")
+}
+
+model MediaCollectionItem {
+  collection_id String
+  media_id      String
+  created_at    DateTime @default(now())
+
+  collection MediaCollection @relation(fields: [collection_id], references: [id], onDelete: Cascade)
+  media      Media           @relation(fields: [media_id], references: [id], onDelete: Cascade)
+
+  @@id([collection_id, media_id])
+  @@index([media_id])
+  @@map("media_collection_items")
+}
+
+model MediaFavorite {
+  user_id    String
+  media_id   String
+  created_at DateTime @default(now())
+
+  user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  media Media @relation(fields: [media_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, media_id])
+  @@index([media_id])
+  @@map("media_favorites")
+}

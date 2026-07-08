@@ -1,10 +1,12 @@
-import { randomUUID } from 'crypto';
+import { randomUUID, createHash } from 'crypto';
 import * as storageService from '../../shared/services/storage.service.js';
 import { prisma } from '../../config/database.js';
 import { getPaginationParams } from '../../shared/utils/pagination.js';
 import { writeActivityAsync } from '../user-management/shared/activity-logger.js';
 import { getUploadSettings } from './settings.js';
 import { enqueueVariantJob } from './media.queue.js';
+import { sanitizeSvg, isSvgMime } from './svg-sanitizer.js';
+import { extractExif } from './exif-extractor.js';
 
 const MIME_TO_TYPE = (mime) => {
   if (mime.startsWith('image/')) return 'IMAGE';
@@ -12,9 +14,14 @@ const MIME_TO_TYPE = (mime) => {
   if (mime.startsWith('audio/')) return 'AUDIO';
   if (mime === 'application/pdf' || mime.includes('document') || mime.includes('spreadsheet') ||
       mime.includes('word') || mime.includes('excel') || mime.includes('csv') ||
-      mime === 'text/csv') return 'DOCUMENT';
+      mime === 'text/csv' || mime === 'text/plain') return 'DOCUMENT';
   return 'OTHER';
 };
+
+// Formats sharp decodes reliably — only these get magic-byte validation,
+// dimension probing, and webp variant generation. SVG/HEIC/PSD etc. are
+// stored as-is (sharp prebuilt binaries lack HEIF/PSD decoders).
+const SHARP_SAFE_MIMES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']);
 
 // ─── Folders ────────────────────────────────────────────────────────────────
 
@@ -133,16 +140,20 @@ export const uploadMedia = async (file, userId, folderId) => {
     throw Object.assign(new Error(`File type not allowed: ${file.mimetype}`), { status: 422 });
   }
 
-  const ext = file.originalname.split('.').pop().toLowerCase();
-  const objectName = `${userId}/${randomUUID()}.${ext}`;
-  await storageService.uploadFile(file, objectName);
+  // SVG: strip active content (scripts, event handlers, entity bombs) before storage
+  if (isSvgMime(file.mimetype)) {
+    file.buffer = sanitizeSvg(file.buffer);
+    file.size = file.buffer.length;
+  }
 
   const mediaType = MIME_TO_TYPE(file.mimetype);
+  const sharpSafe = SHARP_SAFE_MIMES.has(file.mimetype);
   let width = null;
   let height = null;
+  let exif = null;
 
-  // For images: validate magic bytes (sharp throws on fake images → 422) + derive dimensions
-  if (mediaType === 'IMAGE') {
+  // For sharp-decodable images: validate magic bytes (sharp throws on fake images → 422) + derive dimensions
+  if (mediaType === 'IMAGE' && sharpSafe) {
     const { default: sharp } = await import('sharp');
     try {
       const meta = await sharp(file.buffer).metadata();
@@ -152,6 +163,17 @@ export const uploadMedia = async (file, userId, folderId) => {
       throw Object.assign(new Error('Invalid image file: content does not match declared MIME type'), { status: 422 });
     }
   }
+
+  // EXIF (camera/gps/taken_at) — best-effort, never blocks upload
+  if (mediaType === 'IMAGE' && !isSvgMime(file.mimetype)) {
+    exif = await extractExif(file.buffer);
+  }
+
+  const checksum = createHash('sha256').update(file.buffer).digest('hex');
+
+  const ext = file.originalname.split('.').pop().toLowerCase();
+  const objectName = `${userId}/${randomUUID()}.${ext}`;
+  await storageService.uploadFile(file, objectName);
 
   const record = await prisma.media.create({
     data: {
@@ -166,10 +188,12 @@ export const uploadMedia = async (file, userId, folderId) => {
       type: mediaType,
       width,
       height,
+      exif,
+      checksum,
     },
   });
 
-  if (mediaType === 'IMAGE') {
+  if (mediaType === 'IMAGE' && sharpSafe) {
     await enqueueVariantJob(record.id, objectName, file.mimetype);
   }
 
