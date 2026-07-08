@@ -1720,3 +1720,73 @@ L6 (no lifecycle-service unit tests) — deferred; out of scope for opportunisti
 | `frontend: pnpm test` | **45/45**, exit 0 |
 | `full E2E (16 tests)` | **16/16**, exit 0 |
 | `node --check` (4 backend files) | exit 0 |
+
+---
+
+# KDL-113 — NOTIFICATIONS Step 6: Code review (Maker ≠ Grader)
+
+**Reviewer:** Code Reviewer (ab90a50b) — 2026-07-08
+**Scope:** Full notifications module vs `agents/NOTIFICATIONS_ARCH.md` (whole doc). Backend (schema, dispatch, queue/worker/retention, endpoints), SSE, frontend (bell, hooks, 4 pages), security posture.
+
+## Commands run (exit codes, not self-assessment)
+
+| Command | Result |
+|---|---|
+| `backend: vitest run src/modules/notifications` | **50/50**, exit 0 |
+| `frontend: vitest run tests/rtl/regression/NotificationBell.test.tsx` | **3/3**, exit 0 |
+
+## Verified clean
+
+- **Prisma schema** matches arch exactly (4 models, enum, indexes, composite PK, cascades). `User.phone` already exists in core.prisma — correctly not re-added.
+- **Own-data isolation:** markOneRead / deleteOwnNotification fetch-then-compare `user_id`, 404 on others' rows; list/count/read-all scoped to `req.user.id`. Tested (19 controller tests).
+- **Preference filtering:** default-enabled when no row; opt-out excludes; **security + IN_APP override bypasses opt-out** (service.js:86-88); security + EMAIL still respects opt-out. Tested.
+- **Integrations skip path:** dynamic `import()` wrapped in try/catch; `IntegrationsDisabledError` → skip channel, single `writeActivityAsync` log, never fails notify(). `dispatchMessage` call signature matches integrations export (`{channel, to, subject, body, source: 'notifications', meta}`). Tested.
+- **Chunking:** 500 per chunk, verified across boundary (501 users → 2 chunks). Queue threshold: >50 recipients or any heavy channel → BullMQ job, returns `batch_id` immediately.
+- **Worker/retention:** both workers instantiated with dedicated ioredis connections (`maxRetriesPerRequest: null`), closed on shutdown (index.js:90-91); retention worker deletes read notifications older than `notifications.retention_days` app_setting (default 90), repeatable 03:00 cron registered at startup.
+- **Permissions:** all admin routes `requirePermission('notifications', view/add/edit/delete)`; broadcast requires `notifications:publish`; broadcast rejects `user_ids` targeting (role/all only); recipient count activity-logged. `moduleGate('notifications')` on entire router.
+- **SSE lifecycle:** duplicated Redis connection for subscribe mode (never shared client); unsubscribe + disconnect + heartbeat clear + counter decrement in idempotent `cleanup()` on `close`/`aborted`; heartbeat comment every 25s; 3-stream cap enforced; nginx `location /api/notifications/stream` with `proxy_buffering off`. Disconnect cleanup unit-tested (unsubscribe + counter decrement).
+- **Frontend security:** zero `dangerouslySetInnerHTML` in the repo; in-app body and template preview render as React-escaped text. Bell renders nothing when module disabled (RTL-tested); all 4 pages ModuleGuard-wrapped; templates/broadcast additionally PermissionGuard-gated.
+- **Stream fallback:** `useUnreadCount` polls every 30s independent of SSE; EventSource error → close + retry after 30s.
+
+## CRITICAL
+
+None.
+
+## HIGH
+
+None.
+
+## MEDIUM (logged, non-blocking per gate; M1/M2 must land before auth-event triggers are wired)
+
+| # | Finding | Where |
+|---|---|---|
+| M1 | Email HTML sanitization is `stripScripts()` only (script-tag regex). Email clients don't execute scripts anyway — the sanitizer removes the one thing already inert and passes what matters: `<a href>`, `<img>`, `onerror`/`onclick` attrs, unclosed `<script src=…>` (regex needs `</script>`). Variable values are interpolated **unescaped** into email_body — seeded `security.new-login` template interpolates `{{user_agent}}`/`{{ip_address}}` (request-controlled) → phishing-HTML injection into legitimate security emails once that trigger is wired. Latent today (no `notify()` callers outside module). Fix: HTML-escape variable values on email render + real sanitizer (e.g. sanitize-html) on template body. | service.js:42-45, 296-297; seed.js:37-43 |
+| M2 | `updateTemplate` mass assignment: `data: req.body` unfiltered. Admin with `notifications:edit` can rewrite `slug`/`category_id` of code-referenced seeded templates (breaking `notify('user.welcome')` lookups, or moving a template out of `security` category, dropping its IN_APP override); unknown keys → Prisma error → 500. Whitelist updatable fields. | controller.js:237-243 |
+| M3 | SSE cap deviates from arch: rejects the 4th connection with 429 instead of "close oldest". Also cap-counter TTL (1h, refreshed only on connect) can expire under long-lived streams → transient over/under-count. Polling fallback masks impact. | controller.js:463-470 |
+| M4 | `useNotificationStream` unstable deps: `onNew` is an inline closure at both call sites → `connect` recreated every render → effect teardown/re-run closes and reopens the EventSource on every bell/page re-render (dropdown open, count change). Each reopen = new backend Redis subscriber + cap INCR/DECR churn; events in the gap lost. Fix: keep `onNew` in a ref; connect once per auth session. | useNotificationStream.ts:19-55; NotificationBell.tsx:42-46 |
+| M5 | Zero-footprint rule violated when module disabled: bell hooks run before the `isEnabled('notifications')` guard — unread-count poll (30s forever), list fetch, and SSE connect all fire and 404 against the module gate. Queries need `enabled: isEnabled('notifications')`; stream hook needs the same gate. | NotificationBell.tsx:37-48 |
+| M6 | `notify()` ignores `is_active` — deactivated templates still send. Admin "Inactive" toggle is a no-op at dispatch time. | service.js:290-299 |
+| M7 | Inline broadcast + external channel silently sends nothing: inline sets only title/in-app body; EMAIL/SMS/WHATSAPP bodies stay null → channel skipped (`if (!channelBody) continue`). UI lets admin check EMAIL with a custom message → "Broadcast queued" success, no email, no warning. Reject inline+external at the endpoint or fall back to plain-text body. | service.js:283-303, 201; broadcast/page.tsx:89-126 |
+| M8 | No request validation layer: `schema.js` is the scaffold TODO stub; createTemplate/createCategory/updateOwnPreferences/broadcast accept unvalidated bodies — invalid channel enum / missing FK → Prisma error → 500 instead of 400. Wire the zod schemas. | schema.js:3-7; controller.js:144-174, 190-235, 371-392 |
+| M9 | Access token in SSE query string (EventSource can't set headers) → JWT lands in nginx access logs + browser history. Acceptable short-term (short-lived JWT); prefer one-time stream ticket or cookie auth later. | routes.js:9-32; useNotificationStream.ts:24 |
+| M10 | Broadcast page sends immediately — arch specifies "confirm with recipient count" before send. No ConfirmDialog. | broadcast/page.tsx:89-126 |
+
+## LOW
+
+| # | Finding | Where |
+|---|---|---|
+| L1 | IN_APP inserts are per-row `prisma.notification.create` in `Promise.all` (≤500 concurrent) — arch says bulk insert. Use `createManyAndReturn`. | service.js:148-155 |
+| L2 | `subscriber.on('error')` handler is empty; its comment claims it logs. | controller.js:489-491 |
+| L3 | SSE catch after `flushHeaders()` calls `next(err)` → "headers already sent" noise if subscribe fails mid-stream. | controller.js:509-512 |
+| L4 | `resolveUserIds` role path doesn't exclude soft-deleted users; `all` path does. | service.js:54-72 |
+| L5 | Small inline IN_APP broadcast processes inline → response `{sent}`; toast prints "Job ID: undefined". | broadcast/page.tsx:81 |
+| L6 | In-app title is template `name` — `system.broadcast` in-app title is always "System broadcast"; `{{title}}` var only reaches email_subject. | service.js:294 |
+| L7 | Workers + retention cron start at boot even when module disabled (harmless — queues empty). | index.js:17, 71 |
+| L8 | module.json nav: single entry gated `notifications:view` — regular users get no nav to own notifications/preferences (bell "View all" link still works); no nav for templates/broadcast. | module.json |
+| L9 | Notifications page fetches first 20 only, no pagination controls — arch says "full list". | admin/notifications/page.tsx:31 |
+| L10 | RTL regression test `NotificationBell.test.tsx` left uncommitted by Step 5 (untracked in git). Committed with this review. | frontend/tests/rtl/regression/ |
+| L11 | Seed upsert `update: {...tpl}` overwrites admin edits to seeded templates on every reseed. | seed.js:68-75 |
+
+## Verdict
+
+**PASS** — zero CRITICAL, zero HIGH. 10 MEDIUM + 11 LOW logged, non-blocking per gate. Step 7 (E2E) may proceed. M1 (escape email template variables) and M2 (whitelist updateTemplate fields) should be fixed before any auth-event trigger starts passing request-derived data into templates — recommend folding into Step 8 window or a follow-up issue.
