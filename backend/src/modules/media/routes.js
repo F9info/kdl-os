@@ -37,7 +37,13 @@ import {
   editMedia, getJob,
   listVersions, restoreVersion,
   pdfOp, videoOp, audioOp, convertMedia,
+  analyzeMedia, listMediaSuggestions, acceptMediaSuggestion, rejectMediaSuggestion,
 } from './controller.js';
+import {
+  getAiStatus, listAiDrivers, listAiProviders,
+  createAiProvider, updateAiProvider, deleteAiProvider,
+} from './ai/controller.js';
+import { requireFeature } from './ai/ai-provider.service.js';
 
 const router = Router();
 
@@ -117,6 +123,18 @@ router.delete('/meta-fields/:id', requirePermission('media', 'edit'), validate(d
 // Processing jobs status
 router.get('/jobs/:jobId', requirePermission('media', 'view'), validate(jobIdSchema), getJob);
 
+// AI provider config (Phase D — keep above the generic /:id routes)
+router.get('/ai/status', requirePermission('media', 'view'), getAiStatus);
+router.get('/ai/drivers', requirePermission('media', 'edit'), listAiDrivers);
+router.get('/ai/providers', requirePermission('media', 'edit'), listAiProviders);
+router.post('/ai/providers', requirePermission('media', 'edit'), createAiProvider);
+router.patch('/ai/providers/:id', requirePermission('media', 'edit'), updateAiProvider);
+router.delete('/ai/providers/:id', requirePermission('media', 'edit'), deleteAiProvider);
+
+// AI suggestions (Phase D2) — keep above the generic /:id routes
+router.post('/suggestions/:id/accept', requirePermission('media', 'edit'), validate(mediaIdParamSchema), acceptMediaSuggestion);
+router.post('/suggestions/:id/reject', requirePermission('media', 'edit'), validate(mediaIdParamSchema), rejectMediaSuggestion);
+
 // List + CRUD
 router.get('/', requirePermission('media', 'view'), validate(listMediaSchema), listMedia);
 router.post('/:id/favorite', requirePermission('media', 'view'), validate(mediaIdParamSchema), favoriteMedia);
@@ -133,6 +151,9 @@ router.post('/:id/pdf-op', requirePermission('media', 'edit'), validate(pdfOpSch
 router.post('/:id/video-op', requirePermission('media', 'edit'), validate(videoOpSchema), videoOp);
 router.post('/:id/audio-op', requirePermission('media', 'edit'), validate(audioOpSchema), audioOp);
 router.post('/:id/convert', requirePermission('media', 'edit'), validate(convertMediaSchema), convertMedia);
+// AI analyze (Phase D2) — 501 via requireFeature when vision is unconfigured
+router.post('/:id/analyze', requirePermission('media', 'edit'), validate(mediaIdParamSchema), requireFeature('vision'), analyzeMedia);
+router.get('/:id/suggestions', requirePermission('media', 'view'), validate(mediaIdParamSchema), listMediaSuggestions);
 // PDF merge (no parent id)
 router.post('/pdf-merge', requirePermission('media', 'add'), validate(pdfOpSchema), pdfOp);
 router.get('/:id', requirePermission('media', 'view'), validate(getMediaSchema), getMedia);

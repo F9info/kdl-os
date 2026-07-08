@@ -67,6 +67,10 @@ export const executeProcessingJob = async (job) => {
       const { runConversion } = await import('./conversions.service.js');
       return runConversion(job.data);
     }
+    case 'ai-analyze': {
+      const { runAnalyzeJob } = await import('./ai/analyze.service.js');
+      return runAnalyzeJob(job.data);
+    }
     default:
       throw new Error(`Unknown processing job type: ${job.name}`);
   }

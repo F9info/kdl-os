@@ -29,6 +29,7 @@ vi.mock('../../src/modules/media/settings.js', () => ({
     maxFileSizeBytes: 10 * 1024 * 1024,
     allowedMimes: new Set(['image/png', 'image/jpeg']),
   }),
+  isAiAutotagEnabled: vi.fn().mockResolvedValue(false),
 }));
 
 vi.mock('sharp', () => ({

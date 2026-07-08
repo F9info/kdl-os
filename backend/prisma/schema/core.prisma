@@ -178,6 +178,7 @@ model Media {
   collection_items MediaCollectionItem[]
   favorites        MediaFavorite[]
   versions         MediaVersion[]
+  suggestions      MediaSuggestion[]
 
   @@index([user_id])
   @@index([folder_id])

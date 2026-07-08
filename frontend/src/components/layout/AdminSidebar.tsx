@@ -23,6 +23,7 @@ import {
   Settings,
   Activity,
   Lock,
+  Sparkles,
 } from 'lucide-react'
 import { useUiStore } from '@/stores/ui.store'
 import { useAuth } from '@/hooks/useAuth'
@@ -64,11 +65,18 @@ interface NavGroup {
 const FLAT_ITEMS: NavLeaf[] = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
   { label: 'Users', href: '/admin/users', icon: Users, permission: 'users:view' },
-  { label: 'Media', href: '/admin/media', icon: Image, permission: 'media:view' },
   { label: 'Modules', href: '/admin/modules', icon: Package, permission: 'modules:view' },
 ]
 
 const GROUPS: NavGroup[] = [
+  {
+    label: 'Media',
+    icon: Image,
+    children: [
+      { label: 'Library', href: '/admin/media', icon: Image, permission: 'media:view' },
+      { label: 'AI Providers', href: '/admin/media/ai', icon: Sparkles, permission: 'media:edit' },
+    ],
+  },
   {
     label: 'Access Control',
     icon: Shield,

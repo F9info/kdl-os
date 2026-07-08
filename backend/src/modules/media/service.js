@@ -3,7 +3,7 @@ import * as storageService from '../../shared/services/storage.service.js';
 import { prisma } from '../../config/database.js';
 import { getPaginationParams } from '../../shared/utils/pagination.js';
 import { writeActivityAsync } from '../user-management/shared/activity-logger.js';
-import { getUploadSettings } from './settings.js';
+import { getUploadSettings, isAiAutotagEnabled } from './settings.js';
 import { enqueueVariantJob } from './media.queue.js';
 import { sanitizeSvg, isSvgMime } from './svg-sanitizer.js';
 import { extractExif } from './exif-extractor.js';
@@ -200,6 +200,16 @@ export const uploadMedia = async (file, userId, folderId, opts = {}) => {
 
   if (mediaType === 'IMAGE' && sharpSafe) {
     await enqueueVariantJob(record.id, objectName, file.mimetype);
+  }
+
+  // Phase D2 opt-in auto-tag: only fire when the setting is on AND vision is configured —
+  // avoids piling up doomed jobs in the queue when the feature is simply unconfigured.
+  if (mediaType === 'IMAGE' && (await isAiAutotagEnabled())) {
+    const { getActiveProvider } = await import('./ai/ai-provider.service.js');
+    if (await getActiveProvider('vision')) {
+      const { enqueueProcessingJob } = await import('./processing.queue.js');
+      enqueueProcessingJob('ai-analyze', { mediaId: record.id }).catch(() => {});
+    }
   }
 
   enqueueReindex(record.id);

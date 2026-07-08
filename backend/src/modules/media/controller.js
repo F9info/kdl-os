@@ -630,6 +630,51 @@ export const editMedia = async (req, res, next) => {
   }
 };
 
+// ─── AI suggestions (Phase D2) ───────────────────────────────────────────────
+// requireFeature('vision') middleware (ai/ai-provider.service.js) gates this route 501
+// when unconfigured, per the "every AI feature is optional" rule.
+export const analyzeMedia = async (req, res, next) => {
+  try {
+    const { enqueueProcessingJob } = await import('./processing.queue.js');
+    const job = await enqueueProcessingJob('ai-analyze', { mediaId: req.validated.params.id });
+    return successResponse(res, { job_id: job.id, status: 'queued' }, 202);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const listMediaSuggestions = async (req, res, next) => {
+  try {
+    const { listSuggestions } = await import('./ai/suggestions.service.js');
+    const items = await listSuggestions(req.validated.params.id);
+    return successResponse(res, { items });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const acceptMediaSuggestion = async (req, res, next) => {
+  try {
+    const { acceptSuggestion } = await import('./ai/suggestions.service.js');
+    const suggestion = await acceptSuggestion(req.validated.params.id, req.user.id);
+    if (!suggestion) return errorResponse(res, 'Suggestion not found', 404);
+    return successResponse(res, { item: suggestion });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const rejectMediaSuggestion = async (req, res, next) => {
+  try {
+    const { rejectSuggestion } = await import('./ai/suggestions.service.js');
+    const suggestion = await rejectSuggestion(req.validated.params.id, req.user.id);
+    if (!suggestion) return errorResponse(res, 'Suggestion not found', 404);
+    return successResponse(res, { item: suggestion });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const pdfOp = async (req, res, next) => {
   try {
     const { enqueueProcessingJob } = await import('./processing.queue.js');

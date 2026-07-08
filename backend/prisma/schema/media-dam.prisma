@@ -120,3 +120,57 @@ model MediaVersion {
   @@index([media_id])
   @@map("media_versions")
 }
+
+// Phase D — AI Layer: per-feature AI provider config (mirrors IntegrationProvider pattern)
+enum AiFeature {
+  VISION // captioning / auto-tagging (openrouter-vision)
+  IMAGE_OPS // bg-removal / upscale / enhance / object-removal (replicate)
+  SPEECH_TO_TEXT // whisper-local / openai-whisper-api
+}
+
+model AiProvider {
+  id          String    @id @default(cuid())
+  feature     AiFeature
+  driver      String // "openrouter-vision" | "replicate" | "whisper-local" | "openai-whisper-api"
+  name        String // display: "OpenRouter production"
+  credentials String // AES-256-GCM encrypted JSON blob — NEVER plaintext
+  config      Json? // non-secret driver config (model ids, endpoint url)
+  is_active   Boolean   @default(false) // one active provider per feature (enforced in service)
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  @@index([feature, is_active])
+  @@map("ai_providers")
+}
+
+// Phase D2 — AI-generated suggestions (tags/captions/etc). Always editable, never
+// applied to Media directly — a human (or auto-accept policy) must accept them.
+enum MediaSuggestionType {
+  TAGS
+  TITLE
+  DESCRIPTION
+  ALT_TEXT
+  SEO_KEYWORDS
+}
+
+enum MediaSuggestionStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model MediaSuggestion {
+  id         String                @id @default(cuid())
+  media_id   String
+  type       MediaSuggestionType
+  value      Json // string for TITLE/DESCRIPTION/ALT_TEXT, string[] for TAGS/SEO_KEYWORDS
+  source     String                @default("ai")
+  status     MediaSuggestionStatus @default(PENDING)
+  created_at DateTime              @default(now())
+  updated_at DateTime              @updatedAt
+
+  media Media @relation(fields: [media_id], references: [id], onDelete: Cascade)
+
+  @@index([media_id, status])
+  @@map("media_suggestions")
+}

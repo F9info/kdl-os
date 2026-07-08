@@ -13,6 +13,7 @@ vi.mock('../src/modules/media/settings.js', () => ({
     maxFileSizeBytes: 10 * 1024 * 1024,
     allowedMimes: new Set(['image/jpeg', 'image/png', 'application/pdf']),
   })),
+  isAiAutotagEnabled: vi.fn(async () => false),
 }));
 
 vi.mock('../src/modules/media/media.queue.js', () => ({

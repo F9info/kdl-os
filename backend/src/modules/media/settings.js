@@ -59,3 +59,10 @@ export const getUploadSettings = async () => {
   cacheTime = Date.now();
   return cache;
 };
+
+// Phase D2 opt-in: on-upload auto-tag. Off by default — reads live (no cache) since it's
+// only checked once per upload and must reflect a just-toggled setting immediately.
+export const isAiAutotagEnabled = async () => {
+  const setting = await prisma.appSetting.findUnique({ where: { key: 'media.ai_autotag' } });
+  return setting?.value === 'true';
+};
