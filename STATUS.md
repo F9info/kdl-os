@@ -1,3 +1,11 @@
+## 2026-07-08 — KDL-114 Notifications Step 7 E2E (Code Reviewer)
+- `frontend/e2e/notifications.spec.ts` — 13/13 pass in 8.4s against freshly rebuilt docker images (`docker compose up -d --build backend frontend nginx`), Playwright exit 0.
+- Covers: install/enable module → broadcast to all → member unread-count + TopBar bell badge (UI) → mark-all-read clears badge → system-category IN_APP opt-out strictly suppresses next broadcast (count unchanged) → EMAIL channel via `system.broadcast` template → integration log SENT + 3 messages verified in mailhog → module disable removes bell from DOM.
+- Spec fixes this step: test 11 was `after >= before` (proved nothing) → now opts out of `system` (inline-broadcast category) and asserts strict equality; test 12 had wrong status (202 vs 200), wrong response keys (`items`/`metadata` vs `logs`/`subject`), and used inline broadcast which never sets an email body → now uses seeded `system.broadcast` template, provisions a mailhog SMTP provider via API when absent (cleaned up in afterAll), polls log to SENT.
+- Email sub-step NOT blocked: integrations module ENABLED in stack, ran live.
+- Note: killed stale host dev servers (node :4000, next :3001) that blocked docker port binds.
+- Next: KDL-107 Step 8 (docs).
+
 ## 2026-07-08 — KDL-108 Notifications Step 1 (Backend Architect)
 - Commit `0e99008`: notifications scaffold + notifications.prisma (4 models + NotificationChannel enum) + User.phone (own migration) + add_notifications_module migration + module seed.js (4 categories / 4 templates, idempotent).
 - Gates: prisma validate 0, migrate no drift, seed 2x-run stable.

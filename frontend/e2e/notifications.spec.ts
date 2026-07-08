@@ -28,6 +28,7 @@ let api: APIRequestContext
 let adminToken: string
 let memberToken: string
 let memberId: string
+let e2eProviderId: string | null = null
 
 const authHeaders = (token: string) => ({ Authorization: `Bearer ${token}` })
 
@@ -89,6 +90,12 @@ test.beforeAll(async () => {
 
 test.afterAll(async () => {
   await ensureNotificationsUninstalled()
+  // Remove the EMAIL provider this run created (if any)
+  if (e2eProviderId) {
+    await api.delete(`${API_URL}/integrations/providers/${e2eProviderId}`, {
+      headers: authHeaders(adminToken),
+    })
+  }
   // Remove test member
   if (memberId) {
     await api.delete(`${API_URL}/users/${memberId}`, { headers: authHeaders(adminToken) })
@@ -198,29 +205,28 @@ test('9. badge disappears after mark-all-read (UI)', async ({ page }) => {
 
 // ─── Preferences opt-out suppresses next broadcast ──────────────────────────
 
-test('10. member opts out of IN_APP for activity category', async () => {
-  // Get category list to find activity category id
+test('10. member opts out of IN_APP for system category', async () => {
+  // Inline broadcasts are attributed to the 'system' category, so opting the
+  // member out of system/IN_APP must suppress the next inline broadcast.
   const catRes = await api.get(`${API_URL}/notifications/categories`, {
     headers: authHeaders(adminToken),
   })
   expect(catRes.ok(), await catRes.text()).toBeTruthy()
   const categories: Array<{ id: string; slug: string }> =
     (await catRes.json()).data?.categories ?? []
-  const activityCat = categories.find((c) => c.slug === 'activity')
-  expect(activityCat, 'activity category must exist').toBeTruthy()
+  const systemCat = categories.find((c) => c.slug === 'system')
+  expect(systemCat, 'system category must exist').toBeTruthy()
 
   const prefRes = await api.put(`${API_URL}/notifications/preferences`, {
     headers: authHeaders(memberToken),
     data: {
-      preferences: [{ category_id: activityCat!.id, channel: 'IN_APP', enabled: false }],
+      preferences: [{ category_id: systemCat!.id, channel: 'IN_APP', enabled: false }],
     },
   })
   expect(prefRes.ok(), await prefRes.text()).toBeTruthy()
 })
 
-test('11. broadcast to activity category — opted-out member receives nothing', async () => {
-  // Need activity category template or inline — use inline to keep test self-contained
-  // Broadcast as activity category by using template slug if exists, else inline
+test('11. broadcast after opt-out — member receives nothing', async () => {
   const beforeRes = await api.get(`${API_URL}/notifications/unread-count`, {
     headers: authHeaders(memberToken),
   })
@@ -230,72 +236,93 @@ test('11. broadcast to activity category — opted-out member receives nothing',
     headers: authHeaders(adminToken),
     data: {
       to: { all: true },
-      inline: { title: 'Opted-out broadcast', body: `Activity broadcast ${RUN_ID}` },
+      inline: { title: 'Opted-out broadcast', body: `Suppressed broadcast ${RUN_ID}` },
       channels: ['IN_APP'],
     },
   })
   expect(res.ok(), await res.text()).toBeTruthy()
 
-  // Wait for worker
-  await new Promise((r) => setTimeout(r, 2000))
+  // Allow time in case the batch was queued rather than processed inline
+  await new Promise((r) => setTimeout(r, 3000))
 
   const afterRes = await api.get(`${API_URL}/notifications/unread-count`, {
     headers: authHeaders(memberToken),
   })
   const after = (await afterRes.json()).data?.count ?? 0
 
-  // The member opted out — count should not increase beyond what it was
-  // (The inline broadcast uses 'system' category by default; activity opt-out
-  // does NOT suppress system category — so this test validates that only the
-  // opted-out category is suppressed, not all categories.)
-  // To strictly test suppression, re-enable and use an activity-category template.
-  // For now, verify the endpoint returns 202 and worker processed without error.
-  expect(after).toBeGreaterThanOrEqual(before)
+  expect(after, 'opted-out member must not receive the broadcast').toBe(before)
 })
 
 // ─── Integrations + mailhog EMAIL channel (conditional) ─────────────────────
 
 test('12. EMAIL channel — dispatchMessage logs SENT via mailhog (conditional)', async () => {
-  const intStatus = await getModuleStatus('integrations')
-  if (intStatus !== 'ENABLED') {
-    test.skip()
-    return
+  // Requires the integrations module (installed by its own E2E or manually) and
+  // mailhog. Skips — with the reason in the report — when either is absent.
+  let intStatus = await getModuleStatus('integrations')
+  if (intStatus === 'INSTALLED') {
+    await api.post(`${API_URL}/modules/integrations/enable`, { headers: authHeaders(adminToken) })
+    intStatus = await getModuleStatus('integrations')
   }
+  test.skip(intStatus !== 'ENABLED', `integrations module not enabled (status: ${intStatus})`)
 
-  // Verify mailhog is reachable
   const mailhogCheck = await api.get(`${MAILHOG_URL}/api/v2/messages?limit=1`).catch(() => null)
-  if (!mailhogCheck?.ok()) {
-    test.skip()
-    return
+  test.skip(!mailhogCheck?.ok(), 'mailhog HTTP API not reachable on :8025')
+
+  // Ensure an active default EMAIL provider pointing at mailhog exists
+  const provRes = await api.get(`${API_URL}/integrations/providers`, {
+    headers: authHeaders(adminToken),
+  })
+  expect(provRes.ok(), await provRes.text()).toBeTruthy()
+  const providers: Array<{ id: string; channel: string; is_active: boolean }> =
+    (await provRes.json()).data?.items ?? []
+  if (!providers.some((p) => p.channel === 'EMAIL' && p.is_active)) {
+    const createRes = await api.post(`${API_URL}/integrations/providers`, {
+      headers: authHeaders(adminToken),
+      data: {
+        channel: 'EMAIL',
+        driver: 'smtp',
+        name: `E2E Mailhog ${RUN_ID}`,
+        credentials: { host: 'mailhog', port: 1025, user: 'mailhog', pass: 'mailhog' },
+        config: { from: 'e2e@kdl.local' },
+        is_active: true,
+        is_default: true,
+      },
+    })
+    expect(createRes.ok(), await createRes.text()).toBeTruthy()
+    e2eProviderId = (await createRes.json()).data?.item?.id ?? null
   }
 
+  // Inline broadcasts carry no email body — the EMAIL channel needs a template.
+  // Use the seeded system.broadcast template (email_subject: {{title}}).
   const res = await api.post(`${API_URL}/notifications/broadcast`, {
     headers: authHeaders(adminToken),
     data: {
       to: { all: true },
-      inline: { title: 'Email E2E', body: `Email broadcast ${RUN_ID}` },
-      channels: ['IN_APP', 'EMAIL'],
+      template: 'system.broadcast',
+      data: { title: `Email E2E ${RUN_ID}`, message: `Email broadcast ${RUN_ID}` },
+      channels: ['EMAIL'],
     },
   })
-  expect(res.status(), await res.text()).toBe(202)
+  expect(res.ok(), await res.text()).toBeTruthy()
 
-  // Allow time for worker + dispatchMessage
-  await new Promise((r) => setTimeout(r, 3000))
-
-  // Check integration dispatch log has a SENT entry for this run
-  const logRes = await api.get(`${API_URL}/integrations/logs?limit=20`, {
-    headers: authHeaders(adminToken),
-  })
-  if (!logRes.ok()) {
-    // Integration logs may require separate permission — treat as soft pass
-    return
+  // Poll the integration log until this run's EMAIL entry reaches SENT
+  // (notifications worker → dispatchMessage → integrations worker → mailhog)
+  let sentLog: { status: string } | undefined
+  for (let i = 0; i < 30; i++) {
+    const logRes = await api.get(
+      `${API_URL}/integrations/logs?channel=EMAIL&source=notifications&limit=50`,
+      { headers: authHeaders(adminToken) },
+    )
+    expect(logRes.ok(), await logRes.text()).toBeTruthy()
+    const logs: Array<{ channel: string; status: string; subject?: string | null }> =
+      (await logRes.json()).data?.logs ?? []
+    sentLog = logs.find(
+      (l) => l.status === 'SENT' && (l.subject ?? '').includes(RUN_ID),
+    )
+    if (sentLog) break
+    await new Promise((r) => setTimeout(r, 1000))
   }
-  const logs: Array<{ channel: string; status: string; metadata?: Record<string, unknown> }> =
-    (await logRes.json()).data?.items ?? []
-  const sentLog = logs.find(
-    (l) => l.channel === 'EMAIL' && l.status === 'SENT' && JSON.stringify(l.metadata ?? {}).includes(RUN_ID)
-  )
-  expect(sentLog, 'should find a SENT EMAIL log for this run').toBeTruthy()
+  expect(sentLog, `integration log must show a SENT EMAIL entry for run ${RUN_ID}`).toBeTruthy()
 })
 
 // ─── Module disabled = zero footprint ────────────────────────────────────────
