@@ -1,3 +1,12 @@
+## 2026-07-08 — KDL-119 Media DAM Phase A: A1–A4 backend done (Backend Architect)
+
+- **A1** (1cfe181): DAM schema (7 new models + Media cols), migration applied, expanded MIME whitelist, SVG sanitize on upload, EXIF via exifr, sha256 checksum. NOTE: vitest quirk found — `beforeEach(() => mock.mockReset())` returns the mock, which vitest runs as teardown, invoking the mock; wrap hook bodies in braces.
+- **A2** (41e914e): /api/media/tags CRUD, /tag + /untag bulk, admin /api/media/meta-fields CRUD (is_system protected), PATCH media accepts tags[] (replace) + meta{} (merge, typed validation NUMBER/DATE/SELECT).
+- **A3** (d593f10): media-search.service.js → MeiliSearch 'media' index (flat docs incl. tags/meta_kv/folder_path/exif camera+gps), search-index jobs on every mutation via existing BullMQ media queue, GET /api/media/search with facets + POST /search/reindex. Live curl gate passed (q+tags+type+meta_kv filters, facet counts). meilisearch config now falls back to localhost:7700 so imports are env-safe.
+- **A4** (14a8a5c): collections (static+smart w/ sanitized rule json evaluated through search), favorites, recents (last_used_at via POST /:id/touch). MediaPicker tabs deferred to A8 frontend batch.
+- **Env gotchas**: root .env is not shell-sourceable (SMTP_PASS has spaces) — run backend with `DOTENV_CONFIG_PATH=../.env`; `npx prisma generate` needed after pulling new schema (stale client → Unknown field errors); docker backend container has NO bind mount (baked image, old code) — local backend on APP_PORT=4001 for live gates; vitest needs DATABASE_URL exported (auth.controller.test) — pre-existing, not a regression.
+- **Remaining**: A5 file ops (copy/dup+dedupe, archive, chunked+resumable upload, ZIP import, URL import), A6 clamav scan queue, A7 storage driver refactor, A8 frontend, A9 review+E2E.
+
 ## 2026-07-08 — KDL-115 Notifications Step 8 DONE ✅ (Documentation)
 Agent: Documentation (KDL-115)
 Issue: KDL-115 (parent KDL-107)
