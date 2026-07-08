@@ -11,6 +11,9 @@ import {
   createTagSchema, updateTagSchema, deleteTagSchema, tagMediaSchema,
   createMetaFieldSchema, updateMetaFieldSchema, deleteMetaFieldSchema,
   searchMediaSchema,
+  createCollectionSchema, updateCollectionSchema, collectionIdSchema,
+  collectionContentsSchema, collectionItemsSchema,
+  mediaIdParamSchema, pagedListSchema,
 } from './schema.js';
 import {
   uploadMedia, listMedia, getMedia, updateMedia, deleteMedia, bulkDelete,
@@ -20,6 +23,9 @@ import {
   listTags, createTag, renameTag, deleteTag, tagMedia, untagMedia,
   listMetaFields, createMetaField, updateMetaField, deleteMetaField,
   searchMedia, reindexMedia,
+  listCollections, createCollection, updateCollection, deleteCollection,
+  getCollectionContents, addCollectionItems, removeCollectionItems,
+  favoriteMedia, unfavoriteMedia, listFavorites, touchMedia, listRecents,
 } from './controller.js';
 
 const router = Router();
@@ -65,6 +71,19 @@ router.delete('/tags/:id', requirePermission('media', 'edit'), validate(deleteTa
 router.post('/tag', requirePermission('media', 'edit'), validate(tagMediaSchema), tagMedia);
 router.post('/untag', requirePermission('media', 'edit'), validate(tagMediaSchema), untagMedia);
 
+// Collections (smart + static)
+router.get('/collections', requirePermission('media', 'view'), listCollections);
+router.post('/collections', requirePermission('media', 'edit'), validate(createCollectionSchema), createCollection);
+router.get('/collections/:id', requirePermission('media', 'view'), validate(collectionContentsSchema), getCollectionContents);
+router.patch('/collections/:id', requirePermission('media', 'edit'), validate(updateCollectionSchema), updateCollection);
+router.delete('/collections/:id', requirePermission('media', 'edit'), validate(collectionIdSchema), deleteCollection);
+router.post('/collections/:id/items', requirePermission('media', 'edit'), validate(collectionItemsSchema), addCollectionItems);
+router.delete('/collections/:id/items', requirePermission('media', 'edit'), validate(collectionItemsSchema), removeCollectionItems);
+
+// Favorites + recents
+router.get('/favorites', requirePermission('media', 'view'), validate(pagedListSchema), listFavorites);
+router.get('/recent', requirePermission('media', 'view'), validate(pagedListSchema), listRecents);
+
 // Custom meta fields (admin)
 router.get('/meta-fields', requirePermission('media', 'view'), listMetaFields);
 router.post('/meta-fields', requirePermission('media', 'edit'), validate(createMetaFieldSchema), createMetaField);
@@ -73,6 +92,9 @@ router.delete('/meta-fields/:id', requirePermission('media', 'edit'), validate(d
 
 // List + CRUD
 router.get('/', requirePermission('media', 'view'), validate(listMediaSchema), listMedia);
+router.post('/:id/favorite', requirePermission('media', 'view'), validate(mediaIdParamSchema), favoriteMedia);
+router.delete('/:id/favorite', requirePermission('media', 'view'), validate(mediaIdParamSchema), unfavoriteMedia);
+router.post('/:id/touch', requirePermission('media', 'view'), validate(mediaIdParamSchema), touchMedia);
 router.get('/:id/usage', requirePermission('media', 'view'), validate(getMediaSchema), getMediaUsage);
 router.get('/:id', requirePermission('media', 'view'), validate(getMediaSchema), getMedia);
 router.patch('/:id', requirePermission('media', 'edit'), validate(updateMediaSchema), updateMedia);

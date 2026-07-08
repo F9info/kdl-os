@@ -2,6 +2,7 @@ import * as mediaService from './service.js';
 import * as tagsService from './tags.service.js';
 import * as metaFieldsService from './meta-fields.service.js';
 import * as mediaSearchService from './media-search.service.js';
+import * as collectionsService from './collections.service.js';
 import { successResponse, errorResponse } from '../../shared/utils/response.js';
 
 // ─── Search ──────────────────────────────────────────────────────────────────
@@ -190,6 +191,126 @@ export const untagMedia = async (req, res, next) => {
   try {
     const { media_ids, tags } = req.validated.body;
     const result = await tagsService.untagMedia(media_ids, tags, req.user.id);
+    return successResponse(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─── Collections ─────────────────────────────────────────────────────────────
+
+export const listCollections = async (req, res, next) => {
+  try {
+    const collections = await collectionsService.listCollections();
+    return successResponse(res, { collections });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const createCollection = async (req, res, next) => {
+  try {
+    const collection = await collectionsService.createCollection(req.validated.body, req.user.id);
+    return successResponse(res, { collection }, 201);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateCollection = async (req, res, next) => {
+  try {
+    const collection = await collectionsService.updateCollection(req.validated.params.id, req.validated.body, req.user.id);
+    if (!collection) return errorResponse(res, 'Collection not found', 404);
+    return successResponse(res, { collection });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const deleteCollection = async (req, res, next) => {
+  try {
+    const collection = await collectionsService.deleteCollection(req.validated.params.id, req.user.id);
+    if (!collection) return errorResponse(res, 'Collection not found', 404);
+    return successResponse(res, { message: 'Collection deleted' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getCollectionContents = async (req, res, next) => {
+  try {
+    const result = await collectionsService.getCollectionContents(req.validated.params.id, req.validated.query ?? {});
+    if (!result) return errorResponse(res, 'Collection not found', 404);
+    return successResponse(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const addCollectionItems = async (req, res, next) => {
+  try {
+    const result = await collectionsService.addCollectionItems(req.validated.params.id, req.validated.body.media_ids, req.user.id);
+    if (!result) return errorResponse(res, 'Collection not found', 404);
+    return successResponse(res, result);
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+export const removeCollectionItems = async (req, res, next) => {
+  try {
+    const result = await collectionsService.removeCollectionItems(req.validated.params.id, req.validated.body.media_ids, req.user.id);
+    if (!result) return errorResponse(res, 'Collection not found', 404);
+    return successResponse(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─── Favorites / recents ─────────────────────────────────────────────────────
+
+export const favoriteMedia = async (req, res, next) => {
+  try {
+    const result = await collectionsService.favoriteMedia(req.user.id, req.validated.params.id);
+    if (!result) return errorResponse(res, 'Media not found', 404);
+    return successResponse(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const unfavoriteMedia = async (req, res, next) => {
+  try {
+    const result = await collectionsService.unfavoriteMedia(req.user.id, req.validated.params.id);
+    return successResponse(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const listFavorites = async (req, res, next) => {
+  try {
+    const result = await collectionsService.listFavorites(req.user.id, req.validated?.query ?? {});
+    return successResponse(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const touchMedia = async (req, res, next) => {
+  try {
+    const result = await collectionsService.touchMedia(req.validated.params.id);
+    if (!result) return errorResponse(res, 'Media not found', 404);
+    return successResponse(res, { message: 'Touched' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const listRecents = async (req, res, next) => {
+  try {
+    const result = await collectionsService.listRecents(req.validated?.query ?? {});
     return successResponse(res, result);
   } catch (err) {
     next(err);

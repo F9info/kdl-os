@@ -280,7 +280,7 @@ export const updateMediaMeta = async (id, data, actorId) => {
   return resolveUrls(shapeDamFields(updated));
 };
 
-const resolveUrls = async (m) => {
+export const resolveUrls = async (m) => {
   const url = await storageService.getFileUrl(m.path).catch(() => null);
   const variantUrls = m.variants ? await resolveVariantUrls(m.variants) : null;
   return { ...m, url, variants: variantUrls };

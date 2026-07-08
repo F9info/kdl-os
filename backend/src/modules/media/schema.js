@@ -107,6 +107,56 @@ export const deleteMetaFieldSchema = z.object({
   params: z.object({ id: z.string().min(1) }),
 });
 
+// Collections
+const collectionRules = z.record(z.string(), z.any());
+
+export const createCollectionSchema = z.object({
+  body: z.object({
+    name: z.string().min(1).max(255),
+    is_smart: z.boolean().optional(),
+    rules: collectionRules.optional(),
+  }).refine((b) => !b.is_smart || b.rules, { message: 'Smart collections require rules' }),
+});
+
+export const updateCollectionSchema = z.object({
+  params: z.object({ id: z.string().min(1) }),
+  body: z.object({
+    name: z.string().min(1).max(255).optional(),
+    rules: collectionRules.optional(),
+  }),
+});
+
+export const collectionIdSchema = z.object({
+  params: z.object({ id: z.string().min(1) }),
+});
+
+export const collectionContentsSchema = z.object({
+  params: z.object({ id: z.string().min(1) }),
+  query: z.object({
+    page: z.string().regex(/^\d+$/).optional(),
+    limit: z.string().regex(/^\d+$/).optional(),
+  }).optional(),
+});
+
+export const collectionItemsSchema = z.object({
+  params: z.object({ id: z.string().min(1) }),
+  body: z.object({
+    media_ids: z.array(z.string().min(1)).min(1),
+  }),
+});
+
+// Favorites / recents
+export const mediaIdParamSchema = z.object({
+  params: z.object({ id: z.string().min(1) }),
+});
+
+export const pagedListSchema = z.object({
+  query: z.object({
+    page: z.string().regex(/^\d+$/).optional(),
+    limit: z.string().regex(/^\d+$/).optional(),
+  }).optional(),
+});
+
 // Folder schemas
 export const createFolderSchema = z.object({
   body: z.object({

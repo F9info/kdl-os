@@ -39,6 +39,7 @@ vi.mock('sharp', () => ({
 
 vi.mock('../../src/modules/media/media.queue.js', () => ({
   enqueueVariantJob: vi.fn(),
+  enqueueSearchIndexJob: vi.fn(),
 }));
 
 vi.mock('../../src/modules/user-management/shared/activity-logger.js', () => ({
