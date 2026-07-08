@@ -135,10 +135,11 @@ export const moveMedia = async (mediaIds, folderId, actorId) => {
 
 // ─── Media CRUD ─────────────────────────────────────────────────────────────
 
-export const uploadMedia = async (file, userId, folderId) => {
+export const uploadMedia = async (file, userId, folderId, opts = {}) => {
   const settings = await getUploadSettings();
-  if (file.size > settings.maxFileSizeBytes) {
-    throw Object.assign(new Error(`File exceeds max size of ${settings.maxFileSizeMb}MB`), { status: 422 });
+  const capBytes = opts.maxBytesOverride ?? settings.maxFileSizeBytes;
+  if (file.size > capBytes) {
+    throw Object.assign(new Error(`File exceeds max size of ${Math.round(capBytes / (1024 * 1024))}MB`), { status: 422 });
   }
   if (!settings.allowedMimes.has(file.mimetype)) {
     throw Object.assign(new Error(`File type not allowed: ${file.mimetype}`), { status: 422 });
@@ -208,9 +209,12 @@ export const uploadMedia = async (file, userId, folderId) => {
 
 export const listMedia = async (userId, query) => {
   const { page, limit, skip } = getPaginationParams(query);
-  const { folder_id, type, search, date_from, date_to, sort } = query;
+  const { folder_id, type, search, date_from, date_to, sort, archived } = query;
 
   const where = { deleted_at: null };
+  // Archived files are hidden by default; ?archived=true shows only them, ?archived=all shows both.
+  if (archived === 'true') where.is_archived = true;
+  else if (archived !== 'all') where.is_archived = false;
   if (folder_id !== undefined) where.folder_id = folder_id === 'null' ? null : folder_id;
   if (type) where.type = type;
   if (search) {

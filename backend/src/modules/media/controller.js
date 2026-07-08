@@ -3,6 +3,9 @@ import * as tagsService from './tags.service.js';
 import * as metaFieldsService from './meta-fields.service.js';
 import * as mediaSearchService from './media-search.service.js';
 import * as collectionsService from './collections.service.js';
+import * as fileOpsService from './file-ops.service.js';
+import * as chunkedUploadService from './chunked-upload.service.js';
+import * as importService from './import.service.js';
 import { successResponse, errorResponse } from '../../shared/utils/response.js';
 
 // ─── Search ──────────────────────────────────────────────────────────────────
@@ -97,8 +100,110 @@ export const uploadMedia = async (req, res, next) => {
     const files = req.files ?? (req.file ? [req.file] : []);
     if (!files.length) return errorResponse(res, 'No file uploaded', 400);
     const folderId = req.body?.folder_id ?? null;
+
+    // Folder upload (webkitdirectory): relative_paths is a JSON array aligned
+    // with the files array; each entry shapes nested folders under folder_id.
+    let relPaths = req.body?.relative_paths ?? null;
+    if (typeof relPaths === 'string') {
+      try { relPaths = JSON.parse(relPaths); } catch { relPaths = null; }
+    }
+    if (Array.isArray(relPaths) && relPaths.some((p) => typeof p === 'string' && p.includes('/'))) {
+      const results = await fileOpsService.uploadFilesWithPaths(files, relPaths, folderId, req.user.id);
+      return successResponse(res, { media: results }, 201);
+    }
+
     const results = await Promise.all(files.map((f) => mediaService.uploadMedia(f, req.user.id, folderId)));
     return successResponse(res, { media: results }, 201);
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+// ─── File ops (A5) ───────────────────────────────────────────────────────────
+
+export const copyMedia = async (req, res, next) => {
+  try {
+    const result = await fileOpsService.copyMedia(req.validated.params.id, req.validated.body ?? {}, req.user.id);
+    if (!result) return errorResponse(res, 'Media not found', 404);
+    return successResponse(res, result, 201);
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+export const archiveMedia = async (req, res, next) => {
+  try {
+    const { media_ids, archived } = req.validated.body;
+    const result = await fileOpsService.setArchived(media_ids, archived, req.user.id);
+    return successResponse(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const chunkInit = async (req, res, next) => {
+  try {
+    const result = await chunkedUploadService.initChunkedUpload(req.validated.body, req.user.id);
+    return successResponse(res, result, 201);
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+export const chunkPart = async (req, res, next) => {
+  try {
+    if (!req.file?.buffer?.length) return errorResponse(res, 'No chunk data uploaded', 400);
+    const index = Number(req.validated.query.index);
+    const result = await chunkedUploadService.saveChunkPart(req.validated.params.uploadId, index, req.file.buffer, req.user.id);
+    return successResponse(res, result);
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+export const chunkStatus = async (req, res, next) => {
+  try {
+    const result = await chunkedUploadService.getChunkedStatus(req.validated.params.uploadId, req.user.id);
+    return successResponse(res, result);
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+export const chunkComplete = async (req, res, next) => {
+  try {
+    const media = await chunkedUploadService.completeChunkedUpload(req.validated.params.uploadId, req.user.id);
+    return successResponse(res, { media }, 201);
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status, err.detail);
+    next(err);
+  }
+};
+
+export const importZip = async (req, res, next) => {
+  try {
+    if (!req.file?.buffer?.length) return errorResponse(res, 'No zip file uploaded', 400);
+    if (req.file.mimetype !== 'application/zip' && req.file.mimetype !== 'application/x-zip-compressed') {
+      return errorResponse(res, 'File must be a zip archive', 422);
+    }
+    const result = await importService.importZip(req.file.buffer, req.validated.body ?? {}, req.user.id);
+    return successResponse(res, result, 201);
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+export const importUrl = async (req, res, next) => {
+  try {
+    const { url, folder_id } = req.validated.body;
+    const media = await importService.importFromUrl(url, { folder_id }, req.user.id);
+    return successResponse(res, { media }, 201);
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);
     next(err);

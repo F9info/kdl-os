@@ -9,6 +9,10 @@ export const uploadFile = async (file, objectName) => {
   return getFileUrl(objectName);
 };
 
+export const copyFile = async (srcObjectName, destObjectName) => {
+  await minio.copyObject(BUCKET, destObjectName, `/${BUCKET}/${srcObjectName}`);
+};
+
 export const deleteFile = async (objectName) => {
   await minio.removeObject(BUCKET, objectName);
 };

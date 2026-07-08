@@ -31,16 +31,25 @@ const CACHE_TTL = 60_000;
 export const getUploadSettings = async () => {
   if (cache && Date.now() - cacheTime < CACHE_TTL) return cache;
 
-  const [maxSizeSetting, mimesSetting] = await Promise.all([
+  const [maxSizeSetting, mimesSetting, maxChunkedSetting] = await Promise.all([
     prisma.appSetting.findUnique({ where: { key: 'media.max_file_size_mb' } }),
     prisma.appSetting.findUnique({ where: { key: 'media.allowed_mime_types' } }),
+    prisma.appSetting.findUnique({ where: { key: 'media.max_chunked_file_size_mb' } }),
   ]);
 
   const maxFileSizeMb = maxSizeSetting ? Number(maxSizeSetting.value) : 10;
   const allowedList = mimesSetting ? JSON.parse(mimesSetting.value) : DEFAULT_MIME_TYPES;
   const allowedMimes = new Set(allowedList.filter((m) => !EXECUTABLES.has(m)));
+  // Chunked/resumable uploads bypass the per-request cap; this is their (much larger) ceiling.
+  const maxChunkedSizeMb = maxChunkedSetting ? Number(maxChunkedSetting.value) : 512;
 
-  cache = { maxFileSizeMb, maxFileSizeBytes: maxFileSizeMb * 1024 * 1024, allowedMimes };
+  cache = {
+    maxFileSizeMb,
+    maxFileSizeBytes: maxFileSizeMb * 1024 * 1024,
+    allowedMimes,
+    maxChunkedSizeMb,
+    maxChunkedSizeBytes: maxChunkedSizeMb * 1024 * 1024,
+  };
   cacheTime = Date.now();
   return cache;
 };

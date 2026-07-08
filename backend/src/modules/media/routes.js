@@ -14,6 +14,9 @@ import {
   createCollectionSchema, updateCollectionSchema, collectionIdSchema,
   collectionContentsSchema, collectionItemsSchema,
   mediaIdParamSchema, pagedListSchema,
+  copyMediaSchema, archiveMediaSchema,
+  chunkInitSchema, chunkPartSchema, chunkSessionSchema,
+  zipImportSchema, urlImportSchema,
 } from './schema.js';
 import {
   uploadMedia, listMedia, getMedia, updateMedia, deleteMedia, bulkDelete,
@@ -26,6 +29,9 @@ import {
   listCollections, createCollection, updateCollection, deleteCollection,
   getCollectionContents, addCollectionItems, removeCollectionItems,
   favoriteMedia, unfavoriteMedia, listFavorites, touchMedia, listRecents,
+  copyMedia, archiveMedia,
+  chunkInit, chunkPart, chunkStatus, chunkComplete,
+  importZip, importUrl,
 } from './controller.js';
 
 const router = Router();
@@ -54,6 +60,19 @@ router.post('/upload', requirePermission('media', 'add'), upload.array('files', 
 
 // Backward-compat single-file upload alias
 router.post('/upload/single', requirePermission('media', 'add'), upload.single('file'), uploadMedia);
+
+// Chunked + resumable upload (50MB+ files)
+router.post('/upload/chunked/init', requirePermission('media', 'add'), validate(chunkInitSchema), chunkInit);
+router.put('/upload/chunked/:uploadId/part', requirePermission('media', 'add'), upload.single('chunk'), validate(chunkPartSchema), chunkPart);
+router.get('/upload/chunked/:uploadId/status', requirePermission('media', 'add'), validate(chunkSessionSchema), chunkStatus);
+router.post('/upload/chunked/:uploadId/complete', requirePermission('media', 'add'), validate(chunkSessionSchema), chunkComplete);
+
+// Imports
+router.post('/import/zip', requirePermission('media', 'add'), upload.single('file'), validate(zipImportSchema), importZip);
+router.post('/import/url', requirePermission('media', 'add'), validate(urlImportSchema), importUrl);
+
+// Archive flag (bulk)
+router.post('/archive', requirePermission('media', 'edit'), validate(archiveMediaSchema), archiveMedia);
 
 // Usage tracking (test + integration endpoints)
 router.post('/usage/register', requirePermission('media', 'edit'), validate(registerUsageSchema), registerUsage);
@@ -95,6 +114,7 @@ router.get('/', requirePermission('media', 'view'), validate(listMediaSchema), l
 router.post('/:id/favorite', requirePermission('media', 'view'), validate(mediaIdParamSchema), favoriteMedia);
 router.delete('/:id/favorite', requirePermission('media', 'view'), validate(mediaIdParamSchema), unfavoriteMedia);
 router.post('/:id/touch', requirePermission('media', 'view'), validate(mediaIdParamSchema), touchMedia);
+router.post('/:id/copy', requirePermission('media', 'add'), validate(copyMediaSchema), copyMedia);
 router.get('/:id/usage', requirePermission('media', 'view'), validate(getMediaSchema), getMediaUsage);
 router.get('/:id', requirePermission('media', 'view'), validate(getMediaSchema), getMedia);
 router.patch('/:id', requirePermission('media', 'edit'), validate(updateMediaSchema), updateMedia);

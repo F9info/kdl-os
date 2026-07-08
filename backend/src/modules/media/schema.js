@@ -15,7 +15,55 @@ export const listMediaSchema = z.object({
     search: z.string().optional(),
     date_from: z.string().optional(),
     date_to: z.string().optional(),
+    archived: z.enum(['true', 'false', 'all']).optional(),
     sort: z.enum(['created_at_desc', 'created_at_asc', 'name_asc', 'name_desc', 'size_desc']).optional(),
+  }),
+});
+
+// File ops (A5)
+export const copyMediaSchema = z.object({
+  params: z.object({ id: z.string().min(1) }),
+  body: z.object({
+    folder_id: z.string().nullable().optional(),
+  }).optional(),
+});
+
+export const archiveMediaSchema = z.object({
+  body: z.object({
+    media_ids: z.array(z.string().min(1)).min(1),
+    archived: z.boolean(),
+  }),
+});
+
+export const chunkInitSchema = z.object({
+  body: z.object({
+    filename: z.string().min(1).max(255),
+    size: z.number().int().positive(),
+    mime_type: z.string().min(1).max(255),
+    folder_id: z.string().nullable().optional(),
+    total_parts: z.number().int().positive(),
+  }),
+});
+
+export const chunkPartSchema = z.object({
+  params: z.object({ uploadId: z.string().uuid() }),
+  query: z.object({ index: z.string().regex(/^\d+$/) }),
+});
+
+export const chunkSessionSchema = z.object({
+  params: z.object({ uploadId: z.string().uuid() }),
+});
+
+export const zipImportSchema = z.object({
+  body: z.object({
+    folder_id: z.string().nullable().optional(),
+  }).optional(),
+});
+
+export const urlImportSchema = z.object({
+  body: z.object({
+    url: z.string().min(1).max(2000),
+    folder_id: z.string().nullable().optional(),
   }),
 });
 
