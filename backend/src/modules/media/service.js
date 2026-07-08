@@ -7,6 +7,8 @@ import { getUploadSettings } from './settings.js';
 import { enqueueVariantJob } from './media.queue.js';
 import { sanitizeSvg, isSvgMime } from './svg-sanitizer.js';
 import { extractExif } from './exif-extractor.js';
+import { setMediaTags } from './tags.service.js';
+import { setMediaMeta } from './meta-fields.service.js';
 
 const MIME_TO_TYPE = (mime) => {
   if (mime.startsWith('image/')) return 'IMAGE';
@@ -239,18 +241,39 @@ export const listMedia = async (userId, query) => {
   return { media, pagination: { page, limit, total, pages: Math.ceil(total / limit) } };
 };
 
+const DAM_INCLUDE = {
+  tags: { include: { tag: true } },
+  meta_values: { include: { field: true } },
+};
+
+// Flatten pivot rows into API-friendly `tags: string[]` + `meta: {slug: value}`
+const shapeDamFields = (m) => {
+  const { tags, meta_values, ...rest } = m;
+  return {
+    ...rest,
+    tags: (tags ?? []).map((p) => p.tag.name).sort(),
+    meta: Object.fromEntries((meta_values ?? []).map((v) => [v.field.slug, v.value])),
+  };
+};
+
 export const getMediaById = async (id) => {
-  const record = await prisma.media.findFirst({ where: { id, deleted_at: null } });
+  const record = await prisma.media.findFirst({ where: { id, deleted_at: null }, include: DAM_INCLUDE });
   if (!record) return null;
-  return resolveUrls(record);
+  return resolveUrls(shapeDamFields(record));
 };
 
 export const updateMediaMeta = async (id, data, actorId) => {
+  const { tags, meta, ...fields } = data;
   const record = await prisma.media.findFirst({ where: { id, deleted_at: null } });
   if (!record) return null;
-  const updated = await prisma.media.update({ where: { id }, data });
+  if (Object.keys(fields).length) {
+    await prisma.media.update({ where: { id }, data: fields });
+  }
+  if (tags) await setMediaTags(id, tags);
+  if (meta) await setMediaMeta(id, meta);
+  const updated = await prisma.media.findFirst({ where: { id }, include: DAM_INCLUDE });
   writeActivityAsync({ actor: actorId, module: 'media', action: 'updated', description: `File "${updated.original_name}" metadata updated` });
-  return resolveUrls(updated);
+  return resolveUrls(shapeDamFields(updated));
 };
 
 const resolveUrls = async (m) => {

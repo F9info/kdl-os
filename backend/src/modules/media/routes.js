@@ -8,12 +8,16 @@ import {
   createFolderSchema, updateFolderSchema, deleteFolderSchema,
   moveMediaSchema, bulkDeleteSchema, restoreTrashSchema,
   registerUsageSchema, releaseUsageSchema,
+  createTagSchema, updateTagSchema, deleteTagSchema, tagMediaSchema,
+  createMetaFieldSchema, updateMetaFieldSchema, deleteMetaFieldSchema,
 } from './schema.js';
 import {
   uploadMedia, listMedia, getMedia, updateMedia, deleteMedia, bulkDelete,
   listFolders, createFolder, updateFolder, deleteFolder, moveMedia,
   listTrash, restoreTrash, purgeTrash,
   getMediaUsage, registerUsage, releaseUsage,
+  listTags, createTag, renameTag, deleteTag, tagMedia, untagMedia,
+  listMetaFields, createMetaField, updateMetaField, deleteMetaField,
 } from './controller.js';
 
 const router = Router();
@@ -46,6 +50,20 @@ router.post('/upload/single', requirePermission('media', 'add'), upload.single('
 // Usage tracking (test + integration endpoints)
 router.post('/usage/register', requirePermission('media', 'edit'), validate(registerUsageSchema), registerUsage);
 router.post('/usage/release', requirePermission('media', 'edit'), validate(releaseUsageSchema), releaseUsage);
+
+// Tags
+router.get('/tags', requirePermission('media', 'view'), listTags);
+router.post('/tags', requirePermission('media', 'edit'), validate(createTagSchema), createTag);
+router.patch('/tags/:id', requirePermission('media', 'edit'), validate(updateTagSchema), renameTag);
+router.delete('/tags/:id', requirePermission('media', 'edit'), validate(deleteTagSchema), deleteTag);
+router.post('/tag', requirePermission('media', 'edit'), validate(tagMediaSchema), tagMedia);
+router.post('/untag', requirePermission('media', 'edit'), validate(tagMediaSchema), untagMedia);
+
+// Custom meta fields (admin)
+router.get('/meta-fields', requirePermission('media', 'view'), listMetaFields);
+router.post('/meta-fields', requirePermission('media', 'edit'), validate(createMetaFieldSchema), createMetaField);
+router.patch('/meta-fields/:id', requirePermission('media', 'edit'), validate(updateMetaFieldSchema), updateMetaField);
+router.delete('/meta-fields/:id', requirePermission('media', 'edit'), validate(deleteMetaFieldSchema), deleteMetaField);
 
 // List + CRUD
 router.get('/', requirePermission('media', 'view'), validate(listMediaSchema), listMedia);

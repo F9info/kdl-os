@@ -1,4 +1,6 @@
 import * as mediaService from './service.js';
+import * as tagsService from './tags.service.js';
+import * as metaFieldsService from './meta-fields.service.js';
 import { successResponse, errorResponse } from '../../shared/utils/response.js';
 
 // ─── Folders ────────────────────────────────────────────────────────────────
@@ -97,6 +99,113 @@ export const updateMedia = async (req, res, next) => {
     if (!media) return errorResponse(res, 'Media not found', 404);
     return successResponse(res, { media });
   } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+// ─── Tags ────────────────────────────────────────────────────────────────────
+
+export const listTags = async (req, res, next) => {
+  try {
+    const tags = await tagsService.listTags();
+    return successResponse(res, { tags });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const createTag = async (req, res, next) => {
+  try {
+    const tag = await tagsService.createTag(req.validated.body.name, req.user.id);
+    return successResponse(res, { tag }, 201);
+  } catch (err) {
+    if (err.code === 'P2002') return errorResponse(res, 'A tag with that name already exists', 409);
+    next(err);
+  }
+};
+
+export const renameTag = async (req, res, next) => {
+  try {
+    const tag = await tagsService.renameTag(req.validated.params.id, req.validated.body.name, req.user.id);
+    if (!tag) return errorResponse(res, 'Tag not found', 404);
+    return successResponse(res, { tag });
+  } catch (err) {
+    if (err.code === 'P2002') return errorResponse(res, 'A tag with that name already exists', 409);
+    next(err);
+  }
+};
+
+export const deleteTag = async (req, res, next) => {
+  try {
+    const tag = await tagsService.deleteTag(req.validated.params.id, req.user.id);
+    if (!tag) return errorResponse(res, 'Tag not found', 404);
+    return successResponse(res, { message: 'Tag deleted' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const tagMedia = async (req, res, next) => {
+  try {
+    const { media_ids, tags } = req.validated.body;
+    const result = await tagsService.tagMedia(media_ids, tags, req.user.id);
+    return successResponse(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const untagMedia = async (req, res, next) => {
+  try {
+    const { media_ids, tags } = req.validated.body;
+    const result = await tagsService.untagMedia(media_ids, tags, req.user.id);
+    return successResponse(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─── Custom meta fields ──────────────────────────────────────────────────────
+
+export const listMetaFields = async (req, res, next) => {
+  try {
+    const fields = await metaFieldsService.listMetaFields();
+    return successResponse(res, { fields });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const createMetaField = async (req, res, next) => {
+  try {
+    const field = await metaFieldsService.createMetaField(req.validated.body, req.user.id);
+    return successResponse(res, { field }, 201);
+  } catch (err) {
+    if (err.code === 'P2002') return errorResponse(res, 'A field with that slug already exists', 409);
+    next(err);
+  }
+};
+
+export const updateMetaField = async (req, res, next) => {
+  try {
+    const field = await metaFieldsService.updateMetaField(req.validated.params.id, req.validated.body, req.user.id);
+    if (!field) return errorResponse(res, 'Meta field not found', 404);
+    return successResponse(res, { field });
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
+    if (err.code === 'P2002') return errorResponse(res, 'A field with that slug already exists', 409);
+    next(err);
+  }
+};
+
+export const deleteMetaField = async (req, res, next) => {
+  try {
+    const field = await metaFieldsService.deleteMetaField(req.validated.params.id, req.user.id);
+    if (!field) return errorResponse(res, 'Meta field not found', 404);
+    return successResponse(res, { message: 'Meta field deleted' });
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
     next(err);
   }
 };

@@ -34,7 +34,58 @@ export const updateMediaSchema = z.object({
     alt_text: z.string().optional(),
     caption: z.string().optional(),
     original_name: z.string().optional(),
+    tags: z.array(z.string().min(1).max(64)).max(50).optional(),
+    meta: z.record(z.string().min(1), z.string().max(2000).nullable()).optional(),
   }),
+});
+
+// Tags
+export const createTagSchema = z.object({
+  body: z.object({ name: z.string().min(1).max(64) }),
+});
+
+export const updateTagSchema = z.object({
+  params: z.object({ id: z.string().min(1) }),
+  body: z.object({ name: z.string().min(1).max(64) }),
+});
+
+export const deleteTagSchema = z.object({
+  params: z.object({ id: z.string().min(1) }),
+});
+
+export const tagMediaSchema = z.object({
+  body: z.object({
+    media_ids: z.array(z.string().min(1)).min(1),
+    tags: z.array(z.string().min(1).max(64)).min(1).max(50),
+  }),
+});
+
+// Custom meta fields
+const metaFieldSlug = z.string().min(1).max(64).regex(/^[a-z0-9][a-z0-9_-]*$/, 'slug must be lowercase alphanumeric with _ or -');
+
+export const createMetaFieldSchema = z.object({
+  body: z.object({
+    slug: metaFieldSlug,
+    label: z.string().min(1).max(255),
+    field_type: z.enum(['TEXT', 'NUMBER', 'DATE', 'SELECT']).optional(),
+    options: z.array(z.string().min(1).max(255)).max(100).optional(),
+  }).refine((b) => b.field_type !== 'SELECT' || (b.options && b.options.length > 0), {
+    message: 'SELECT fields require options',
+  }),
+});
+
+export const updateMetaFieldSchema = z.object({
+  params: z.object({ id: z.string().min(1) }),
+  body: z.object({
+    slug: metaFieldSlug.optional(),
+    label: z.string().min(1).max(255).optional(),
+    field_type: z.enum(['TEXT', 'NUMBER', 'DATE', 'SELECT']).optional(),
+    options: z.array(z.string().min(1).max(255)).max(100).nullable().optional(),
+  }),
+});
+
+export const deleteMetaFieldSchema = z.object({
+  params: z.object({ id: z.string().min(1) }),
 });
 
 // Folder schemas
