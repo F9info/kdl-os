@@ -29,6 +29,15 @@ export interface Media {
   deleted_at: string | null
   created_at: string
   updated_at: string
+  // A1 additions
+  checksum: string | null
+  scan_result: string | null
+  scanned_at: string | null
+  exif: Record<string, unknown> | null
+  is_archived: boolean
+  // A2 additions
+  tags?: MediaTag[]
+  meta_values?: MediaMetaValue[]
 }
 
 export interface MediaFolder {
@@ -57,4 +66,56 @@ export interface MediaListResponse {
     total: number
     pages: number
   }
+}
+
+// A2: Tags + custom meta fields
+export interface MediaTag {
+  id: string
+  name: string
+  slug: string
+  color: string | null
+}
+
+export interface MediaMetaField {
+  id: string
+  name: string
+  slug: string
+  field_type: 'TEXT' | 'NUMBER' | 'DATE' | 'BOOLEAN' | 'URL'
+  required: boolean
+}
+
+export interface MediaMetaValue {
+  field_id: string
+  value: string
+  field?: MediaMetaField
+}
+
+// A4: Collections
+export interface MediaCollection {
+  id: string
+  name: string
+  description: string | null
+  is_smart: boolean
+  rules: SmartCollectionRule[] | null
+  cover_media_id: string | null
+  created_by: string
+  created_at: string
+  updated_at: string
+  _count?: { items: number }
+}
+
+export interface SmartCollectionRule {
+  field: string
+  op: 'eq' | 'contains' | 'gt' | 'lt' | 'in'
+  value: unknown
+}
+
+// A3: MeiliSearch faceted search results
+export interface MediaSearchResult {
+  media: Media[]
+  facets: {
+    type?: Record<string, number>
+    tags?: Record<string, number>
+  }
+  pagination: { total: number; page: number; limit: number; pages: number }
 }

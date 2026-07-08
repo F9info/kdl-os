@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Folder, FolderPlus, ChevronRight, Upload, Grid, List, Search, Trash2,
@@ -20,7 +20,13 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { formatDate, formatBytes } from '@/lib/utils'
 import { cn } from '@/lib/utils'
-import type { Media, MediaFolder, MediaType, MediaUsage } from '@/types/media.types'
+import type { Media, MediaFolder, MediaType, MediaUsage, MediaSearchResult } from '@/types/media.types'
+import {
+  SearchFacets, MediaTagChips, CustomFieldEditor, SidebarNav, CollectionsPanel,
+  CollectionItemsView, FavoritesView, RecentsView, ChunkedUploadDialog,
+  FolderUploadButton, useClipboardPaste, FavoriteButton, TagManager,
+  type SidebarView,
+} from '@/components/media/DamExtensions'
 
 // ── API helpers ──────────────────────────────────────────────────────────────
 
@@ -582,6 +588,35 @@ function DetailDrawer({
         </div>
       )}
 
+      {/* A8: tag chips */}
+      <div className="space-y-1">
+        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Tags</p>
+        <MediaTagChips
+          mediaId={item.id}
+          tags={item.tags ?? []}
+          onChange={() => queryClient.invalidateQueries({ queryKey: ['media'] })}
+        />
+      </div>
+
+      {/* A8: custom meta fields */}
+      <CustomFieldEditor
+        mediaId={item.id}
+        metaValues={item.meta_values ?? []}
+        onChange={() => queryClient.invalidateQueries({ queryKey: ['media'] })}
+      />
+
+      {/* A8: favorite toggle */}
+      <div className="flex items-center gap-2">
+        <FavoriteButton
+          mediaId={item.id}
+          isFav={false}
+          onChange={() => {
+            queryClient.invalidateQueries({ queryKey: ['media-favorites'] })
+          }}
+        />
+        <span className="text-xs text-muted-foreground">Favorite</span>
+      </div>
+
       {showAnalyze && <AiSuggestionsPanel item={item} />}
       {showTranscribe && <TranscriptPanel item={item} />}
 
@@ -627,13 +662,28 @@ export default function MediaPage() {
   const queryClient = useQueryClient()
 
   const [view, setView] = useState<ViewMode>('files')
+  const [sidebarView, setSidebarView] = useState<SidebarView>('folders')
   const [gridMode, setGridMode] = useState<'grid' | 'list'>('grid')
   const [selectedFolder, setSelectedFolder] = useState<string | null | undefined>(undefined)
+  const [selectedCollection, setSelectedCollection] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<MediaType | ''>('')
+  const [searchResults, setSearchResults] = useState<MediaSearchResult | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [detailItem, setDetailItem] = useState<Media | null>(null)
   const [lastClickIdx, setLastClickIdx] = useState<number | null>(null)
+  // A8: chunked upload dialog
+  const [chunkedFiles, setChunkedFiles] = useState<File[]>([])
+  const [chunkedOpen, setChunkedOpen] = useState(false)
+  // A8: folder upload — uses existing backend /media/upload?relative_paths=...
+  const handleFolderUpload = useCallback((files: File[], relativePaths: string[]) => {
+    const fd = new FormData()
+    files.forEach((f) => fd.append('files', f))
+    relativePaths.forEach((p) => fd.append('relative_paths', p))
+    if (selectedFolder) fd.append('folder_id', selectedFolder)
+    api.post('/media/upload', fd).then(() => { invalidateAll(); toast({ title: 'Folder uploaded' }) })
+      .catch(() => toast({ title: 'Folder upload failed', variant: 'destructive' }))
+  }, [selectedFolder]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const [createFolderOpen, setCreateFolderOpen] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
@@ -669,9 +719,23 @@ export default function MediaPage() {
     enabled: view === 'trash',
   })
 
-  const items: Media[] = view === 'files'
-    ? (mediaQuery.data?.media ?? [])
-    : (trashQuery.data ?? [])
+  // A8: clipboard paste — attach images/files pasted anywhere on the page
+  useClipboardPaste(
+    useCallback((files: File[]) => {
+      const large = files.filter((f) => f.size > 50 * 1024 * 1024)
+      const small = files.filter((f) => f.size <= 50 * 1024 * 1024)
+      if (small.length) uploadMutation.mutate(small)
+      if (large.length) { setChunkedFiles(large); setChunkedOpen(true) }
+    }, []), // eslint-disable-line react-hooks/exhaustive-deps
+    can('media:add')
+  )
+
+  // A8: items — prefer searchResults when active, else regular query
+  const items: Media[] = searchResults
+    ? searchResults.media
+    : view === 'files'
+      ? (mediaQuery.data?.media ?? [])
+      : (trashQuery.data ?? [])
 
   // ── Mutations ────────────────────────────────────────────────────────────────
 
@@ -771,60 +835,80 @@ export default function MediaPage() {
       <div className="flex h-[calc(100vh-64px)] overflow-hidden">
         {/* Sidebar */}
         <aside className="w-56 flex-shrink-0 border-r flex flex-col bg-background">
-          <div className="p-2 border-b flex items-center justify-between">
-            <span className="text-sm font-medium">Folders</span>
-            {can('media:add') && (
-              <button
-                type="button"
-                title="New folder"
-                onClick={() => setCreateFolderOpen(true)}
-                className="p-1 rounded hover:bg-accent"
-              >
-                <FolderPlus className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-          <div className="flex-1 overflow-y-auto p-1 space-y-0.5">
-            <button
-              type="button"
-              className={cn(
-                'flex items-center gap-2 rounded px-2 py-1 text-sm w-full hover:bg-accent',
-                selectedFolder === undefined && view === 'files' && 'bg-accent font-medium'
-              )}
-              onClick={() => { setView('files'); setSelectedFolder(undefined) }}
-            >
-              <Grid className="h-3.5 w-3.5" />
-              All files
-            </button>
-            {rootFolders.map((f) => (
-              <FolderNode
-                key={f.id}
-                folder={f}
-                depth={0}
-                selectedId={selectedFolder}
-                onSelect={(id) => { setSelectedFolder(id); setView('files') }}
-                folders={folders}
-                onRename={(folder) => { setRenameFolderTarget(folder); setRenameFolderName(folder.name) }}
-                onDelete={setDeleteFolderTarget}
-              />
-            ))}
-          </div>
-          <div className="border-t p-1">
-            <button
-              type="button"
-              className={cn(
-                'flex items-center gap-2 rounded px-2 py-1 text-sm w-full hover:bg-accent',
-                view === 'trash' && 'bg-accent font-medium'
-              )}
-              onClick={() => { setView('trash'); setSelected(new Set()) }}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Trash
-              {trashCount > 0 && (
-                <Badge variant="secondary" className="ml-auto text-xs px-1">{trashCount}</Badge>
-              )}
-            </button>
-          </div>
+          <SidebarNav current={sidebarView} onChange={(v) => { setSidebarView(v); if (v !== 'collections') setSelectedCollection(null) }} />
+
+          {sidebarView === 'folders' && (
+            <>
+              <div className="p-2 border-b flex items-center justify-between">
+                <span className="text-sm font-medium">Folders</span>
+                {can('media:add') && (
+                  <button
+                    type="button"
+                    title="New folder"
+                    onClick={() => setCreateFolderOpen(true)}
+                    className="p-1 rounded hover:bg-accent"
+                  >
+                    <FolderPlus className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              <div className="flex-1 overflow-y-auto p-1 space-y-0.5">
+                <button
+                  type="button"
+                  className={cn(
+                    'flex items-center gap-2 rounded px-2 py-1 text-sm w-full hover:bg-accent',
+                    selectedFolder === undefined && view === 'files' && 'bg-accent font-medium'
+                  )}
+                  onClick={() => { setView('files'); setSelectedFolder(undefined) }}
+                >
+                  <Grid className="h-3.5 w-3.5" />
+                  All files
+                </button>
+                {rootFolders.map((f) => (
+                  <FolderNode
+                    key={f.id}
+                    folder={f}
+                    depth={0}
+                    selectedId={selectedFolder}
+                    onSelect={(id) => { setSelectedFolder(id); setView('files') }}
+                    folders={folders}
+                    onRename={(folder) => { setRenameFolderTarget(folder); setRenameFolderName(folder.name) }}
+                    onDelete={setDeleteFolderTarget}
+                  />
+                ))}
+              </div>
+              <div className="border-t p-1">
+                <button
+                  type="button"
+                  className={cn(
+                    'flex items-center gap-2 rounded px-2 py-1 text-sm w-full hover:bg-accent',
+                    view === 'trash' && 'bg-accent font-medium'
+                  )}
+                  onClick={() => { setView('trash'); setSelected(new Set()) }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Trash
+                  {trashCount > 0 && (
+                    <Badge variant="secondary" className="ml-auto text-xs px-1">{trashCount}</Badge>
+                  )}
+                </button>
+              </div>
+            </>
+          )}
+
+          {sidebarView === 'collections' && (
+            <CollectionsPanel
+              selected={selectedCollection}
+              onSelect={(id) => { setSelectedCollection(id); setView('files') }}
+            />
+          )}
+
+          {/* favorites + recents: no sidebar content needed — main area shows them */}
+          {(sidebarView === 'favorites' || sidebarView === 'recents') && (
+            <div className="flex-1 flex items-center justify-center p-4 text-xs text-muted-foreground">
+              Select a file to see details
+            </div>
+          )}
         </aside>
 
         {/* Main content */}
@@ -834,30 +918,23 @@ export default function MediaPage() {
             {view === 'files' && (
               <>
                 {can('media:add') && (
-                  <UploadZone
-                    onFiles={(files) => uploadMutation.mutate(files)}
-                    disabled={uploadMutation.isPending}
-                  />
+                  <>
+                    <UploadZone
+                      onFiles={(files) => {
+                        const large = files.filter((f) => f.size > 50 * 1024 * 1024)
+                        const small = files.filter((f) => f.size <= 50 * 1024 * 1024)
+                        if (small.length) uploadMutation.mutate(small)
+                        if (large.length) { setChunkedFiles(large); setChunkedOpen(true) }
+                      }}
+                      disabled={uploadMutation.isPending}
+                    />
+                    <FolderUploadButton onFiles={handleFolderUpload} disabled={uploadMutation.isPending} />
+                  </>
                 )}
-                <div className="relative flex-1 min-w-[160px]">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search…"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-8 h-9"
-                  />
-                </div>
-                <select
-                  value={typeFilter}
-                  onChange={(e) => setTypeFilter(e.target.value as MediaType | '')}
-                  className="border rounded h-9 text-sm px-2 bg-background"
-                >
-                  <option value="">All types</option>
-                  {(['IMAGE', 'VIDEO', 'AUDIO', 'DOCUMENT', 'OTHER'] as MediaType[]).map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
+                <SearchFacets
+                  onResults={(r) => setSearchResults(r)}
+                  onClear={() => setSearchResults(null)}
+                />
               </>
             )}
 
@@ -929,6 +1006,16 @@ export default function MediaPage() {
 
           {/* Files area */}
           <div className="flex-1 overflow-y-auto p-3">
+            {/* A8: collection / favorites / recents special views */}
+            {sidebarView === 'collections' && selectedCollection && (
+              <CollectionItemsView collectionId={selectedCollection} onDetail={setDetailItem} />
+            )}
+            {sidebarView === 'favorites' && <FavoritesView onDetail={setDetailItem} />}
+            {sidebarView === 'recents' && <RecentsView onDetail={setDetailItem} />}
+
+            {/* Regular file grid (folders view or when no special view active) */}
+            {(sidebarView === 'folders' || (sidebarView === 'collections' && !selectedCollection)) && (
+              <>
             {(mediaQuery.isLoading || trashQuery.isLoading) && (
               <p className="text-sm text-muted-foreground">Loading…</p>
             )}
@@ -968,6 +1055,8 @@ export default function MediaPage() {
                 ))}
               </div>
             )}
+              </>
+            )}
           </div>
         </div>
 
@@ -982,6 +1071,16 @@ export default function MediaPage() {
           />
         )}
       </div>
+
+      {/* A8: chunked upload dialog */}
+      {chunkedOpen && chunkedFiles.length > 0 && (
+        <ChunkedUploadDialog
+          files={chunkedFiles}
+          folderId={selectedFolder ?? null}
+          onComplete={() => { invalidateAll(); toast({ title: 'Chunked upload complete' }) }}
+          onClose={() => { setChunkedOpen(false); setChunkedFiles([]) }}
+        />
+      )}
 
       {/* PageHeader outside the flex (scroll context) */}
       <PageHeader title="Media Library" />
