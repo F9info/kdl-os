@@ -8,7 +8,7 @@ Last updated: 2026-07-08 (KDL-121 Phase C — Backend Coder)
 |---|---|---|---|---|
 | A — DAM Foundations | KDL-119 | Backend Architect | 🔨 In progress (A5 done, A6+ pending) | A1–A5 done; full suite 394+ passing |
 | B — Delivery, Sharing, Workflow, Versioning | KDL-120 | Backend Coder | ⏳ Blocked by A | — |
-| C — Processing Studio | KDL-121 | Backend Coder | 🔨 In progress (C1–C7 done, C8 pending E2E) | MediaVersion schema migrated; C1 queue+Dockerfile; C2–C6 services; 25 new vitest (411 total pass); C7 frontend (tsc exit 0) |
+| C — Processing Studio | KDL-121 | Backend Coder | ✅ PASS | C1–C8 complete; 411 vitest pass; tsc exit 0; Playwright 4/4 (image-edit→version, pdf-merge→new media, video-trim→version, audio-waveform→peaks) |
 | D — AI Layer | KDL-122 | AI Services | ⏳ Blocked by C | — |
 
 ### Gate Rule

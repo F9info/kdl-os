@@ -624,7 +624,7 @@ export const editMedia = async (req, res, next) => {
       note: req.validated.body.note,
       createdBy: req.user?.id,
     });
-    return successResponse(res, { job_id: job.id, status: 'queued' }, undefined, 202);
+    return successResponse(res, { job_id: job.id, status: 'queued' }, 202);
   } catch (err) {
     next(err);
   }
@@ -638,7 +638,7 @@ export const pdfOp = async (req, res, next) => {
       mediaId: req.validated.params?.id ?? req.validated.body.id,
       createdBy: req.user?.id,
     });
-    return successResponse(res, { job_id: job.id, status: 'queued' }, undefined, 202);
+    return successResponse(res, { job_id: job.id, status: 'queued' }, 202);
   } catch (err) {
     next(err);
   }
@@ -652,7 +652,7 @@ export const videoOp = async (req, res, next) => {
       mediaId: req.validated.params.id,
       createdBy: req.user?.id,
     });
-    return successResponse(res, { job_id: job.id, status: 'queued' }, undefined, 202);
+    return successResponse(res, { job_id: job.id, status: 'queued' }, 202);
   } catch (err) {
     next(err);
   }
@@ -666,7 +666,7 @@ export const audioOp = async (req, res, next) => {
       mediaId: req.validated.params.id,
       createdBy: req.user?.id,
     });
-    return successResponse(res, { job_id: job.id, status: 'queued' }, undefined, 202);
+    return successResponse(res, { job_id: job.id, status: 'queued' }, 202);
   } catch (err) {
     next(err);
   }
@@ -681,7 +681,7 @@ export const convertMedia = async (req, res, next) => {
       quality: req.validated.body.quality,
       createdBy: req.user?.id,
     });
-    return successResponse(res, { job_id: job.id, status: 'queued' }, undefined, 202);
+    return successResponse(res, { job_id: job.id, status: 'queued' }, 202);
   } catch (err) {
     next(err);
   }

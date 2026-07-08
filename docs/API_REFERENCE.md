@@ -1027,6 +1027,191 @@ Get all usage records for a file.
 
 ---
 
+### Processing Studio — `/api/media` (Phase C)
+
+All processing endpoints enqueue a BullMQ job on the `media-processing` queue (concurrency 2, 10-min lock). Every destructive edit writes a new **MediaVersion** — originals are never mutated.
+
+#### `GET /api/media/jobs/:jobId`
+
+Poll job status.
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "job-123",
+    "name": "image-edit",
+    "state": "completed",
+    "progress": 100,
+    "result": { ... },
+    "failedReason": null,
+    "timestamp": 1720000000000,
+    "processedOn": 1720000001000,
+    "finishedOn": 1720000002000
+  }
+}
+```
+
+`state` values: `waiting` | `active` | `completed` | `failed` | `delayed`
+
+---
+
+#### `GET /api/media/:id/versions`
+
+List all versions of a media file, newest first.
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "data": {
+    "versions": [
+      { "id": "...", "media_id": "...", "version": 1, "path": "...", "url": "https://...", "size": 12345, "checksum": "sha256...", "note": "grayscale", "created_at": "..." }
+    ]
+  }
+}
+```
+
+---
+
+#### `POST /api/media/:id/versions/:versionId/restore`
+
+Overwrite the current media file with a prior version's content (updates `size` and `checksum`).
+
+**Response 200:** `{ "success": true, "data": { "restored": true, "version": 1 } }`
+
+---
+
+#### `POST /api/media/:id/edit` — Image ops
+
+Enqueue one or more image operations (applied in order). Returns a job immediately.
+
+Required permission: `media:edit`
+
+**Body:**
+```json
+{
+  "ops": [
+    { "op": "resize", "width": 800, "height": 600, "fit": "cover" },
+    { "op": "grayscale" },
+    { "op": "compress", "quality": 80 }
+  ],
+  "note": "optional label for the version"
+}
+```
+
+| `op` | Extra fields | Notes |
+|------|-------------|-------|
+| `crop` | `left`, `top`, `width`, `height` | All integers, px |
+| `resize` | `width?`, `height?`, `fit?` | `fit`: cover/contain/fill/inside/outside |
+| `rotate` | `angle` | Degrees (90/180/270 or arbitrary) |
+| `flip` | — | Vertical mirror |
+| `flop` | — | Horizontal mirror |
+| `brightness` | `factor` | 0–2 float |
+| `contrast` | `factor` | 0–2 float |
+| `saturation` | `factor` | 0–2 float |
+| `grayscale` | — | |
+| `blur` | `sigma?` | Default 3 |
+| `sharpen` | — | |
+| `negate` | — | Invert colours |
+| `text_watermark` | `text`, `position?`, `opacity?`, `fontSize?`, `color?` | SVG composite |
+| `logo_watermark` | `mediaId`, `position?`, `opacity?`, `size?` | Fetched from MinIO |
+| `compress` | `quality?` | JPEG/WebP quality 1–100 |
+
+**Response 202:**
+```json
+{ "success": true, "data": { "job_id": "...", "status": "queued" } }
+```
+
+---
+
+#### `POST /api/media/:id/pdf-op` — Single-file PDF ops
+
+#### `POST /api/media/pdf-merge` — PDF merge (multi-file)
+
+Required permission: `media:edit` (merge requires `media:add`)
+
+**Body (`op: merge`):**
+```json
+{ "op": "merge", "ids": ["id1", "id2"], "name": "merged.pdf" }
+```
+
+| `op` | Required fields | Notes |
+|------|----------------|-------|
+| `merge` | `ids[]` (2–50) | Produces new `Media` row; result contains `media_id` |
+| `split` | `id`, `ranges[]` `{start,end}` | Each range → new MediaVersion |
+| `compress` | `id` | qpdf linearise + compression |
+| `password_protect` | `id`, `password` | qpdf owner+user password |
+| `password_remove` | `id`, `password` | Removes encryption |
+| `watermark` | `id`, `text`, `opacity?` | Via pdf-lib |
+| `thumbnail` | `id` | First-page PNG via pdftoppm → new MediaVersion |
+| `info` | `id` | Returns page count, title, author (no version written) |
+
+**Response 202:**
+```json
+{ "success": true, "data": { "job_id": "...", "status": "queued" } }
+```
+
+---
+
+#### `POST /api/media/:id/video-op` — Video ops
+
+Required permission: `media:edit`
+
+| `op` | Extra fields | Notes |
+|------|-------------|-------|
+| `thumbnail` | `time?` (default 1s) | Single PNG frame |
+| `poster` | `time?` | Alias for thumbnail |
+| `preview_clip` | `duration?` (1–30s) | First Ns as WebM |
+| `trim` | `start`, `end` | ffmpeg -ss/-to, MP4 output |
+| `transcode` | `preset`, `format?` | preset: 1080p/720p/480p/360p; format: mp4/webm |
+| `watermark` | `text`, `position?`, `opacity?` | drawtext filter |
+| `multi_resolution` | `presets[]` | Parallel transcodes; result has `versions[]` |
+| `hls` | `presets[]` | HLS renditions (requires `media.hls_enabled` setting) |
+
+**Response 202:**
+```json
+{ "success": true, "data": { "job_id": "...", "status": "queued" } }
+```
+
+---
+
+#### `POST /api/media/:id/audio-op` — Audio ops
+
+Required permission: `media:edit`
+
+| `op` | Extra fields | Notes |
+|------|-------------|-------|
+| `waveform` | — | 200-bar peaks JSON + PNG via showwavespic; result: `{ peaks[], waveformUrl }` |
+| `trim` | `start`, `end` | ffmpeg -ss/-to |
+| `normalize` | — | ffmpeg loudnorm filter |
+| `convert` | `format` | mp3/wav/aac/ogg/flac |
+
+**Response 202:**
+```json
+{ "success": true, "data": { "job_id": "...", "status": "queued" } }
+```
+
+---
+
+#### `POST /api/media/:id/convert` — Format conversion matrix
+
+Required permission: `media:edit`
+
+| From → To | Supported |
+|-----------|-----------|
+| image → webp/avif/png/jpeg | ✅ via sharp |
+| video → mp4/webm | ✅ libx264/vp9 |
+| audio → mp3/wav | ✅ fluent-ffmpeg |
+| doc → pdf | ❌ excluded v1 (LibreOffice weight — see DECISIONS.md) |
+
+**Body:** `{ "to": "webp", "quality": 85 }`
+
+**Response 202:** `{ "success": true, "data": { "job_id": "...", "status": "queued" } }`
+
+---
+
 ### Integrations — `/api/integrations`
 
 Plugin module (non-core). All endpoints require the `integrations` module to be **ENABLED** — requests to a disabled module return `403 Module not enabled`. Webhook endpoints have no auth requirement (public inbound); all provider/log endpoints require `Authorization: Bearer <accessToken>`.
