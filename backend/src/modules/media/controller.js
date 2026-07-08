@@ -651,6 +651,54 @@ export const ocrMedia = async (req, res, next) => {
   }
 };
 
+// ─── Speech-to-text (Phase D4) ───────────────────────────────────────────────
+// requireFeature('speech_to_text') on the route gives the 501 when unconfigured.
+export const transcribeMedia = async (req, res, next) => {
+  try {
+    const { enqueueProcessingJob } = await import('./processing.queue.js');
+    const job = await enqueueProcessingJob('ai-transcribe', {
+      mediaId: req.validated.params.id,
+      language: req.validated.body?.language,
+    });
+    return successResponse(res, { job_id: job.id, status: 'queued' }, 202);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getTranscript = async (req, res, next) => {
+  try {
+    const { prisma } = await import('../../config/database.js');
+    const media = await prisma.media.findFirst({
+      where: { id: req.validated.params.id, deleted_at: null },
+      select: { id: true, transcript: true, transcript_text: true, transcript_lang: true, original_name: true },
+    });
+    if (!media) return errorResponse(res, 'Media not found', 404);
+    if (!media.transcript_text && !(media.transcript ?? []).length) {
+      return errorResponse(res, 'No transcript available for this media', 404);
+    }
+
+    const format = req.validated.query?.format ?? 'json';
+    const segments = media.transcript ?? [];
+    if (format === 'srt' || format === 'vtt') {
+      const { segmentsToSrt, segmentsToVtt } = await import('./ai/transcribe.service.js');
+      const body = format === 'srt' ? segmentsToSrt(segments) : segmentsToVtt(segments);
+      const base = media.original_name.replace(/\.[^.]+$/, '');
+      res.setHeader('Content-Type', format === 'srt' ? 'application/x-subrip' : 'text/vtt');
+      res.setHeader('Content-Disposition', `attachment; filename="${base}.${format}"`);
+      return res.send(body);
+    }
+
+    return successResponse(res, {
+      text: media.transcript_text,
+      segments,
+      language: media.transcript_lang,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ─── AI suggestions (Phase D2) ───────────────────────────────────────────────
 // requireFeature('vision') middleware (ai/ai-provider.service.js) gates this route 501
 // when unconfigured, per the "every AI feature is optional" rule.

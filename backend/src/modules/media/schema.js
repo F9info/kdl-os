@@ -358,6 +358,21 @@ export const audioOpSchema = z.object({
   ]),
 });
 
+// Speech-to-text (Phase D4)
+export const transcribeMediaSchema = z.object({
+  params: z.object({ id: z.string().min(1) }),
+  body: z.object({
+    language: z.string().min(2).max(8).optional(),
+  }).optional(),
+});
+
+export const getTranscriptSchema = z.object({
+  params: z.object({ id: z.string().min(1) }),
+  query: z.object({
+    format: z.enum(['json', 'srt', 'vtt']).optional(),
+  }).optional(),
+});
+
 // Conversions
 export const convertMediaSchema = z.object({
   params: z.object({ id: z.string().cuid() }),
