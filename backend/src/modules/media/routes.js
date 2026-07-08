@@ -10,6 +10,7 @@ import {
   registerUsageSchema, releaseUsageSchema,
   createTagSchema, updateTagSchema, deleteTagSchema, tagMediaSchema,
   createMetaFieldSchema, updateMetaFieldSchema, deleteMetaFieldSchema,
+  searchMediaSchema,
 } from './schema.js';
 import {
   uploadMedia, listMedia, getMedia, updateMedia, deleteMedia, bulkDelete,
@@ -18,6 +19,7 @@ import {
   getMediaUsage, registerUsage, releaseUsage,
   listTags, createTag, renameTag, deleteTag, tagMedia, untagMedia,
   listMetaFields, createMetaField, updateMetaField, deleteMetaField,
+  searchMedia, reindexMedia,
 } from './controller.js';
 
 const router = Router();
@@ -50,6 +52,10 @@ router.post('/upload/single', requirePermission('media', 'add'), upload.single('
 // Usage tracking (test + integration endpoints)
 router.post('/usage/register', requirePermission('media', 'edit'), validate(registerUsageSchema), registerUsage);
 router.post('/usage/release', requirePermission('media', 'edit'), validate(releaseUsageSchema), releaseUsage);
+
+// Search (MeiliSearch-backed, faceted)
+router.get('/search', requirePermission('media', 'view'), validate(searchMediaSchema), searchMedia);
+router.post('/search/reindex', requirePermission('media', 'edit'), reindexMedia);
 
 // Tags
 router.get('/tags', requirePermission('media', 'view'), listTags);

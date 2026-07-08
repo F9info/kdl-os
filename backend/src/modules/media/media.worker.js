@@ -14,6 +14,13 @@ const VARIANT_SIZES = {
 export const mediaWorker = new Worker(
   'media',
   async (job) => {
+    if (job.name === 'search-index') {
+      const { indexMediaById, removeMediaFromIndex } = await import('./media-search.service.js');
+      if (job.data.action === 'remove') await removeMediaFromIndex(job.data.mediaId);
+      else await indexMediaById(job.data.mediaId);
+      return;
+    }
+
     const { mediaId, path: objectPath } = job.data;
 
     // Fetch original from storage (we need the buffer for sharp)
@@ -56,14 +63,18 @@ export const mediaWorker = new Worker(
       data: { variants, width: meta.width ?? null, height: meta.height ?? null },
     });
 
+    // Refresh search doc with final dimensions (best-effort)
+    const { indexMediaById } = await import('./media-search.service.js');
+    await indexMediaById(mediaId).catch((e) => logger.warn(`search reindex after variants failed: ${e.message}`));
+
     logger.info(`Variants generated for media ${mediaId}`);
   },
   { connection: redis }
 );
 
 mediaWorker.on('failed', async (job, err) => {
-  logger.error(`Media variant job ${job?.id} failed: ${err.message}`);
-  if (job?.data?.mediaId) {
+  logger.error(`Media job ${job?.name} ${job?.id} failed: ${err.message}`);
+  if (job?.name === 'generate-variants' && job?.data?.mediaId) {
     await prisma.media.update({ where: { id: job.data.mediaId }, data: { variants: null } }).catch(() => {});
   }
 });

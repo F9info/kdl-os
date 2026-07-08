@@ -1,5 +1,6 @@
 import { prisma } from '../../config/database.js';
 import { writeActivityAsync } from '../user-management/shared/activity-logger.js';
+import { enqueueReindex } from './media-search.service.js';
 
 // Tags are stored normalized (lowercase, single-spaced) so "Logo Design" and
 // "logo  design" resolve to the same tag.
@@ -49,6 +50,7 @@ export const tagMedia = async (mediaIds, tagNames, actorId) => {
   });
   const rows = found.flatMap((m) => tags.map((t) => ({ media_id: m.id, tag_id: t.id })));
   if (rows.length) await prisma.mediaTagPivot.createMany({ data: rows, skipDuplicates: true });
+  found.forEach((m) => enqueueReindex(m.id));
   writeActivityAsync({ actor: actorId, module: 'media', action: 'tagged', description: `${found.length} file(s) tagged: ${names.join(', ')}` });
   return { tagged: found.length, tags: names };
 };
@@ -61,6 +63,7 @@ export const untagMedia = async (mediaIds, tagNames, actorId) => {
   const result = await prisma.mediaTagPivot.deleteMany({
     where: { media_id: { in: mediaIds }, tag_id: { in: tags.map((t) => t.id) } },
   });
+  mediaIds.forEach((mid) => enqueueReindex(mid));
   writeActivityAsync({ actor: actorId, module: 'media', action: 'untagged', description: `${result.count} tag link(s) removed: ${names.join(', ')}` });
   return { removed: result.count };
 };

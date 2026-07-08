@@ -19,6 +19,25 @@ export const listMediaSchema = z.object({
   }),
 });
 
+export const searchMediaSchema = z.object({
+  query: z.object({
+    q: z.string().max(500).optional(),
+    type: z.enum(['IMAGE', 'VIDEO', 'AUDIO', 'DOCUMENT', 'OTHER']).optional(),
+    tags: z.string().optional(),      // csv
+    meta: z.string().optional(),      // csv of slug:value
+    folder_id: z.string().optional(),
+    owner_id: z.string().optional(),
+    date_from: z.string().optional(),
+    date_to: z.string().optional(),
+    size_min: z.string().regex(/^\d+$/).optional(),
+    size_max: z.string().regex(/^\d+$/).optional(),
+    archived: z.enum(['true', 'false', 'all']).optional(),
+    sort: z.enum(['created_at_desc', 'created_at_asc', 'name_asc', 'size_desc']).optional(),
+    page: z.string().regex(/^\d+$/).optional(),
+    limit: z.string().regex(/^\d+$/).optional(),
+  }),
+});
+
 export const getMediaSchema = z.object({
   params: z.object({ id: z.string().min(1) }),
 });

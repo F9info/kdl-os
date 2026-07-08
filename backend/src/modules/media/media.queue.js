@@ -13,3 +13,7 @@ export const mediaQueue = new Queue('media', {
 
 export const enqueueVariantJob = (mediaId, path, mimeType) =>
   mediaQueue.add('generate-variants', { mediaId, path, mimeType });
+
+// action: 'index' (add/update doc) | 'remove' (drop doc)
+export const enqueueSearchIndexJob = (mediaId, action = 'index') =>
+  mediaQueue.add('search-index', { mediaId, action });

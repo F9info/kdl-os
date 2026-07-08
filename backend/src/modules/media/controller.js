@@ -1,7 +1,37 @@
 import * as mediaService from './service.js';
 import * as tagsService from './tags.service.js';
 import * as metaFieldsService from './meta-fields.service.js';
+import * as mediaSearchService from './media-search.service.js';
 import { successResponse, errorResponse } from '../../shared/utils/response.js';
+
+// ─── Search ──────────────────────────────────────────────────────────────────
+
+export const searchMedia = async (req, res, next) => {
+  try {
+    const query = { ...req.validated.query };
+    if (query.tags) query.tags = query.tags.split(',').map((t) => t.trim()).filter(Boolean);
+    if (query.meta) {
+      query.meta = Object.fromEntries(
+        query.meta.split(',')
+          .map((pair) => pair.split(':').map((s) => s.trim()))
+          .filter(([k, v]) => k && v)
+      );
+    }
+    const result = await mediaSearchService.searchMedia(query);
+    return successResponse(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const reindexMedia = async (req, res, next) => {
+  try {
+    const result = await mediaSearchService.reindexAllMedia();
+    return successResponse(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
 
 // ─── Folders ────────────────────────────────────────────────────────────────
 

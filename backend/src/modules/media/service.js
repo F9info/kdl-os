@@ -9,6 +9,7 @@ import { sanitizeSvg, isSvgMime } from './svg-sanitizer.js';
 import { extractExif } from './exif-extractor.js';
 import { setMediaTags } from './tags.service.js';
 import { setMediaMeta } from './meta-fields.service.js';
+import { enqueueReindex } from './media-search.service.js';
 
 const MIME_TO_TYPE = (mime) => {
   if (mime.startsWith('image/')) return 'IMAGE';
@@ -127,6 +128,7 @@ export const moveMedia = async (mediaIds, folderId, actorId) => {
     where: { id: { in: mediaIds } },
     data: { folder_id: folderId ?? null },
   });
+  mediaIds.forEach((mid) => enqueueReindex(mid));
   writeActivityAsync({ actor: actorId, module: 'media', action: 'media_moved', description: `${mediaIds.length} file(s) moved` });
   return { moved: mediaIds.length };
 };
@@ -199,6 +201,7 @@ export const uploadMedia = async (file, userId, folderId) => {
     await enqueueVariantJob(record.id, objectName, file.mimetype);
   }
 
+  enqueueReindex(record.id);
   writeActivityAsync({ actor: userId, module: 'media', action: 'uploaded', description: `File "${file.originalname}" uploaded` });
   return record;
 };
@@ -272,6 +275,7 @@ export const updateMediaMeta = async (id, data, actorId) => {
   if (tags) await setMediaTags(id, tags);
   if (meta) await setMediaMeta(id, meta);
   const updated = await prisma.media.findFirst({ where: { id }, include: DAM_INCLUDE });
+  enqueueReindex(id);
   writeActivityAsync({ actor: actorId, module: 'media', action: 'updated', description: `File "${updated.original_name}" metadata updated` });
   return resolveUrls(shapeDamFields(updated));
 };
@@ -315,6 +319,7 @@ export const bulkDelete = async (mediaIds, actorId) => {
 
   const foundIds = records.map((r) => r.id);
   await prisma.media.updateMany({ where: { id: { in: foundIds } }, data: { deleted_at: new Date() } });
+  foundIds.forEach((mid) => enqueueReindex(mid, 'remove'));
   writeActivityAsync({ actor: actorId, module: 'media', action: 'bulk_deleted', description: `${foundIds.length} file(s) moved to trash` });
   return { deleted: foundIds.length };
 };
@@ -328,6 +333,7 @@ export const deleteMedia = async (id, actorId) => {
     throw Object.assign(new Error('File is in use and cannot be deleted'), { status: 409, detail });
   }
   await prisma.media.update({ where: { id }, data: { deleted_at: new Date() } });
+  enqueueReindex(id, 'remove');
   writeActivityAsync({ actor: actorId, module: 'media', action: 'deleted', description: `File "${record.original_name}" moved to trash` });
   return record;
 };
@@ -345,6 +351,7 @@ export const restoreTrash = async (mediaIds, actorId) => {
     where: { id: { in: mediaIds }, deleted_at: { not: null } },
     data: { deleted_at: null },
   });
+  mediaIds.forEach((mid) => enqueueReindex(mid));
   writeActivityAsync({ actor: actorId, module: 'media', action: 'restored', description: `${mediaIds.length} file(s) restored from trash` });
   return { restored: mediaIds.length };
 };
