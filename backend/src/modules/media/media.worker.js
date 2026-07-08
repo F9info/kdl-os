@@ -78,3 +78,22 @@ mediaWorker.on('failed', async (job, err) => {
     await prisma.media.update({ where: { id: job.data.mediaId }, data: { variants: null } }).catch(() => {});
   }
 });
+
+export const mediaScanWorker = new Worker(
+  'media-scan',
+  async (job) => {
+    const { scanMediaById } = await import('./scan.service.js');
+    return scanMediaById(job.data.mediaId);
+  },
+  { connection: redis }
+);
+
+mediaScanWorker.on('failed', async (job, err) => {
+  logger.error(`Media scan job ${job?.id} failed: ${err.message}`);
+  // clamd unreachable through all retries → record SKIPPED so the file
+  // doesn't sit in "pending scan" limbo forever (require_scan still blocks it)
+  if (job?.data?.mediaId && job.attemptsMade >= (job.opts?.attempts ?? 1)) {
+    const { markScanSkipped } = await import('./scan.service.js');
+    await markScanSkipped(job.data.mediaId, `scan failed after ${job.attemptsMade} attempts: ${err.message}`).catch(() => {});
+  }
+});

@@ -31,10 +31,11 @@ const CACHE_TTL = 60_000;
 export const getUploadSettings = async () => {
   if (cache && Date.now() - cacheTime < CACHE_TTL) return cache;
 
-  const [maxSizeSetting, mimesSetting, maxChunkedSetting] = await Promise.all([
+  const [maxSizeSetting, mimesSetting, maxChunkedSetting, requireScanSetting] = await Promise.all([
     prisma.appSetting.findUnique({ where: { key: 'media.max_file_size_mb' } }),
     prisma.appSetting.findUnique({ where: { key: 'media.allowed_mime_types' } }),
     prisma.appSetting.findUnique({ where: { key: 'media.max_chunked_file_size_mb' } }),
+    prisma.appSetting.findUnique({ where: { key: 'media.require_scan' } }),
   ]);
 
   const maxFileSizeMb = maxSizeSetting ? Number(maxSizeSetting.value) : 10;
@@ -42,6 +43,10 @@ export const getUploadSettings = async () => {
   const allowedMimes = new Set(allowedList.filter((m) => !EXECUTABLES.has(m)));
   // Chunked/resumable uploads bypass the per-request cap; this is their (much larger) ceiling.
   const maxChunkedSizeMb = maxChunkedSetting ? Number(maxChunkedSetting.value) : 512;
+  // When on, files without a CLEAN scan result get no serving URL (default: on in prod only)
+  const requireScan = requireScanSetting
+    ? requireScanSetting.value === 'true'
+    : process.env.NODE_ENV === 'production';
 
   cache = {
     maxFileSizeMb,
@@ -49,6 +54,7 @@ export const getUploadSettings = async () => {
     allowedMimes,
     maxChunkedSizeMb,
     maxChunkedSizeBytes: maxChunkedSizeMb * 1024 * 1024,
+    requireScan,
   };
   cacheTime = Date.now();
   return cache;

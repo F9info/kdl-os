@@ -547,3 +547,142 @@ export const releaseUsage = async (req, res, next) => {
     next(err);
   }
 };
+
+// ─── Processing jobs (Phase C) ───────────────────────────────────────────────
+
+export const getJob = async (req, res, next) => {
+  try {
+    const { processingQueue } = await import('./processing.queue.js');
+    const job = await processingQueue.getJob(req.validated.params.jobId);
+    if (!job) return errorResponse(res, 'Job not found', 404);
+    const state = await job.getState();
+    const progress = job.progress;
+    return successResponse(res, {
+      id: job.id,
+      name: job.name,
+      state,
+      progress,
+      result: state === 'completed' ? job.returnvalue : null,
+      failedReason: state === 'failed' ? job.failedReason : null,
+      timestamp: job.timestamp,
+      processedOn: job.processedOn,
+      finishedOn: job.finishedOn,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const listVersions = async (req, res, next) => {
+  try {
+    const { prisma } = await import('../../config/database.js');
+    const { getFileUrl } = await import('../../shared/services/storage.service.js');
+    const versions = await prisma.mediaVersion.findMany({
+      where: { media_id: req.validated.params.id },
+      orderBy: { version: 'desc' },
+    });
+    const result = await Promise.all(
+      versions.map(async (v) => ({ ...v, url: await getFileUrl(v.path) }))
+    );
+    return successResponse(res, { versions: result });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const restoreVersion = async (req, res, next) => {
+  try {
+    const { prisma } = await import('../../config/database.js');
+    const { minio } = await import('../../config/minio.js');
+    const { getFileUrl } = await import('../../shared/services/storage.service.js');
+    const { id: mediaId, versionId } = req.validated.params;
+    const version = await prisma.mediaVersion.findUnique({ where: { id: versionId } });
+    if (!version || version.media_id !== mediaId) return errorResponse(res, 'Version not found', 404);
+    const media = await prisma.media.findUnique({ where: { id: mediaId } });
+    if (!media) return errorResponse(res, 'Media not found', 404);
+
+    // Copy version file to main media path (new object overwrite)
+    const stream = await minio.getObject(process.env.MINIO_BUCKET, version.path);
+    const chunks = [];
+    for await (const chunk of stream) chunks.push(chunk);
+    const buf = Buffer.concat(chunks);
+    await minio.putObject(process.env.MINIO_BUCKET, media.path, buf);
+
+    await prisma.media.update({ where: { id: mediaId }, data: { size: version.size, checksum: version.checksum } });
+    return successResponse(res, { restored: true, version: version.version });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const editMedia = async (req, res, next) => {
+  try {
+    const { enqueueProcessingJob } = await import('./processing.queue.js');
+    const job = await enqueueProcessingJob('image-edit', {
+      mediaId: req.validated.params.id,
+      ops: req.validated.body.ops,
+      note: req.validated.body.note,
+      createdBy: req.user?.id,
+    });
+    return successResponse(res, { job_id: job.id, status: 'queued' }, undefined, 202);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const pdfOp = async (req, res, next) => {
+  try {
+    const { enqueueProcessingJob } = await import('./processing.queue.js');
+    const job = await enqueueProcessingJob('pdf-op', {
+      ...req.validated.body,
+      mediaId: req.validated.params?.id ?? req.validated.body.id,
+      createdBy: req.user?.id,
+    });
+    return successResponse(res, { job_id: job.id, status: 'queued' }, undefined, 202);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const videoOp = async (req, res, next) => {
+  try {
+    const { enqueueProcessingJob } = await import('./processing.queue.js');
+    const job = await enqueueProcessingJob('video-op', {
+      ...req.validated.body,
+      mediaId: req.validated.params.id,
+      createdBy: req.user?.id,
+    });
+    return successResponse(res, { job_id: job.id, status: 'queued' }, undefined, 202);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const audioOp = async (req, res, next) => {
+  try {
+    const { enqueueProcessingJob } = await import('./processing.queue.js');
+    const job = await enqueueProcessingJob('audio-op', {
+      ...req.validated.body,
+      mediaId: req.validated.params.id,
+      createdBy: req.user?.id,
+    });
+    return successResponse(res, { job_id: job.id, status: 'queued' }, undefined, 202);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const convertMedia = async (req, res, next) => {
+  try {
+    const { enqueueProcessingJob } = await import('./processing.queue.js');
+    const job = await enqueueProcessingJob('convert', {
+      mediaId: req.validated.params.id,
+      to: req.validated.body.to,
+      quality: req.validated.body.quality,
+      createdBy: req.user?.id,
+    });
+    return successResponse(res, { job_id: job.id, status: 'queued' }, undefined, 202);
+  } catch (err) {
+    next(err);
+  }
+};

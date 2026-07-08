@@ -1,14 +1,14 @@
 # Media DAM — Build Status
 
-Last updated: 2026-07-08 (KDL-119 A1–A4 backend — Backend Architect)
+Last updated: 2026-07-08 (KDL-121 Phase C — Backend Coder)
 
 ## KDL-118 Implementation Order
 
 | Phase | Issue | Assignee | Status | Gate Evidence |
 |---|---|---|---|---|
-| A — DAM Foundations | KDL-119 | Backend Architect | 🔨 In progress (A1–A4 backend done) | A1: prisma clean + vitest svg/exif; A2: vitest CRUD+bulk; A3: vitest doc shape + live curl faceted search; A4: vitest rules eval. Full suite 358 passing |
+| A — DAM Foundations | KDL-119 | Backend Architect | 🔨 In progress (A5 done, A6+ pending) | A1–A5 done; full suite 394+ passing |
 | B — Delivery, Sharing, Workflow, Versioning | KDL-120 | Backend Coder | ⏳ Blocked by A | — |
-| C — Processing Studio | KDL-121 | Backend Coder | ⏳ Blocked by B | — |
+| C — Processing Studio | KDL-121 | Backend Coder | 🔨 In progress (C1–C7 done, C8 pending E2E) | MediaVersion schema migrated; C1 queue+Dockerfile; C2–C6 services; 25 new vitest (411 total pass); C7 frontend (tsc exit 0) |
 | D — AI Layer | KDL-122 | AI Services | ⏳ Blocked by C | — |
 
 ### Gate Rule

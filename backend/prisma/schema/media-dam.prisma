@@ -1,4 +1,5 @@
 // Media DAM — Phase A foundations (tags, custom meta fields, collections, favorites)
+// Phase B prerequisite — MediaVersion bootstrapped here for Phase C
 // See .agents/MEDIA_DAM_ARCH.md
 
 enum MediaMetaFieldType {
@@ -99,4 +100,23 @@ model MediaFavorite {
   @@id([user_id, media_id])
   @@index([media_id])
   @@map("media_favorites")
+}
+
+// Phase B prerequisite — every destructive Phase C op writes a new version
+model MediaVersion {
+  id         String   @id @default(cuid())
+  media_id   String
+  version    Int
+  path       String
+  size       Int
+  checksum   String?
+  created_by String?
+  note       String?
+  created_at DateTime @default(now())
+
+  media Media @relation(fields: [media_id], references: [id], onDelete: Cascade)
+
+  @@unique([media_id, version])
+  @@index([media_id])
+  @@map("media_versions")
 }

@@ -17,6 +17,8 @@ import {
   copyMediaSchema, archiveMediaSchema,
   chunkInitSchema, chunkPartSchema, chunkSessionSchema,
   zipImportSchema, urlImportSchema,
+  editMediaSchema, jobIdSchema, versionIdSchema, restoreVersionSchema,
+  pdfOpSchema, videoOpSchema, audioOpSchema, convertMediaSchema,
 } from './schema.js';
 import {
   uploadMedia, listMedia, getMedia, updateMedia, deleteMedia, bulkDelete,
@@ -32,6 +34,9 @@ import {
   copyMedia, archiveMedia,
   chunkInit, chunkPart, chunkStatus, chunkComplete,
   importZip, importUrl,
+  editMedia, getJob,
+  listVersions, restoreVersion,
+  pdfOp, videoOp, audioOp, convertMedia,
 } from './controller.js';
 
 const router = Router();
@@ -109,6 +114,9 @@ router.post('/meta-fields', requirePermission('media', 'edit'), validate(createM
 router.patch('/meta-fields/:id', requirePermission('media', 'edit'), validate(updateMetaFieldSchema), updateMetaField);
 router.delete('/meta-fields/:id', requirePermission('media', 'edit'), validate(deleteMetaFieldSchema), deleteMetaField);
 
+// Processing jobs status
+router.get('/jobs/:jobId', requirePermission('media', 'view'), validate(jobIdSchema), getJob);
+
 // List + CRUD
 router.get('/', requirePermission('media', 'view'), validate(listMediaSchema), listMedia);
 router.post('/:id/favorite', requirePermission('media', 'view'), validate(mediaIdParamSchema), favoriteMedia);
@@ -116,6 +124,17 @@ router.delete('/:id/favorite', requirePermission('media', 'view'), validate(medi
 router.post('/:id/touch', requirePermission('media', 'view'), validate(mediaIdParamSchema), touchMedia);
 router.post('/:id/copy', requirePermission('media', 'add'), validate(copyMediaSchema), copyMedia);
 router.get('/:id/usage', requirePermission('media', 'view'), validate(getMediaSchema), getMediaUsage);
+// Versions
+router.get('/:id/versions', requirePermission('media', 'view'), validate(mediaIdParamSchema), listVersions);
+router.post('/:id/versions/:versionId/restore', requirePermission('media', 'edit'), validate(restoreVersionSchema), restoreVersion);
+// Processing ops
+router.post('/:id/edit', requirePermission('media', 'edit'), validate(editMediaSchema), editMedia);
+router.post('/:id/pdf-op', requirePermission('media', 'edit'), validate(pdfOpSchema), pdfOp);
+router.post('/:id/video-op', requirePermission('media', 'edit'), validate(videoOpSchema), videoOp);
+router.post('/:id/audio-op', requirePermission('media', 'edit'), validate(audioOpSchema), audioOp);
+router.post('/:id/convert', requirePermission('media', 'edit'), validate(convertMediaSchema), convertMedia);
+// PDF merge (no parent id)
+router.post('/pdf-merge', requirePermission('media', 'add'), validate(pdfOpSchema), pdfOp);
 router.get('/:id', requirePermission('media', 'view'), validate(getMediaSchema), getMedia);
 router.patch('/:id', requirePermission('media', 'edit'), validate(updateMediaSchema), updateMedia);
 router.delete('/:id', requirePermission('media', 'delete'), validate(deleteMediaSchema), deleteMedia);

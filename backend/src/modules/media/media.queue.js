@@ -17,3 +17,15 @@ export const enqueueVariantJob = (mediaId, path, mimeType) =>
 // action: 'index' (add/update doc) | 'remove' (drop doc)
 export const enqueueSearchIndexJob = (mediaId, action = 'index') =>
   mediaQueue.add('search-index', { mediaId, action });
+
+export const mediaScanQueue = new Queue('media-scan', {
+  connection: redis,
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: { type: 'exponential', delay: 5000 },
+    removeOnComplete: 100,
+    removeOnFail: 500,
+  },
+});
+
+export const enqueueScanJob = (mediaId) => mediaScanQueue.add('scan', { mediaId });

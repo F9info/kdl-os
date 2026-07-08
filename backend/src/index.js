@@ -13,6 +13,7 @@ import { ensureBucketExists } from './shared/services/storage.service.js';
 
 import { emailWorker } from './shared/workers/email.worker.js';
 import { mediaWorker } from './modules/media/media.worker.js';
+import { startProcessingWorker, closeProcessingWorker } from './modules/media/processing.queue.js';
 import { integrationsWorker } from './modules/integrations/integrations.worker.js';
 import { notificationsWorker, notificationsRetentionWorker, startRetentionJob } from './modules/notifications/notifications.worker.js';
 
@@ -68,6 +69,7 @@ app.use('/api/modules', moduleRoutes);
 await loadModules(app);
 
 // Start background jobs
+startProcessingWorker();
 startRetentionJob().catch((err) => logger.error(`Retention job init failed: ${err.message}`));
 
 app.use((req, res) => errorResponse(res, 'Not found', 404));
@@ -86,6 +88,7 @@ const shutdown = async () => {
   logger.info('Shutting down...');
   await emailWorker.close();
   await mediaWorker.close();
+  await closeProcessingWorker();
   await integrationsWorker.close();
   if (notificationsWorker) await notificationsWorker.close();
   if (notificationsRetentionWorker) await notificationsRetentionWorker.close();

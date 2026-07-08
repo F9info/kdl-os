@@ -177,6 +177,7 @@ model Media {
   meta_values      MediaMetaValue[]
   collection_items MediaCollectionItem[]
   favorites        MediaFavorite[]
+  versions         MediaVersion[]
 
   @@index([user_id])
   @@index([folder_id])
