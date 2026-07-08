@@ -144,19 +144,15 @@ export async function processBatch({
           data: data ?? undefined,
         }));
 
-        await prisma.notification.createMany({ data: rows, skipDuplicates: false });
-
-        // Fetch created rows to get IDs and timestamps for Redis publish
-        const created = await prisma.notification.findMany({
-          where: {
-            user_id: { in: Array.from(eligible) },
-            created_at: { gte: new Date(Date.now() - 5000) },
-            body,
-          },
-          select: { id: true, user_id: true, title: true, body: true, data: true, created_at: true },
-          orderBy: { created_at: 'desc' },
-          take: rows.length,
-        });
+        // Create individually to obtain IDs without a race-prone time-window re-query
+        const created = await Promise.all(
+          rows.map((row) =>
+            prisma.notification.create({
+              data: row,
+              select: { id: true, user_id: true, title: true, body: true, data: true, created_at: true },
+            })
+          )
+        );
 
         for (const notif of created) {
           const payload = {
@@ -272,6 +268,12 @@ export async function notify({
   channels = ['IN_APP'],
   actor_id,
 }) {
+  // Exactly one target field must be set
+  const targetCount = [to?.user_ids, to?.role_slug, to?.all].filter(Boolean).length;
+  if (!to || targetCount !== 1) {
+    throw new Error('notify(): `to` must specify exactly one of: user_ids, role_slug, all');
+  }
+
   // 1. Resolve recipients
   const userIds = await resolveUserIds(to);
   if (userIds.length === 0) return { sent: 0 };
@@ -289,7 +291,7 @@ export async function notify({
     const tpl = await getNotificationTemplate(template);
     if (!tpl) throw new Error(`Notification template not found: ${template}`);
     categorySlug = tpl.category?.slug ?? 'system';
-    title = renderTemplate(tpl.email_subject ?? tpl.in_app_body ?? '', data);
+    title = renderTemplate(tpl.name ?? tpl.in_app_body ?? '', data);
     inAppBody = renderTemplate(tpl.in_app_body ?? '', data);
     emailSubject = tpl.email_subject ? renderTemplate(tpl.email_subject, data) : null;
     emailBody = tpl.email_body ? renderTemplate(tpl.email_body, data) : null;

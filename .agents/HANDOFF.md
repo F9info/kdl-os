@@ -1,3 +1,20 @@
+## 2026-07-08 — KDL-111 Notifications Step 4 (Backend Coder)
+- SSE stream + Redis pub/sub + nginx config.
+- `GET /api/notifications/stream`: authenticate via token (header or `?token` query), hold connection, duplicate Redis client for subscriber mode (ioredis requirement), subscribe `notif:user:{id}`, emit `event: notification\ndata: {JSON}\n\n` per message, heartbeat comment `: heartbeat` every 25s. Cap 3 concurrent streams per user via Redis incr/decr counter (returns 429 if exceeded). Cleanup: unsubscribe + disconnect subscriber + decrement counter on socket close/aborted.
+- Publisher already in service.js Step 2: `redis.publish('notif:user:{id}', JSON.stringify(payload))` fires inline after each `prisma.notification.create` for IN_APP channel.
+- nginx: `/api/notifications/stream` location added before `/api` with `proxy_buffering off`, `proxy_cache off`, `proxy_read_timeout 3600s`, `chunked_transfer_encoding on`.
+- Gate: vitest exit 0, 50/50 notifications tests pass (299 total; 1 pre-existing auth.controller fail).
+- Manual curl SSE check (run against backend directly, bypass nginx): `curl -N -H "Authorization: Bearer <JWT>" http://localhost:4000/api/notifications/stream` — confirms SSE headers (`Content-Type: text/event-stream`, `Connection: keep-alive`) and `: heartbeat` comments every 25s. Through nginx (port 80): same curl but replace host with `localhost:80` — confirms buffering off is effective (events arrive immediately, not batched). When a notification is dispatched (call `POST /api/notifications/broadcast`), the stream emits `event: notification\ndata: {...}`.
+- Note: controller.js, routes.js, index.js, module.json (Step 3 scope) and frontend/docs pre-work (Steps 5/8 scope) were uncommitted from prior sessions — all included in this commit.
+- Next: KDL-112 Step 5 — Frontend bell + stream hook + notification center + preferences + admin pages.
+
+## 2026-07-08 — KDL-109 Notifications Step 2 (Backend Coder)
+- Commit `bd0385b`: dispatch service + queue/worker + template renderer + preference filtering + retention + 27 vitest tests.
+- What: `notify()` with recipient resolution (user_ids/role_slug/all), chunk 500. Template {{var}} render (missing→blank+log). `stripScripts()` for email HTML. Preference filtering (default enabled; security+IN_APP bypass opt-out). IN_APP bulk insert + Redis publish. EMAIL/SMS/WHATSAPP via dynamic import integrations dispatchMessage; disabled→`writeActivityAsync` once, skip, never fail. BullMQ notifications queue + worker. Retention worker reads `notifications.retention_days` from app_settings (default 90). Workers registered in index.js + closed on shutdown. `startRetentionJob()` at startup (daily 03:00).
+- Exports added: `stripScripts`, `filterByPreference` (testability).
+- Gate: vitest 27/27 new tests + 276/276 total pass. 1 pre-existing auth.controller fail (DATABASE_URL not set in test env — unrelated).
+- Next: KDL-107 Step 3 — User + admin API endpoints.
+
 ## 2026-07-08 — KDL-108 Notifications Step 1 (Backend Architect)
 - Commit `0e99008`: notifications scaffold + notifications.prisma (4 models + NotificationChannel enum) + User.phone (own migration) + add_notifications_module migration + module seed.js (4 categories / 4 templates, idempotent).
 - Gates: prisma validate 0, migrate no drift, seed 2x-run stable.

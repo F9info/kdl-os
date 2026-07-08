@@ -17,6 +17,6 @@
     }
   ],
   "dependsOn": [],
-  "queues": [],
+  "queues": ["notifications"],
   "env": []
 }

@@ -57,6 +57,7 @@ vi.mock('../integrations/service.js', () => {
 const { renderTemplate, stripScripts, filterByPreference, processBatch, notify } =
   await import('./service.js');
 const { prisma } = await import('../../config/database.js');
+const { redis } = await import('../../config/redis.js');
 const { notificationsQueue } = await import('./notifications.queue.js');
 const integrationsMod = await import('../integrations/service.js');
 
@@ -328,5 +329,50 @@ describe('notify — queuing', () => {
     });
     expect(result).toHaveProperty('batch_id');
     expect(notificationsQueue.add).toHaveBeenCalledWith('notify-batch', expect.any(Object));
+  });
+});
+
+// ── processBatch — redis.publish on IN_APP insert ─────────────────────────────
+
+describe('processBatch — redis.publish on IN_APP insert', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prisma.notificationCategory.findUnique.mockResolvedValue({ id: 'cat-id' });
+    prisma.notificationPreference.findMany.mockResolvedValue([]);
+    prisma.notification.create.mockImplementation(({ data }) =>
+      Promise.resolve({
+        id: `notif-${data.user_id}`,
+        user_id: data.user_id,
+        title: data.title,
+        body: data.body,
+        data: data.data ?? null,
+        created_at: new Date(),
+      })
+    );
+  });
+
+  it('fires redis.publish for each IN_APP notification created', async () => {
+    await processBatch(makeBatchArgs({ userIds: ['user-1', 'user-2'], channels: ['IN_APP'] }));
+    expect(redis.publish).toHaveBeenCalledTimes(2);
+    expect(redis.publish).toHaveBeenCalledWith('notif:user:user-1', expect.any(String));
+    expect(redis.publish).toHaveBeenCalledWith('notif:user:user-2', expect.any(String));
+  });
+
+  it('publish payload contains id, title, body, data, created_at', async () => {
+    await processBatch(makeBatchArgs({ userIds: ['user-1'], channels: ['IN_APP'] }));
+    const [channel, payloadStr] = redis.publish.mock.calls[0];
+    expect(channel).toBe('notif:user:user-1');
+    const payload = JSON.parse(payloadStr);
+    expect(payload).toMatchObject({
+      id: 'notif-user-1',
+      title: 'Test notification',
+      body: 'Test body',
+    });
+    expect(payload).toHaveProperty('created_at');
+  });
+
+  it('does not publish when channel is not IN_APP', async () => {
+    await processBatch(makeBatchArgs({ userIds: ['user-1'], channels: ['EMAIL'], emailBody: '<p>Test</p>' }));
+    expect(redis.publish).not.toHaveBeenCalled();
   });
 });

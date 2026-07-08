@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // ── Mocks ──────────────────────────────────────────────────────────────────────
 
@@ -25,7 +25,14 @@ vi.mock('../../config/database.js', () => ({
 }));
 
 vi.mock('../../config/redis.js', () => ({
-  redis: { publish: vi.fn(), incr: vi.fn(), expire: vi.fn(), decr: vi.fn(), del: vi.fn() },
+  redis: {
+    publish: vi.fn(),
+    incr: vi.fn(),
+    expire: vi.fn(),
+    decr: vi.fn(),
+    del: vi.fn(),
+    duplicate: vi.fn(),
+  },
 }));
 
 vi.mock('../../shared/utils/logger.js', () => ({
@@ -54,6 +61,7 @@ vi.mock('bullmq', () => ({
 // ── Import after mocks ─────────────────────────────────────────────────────────
 
 const { prisma } = await import('../../config/database.js');
+const { redis } = await import('../../config/redis.js');
 const { notify, renderTemplate } = await import('./service.js');
 
 const {
@@ -73,6 +81,7 @@ const {
   listCategories,
   createCategory,
   updateCategory,
+  sseStream,
 } = await import('./controller.js');
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -422,5 +431,84 @@ describe('deleteTemplate', () => {
 
     expect(prisma.notificationTemplate.delete).toHaveBeenCalledWith({ where: { id: 'tpl-usr' } });
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+  });
+});
+
+// ── sseStream — disconnect cleanup ────────────────────────────────────────────
+
+describe('sseStream — disconnect cleanup', () => {
+  let subscriberMock;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+
+    subscriberMock = {
+      on: vi.fn(),
+      subscribe: vi.fn().mockResolvedValue(undefined),
+      unsubscribe: vi.fn().mockResolvedValue(undefined),
+      disconnect: vi.fn(),
+    };
+
+    redis.duplicate.mockReturnValue(subscriberMock);
+    redis.incr.mockResolvedValue(1);
+    redis.expire.mockResolvedValue(1);
+    redis.decr.mockResolvedValue(0);
+    redis.del.mockResolvedValue(1);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('unsubscribes Redis subscriber when socket closes', async () => {
+    const closeListeners = {};
+    const req = {
+      user: { id: 'sse-user-1' },
+      query: {},
+      headers: {},
+      on: vi.fn((event, cb) => { closeListeners[event] = cb; }),
+    };
+    const res = {
+      setHeader: vi.fn(),
+      flushHeaders: vi.fn(),
+      write: vi.fn(),
+      writableEnded: false,
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+    };
+    const next = vi.fn();
+
+    await sseStream(req, res, next);
+
+    // Trigger socket close
+    await closeListeners['close']?.();
+
+    expect(subscriberMock.unsubscribe).toHaveBeenCalledWith('notif:user:sse-user-1');
+    expect(subscriberMock.disconnect).toHaveBeenCalled();
+  });
+
+  it('decrements SSE counter on disconnect', async () => {
+    const closeListeners = {};
+    const req = {
+      user: { id: 'sse-user-2' },
+      query: {},
+      headers: {},
+      on: vi.fn((event, cb) => { closeListeners[event] = cb; }),
+    };
+    const res = {
+      setHeader: vi.fn(),
+      flushHeaders: vi.fn(),
+      write: vi.fn(),
+      writableEnded: false,
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+    };
+    const next = vi.fn();
+
+    await sseStream(req, res, next);
+    await closeListeners['close']?.();
+
+    expect(redis.decr).toHaveBeenCalledWith('notif:sse:sse-user-2');
   });
 });

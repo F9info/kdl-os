@@ -1382,3 +1382,268 @@ Transcribe audio via Whisper on OpenRouter (`openai/whisper-1`, override with `O
 ```json
 { "success": false, "message": "AI budget exhausted for today. Try again tomorrow." }
 ```
+
+---
+
+### Notifications — `/api/notifications`
+
+> Requires module `notifications` ENABLED. All routes return 404 when module is disabled.
+
+**Permissions** (admin routes): `notifications:view`, `notifications:add`, `notifications:edit`, `notifications:delete`, `notifications:publish`.
+
+#### User-facing endpoints (own data only)
+
+##### `GET /api/notifications`
+
+Own notification list, paginated.
+
+| Query | Type | Default | Description |
+|---|---|---|---|
+| `page` | int | 1 | Page number |
+| `limit` | int | 20 | Items per page |
+| `unread` | bool | — | Filter to unread only |
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "data": {
+    "notifications": [
+      { "id": "clx...", "title": "Welcome", "body": "Hello World", "read_at": null, "data": {"url": "/admin/dashboard"}, "created_at": "2026-07-08T00:00:00Z" }
+    ],
+    "total": 1, "page": 1, "limit": 20
+  }
+}
+```
+
+---
+
+##### `GET /api/notifications/unread-count`
+
+Cheap poll endpoint for badge count.
+
+**Response 200:**
+```json
+{ "success": true, "data": { "count": 3 } }
+```
+
+---
+
+##### `PATCH /api/notifications/:id/read`
+
+Mark one notification read. Returns 404 if notification belongs to another user.
+
+**Response 200:**
+```json
+{ "success": true, "data": { "notification": { "id": "clx...", "read_at": "2026-07-08T00:00:00Z" } } }
+```
+
+---
+
+##### `POST /api/notifications/read-all`
+
+Mark all own notifications read.
+
+**Response 200:**
+```json
+{ "success": true, "data": { "updated": 5 } }
+```
+
+---
+
+##### `DELETE /api/notifications/:id`
+
+Delete own notification. Returns 404 if notification belongs to another user.
+
+**Response 200:**
+```json
+{ "success": true, "data": {} }
+```
+
+---
+
+##### `GET /api/notifications/stream`
+
+SSE stream — real-time notification push. Use `?token=<accessToken>` (EventSource cannot set headers).
+
+**Response:** `text/event-stream`. Each event:
+```
+data: {"id":"clx...","title":"Alert","body":"Something happened","data":{"url":"/admin/users/x"},"created_at":"2026-07-08T00:00:00Z"}
+```
+
+Heartbeat comment (`: heartbeat`) sent every 25 s. Max 3 concurrent streams per user; oldest closed on new connection.
+
+**nginx setup required** (see SETUP.md):
+```nginx
+location /api/notifications/stream {
+  proxy_pass http://backend;
+  proxy_buffering off;
+  proxy_cache off;
+  proxy_read_timeout 3600s;
+}
+```
+
+---
+
+##### `GET /api/notifications/preferences`
+
+Own preference matrix (category × channel toggles).
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "data": {
+    "preferences": [
+      { "category_id": "clx...", "category_slug": "security", "channel": "EMAIL", "enabled": true }
+    ]
+  }
+}
+```
+
+---
+
+##### `PUT /api/notifications/preferences`
+
+Update own preferences.
+
+**Body:**
+```json
+{
+  "preferences": [
+    { "category_id": "clx...", "channel": "EMAIL", "enabled": false }
+  ]
+}
+```
+
+**Response 200:**
+```json
+{ "success": true, "data": { "updated": 1 } }
+```
+
+---
+
+#### Admin endpoints
+
+##### `GET /api/notifications/categories`
+
+Permission: `notifications:view`
+
+**Response 200:**
+```json
+{ "success": true, "data": { "categories": [ { "id": "clx...", "slug": "security", "name": "Security", "is_system": true } ] } }
+```
+
+---
+
+##### `POST /api/notifications/categories`
+
+Permission: `notifications:add`
+
+**Body:**
+```json
+{ "slug": "marketing", "name": "Marketing", "description": "Promotional messages" }
+```
+
+---
+
+##### `PATCH /api/notifications/categories/:id`
+
+Permission: `notifications:edit`. `is_system` categories cannot be deleted (409).
+
+---
+
+##### `GET /api/notifications/templates`
+
+Permission: `notifications:view`
+
+---
+
+##### `POST /api/notifications/templates`
+
+Permission: `notifications:add`
+
+**Body:**
+```json
+{
+  "slug": "user.welcome",
+  "category_id": "clx...",
+  "name": "Welcome User",
+  "variables": ["user_name"],
+  "in_app_body": "Welcome, {{user_name}}!",
+  "email_subject": "Welcome to KDL",
+  "email_body": "<p>Hello {{user_name}}, welcome!</p>",
+  "sms_body": null,
+  "whatsapp_body": null
+}
+```
+
+---
+
+##### `PATCH /api/notifications/templates/:id`
+
+Permission: `notifications:edit`
+
+---
+
+##### `DELETE /api/notifications/templates/:id`
+
+Permission: `notifications:delete`. Returns 409 if template is a system seed.
+
+---
+
+##### `POST /api/notifications/templates/:id/preview`
+
+Permission: `notifications:view`. Renders template with sample data per channel.
+
+**Body:**
+```json
+{ "data": { "user_name": "Prasanna" } }
+```
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "data": {
+    "in_app": { "title": "Welcome User", "body": "Welcome, Prasanna!" },
+    "email": { "subject": "Welcome to KDL", "body": "<p>Hello Prasanna, welcome!</p>" },
+    "sms": null,
+    "whatsapp": null
+  }
+}
+```
+
+---
+
+##### `POST /api/notifications/broadcast`
+
+Permission: `notifications:publish`. Queues a batch notification to a role or all users.
+
+**Body:**
+```json
+{
+  "to": { "all": true },
+  "template": "system.broadcast",
+  "data": { "message": "Maintenance scheduled for Sunday" },
+  "channels": ["IN_APP", "EMAIL"]
+}
+```
+
+Or with `role_slug`:
+```json
+{ "to": { "role_slug": "admin" }, "inline": { "title": "Alert", "body": "Check the dashboard." }, "channels": ["IN_APP"] }
+```
+
+`to` must specify **exactly one** of `all` or `role_slug`. Either `template` (slug) or `inline` (`{title, body}`) must be provided.
+
+**Response 200 (inline — small batch):**
+```json
+{ "success": true, "data": { "sent": 42 } }
+```
+
+**Response 200 (queued — large batch or external channels):**
+```json
+{ "success": true, "data": { "batch_id": "1234", "recipient_count": 500 } }
+```
+```

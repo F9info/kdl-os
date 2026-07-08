@@ -340,3 +340,20 @@ npx prisma migrate status
 **MinIO media URLs expire (403 after 7 days)**
 
 Expected behavior — presigned URLs are generated fresh on every API response. Stored URLs in old DB records are expired; re-fetch via the API to get a new URL.
+
+**Notification SSE stream hangs / no events**
+
+nginx buffers SSE responses by default, which blocks real-time delivery. The `infra/nginx.conf` already has the required location block, but confirm it is present if you customise nginx:
+
+```nginx
+location /api/notifications/stream {
+    proxy_pass         http://backend;
+    proxy_buffering    off;
+    proxy_cache        off;
+    proxy_read_timeout 3600s;
+    proxy_set_header   Connection '';
+    proxy_http_version 1.1;
+}
+```
+
+Without `proxy_buffering off` the browser receives all events in one burst when the connection closes instead of in real time. The frontend falls back to 30-second polling if the EventSource fails, so the app remains functional, but real-time push requires this nginx config.

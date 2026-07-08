@@ -14,6 +14,7 @@ import { ensureBucketExists } from './shared/services/storage.service.js';
 import { emailWorker } from './shared/workers/email.worker.js';
 import { mediaWorker } from './modules/media/media.worker.js';
 import { integrationsWorker } from './modules/integrations/integrations.worker.js';
+import { notificationsWorker, notificationsRetentionWorker, startRetentionJob } from './modules/notifications/notifications.worker.js';
 
 import authRoutes from './modules/auth/routes.js';
 import userRoutes from './modules/users/routes.js';
@@ -66,6 +67,9 @@ app.use('/api/modules', moduleRoutes);
 // Mount plugin modules (those with module.json + routes.js) behind moduleGate
 await loadModules(app);
 
+// Start background jobs
+startRetentionJob().catch((err) => logger.error(`Retention job init failed: ${err.message}`));
+
 app.use((req, res) => errorResponse(res, 'Not found', 404));
 app.use(errorHandler);
 
@@ -83,6 +87,8 @@ const shutdown = async () => {
   await emailWorker.close();
   await mediaWorker.close();
   await integrationsWorker.close();
+  if (notificationsWorker) await notificationsWorker.close();
+  if (notificationsRetentionWorker) await notificationsRetentionWorker.close();
   server.close(async () => {
     await prisma.$disconnect();
     redis.disconnect();

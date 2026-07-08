@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useUiStore } from '@/stores/ui.store'
 import { useAuth } from '@/hooks/useAuth'
+import { NotificationBell } from '@/components/notifications/NotificationBell'
 
 function getInitials(name: string): string {
   return name
@@ -33,6 +34,8 @@ export function TopBar() {
         <Menu className="h-5 w-5" />
       </Button>
 
+      <div className="flex items-center gap-1">
+      <NotificationBell />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-9 w-9 rounded-full">
@@ -58,6 +61,7 @@ export function TopBar() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      </div>
     </header>
   )
 }
