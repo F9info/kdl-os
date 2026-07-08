@@ -1,3 +1,34 @@
+## 2026-07-08 — KDL-115 Notifications Step 8 DONE ✅ (Documentation)
+Agent: Documentation (KDL-115)
+Issue: KDL-115 (parent KDL-107)
+
+All 8 steps of the Notifications module are complete.
+
+### What was documented
+
+**docs/API_REFERENCE.md** — `/api/notifications` section cross-referenced to `routes.js` + `controller.js`:
+- User endpoints: `GET /` (paginated list, `items` key), `GET /unread-count`, `PATCH /:id/read`, `POST /read-all`, `DELETE /:id`, `GET /stream` (SSE), `GET /preferences`, `PUT /preferences`
+- Admin endpoints: categories (list/create/patch), templates (list/create/patch/delete/preview), `POST /broadcast`
+- All request/response shapes verified against actual controller code; corrected 6 inaccuracies in a prior partial draft: list key (`notifications` → `items`), DELETE response (`{}` → `{deleted: true}`), SSE event format (added `event: notification` line), preferences matrix shape (flat → nested channels array), template preview fields (`in_app/{title,body}` → `in_app/email_subject/email_body/sms/whatsapp`), stray closing ``` in broadcast section
+
+**docs/SETUP.md** — Added "Nginx — SSE configuration" section (under Docker Compose) explaining `proxy_buffering off` requirement for `/api/notifications/stream`, showing the exact location block from `infra/nginx/nginx.conf`, and explaining the frontend polling fallback. Common Issues section also retains the SSE troubleshooting entry.
+
+### Manual curl SSE check (from Step 4 HANDOFF)
+`curl -N -H "Authorization: Bearer <JWT>" http://localhost:4000/api/notifications/stream`
+- Confirms: `Content-Type: text/event-stream`, `Connection: keep-alive`, `: heartbeat` every 25s
+- Through nginx (port 80): events arrive immediately (not batched) — confirms `proxy_buffering off` effective
+- On `POST /api/notifications/broadcast`: stream emits `event: notification\ndata: {...}\n\n`
+
+### Gate evidence
+All doc content cross-referenced to live code (routes.js, controller.js, service.js) ✅
+Endpoint table in arch doc matches routes.js exactly ✅
+SETUP.md nginx block matches `infra/nginx/nginx.conf` exactly ✅
+
+### Next
+KDL-115 done. KDL-107 (parent) can close — all 8 Notifications steps complete.
+
+---
+
 ## 2026-07-08 — KDL-111 Notifications Step 4 (Backend Coder)
 - SSE stream + Redis pub/sub + nginx config.
 - `GET /api/notifications/stream`: authenticate via token (header or `?token` query), hold connection, duplicate Redis client for subscriber mode (ioredis requirement), subscribe `notif:user:{id}`, emit `event: notification\ndata: {JSON}\n\n` per message, heartbeat comment `: heartbeat` every 25s. Cap 3 concurrent streams per user via Redis incr/decr counter (returns 429 if exceeded). Cleanup: unsubscribe + disconnect subscriber + decrement counter on socket close/aborted.

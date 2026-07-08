@@ -191,6 +191,29 @@ Production overrides:
 - `NODE_ENV: production`
 - No host ports exposed (except nginx :80)
 
+### Nginx — SSE configuration
+
+The Notifications module uses Server-Sent Events (SSE) at `GET /api/notifications/stream`. SSE requires nginx to disable response buffering for that route, or events will batch and only arrive when the connection closes.
+
+`infra/nginx/nginx.conf` already has the required location block **before** the generic `/api` block:
+
+```nginx
+location /api/notifications/stream {
+  set $backend_host backend:4000;
+  proxy_pass http://$backend_host;
+  proxy_http_version 1.1;
+  proxy_set_header Host $host;
+  proxy_set_header X-Real-IP $remote_addr;
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_buffering off;
+  proxy_cache off;
+  proxy_read_timeout 3600s;
+  chunked_transfer_encoding on;
+}
+```
+
+**If you customise nginx**, ensure this location block appears before `location /api` — nginx uses the longest-prefix rule, so order only matters for equal-length prefixes, but the explicit location ensures buffering-off is applied correctly. Without `proxy_buffering off` the browser receives all events at once when the connection closes rather than in real time. The frontend falls back to 30-second polling when EventSource fails, so the app stays functional, but real-time push requires this config.
+
 ---
 
 ## Port Reference

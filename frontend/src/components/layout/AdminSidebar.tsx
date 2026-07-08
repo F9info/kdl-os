@@ -65,6 +65,7 @@ const FLAT_ITEMS: NavLeaf[] = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
   { label: 'Users', href: '/admin/users', icon: Users, permission: 'users:view' },
   { label: 'Media', href: '/admin/media', icon: Image, permission: 'media:view' },
+  { label: 'Modules', href: '/admin/modules', icon: Package, permission: 'modules:view' },
 ]
 
 const GROUPS: NavGroup[] = [
