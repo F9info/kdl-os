@@ -4,7 +4,7 @@ import { prisma } from '../../config/database.js';
 import { getPaginationParams } from '../../shared/utils/pagination.js';
 import { writeActivityAsync } from '../user-management/shared/activity-logger.js';
 import { getUploadSettings, isAiAutotagEnabled } from './settings.js';
-import { enqueueVariantJob } from './media.queue.js';
+import { enqueueVariantJob, enqueueScanJob } from './media.queue.js';
 import { sanitizeSvg, isSvgMime } from './svg-sanitizer.js';
 import { extractExif } from './exif-extractor.js';
 import { setMediaTags } from './tags.service.js';
@@ -212,6 +212,10 @@ export const uploadMedia = async (file, userId, folderId, opts = {}) => {
     }
   }
 
+  // A6: every upload is scanned async; without CLAMAV_HOST the job records SKIPPED
+  // so files never sit unscanned in limbo when require_scan is later turned on.
+  enqueueScanJob(record.id).catch(() => {});
+
   enqueueReindex(record.id);
   writeActivityAsync({ actor: userId, module: 'media', action: 'uploaded', description: `File "${file.originalname}" uploaded` });
   return record;
@@ -295,6 +299,12 @@ export const updateMediaMeta = async (id, data, actorId) => {
 };
 
 export const resolveUrls = async (m) => {
+  // A6: with media.require_scan on, only files verified CLEAN get serving URLs.
+  // Pending (null) and SKIPPED results are both withheld — fail closed.
+  const { requireScan } = await getUploadSettings();
+  if (requireScan && m.scan_result !== 'CLEAN') {
+    return { ...m, url: null, variants: null };
+  }
   const url = await storageService.getFileUrl(m.path).catch(() => null);
   const variantUrls = m.variants ? await resolveVariantUrls(m.variants) : null;
   return { ...m, url, variants: variantUrls };

@@ -19,6 +19,7 @@ vi.mock('../src/modules/media/settings.js', () => ({
 vi.mock('../src/modules/media/media.queue.js', () => ({
   enqueueVariantJob: vi.fn(),
   enqueueSearchIndexJob: vi.fn(),
+  enqueueScanJob: vi.fn(async () => {}),
 }));
 
 vi.mock('sharp', () => ({
@@ -65,7 +66,7 @@ vi.mock('../src/config/database.js', () => ({
 
 import { prisma } from '../src/config/database.js';
 import {
-  listMedia, getMediaById, uploadMedia,
+  listMedia, getMediaById, uploadMedia, resolveUrls,
   createFolder, updateFolder, deleteFolder, moveMedia,
   bulkDelete, listTrash, restoreTrash, purgeTrash,
   registerMediaUsage, releaseMediaUsage, getMediaUsage,
@@ -223,5 +224,55 @@ describe('media service — regression + new', () => {
     }));
     const file = { originalname: 'fake.jpg', mimetype: 'image/jpeg', size: 1024, buffer: Buffer.from('notanimage') };
     await expect(uploadMedia(file, 'u1', null)).rejects.toMatchObject({ status: 422 });
+  });
+
+  // ── A6 virus scan: every upload enqueues a scan job ───────────────────────
+  it('enqueues a media-scan job on upload', async () => {
+    const { enqueueScanJob } = await import('../src/modules/media/media.queue.js');
+    const file = { originalname: 'doc.pdf', mimetype: 'application/pdf', size: 1024, buffer: Buffer.from('pdf') };
+    prismaMock.media.create.mockResolvedValue({ id: 'm-scan', path: 'u1/x.pdf', type: 'DOCUMENT', variants: null });
+    await uploadMedia(file, 'u1', null);
+    expect(enqueueScanJob).toHaveBeenCalledWith('m-scan');
+  });
+
+  // ── A6 require_scan gate: no serving URLs unless verified CLEAN ──────────
+  describe('resolveUrls require_scan gate', () => {
+    const withRequireScan = async (requireScan) => {
+      const { getUploadSettings } = await import('../src/modules/media/settings.js');
+      vi.mocked(getUploadSettings).mockResolvedValueOnce({
+        maxFileSizeMb: 10,
+        maxFileSizeBytes: 10 * 1024 * 1024,
+        allowedMimes: new Set(['image/jpeg']),
+        requireScan,
+      });
+    };
+
+    it('withholds url and variants for unscanned file when require_scan is on', async () => {
+      await withRequireScan(true);
+      const result = await resolveUrls({ id: 'm1', path: 'u/a.jpg', scan_result: null, variants: { thumb: 'v/t.webp' } });
+      expect(result.url).toBeNull();
+      expect(result.variants).toBeNull();
+      expect(getFileUrl).not.toHaveBeenCalled();
+    });
+
+    it('withholds url for SKIPPED scan when require_scan is on (fail closed)', async () => {
+      await withRequireScan(true);
+      const result = await resolveUrls({ id: 'm1', path: 'u/a.jpg', scan_result: 'SKIPPED', variants: null });
+      expect(result.url).toBeNull();
+    });
+
+    it('serves url for CLEAN file when require_scan is on', async () => {
+      await withRequireScan(true);
+      vi.mocked(getFileUrl).mockResolvedValue('https://cdn/u/a.jpg');
+      const result = await resolveUrls({ id: 'm1', path: 'u/a.jpg', scan_result: 'CLEAN', variants: null });
+      expect(result.url).toBe('https://cdn/u/a.jpg');
+    });
+
+    it('serves url for unscanned file when require_scan is off', async () => {
+      await withRequireScan(false);
+      vi.mocked(getFileUrl).mockResolvedValue('https://cdn/u/a.jpg');
+      const result = await resolveUrls({ id: 'm1', path: 'u/a.jpg', scan_result: null, variants: null });
+      expect(result.url).toBe('https://cdn/u/a.jpg');
+    });
   });
 });
