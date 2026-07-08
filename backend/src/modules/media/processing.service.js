@@ -67,6 +67,10 @@ export const executeProcessingJob = async (job) => {
       const { runConversion } = await import('./conversions.service.js');
       return runConversion(job.data);
     }
+    case 'ocr': {
+      const { runOcrJob } = await import('./ocr.service.js');
+      return runOcrJob(job.data);
+    }
     case 'ai-analyze': {
       const { runAnalyzeJob } = await import('./ai/analyze.service.js');
       return runAnalyzeJob(job.data);

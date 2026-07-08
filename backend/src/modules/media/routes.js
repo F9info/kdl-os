@@ -38,6 +38,7 @@ import {
   listVersions, restoreVersion,
   pdfOp, videoOp, audioOp, convertMedia,
   analyzeMedia, listMediaSuggestions, acceptMediaSuggestion, rejectMediaSuggestion,
+  ocrMedia,
 } from './controller.js';
 import {
   getAiStatus, listAiDrivers, listAiProviders,
@@ -154,6 +155,8 @@ router.post('/:id/convert', requirePermission('media', 'edit'), validate(convert
 // AI analyze (Phase D2) — 501 via requireFeature when vision is unconfigured
 router.post('/:id/analyze', requirePermission('media', 'edit'), validate(mediaIdParamSchema), requireFeature('vision'), analyzeMedia);
 router.get('/:id/suggestions', requirePermission('media', 'view'), validate(mediaIdParamSchema), listMediaSuggestions);
+// OCR (Phase D3) — local tesseract job, works without any AI provider
+router.post('/:id/ocr', requirePermission('media', 'edit'), validate(mediaIdParamSchema), ocrMedia);
 // PDF merge (no parent id)
 router.post('/pdf-merge', requirePermission('media', 'add'), validate(pdfOpSchema), pdfOp);
 router.get('/:id', requirePermission('media', 'view'), validate(getMediaSchema), getMedia);

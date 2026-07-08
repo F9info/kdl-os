@@ -630,6 +630,27 @@ export const editMedia = async (req, res, next) => {
   }
 };
 
+// ─── OCR (Phase D3) — local tesseract/poppler job, no AI provider required ───
+export const ocrMedia = async (req, res, next) => {
+  try {
+    const { isOcrSupported } = await import('./ocr.service.js');
+    const { prisma } = await import('../../config/database.js');
+    const media = await prisma.media.findFirst({
+      where: { id: req.validated.params.id, deleted_at: null },
+      select: { id: true, mime_type: true },
+    });
+    if (!media) return errorResponse(res, 'Media not found', 404);
+    if (!isOcrSupported(media.mime_type)) {
+      return errorResponse(res, `OCR not supported for ${media.mime_type}`, 422);
+    }
+    const { enqueueProcessingJob } = await import('./processing.queue.js');
+    const job = await enqueueProcessingJob('ocr', { mediaId: media.id });
+    return successResponse(res, { job_id: job.id, status: 'queued' }, 202);
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ─── AI suggestions (Phase D2) ───────────────────────────────────────────────
 // requireFeature('vision') middleware (ai/ai-provider.service.js) gates this route 501
 // when unconfigured, per the "every AI feature is optional" rule.

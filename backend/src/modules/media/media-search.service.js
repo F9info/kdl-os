@@ -50,6 +50,7 @@ export const buildMediaDoc = async (media) => {
     title: media.title ?? null,
     alt: media.alt_text ?? null,
     caption: media.caption ?? null,
+    ocr_text: media.ocr_text ?? null,
     tags,
     meta: Object.fromEntries(metaEntries),
     meta_text: metaEntries.map(([, v]) => v).join(' '),

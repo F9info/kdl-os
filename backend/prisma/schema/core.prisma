@@ -164,6 +164,7 @@ model Media {
   checksum      String?
   scanned_at    DateTime?
   scan_result   String?
+  ocr_text      String? // Phase D3 — tesseract/pdftotext output, indexed in Meili
   last_used_at  DateTime?
   is_archived   Boolean    @default(false)
   deleted_at    DateTime?
