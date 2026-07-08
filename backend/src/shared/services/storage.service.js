@@ -1,34 +1,22 @@
-import { minio, minioPublic } from '../../config/minio.js';
-
-const BUCKET = process.env.MINIO_BUCKET;
+// Storage facade — delegates to the active driver selected by STORAGE_DRIVER env.
+// Callers import from this file exactly as before; the driver is swapped here only.
+import { activeDriver } from './storage/index.js';
 
 export const uploadFile = async (file, objectName) => {
-  await minio.putObject(BUCKET, objectName, file.buffer, file.size, {
-    'Content-Type': file.mimetype,
-  });
+  await activeDriver.put(file, objectName);
   return getFileUrl(objectName);
 };
 
-export const copyFile = async (srcObjectName, destObjectName) => {
-  await minio.copyObject(BUCKET, destObjectName, `/${BUCKET}/${srcObjectName}`);
-};
+export const copyFile = (srcObjectName, destObjectName) =>
+  activeDriver.copy(srcObjectName, destObjectName);
 
-export const deleteFile = async (objectName) => {
-  await minio.removeObject(BUCKET, objectName);
-};
+export const getFileStream = (objectName) => activeDriver.get(objectName);
 
-export const deleteFiles = async (objectNames) => {
-  await Promise.all(objectNames.map((name) => minio.removeObject(BUCKET, name)));
-};
+export const deleteFile = (objectName) => activeDriver.delete(objectName);
 
-export const getFileUrl = async (objectName, expiry = 7 * 24 * 60 * 60) => {
-  // Generated against the public endpoint so the returned URL is browser-reachable.
-  return minioPublic.presignedGetObject(BUCKET, objectName, expiry);
-};
+export const deleteFiles = (objectNames) => activeDriver.deleteMany(objectNames);
 
-export const ensureBucketExists = async () => {
-  const exists = await minio.bucketExists(BUCKET);
-  if (!exists) {
-    await minio.makeBucket(BUCKET, 'us-east-1');
-  }
-};
+export const getFileUrl = (objectName, expiry = 7 * 24 * 60 * 60) =>
+  activeDriver.presign(objectName, expiry);
+
+export const ensureBucketExists = () => activeDriver.ensureBucket();

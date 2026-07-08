@@ -112,6 +112,8 @@ services:
       # Virus scan (A6): empty default keeps scans SKIPPED; set CLAMAV_HOST=clamav
       # in .env and start the `scan` profile to scan for real.
       CLAMAV_HOST: ${CLAMAV_HOST:-}
+      # Storage driver (A7): defaults to minio. Set STORAGE_DRIVER=s3|r2 in .env for cloud.
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-minio}
     ports:
       - "4000:4000"
     depends_on:
