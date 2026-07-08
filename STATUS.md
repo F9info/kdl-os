@@ -1,3 +1,8 @@
+## 2026-07-08 — KDL-108 Notifications Step 1 (Backend Architect)
+- Commit `0e99008`: notifications scaffold + notifications.prisma (4 models + NotificationChannel enum) + User.phone (own migration) + add_notifications_module migration + module seed.js (4 categories / 4 templates, idempotent).
+- Gates: prisma validate 0, migrate no drift, seed 2x-run stable.
+- Next: KDL-107 Step 2 (dispatch/channels per agents/NOTIFICATIONS_ARCH.md).
+
 ## 2026-07-07 — KDL-89 INTEGRATIONS Step 1: DONE ✅
 
 **Scaffold + Prisma schema + crypto.js complete.**
