@@ -63,6 +63,16 @@ services:
     volumes:
       - chromadata:/chroma/chroma
 
+  # E2E mail sink (KDL-97): catches all SMTP traffic from the dockerized stack so
+  # tests never send real email. Web UI / HTTP API on :8025, SMTP on :1025.
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    platform: linux/amd64
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
   backend:
     build: ./backend
     restart: unless-stopped
@@ -70,6 +80,10 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://redis:6379
+      # Route all direct-SMTP email (password reset fallback etc.) to mailhog —
+      # the dockerized stack must never send to real addresses (CI rule, KDL-97).
+      SMTP_HOST: mailhog
+      SMTP_PORT: "1025"
       # Reach MinIO over the internal network for object operations...
       MINIO_ENDPOINT: minio
       MINIO_PORT: "9000"

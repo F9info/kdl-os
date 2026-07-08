@@ -13,6 +13,7 @@ import { ensureBucketExists } from './shared/services/storage.service.js';
 
 import { emailWorker } from './shared/workers/email.worker.js';
 import { mediaWorker } from './modules/media/media.worker.js';
+import { integrationsWorker } from './modules/integrations/integrations.worker.js';
 
 import authRoutes from './modules/auth/routes.js';
 import userRoutes from './modules/users/routes.js';
@@ -33,7 +34,9 @@ const PORT = process.env.APP_PORT || 4000;
 app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cors({ origin: process.env.CORS_ORIGIN, credentials: true }));
-app.use(express.json());
+app.use(express.json({
+  verify(req, _res, buf) { req.rawBody = buf; },
+}));
 app.use(express.urlencoded({ extended: true }));
 
 const limiter = rateLimit({
@@ -79,6 +82,7 @@ const shutdown = async () => {
   logger.info('Shutting down...');
   await emailWorker.close();
   await mediaWorker.close();
+  await integrationsWorker.close();
   server.close(async () => {
     await prisma.$disconnect();
     redis.disconnect();

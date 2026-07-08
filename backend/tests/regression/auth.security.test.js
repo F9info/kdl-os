@@ -9,7 +9,7 @@ import { agent, cookieAttributes, cookieValue } from '../helpers/app.js';
 
 vi.mock('../../src/config/database.js', () => ({
   prisma: {
-    user: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
+    user: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn().mockResolvedValue({}) },
     userRole: { findMany: vi.fn(() => Promise.resolve([])) },
     refreshToken: { findFirst: vi.fn(), create: vi.fn(), updateMany: vi.fn() },
     passwordResetToken: { create: vi.fn(), findFirst: vi.fn(), update: vi.fn() },
@@ -33,6 +33,9 @@ const mockUser = (overrides = {}) => ({
   password_hash: overrides.password_hash || passwordHash('Password123!'),
   role: overrides.role || 'USER',
   is_active: overrides.is_active !== undefined ? overrides.is_active : true,
+  status: overrides.status || 'ACTIVE',
+  deleted_at: overrides.deleted_at || null,
+  roles: overrides.roles || [],
   created_at: new Date().toISOString(),
 });
 
