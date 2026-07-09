@@ -718,6 +718,66 @@ export const getTranscript = async (req, res, next) => {
   }
 };
 
+// ─── AI image ops (Phase D6) — bg-removal/upscale/enhance/object-removal ─────
+// requireFeature('image_ops') on the route gives the 501 when unconfigured.
+export const aiImageOp = async (req, res, next) => {
+  try {
+    const { enqueueProcessingJob } = await import('./processing.queue.js');
+    const job = await enqueueProcessingJob('ai-image-op', {
+      mediaId: req.validated.params.id,
+      op: req.validated.body.op,
+      scale: req.validated.body.scale,
+      mask: req.validated.body.mask,
+      createdBy: req.user?.id,
+    });
+    return successResponse(res, { job_id: job.id, status: 'queued' }, 202);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─── Recognition (Phase D7) — optional, default OFF via media.recognition ────
+// Labels/logos/landmarks/products via vision driver → tags. Face recognition is
+// excluded in v1 (decision MEDIA-002) and is not requested from the model.
+export const recognizeMedia = async (req, res, next) => {
+  try {
+    const { isRecognitionEnabled } = await import('./settings.js');
+    if (!(await isRecognitionEnabled())) {
+      return errorResponse(res, 'Recognition is disabled (enable the media.recognition setting)', 403);
+    }
+    const { enqueueProcessingJob } = await import('./processing.queue.js');
+    const job = await enqueueProcessingJob('ai-recognize', { mediaId: req.validated.params.id });
+    return successResponse(res, { job_id: job.id, status: 'queued' }, 202);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// QR/barcode decode — local zxing job, no AI provider required (mirrors OCR).
+export const qrDecodeMedia = async (req, res, next) => {
+  try {
+    const { isRecognitionEnabled } = await import('./settings.js');
+    if (!(await isRecognitionEnabled())) {
+      return errorResponse(res, 'Recognition is disabled (enable the media.recognition setting)', 403);
+    }
+    const { isBarcodeSupported } = await import('./barcode.service.js');
+    const { prisma } = await import('../../config/database.js');
+    const media = await prisma.media.findFirst({
+      where: { id: req.validated.params.id, deleted_at: null },
+      select: { id: true, mime_type: true },
+    });
+    if (!media) return errorResponse(res, 'Media not found', 404);
+    if (!isBarcodeSupported(media.mime_type)) {
+      return errorResponse(res, `Barcode decode not supported for ${media.mime_type}`, 422);
+    }
+    const { enqueueProcessingJob } = await import('./processing.queue.js');
+    const job = await enqueueProcessingJob('barcode-decode', { mediaId: media.id });
+    return successResponse(res, { job_id: job.id, status: 'queued' }, 202);
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ─── AI suggestions (Phase D2) ───────────────────────────────────────────────
 // requireFeature('vision') middleware (ai/ai-provider.service.js) gates this route 501
 // when unconfigured, per the "every AI feature is optional" rule.

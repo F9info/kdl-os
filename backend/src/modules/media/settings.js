@@ -66,3 +66,10 @@ export const isAiAutotagEnabled = async () => {
   const setting = await prisma.appSetting.findUnique({ where: { key: 'media.ai_autotag' } });
   return setting?.value === 'true';
 };
+
+// Phase D7 opt-in: recognition (labels/logos/landmarks/products + QR/barcode decode).
+// OFF by default per arch table; gates the /recognize and /qr-decode routes with 403.
+export const isRecognitionEnabled = async () => {
+  const setting = await prisma.appSetting.findUnique({ where: { key: 'media.recognition' } });
+  return setting?.value === 'true';
+};

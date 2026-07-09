@@ -19,7 +19,7 @@ import {
   zipImportSchema, urlImportSchema,
   editMediaSchema, jobIdSchema, versionIdSchema, restoreVersionSchema,
   pdfOpSchema, videoOpSchema, audioOpSchema, convertMediaSchema,
-  transcribeMediaSchema, getTranscriptSchema,
+  transcribeMediaSchema, getTranscriptSchema, aiImageOpSchema,
   createShareSchema, shareIdParamSchema, shareTokenParamSchema,
   transformQuerySchema, createCommentSchema, commentIdParamSchema,
   reuploadVersionSchema, workflowTransitionSchema,
@@ -42,7 +42,8 @@ import {
   listVersions, restoreVersion,
   pdfOp, videoOp, audioOp, convertMedia,
   analyzeMedia, listMediaSuggestions, acceptMediaSuggestion, rejectMediaSuggestion,
-  ocrMedia, transcribeMedia, getTranscript,
+  ocrMedia, transcribeMedia, getTranscript, aiImageOp,
+  recognizeMedia, qrDecodeMedia,
   getTransform,
   listComments, createComment, deleteComment,
   transitionWorkflow, reuploadAsVersion,
@@ -189,6 +190,13 @@ router.post('/:id/ocr', requirePermission('media', 'edit'), validate(mediaIdPara
 // Speech-to-text (Phase D4) — 501 via requireFeature when unconfigured
 router.post('/:id/transcribe', requirePermission('media', 'edit'), validate(transcribeMediaSchema), requireFeature('speech_to_text'), transcribeMedia);
 router.get('/:id/transcript', requirePermission('media', 'view'), validate(getTranscriptSchema), getTranscript);
+// AI image ops (Phase D6) — bg-removal/upscale/enhance/object-removal via replicate; 501 via requireFeature when unconfigured
+router.post('/:id/image-op', requirePermission('media', 'edit'), validate(aiImageOpSchema), requireFeature('image_ops'), aiImageOp);
+// Recognition (Phase D7) — optional, 403 while media.recognition is off (default);
+// /recognize additionally 501s via requireFeature when vision is unconfigured
+router.post('/:id/recognize', requirePermission('media', 'edit'), validate(mediaIdParamSchema), requireFeature('vision'), recognizeMedia);
+// QR/barcode decode — local zxing job, works without any AI provider
+router.post('/:id/qr-decode', requirePermission('media', 'edit'), validate(mediaIdParamSchema), qrDecodeMedia);
 // PDF merge (no parent id)
 router.post('/pdf-merge', requirePermission('media', 'add'), validate(pdfOpSchema), pdfOp);
 router.get('/:id', requirePermission('media', 'view'), validate(getMediaSchema), getMedia);

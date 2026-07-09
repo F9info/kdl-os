@@ -24,6 +24,7 @@
     "@prisma/client": "^7.0.0",
     "@sentry/node": "^8.0.0",
     "adm-zip": "^0.5.18",
+    "basic-ftp": "^6.0.1",
     "bcryptjs": "^2.4.3",
     "bullmq": "^5.0.0",
     "chromadb": "^1.9.0",
@@ -46,7 +47,8 @@
     "qrcode": "^1.5.4",
     "sharp": "^0.35.3",
     "winston": "^3.13.0",
-    "zod": "^3.23.0"
+    "zod": "^3.23.0",
+    "zxing-wasm": "^3.1.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.0",

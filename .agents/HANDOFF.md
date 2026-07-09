@@ -1,3 +1,12 @@
+## 2026-07-09 — KDL-133 Media DAM Phase D7: Recognition (labels/logos/QR) — DONE ✅ (Backend Architect)
+- **D7 complete, gate PASS**: `tests/media/recognition.test.js` 12/12; full `tests/media` 296/296 (25 files), no regressions.
+- Recognition is OPTIONAL + default OFF: `media.recognition` AppSetting gates both endpoints with 403 (`isRecognitionEnabled` in `media/settings.js`; absent row = off).
+- `POST /media/:id/recognize` → `ai-recognize` job → `ai/recognition.service.js`: vision driver (`requireFeature('vision')` → 501 unconfigured) prompted for labels/logos/landmarks/products as strict JSON; defensive parse (`parseRecognitionResult` handles prose/code fences); results deduped across categories → `tagMedia` (Meili reindex) + `enqueueEmbed`. **Face recognition NOT built** — prompt explicitly forbids naming people; decision MEDIA-002 confirmed.
+- `POST /media/:id/qr-decode` → `barcode-decode` job → `barcode.service.js`: LOCAL `zxing-wasm` (new backend dep), no AI call, mirrors ocr.service.js job pattern. Decoded `[{format,text}]` → new `Media.barcodes` Json column (migration `20260709061616_add_media_barcodes`, applied to dev DB). 422 for webp/avif/svg (zxing-wasm's stb_image can't parse those containers). QR fixture test decodes a real checked-in PNG (`tests/fixtures/qr-kdl.png` → `https://kdl.example.com/asset/42`).
+- **Also landed in the same commit: interrupted D6 WIP (KDL-132, AI image ops)** — it was left complete-but-uncommitted+staged in the tree by the AI-Services agent (spend-limit failure), intermixed with D7 wiring in shared files (controller/routes/processing/schema). Verified green (7/7 ai-image-ops.test.js inside the 296) and landed with attribution rather than left rotting — same recovery precedent as commit `a3c0c88`. D6's own STATUS row/bullet were already written by that agent and are included.
+- This heartbeat ran as Backend Architect because AI Services hit the org Claude spend limit (CEO routed the issue over).
+- Next: D8 cloud imports (KDL-134, already assigned to Backend Architect) → D9 final review/E2E gate (KDL-135).
+
 ## 2026-07-09 — KDL-119 Media DAM Phase A: A9 review + E2E — PHASE A COMPLETE ✅ (Backend Architect)
 - **Phase gate PASS: adversarial review + Playwright exit 0.** Phase B (KDL-120) is unblocked.
 - Adversarial review (feature-dev:code-reviewer over A1–A8) surfaced 3 real defects, all fixed in commit `b4aa86b`:
