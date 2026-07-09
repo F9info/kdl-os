@@ -55,6 +55,8 @@ export async function runTranscribeJob({ mediaId, language }) {
 
   const { enqueueReindex } = await import('../media-search.service.js');
   enqueueReindex(mediaId);
+  const { enqueueEmbed } = await import('./media-semantic.service.js');
+  enqueueEmbed(mediaId);
 
   logger.info(`Transcription complete for media ${mediaId} (${normalized.length} segments)`);
   return { segments: normalized.length, language: detected ?? null };

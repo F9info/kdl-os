@@ -1,6 +1,7 @@
 import { prisma } from '../../../config/database.js';
 import { writeActivityAsync } from '../../user-management/shared/activity-logger.js';
 import { enqueueReindex } from '../media-search.service.js';
+import { enqueueEmbed } from './media-semantic.service.js';
 import { tagMedia } from '../tags.service.js';
 
 export const listSuggestions = (mediaId) =>
@@ -40,6 +41,7 @@ export async function acceptSuggestion(id, actorId) {
   await applySuggestion(suggestion, actorId);
   const updated = await prisma.mediaSuggestion.update({ where: { id }, data: { status: 'ACCEPTED' } });
   enqueueReindex(suggestion.media_id);
+  enqueueEmbed(suggestion.media_id);
   writeActivityAsync({
     actor: actorId,
     module: 'media',

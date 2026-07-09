@@ -1,13 +1,13 @@
 # Media DAM — Build Status
 
-Last updated: 2026-07-08 (KDL-122 Phase D — AI Services)
+Last updated: 2026-07-09 (KDL-120 Phase B — Delivery, Sharing, Workflow, Versioning)
 
 ## KDL-118 Implementation Order
 
 | Phase | Issue | Assignee | Status | Gate Evidence |
 |---|---|---|---|---|
 | A — DAM Foundations | KDL-119 | Backend Architect | ✅ PASS | A1–A9 complete; adversarial review (3 fixes: SVG entity-XSS, tag/meta reindex, url-import SSRF IP-pin); 80/80 frontend RTL, tsc 0; backend 500/502 (2 pre-existing D5 failures); **Playwright A9 exit 0 — 5/5** (60MB chunked+resume, zip import, tag+meta search, smart collection, EICAR→quarantine vs live clamd) |
-| B — Delivery, Sharing, Workflow, Versioning | KDL-120 | Backend Coder | 🟢 Unblocked (A PASS) | — |
+| B — Delivery, Sharing, Workflow, Versioning | KDL-120 | Backend Coder | ✅ PASS | B1–B8 complete; 2 bugs fixed (transform.service.js used non-existent storage API → rewrote to use minio client directly; workflow_status @default(PUBLISHED) → DRAFT + migration); 51/51 Phase B backend vitest; 97/97 frontend RTL (incl. 17 new B7 tests: MediaImage, WorkflowBadge, CommentsThread, ShareDialog, VersionHistoryPanel); tsc exit 0; **Playwright B8 exit 0 — 4/4** (share+password+expiry honored unauthenticated, version restore, REVIEW invisible until APPROVED, transform→webp+immutable cache-control) |
 | C — Processing Studio | KDL-121 | Backend Coder | ✅ PASS | C1–C8 complete; 411 vitest pass; tsc exit 0; Playwright 4/4 (image-edit→version, pdf-merge→new media, video-trim→version, audio-waveform→peaks) |
 | D — AI Layer | KDL-122 | AI Services | 🔨 In progress (D1–D4 done, D5–D9 pending) | 453/453 backend vitest pass (D1 driver, D2 analyze/suggestion, D3 OCR, D4 transcribe suites); 1 pre-existing unrelated failure (auth.controller.test.js — missing DATABASE_URL in test env, not caused by Phase D); frontend tsc exit 0; migrations applied |
 

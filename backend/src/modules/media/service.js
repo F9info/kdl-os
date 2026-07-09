@@ -422,3 +422,78 @@ export const releaseMediaUsage = async (mediaId, entity, entityId) => {
 export const getMediaUsage = async (id) => {
   return prisma.mediaUsage.findMany({ where: { media_id: id } });
 };
+
+// ─── Versioning (B5) ────────────────────────────────────────────────────────
+
+export const reUploadAsVersion = async (mediaId, file, actorId) => {
+  const media = await prisma.media.findFirst({ where: { id: mediaId, deleted_at: null } });
+  if (!media) throw Object.assign(new Error('Media not found'), { status: 404 });
+
+  const checksum = createHash('sha256').update(file.buffer).digest('hex');
+  const ext = (file.originalname ?? media.original_name).split('.').pop().toLowerCase();
+  const objectName = `${media.user_id}/${randomUUID()}.${ext}`;
+  await storageService.uploadFile(file, objectName);
+
+  const maxVersion = await prisma.mediaVersion.aggregate({
+    where: { media_id: mediaId },
+    _max: { version: true },
+  });
+  const nextVersion = (maxVersion._max.version ?? 0) + 1;
+
+  const version = await prisma.mediaVersion.create({
+    data: {
+      media_id: mediaId,
+      version: nextVersion,
+      path: objectName,
+      size: file.size,
+      checksum,
+      created_by: actorId,
+    },
+  });
+
+  await prisma.media.update({
+    where: { id: mediaId },
+    data: { path: objectName, size: file.size, checksum },
+  });
+
+  writeActivityAsync({ actor: actorId, module: 'media', action: 'version_uploaded', description: `New version ${nextVersion} uploaded for media ${mediaId}` });
+  return version;
+};
+
+export const compareVersions = async (mediaId, v1Id, v2Id) => {
+  const [v1, v2] = await Promise.all([
+    prisma.mediaVersion.findUnique({ where: { id: v1Id } }),
+    prisma.mediaVersion.findUnique({ where: { id: v2Id } }),
+  ]);
+  if (!v1 || v1.media_id !== mediaId) throw Object.assign(new Error('Version not found'), { status: 404 });
+  if (!v2 || v2.media_id !== mediaId) throw Object.assign(new Error('Version not found'), { status: 404 });
+  const [url1, url2] = await Promise.all([
+    storageService.getFileUrl(v1.path),
+    storageService.getFileUrl(v2.path),
+  ]);
+  return { v1: { ...v1, url: url1 }, v2: { ...v2, url: url2 } };
+};
+
+export const deleteVersion = async (mediaId, versionId, actorId) => {
+  const version = await prisma.mediaVersion.findUnique({ where: { id: versionId } });
+  if (!version || version.media_id !== mediaId) throw Object.assign(new Error('Version not found'), { status: 404 });
+
+  const maxVersion = await prisma.mediaVersion.aggregate({
+    where: { media_id: mediaId },
+    _max: { version: true },
+  });
+  if (version.version === maxVersion._max.version) {
+    throw Object.assign(new Error('Cannot delete the latest version'), { status: 422 });
+  }
+
+  await prisma.mediaVersion.delete({ where: { id: versionId } });
+  writeActivityAsync({ actor: actorId, module: 'media', action: 'version_deleted', description: `Version ${version.version} deleted for media ${mediaId}` });
+  return version;
+};
+
+export const getVersionUrl = async (mediaId, versionId) => {
+  const version = await prisma.mediaVersion.findUnique({ where: { id: versionId } });
+  if (!version || version.media_id !== mediaId) throw Object.assign(new Error('Version not found'), { status: 404 });
+  const url = await storageService.getFileUrl(version.path);
+  return { ...version, url };
+};

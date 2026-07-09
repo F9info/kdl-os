@@ -1,6 +1,60 @@
-// Media DAM — Phase A foundations (tags, custom meta fields, collections, favorites)
-// Phase B prerequisite — MediaVersion bootstrapped here for Phase C
+// Media DAM — Phase A foundations + Phase B (delivery, sharing, workflow, versioning)
 // See .agents/MEDIA_DAM_ARCH.md
+
+// ─── Phase B ────────────────────────────────────────────────────────────────
+
+enum MediaWorkflowStatus {
+  DRAFT
+  REVIEW
+  APPROVED
+  PUBLISHED
+  REJECTED
+  EXPIRED
+  ARCHIVED
+}
+
+// Public / password-protected / time-limited share links for media or folders
+model MediaShare {
+  id             String    @id @default(cuid())
+  media_id       String?
+  folder_id      String?
+  token          String    @unique
+  password_hash  String?
+  expires_at     DateTime?
+  max_downloads  Int?
+  download_count Int       @default(0)
+  created_by     String?
+  revoked        Boolean   @default(false)
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  media    Media?       @relation(fields: [media_id], references: [id], onDelete: Cascade)
+  folder   MediaFolder? @relation(fields: [folder_id], references: [id], onDelete: Cascade)
+  creator  User?        @relation("MediaShareCreator", fields: [created_by], references: [id], onDelete: SetNull)
+
+  @@index([token])
+  @@index([media_id])
+  @@index([folder_id])
+  @@index([created_by])
+  @@index([expires_at])
+  @@map("media_shares")
+}
+
+// Threaded comments on media assets
+model MediaComment {
+  id         String   @id @default(cuid())
+  media_id   String
+  user_id    String
+  body       String
+  created_at DateTime @default(now())
+
+  media Media @relation(fields: [media_id], references: [id], onDelete: Cascade)
+  user  User  @relation("MediaCommentAuthor", fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([media_id])
+  @@index([user_id])
+  @@map("media_comments")
+}
 
 enum MediaMetaFieldType {
   TEXT

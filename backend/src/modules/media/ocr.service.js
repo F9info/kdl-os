@@ -87,6 +87,8 @@ export const runOcrJob = async ({ mediaId }) => {
 
     const { enqueueReindex } = await import('./media-search.service.js');
     enqueueReindex(mediaId);
+    const { enqueueEmbed } = await import('./ai/media-semantic.service.js');
+    enqueueEmbed(mediaId);
 
     logger.info(`OCR complete for media ${mediaId} (${text.length} chars)`);
     return { chars: text.length };

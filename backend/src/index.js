@@ -16,6 +16,7 @@ import { mediaWorker } from './modules/media/media.worker.js';
 import { startProcessingWorker, closeProcessingWorker } from './modules/media/processing.queue.js';
 import { integrationsWorker } from './modules/integrations/integrations.worker.js';
 import { notificationsWorker, notificationsRetentionWorker, startRetentionJob } from './modules/notifications/notifications.worker.js';
+import { startExpiryJob } from './modules/media/media.expiry.worker.js';
 
 import authRoutes from './modules/auth/routes.js';
 import userRoutes from './modules/users/routes.js';
@@ -71,6 +72,51 @@ await loadModules(app);
 // Start background jobs
 startProcessingWorker();
 startRetentionJob().catch((err) => logger.error(`Retention job init failed: ${err.message}`));
+startExpiryJob().catch((err) => logger.error(`Expiry job init failed: ${err.message}`));
+
+// ─── Public share routes (no auth) ───────────────────────────────────────────
+// These live outside /api so they are not subject to the API rate limiter.
+const shareRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 50,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// GET /share/:token — resolve a share token and return media/folder metadata
+app.get('/share/:token', shareRateLimiter, async (req, res) => {
+  const { resolveShare } = await import('./modules/media/sharing.service.js');
+  try {
+    const result = await resolveShare(req.params.token, undefined);
+    return res.json({ success: true, data: result });
+  } catch (err) {
+    return res.status(err.status || 500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /share/:token — same as GET but accepts a password in the request body
+app.post('/share/:token', shareRateLimiter, express.json(), async (req, res) => {
+  const { resolveShare } = await import('./modules/media/sharing.service.js');
+  try {
+    const result = await resolveShare(req.params.token, req.body?.password);
+    return res.json({ success: true, data: result });
+  } catch (err) {
+    return res.status(err.status || 500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /share/:token/qr — return QR PNG for a share link
+app.get('/share/:token/qr', shareRateLimiter, async (req, res) => {
+  const { getShareQr } = await import('./modules/media/sharing.service.js');
+  try {
+    const baseUrl = req.protocol + '://' + req.get('host');
+    const buf = await getShareQr(req.params.token, baseUrl);
+    res.set({ 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=3600' });
+    return res.send(buf);
+  } catch (err) {
+    return res.status(err.status || 500).json({ message: err.message });
+  }
+});
 
 app.use((req, res) => errorResponse(res, 'Not found', 404));
 app.use(errorHandler);

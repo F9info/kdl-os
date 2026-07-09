@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '../src/config/database.js';
 import { seedUserManagement } from './seeders/user-management.seed.js';
 import { seedCoreModules } from './seeders/modules.seed.js';
+import { seedMediaPhaseB } from './seeders/media-phase-b.seed.js';
 
 async function main() {
   const password_hash = await bcrypt.hash('Admin@123', 12);
@@ -22,6 +23,7 @@ async function main() {
 
   await seedUserManagement(prisma);
   await seedCoreModules(prisma);
+  await seedMediaPhaseB(prisma);
 }
 
 main()

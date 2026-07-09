@@ -20,6 +20,9 @@ import {
   editMediaSchema, jobIdSchema, versionIdSchema, restoreVersionSchema,
   pdfOpSchema, videoOpSchema, audioOpSchema, convertMediaSchema,
   transcribeMediaSchema, getTranscriptSchema,
+  createShareSchema, shareIdParamSchema, shareTokenParamSchema,
+  transformQuerySchema, createCommentSchema, commentIdParamSchema,
+  reuploadVersionSchema, workflowTransitionSchema,
 } from './schema.js';
 import {
   uploadMedia, listMedia, getMedia, updateMedia, deleteMedia, bulkDelete,
@@ -40,6 +43,10 @@ import {
   pdfOp, videoOp, audioOp, convertMedia,
   analyzeMedia, listMediaSuggestions, acceptMediaSuggestion, rejectMediaSuggestion,
   ocrMedia, transcribeMedia, getTranscript,
+  getTransform,
+  listComments, createComment, deleteComment,
+  transitionWorkflow, reuploadAsVersion,
+  createShareLink, revokeShareLink, listShareLinks, shareQr, shareEmbed,
 } from './controller.js';
 import {
   getAiStatus, listAiDrivers, listAiProviders,
@@ -136,6 +143,27 @@ router.delete('/ai/providers/:id', requirePermission('media', 'edit'), deleteAiP
 // AI suggestions (Phase D2) — keep above the generic /:id routes
 router.post('/suggestions/:id/accept', requirePermission('media', 'edit'), validate(mediaIdParamSchema), acceptMediaSuggestion);
 router.post('/suggestions/:id/reject', requirePermission('media', 'edit'), validate(mediaIdParamSchema), rejectMediaSuggestion);
+
+// Transform (B2) — on-the-fly image resize/format/filter; cached in MinIO
+router.get('/:id/t', requirePermission('media', 'view'), validate(transformQuerySchema), getTransform);
+
+// Share management (B4) — authenticated CRUD; static paths before /:id wildcards
+router.post('/shares', requirePermission('media', 'share'), validate(createShareSchema), createShareLink);
+router.delete('/shares/:id', requirePermission('media', 'share'), validate(shareIdParamSchema), revokeShareLink);
+router.get('/shares/:token/qr', requirePermission('media', 'share'), validate(shareTokenParamSchema), shareQr);
+router.get('/shares/:token/embed', requirePermission('media', 'share'), validate(shareTokenParamSchema), shareEmbed);
+router.get('/:id/shares', requirePermission('media', 'share'), validate(mediaIdParamSchema), listShareLinks);
+
+// Versioning (B5) — re-upload file onto existing media record → new MediaVersion
+router.post('/:id/upload', requirePermission('media', 'edit'), upload.single('file'), validate(reuploadVersionSchema), reuploadAsVersion);
+
+// Comments (B5)
+router.get('/:id/comments', requirePermission('media', 'view'), validate(mediaIdParamSchema), listComments);
+router.post('/:id/comments', requirePermission('media', 'view'), validate(createCommentSchema), createComment);
+router.delete('/:id/comments/:commentId', requirePermission('media', 'view'), validate(commentIdParamSchema), deleteComment);
+
+// Workflow (B6)
+router.patch('/:id/workflow', requirePermission('media', 'approve'), validate(workflowTransitionSchema), transitionWorkflow);
 
 // List + CRUD
 router.get('/', requirePermission('media', 'view'), validate(listMediaSchema), listMedia);

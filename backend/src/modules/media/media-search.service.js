@@ -11,6 +11,7 @@ const INDEX_SETTINGS = {
     'ocr_text', 'transcript',
   ],
   filterableAttributes: [
+    'id', // semantic mode (D5) intersects Chroma top-K ids with Meili filters
     'type', 'tags', 'meta_kv', 'folder_id', 'owner_id',
     'created_at_ts', 'size', 'is_archived', 'camera_make', 'camera_model', 'has_gps',
   ],

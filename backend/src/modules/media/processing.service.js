@@ -79,6 +79,10 @@ export const executeProcessingJob = async (job) => {
       const { runTranscribeJob } = await import('./ai/transcribe.service.js');
       return runTranscribeJob(job.data);
     }
+    case 'ai-embed': {
+      const { runEmbedJob } = await import('./ai/media-semantic.service.js');
+      return runEmbedJob(job.data);
+    }
     default:
       throw new Error(`Unknown processing job type: ${job.name}`);
   }

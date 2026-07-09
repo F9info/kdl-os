@@ -381,3 +381,59 @@ export const convertMediaSchema = z.object({
     quality: z.number().int().min(1).max(100).optional(),
   }),
 });
+
+// Phase B4 — Sharing
+export const createShareSchema = z.object({
+  body: z.object({
+    media_id: z.string().cuid().optional(),
+    folder_id: z.string().cuid().optional(),
+    password: z.string().min(1).max(200).optional(),
+    expires_at: z.string().datetime().optional(),
+    max_downloads: z.number().int().min(1).optional(),
+  }).refine(d => d.media_id || d.folder_id, { message: 'media_id or folder_id required' }),
+});
+
+export const shareIdParamSchema = z.object({ params: z.object({ id: z.string().cuid() }) });
+export const shareTokenParamSchema = z.object({ params: z.object({ token: z.string().min(1) }) });
+export const resolveShareSchema = z.object({
+  params: z.object({ token: z.string().min(1) }),
+  body: z.object({ password: z.string().optional() }).optional(),
+});
+
+// Phase B2 — On-the-fly image transform
+export const transformQuerySchema = z.object({
+  params: z.object({ id: z.string().min(1) }),
+  query: z.object({
+    w: z.string().regex(/^\d+$/).optional(),
+    h: z.string().regex(/^\d+$/).optional(),
+    fit: z.enum(['cover', 'contain', 'fill', 'inside', 'outside']).optional(),
+    q: z.string().regex(/^\d+$/).optional(),
+    format: z.enum(['webp', 'avif', 'jpg', 'jpeg', 'png']).optional(),
+    blur: z.string().optional(),
+    gray: z.string().optional(),
+  }).optional(),
+});
+
+// Phase B5 — Comments
+export const createCommentSchema = z.object({
+  params: z.object({ id: z.string().cuid() }),
+  body: z.object({ body: z.string().min(1).max(2000) }),
+});
+
+export const commentIdParamSchema = z.object({
+  params: z.object({ id: z.string().cuid(), commentId: z.string().cuid() }),
+});
+
+// Phase B5 — Re-upload as new version
+export const reuploadVersionSchema = z.object({
+  params: z.object({ id: z.string().cuid() }),
+  body: z.object({ note: z.string().max(500).optional() }).optional(),
+});
+
+// Phase B6 — Workflow transition
+export const workflowTransitionSchema = z.object({
+  params: z.object({ id: z.string().cuid() }),
+  body: z.object({
+    status: z.enum(['DRAFT', 'REVIEW', 'APPROVED', 'REJECTED', 'PUBLISHED', 'EXPIRED', 'ARCHIVED']),
+  }),
+});

@@ -6,6 +6,10 @@ import * as collectionsService from './collections.service.js';
 import * as fileOpsService from './file-ops.service.js';
 import * as chunkedUploadService from './chunked-upload.service.js';
 import * as importService from './import.service.js';
+import { createShare, revokeShare, listShares, resolveShare, getShareQr, getEmbedSnippet } from './sharing.service.js';
+import { transformMedia, buildSrcset } from './transform.service.js';
+import * as commentsService from './comments.service.js';
+import { transitionWorkflow as workflowTransition } from './workflow.service.js';
 import { successResponse, errorResponse } from '../../shared/utils/response.js';
 
 // ─── Search ──────────────────────────────────────────────────────────────────
@@ -223,7 +227,9 @@ export const getMedia = async (req, res, next) => {
   try {
     const media = await mediaService.getMediaById(req.validated.params.id);
     if (!media) return errorResponse(res, 'Media not found', 404);
-    return successResponse(res, { media });
+    const baseUrl = req.protocol + '://' + req.get('host');
+    const srcset = media.type === 'IMAGE' ? buildSrcset(media.id, baseUrl) : null;
+    return successResponse(res, { media: { ...media, srcset } });
   } catch (err) {
     next(err);
   }
@@ -797,6 +803,188 @@ export const convertMedia = async (req, res, next) => {
     });
     return successResponse(res, { job_id: job.id, status: 'queued' }, 202);
   } catch (err) {
+    next(err);
+  }
+};
+
+// ─── Sharing (B4) ────────────────────────────────────────────────────────────
+export const createShareLink = async (req, res, next) => {
+  try {
+    const share = await createShare(req.validated.body, req.user.id);
+    return successResponse(res, share, 201);
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+export const revokeShareLink = async (req, res, next) => {
+  try {
+    await revokeShare(req.validated.params.id, req.user.id);
+    return successResponse(res, { message: 'Revoked' });
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+export const listShareLinks = async (req, res, next) => {
+  try {
+    const shares = await listShares(req.validated.params.id);
+    return successResponse(res, { shares });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const resolveShareLink = async (req, res, next) => {
+  try {
+    const password = req.body?.password;
+    const result = await resolveShare(req.params.token, password);
+    return successResponse(res, result);
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+export const shareQr = async (req, res, next) => {
+  try {
+    const baseUrl = req.protocol + '://' + req.get('host');
+    const buf = await getShareQr(req.params.token, baseUrl);
+    res.set({ 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=3600' });
+    res.send(buf);
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+export const shareEmbed = async (req, res, next) => {
+  try {
+    const baseUrl = req.protocol + '://' + req.get('host');
+    const snippet = getEmbedSnippet(req.params.token, baseUrl);
+    return successResponse(res, { snippet });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─── Transform (B2) ──────────────────────────────────────────────────────────
+export const getTransform = async (req, res, next) => {
+  try {
+    const { id } = req.validated.params;
+    const { buffer, format } = await transformMedia(id, req.validated.query ?? {}, req.user?.id);
+    res.set({
+      'Content-Type': `image/${format}`,
+      'Cache-Control': 'public, max-age=31536000, immutable',
+    });
+    return res.send(buffer);
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+// ─── Comments (B5) ───────────────────────────────────────────────────────────
+export const listComments = async (req, res, next) => {
+  try {
+    const comments = await commentsService.listComments(req.validated.params.id);
+    return successResponse(res, { comments });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const createComment = async (req, res, next) => {
+  try {
+    const comment = await commentsService.createComment(
+      req.validated.params.id,
+      req.user.id,
+      req.validated.body.body,
+    );
+    return successResponse(res, { comment }, 201);
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+export const deleteComment = async (req, res, next) => {
+  try {
+    await commentsService.deleteComment(req.validated.params.commentId, req.user.id);
+    return successResponse(res, { message: 'Comment deleted' });
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+// ─── Workflow transition (B6) ─────────────────────────────────────────────────
+export const transitionWorkflow = async (req, res, next) => {
+  try {
+    const { id } = req.validated.params;
+    const { status } = req.validated.body;
+    // Build a Set of permission strings; bypass (superadmin) grants all media actions
+    const permsSet = req.userPermissions?.bypass
+      ? new Set(['media:edit', 'media:approve', 'media:publish'])
+      : new Set(req.userPermissions?.permissions ?? []);
+    const media = await workflowTransition(id, status, req.user.id, permsSet);
+    return successResponse(res, { media });
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+// ─── Re-upload as new version (B5) ───────────────────────────────────────────
+export const reuploadAsVersion = async (req, res, next) => {
+  try {
+    if (!req.file?.buffer?.length) return errorResponse(res, 'No file uploaded', 400);
+    const { id } = req.validated.params;
+    const note = req.validated.body?.note ?? null;
+
+    const { prisma } = await import('../../config/database.js');
+    const { minio } = await import('../../config/minio.js');
+    const { createHash } = await import('crypto');
+
+    const media = await prisma.media.findUnique({ where: { id, deleted_at: null } });
+    if (!media) return errorResponse(res, 'Media not found', 404);
+
+    // 1. Snapshot the CURRENT (old) state as a version record (path only — no file copy)
+    const lastVersion = await prisma.mediaVersion.findFirst({
+      where: { media_id: id },
+      orderBy: { version: 'desc' },
+      select: { version: true },
+    });
+    const nextVersion = (lastVersion?.version ?? 0) + 1;
+    await prisma.mediaVersion.create({
+      data: {
+        media_id: id,
+        version: nextVersion,
+        path: media.path,
+        size: media.size,
+        checksum: media.checksum,
+        created_by: req.user.id,
+        note: note ?? null,
+      },
+    });
+
+    // 2. Overwrite the main file in storage with the new buffer
+    const buf = req.file.buffer;
+    const bucket = media.bucket ?? process.env.MINIO_BUCKET;
+    await minio.putObject(bucket, media.path, buf, buf.length, { 'Content-Type': req.file.mimetype });
+
+    // 3. Update Media record with new size and checksum
+    const checksum = createHash('sha256').update(buf).digest('hex');
+    const updated = await prisma.media.update({
+      where: { id },
+      data: { size: buf.length, checksum },
+    });
+
+    return successResponse(res, { media: updated, version: nextVersion });
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
     next(err);
   }
 };
