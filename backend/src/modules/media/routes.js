@@ -43,6 +43,7 @@ import {
   pdfOp, videoOp, audioOp, convertMedia,
   analyzeMedia, listMediaSuggestions, acceptMediaSuggestion, rejectMediaSuggestion,
   ocrMedia, transcribeMedia, getTranscript, aiImageOp,
+  recognizeMedia, qrDecodeMedia,
   getTransform,
   listComments, createComment, deleteComment,
   transitionWorkflow, reuploadAsVersion,
@@ -191,6 +192,10 @@ router.post('/:id/transcribe', requirePermission('media', 'edit'), validate(tran
 router.get('/:id/transcript', requirePermission('media', 'view'), validate(getTranscriptSchema), getTranscript);
 // AI image ops (Phase D6) — bg-removal/upscale/enhance/object-removal → new version; 501 via requireFeature when unconfigured
 router.post('/:id/ai-image-op', requirePermission('media', 'edit'), validate(aiImageOpSchema), requireFeature('image_ops'), aiImageOp);
+// AI recognition (Phase D7) — OPTIONAL, default OFF: labels/logos/landmarks/products → tag suggestion; 501 via requireFeature when unconfigured
+router.post('/:id/recognize', requirePermission('media', 'edit'), validate(mediaIdParamSchema), requireFeature('vision'), recognizeMedia);
+// QR/barcode decode (Phase D7) — local zxing job, works without any AI provider
+router.post('/:id/qr-decode', requirePermission('media', 'edit'), validate(mediaIdParamSchema), qrDecodeMedia);
 // PDF merge (no parent id)
 router.post('/pdf-merge', requirePermission('media', 'add'), validate(pdfOpSchema), pdfOp);
 router.get('/:id', requirePermission('media', 'view'), validate(getMediaSchema), getMedia);

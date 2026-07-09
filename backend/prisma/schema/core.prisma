@@ -170,6 +170,7 @@ model Media {
   transcript      Json?               // Phase D4 — whisper segments (verbose_json shape)
   transcript_text String?             // Phase D4 — flat transcript text, indexed in Meili
   transcript_lang String?             // Phase D4 — detected/requested language code
+  barcodes        Json?               // Phase D7 — zxing-decoded QR/barcode hits: [{ value, format }], indexed in Meili
   // Phase B — workflow / delivery
   workflow_status MediaWorkflowStatus @default(DRAFT)
   published_at    DateTime?

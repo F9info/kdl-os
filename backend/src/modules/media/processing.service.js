@@ -87,6 +87,14 @@ export const executeProcessingJob = async (job) => {
       const { runImageOpJob } = await import('./ai/image-ops.service.js');
       return runImageOpJob(job.data);
     }
+    case 'ai-recognize': {
+      const { runRecognizeJob } = await import('./ai/recognize.service.js');
+      return runRecognizeJob(job.data);
+    }
+    case 'qr-decode': {
+      const { runQrDecodeJob } = await import('./qr.service.js');
+      return runQrDecodeJob(job.data);
+    }
     default:
       throw new Error(`Unknown processing job type: ${job.name}`);
   }
