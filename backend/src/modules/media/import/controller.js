@@ -2,6 +2,24 @@ import { successResponse, errorResponse } from '../../../shared/utils/response.j
 import { getImportDriver } from './drivers/index.js';
 import * as cloudImportService from './cloud-import.service.js';
 
+const IS_PROD = process.env.NODE_ENV === 'production';
+// Covers both the authenticated /start route and the public /callback route —
+// see routes.js (mounted under /api/media) and public-routes.js (mounted at
+// /api/media/import/oauth, before the authenticated router).
+const OAUTH_STATE_COOKIE_PATH = '/api/media/import/oauth';
+
+// No cookie-parser middleware in this app (see auth/controller.js's manual
+// getRefreshTokens) — parse the single cookie we need directly off the header.
+function getCookie(req, name) {
+  const cookieStr = req.headers.cookie || '';
+  for (const part of cookieStr.split(';')) {
+    const eqIdx = part.indexOf('=');
+    if (eqIdx === -1) continue;
+    if (part.slice(0, eqIdx).trim() === name) return decodeURIComponent(part.slice(eqIdx + 1).trim());
+  }
+  return undefined;
+}
+
 export const getImportProviders = async (req, res, next) => {
   try {
     successResponse(res, { items: cloudImportService.getProviderStatus() });
@@ -50,7 +68,17 @@ export const deleteImportConnection = async (req, res, next) => {
 export const startImportOAuth = async (req, res, next) => {
   try {
     const { provider } = req.validated.params;
-    const { url } = cloudImportService.startOAuth(req.user.id, provider);
+    const { url, nonce } = cloudImportService.startOAuth(req.user.id, provider);
+    // Bind the state to this browser via an HttpOnly cookie so completeOAuth can
+    // verify the callback lands in the same session that started it — closes the
+    // OAuth login-CSRF gap (see cloud-import.service.js parseState).
+    res.cookie(cloudImportService.oauthStateCookieName(provider), nonce, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: IS_PROD,
+      maxAge: cloudImportService.STATE_TTL_MS,
+      path: OAUTH_STATE_COOKIE_PATH,
+    });
     successResponse(res, { url });
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);
@@ -86,7 +114,12 @@ export const importRemoteFiles = async (req, res, next) => {
 export const oauthCallback = async (req, res) => {
   const { provider } = req.params;
   const frontendBase = process.env.CORS_ORIGIN || '';
-  const redirectTo = (params) => res.redirect(`${frontendBase}/admin/media/import?${new URLSearchParams(params).toString()}`);
+  const cookieName = cloudImportService.oauthStateCookieName(provider);
+  const clearStateCookie = () => res.clearCookie(cookieName, { path: OAUTH_STATE_COOKIE_PATH });
+  const redirectTo = (params) => {
+    clearStateCookie();
+    return res.redirect(`${frontendBase}/admin/media/import?${new URLSearchParams(params).toString()}`);
+  };
 
   if (req.query.error) {
     return redirectTo({ error: String(req.query.error) });
@@ -101,7 +134,8 @@ export const oauthCallback = async (req, res) => {
   }
 
   try {
-    await cloudImportService.completeOAuth(provider, { code: req.query.code, state: req.query.state });
+    const nonce = getCookie(req, cookieName);
+    await cloudImportService.completeOAuth(provider, { code: req.query.code, state: req.query.state, nonce });
     return redirectTo({ connected: provider });
   } catch (err) {
     return redirectTo({ error: err.message || 'oauth_failed' });

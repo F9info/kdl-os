@@ -328,36 +328,59 @@ describe('OAuth start/callback — AI-Rules-style: unconfigured provider → 501
     expect(() => svc.startOAuth('u1', 's3')).toThrow(expect.objectContaining({ status: 422 }));
   });
 
-  it('startOAuth returns a provider auth url embedding a signed state once configured', () => {
+  it('startOAuth returns a provider auth url embedding a signed state bound to a fresh nonce', () => {
     process.env.GOOGLE_DRIVE_CLIENT_ID = 'id';
     process.env.GOOGLE_DRIVE_CLIENT_SECRET = 'secret';
-    const { url } = svc.startOAuth('u1', 'google-drive');
+    const { url, nonce } = svc.startOAuth('u1', 'google-drive');
     expect(url).toContain('https://accounts.google.com/o/oauth2/v2/auth');
     expect(url).toContain('state=');
+    expect(typeof nonce).toBe('string');
+    expect(nonce.length).toBeGreaterThan(10);
   });
 
   it('completeOAuth rejects a state signed for a different provider', async () => {
     process.env.DROPBOX_CLIENT_ID = 'id';
     process.env.DROPBOX_CLIENT_SECRET = 'secret';
-    const state = enc({ userId: 'u1', provider: 'onedrive', ts: Date.now() });
-    await expect(svc.completeOAuth('dropbox', { code: 'c', state })).rejects.toMatchObject({ status: 422 });
+    const state = enc({ userId: 'u1', provider: 'onedrive', nonce: 'n1', ts: Date.now() });
+    await expect(svc.completeOAuth('dropbox', { code: 'c', state, nonce: 'n1' })).rejects.toMatchObject({ status: 422 });
   });
 
   it('completeOAuth rejects an expired state', async () => {
     process.env.DROPBOX_CLIENT_ID = 'id';
     process.env.DROPBOX_CLIENT_SECRET = 'secret';
-    const state = enc({ userId: 'u1', provider: 'dropbox', ts: Date.now() - 11 * 60 * 1000 });
-    await expect(svc.completeOAuth('dropbox', { code: 'c', state })).rejects.toMatchObject({ status: 422 });
+    const state = enc({ userId: 'u1', provider: 'dropbox', nonce: 'n1', ts: Date.now() - 11 * 60 * 1000 });
+    await expect(svc.completeOAuth('dropbox', { code: 'c', state, nonce: 'n1' })).rejects.toMatchObject({ status: 422 });
   });
 
-  it('completeOAuth exchanges the code and creates an encrypted connection', async () => {
+  // OAuth login-CSRF (RFC 6749 §10.12): an attacker who calls startOAuth as
+  // themselves gets a validly-encrypted state for their own userId. Without a
+  // session-bound nonce check, tricking a victim into completing the provider
+  // consent would link the victim's cloud credentials to the attacker's account.
+  it('completeOAuth rejects a validly-encrypted state when the nonce does not match the session cookie', async () => {
+    process.env.DROPBOX_CLIENT_ID = 'id';
+    process.env.DROPBOX_CLIENT_SECRET = 'secret';
+    const state = enc({ userId: 'attacker', provider: 'dropbox', nonce: 'attackers-nonce', ts: Date.now() });
+    await expect(svc.completeOAuth('dropbox', { code: 'c', state, nonce: 'victims-cookie-nonce' }))
+      .rejects.toMatchObject({ status: 422 });
+    expect(prismaMock.mediaImportConnection.create).not.toHaveBeenCalled();
+  });
+
+  it('completeOAuth rejects a state when no session cookie nonce is provided at all', async () => {
+    process.env.DROPBOX_CLIENT_ID = 'id';
+    process.env.DROPBOX_CLIENT_SECRET = 'secret';
+    const state = enc({ userId: 'u1', provider: 'dropbox', nonce: 'n1', ts: Date.now() });
+    await expect(svc.completeOAuth('dropbox', { code: 'c', state, nonce: undefined }))
+      .rejects.toMatchObject({ status: 422 });
+  });
+
+  it('completeOAuth exchanges the code and creates an encrypted connection when the nonce matches', async () => {
     process.env.DROPBOX_CLIENT_ID = 'id';
     process.env.DROPBOX_CLIENT_SECRET = 'secret';
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ access_token: 'a', refresh_token: 'r' }) }));
     prismaMock.mediaImportConnection.create.mockResolvedValue({ id: 'c1', provider: 'dropbox', label: 'dropbox (connected)' });
 
-    const state = enc({ userId: 'u1', provider: 'dropbox', ts: Date.now() });
-    const out = await svc.completeOAuth('dropbox', { code: 'c', state });
+    const state = enc({ userId: 'u1', provider: 'dropbox', nonce: 'n1', ts: Date.now() });
+    const out = await svc.completeOAuth('dropbox', { code: 'c', state, nonce: 'n1' });
     expect(out.userId).toBe('u1');
     expect(out.connection.id).toBe('c1');
     vi.unstubAllGlobals();

@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { prisma } from '../../../config/database.js';
 import { encrypt, decrypt } from '../../../shared/utils/crypto.js';
 import { logger } from '../../../shared/utils/logger.js';
@@ -5,7 +6,8 @@ import { uploadMedia } from '../service.js';
 import { writeActivityAsync } from '../../user-management/shared/activity-logger.js';
 import registry, { getImportDriver } from './drivers/index.js';
 
-const STATE_TTL_MS = 10 * 60 * 1000;
+export const STATE_TTL_MS = 10 * 60 * 1000;
+export const oauthStateCookieName = (provider) => `oauth_state_${provider}`;
 
 export const getRedirectUri = (provider) => {
   const base = process.env.APP_PUBLIC_URL || `http://localhost:${process.env.APP_PORT || 4000}`;
@@ -48,9 +50,15 @@ export const deleteConnection = async (userId, id) => {
   return existing;
 };
 
-const buildState = (userId, provider) => encrypt(JSON.stringify({ userId, provider, ts: Date.now() }));
+const buildState = (userId, provider, nonce) => encrypt(JSON.stringify({ userId, provider, nonce, ts: Date.now() }));
 
-const parseState = (state, provider) => {
+// `expectedNonce` binds the state to the browser session that called startOAuth
+// (carried via the oauth_state_<provider> HttpOnly cookie) — without this check,
+// an attacker can complete their own startOAuth to mint a validly-encrypted state
+// for their own userId, then trick a victim into finishing the provider consent,
+// linking the victim's cloud account to the attacker's app account (RFC 6749 §10.12
+// login-CSRF). Encryption alone only stops tampering, not replay from another session.
+const parseState = (state, provider, expectedNonce) => {
   let parsed;
   try {
     parsed = JSON.parse(decrypt(state));
@@ -63,6 +71,9 @@ const parseState = (state, provider) => {
   if (Date.now() - parsed.ts > STATE_TTL_MS) {
     throw Object.assign(new Error('OAuth state expired — restart the connection flow'), { status: 422 });
   }
+  if (!expectedNonce || !parsed.nonce || parsed.nonce !== expectedNonce) {
+    throw Object.assign(new Error('OAuth state does not match this session — restart the connection flow'), { status: 422 });
+  }
   return parsed;
 };
 
@@ -73,15 +84,17 @@ export const startOAuth = (userId, provider) => {
     throw Object.assign(new Error(`Cloud import provider "${provider}" is not configured on this server`), { status: 501 });
   }
   const redirectUri = getRedirectUri(provider);
-  const state = buildState(userId, provider);
-  return { url: driver.getAuthUrl({ redirectUri, state }) };
+  const nonce = randomBytes(24).toString('base64url');
+  const state = buildState(userId, provider, nonce);
+  return { url: driver.getAuthUrl({ redirectUri, state }), nonce };
 };
 
 // Returns { userId, connection } on success — controller decides how to redirect.
-export const completeOAuth = async (provider, { code, state }) => {
+// `nonce` must be the value read from the oauth_state_<provider> cookie set by startOAuth.
+export const completeOAuth = async (provider, { code, state, nonce }) => {
   const driver = getImportDriver(provider);
   if (!driver.oauth) throw Object.assign(new Error(`"${provider}" does not use OAuth`), { status: 422 });
-  const { userId } = parseState(state, provider);
+  const { userId } = parseState(state, provider, nonce);
   if (!driver.isAppConfigured()) {
     throw Object.assign(new Error(`Cloud import provider "${provider}" is not configured on this server`), { status: 501 });
   }
