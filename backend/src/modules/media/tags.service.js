@@ -18,10 +18,21 @@ export const createTag = async (name, actorId) => {
   return tag;
 };
 
+// Meili docs denormalize tag names — renaming/deleting a tag must reindex every
+// media row carrying it, or search facets serve the old name forever.
+const mediaIdsForTag = async (tagId) => {
+  const pivots = await prisma.mediaTagPivot.findMany({
+    where: { tag_id: tagId },
+    select: { media_id: true },
+  });
+  return pivots.map((p) => p.media_id);
+};
+
 export const renameTag = async (id, name, actorId) => {
   const existing = await prisma.mediaTag.findUnique({ where: { id } });
   if (!existing) return null;
   const tag = await prisma.mediaTag.update({ where: { id }, data: { name: normalizeTagName(name) } });
+  (await mediaIdsForTag(id)).forEach((id) => enqueueReindex(id));
   writeActivityAsync({ actor: actorId, module: 'media', action: 'tag_renamed', description: `Tag "${existing.name}" renamed to "${tag.name}"` });
   return tag;
 };
@@ -29,7 +40,9 @@ export const renameTag = async (id, name, actorId) => {
 export const deleteTag = async (id, actorId) => {
   const existing = await prisma.mediaTag.findUnique({ where: { id } });
   if (!existing) return null;
+  const affected = await mediaIdsForTag(id); // collect BEFORE the cascade wipes the pivots
   await prisma.mediaTag.delete({ where: { id } });
+  affected.forEach((id) => enqueueReindex(id));
   writeActivityAsync({ actor: actorId, module: 'media', action: 'tag_deleted', description: `Tag "${existing.name}" deleted` });
   return existing;
 };

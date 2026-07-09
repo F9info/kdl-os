@@ -1,5 +1,16 @@
 import { prisma } from '../../config/database.js';
 import { writeActivityAsync } from '../user-management/shared/activity-logger.js';
+import { enqueueReindex } from './media-search.service.js';
+
+// Meili docs denormalize meta slugs+values — a field mutation must reindex every
+// media row that carries a value for it, or search serves stale data forever.
+const mediaIdsForField = async (fieldId) => {
+  const values = await prisma.mediaMetaValue.findMany({
+    where: { field_id: fieldId },
+    select: { media_id: true },
+  });
+  return values.map((v) => v.media_id);
+};
 
 export const listMetaFields = () =>
   prisma.mediaMetaField.findMany({ orderBy: { label: 'asc' } });
@@ -24,6 +35,9 @@ export const updateMetaField = async (id, data, actorId) => {
     throw Object.assign(new Error('System fields cannot change slug or type'), { status: 422 });
   }
   const field = await prisma.mediaMetaField.update({ where: { id }, data });
+  if (data.slug && data.slug !== existing.slug) {
+    (await mediaIdsForField(id)).forEach((id) => enqueueReindex(id));
+  }
   writeActivityAsync({ actor: actorId, module: 'media', action: 'meta_field_updated', description: `Meta field "${field.label}" updated` });
   return field;
 };
@@ -34,7 +48,9 @@ export const deleteMetaField = async (id, actorId) => {
   if (existing.is_system) {
     throw Object.assign(new Error('System fields cannot be deleted'), { status: 422 });
   }
+  const affected = await mediaIdsForField(id); // collect BEFORE the cascade wipes the values
   await prisma.mediaMetaField.delete({ where: { id } }); // values cascade
+  affected.forEach((id) => enqueueReindex(id));
   writeActivityAsync({ actor: actorId, module: 'media', action: 'meta_field_deleted', description: `Meta field "${existing.label}" deleted` });
   return existing;
 };

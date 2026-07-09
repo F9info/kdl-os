@@ -42,6 +42,24 @@ describe('sanitizeSvg', () => {
     expect(out).not.toContain('data:text/html');
   });
 
+  it('strips javascript: hidden behind numeric-entity encoding', () => {
+    // &#106; = 'j'; a literal-substring check would miss this, a browser would not
+    const out = clean('<svg><a href="&#106;avascript:alert(1)">x</a></svg>');
+    expect(out).not.toContain('avascript:');
+    expect(out).not.toContain('&#106;');
+  });
+
+  it('strips javascript: hidden behind hex-entity + whitespace in the scheme', () => {
+    const out = clean('<svg><a href="ja&#x09;va\tscript:alert(1)">x</a></svg>');
+    expect(out).not.toContain('script:');
+  });
+
+  it('strips data:image/svg+xml (can carry nested script) but keeps raster data URIs', () => {
+    const out = clean('<svg><image href="data:image/svg+xml,<svg onload=alert(1)>"/><image href="data:image/png;base64,iVBORw0KGgo="/></svg>')
+    expect(out).not.toContain('svg+xml')
+    expect(out).toContain('data:image/png;base64')
+  });
+
   it('strips <foreignObject> blocks', () => {
     const out = clean('<svg><foreignObject><body xmlns="http://www.w3.org/1999/xhtml"><iframe src="x"/></body></foreignObject><rect/></svg>');
     expect(out).not.toContain('foreignObject');

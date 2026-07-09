@@ -109,6 +109,9 @@ services:
       # can load them (host maps minio:9000 -> localhost:9002).
       MINIO_PUBLIC_ENDPOINT: localhost
       MINIO_PUBLIC_PORT: "9002"
+      # Root .env points MEILISEARCH_HOST at localhost for host-run backends;
+      # inside the compose network the service name must be used instead.
+      MEILISEARCH_HOST: http://meilisearch:7700
       # Virus scan (A6): empty default keeps scans SKIPPED; set CLAMAV_HOST=clamav
       # in .env and start the `scan` profile to scan for real.
       CLAMAV_HOST: ${CLAMAV_HOST:-}

@@ -16,6 +16,7 @@ vi.mock('../../src/config/database.js', () => ({
       upsert: vi.fn(),
     },
     mediaTagPivot: {
+      findMany: vi.fn(() => Promise.resolve([])),
       createMany: vi.fn(),
       deleteMany: vi.fn(),
     },
@@ -27,10 +28,17 @@ vi.mock('../../src/config/database.js', () => ({
       delete: vi.fn(),
     },
     mediaMetaValue: {
+      findMany: vi.fn(() => Promise.resolve([])),
       upsert: vi.fn(),
       deleteMany: vi.fn(),
     },
   },
+}));
+
+// Reindex is fire-and-forget denorm sync — stub it so tag/meta unit tests stay
+// pure (no BullMQ/Meili). Assertions on reindex live in media-search tests.
+vi.mock('../../src/modules/media/media-search.service.js', () => ({
+  enqueueReindex: vi.fn(),
 }));
 
 import { prisma } from '../../src/config/database.js';
@@ -67,6 +75,25 @@ describe('tags service', () => {
     const deleted = await deleteTag('t1', 'u1');
     expect(deleted.name).toBe('old');
     expect(prisma.mediaTag.delete).toHaveBeenCalledWith({ where: { id: 't1' } });
+  });
+
+  it('renameTag reindexes every media carrying the tag (denorm sync)', async () => {
+    const { enqueueReindex } = await import('../../src/modules/media/media-search.service.js');
+    prisma.mediaTag.findUnique.mockResolvedValue({ id: 't1', name: 'old' });
+    prisma.mediaTag.update.mockResolvedValue({ id: 't1', name: 'new' });
+    prisma.mediaTagPivot.findMany.mockResolvedValue([{ media_id: 'm1' }, { media_id: 'm2' }]);
+    await renameTag('t1', 'New', 'u1');
+    expect(enqueueReindex).toHaveBeenCalledWith('m1');
+    expect(enqueueReindex).toHaveBeenCalledWith('m2');
+  });
+
+  it('deleteTag reindexes affected media, collected before the cascade', async () => {
+    const { enqueueReindex } = await import('../../src/modules/media/media-search.service.js');
+    prisma.mediaTag.findUnique.mockResolvedValue({ id: 't1', name: 'old' });
+    prisma.mediaTag.delete.mockResolvedValue({});
+    prisma.mediaTagPivot.findMany.mockResolvedValue([{ media_id: 'm9' }]);
+    await deleteTag('t1', 'u1');
+    expect(enqueueReindex).toHaveBeenCalledWith('m9');
   });
 
   it('tagMedia bulk: upserts tags by name and links every found media', async () => {
@@ -157,6 +184,31 @@ describe('meta fields service', () => {
     prisma.mediaMetaField.delete.mockResolvedValue({});
     await deleteMetaField('f2', 'u1');
     expect(prisma.mediaMetaField.delete).toHaveBeenCalledWith({ where: { id: 'f2' } });
+  });
+
+  it('deleteMetaField reindexes affected media, collected before the cascade', async () => {
+    const { enqueueReindex } = await import('../../src/modules/media/media-search.service.js');
+    prisma.mediaMetaField.findUnique.mockResolvedValue({ id: 'f3', is_system: false, label: 'Client' });
+    prisma.mediaMetaField.delete.mockResolvedValue({});
+    prisma.mediaMetaValue.findMany.mockResolvedValue([{ media_id: 'm5' }]);
+    await deleteMetaField('f3', 'u1');
+    expect(enqueueReindex).toHaveBeenCalledWith('m5');
+  });
+
+  it('updateMetaField reindexes affected media only when slug changes', async () => {
+    const { enqueueReindex } = await import('../../src/modules/media/media-search.service.js');
+    prisma.mediaMetaField.findUnique.mockResolvedValue({ id: 'f4', is_system: false, slug: 'old', label: 'L' });
+    prisma.mediaMetaField.update.mockResolvedValue({ id: 'f4', slug: 'new', label: 'L' });
+    prisma.mediaMetaValue.findMany.mockResolvedValue([{ media_id: 'm7' }]);
+    await updateMetaField('f4', { slug: 'new' }, 'u1');
+    expect(enqueueReindex).toHaveBeenCalledWith('m7');
+
+    // label-only change → no reindex needed (denorm doc unchanged)
+    enqueueReindex.mockClear()
+    prisma.mediaMetaField.findUnique.mockResolvedValue({ id: 'f4', is_system: false, slug: 'new', label: 'L' });
+    prisma.mediaMetaField.update.mockResolvedValue({ id: 'f4', slug: 'new', label: 'L2' });
+    await updateMetaField('f4', { label: 'L2' }, 'u1');
+    expect(enqueueReindex).not.toHaveBeenCalled();
   });
 
   it('setMediaMeta rejects unknown slugs with 422', async () => {

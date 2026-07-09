@@ -20,7 +20,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { formatDate, formatBytes } from '@/lib/utils'
 import { cn } from '@/lib/utils'
-import type { Media, MediaFolder, MediaType, MediaUsage, MediaSearchResult } from '@/types/media.types'
+import type { Media, MediaFolder, MediaType, MediaUsage, MediaSearchResult, MediaSearchDoc } from '@/types/media.types'
 import {
   SearchFacets, MediaTagChips, CustomFieldEditor, SidebarNav, CollectionsPanel,
   CollectionItemsView, FavoritesView, RecentsView, ChunkedUploadDialog,
@@ -32,6 +32,7 @@ import {
 
 const mediaApi = {
   list: (params: Record<string, string>) => api.get('/media', { params }).then((r) => r.data.data),
+  get: (id: string) => api.get(`/media/${id}`).then((r) => r.data.data.media as Media),
   folders: () => api.get('/media/folders').then((r) => r.data.data.folders as MediaFolder[]),
   trash: () => api.get('/media/trash').then((r) => r.data.data.media as Media[]),
   usage: (id: string) => api.get(`/media/${id}/usage`).then((r) => r.data.data.usages as MediaUsage[]),
@@ -601,7 +602,7 @@ function DetailDrawer({
       {/* A8: custom meta fields */}
       <CustomFieldEditor
         mediaId={item.id}
-        metaValues={item.meta_values ?? []}
+        meta={item.meta ?? {}}
         onChange={() => queryClient.invalidateQueries({ queryKey: ['media'] })}
       />
 
@@ -730,12 +731,34 @@ export default function MediaPage() {
     can('media:add')
   )
 
-  // A8: items — prefer searchResults when active, else regular query
+  // A8: open detail by id — search hits / collection docs lack url+variants, so
+  // fetch the full row before showing the drawer
+  const openDetailById = useCallback((mediaId: string) => {
+    mediaApi.get(mediaId).then(setDetailItem)
+      .catch(() => toast({ title: 'Failed to load file', variant: 'destructive' }))
+  }, [])
+
+  // A8: items — search hits are flat Meili docs; map to Media-ish rows for the
+  // grid (no url/variants → letter tile fallback, click fetches the full row)
+  const docToMedia = (d: MediaSearchDoc): Media => ({
+    id: d.id, user_id: d.owner_id, folder_id: d.folder_id, filename: d.name,
+    original_name: d.name, mime_type: d.mime_type, size: d.size, bucket: '', path: '',
+    url: null, title: d.title, alt_text: d.alt, caption: d.caption, width: d.width,
+    height: d.height, duration: null, variants: null, type: d.type, deleted_at: null,
+    created_at: d.created_at, updated_at: d.created_at, checksum: null, scan_result: null,
+    scanned_at: null, exif: null, is_archived: d.is_archived, tags: d.tags, meta: d.meta,
+  })
   const items: Media[] = searchResults
-    ? searchResults.media
+    ? searchResults.hits.map(docToMedia)
     : view === 'files'
       ? (mediaQuery.data?.media ?? [])
       : (trashQuery.data ?? [])
+
+  // When search is active the grid rows are doc stubs — fetch full row on click
+  const handleDetail = useCallback((m: Media) => {
+    if (searchResults) openDetailById(m.id)
+    else setDetailItem(m)
+  }, [searchResults, openDetailById])
 
   // ── Mutations ────────────────────────────────────────────────────────────────
 
@@ -1008,10 +1031,10 @@ export default function MediaPage() {
           <div className="flex-1 overflow-y-auto p-3">
             {/* A8: collection / favorites / recents special views */}
             {sidebarView === 'collections' && selectedCollection && (
-              <CollectionItemsView collectionId={selectedCollection} onDetail={setDetailItem} />
+              <CollectionItemsView collectionId={selectedCollection} onDetail={openDetailById} />
             )}
-            {sidebarView === 'favorites' && <FavoritesView onDetail={setDetailItem} />}
-            {sidebarView === 'recents' && <RecentsView onDetail={setDetailItem} />}
+            {sidebarView === 'favorites' && <FavoritesView onDetail={openDetailById} />}
+            {sidebarView === 'recents' && <RecentsView onDetail={openDetailById} />}
 
             {/* Regular file grid (folders view or when no special view active) */}
             {(sidebarView === 'folders' || (sidebarView === 'collections' && !selectedCollection)) && (
@@ -1038,7 +1061,7 @@ export default function MediaPage() {
                     item={item}
                     selected={selected.has(item.id)}
                     onToggle={handleToggle}
-                    onDetail={setDetailItem}
+                    onDetail={handleDetail}
                   />
                 ))}
               </div>
@@ -1050,7 +1073,7 @@ export default function MediaPage() {
                     item={item}
                     selected={selected.has(item.id)}
                     onToggle={handleToggle}
-                    onDetail={setDetailItem}
+                    onDetail={handleDetail}
                   />
                 ))}
               </div>

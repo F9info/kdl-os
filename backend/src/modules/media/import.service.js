@@ -1,4 +1,6 @@
 import path from 'path';
+import http from 'node:http';
+import https from 'node:https';
 import { lookup as dnsLookup } from 'dns/promises';
 import { getUploadSettings } from './settings.js';
 import { uploadMedia } from './service.js';
@@ -155,8 +157,36 @@ export const assertSafeUrl = async (rawUrl, { lookup = dnsLookup } = {}) => {
   if (addresses.some((a) => isPrivateAddress(a.address))) {
     throw Object.assign(new Error('URL host is not allowed'), { status: 422 });
   }
-  return parsed;
+  // Return the validated address so the connection can be PINNED to it —
+  // re-resolving at fetch time reopens a DNS-rebinding TOCTOU window.
+  return { url: parsed, address: addresses[0].address, family: addresses[0].family };
 };
+
+// fetch-alike over node http/https with the connection pinned to a pre-validated
+// IP: the custom `lookup` never re-queries DNS, so the address the SSRF guard
+// approved is the address we connect to (Host header / TLS SNI keep the hostname).
+const pinnedFetch = (parsed, { address, family }, timeoutMs = 30_000) =>
+  new Promise((resolve, reject) => {
+    const mod = parsed.protocol === 'https:' ? https : http;
+    const req = mod.request(parsed, {
+      lookup: (host, opts, cb) =>
+        opts?.all ? cb(null, [{ address, family }]) : cb(null, address, family),
+      timeout: timeoutMs,
+    }, (res) => {
+      resolve({
+        status: res.statusCode,
+        ok: res.statusCode >= 200 && res.statusCode < 300,
+        headers: { get: (name) => {
+          const v = res.headers[name.toLowerCase()];
+          return Array.isArray(v) ? v[0] : v ?? null;
+        } },
+        body: res,
+      });
+    });
+    req.on('timeout', () => req.destroy(new Error('Request timed out')));
+    req.on('error', reject);
+    req.end();
+  });
 
 const filenameFromResponse = (parsedUrl, res, mime) => {
   const cd = res.headers.get('content-disposition') ?? '';
@@ -170,17 +200,21 @@ const filenameFromResponse = (parsedUrl, res, mime) => {
 
 const MAX_REDIRECTS = 3;
 
-export const importFromUrl = async (rawUrl, { folder_id } = {}, userId, { fetchImpl = fetch, lookup } = {}) => {
+export const importFromUrl = async (rawUrl, { folder_id } = {}, userId, { fetchImpl = null, lookup } = {}) => {
   const settings = await getUploadSettings();
   const guardOpts = lookup ? { lookup } : {};
 
   // Redirects are followed manually so every hop passes the SSRF guard —
-  // a public URL 302ing to an internal address must not be fetched.
-  let parsed = await assertSafeUrl(rawUrl, guardOpts);
+  // a public URL 302ing to an internal address must not be fetched. Each hop
+  // connects to the exact IP the guard validated (see pinnedFetch).
+  let safe = await assertSafeUrl(rawUrl, guardOpts);
+  let parsed = safe.url;
   let res;
   for (let hop = 0; ; hop++) {
     try {
-      res = await fetchImpl(parsed.href, { redirect: 'manual', signal: AbortSignal.timeout(30_000) });
+      res = fetchImpl
+        ? await fetchImpl(parsed.href, { redirect: 'manual', signal: AbortSignal.timeout(30_000) })
+        : await pinnedFetch(parsed, safe);
     } catch {
       throw Object.assign(new Error('Failed to fetch URL'), { status: 422 });
     }
@@ -188,7 +222,8 @@ export const importFromUrl = async (rawUrl, { folder_id } = {}, userId, { fetchI
       if (hop >= MAX_REDIRECTS) {
         throw Object.assign(new Error('Too many redirects'), { status: 422 });
       }
-      parsed = await assertSafeUrl(new URL(res.headers.get('location'), parsed.href).href, guardOpts);
+      safe = await assertSafeUrl(new URL(res.headers.get('location'), parsed.href).href, guardOpts);
+      parsed = safe.url;
       continue;
     }
     break;

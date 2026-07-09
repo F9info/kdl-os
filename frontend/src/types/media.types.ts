@@ -35,9 +35,9 @@ export interface Media {
   scanned_at: string | null
   exif: Record<string, unknown> | null
   is_archived: boolean
-  // A2 additions
-  tags?: MediaTag[]
-  meta_values?: MediaMetaValue[]
+  // A2 additions — API flattens pivots: tag names + {slug: value} map
+  tags?: string[]
+  meta?: Record<string, string>
 }
 
 export interface MediaFolder {
@@ -72,50 +72,65 @@ export interface MediaListResponse {
 export interface MediaTag {
   id: string
   name: string
-  slug: string
-  color: string | null
+  created_at: string
+  _count?: { media: number }
 }
 
 export interface MediaMetaField {
   id: string
-  name: string
   slug: string
-  field_type: 'TEXT' | 'NUMBER' | 'DATE' | 'BOOLEAN' | 'URL'
-  required: boolean
-}
-
-export interface MediaMetaValue {
-  field_id: string
-  value: string
-  field?: MediaMetaField
+  label: string
+  field_type: 'TEXT' | 'NUMBER' | 'DATE' | 'SELECT'
+  options: string[] | null
+  is_system: boolean
 }
 
 // A4: Collections
 export interface MediaCollection {
   id: string
   name: string
-  description: string | null
+  created_by: string | null
   is_smart: boolean
-  rules: SmartCollectionRule[] | null
-  cover_media_id: string | null
-  created_by: string
+  rules: Record<string, unknown> | null
   created_at: string
   updated_at: string
   _count?: { items: number }
 }
 
-export interface SmartCollectionRule {
-  field: string
-  op: 'eq' | 'contains' | 'gt' | 'lt' | 'in'
-  value: unknown
+// A3: MeiliSearch hit — flat index doc, NOT a full Media row (no url/variants)
+export interface MediaSearchDoc {
+  id: string
+  name: string
+  title: string | null
+  alt: string | null
+  caption: string | null
+  tags: string[]
+  meta: Record<string, string>
+  folder_id: string | null
+  folder_path: string | null
+  type: MediaType
+  mime_type: string
+  size: number
+  width: number | null
+  height: number | null
+  owner_id: string
+  owner_name: string | null
+  is_archived: boolean
+  created_at: string
 }
 
-// A3: MeiliSearch faceted search results
 export interface MediaSearchResult {
-  media: Media[]
-  facets: {
-    type?: Record<string, number>
-    tags?: Record<string, number>
-  }
+  hits: MediaSearchDoc[]
+  facets: Record<string, Record<string, number>>
   pagination: { total: number; page: number; limit: number; pages: number }
+}
+
+// A5: chunked upload session
+export interface ChunkedUploadStatus {
+  upload_id: string
+  filename: string
+  size: number
+  total_parts: number
+  received_parts: number[]
+  complete: boolean
 }

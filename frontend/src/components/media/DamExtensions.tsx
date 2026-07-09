@@ -6,48 +6,52 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { X, Plus, Tag, Star, Clock, Layers, Upload, Folder as FolderIcon, Search } from 'lucide-react'
+import { X, Plus, Star, Clock, Layers, Upload, Folder as FolderIcon, Search } from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { formatBytes, formatDate } from '@/lib/utils'
 import type {
-  Media, MediaTag, MediaMetaField, MediaMetaValue, MediaCollection, MediaSearchResult,
+  Media, MediaTag, MediaMetaField, MediaCollection, MediaSearchResult, MediaSearchDoc,
+  ChunkedUploadStatus,
 } from '@/types/media.types'
 
 // ─── API helpers ──────────────────────────────────────────────────────────────
 
 const damApi = {
-  // A3 faceted search
+  // A3 faceted search — returns { hits, facets, pagination }
   search: (q: string, filters: Record<string, string>) =>
     api.get('/media/search', { params: { q, ...filters } }).then((r) => r.data.data as MediaSearchResult),
 
-  // A2 tags
+  // A2 tags — media rows carry tag NAMES; tag/untag are bulk by name
   listTags: () => api.get('/media/tags').then((r) => r.data.data.tags as MediaTag[]),
-  createTag: (data: { name: string; color?: string }) => api.post('/media/tags', data),
+  createTag: (name: string) => api.post('/media/tags', { name }),
   deleteTag: (id: string) => api.delete(`/media/tags/${id}`),
-  addTag: (mediaId: string, tagId: string) => api.post(`/media/${mediaId}/tags`, { tag_ids: [tagId] }),
-  removeTag: (mediaId: string, tagId: string) => api.delete(`/media/${mediaId}/tags/${tagId}`),
-  bulkTag: (mediaIds: string[], addTagIds: string[], removeTagIds: string[]) =>
-    api.post('/media/bulk-tag', { media_ids: mediaIds, add_tag_ids: addTagIds, remove_tag_ids: removeTagIds }),
+  tagMedia: (mediaIds: string[], tags: string[]) =>
+    api.post('/media/tag', { media_ids: mediaIds, tags }),
+  untagMedia: (mediaIds: string[], tags: string[]) =>
+    api.post('/media/untag', { media_ids: mediaIds, tags }),
 
-  // A2 custom meta fields
+  // A2 custom meta fields — media PATCH takes meta {slug: value|null}
   listMetaFields: () => api.get('/media/meta-fields').then((r) => r.data.data.fields as MediaMetaField[]),
-  setMeta: (mediaId: string, meta: Record<string, string>) => api.patch(`/media/${mediaId}`, { meta }),
+  setMeta: (mediaId: string, meta: Record<string, string | null>) =>
+    api.patch(`/media/${mediaId}`, { meta }),
 
   // A4 collections
   listCollections: () => api.get('/media/collections').then((r) => r.data.data.collections as MediaCollection[]),
-  createCollection: (data: { name: string; description?: string; is_smart?: boolean; rules?: unknown[] }) =>
+  createCollection: (data: { name: string; is_smart?: boolean; rules?: Record<string, unknown> }) =>
     api.post('/media/collections', data),
   addToCollection: (collectionId: string, mediaIds: string[]) =>
     api.post(`/media/collections/${collectionId}/items`, { media_ids: mediaIds }),
-  removeFromCollection: (collectionId: string, mediaId: string) =>
-    api.delete(`/media/collections/${collectionId}/items/${mediaId}`),
+  removeFromCollection: (collectionId: string, mediaIds: string[]) =>
+    api.delete(`/media/collections/${collectionId}/items`, { data: { media_ids: mediaIds } }),
+  // static collections → hits are full Media rows; smart → Meili docs
   collectionItems: (id: string) =>
-    api.get(`/media/collections/${id}/items`).then((r) => r.data.data.media as Media[]),
+    api.get(`/media/collections/${id}`).then(
+      (r) => r.data.data as { collection: MediaCollection; hits: (Media | MediaSearchDoc)[] }
+    ),
 
   // A4 favorites
   listFavorites: () => api.get('/media/favorites').then((r) => r.data.data.media as Media[]),
@@ -55,26 +59,23 @@ const damApi = {
   removeFavorite: (mediaId: string) => api.delete(`/media/${mediaId}/favorite`),
 
   // A4 recents
-  listRecents: () => api.get('/media/recents').then((r) => r.data.data.media as Media[]),
+  listRecents: () => api.get('/media/recent').then((r) => r.data.data.media as Media[]),
 
   // A5 chunked upload
-  chunkInit: (data: { filename: string; total_size: number; folder_id?: string | null }) =>
-    api.post('/media/chunked/init', data).then((r) => r.data.data as { upload_id: string }),
+  chunkInit: (data: { filename: string; size: number; mime_type: string; folder_id?: string | null; total_parts: number }) =>
+    api.post('/media/upload/chunked/init', data).then((r) => r.data.data as { upload_id: string; total_parts: number }),
   chunkPart: (uploadId: string, index: number, chunk: Blob) => {
     const fd = new FormData()
     fd.append('chunk', chunk)
-    fd.append('part_index', String(index))
-    return api.post(`/media/chunked/${uploadId}/part`, fd, {
+    return api.put(`/media/upload/chunked/${uploadId}/part`, fd, {
+      params: { index: String(index) },
       headers: { 'Content-Type': 'multipart/form-data' },
-      // individual chunk progress tracked by caller
     })
   },
   chunkComplete: (uploadId: string) =>
-    api.post(`/media/chunked/${uploadId}/complete`).then((r) => r.data.data as Media),
+    api.post(`/media/upload/chunked/${uploadId}/complete`).then((r) => r.data.data.media as Media),
   chunkStatus: (uploadId: string) =>
-    api.get(`/media/chunked/${uploadId}/status`).then(
-      (r) => r.data.data as { received: number; total_chunks: number; complete: boolean }
-    ),
+    api.get(`/media/upload/chunked/${uploadId}/status`).then((r) => r.data.data as ChunkedUploadStatus),
 }
 
 export { damApi }
@@ -148,7 +149,7 @@ export function SearchFacets({ onResults, onClear }: SearchFacetsProps) {
         className="border rounded h-9 text-sm px-2 bg-background"
       >
         <option value="">All tags</option>
-        {(tags ?? []).map((t) => <option key={t.id} value={t.slug}>{t.name}</option>)}
+        {(tags ?? []).map((t) => <option key={t.id} value={t.name}>{t.name}</option>)}
       </select>
       {active && (
         <button type="button" onClick={handleClear} className="p-1 rounded hover:bg-accent" title="Clear search">
@@ -168,35 +169,40 @@ export function SearchFacets({ onResults, onClear }: SearchFacetsProps) {
 
 export function MediaTagChips({
   mediaId, tags, onChange,
-}: { mediaId: string; tags: MediaTag[]; onChange: () => void }) {
+}: { mediaId: string; tags: string[]; onChange: () => void }) {
+  const queryClient = useQueryClient()
   const { data: allTags } = useQuery({ queryKey: ['media-tags'], queryFn: damApi.listTags })
 
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['media-tags'] })
+    onChange()
+  }
   const addMut = useMutation({
-    mutationFn: (tagId: string) => damApi.addTag(mediaId, tagId),
-    onSuccess: onChange,
+    mutationFn: (tag: string) => damApi.tagMedia([mediaId], [tag]),
+    onSuccess: invalidate,
     onError: () => toast({ title: 'Tag failed', variant: 'destructive' }),
   })
   const removeMut = useMutation({
-    mutationFn: (tagId: string) => damApi.removeTag(mediaId, tagId),
-    onSuccess: onChange,
+    mutationFn: (tag: string) => damApi.untagMedia([mediaId], [tag]),
+    onSuccess: invalidate,
     onError: () => toast({ title: 'Remove tag failed', variant: 'destructive' }),
   })
 
   const [addOpen, setAddOpen] = useState(false)
-  const available = (allTags ?? []).filter((t) => !tags.find((x) => x.id === t.id))
+  const [newTag, setNewTag] = useState('')
+  const available = (allTags ?? []).map((t) => t.name).filter((n) => !tags.includes(n))
 
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-1">
         {tags.map((t) => (
           <Badge
-            key={t.id}
-            style={t.color ? { backgroundColor: t.color + '22', borderColor: t.color } : undefined}
+            key={t}
             className="text-xs cursor-pointer border"
-            onClick={() => removeMut.mutate(t.id)}
+            onClick={() => removeMut.mutate(t)}
             title="Click to remove"
           >
-            {t.name} <X className="h-2.5 w-2.5 ml-1" />
+            {t} <X className="h-2.5 w-2.5 ml-1" />
           </Badge>
         ))}
         <button
@@ -207,18 +213,35 @@ export function MediaTagChips({
           <Plus className="h-3 w-3" /> Add tag
         </button>
       </div>
-      {addOpen && available.length > 0 && (
-        <div className="flex flex-wrap gap-1 border rounded p-2 bg-muted/30">
-          {available.map((t) => (
-            <Badge
-              key={t.id}
-              variant="outline"
-              className="cursor-pointer text-xs"
-              onClick={() => { addMut.mutate(t.id); setAddOpen(false) }}
-            >
-              {t.name}
-            </Badge>
-          ))}
+      {addOpen && (
+        <div className="space-y-1 border rounded p-2 bg-muted/30">
+          {available.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {available.map((t) => (
+                <Badge
+                  key={t}
+                  variant="outline"
+                  className="cursor-pointer text-xs"
+                  onClick={() => { addMut.mutate(t); setAddOpen(false) }}
+                >
+                  {t}
+                </Badge>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-1">
+            <Input
+              value={newTag}
+              onChange={(e) => setNewTag(e.target.value)}
+              placeholder="New tag"
+              className="h-7 text-xs"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newTag.trim()) {
+                  addMut.mutate(newTag.trim()); setNewTag(''); setAddOpen(false)
+                }
+              }}
+            />
+          </div>
         </div>
       )}
     </div>
@@ -230,15 +253,14 @@ export function MediaTagChips({
 export function TagManager() {
   const queryClient = useQueryClient()
   const [name, setName] = useState('')
-  const [color, setColor] = useState('')
 
   const { data: tags } = useQuery({ queryKey: ['media-tags'], queryFn: damApi.listTags })
 
   const createMut = useMutation({
-    mutationFn: () => damApi.createTag({ name, color: color || undefined }),
+    mutationFn: () => damApi.createTag(name.trim()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['media-tags'] })
-      setName(''); setColor('')
+      setName('')
     },
     onError: () => toast({ title: 'Create tag failed', variant: 'destructive' }),
   })
@@ -255,12 +277,13 @@ export function TagManager() {
         {(tags ?? []).map((t) => (
           <Badge
             key={t.id}
-            style={t.color ? { backgroundColor: t.color + '22', borderColor: t.color } : undefined}
             className="border cursor-pointer text-xs"
             onClick={() => deleteMut.mutate(t.id)}
             title="Click to delete"
           >
-            {t.name} <X className="h-2.5 w-2.5 ml-1" />
+            {t.name}
+            {t._count ? <span className="ml-1 text-muted-foreground">{t._count.media}</span> : null}
+            <X className="h-2.5 w-2.5 ml-1" />
           </Badge>
         ))}
       </div>
@@ -271,13 +294,6 @@ export function TagManager() {
           placeholder="Tag name"
           className="h-8 text-xs"
           onKeyDown={(e) => e.key === 'Enter' && name.trim() && createMut.mutate()}
-        />
-        <input
-          type="color"
-          value={color || '#888888'}
-          onChange={(e) => setColor(e.target.value)}
-          className="h-8 w-8 rounded border cursor-pointer"
-          title="Tag colour"
         />
         <Button size="sm" onClick={() => createMut.mutate()} disabled={!name.trim() || createMut.isPending}>
           <Plus className="h-3 w-3" />
@@ -290,26 +306,23 @@ export function TagManager() {
 // ─── Custom-field editor (in detail drawer) ───────────────────────────────────
 
 export function CustomFieldEditor({
-  mediaId, metaValues, onChange,
-}: { mediaId: string; metaValues: MediaMetaValue[]; onChange: () => void }) {
+  mediaId, meta, onChange,
+}: { mediaId: string; meta: Record<string, string>; onChange: () => void }) {
   const { data: fields } = useQuery({ queryKey: ['media-meta-fields'], queryFn: damApi.listMetaFields })
   const [draft, setDraft] = useState<Record<string, string>>({})
 
-  // seed draft from existing values
-  useEffect(() => {
-    const init: Record<string, string> = {}
-    metaValues.forEach((mv) => { init[mv.field_id] = mv.value })
-    setDraft(init)
-  }, [metaValues])
+  // seed draft from existing values (keyed by slug, matching the API shape)
+  useEffect(() => { setDraft({ ...meta }) }, [meta])
 
   const saveMut = useMutation({
     mutationFn: () => {
-      // convert field_id keys → slug keys (API expects slug)
-      const slugMap: Record<string, string> = {}
-      ;(fields ?? []).forEach((f) => { slugMap[f.id] = f.slug })
-      const meta: Record<string, string> = {}
-      Object.entries(draft).forEach(([fid, val]) => { if (slugMap[fid]) meta[slugMap[fid]] = val })
-      return damApi.setMeta(mediaId, meta)
+      const payload: Record<string, string | null> = {}
+      ;(fields ?? []).forEach((f) => {
+        const val = draft[f.slug] ?? ''
+        const prev = meta[f.slug] ?? ''
+        if (val !== prev) payload[f.slug] = val === '' ? null : val
+      })
+      return damApi.setMeta(mediaId, payload)
     },
     onSuccess: () => { toast({ title: 'Saved' }); onChange() },
     onError: () => toast({ title: 'Save failed', variant: 'destructive' }),
@@ -322,14 +335,25 @@ export function CustomFieldEditor({
       <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Custom fields</p>
       {fields.map((f) => (
         <div key={f.id} className="space-y-0.5">
-          <label className="text-xs text-muted-foreground">{f.name}</label>
-          <Input
-            value={draft[f.id] ?? ''}
-            onChange={(e) => setDraft((d) => ({ ...d, [f.id]: e.target.value }))}
-            placeholder={f.field_type === 'DATE' ? 'YYYY-MM-DD' : f.name}
-            type={f.field_type === 'NUMBER' ? 'number' : f.field_type === 'DATE' ? 'date' : 'text'}
-            className="h-8 text-xs"
-          />
+          <label className="text-xs text-muted-foreground">{f.label}</label>
+          {f.field_type === 'SELECT' ? (
+            <select
+              value={draft[f.slug] ?? ''}
+              onChange={(e) => setDraft((d) => ({ ...d, [f.slug]: e.target.value }))}
+              className="border rounded h-8 text-xs px-2 w-full bg-background"
+            >
+              <option value="">—</option>
+              {(f.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          ) : (
+            <Input
+              value={draft[f.slug] ?? ''}
+              onChange={(e) => setDraft((d) => ({ ...d, [f.slug]: e.target.value }))}
+              placeholder={f.field_type === 'DATE' ? 'YYYY-MM-DD' : f.label}
+              type={f.field_type === 'NUMBER' ? 'number' : f.field_type === 'DATE' ? 'date' : 'text'}
+              className="h-8 text-xs"
+            />
+          )}
         </div>
       ))}
       <Button size="sm" onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>Save fields</Button>
@@ -450,18 +474,18 @@ export function CollectionsPanel({ onSelect, selected }: CollectionsPanelProps) 
 
 export function CollectionItemsView({
   collectionId, onDetail,
-}: { collectionId: string; onDetail: (m: Media) => void }) {
-  const { data: items, isLoading } = useQuery({
+}: { collectionId: string; onDetail: (mediaId: string) => void }) {
+  const { data, isLoading } = useQuery({
     queryKey: ['media-collection-items', collectionId],
     queryFn: () => damApi.collectionItems(collectionId),
   })
 
   if (isLoading) return <p className="p-4 text-sm text-muted-foreground">Loading…</p>
-  if (!items?.length) return <p className="p-4 text-sm text-muted-foreground">No items in this collection.</p>
+  if (!data?.hits?.length) return <p className="p-4 text-sm text-muted-foreground">No items in this collection.</p>
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 p-3">
-      {items.map((item) => (
+      {data.hits.map((item) => (
         <MediaThumbnailCard key={item.id} item={item} onDetail={onDetail} />
       ))}
     </div>
@@ -470,7 +494,7 @@ export function CollectionItemsView({
 
 // ─── Favorites view ───────────────────────────────────────────────────────────
 
-export function FavoritesView({ onDetail }: { onDetail: (m: Media) => void }) {
+export function FavoritesView({ onDetail }: { onDetail: (mediaId: string) => void }) {
   const { data: items, isLoading } = useQuery({
     queryKey: ['media-favorites'],
     queryFn: damApi.listFavorites,
@@ -486,7 +510,7 @@ export function FavoritesView({ onDetail }: { onDetail: (m: Media) => void }) {
 
 // ─── Recents view ─────────────────────────────────────────────────────────────
 
-export function RecentsView({ onDetail }: { onDetail: (m: Media) => void }) {
+export function RecentsView({ onDetail }: { onDetail: (mediaId: string) => void }) {
   const { data: items, isLoading } = useQuery({
     queryKey: ['media-recents'],
     queryFn: damApi.listRecents,
@@ -501,24 +525,32 @@ export function RecentsView({ onDetail }: { onDetail: (m: Media) => void }) {
 }
 
 // ─── Small thumbnail card (shared) ───────────────────────────────────────────
+// Tolerates both full Media rows and flat Meili docs (no url/variants).
 
-function MediaThumbnailCard({ item, onDetail }: { item: Media; onDetail: (m: Media) => void }) {
-  const thumb = item.variants?.thumb ?? item.variants?.small ?? (item.mime_type.startsWith('image/') ? item.url : null)
+function MediaThumbnailCard({
+  item, onDetail,
+}: { item: Media | MediaSearchDoc; onDetail: (mediaId: string) => void }) {
+  const asMedia = item as Partial<Media>
+  const name = asMedia.original_name ?? (item as MediaSearchDoc).name ?? 'file'
+  const thumb =
+    asMedia.variants?.thumb ??
+    asMedia.variants?.small ??
+    (item.mime_type?.startsWith('image/') ? asMedia.url ?? null : null)
   return (
     <button
       type="button"
-      onClick={() => onDetail(item)}
+      onClick={() => onDetail(item.id)}
       className="group relative aspect-square rounded border overflow-hidden bg-muted flex items-center justify-center hover:ring-2 hover:ring-primary"
-      title={item.original_name}
+      title={name}
     >
       {thumb ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={thumb} alt={item.original_name} className="w-full h-full object-cover" />
+        <img src={thumb} alt={name} className="w-full h-full object-cover" />
       ) : (
-        <span className="text-xs text-muted-foreground">{item.type[0]}</span>
+        <span className="text-xs text-muted-foreground">{item.type?.[0] ?? '?'}</span>
       )}
       <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] px-1 py-0.5 truncate opacity-0 group-hover:opacity-100 transition-opacity">
-        {item.original_name}
+        {name}
       </div>
     </button>
   )
@@ -557,54 +589,64 @@ export function ChunkedUploadDialog({ files, folderId, onComplete, onClose }: Ch
     setStarted(true)
     abortRef.current = false
 
-    const initial = files.map((f) => ({
+    setStates(files.map((f) => ({
       file: f,
       uploadId: '',
       totalChunks: Math.ceil(f.size / CHUNK_SIZE),
       sent: 0,
       done: false,
       error: null,
-    }))
-    setStates(initial)
+    })))
 
+    let allSucceeded = true
     for (let i = 0; i < files.length; i++) {
-      if (abortRef.current) break
+      if (abortRef.current) { allSucceeded = false; break }
       const f = files[i]!
       try {
-        const { upload_id } = await damApi.chunkInit({ filename: f.name, total_size: f.size, folder_id: folderId })
+        const totalParts = Math.max(1, Math.ceil(f.size / CHUNK_SIZE))
+        const { upload_id } = await damApi.chunkInit({
+          filename: f.name,
+          size: f.size,
+          mime_type: f.type || 'application/octet-stream',
+          folder_id: folderId,
+          total_parts: totalParts,
+        })
         updateState(i, { uploadId: upload_id })
 
-        // Check if there's already progress (resume)
-        let startPart = 0
+        // Resume: skip parts the server already has
+        let received = new Set<number>()
         try {
           const status = await damApi.chunkStatus(upload_id)
-          startPart = status.received
-          updateState(i, { sent: startPart })
-        } catch { /* no existing session — start from 0 */ }
+          received = new Set(status.received_parts)
+          updateState(i, { sent: received.size })
+        } catch { /* fresh session — nothing received yet */ }
 
-        const totalChunks = Math.ceil(f.size / CHUNK_SIZE)
-        for (let p = startPart; p < totalChunks; p++) {
+        let sent = received.size
+        for (let p = 0; p < totalParts; p++) {
           if (abortRef.current) break
+          if (received.has(p)) continue
           const start = p * CHUNK_SIZE
           const chunk = f.slice(start, start + CHUNK_SIZE)
           await damApi.chunkPart(upload_id, p, chunk)
-          updateState(i, { sent: p + 1 })
+          sent += 1
+          updateState(i, { sent })
         }
 
         if (!abortRef.current) {
           await damApi.chunkComplete(upload_id)
           updateState(i, { done: true })
+        } else {
+          allSucceeded = false
         }
       } catch (err: unknown) {
+        allSucceeded = false
         const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Upload failed'
         updateState(i, { error: msg })
       }
     }
 
-    if (!abortRef.current && states.every((s) => s.done)) {
-      onComplete()
-    }
-  }, [files, folderId, started, onComplete, states])
+    if (!abortRef.current && allSucceeded) onComplete()
+  }, [files, folderId, started, onComplete])
 
   // auto-start
   useEffect(() => { startUpload() }, [startUpload])
