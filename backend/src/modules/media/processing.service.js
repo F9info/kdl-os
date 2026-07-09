@@ -83,6 +83,10 @@ export const executeProcessingJob = async (job) => {
       const { runEmbedJob } = await import('./ai/media-semantic.service.js');
       return runEmbedJob(job.data);
     }
+    case 'ai-image-op': {
+      const { runImageOpJob } = await import('./ai/image-ops.service.js');
+      return runImageOpJob(job.data);
+    }
     default:
       throw new Error(`Unknown processing job type: ${job.name}`);
   }

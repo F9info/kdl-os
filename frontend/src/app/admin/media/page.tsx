@@ -70,6 +70,8 @@ const mediaApi = {
     api.get(`/media/${id}/transcript`).then(
       (r) => r.data.data as { text: string | null; segments: TranscriptSegment[]; language: string | null },
     ),
+  aiImageOp: (id: string, op: 'bg-removal' | 'upscale' | 'enhance', scale?: number) =>
+    api.post(`/media/${id}/ai-image-op`, { op, ...(scale ? { scale } : {}) }),
 }
 
 interface MediaSuggestion {
@@ -452,6 +454,55 @@ function TranscriptPanel({ item }: { item: Media }) {
   )
 }
 
+function AiImageOpsPanel({ item }: { item: Media }) {
+  const queryClient = useQueryClient()
+
+  const opMutation = useMutation({
+    mutationFn: (op: 'bg-removal' | 'upscale' | 'enhance') => mediaApi.aiImageOp(item.id, op, op === 'upscale' ? 2 : undefined),
+    onSuccess: () => {
+      toast({ title: 'AI edit queued', description: 'A new version appears in Version History when ready.' })
+      setTimeout(() => queryClient.invalidateQueries({ queryKey: ['media-versions', item.id] }), 15_000)
+    },
+    onError: () => toast({ title: 'AI edit failed', variant: 'destructive' }),
+  })
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">AI Image Edits</p>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-6 px-2 text-xs"
+          onClick={() => opMutation.mutate('bg-removal')}
+          disabled={opMutation.isPending}
+        >
+          Remove background
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-6 px-2 text-xs"
+          onClick={() => opMutation.mutate('upscale')}
+          disabled={opMutation.isPending}
+        >
+          Upscale 2x
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-6 px-2 text-xs"
+          onClick={() => opMutation.mutate('enhance')}
+          disabled={opMutation.isPending}
+        >
+          Enhance
+        </Button>
+      </div>
+      {/* Object-removal needs a mask drawn in the editor — deferred, see STATUS.md D6 notes */}
+    </div>
+  )
+}
+
 // ── Detail drawer ─────────────────────────────────────────────────────────────
 
 function DetailDrawer({
@@ -487,6 +538,7 @@ function DetailDrawer({
   const isAv = item.mime_type.startsWith('video/') || item.mime_type.startsWith('audio/')
   const showAnalyze = isImage && aiStatus?.vision?.configured
   const showTranscribe = isAv && aiStatus?.speech_to_text?.configured
+  const showImageOps = isImage && aiStatus?.image_ops?.configured
 
   const updateMutation = useMutation({
     mutationFn: () => mediaApi.update(item.id, { title, alt_text: altText, caption }),
@@ -620,6 +672,7 @@ function DetailDrawer({
 
       {showAnalyze && <AiSuggestionsPanel item={item} />}
       {showTranscribe && <TranscriptPanel item={item} />}
+      {showImageOps && <AiImageOpsPanel item={item} />}
 
       {usages && usages.length > 0 && (
         <div className="space-y-1">

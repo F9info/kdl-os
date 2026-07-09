@@ -19,7 +19,7 @@ import {
   zipImportSchema, urlImportSchema,
   editMediaSchema, jobIdSchema, versionIdSchema, restoreVersionSchema,
   pdfOpSchema, videoOpSchema, audioOpSchema, convertMediaSchema,
-  transcribeMediaSchema, getTranscriptSchema,
+  transcribeMediaSchema, getTranscriptSchema, aiImageOpSchema,
   createShareSchema, shareIdParamSchema, shareTokenParamSchema,
   transformQuerySchema, createCommentSchema, commentIdParamSchema,
   reuploadVersionSchema, workflowTransitionSchema,
@@ -42,7 +42,7 @@ import {
   listVersions, restoreVersion,
   pdfOp, videoOp, audioOp, convertMedia,
   analyzeMedia, listMediaSuggestions, acceptMediaSuggestion, rejectMediaSuggestion,
-  ocrMedia, transcribeMedia, getTranscript,
+  ocrMedia, transcribeMedia, getTranscript, aiImageOp,
   getTransform,
   listComments, createComment, deleteComment,
   transitionWorkflow, reuploadAsVersion,
@@ -189,6 +189,8 @@ router.post('/:id/ocr', requirePermission('media', 'edit'), validate(mediaIdPara
 // Speech-to-text (Phase D4) — 501 via requireFeature when unconfigured
 router.post('/:id/transcribe', requirePermission('media', 'edit'), validate(transcribeMediaSchema), requireFeature('speech_to_text'), transcribeMedia);
 router.get('/:id/transcript', requirePermission('media', 'view'), validate(getTranscriptSchema), getTranscript);
+// AI image ops (Phase D6) — bg-removal/upscale/enhance/object-removal → new version; 501 via requireFeature when unconfigured
+router.post('/:id/ai-image-op', requirePermission('media', 'edit'), validate(aiImageOpSchema), requireFeature('image_ops'), aiImageOp);
 // PDF merge (no parent id)
 router.post('/pdf-merge', requirePermission('media', 'add'), validate(pdfOpSchema), pdfOp);
 router.get('/:id', requirePermission('media', 'view'), validate(getMediaSchema), getMedia);

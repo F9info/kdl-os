@@ -731,6 +731,26 @@ export const analyzeMedia = async (req, res, next) => {
   }
 };
 
+// ─── AI image ops (Phase D6) ─────────────────────────────────────────────────
+// requireFeature('image_ops') on the route gives the 501 when unconfigured.
+export const aiImageOp = async (req, res, next) => {
+  try {
+    const { enqueueProcessingJob } = await import('./processing.queue.js');
+    const { op, scale, mask, note } = req.validated.body;
+    const job = await enqueueProcessingJob('ai-image-op', {
+      mediaId: req.validated.params.id,
+      op,
+      scale,
+      mask,
+      note,
+      createdBy: req.user.id,
+    });
+    return successResponse(res, { job_id: job.id, status: 'queued' }, 202);
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const listMediaSuggestions = async (req, res, next) => {
   try {
     const { listSuggestions } = await import('./ai/suggestions.service.js');
