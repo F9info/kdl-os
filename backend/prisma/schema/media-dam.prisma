@@ -229,3 +229,20 @@ model MediaSuggestion {
   @@index([media_id, status])
   @@map("media_suggestions")
 }
+
+// Phase D8 — cloud import connections (Google Drive / Dropbox / OneDrive / S3 / FTP).
+// `credentials` holds an aes-256-gcm payload (shared/utils/crypto.js encrypt of a
+// JSON blob: OAuth tokens or S3/FTP credentials) — never stored in plaintext.
+// user_id is a plain scalar (no relation) to keep this schema file self-contained.
+model MediaImportConnection {
+  id          String   @id @default(cuid())
+  user_id     String
+  provider    String // gdrive | dropbox | onedrive | s3 | ftp
+  label       String
+  credentials String   @db.Text
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@index([user_id, provider])
+  @@map("media_import_connections")
+}

@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Folder, FolderPlus, ChevronRight, Upload, Grid, List, Search, Trash2,
-  Move, RefreshCcw, AlertTriangle, X, Eye, Pencil, Info
+  Move, RefreshCcw, AlertTriangle, X, Eye, Pencil, Info, Cloud, Camera
 } from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
@@ -27,6 +27,8 @@ import {
   FolderUploadButton, useClipboardPaste, FavoriteButton, TagManager,
   type SidebarView,
 } from '@/components/media/DamExtensions'
+import { CloudImportDialog } from '@/components/media/CloudImportDialog'
+import { CaptureDialog } from '@/components/media/capture/CaptureDialog'
 
 // ── API helpers ──────────────────────────────────────────────────────────────
 
@@ -686,6 +688,10 @@ export default function MediaPage() {
       .catch(() => toast({ title: 'Folder upload failed', variant: 'destructive' }))
   }, [selectedFolder]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // D8: cloud import + capture dialogs
+  const [cloudImportOpen, setCloudImportOpen] = useState(false)
+  const [captureOpen, setCaptureOpen] = useState(false)
+
   const [createFolderOpen, setCreateFolderOpen] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
   const [renameFolderTarget, setRenameFolderTarget] = useState<MediaFolder | null>(null)
@@ -963,6 +969,23 @@ export default function MediaPage() {
                       disabled={uploadMutation.isPending}
                     />
                     <FolderUploadButton onFiles={handleFolderUpload} disabled={uploadMutation.isPending} />
+                    {/* D8: cloud import + capture entry points */}
+                    <button
+                      type="button"
+                      onClick={() => setCloudImportOpen(true)}
+                      className="flex items-center gap-1 px-3 h-9 text-sm rounded border hover:bg-accent transition-colors"
+                      title="Import from cloud"
+                    >
+                      <Cloud className="h-4 w-4" /> Cloud
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCaptureOpen(true)}
+                      className="flex items-center gap-1 px-3 h-9 text-sm rounded border hover:bg-accent transition-colors"
+                      title="Capture media"
+                    >
+                      <Camera className="h-4 w-4" /> Capture
+                    </button>
                   </>
                 )}
                 <SearchFacets
@@ -1114,6 +1137,24 @@ export default function MediaPage() {
           folderId={selectedFolder ?? null}
           onComplete={() => { invalidateAll(); toast({ title: 'Chunked upload complete' }) }}
           onClose={() => { setChunkedOpen(false); setChunkedFiles([]) }}
+        />
+      )}
+
+      {/* D8: cloud import dialog */}
+      {cloudImportOpen && (
+        <CloudImportDialog
+          folderId={selectedFolder ?? null}
+          onClose={() => setCloudImportOpen(false)}
+          onImported={invalidateAll}
+        />
+      )}
+
+      {/* D8: capture dialog (webcam / screen / voice) */}
+      {captureOpen && (
+        <CaptureDialog
+          folderId={selectedFolder ?? null}
+          onClose={() => setCaptureOpen(false)}
+          onUploaded={invalidateAll}
         />
       )}
 

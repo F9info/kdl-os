@@ -54,6 +54,14 @@ import {
   createAiProvider, updateAiProvider, deleteAiProvider,
 } from './ai/controller.js';
 import { requireFeature } from './ai/ai-provider.service.js';
+import {
+  listImportProviders, listImportConnections, createImportConnection, deleteImportConnection,
+  getImportOAuthUrl, completeImportOAuth, browseImportConnection, importFromConnection,
+} from './cloud-import/controller.js';
+import {
+  createConnectionSchema, connectionIdSchema, oauthProviderSchema, oauthCallbackSchema,
+  browseConnectionSchema, importFilesSchema,
+} from './cloud-import/schema.js';
 
 const router = Router();
 
@@ -91,6 +99,16 @@ router.post('/upload/chunked/:uploadId/complete', requirePermission('media', 'ad
 // Imports
 router.post('/import/zip', requirePermission('media', 'add'), upload.single('file'), validate(zipImportSchema), importZip);
 router.post('/import/url', requirePermission('media', 'add'), validate(urlImportSchema), importUrl);
+
+// Cloud imports (D8): Drive/Dropbox/OneDrive via per-user OAuth, S3/FTP via stored creds
+router.get('/import/providers', requirePermission('media', 'add'), listImportProviders);
+router.get('/import/connections', requirePermission('media', 'add'), listImportConnections);
+router.post('/import/connections', requirePermission('media', 'add'), validate(createConnectionSchema), createImportConnection);
+router.delete('/import/connections/:id', requirePermission('media', 'add'), validate(connectionIdSchema), deleteImportConnection);
+router.post('/import/oauth/:provider/url', requirePermission('media', 'add'), validate(oauthProviderSchema), getImportOAuthUrl);
+router.post('/import/oauth/:provider/callback', requirePermission('media', 'add'), validate(oauthCallbackSchema), completeImportOAuth);
+router.get('/import/connections/:id/browse', requirePermission('media', 'add'), validate(browseConnectionSchema), browseImportConnection);
+router.post('/import/connections/:id/import', requirePermission('media', 'add'), validate(importFilesSchema), importFromConnection);
 
 // Archive flag (bulk)
 router.post('/archive', requirePermission('media', 'edit'), validate(archiveMediaSchema), archiveMedia);

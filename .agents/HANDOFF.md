@@ -1,3 +1,12 @@
+## 2026-07-09 — KDL-134 Media DAM Phase D8: Cloud imports + capture widgets — DONE ✅ (Backend Architect)
+- **D8 complete, gate PASS**: `tests/media/cloud-import.test.js` 32/32; full `tests/media` 309/309 (26 files) no regressions; frontend RTL 118/118 (21 new: CloudImportDialog 10 + CaptureWidgets 11); `tsc --noEmit` 0.
+- Backend `media/cloud-import/`: 5 drivers (gdrive/dropbox/onedrive/s3/ftp) on one shared contract — `list(creds,{path,cursor}) → {entries,cursor}` / `download(creds,id) → {buffer,name,mime,size}`, `deps.fetchImpl`/`deps.clientFactory` injectable. OAuth per user (state = 10-min JWT bound to user+provider, CSRF-proof; refresh-on-401-retry-once, per download so mid-batch expiry can't duplicate uploads). Credentials (tokens or S3/FTP creds) encrypted via shared `crypto.js` aes-256-gcm into new `MediaImportConnection` (migration `20260709063848`, applied); never selected back out.
+- Imports funnel through the normal `uploadMedia` → scan/reindex/embed hooks all fire; MIME from provider or `EXT_TO_MIME` fallback, gated by upload settings (allowed MIMEs + max size); per-file skip reasons returned. Routes `/media/import/*`, all `requirePermission('media','add')` + zod.
+- OAuth providers report `configured:false` until `GDRIVE|DROPBOX|ONEDRIVE_CLIENT_ID/_SECRET` land in env — UI disables connect with a hint; s3/ftp always available.
+- Frontend: `CloudImportDialog` (connections + OAuth popup→`postMessage` callback page at `/admin/media/import/callback` + S3/FTP forms; browser with breadcrumb/multi-select/cursor paging; import summary incl. skipped). Capture widgets FRONTEND-ONLY per arch: `capture/WebcamCapture|ScreenCapture|VoiceRecorder` (getUserMedia/getDisplayMedia + MediaRecorder → normal `POST /media/upload`, zero new backend). Both wired into media toolbar behind `can('media:add')`.
+- Run continuity: previous heartbeat died on org spend limit AFTER writing drivers/oauth/service/schema WIP; this run verified that WIP, added controller/schema/routes/tests/frontend, landed everything.
+- Next: D9 final review/E2E gate (KDL-135) — last open Phase D step.
+
 ## 2026-07-09 — KDL-133 Media DAM Phase D7: Recognition (labels/logos/QR) — DONE ✅ (Backend Architect)
 - **D7 complete, gate PASS**: `tests/media/recognition.test.js` 12/12; full `tests/media` 296/296 (25 files), no regressions.
 - Recognition is OPTIONAL + default OFF: `media.recognition` AppSetting gates both endpoints with 403 (`isRecognitionEnabled` in `media/settings.js`; absent row = off).
