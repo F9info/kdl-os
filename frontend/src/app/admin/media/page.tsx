@@ -27,6 +27,7 @@ import {
   FolderUploadButton, useClipboardPaste, FavoriteButton, TagManager,
   type SidebarView,
 } from '@/components/media/DamExtensions'
+import { WebcamCaptureButton, ScreenCaptureButton, VoiceRecorderButton } from '@/components/media/CaptureWidgets'
 
 // ── API helpers ──────────────────────────────────────────────────────────────
 
@@ -1016,6 +1017,9 @@ export default function MediaPage() {
                       disabled={uploadMutation.isPending}
                     />
                     <FolderUploadButton onFiles={handleFolderUpload} disabled={uploadMutation.isPending} />
+                    <WebcamCaptureButton onCapture={(file) => uploadMutation.mutate([file])} disabled={uploadMutation.isPending} />
+                    <ScreenCaptureButton onCapture={(file) => uploadMutation.mutate([file])} disabled={uploadMutation.isPending} />
+                    <VoiceRecorderButton onCapture={(file) => uploadMutation.mutate([file])} disabled={uploadMutation.isPending} />
                   </>
                 )}
                 <SearchFacets

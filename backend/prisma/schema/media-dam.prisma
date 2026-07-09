@@ -229,3 +229,22 @@ model MediaSuggestion {
   @@index([media_id, status])
   @@map("media_suggestions")
 }
+
+// Phase D8 — cloud import connections. `provider` mirrors the driver registry key
+// ("google-drive" | "dropbox" | "onedrive" | "s3" | "ftp"). `credentials` is an
+// AES-256-GCM encrypted JSON blob (OAuth tokens for Drive/Dropbox/OneDrive; access
+// key/secret/bucket for S3; host/port/user/pass for FTP) — NEVER plaintext.
+// Table + columns were already applied via migration 20260709063848 (see that
+// migration's header comment); this model just catches the schema up to it.
+model MediaImportConnection {
+  id          String   @id @default(cuid())
+  user_id     String
+  provider    String
+  label       String
+  credentials String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@index([user_id, provider])
+  @@map("media_import_connections")
+}

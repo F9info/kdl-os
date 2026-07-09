@@ -1,0 +1,96 @@
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "15432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "16379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "19000:9000"
+      - "19001:9001"
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.7
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+    ports:
+      - "17700:7700"
+
+  chromadb:
+    image: chromadb/chroma
+    ports:
+      - "18000:8000"
+
+  backend:
+    image: repo-backend:latest
+    environment:
+      # Bumps the express-rate-limit ceiling from 100/15min to 1000/15min — this
+      # isolated stack is hammered repeatedly during E2E debugging.
+      NODE_ENV: development
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: "9000"
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET:-kdl-media}
+      MINIO_PUBLIC_ENDPOINT: localhost
+      MINIO_PUBLIC_PORT: "19000"
+      MEILISEARCH_HOST: http://meilisearch:7700
+      MEILISEARCH_API_KEY: ${MEILI_MASTER_KEY}
+      CHROMADB_URL: http://chromadb:8000
+      CLAMAV_HOST: ""
+      STORAGE_DRIVER: minio
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY}
+      CORS_ORIGIN: http://localhost:13001
+      JWT_SECRET: ${JWT_SECRET}
+      APP_PUBLIC_URL: http://localhost:14000
+    ports:
+      - "14000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4000/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+      start_period: 20s
+
+  frontend:
+    image: repo-frontend:latest
+    environment:
+      BACKEND_INTERNAL_URL: http://backend:4000
+    ports:
+      - "13001:3000"
+    depends_on:
+      backend:
+        condition: service_healthy

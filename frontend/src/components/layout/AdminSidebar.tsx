@@ -24,6 +24,7 @@ import {
   Activity,
   Lock,
   Sparkles,
+  CloudUpload,
 } from 'lucide-react'
 import { useUiStore } from '@/stores/ui.store'
 import { useAuth } from '@/hooks/useAuth'
@@ -75,6 +76,7 @@ const GROUPS: NavGroup[] = [
     children: [
       { label: 'Library', href: '/admin/media', icon: Image, permission: 'media:view' },
       { label: 'AI Providers', href: '/admin/media/ai', icon: Sparkles, permission: 'media:edit' },
+      { label: 'Cloud Imports', href: '/admin/media/import', icon: CloudUpload, permission: 'media:edit' },
     ],
   },
   {

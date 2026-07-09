@@ -22,6 +22,7 @@ import authRoutes from './modules/auth/routes.js';
 import userRoutes from './modules/users/routes.js';
 import settingsRoutes from './modules/settings/routes.js';
 import mediaRoutes from './modules/media/routes.js';
+import mediaImportPublicRoutes from './modules/media/import/public-routes.js';
 import typeRoutes from './modules/types/routes.js';
 import categoryRoutes from './modules/categories/routes.js';
 import settingFieldRoutes from './modules/setting-fields/routes.js';
@@ -57,6 +58,9 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/settings', settingsRoutes);
+// Unauthenticated OAuth callback (Phase D8 cloud imports) — must be registered
+// before the authenticated media router since both share the /api/media prefix.
+app.use('/api/media/import/oauth', mediaImportPublicRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/types', typeRoutes);
 app.use('/api/categories', categoryRoutes);

@@ -54,6 +54,14 @@ import {
   createAiProvider, updateAiProvider, deleteAiProvider,
 } from './ai/controller.js';
 import { requireFeature } from './ai/ai-provider.service.js';
+import {
+  getImportProviders, listImportConnections, createImportConnection, deleteImportConnection,
+  startImportOAuth, listImportFiles, importRemoteFiles,
+} from './import/controller.js';
+import {
+  connectionIdParamSchema, oauthStartParamSchema, createManualConnectionSchema,
+  listRemoteFilesSchema, importFilesSchema,
+} from './import/schema.js';
 
 const router = Router();
 
@@ -140,6 +148,16 @@ router.get('/ai/providers', requirePermission('media', 'edit'), listAiProviders)
 router.post('/ai/providers', requirePermission('media', 'edit'), createAiProvider);
 router.patch('/ai/providers/:id', requirePermission('media', 'edit'), updateAiProvider);
 router.delete('/ai/providers/:id', requirePermission('media', 'edit'), deleteAiProvider);
+
+// Cloud imports (Phase D8) — keep above the generic /:id routes. OAuth callback
+// itself lives in import/public-routes.js (mounted before this router, unauthenticated).
+router.get('/import/providers', requirePermission('media', 'view'), getImportProviders);
+router.get('/import/connections', requirePermission('media', 'view'), listImportConnections);
+router.post('/import/connections', requirePermission('media', 'edit'), validate(createManualConnectionSchema), createImportConnection);
+router.delete('/import/connections/:id', requirePermission('media', 'edit'), validate(connectionIdParamSchema), deleteImportConnection);
+router.get('/import/oauth/:provider/start', requirePermission('media', 'edit'), validate(oauthStartParamSchema), startImportOAuth);
+router.get('/import/connections/:id/files', requirePermission('media', 'view'), validate(listRemoteFilesSchema), listImportFiles);
+router.post('/import/connections/:id/import', requirePermission('media', 'edit'), validate(importFilesSchema), importRemoteFiles);
 
 // AI suggestions (Phase D2) — keep above the generic /:id routes
 router.post('/suggestions/:id/accept', requirePermission('media', 'edit'), validate(mediaIdParamSchema), acceptMediaSuggestion);
