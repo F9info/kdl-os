@@ -1,4 +1,4 @@
-export type AiFeature = 'vision' | 'image_ops' | 'speech_to_text'
+export type AiFeature = 'vision' | 'image_ops' | 'speech_to_text' | 'embeddings'
 
 export interface AiFieldDef {
   key: string
@@ -15,7 +15,7 @@ export interface AiDriverDef {
 
 export interface AiProvider {
   id: string
-  feature: string // backend stores upper-case enum (VISION | IMAGE_OPS | SPEECH_TO_TEXT)
+  feature: string // backend stores upper-case enum (VISION | IMAGE_OPS | SPEECH_TO_TEXT | EMBEDDINGS)
   driver: string
   name: string
   config: Record<string, unknown> | null
@@ -30,10 +30,11 @@ export interface AiFeatureStatus {
   driver: string | null
 }
 
-export const AI_FEATURES: AiFeature[] = ['vision', 'image_ops', 'speech_to_text']
+export const AI_FEATURES: AiFeature[] = ['vision', 'image_ops', 'speech_to_text', 'embeddings']
 
 export const AI_FEATURE_LABELS: Record<AiFeature, string> = {
   vision: 'Vision (tagging & captions)',
   image_ops: 'Image Ops (bg removal, upscale, enhance)',
   speech_to_text: 'Speech to Text',
+  embeddings: 'Embeddings (semantic search)',
 }

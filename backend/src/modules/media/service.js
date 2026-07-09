@@ -11,6 +11,17 @@ import { setMediaTags } from './tags.service.js';
 import { setMediaMeta } from './meta-fields.service.js';
 import { enqueueReindex } from './media-search.service.js';
 
+// Phase D5: refresh the semantic embedding alongside every Meili reindex.
+// Mirrors enqueueReindex's own fire-and-forget shape (dynamic import + swallowed
+// failure) rather than a static top-level import — the embed module pulls in
+// ai-provider.service.js (crypto-backed), which must never be a hard dependency
+// for callers that don't touch AI features (e.g. plain upload/move/delete).
+const enqueueEmbed = (mediaId) => {
+  import('./ai/media-semantic.service.js')
+    .then(({ enqueueEmbed: embed }) => embed(mediaId))
+    .catch(() => {});
+};
+
 const MIME_TO_TYPE = (mime) => {
   if (mime.startsWith('image/')) return 'IMAGE';
   if (mime.startsWith('video/')) return 'VIDEO';
@@ -129,6 +140,7 @@ export const moveMedia = async (mediaIds, folderId, actorId) => {
     data: { folder_id: folderId ?? null },
   });
   mediaIds.forEach((mid) => enqueueReindex(mid));
+  mediaIds.forEach((mid) => enqueueEmbed(mid));
   writeActivityAsync({ actor: actorId, module: 'media', action: 'media_moved', description: `${mediaIds.length} file(s) moved` });
   return { moved: mediaIds.length };
 };
@@ -217,6 +229,7 @@ export const uploadMedia = async (file, userId, folderId, opts = {}) => {
   enqueueScanJob(record.id).catch(() => {});
 
   enqueueReindex(record.id);
+  enqueueEmbed(record.id);
   writeActivityAsync({ actor: userId, module: 'media', action: 'uploaded', description: `File "${file.originalname}" uploaded` });
   return record;
 };
@@ -294,6 +307,7 @@ export const updateMediaMeta = async (id, data, actorId) => {
   if (meta) await setMediaMeta(id, meta);
   const updated = await prisma.media.findFirst({ where: { id }, include: DAM_INCLUDE });
   enqueueReindex(id);
+  enqueueEmbed(id);
   writeActivityAsync({ actor: actorId, module: 'media', action: 'updated', description: `File "${updated.original_name}" metadata updated` });
   return resolveUrls(shapeDamFields(updated));
 };
@@ -344,6 +358,7 @@ export const bulkDelete = async (mediaIds, actorId) => {
   const foundIds = records.map((r) => r.id);
   await prisma.media.updateMany({ where: { id: { in: foundIds } }, data: { deleted_at: new Date() } });
   foundIds.forEach((mid) => enqueueReindex(mid, 'remove'));
+  foundIds.forEach((mid) => enqueueEmbed(mid));
   writeActivityAsync({ actor: actorId, module: 'media', action: 'bulk_deleted', description: `${foundIds.length} file(s) moved to trash` });
   return { deleted: foundIds.length };
 };
@@ -358,6 +373,7 @@ export const deleteMedia = async (id, actorId) => {
   }
   await prisma.media.update({ where: { id }, data: { deleted_at: new Date() } });
   enqueueReindex(id, 'remove');
+  enqueueEmbed(id);
   writeActivityAsync({ actor: actorId, module: 'media', action: 'deleted', description: `File "${record.original_name}" moved to trash` });
   return record;
 };
@@ -376,6 +392,7 @@ export const restoreTrash = async (mediaIds, actorId) => {
     data: { deleted_at: null },
   });
   mediaIds.forEach((mid) => enqueueReindex(mid));
+  mediaIds.forEach((mid) => enqueueEmbed(mid));
   writeActivityAsync({ actor: actorId, module: 'media', action: 'restored', description: `${mediaIds.length} file(s) restored from trash` });
   return { restored: mediaIds.length };
 };

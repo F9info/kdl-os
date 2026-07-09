@@ -25,6 +25,19 @@ export const searchMedia = async (req, res, next) => {
           .filter(([k, v]) => k && v)
       );
     }
+
+    // Phase D5: mode=semantic routes through ChromaDB embeddings ∩ Meili filters
+    // instead of the plain keyword search below. 501 when no embeddings provider
+    // is active (same shape as requireFeature()'s gate on the other AI routes).
+    if (query.mode === 'semantic') {
+      const { getActiveProvider } = await import('./ai/ai-provider.service.js');
+      const provider = await getActiveProvider('embeddings');
+      if (!provider) return errorResponse(res, 'AI feature "embeddings" is not configured', 501);
+      const { searchMediaSemantic } = await import('./ai/media-semantic.service.js');
+      const result = await searchMediaSemantic(provider, query);
+      return successResponse(res, result);
+    }
+
     const result = await mediaSearchService.searchMedia(query);
     return successResponse(res, result);
   } catch (err) {

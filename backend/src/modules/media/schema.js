@@ -70,6 +70,7 @@ export const urlImportSchema = z.object({
 export const searchMediaSchema = z.object({
   query: z.object({
     q: z.string().max(500).optional(),
+    mode: z.enum(['keyword', 'semantic']).optional(),
     type: z.enum(['IMAGE', 'VIDEO', 'AUDIO', 'DOCUMENT', 'OTHER']).optional(),
     tags: z.string().optional(),      // csv
     meta: z.string().optional(),      // csv of slug:value

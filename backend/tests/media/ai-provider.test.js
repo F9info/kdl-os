@@ -76,6 +76,7 @@ describe('getFeatureStatus', () => {
       vision: { configured: true, driver: 'openrouter-vision' },
       image_ops: { configured: false, driver: null },
       speech_to_text: { configured: false, driver: null },
+      embeddings: { configured: false, driver: null },
     });
   });
 });

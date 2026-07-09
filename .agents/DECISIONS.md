@@ -25,3 +25,13 @@
 **Reason:** rar decompression requires non-free unrar licensing; 7z adds a native dependency (p7zip) to the backend image for a marginal use case. Zip covers the dominant workflow.
 
 **Log:** Required by KDL-122 issue scope ("rar/7z extraction — log to DECISIONS.md").
+
+## MEDIA-004 — D5 embeddings via a minimal `openai-embeddings` ai-provider driver, not "ai-services"/"brain-router" (2026-07-09)
+
+**Decision:** Phase D5 natural-language search embeds media docs via a new `openai-embeddings` driver added to the existing `ai-provider` framework (feature `embeddings`, method `embed`), not through an "ai-services" embed call or a "brain-router" translation layer as literally worded in `MEDIA_DAM_ARCH.md`'s D5/D4 rows.
+
+**Reason:** No `ai-services` or `brain-router` module exists anywhere in this codebase (`backend/src/modules/` has no match for either name) — the arch doc's wording assumed infrastructure that was never built. D1–D4 already established a working, tested pattern for per-feature AI providers (`AiFeature` enum + `AiProvider` model + driver registry keyed by feature/method + `requireFeature()` 501 gate). Extending that same pattern with a 5th feature (`embeddings`) and 5th driver (`openai-embeddings`, hitting any OpenAI-compatible `/embeddings` endpoint via configurable `base_url` — so OpenRouter or a self-hosted endpoint work too) reuses proven code instead of introducing a new, unbuilt subsystem for one feature.
+
+**Outcome:** `AiFeature` enum gained `EMBEDDINGS` (migration `20260709054618_add_embeddings_ai_feature`). `openai-embeddings` driver lives at `backend/src/modules/media/ai/drivers/openai-embeddings.js`, registered in `drivers/index.js`. `media-semantic.service.js` embeds `caption+tags+ocr_text+transcript_text` into a `media_semantic` Chroma collection via `runEmbedJob` (the `ai-embed` processing-job case), enqueued by `enqueueEmbed()` alongside every Meili reindex call site. `GET /api/media/search?mode=semantic&q=` resolves the active `embeddings` provider (501 if none, same shape as `requireFeature()`), then hybrid-merges Chroma top-50 with Meili-filtered hits via `mergeHybrid()`, preserving semantic rank order. Frontend search bar gained a "Semantic" toggle, shown only once `GET /media/ai/status` reports `embeddings.configured`. Translation-via-brain-router (mentioned in the D4 row) remains out of scope — no such layer exists; revisit only if a dedicated NLP-ops module is built.
+
+**Log:** Resolves the "⚠ D5 dependency note" carried in `.agents/STATUS.md` since D4. Required by KDL-122 D5.

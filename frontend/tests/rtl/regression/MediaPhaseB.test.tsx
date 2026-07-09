@@ -171,17 +171,17 @@ describe('ShareDialog (B4)', () => {
   })
 
   it('renders when open', async () => {
-    render(<ShareDialog mediaId="m1" open onClose={() => {}} />)
+    render(<ShareDialog mediaId="m1" mediaName="test.jpg" open onClose={() => {}} />)
     expect(screen.getByRole('dialog')).toBeTruthy()
   })
 
   it('lists existing shares', async () => {
-    render(<ShareDialog mediaId="m1" open onClose={() => {}} />)
+    render(<ShareDialog mediaId="m1" mediaName="test.jpg" open onClose={() => {}} />)
     await waitFor(() => expect(screen.getByText(/tok1|2 download/i)).toBeTruthy())
   })
 
   it('opens create form and submits a new share', async () => {
-    render(<ShareDialog mediaId="m1" open onClose={() => {}} />)
+    render(<ShareDialog mediaId="m1" mediaName="test.jpg" open onClose={() => {}} />)
     await waitFor(() => screen.getByText(/tok1|download/i))
     const addBtn = screen.getByRole('button', { name: /new|create|add|link/i })
     fireEvent.click(addBtn)

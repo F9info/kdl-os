@@ -20,6 +20,11 @@ vi.mock('../../src/modules/media/media-search.service.js', async (importOriginal
   enqueueReindex: reindexMock,
 }));
 vi.mock('child_process', () => ({ execFile: execFileMock }));
+// Phase D5: runOcrJob also fires enqueueEmbed via a dynamic import of
+// media-semantic.service.js, which statically imports ai-provider.service.js
+// (crypto-backed). Mock it out here (mirrors ai-transcribe.test.js) so this
+// suite never depends on APP_ENCRYPTION_KEY being set in the test env.
+vi.mock('../../src/modules/media/ai/ai-provider.service.js', () => ({ getActiveProvider: vi.fn() }));
 
 const { runOcrJob, isOcrSupported } = await import('../../src/modules/media/ocr.service.js');
 const { buildMediaDoc } = await import('../../src/modules/media/media-search.service.js');

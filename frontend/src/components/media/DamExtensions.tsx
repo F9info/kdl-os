@@ -6,7 +6,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { X, Plus, Star, Clock, Layers, Upload, Folder as FolderIcon, Search } from 'lucide-react'
+import { X, Plus, Star, Clock, Layers, Upload, Folder as FolderIcon, Search, Sparkles } from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
@@ -22,6 +22,7 @@ import type {
 
 const damApi = {
   // A3 faceted search — returns { hits, facets, pagination }
+  // D5: mode=semantic routes through the ChromaDB embeddings ∩ Meili hybrid search
   search: (q: string, filters: Record<string, string>) =>
     api.get('/media/search', { params: { q, ...filters } }).then((r) => r.data.data as MediaSearchResult),
 
@@ -85,22 +86,27 @@ export { damApi }
 interface SearchFacetsProps {
   onResults: (results: MediaSearchResult | null) => void
   onClear: () => void
+  // D5: only show the semantic toggle once an embeddings AI provider is configured
+  // (mirrors the aiStatus-gated Analyze/Transcribe controls elsewhere on this page).
+  semanticEnabled?: boolean
 }
 
-export function SearchFacets({ onResults, onClear }: SearchFacetsProps) {
+export function SearchFacets({ onResults, onClear, semanticEnabled }: SearchFacetsProps) {
   const [q, setQ] = useState('')
   const [tagFilter, setTagFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
+  const [semantic, setSemantic] = useState(false)
   const [active, setActive] = useState(false)
 
   const { data: tags } = useQuery({ queryKey: ['media-tags'], queryFn: damApi.listTags })
 
   const searchQuery = useQuery({
-    queryKey: ['media-search', q, tagFilter, typeFilter],
+    queryKey: ['media-search', q, tagFilter, typeFilter, semantic],
     queryFn: () => {
       const filters: Record<string, string> = {}
       if (tagFilter) filters.tags = tagFilter
       if (typeFilter) filters.type = typeFilter
+      if (semantic && semanticEnabled) filters.mode = 'semantic'
       return damApi.search(q, filters)
     },
     enabled: active && (q.length > 0 || Boolean(tagFilter) || Boolean(typeFilter)),
@@ -118,7 +124,7 @@ export function SearchFacets({ onResults, onClear }: SearchFacetsProps) {
   }
 
   const handleClear = () => {
-    setQ(''); setTagFilter(''); setTypeFilter(''); setActive(false); onClear()
+    setQ(''); setTagFilter(''); setTypeFilter(''); setSemantic(false); setActive(false); onClear()
   }
 
   return (
@@ -133,6 +139,21 @@ export function SearchFacets({ onResults, onClear }: SearchFacetsProps) {
           onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
         />
       </div>
+      {semanticEnabled && (
+        <button
+          type="button"
+          onClick={() => { setSemantic((s) => !s); setActive(true) }}
+          title="Natural-language (semantic) search"
+          aria-pressed={semantic}
+          className={cn(
+            'flex items-center gap-1 h-9 px-2 rounded border text-sm',
+            semantic ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-accent'
+          )}
+        >
+          <Sparkles className="h-4 w-4" />
+          Semantic
+        </button>
+      )}
       <select
         value={typeFilter}
         onChange={(e) => { setTypeFilter(e.target.value); setActive(true) }}

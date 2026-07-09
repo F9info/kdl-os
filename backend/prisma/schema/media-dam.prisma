@@ -180,6 +180,7 @@ enum AiFeature {
   VISION // captioning / auto-tagging (openrouter-vision)
   IMAGE_OPS // bg-removal / upscale / enhance / object-removal (replicate)
   SPEECH_TO_TEXT // whisper-local / openai-whisper-api
+  EMBEDDINGS // semantic search vectors (openai-embeddings) — Phase D5
 }
 
 model AiProvider {

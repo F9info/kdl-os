@@ -4,9 +4,9 @@ import registry, { getDriver, driversForFeature, FEATURES } from '../../src/modu
 const FEATURE_KEYS = Object.keys(FEATURES);
 
 describe('AI driver registry contract', () => {
-  it('exports all 4 v1 drivers', () => {
+  it('exports all 5 v1 drivers', () => {
     expect(Object.keys(registry).sort()).toEqual(
-      ['openai-whisper-api', 'openrouter-vision', 'replicate', 'whisper-local'],
+      ['openai-embeddings', 'openai-whisper-api', 'openrouter-vision', 'replicate', 'whisper-local'],
     );
   });
 
@@ -46,6 +46,7 @@ describe('AI driver registry contract', () => {
     expect(driversForFeature('image_ops').map((d) => d.driver)).toEqual(['replicate']);
     expect(driversForFeature('speech_to_text').map((d) => d.driver).sort())
       .toEqual(['openai-whisper-api', 'whisper-local']);
+    expect(driversForFeature('embeddings').map((d) => d.driver)).toEqual(['openai-embeddings']);
   });
 });
 

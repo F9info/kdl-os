@@ -703,6 +703,17 @@ export default function MediaPage() {
   const foldersQuery = useQuery({ queryKey: ['media-folders'], queryFn: mediaApi.folders })
   const folders = foldersQuery.data ?? []
 
+  // Phase D5: the search bar's semantic-mode toggle stays hidden until an
+  // embeddings AI provider is configured (mirrors the per-item aiStatus gate
+  // used for Analyze/Transcribe elsewhere on this page).
+  const { data: searchAiStatus } = useQuery({
+    queryKey: ['media-ai-status'],
+    queryFn: () =>
+      mediaApi.aiStatus().catch(() => ({} as Record<string, { configured: boolean; driver: string | null }>)),
+    staleTime: 60_000,
+  })
+  const semanticSearchEnabled = Boolean(searchAiStatus?.embeddings?.configured)
+
   const mediaParams: Record<string, string> = { limit: '50' }
   if (selectedFolder !== undefined) mediaParams.folder_id = selectedFolder === null ? 'null' : selectedFolder
   if (debouncedSearch) mediaParams.search = debouncedSearch
@@ -957,6 +968,7 @@ export default function MediaPage() {
                 <SearchFacets
                   onResults={(r) => setSearchResults(r)}
                   onClear={() => setSearchResults(null)}
+                  semanticEnabled={semanticSearchEnabled}
                 />
               </>
             )}
