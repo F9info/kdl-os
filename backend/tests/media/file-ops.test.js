@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const { uploadMediaMock } = vi.hoisted(() => ({ uploadMediaMock: vi.fn() }));
-vi.mock('../../src/modules/media/service.js', () => ({ uploadMedia: uploadMediaMock }));
+vi.mock('../../src/modules/media/service.js', () => ({ uploadMedia: uploadMediaMock, resolveUrls: async (m) => m }));
 vi.mock('../../src/modules/media/media-search.service.js', () => ({ enqueueReindex: vi.fn() }));
 vi.mock('../../src/modules/media/media.queue.js', () => ({ enqueueVariantJob: vi.fn() }));
 vi.mock('../../src/modules/user-management/shared/activity-logger.js', () => ({ writeActivityAsync: vi.fn() }));

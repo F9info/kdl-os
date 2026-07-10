@@ -8,7 +8,7 @@ const { getUploadSettingsMock, uploadMediaMock } = vi.hoisted(() => ({
   uploadMediaMock: vi.fn(),
 }));
 vi.mock('../../src/modules/media/settings.js', () => ({ getUploadSettings: getUploadSettingsMock }));
-vi.mock('../../src/modules/media/service.js', () => ({ uploadMedia: uploadMediaMock }));
+vi.mock('../../src/modules/media/service.js', () => ({ uploadMedia: uploadMediaMock, resolveUrls: async (m) => m }));
 
 // Service reads CHUNK_UPLOAD_DIR at module load — set before importing it.
 const TEST_ROOT = path.join(os.tmpdir(), `kdl-chunk-test-${process.pid}`);

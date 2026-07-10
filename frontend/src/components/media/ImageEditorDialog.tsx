@@ -107,6 +107,12 @@ export function ImageEditorDialog({ mediaId, mediaUrl, open, onClose, onSaved }:
   const [resizeFit, setResizeFit] = useState<ResizeFit>('cover')
   const [rotateAngle, setRotateAngle] = useState('')
 
+  // Crop
+  const [cropLeft, setCropLeft] = useState('')
+  const [cropTop, setCropTop] = useState('')
+  const [cropWidth, setCropWidth] = useState('')
+  const [cropHeight, setCropHeight] = useState('')
+
   // Adjustments
   const [brightness, setBrightness] = useState(1)
   const [contrast, setContrast] = useState(1)
@@ -259,6 +265,61 @@ export function ImageEditorDialog({ mediaId, mediaUrl, open, onClose, onSaved }:
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => addOp({ op: 'flop' })}>
                   Flop horizontal
+                </Button>
+              </div>
+
+              <div className="space-y-2 pt-2 border-t">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Crop</p>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Left"
+                    value={cropLeft}
+                    onChange={(e) => setCropLeft(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Top"
+                    value={cropTop}
+                    onChange={(e) => setCropTop(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Width"
+                    value={cropWidth}
+                    onChange={(e) => setCropWidth(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                  <span className="text-muted-foreground text-xs">×</span>
+                  <Input
+                    type="number"
+                    placeholder="Height"
+                    value={cropHeight}
+                    onChange={(e) => setCropHeight(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const left = parseInt(cropLeft, 10)
+                    const top = parseInt(cropTop, 10)
+                    const width = parseInt(cropWidth, 10)
+                    const height = parseInt(cropHeight, 10)
+                    if (isNaN(left) || isNaN(top) || isNaN(width) || isNaN(height) || width < 1 || height < 1) return
+                    addOp({ op: 'crop', left, top, width, height })
+                    setCropLeft('')
+                    setCropTop('')
+                    setCropWidth('')
+                    setCropHeight('')
+                  }}
+                >
+                  Add crop
                 </Button>
               </div>
             </Section>
