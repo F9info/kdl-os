@@ -59,6 +59,13 @@ function useCaptureRecorder({ acquireStream, mimeCandidates, filenamePrefix, has
     try {
       const stream = await acquireStream()
       streamRef.current = stream
+      // The browser's own UI (the "Stop sharing" bar for screen capture, or a
+      // device being unplugged/revoked) can end a track without going through
+      // our Stop button — without this listener the recorder is left stuck in
+      // "recording" state forever (KDL-148). Guarded with `?.` so the fake
+      // stream objects used in tests (which stub only `getTracks`/`stop`)
+      // don't need to implement a full MediaStreamTrack.
+      stream.getTracks().forEach((t) => t.addEventListener?.('ended', () => recorderRef.current?.stop()))
       if (hasVideo && videoRef.current) {
         videoRef.current.srcObject = stream
         void videoRef.current.play().catch(() => {})

@@ -18,6 +18,21 @@ const config: NextConfig = {
     // non-Docker `pnpm dev`, set BACKEND_INTERNAL_URL=http://localhost:4000.
     const backend = process.env.BACKEND_INTERNAL_URL ?? 'http://backend:4000'
     return [
+      // KDL-148: the media "Share / copy link" feature builds public link URLs
+      // as `<frontend-origin>/share/:token` (see ShareDialog.tsx shareUrl()),
+      // but the backend only serves that path unauthenticated at its own
+      // origin, outside /api (see backend/src/index.js — deliberately kept
+      // off the /api rate limiter). Without this proxy, the copied link 404s
+      // on the frontend origin because there is no Next.js route registered
+      // at the exact path `/share/[token]` other than the page itself, which
+      // needs *this* JSON to render. Proxy it under /api so the page's client
+      // fetch can reach it without exposing the backend's internal/public host.
+      //
+      // MUST come before the generic '/api/:path*' rule below — Next.js uses
+      // the first matching rewrite, and `:path*` would otherwise also match
+      // `public-share/:token` and forward it to the (nonexistent) backend
+      // route `/api/public-share/:token`, 404ing every time.
+      { source: '/api/public-share/:path*', destination: `${backend}/share/:path*` },
       { source: '/api/:path*', destination: `${backend}/api/:path*` },
     ]
   },

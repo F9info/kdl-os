@@ -31,6 +31,7 @@ import { WebcamCaptureButton, ScreenCaptureButton, VoiceRecorderButton } from '@
 import { CloudImportDialog } from '@/components/media/CloudImportDialog'
 import { CaptureDialog } from '@/components/media/capture/CaptureDialog'
 import { ImageEditorDialog } from '@/components/media/ImageEditorDialog'
+import { ShareDialog } from '@/components/media/ShareDialog'
 
 // ── API helpers ──────────────────────────────────────────────────────────────
 
@@ -524,6 +525,7 @@ function DetailDrawer({
   const [caption, setCaption] = useState(item.caption ?? '')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [editorOpen, setEditorOpen] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
 
   const { data: usages } = useQuery({
     queryKey: ['media-usage', item.id],
@@ -595,6 +597,18 @@ function DetailDrawer({
           onSaved={() => queryClient.invalidateQueries({ queryKey: ['media'] })}
         />
       )}
+
+      {/* KDL-148: this button + dialog existed but were never rendered anywhere
+          in the app, so there was no way to create or copy a share link. */}
+      <Button size="sm" variant="outline" className="w-full" onClick={() => setShareOpen(true)}>
+        Share / copy link
+      </Button>
+      <ShareDialog
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        mediaId={item.id}
+        mediaName={item.original_name}
+      />
 
       <div className="space-y-2">
         <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Metadata</p>
