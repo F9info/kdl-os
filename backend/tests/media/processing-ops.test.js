@@ -30,8 +30,13 @@ const { sharpFactory, ffmpegFactory, pdfDocFactory } = vi.hoisted(() => {
     return c;
   };
 
-  const sf = { current: null };
-  sf.make = () => { sf.current = makeSharpChain(); return sf.current; };
+  const sf = { current: null, first: null };
+  sf.make = () => {
+    const c = makeSharpChain();
+    sf.current = c;
+    if (!sf.first) sf.first = c;
+    return c;
+  };
   sf.make();
 
   const makeFfmpegChain = () => {
@@ -108,6 +113,7 @@ vi.mock('../../src/config/database.js', () => ({
     media: {
       findUnique: vi.fn(),
       create:     vi.fn().mockResolvedValue({ id: 'm2', path: 'u1/merged.pdf' }),
+      update:     vi.fn().mockResolvedValue({}),
     },
     mediaVersion: {
       findFirst: vi.fn().mockResolvedValue(null),
@@ -132,7 +138,7 @@ vi.mock('../../src/shared/services/storage.service.js', () => ({
 }));
 
 vi.mock('../../src/shared/utils/logger.js', () => ({
-  logger: { info: vi.fn(), error: vi.fn() },
+  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
 vi.mock('../../src/modules/media/processing.service.js', () => ({
@@ -183,28 +189,32 @@ describe('C2 Image ops', () => {
   beforeEach(() => {
     prisma.media.findUnique.mockResolvedValue(IMAGE_MEDIA);
     createMediaVersion.mockResolvedValue({ version: { id: 'v1', version: 1 }, path: 'p', url: 'u' });
+    // runImageEdit regenerates thumb/small/medium/large variants after the edit
+    // pipeline runs, which calls sharp() again — reset so `.first` below always
+    // captures the edit pipeline's chain, not a variant-generation chain.
+    sharpFactory.first = null;
   });
 
   it('crop op calls sharp extract() with correct region', async () => {
     await runImageEdit({ mediaId: 'm1', ops: [{ op: 'crop', left: 10, top: 20, width: 100, height: 80 }], createdBy: 'u1' });
-    expect(sharpFactory.current.extract).toHaveBeenCalledWith({ left: 10, top: 20, width: 100, height: 80 });
+    expect(sharpFactory.first.extract).toHaveBeenCalledWith({ left: 10, top: 20, width: 100, height: 80 });
   });
 
   it('resize op calls sharp resize() with width and height', async () => {
     await runImageEdit({ mediaId: 'm1', ops: [{ op: 'resize', width: 300, height: 200 }], createdBy: 'u1' });
-    expect(sharpFactory.current.resize).toHaveBeenCalledWith(
+    expect(sharpFactory.first.resize).toHaveBeenCalledWith(
       expect.objectContaining({ width: 300, height: 200 }),
     );
   });
 
   it('grayscale op calls sharp grayscale()', async () => {
     await runImageEdit({ mediaId: 'm1', ops: [{ op: 'grayscale' }], createdBy: 'u1' });
-    expect(sharpFactory.current.grayscale).toHaveBeenCalled();
+    expect(sharpFactory.first.grayscale).toHaveBeenCalled();
   });
 
   it('blur op calls sharp blur() with the provided sigma', async () => {
     await runImageEdit({ mediaId: 'm1', ops: [{ op: 'blur', sigma: 5 }], createdBy: 'u1' });
-    expect(sharpFactory.current.blur).toHaveBeenCalledWith(5);
+    expect(sharpFactory.first.blur).toHaveBeenCalledWith(5);
   });
 
   it('text_watermark op calls sharp composite()', async () => {
@@ -213,7 +223,7 @@ describe('C2 Image ops', () => {
       ops: [{ op: 'text_watermark', text: 'Hello', position: 'center' }],
       createdBy: 'u1',
     });
-    expect(sharpFactory.current.composite).toHaveBeenCalled();
+    expect(sharpFactory.first.composite).toHaveBeenCalled();
   });
 
   it('compress jpeg op calls sharp jpeg() with quality', async () => {
@@ -222,7 +232,7 @@ describe('C2 Image ops', () => {
       ops: [{ op: 'compress', format: 'jpeg', quality: 75 }],
       createdBy: 'u1',
     });
-    expect(sharpFactory.current.jpeg).toHaveBeenCalledWith({ quality: 75 });
+    expect(sharpFactory.first.jpeg).toHaveBeenCalledWith({ quality: 75 });
   });
 
   it('createMediaVersion is called with a buffer and ext', async () => {

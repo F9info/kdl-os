@@ -249,7 +249,11 @@ describe('searchMedia controller — mode=semantic', () => {
     }));
 
     const { searchMedia } = await import('../../src/modules/media/controller.js');
-    const req = { validated: { query: { mode: 'semantic', q: 'sunset beach' } } };
+    const req = {
+      validated: { query: { mode: 'semantic', q: 'sunset beach' } },
+      user: { userId: 'u1' },
+      userPermissions: { bypass: false },
+    };
     const res = makeRes();
     const next = vi.fn();
 
