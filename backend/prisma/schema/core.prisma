@@ -12,6 +12,11 @@ enum MediaType {
   OTHER
 }
 
+enum MediaVisibility {
+  PRIVATE
+  SHARED
+}
+
 model User {
   id              String    @id @default(cuid())
   name            String
@@ -162,6 +167,7 @@ model Media {
   duration      Int?
   variants      Json?
   type          MediaType  @default(OTHER)
+  visibility    MediaVisibility @default(PRIVATE) // KDL-150 — per-user/shared media
   exif          Json?
   checksum      String?
   scanned_at    DateTime?
@@ -196,6 +202,7 @@ model Media {
   @@index([user_id])
   @@index([folder_id])
   @@index([type])
+  @@index([visibility])
   @@index([deleted_at])
   @@index([checksum])
   @@index([last_used_at])

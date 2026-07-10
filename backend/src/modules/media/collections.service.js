@@ -160,10 +160,13 @@ export const touchMedia = async (mediaId) => {
   return prisma.media.update({ where: { id: mediaId }, data: { last_used_at: new Date() } });
 };
 
-export const listRecents = async ({ page = 1, limit = 24 } = {}) => {
+export const listRecents = async (userId, { page = 1, limit = 24 } = {}, { bypass = false } = {}) => {
   const take = Math.min(100, Math.max(1, Number(limit) || 24));
   const currentPage = Math.max(1, Number(page) || 1);
   const where = { deleted_at: null, last_used_at: { not: null } };
+  // KDL-150 — recents leaked every user's activity across the whole system;
+  // scope it the same as listMedia (own + shared, Super Admin sees all).
+  if (!bypass) where.OR = [{ user_id: userId }, { visibility: 'SHARED' }];
   const [rows, total] = await Promise.all([
     prisma.media.findMany({
       where,

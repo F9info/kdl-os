@@ -27,7 +27,7 @@ import {
 import {
   uploadMedia, listMedia, getMedia, updateMedia, deleteMedia, bulkDelete,
   listFolders, createFolder, updateFolder, deleteFolder, moveMedia,
-  listTrash, restoreTrash, purgeTrash,
+  listTrash, restoreTrash, purgeTrash, purgeSingle,
   getMediaUsage, registerUsage, releaseUsage,
   listTags, createTag, renameTag, deleteTag, tagMedia, untagMedia,
   listMetaFields, createMetaField, updateMetaField, deleteMetaField,
@@ -83,6 +83,9 @@ router.post('/bulk-delete', requirePermission('media', 'delete'), validate(bulkD
 router.get('/trash', requirePermission('media', 'delete'), listTrash);
 router.post('/trash/restore', requirePermission('media', 'delete'), validate(restoreTrashSchema), restoreTrash);
 router.delete('/trash/purge', requirePermission('media', 'delete'), purgeTrash);
+// Single-file permanent delete — literal routes above must stay registered first
+// so 'purge'/'restore' are never matched as an :id.
+router.delete('/trash/:id', requirePermission('media', 'delete'), validate(mediaIdParamSchema), purgeSingle);
 
 // Upload (multi-file)
 router.post('/upload', requirePermission('media', 'add'), upload.array('files', 20), uploadMedia);

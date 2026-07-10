@@ -17,6 +17,9 @@ export const listMediaSchema = z.object({
     date_to: z.string().optional(),
     archived: z.enum(['true', 'false', 'all']).optional(),
     sort: z.enum(['created_at_desc', 'created_at_asc', 'name_asc', 'name_desc', 'size_desc']).optional(),
+    // 'mine' (default) = own + shared files; 'shared' = shared-by-others only;
+    // 'all' = every file regardless of owner (Super Admin only — enforced in service.js)
+    scope: z.enum(['mine', 'shared', 'all']).optional(),
   }),
 });
 
@@ -104,6 +107,7 @@ export const updateMediaSchema = z.object({
     original_name: z.string().optional(),
     tags: z.array(z.string().min(1).max(64)).max(50).optional(),
     meta: z.record(z.string().min(1), z.string().max(2000).nullable()).optional(),
+    visibility: z.enum(['PRIVATE', 'SHARED']).optional(),
   }),
 });
 

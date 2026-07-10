@@ -1,4 +1,5 @@
 export type MediaType = 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT' | 'OTHER'
+export type MediaVisibility = 'PRIVATE' | 'SHARED'
 
 export interface MediaVariants {
   thumb?: string | null
@@ -26,6 +27,7 @@ export interface Media {
   duration: number | null
   variants: MediaVariants | null
   type: MediaType
+  visibility: MediaVisibility
   deleted_at: string | null
   created_at: string
   updated_at: string
@@ -109,6 +111,7 @@ export interface MediaSearchDoc {
   folder_id: string | null
   folder_path: string | null
   type: MediaType
+  visibility: MediaVisibility
   mime_type: string
   size: number
   width: number | null
