@@ -8,7 +8,7 @@ const INDEX_SETTINGS = {
   searchableAttributes: [
     'name', 'title', 'alt', 'caption', 'tags', 'meta_text', 'folder_path', 'owner_name',
     // Phase D fills these; declared now so docs indexed today match later searches
-    'ocr_text', 'transcript',
+    'ocr_text', 'transcript', 'barcodes',
   ],
   filterableAttributes: [
     'id', // semantic mode (D5) intersects Chroma top-K ids with Meili filters
@@ -53,6 +53,7 @@ export const buildMediaDoc = async (media) => {
     caption: media.caption ?? null,
     ocr_text: media.ocr_text ?? null,
     transcript: media.transcript_text ?? null,
+    barcodes: Array.isArray(media.barcodes) ? media.barcodes.map((b) => b.value).join(' ') : null,
     tags,
     meta: Object.fromEntries(metaEntries),
     meta_text: metaEntries.map(([, v]) => v).join(' '),

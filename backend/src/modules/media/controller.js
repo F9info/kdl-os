@@ -791,6 +791,61 @@ export const analyzeMedia = async (req, res, next) => {
   }
 };
 
+// ─── AI image ops (Phase D6) ─────────────────────────────────────────────────
+// requireFeature('image_ops') on the route gives the 501 when unconfigured.
+export const aiImageOp = async (req, res, next) => {
+  try {
+    const { enqueueProcessingJob } = await import('./processing.queue.js');
+    const { op, scale, mask, note } = req.validated.body;
+    const job = await enqueueProcessingJob('ai-image-op', {
+      mediaId: req.validated.params.id,
+      op,
+      scale,
+      mask,
+      note,
+      createdBy: req.user.id,
+    });
+    return successResponse(res, { job_id: job.id, status: 'queued' }, 202);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─── AI recognition (Phase D7) — labels/logos/landmarks/products → tags ─────
+// OPTIONAL, default OFF: only runs when this endpoint is explicitly called AND
+// requireFeature('vision') on the route resolves an active provider (501 otherwise).
+// Face recognition is explicitly EXCLUDED v1 — see .agents/DECISIONS.md MEDIA-002.
+export const recognizeMedia = async (req, res, next) => {
+  try {
+    const { enqueueProcessingJob } = await import('./processing.queue.js');
+    const job = await enqueueProcessingJob('ai-recognize', { mediaId: req.validated.params.id });
+    return successResponse(res, { job_id: job.id, status: 'queued' }, 202);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─── QR/barcode decode (Phase D7) — local zxing job, no AI provider required ─
+export const qrDecodeMedia = async (req, res, next) => {
+  try {
+    const { isQrDecodeSupported } = await import('./qr.service.js');
+    const { prisma } = await import('../../config/database.js');
+    const media = await prisma.media.findFirst({
+      where: { id: req.validated.params.id, deleted_at: null },
+      select: { id: true, mime_type: true },
+    });
+    if (!media) return errorResponse(res, 'Media not found', 404);
+    if (!isQrDecodeSupported(media.mime_type)) {
+      return errorResponse(res, `QR/barcode decode not supported for ${media.mime_type}`, 422);
+    }
+    const { enqueueProcessingJob } = await import('./processing.queue.js');
+    const job = await enqueueProcessingJob('qr-decode', { mediaId: media.id });
+    return successResponse(res, { job_id: job.id, status: 'queued' }, 202);
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const listMediaSuggestions = async (req, res, next) => {
   try {
     const { listSuggestions } = await import('./ai/suggestions.service.js');

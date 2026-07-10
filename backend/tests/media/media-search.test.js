@@ -78,6 +78,7 @@ describe('buildMediaDoc — index doc shape', () => {
       caption: null,
       ocr_text: null,
       transcript: null,
+      barcodes: null,
       tags: ['brand', 'logo'],
       meta: { client: 'Acme', campaign: 'Summer' },
       meta_text: 'Acme Summer',

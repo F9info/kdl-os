@@ -23,6 +23,7 @@
     "@prisma/adapter-pg": "^7.0.0",
     "@prisma/client": "^7.0.0",
     "@sentry/node": "^8.0.0",
+    "@zxing/library": "^0.21.3",
     "adm-zip": "^0.5.18",
     "basic-ftp": "^6.0.1",
     "bcryptjs": "^2.4.3",

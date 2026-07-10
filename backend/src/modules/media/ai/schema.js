@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const featureEnum = z.enum(['vision', 'image_ops', 'speech_to_text']);
+const featureEnum = z.enum(['vision', 'image_ops', 'speech_to_text', 'embeddings']);
 
 export const createAiProviderSchema = z.object({
   feature: featureEnum,

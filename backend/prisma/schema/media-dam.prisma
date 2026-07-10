@@ -230,16 +230,18 @@ model MediaSuggestion {
   @@map("media_suggestions")
 }
 
-// Phase D8 — cloud import connections (Google Drive / Dropbox / OneDrive / S3 / FTP).
-// `credentials` holds an aes-256-gcm payload (shared/utils/crypto.js encrypt of a
-// JSON blob: OAuth tokens or S3/FTP credentials) — never stored in plaintext.
-// user_id is a plain scalar (no relation) to keep this schema file self-contained.
+// Phase D8 — cloud import connections. `provider` mirrors the driver registry key
+// ("google-drive" | "dropbox" | "onedrive" | "s3" | "ftp"). `credentials` is an
+// AES-256-GCM encrypted JSON blob (OAuth tokens for Drive/Dropbox/OneDrive; access
+// key/secret/bucket for S3; host/port/user/pass for FTP) — NEVER plaintext.
+// Table + columns were already applied via migration 20260709063848 (see that
+// migration's header comment); this model just catches the schema up to it.
 model MediaImportConnection {
   id          String   @id @default(cuid())
   user_id     String
-  provider    String // gdrive | dropbox | onedrive | s3 | ftp
+  provider    String
   label       String
-  credentials String   @db.Text
+  credentials String
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 

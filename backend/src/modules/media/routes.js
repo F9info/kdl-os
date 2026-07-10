@@ -55,13 +55,13 @@ import {
 } from './ai/controller.js';
 import { requireFeature } from './ai/ai-provider.service.js';
 import {
-  listImportProviders, listImportConnections, createImportConnection, deleteImportConnection,
-  getImportOAuthUrl, completeImportOAuth, browseImportConnection, importFromConnection,
-} from './cloud-import/controller.js';
+  getImportProviders, listImportConnections, createImportConnection, deleteImportConnection,
+  startImportOAuth, listImportFiles, importRemoteFiles,
+} from './import/controller.js';
 import {
-  createConnectionSchema, connectionIdSchema, oauthProviderSchema, oauthCallbackSchema,
-  browseConnectionSchema, importFilesSchema,
-} from './cloud-import/schema.js';
+  connectionIdParamSchema, oauthStartParamSchema, createManualConnectionSchema,
+  listRemoteFilesSchema, importFilesSchema,
+} from './import/schema.js';
 
 const router = Router();
 
@@ -159,6 +159,16 @@ router.post('/ai/providers', requirePermission('media', 'edit'), createAiProvide
 router.patch('/ai/providers/:id', requirePermission('media', 'edit'), updateAiProvider);
 router.delete('/ai/providers/:id', requirePermission('media', 'edit'), deleteAiProvider);
 
+// Cloud imports (Phase D8) — keep above the generic /:id routes. OAuth callback
+// itself lives in import/public-routes.js (mounted before this router, unauthenticated).
+router.get('/import/providers', requirePermission('media', 'view'), getImportProviders);
+router.get('/import/connections', requirePermission('media', 'view'), listImportConnections);
+router.post('/import/connections', requirePermission('media', 'edit'), validate(createManualConnectionSchema), createImportConnection);
+router.delete('/import/connections/:id', requirePermission('media', 'edit'), validate(connectionIdParamSchema), deleteImportConnection);
+router.get('/import/oauth/:provider/start', requirePermission('media', 'edit'), validate(oauthStartParamSchema), startImportOAuth);
+router.get('/import/connections/:id/files', requirePermission('media', 'view'), validate(listRemoteFilesSchema), listImportFiles);
+router.post('/import/connections/:id/import', requirePermission('media', 'edit'), validate(importFilesSchema), importRemoteFiles);
+
 // AI suggestions (Phase D2) — keep above the generic /:id routes
 router.post('/suggestions/:id/accept', requirePermission('media', 'edit'), validate(mediaIdParamSchema), acceptMediaSuggestion);
 router.post('/suggestions/:id/reject', requirePermission('media', 'edit'), validate(mediaIdParamSchema), rejectMediaSuggestion);
@@ -208,12 +218,11 @@ router.post('/:id/ocr', requirePermission('media', 'edit'), validate(mediaIdPara
 // Speech-to-text (Phase D4) — 501 via requireFeature when unconfigured
 router.post('/:id/transcribe', requirePermission('media', 'edit'), validate(transcribeMediaSchema), requireFeature('speech_to_text'), transcribeMedia);
 router.get('/:id/transcript', requirePermission('media', 'view'), validate(getTranscriptSchema), getTranscript);
-// AI image ops (Phase D6) — bg-removal/upscale/enhance/object-removal via replicate; 501 via requireFeature when unconfigured
-router.post('/:id/image-op', requirePermission('media', 'edit'), validate(aiImageOpSchema), requireFeature('image_ops'), aiImageOp);
-// Recognition (Phase D7) — optional, 403 while media.recognition is off (default);
-// /recognize additionally 501s via requireFeature when vision is unconfigured
+// AI image ops (Phase D6) — bg-removal/upscale/enhance/object-removal → new version; 501 via requireFeature when unconfigured
+router.post('/:id/ai-image-op', requirePermission('media', 'edit'), validate(aiImageOpSchema), requireFeature('image_ops'), aiImageOp);
+// AI recognition (Phase D7) — OPTIONAL, default OFF: labels/logos/landmarks/products → tag suggestion; 501 via requireFeature when unconfigured
 router.post('/:id/recognize', requirePermission('media', 'edit'), validate(mediaIdParamSchema), requireFeature('vision'), recognizeMedia);
-// QR/barcode decode — local zxing job, works without any AI provider
+// QR/barcode decode (Phase D7) — local zxing job, works without any AI provider
 router.post('/:id/qr-decode', requirePermission('media', 'edit'), validate(mediaIdParamSchema), qrDecodeMedia);
 // PDF merge (no parent id)
 router.post('/pdf-merge', requirePermission('media', 'add'), validate(pdfOpSchema), pdfOp);

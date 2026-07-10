@@ -367,6 +367,19 @@ export const transcribeMediaSchema = z.object({
   }).optional(),
 });
 
+// AI image ops (Phase D6) — bg-removal/upscale/enhance/object-removal via replicate driver
+export const aiImageOpSchema = z.object({
+  params: z.object({ id: z.string().min(1) }),
+  body: z.object({
+    op: z.enum(['bg-removal', 'upscale', 'enhance', 'object-removal']),
+    scale: z.number().int().min(2).max(4).optional(),
+    // Mask is a URL to a pre-uploaded mask image (editor exports the mask via the
+    // normal upload endpoint first, then passes its URL here) — required for object-removal.
+    mask: z.string().url().optional(),
+    note: z.string().max(500).optional(),
+  }),
+});
+
 export const getTranscriptSchema = z.object({
   params: z.object({ id: z.string().min(1) }),
   query: z.object({

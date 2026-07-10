@@ -1,84 +1,72 @@
-import { randomUUID } from 'crypto';
 import { prisma } from '../../../config/database.js';
-import { getFileUrl, uploadFile } from '../../../shared/services/storage.service.js';
-import { createMediaVersion } from '../processing.service.js';
 import { logger } from '../../../shared/utils/logger.js';
 import { getActiveProvider } from './ai-provider.service.js';
+import { getFileUrl } from '../../../shared/services/storage.service.js';
 
-const CONTENT_TYPE_EXT = {
-  'image/png': 'png',
-  'image/jpeg': 'jpg',
-  'image/webp': 'webp',
-};
+// Mirrors replicate.js driver's `ops` — kept here too so we can 422 before
+// ever resolving the provider/hitting the network.
+export const IMAGE_OPS = ['bg-removal', 'upscale', 'enhance', 'object-removal'];
 
-// Per-op input shape for the replicate models wired in drivers/replicate.js —
-// each model has its own input keys, so the mapping lives here rather than in the driver.
-const buildInput = (op, imageUrl, { scale, maskUrl }) => {
-  switch (op) {
-    case 'bg-removal':
-      return { image: imageUrl };
-    case 'upscale':
-      return { image: imageUrl, scale };
-    case 'enhance':
-      return { img: imageUrl };
-    case 'object-removal':
-      return { image: imageUrl, mask: maskUrl };
-    default:
-      throw Object.assign(new Error(`Unsupported AI image op: ${op}`), { status: 422 });
-  }
-};
-
-const uploadMask = async (mediaId, maskBase64) => {
-  const buffer = Buffer.from(maskBase64.replace(/^data:image\/\w+;base64,/, ''), 'base64');
-  const maskPath = `ai-masks/${mediaId}/${randomUUID()}.png`;
-  return uploadFile({ buffer, size: buffer.length, mimetype: 'image/png', originalname: 'mask.png' }, maskPath);
-};
-
-const downloadOutput = async (outputUrl) => {
-  const res = await fetch(outputUrl);
-  if (!res.ok) throw new Error(`Failed to download AI image op output (${res.status})`);
-  const buffer = Buffer.from(await res.arrayBuffer());
-  const ext = CONTENT_TYPE_EXT[res.headers.get('content-type')] ?? 'png';
-  return { buffer, ext };
+const getMimeExt = (mime) => {
+  const map = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/avif': 'avif', 'image/gif': 'gif' };
+  return map[mime] ?? 'jpg';
 };
 
 // Processing-job entry point ('ai-image-op' case in processing.service.js).
-export async function runAiImageOpJob({ mediaId, op, scale, mask, createdBy }) {
+// Structurally identical to the C2 image-edit job: fetch source → run transform
+// → upload result → write new MediaVersion. The "transform" here is a remote
+// Replicate prediction instead of a local sharp pipeline.
+export async function runImageOpJob({ mediaId, op, scale, mask, note, createdBy }) {
+  if (!IMAGE_OPS.includes(op)) {
+    throw Object.assign(new Error(`Unsupported AI image op "${op}"`), { status: 422 });
+  }
+
   const provider = await getActiveProvider('image_ops');
   if (!provider) {
     throw Object.assign(new Error('AI feature "image_ops" is not configured'), { status: 501 });
   }
 
   const media = await prisma.media.findUnique({ where: { id: mediaId } });
-  if (!media) throw Object.assign(new Error('Media not found'), { status: 404 });
+  if (!media) throw new Error(`Media ${mediaId} not found`);
   if (media.type !== 'IMAGE') {
-    throw Object.assign(new Error('AI image ops are only supported for images'), { status: 422 });
+    throw Object.assign(new Error('AI image ops are only supported for images in v1'), { status: 422 });
   }
 
-  const imageUrl = await getFileUrl(media.path);
-  const maskUrl = op === 'object-removal' ? await uploadMask(mediaId, mask) : undefined;
-  const input = buildInput(op, imageUrl, { scale, maskUrl });
+  if (op === 'object-removal' && !mask) {
+    throw Object.assign(new Error('object-removal requires a mask'), { status: 422 });
+  }
 
-  const { outputUrl } = await provider.driver.runImageOp({
+  // Replicate reads the source image via URL — hand it a presigned URL from our
+  // own storage rather than raw bytes (mirrors how the driver is contract-tested).
+  const imageUrl = await getFileUrl(media.path);
+  const input = { image: imageUrl };
+  if (op === 'upscale') input.scale = scale ?? 2;
+  if (op === 'object-removal') input.mask = mask;
+
+  const { outputUrl, predictionId } = await provider.driver.runImageOp({
     credentials: provider.credentials,
     config: provider.config,
     op,
     input,
   });
 
-  const { buffer, ext } = await downloadOutput(outputUrl);
+  // Never store an external URL as the asset of record — download the
+  // Replicate output and land it in our own storage via the version helper
+  // (which itself uploads through storage.service.js).
+  const outputRes = await fetch(outputUrl);
+  if (!outputRes.ok) {
+    throw new Error(`Failed to download AI image-op output (${outputRes.status})`);
+  }
+  const outputBuffer = Buffer.from(await outputRes.arrayBuffer());
+
+  const { createMediaVersion } = await import('../processing.service.js');
   const { version } = await createMediaVersion(mediaId, {
-    buffer,
-    ext,
-    note: `AI image op: ${op}`,
+    buffer: outputBuffer,
+    ext: getMimeExt(media.mime_type),
+    note: note ?? `AI ${op}`,
     createdBy,
   });
 
-  const { enqueueReindex } = await import('../media-search.service.js');
-  enqueueReindex(mediaId);
-  const { enqueueEmbed } = await import('./media-semantic.service.js');
-  enqueueEmbed(mediaId);
-
-  logger.info(`AI image op "${op}" complete for media ${mediaId} → version ${version.version}`);
-  return { version_id: version.id, version: version.version, op };
+  logger.info(`AI image op "${op}" complete for media ${mediaId} → version ${version.version} (prediction ${predictionId ?? 'n/a'})`);
+  return { version_id: version.id, version: version.version, prediction_id: predictionId ?? null };
 }

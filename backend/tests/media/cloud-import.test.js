@@ -1,502 +1,446 @@
-// Phase D8 gate — cloud import: every driver (gdrive/dropbox/onedrive/s3/ftp)
-// honors the shared list+download contract against a mocked client, and the
-// service layer encrypts credentials, enforces ownership, refreshes OAuth
-// tokens on 401, and gates imports on MIME/size settings.
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+// Phase D8 gate: importer contract mocked — no test ever touches network,
+// AWS, an FTP server, or a real Google/Dropbox/Microsoft OAuth endpoint.
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-const { prismaMock, uploadMediaMock, getUploadSettingsMock } = vi.hoisted(() => ({
+const { prismaMock, uploadMediaMock, s3SendMock, ftpMocks } = vi.hoisted(() => ({
   prismaMock: {
     mediaImportConnection: {
       findMany: vi.fn(),
-      findUnique: vi.fn(),
+      findFirst: vi.fn(),
       create: vi.fn(),
-      update: vi.fn(),
       delete: vi.fn(),
     },
   },
   uploadMediaMock: vi.fn(),
-  getUploadSettingsMock: vi.fn(),
+  s3SendMock: vi.fn(),
+  ftpMocks: {
+    access: vi.fn(),
+    list: vi.fn(),
+    downloadTo: vi.fn(),
+    close: vi.fn(),
+  },
 }));
 
 vi.mock('../../src/config/database.js', () => ({ prisma: prismaMock }));
-vi.mock('../../src/shared/utils/crypto.js', () => ({
-  encrypt: vi.fn((s) => `enc:${s}`),
-  decrypt: vi.fn((s) => s.replace(/^enc:/, '')),
-}));
 vi.mock('../../src/modules/media/service.js', () => ({ uploadMedia: uploadMediaMock }));
-vi.mock('../../src/modules/media/settings.js', () => ({ getUploadSettings: getUploadSettingsMock }));
-vi.mock('../../src/modules/media/import.service.js', () => ({
-  EXT_TO_MIME: { jpg: 'image/jpeg', png: 'image/png', pdf: 'application/pdf' },
+vi.mock('../../src/modules/user-management/shared/activity-logger.js', () => ({ writeActivityAsync: vi.fn() }));
+// Simple, deterministic, round-trippable stand-in for AES-GCM — same technique
+// ai-provider.test.js uses so tests don't depend on APP_ENCRYPTION_KEY.
+vi.mock('../../src/shared/utils/crypto.js', () => ({
+  encrypt: (s) => Buffer.from(String(s)).toString('base64'),
+  decrypt: (s) => Buffer.from(String(s), 'base64').toString('utf8'),
 }));
-vi.mock('../../src/modules/user-management/shared/activity-logger.js', () => ({
-  writeActivityAsync: vi.fn(),
+vi.mock('@aws-sdk/client-s3', () => ({
+  S3Client: vi.fn(() => ({ send: s3SendMock })),
+  ListObjectsV2Command: vi.fn((i) => ({ _type: 'ListObjectsV2', ...i })),
+  GetObjectCommand: vi.fn((i) => ({ _type: 'GetObject', ...i })),
+}));
+vi.mock('basic-ftp', () => ({
+  Client: vi.fn(() => ftpMocks),
+  FileType: { Unknown: 0, File: 1, Directory: 2, SymbolicLink: 3 },
 }));
 
-import jwt from 'jsonwebtoken';
-import registry, { getImportDriver, IMPORT_PROVIDERS } from '../../src/modules/media/cloud-import/drivers/index.js';
-import { buildAuthUrl, verifyState, exchangeCode, refreshTokens } from '../../src/modules/media/cloud-import/oauth.js';
-import * as svc from '../../src/modules/media/cloud-import/service.js';
+const enc = (obj) => Buffer.from(JSON.stringify(obj)).toString('base64');
 
-const jsonResponse = (data, { status = 200, headers = {} } = {}) => ({
-  ok: status >= 200 && status < 300,
-  status,
-  headers: { get: (k) => headers[k.toLowerCase()] ?? null },
-  json: async () => data,
-  arrayBuffer: async () => Buffer.from(data ?? '').buffer,
-});
-
-const binResponse = (buf, headers = {}) => ({
-  ok: true,
-  status: 200,
-  headers: { get: (k) => headers[k.toLowerCase()] ?? null },
-  json: async () => ({}),
-  arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
-});
+import registry, { getImportDriver, OAUTH_PROVIDERS, MANUAL_PROVIDERS } from '../../src/modules/media/import/drivers/index.js';
+import * as svc from '../../src/modules/media/import/cloud-import.service.js';
 
 beforeEach(() => {
   vi.clearAllMocks();
-  getUploadSettingsMock.mockResolvedValue({
-    allowedMimes: new Set(['image/jpeg', 'image/png', 'application/pdf']),
-    maxFileSizeMb: 1,
-    maxFileSizeBytes: 1024 * 1024,
-  });
 });
 
-// ─── Shared importer contract ────────────────────────────────────────────────
+// ─── Driver registry contract ────────────────────────────────────────────────
 
-describe('driver registry', () => {
-  it('exposes exactly the five D8 providers', () => {
-    expect(IMPORT_PROVIDERS.sort()).toEqual(['dropbox', 'ftp', 'gdrive', 'onedrive', 's3']);
-  });
-
-  it('every driver implements the same contract surface', () => {
-    for (const provider of IMPORT_PROVIDERS) {
-      const driver = registry[provider];
-      expect(driver.name).toBe(provider);
-      expect(['oauth', 'credentials']).toContain(driver.auth);
-      expect(typeof driver.list).toBe('function');
-      expect(typeof driver.download).toBe('function');
+describe('import driver registry contract', () => {
+  it('exports all 5 v1 providers with the required shape', () => {
+    expect(Object.keys(registry).sort()).toEqual(['dropbox', 'ftp', 'google-drive', 'onedrive', 's3']);
+    for (const [name, d] of Object.entries(registry)) {
+      expect(d.provider, `${name}.provider`).toBe(name);
+      expect(typeof d.oauth, `${name}.oauth`).toBe('boolean');
+      expect(d.credentialsSchema, `${name}.credentialsSchema`).toBeDefined();
+      expect(typeof d.isAppConfigured, `${name}.isAppConfigured`).toBe('function');
+      expect(typeof d.list, `${name}.list`).toBe('function');
+      expect(typeof d.download, `${name}.download`).toBe('function');
+      if (d.oauth) {
+        expect(typeof d.getAuthUrl, `${name}.getAuthUrl`).toBe('function');
+        expect(typeof d.exchangeCode, `${name}.exchangeCode`).toBe('function');
+      }
     }
   });
 
-  it('throws 422 on unknown provider', () => {
-    expect(() => getImportDriver('gopher')).toThrow(/Unknown import provider/);
+  it('splits oauth vs manual providers correctly', () => {
+    expect(OAUTH_PROVIDERS.sort()).toEqual(['dropbox', 'google-drive', 'onedrive']);
+    expect(MANUAL_PROVIDERS.sort()).toEqual(['ftp', 's3']);
+  });
+
+  it('getImportDriver throws for unknown provider', () => {
+    expect(() => getImportDriver('nope')).toThrow('Unknown import provider');
+  });
+
+  it('manual driver credential schemas reject empty objects', () => {
+    expect(registry.s3.credentialsSchema.safeParse({}).success).toBe(false);
+    expect(registry.ftp.credentialsSchema.safeParse({}).success).toBe(false);
   });
 });
 
-describe('gdrive driver', () => {
-  const creds = { access_token: 'tok' };
+// ─── OAuth drivers: HTTP calls (fetch mocked) ────────────────────────────────
 
-  it('list maps files/folders and filters Google-native docs', async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({
-      nextPageToken: 'page2',
-      files: [
-        { id: 'f1', name: 'Photos', mimeType: 'application/vnd.google-apps.folder' },
-        { id: 'f2', name: 'cat.jpg', mimeType: 'image/jpeg', size: '123' },
-        { id: 'f3', name: 'Doc', mimeType: 'application/vnd.google-apps.document' },
-      ],
-    }));
-    const out = await registry.gdrive.list(creds, {}, { fetchImpl });
-    expect(out).toEqual({
-      entries: [
-        { id: 'f1', name: 'Photos', size: null, mime: null, is_folder: true },
-        { id: 'f2', name: 'cat.jpg', size: 123, mime: 'image/jpeg', is_folder: false },
-      ],
-      cursor: 'page2',
-    });
-    expect(fetchImpl.mock.calls[0][1].headers.Authorization).toBe('Bearer tok');
+describe('oauth driver HTTP calls (fetch mocked)', () => {
+  const fetchMock = vi.fn();
+  beforeEach(() => {
+    vi.stubGlobal('fetch', fetchMock);
+    fetchMock.mockReset();
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('google-drive: exchangeCode posts form body and returns tokens', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ access_token: 'a', refresh_token: 'r' }) });
+    const out = await registry['google-drive'].exchangeCode({ code: 'c', redirectUri: 'https://cb' });
+    expect(out).toEqual({ access_token: 'a', refresh_token: 'r' });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://oauth2.googleapis.com/token');
+    expect(init.body.toString()).toContain('code=c');
   });
 
-  it('download returns buffer+name+mime and rejects Google-native files', async () => {
-    const buf = Buffer.from('JPEGDATA');
-    const fetchImpl = vi.fn()
-      .mockResolvedValueOnce(jsonResponse({ id: 'f2', name: 'cat.jpg', mimeType: 'image/jpeg' }))
-      .mockResolvedValueOnce(binResponse(buf));
-    const out = await registry.gdrive.download(creds, 'f2', { fetchImpl });
-    expect(out.name).toBe('cat.jpg');
-    expect(out.mime).toBe('image/jpeg');
-    expect(Buffer.from(out.buffer).toString()).toBe('JPEGDATA');
-    expect(out.size).toBe(buf.length);
+  it('google-drive: exchangeCode throws when no refresh_token returned', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ access_token: 'a' }) });
+    await expect(registry['google-drive'].exchangeCode({ code: 'c', redirectUri: 'https://cb' }))
+      .rejects.toThrow('did not return a refresh_token');
+  });
 
-    const nativeFetch = vi.fn().mockResolvedValue(
-      jsonResponse({ id: 'f3', name: 'Doc', mimeType: 'application/vnd.google-apps.document' }),
-    );
-    await expect(registry.gdrive.download(creds, 'f3', { fetchImpl: nativeFetch }))
+  it('google-drive: list refreshes token then lists files, mapping folders', async () => {
+    fetchMock
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ access_token: 'fresh' }) })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          files: [
+            { id: 'f1', name: 'Docs', mimeType: 'application/vnd.google-apps.folder' },
+            { id: 'f2', name: 'a.png', mimeType: 'image/png', size: '100' },
+          ],
+          nextPageToken: 'p2',
+        }),
+      });
+    const out = await registry['google-drive'].list({ credentials: { access_token: 'x', refresh_token: 'rt' }, folderId: null, cursor: null });
+    expect(out.items).toEqual([
+      { id: 'f1', name: 'Docs', mimeType: 'application/vnd.google-apps.folder', size: null, isFolder: true },
+      { id: 'f2', name: 'a.png', mimeType: 'image/png', size: 100, isFolder: false },
+    ]);
+    expect(out.nextCursor).toBe('p2');
+  });
+
+  it('google-drive: download rejects native Google Docs types', async () => {
+    fetchMock
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ access_token: 'fresh' }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ name: 'Doc', mimeType: 'application/vnd.google-apps.document' }) });
+    await expect(registry['google-drive'].download({ credentials: { refresh_token: 'rt' }, fileId: 'f1' }))
       .rejects.toMatchObject({ status: 422 });
   });
 
-  it('surfaces provider 401 as { status: 401 }', async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({}, { status: 401 }));
-    await expect(registry.gdrive.list(creds, {}, { fetchImpl })).rejects.toMatchObject({ status: 401 });
-  });
-});
-
-describe('dropbox driver', () => {
-  const creds = { access_token: 'dbx' };
-
-  it('list maps entries and exposes cursor only when has_more', async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({
-      entries: [
-        { '.tag': 'folder', path_lower: '/photos', name: 'Photos' },
-        { '.tag': 'file', path_lower: '/cat.jpg', name: 'cat.jpg', size: 5 },
-      ],
-      cursor: 'c1',
-      has_more: false,
-    }));
-    const out = await registry.dropbox.list(creds, { path: '' }, { fetchImpl });
-    expect(out).toEqual({
-      entries: [
-        { id: '/photos', name: 'Photos', size: null, mime: null, is_folder: true },
-        { id: '/cat.jpg', name: 'cat.jpg', size: 5, mime: null, is_folder: false },
-      ],
-      cursor: null,
-    });
-    const [url, init] = fetchImpl.mock.calls[0];
-    expect(url).toMatch(/list_folder$/);
-    expect(JSON.parse(init.body)).toEqual({ path: '' });
-  });
-
-  it('list with cursor calls list_folder/continue', async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ entries: [], cursor: 'c2', has_more: true }));
-    const out = await registry.dropbox.list(creds, { cursor: 'c1' }, { fetchImpl });
-    expect(fetchImpl.mock.calls[0][0]).toMatch(/list_folder\/continue$/);
-    expect(out.cursor).toBe('c2');
-  });
-
-  it('download returns buffer and name from dropbox-api-result header', async () => {
-    const buf = Buffer.from('DATA');
-    const fetchImpl = vi.fn().mockResolvedValue(
-      binResponse(buf, { 'dropbox-api-result': JSON.stringify({ name: 'cat.jpg' }) }),
-    );
-    const out = await registry.dropbox.download(creds, '/cat.jpg', { fetchImpl });
-    expect(out).toMatchObject({ name: 'cat.jpg', mime: null, size: 4 });
-  });
-});
-
-describe('onedrive driver', () => {
-  const creds = { access_token: 'od' };
-
-  it('list maps Graph items; cursor is @odata.nextLink passed back verbatim', async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({
-      value: [
-        { id: 'i1', name: 'Photos', folder: { childCount: 2 } },
-        { id: 'i2', name: 'cat.jpg', size: 9, file: { mimeType: 'image/jpeg' } },
-      ],
-      '@odata.nextLink': 'https://graph.microsoft.com/next',
-    }));
-    const out = await registry.onedrive.list(creds, {}, { fetchImpl });
-    expect(out.entries).toEqual([
-      { id: 'i1', name: 'Photos', size: null, mime: null, is_folder: true },
-      { id: 'i2', name: 'cat.jpg', size: 9, mime: 'image/jpeg', is_folder: false },
+  it('dropbox: list_folder maps entries and continue cursor', async () => {
+    fetchMock
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ access_token: 'fresh' }) })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          entries: [
+            { '.tag': 'folder', name: 'Photos', path_lower: '/photos' },
+            { '.tag': 'file', name: 'a.jpg', path_lower: '/a.jpg', size: 42 },
+          ],
+          has_more: true,
+          cursor: 'cur1',
+        }),
+      });
+    const out = await registry.dropbox.list({ credentials: { refresh_token: 'rt' }, folderId: '', cursor: null });
+    expect(out.items).toEqual([
+      { id: '/photos', name: 'Photos', mimeType: null, size: null, isFolder: true },
+      { id: '/a.jpg', name: 'a.jpg', mimeType: null, size: 42, isFolder: false },
     ]);
-    expect(out.cursor).toBe('https://graph.microsoft.com/next');
-
-    await registry.onedrive.list(creds, { cursor: out.cursor }, { fetchImpl });
-    expect(fetchImpl.mock.calls[1][0]).toBe('https://graph.microsoft.com/next');
+    expect(out.nextCursor).toBe('cur1');
   });
 
-  it('download fetches metadata then content', async () => {
-    const buf = Buffer.from('ODDATA');
-    const fetchImpl = vi.fn()
-      .mockResolvedValueOnce(jsonResponse({ id: 'i2', name: 'cat.jpg', file: { mimeType: 'image/jpeg' } }))
-      .mockResolvedValueOnce(binResponse(buf));
-    const out = await registry.onedrive.download(creds, 'i2', { fetchImpl });
-    expect(out).toMatchObject({ name: 'cat.jpg', mime: 'image/jpeg', size: buf.length });
+  it('dropbox: download reads Dropbox-API-Result header for filename', async () => {
+    fetchMock
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ access_token: 'fresh' }) })
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: { get: (h) => (h === 'dropbox-api-result' ? JSON.stringify({ name: 'a.jpg' }) : null) },
+        arrayBuffer: async () => Buffer.from('data'),
+      });
+    const out = await registry.dropbox.download({ credentials: { refresh_token: 'rt' }, fileId: '/a.jpg' });
+    expect(out.filename).toBe('a.jpg');
+    expect(out.buffer).toEqual(Buffer.from('data'));
   });
 
-  it('surfaces provider 401 as { status: 401 }', async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({}, { status: 401 }));
-    await expect(registry.onedrive.download(creds, 'i2', { fetchImpl })).rejects.toMatchObject({ status: 401 });
+  it('onedrive: list maps folder/file items via graph', async () => {
+    fetchMock
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ access_token: 'fresh' }) })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ value: [{ id: 'i1', name: 'Sub', folder: {} }, { id: 'i2', name: 'b.pdf', file: { mimeType: 'application/pdf' }, size: 10 }] }),
+      });
+    const out = await registry.onedrive.list({ credentials: { refresh_token: 'rt' }, folderId: null, cursor: null });
+    expect(out.items).toEqual([
+      { id: 'i1', name: 'Sub', mimeType: null, size: null, isFolder: true },
+      { id: 'i2', name: 'b.pdf', mimeType: 'application/pdf', size: 10, isFolder: false },
+    ]);
   });
 });
 
-describe('s3 driver', () => {
-  const creds = { access_key_id: 'k', secret_access_key: 's', bucket: 'b' };
+// ─── S3 driver (AWS SDK mocked) ───────────────────────────────────────────────
+
+describe('s3 driver (SDK mocked)', () => {
+  const creds = { access_key_id: 'ak', secret_access_key: 'sk', bucket: 'b' };
 
   it('list maps CommonPrefixes to folders and Contents to files', async () => {
-    const send = vi.fn().mockResolvedValue({
+    s3SendMock.mockResolvedValueOnce({
       CommonPrefixes: [{ Prefix: 'photos/' }],
-      Contents: [
-        { Key: 'docs/' }, // prefix placeholder object — dropped
-        { Key: 'cat.jpg', Size: 7 },
-      ],
+      Contents: [{ Key: 'a.png', Size: 10 }],
+      IsTruncated: true,
       NextContinuationToken: 'tok2',
     });
-    const out = await registry.s3.list(creds, {}, { clientFactory: () => ({ send }) });
-    expect(out.entries).toEqual([
-      { id: 'photos/', name: 'photos', size: null, mime: null, is_folder: true },
-      { id: 'cat.jpg', name: 'cat.jpg', size: 7, mime: null, is_folder: false },
+    const out = await registry.s3.list({ credentials: creds, folderId: '', cursor: null });
+    expect(out.items).toEqual([
+      { id: 'photos/', name: 'photos', mimeType: null, size: null, isFolder: true },
+      { id: 'a.png', name: 'a.png', mimeType: null, size: 10, isFolder: false },
     ]);
-    expect(out.cursor).toBe('tok2');
-    // folder path gets a trailing-slash prefix + delimiter listing
-    await registry.s3.list(creds, { path: 'photos' }, { clientFactory: () => ({ send }) });
-    expect(send.mock.calls[1][0].input).toMatchObject({ Bucket: 'b', Prefix: 'photos/', Delimiter: '/' });
+    expect(out.nextCursor).toBe('tok2');
   });
 
-  it('download returns buffer, treats octet-stream as unknown mime', async () => {
-    const buf = Buffer.from('S3DATA');
-    const send = vi.fn().mockResolvedValue({
-      Body: { transformToByteArray: async () => new Uint8Array(buf) },
-      ContentType: 'application/octet-stream',
+  it('download streams the object body into a buffer', async () => {
+    const { Readable } = await import('node:stream');
+    s3SendMock.mockResolvedValueOnce({ Body: Readable.from([Buffer.from('hello')]), ContentType: 'text/plain' });
+    const out = await registry.s3.download({ credentials: creds, fileId: 'a.txt' });
+    expect(out.buffer).toEqual(Buffer.from('hello'));
+    expect(out.filename).toBe('a.txt');
+    expect(out.mimeType).toBe('text/plain');
+  });
+});
+
+// ─── FTP driver (basic-ftp mocked) ────────────────────────────────────────────
+
+describe('ftp driver (basic-ftp mocked)', () => {
+  const creds = { host: 'h', user: 'u', password: 'p' };
+
+  it('list maps FileInfo entries, skipping unknown types', async () => {
+    ftpMocks.list.mockResolvedValueOnce([
+      { name: 'sub', type: 2, size: 0 },
+      { name: 'a.txt', type: 1, size: 5 },
+      { name: 'weird', type: 0, size: 0 },
+    ]);
+    const out = await registry.ftp.list({ credentials: creds, folderId: '/' });
+    expect(out.items).toEqual([
+      { id: '/sub', name: 'sub', mimeType: null, size: null, isFolder: true },
+      { id: '/a.txt', name: 'a.txt', mimeType: null, size: 5, isFolder: false },
+    ]);
+    expect(ftpMocks.access).toHaveBeenCalledWith(expect.objectContaining({ host: 'h', user: 'u' }));
+    expect(ftpMocks.close).toHaveBeenCalled();
+  });
+
+  it('download writes into an in-memory buffer (never touches disk)', async () => {
+    ftpMocks.downloadTo.mockImplementationOnce(async (writable) => {
+      writable.write(Buffer.from('ftp-data'));
+      writable.end();
     });
-    const out = await registry.s3.download(creds, 'photos/cat.jpg', { clientFactory: () => ({ send }) });
-    expect(out).toMatchObject({ name: 'cat.jpg', mime: null, size: buf.length });
-    expect(Buffer.from(out.buffer).toString()).toBe('S3DATA');
+    const out = await registry.ftp.download({ credentials: creds, fileId: '/a.txt' });
+    expect(out.buffer).toEqual(Buffer.from('ftp-data'));
+    expect(out.filename).toBe('a.txt');
+  });
+
+  it('closes the client even when access() throws', async () => {
+    ftpMocks.access.mockRejectedValueOnce(new Error('econnrefused'));
+    await expect(registry.ftp.list({ credentials: creds, folderId: '/' })).rejects.toThrow('econnrefused');
+    expect(ftpMocks.close).toHaveBeenCalled();
   });
 });
 
-describe('ftp driver', () => {
-  const creds = { host: 'ftp.example.com', user: 'u', password: 'p' };
+// ─── cloud-import.service.js ──────────────────────────────────────────────────
 
-  it('list maps directory listing and always closes the client', async () => {
-    const client = {
-      list: vi.fn().mockResolvedValue([
-        { name: 'photos', isDirectory: true },
-        { name: 'cat.jpg', isDirectory: false, size: 11 },
-      ]),
-      close: vi.fn(),
-    };
-    const out = await registry.ftp.list(creds, { path: '/pub' }, { clientFactory: () => client });
-    expect(out).toEqual({
-      entries: [
-        { id: '/pub/photos', name: 'photos', size: null, mime: null, is_folder: true },
-        { id: '/pub/cat.jpg', name: 'cat.jpg', size: 11, mime: null, is_folder: false },
-      ],
-      cursor: null,
+describe('getProviderStatus', () => {
+  const savedEnv = { ...process.env };
+  afterEach(() => { process.env = { ...savedEnv }; });
+
+  it('flags oauth providers as unconfigured when env is unset, manual providers always configured', () => {
+    delete process.env.GOOGLE_DRIVE_CLIENT_ID;
+    delete process.env.GOOGLE_DRIVE_CLIENT_SECRET;
+    const statuses = svc.getProviderStatus();
+    expect(statuses.find((s) => s.provider === 'google-drive')).toEqual({ provider: 'google-drive', oauth: true, configured: false });
+    expect(statuses.find((s) => s.provider === 's3')).toEqual({ provider: 's3', oauth: false, configured: true });
+    expect(statuses.find((s) => s.provider === 'ftp')).toEqual({ provider: 'ftp', oauth: false, configured: true });
+  });
+
+  it('flags an oauth provider configured once its client id/secret env vars are set', () => {
+    process.env.DROPBOX_CLIENT_ID = 'id';
+    process.env.DROPBOX_CLIENT_SECRET = 'secret';
+    expect(svc.getProviderStatus().find((s) => s.provider === 'dropbox').configured).toBe(true);
+  });
+});
+
+describe('connection CRUD', () => {
+  it('createManualConnection validates credentials against the driver schema and encrypts them before storing', async () => {
+    prismaMock.mediaImportConnection.create.mockResolvedValue({ id: 'c1', provider: 's3', label: 'My bucket' });
+    const out = await svc.createManualConnection('u1', {
+      provider: 's3', label: 'My bucket',
+      credentials: { access_key_id: 'ak', secret_access_key: 'sk', bucket: 'b' },
     });
-    expect(client.close).toHaveBeenCalled();
+    expect(out.id).toBe('c1');
+    const call = prismaMock.mediaImportConnection.create.mock.calls[0][0];
+    expect(call.data.user_id).toBe('u1');
+    expect(call.data.credentials).not.toContain('sk'); // "encrypted" (base64) — not plaintext in the stored blob
   });
 
-  it('download streams into a buffer and closes even on failure', async () => {
-    const client = {
-      downloadTo: vi.fn(async (sink) => {
-        sink.write(Buffer.from('FTP'));
-        sink.write(Buffer.from('DATA'));
-      }),
-      close: vi.fn(),
-    };
-    const out = await registry.ftp.download(creds, '/pub/cat.jpg', { clientFactory: () => client });
-    expect(out).toMatchObject({ name: 'cat.jpg', size: 7 });
-    expect(Buffer.from(out.buffer).toString()).toBe('FTPDATA');
-    expect(client.close).toHaveBeenCalled();
-
-    const failing = { downloadTo: vi.fn().mockRejectedValue(new Error('boom')), close: vi.fn() };
-    await expect(registry.ftp.download(creds, '/x', { clientFactory: () => failing })).rejects.toThrow('boom');
-    expect(failing.close).toHaveBeenCalled();
-  });
-});
-
-// ─── OAuth helper ────────────────────────────────────────────────────────────
-
-describe('oauth', () => {
-  beforeEach(() => {
-    process.env.GDRIVE_CLIENT_ID = 'cid';
-    process.env.GDRIVE_CLIENT_SECRET = 'csec';
+  it('createManualConnection rejects invalid credentials with 422', async () => {
+    await expect(svc.createManualConnection('u1', { provider: 's3', label: 'x', credentials: {} }))
+      .rejects.toMatchObject({ status: 422 });
+    expect(prismaMock.mediaImportConnection.create).not.toHaveBeenCalled();
   });
 
-  it('buildAuthUrl embeds a state JWT bound to user+provider; verifyState round-trips', () => {
-    const { url, state } = buildAuthUrl('gdrive', 'user-1', 'https://app/cb');
-    expect(url).toContain('accounts.google.com');
-    expect(url).toContain(`state=${encodeURIComponent(state)}`);
-    expect(verifyState(state, 'user-1', 'gdrive')).toMatchObject({ sub: 'user-1', provider: 'gdrive' });
-    expect(() => verifyState(state, 'user-2', 'gdrive')).toThrow(/does not match/);
-    expect(() => verifyState(state, 'user-1', 'dropbox')).toThrow(/does not match/);
-    expect(() => verifyState('garbage', 'user-1', 'gdrive')).toThrow(/Invalid or expired/);
-  });
-
-  it('rejects a JWT minted for another purpose', () => {
-    const forged = jwt.sign({ sub: 'user-1', provider: 'gdrive', purpose: 'other' }, process.env.JWT_SECRET);
-    expect(() => verifyState(forged, 'user-1', 'gdrive')).toThrow(/does not match/);
-  });
-
-  it('exchangeCode posts the code and normalizes tokens', async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({
-      access_token: 'at', refresh_token: 'rt', expires_in: 3600,
-    }));
-    const tokens = await exchangeCode('gdrive', 'the-code', 'https://app/cb', { fetchImpl });
-    expect(tokens).toMatchObject({ access_token: 'at', refresh_token: 'rt' });
-    expect(tokens.expires_at).toBeTypeOf('number');
-    const body = fetchImpl.mock.calls[0][1].body;
-    expect(body.get('grant_type')).toBe('authorization_code');
-    expect(body.get('code')).toBe('the-code');
-  });
-
-  it('refreshTokens keeps the old refresh_token when the provider omits it', async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ access_token: 'new-at', expires_in: 60 }));
-    const out = await refreshTokens('gdrive', { access_token: 'old', refresh_token: 'rt' }, { fetchImpl });
-    expect(out).toMatchObject({ access_token: 'new-at', refresh_token: 'rt' });
-  });
-
-  it('refreshTokens 401s when there is no refresh_token', async () => {
-    await expect(refreshTokens('gdrive', { access_token: 'old' }, {})).rejects.toMatchObject({ status: 401 });
-  });
-});
-
-// ─── Service layer ───────────────────────────────────────────────────────────
-
-const CONN_ROW = (over = {}) => ({
-  id: 'conn-1',
-  user_id: 'user-1',
-  provider: 's3',
-  label: 'my bucket',
-  credentials: `enc:${JSON.stringify({ access_key_id: 'k', secret_access_key: 's', bucket: 'b' })}`,
-  ...over,
-});
-
-describe('service: connections', () => {
-  it('createConnection encrypts credentials and never selects them back', async () => {
-    prismaMock.mediaImportConnection.create.mockResolvedValue({ id: 'conn-1', provider: 's3', label: 'b' });
-    await svc.createConnection('user-1', {
-      provider: 's3',
-      label: 'b',
-      credentials: { access_key_id: 'k', secret_access_key: 's', bucket: 'b' },
-    });
-    const arg = prismaMock.mediaImportConnection.create.mock.calls[0][0];
-    expect(arg.data.credentials).toBe(`enc:${JSON.stringify({ access_key_id: 'k', secret_access_key: 's', bucket: 'b' })}`);
-    expect(arg.select).not.toHaveProperty('credentials');
-  });
-
-  it('createConnection rejects OAuth providers (422)', async () => {
-    await expect(svc.createConnection('user-1', { provider: 'gdrive', credentials: {} }))
+  it('createManualConnection rejects an oauth provider name with 422', async () => {
+    await expect(svc.createManualConnection('u1', { provider: 'google-drive', label: 'x', credentials: {} }))
       .rejects.toMatchObject({ status: 422 });
   });
 
-  it('deleteConnection 404s on another user\'s connection', async () => {
-    prismaMock.mediaImportConnection.findUnique.mockResolvedValue(CONN_ROW({ user_id: 'someone-else' }));
-    await expect(svc.deleteConnection('user-1', 'conn-1')).rejects.toMatchObject({ status: 404 });
+  it('deleteConnection 404s when the connection is not owned by the user', async () => {
+    prismaMock.mediaImportConnection.findFirst.mockResolvedValue(null);
+    await expect(svc.deleteConnection('u1', 'c404')).rejects.toMatchObject({ status: 404 });
     expect(prismaMock.mediaImportConnection.delete).not.toHaveBeenCalled();
   });
 
-  it('browseConnection decrypts creds and delegates to the driver', async () => {
-    prismaMock.mediaImportConnection.findUnique.mockResolvedValue(CONN_ROW());
-    const send = vi.fn().mockResolvedValue({ Contents: [{ Key: 'cat.jpg', Size: 1 }] });
-    const out = await svc.browseConnection('user-1', 'conn-1', {}, { clientFactory: () => ({ send }) });
-    expect(out.entries).toHaveLength(1);
-    expect(send.mock.calls[0][0].input.Bucket).toBe('b');
+  it('deleteConnection removes an owned connection', async () => {
+    prismaMock.mediaImportConnection.findFirst.mockResolvedValue({ id: 'c1' });
+    prismaMock.mediaImportConnection.delete.mockResolvedValue({});
+    await svc.deleteConnection('u1', 'c1');
+    expect(prismaMock.mediaImportConnection.delete).toHaveBeenCalledWith({ where: { id: 'c1' } });
   });
 });
 
-describe('service: OAuth refresh-and-retry', () => {
-  beforeEach(() => {
-    process.env.GDRIVE_CLIENT_ID = 'cid';
-    process.env.GDRIVE_CLIENT_SECRET = 'csec';
+describe('OAuth start/callback — AI-Rules-style: unconfigured provider → 501', () => {
+  const savedEnv = { ...process.env };
+  afterEach(() => { process.env = { ...savedEnv }; });
+
+  it('startOAuth 501s when the provider app client is not configured', () => {
+    delete process.env.GOOGLE_DRIVE_CLIENT_ID;
+    delete process.env.GOOGLE_DRIVE_CLIENT_SECRET;
+    expect(() => svc.startOAuth('u1', 'google-drive')).toThrow(expect.objectContaining({ status: 501 }));
   });
 
-  it('on 401 refreshes tokens, persists them encrypted, and retries once', async () => {
-    prismaMock.mediaImportConnection.findUnique.mockResolvedValue(CONN_ROW({
-      provider: 'gdrive',
-      credentials: `enc:${JSON.stringify({ access_token: 'stale', refresh_token: 'rt' })}`,
-    }));
-    prismaMock.mediaImportConnection.update.mockResolvedValue({});
-    const fetchImpl = vi.fn()
-      // 1st drive list -> 401
-      .mockResolvedValueOnce(jsonResponse({}, { status: 401 }))
-      // token refresh
-      .mockResolvedValueOnce(jsonResponse({ access_token: 'fresh', expires_in: 60 }))
-      // retried drive list
-      .mockResolvedValueOnce(jsonResponse({ files: [{ id: 'f1', name: 'cat.jpg', mimeType: 'image/jpeg' }] }));
+  it('startOAuth 422s for a non-oauth provider', () => {
+    expect(() => svc.startOAuth('u1', 's3')).toThrow(expect.objectContaining({ status: 422 }));
+  });
 
-    const out = await svc.browseConnection('user-1', 'conn-1', {}, { fetchImpl });
-    expect(out.entries).toEqual([{ id: 'f1', name: 'cat.jpg', size: null, mime: 'image/jpeg', is_folder: false }]);
-    const persisted = JSON.parse(
-      prismaMock.mediaImportConnection.update.mock.calls[0][0].data.credentials.replace(/^enc:/, ''),
+  it('startOAuth returns a provider auth url embedding a signed state bound to a fresh nonce', () => {
+    process.env.GOOGLE_DRIVE_CLIENT_ID = 'id';
+    process.env.GOOGLE_DRIVE_CLIENT_SECRET = 'secret';
+    const { url, nonce } = svc.startOAuth('u1', 'google-drive');
+    expect(url).toContain('https://accounts.google.com/o/oauth2/v2/auth');
+    expect(url).toContain('state=');
+    expect(typeof nonce).toBe('string');
+    expect(nonce.length).toBeGreaterThan(10);
+  });
+
+  it('completeOAuth rejects a state signed for a different provider', async () => {
+    process.env.DROPBOX_CLIENT_ID = 'id';
+    process.env.DROPBOX_CLIENT_SECRET = 'secret';
+    const state = enc({ userId: 'u1', provider: 'onedrive', nonce: 'n1', ts: Date.now() });
+    await expect(svc.completeOAuth('dropbox', { code: 'c', state, nonce: 'n1' })).rejects.toMatchObject({ status: 422 });
+  });
+
+  it('completeOAuth rejects an expired state', async () => {
+    process.env.DROPBOX_CLIENT_ID = 'id';
+    process.env.DROPBOX_CLIENT_SECRET = 'secret';
+    const state = enc({ userId: 'u1', provider: 'dropbox', nonce: 'n1', ts: Date.now() - 11 * 60 * 1000 });
+    await expect(svc.completeOAuth('dropbox', { code: 'c', state, nonce: 'n1' })).rejects.toMatchObject({ status: 422 });
+  });
+
+  // OAuth login-CSRF (RFC 6749 §10.12): an attacker who calls startOAuth as
+  // themselves gets a validly-encrypted state for their own userId. Without a
+  // session-bound nonce check, tricking a victim into completing the provider
+  // consent would link the victim's cloud credentials to the attacker's account.
+  it('completeOAuth rejects a validly-encrypted state when the nonce does not match the session cookie', async () => {
+    process.env.DROPBOX_CLIENT_ID = 'id';
+    process.env.DROPBOX_CLIENT_SECRET = 'secret';
+    const state = enc({ userId: 'attacker', provider: 'dropbox', nonce: 'attackers-nonce', ts: Date.now() });
+    await expect(svc.completeOAuth('dropbox', { code: 'c', state, nonce: 'victims-cookie-nonce' }))
+      .rejects.toMatchObject({ status: 422 });
+    expect(prismaMock.mediaImportConnection.create).not.toHaveBeenCalled();
+  });
+
+  it('completeOAuth rejects a state when no session cookie nonce is provided at all', async () => {
+    process.env.DROPBOX_CLIENT_ID = 'id';
+    process.env.DROPBOX_CLIENT_SECRET = 'secret';
+    const state = enc({ userId: 'u1', provider: 'dropbox', nonce: 'n1', ts: Date.now() });
+    await expect(svc.completeOAuth('dropbox', { code: 'c', state, nonce: undefined }))
+      .rejects.toMatchObject({ status: 422 });
+  });
+
+  it('completeOAuth exchanges the code and creates an encrypted connection when the nonce matches', async () => {
+    process.env.DROPBOX_CLIENT_ID = 'id';
+    process.env.DROPBOX_CLIENT_SECRET = 'secret';
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ access_token: 'a', refresh_token: 'r' }) }));
+    prismaMock.mediaImportConnection.create.mockResolvedValue({ id: 'c1', provider: 'dropbox', label: 'dropbox (connected)' });
+
+    const state = enc({ userId: 'u1', provider: 'dropbox', nonce: 'n1', ts: Date.now() });
+    const out = await svc.completeOAuth('dropbox', { code: 'c', state, nonce: 'n1' });
+    expect(out.userId).toBe('u1');
+    expect(out.connection.id).toBe('c1');
+    vi.unstubAllGlobals();
+  });
+});
+
+describe('listRemoteFiles / importRemoteFiles', () => {
+  it('listRemoteFiles decrypts the owned connection and delegates to the driver', async () => {
+    prismaMock.mediaImportConnection.findFirst.mockResolvedValue({
+      id: 'c1', user_id: 'u1', provider: 's3',
+      credentials: enc({ access_key_id: 'ak', secret_access_key: 'sk', bucket: 'b' }),
+    });
+    s3SendMock.mockResolvedValueOnce({ CommonPrefixes: [], Contents: [], IsTruncated: false });
+    const out = await svc.listRemoteFiles('u1', 'c1', { folderId: '', cursor: null });
+    expect(out.items).toEqual([]);
+  });
+
+  it('listRemoteFiles 404s for a connection not owned by the caller', async () => {
+    prismaMock.mediaImportConnection.findFirst.mockResolvedValue(null);
+    await expect(svc.listRemoteFiles('u1', 'c404', {})).rejects.toMatchObject({ status: 404 });
+  });
+
+  it('importRemoteFiles downloads each file and uploads it via the normal media pipeline', async () => {
+    prismaMock.mediaImportConnection.findFirst.mockResolvedValue({
+      id: 'c1', user_id: 'u1', provider: 's3',
+      credentials: enc({ access_key_id: 'ak', secret_access_key: 'sk', bucket: 'b' }),
+    });
+    const { Readable } = await import('node:stream');
+    s3SendMock
+      .mockResolvedValueOnce({ Body: Readable.from([Buffer.from('img')]), ContentType: 'image/png' })
+      .mockRejectedValueOnce(new Error('not found'));
+    uploadMediaMock.mockResolvedValueOnce({ id: 'm1' });
+
+    const out = await svc.importRemoteFiles('u1', 'c1', { fileIds: ['a.png', 'missing.png'], folderId: 'f1' });
+    expect(out.imported).toEqual([{ id: 'm1', name: 'a.png' }]);
+    expect(out.skipped).toEqual([{ file_id: 'missing.png', reason: 'not found' }]);
+    expect(uploadMediaMock).toHaveBeenCalledWith(
+      expect.objectContaining({ mimetype: 'image/png', originalname: 'a.png' }),
+      'u1',
+      'f1',
     );
-    expect(persisted).toMatchObject({ access_token: 'fresh', refresh_token: 'rt' });
-    expect(fetchImpl.mock.calls[2][1].headers.Authorization).toBe('Bearer fresh');
   });
 
-  it('does not attempt refresh for credential providers', async () => {
-    prismaMock.mediaImportConnection.findUnique.mockResolvedValue(CONN_ROW());
-    const send = vi.fn().mockRejectedValue(Object.assign(new Error('denied'), { status: 401 }));
-    await expect(svc.browseConnection('user-1', 'conn-1', {}, { clientFactory: () => ({ send }) }))
-      .rejects.toMatchObject({ status: 401 });
-    expect(prismaMock.mediaImportConnection.update).not.toHaveBeenCalled();
-  });
-});
-
-describe('service: importFiles', () => {
-  const s3deps = (objects) => ({
-    clientFactory: () => ({
-      send: vi.fn(async (cmd) => {
-        const key = cmd.input.Key;
-        const obj = objects[key];
-        if (!obj) throw new Error(`missing ${key}`);
-        return {
-          Body: { transformToByteArray: async () => new Uint8Array(obj.buf) },
-          ContentType: obj.mime,
-        };
-      }),
-    }),
-  });
-
-  beforeEach(() => {
-    prismaMock.mediaImportConnection.findUnique.mockResolvedValue(CONN_ROW());
-  });
-
-  it('imports allowed files via uploadMedia and reports skipped with reasons', async () => {
-    uploadMediaMock.mockResolvedValue({ id: 'media-1' });
-    const deps = s3deps({
-      'cat.jpg': { buf: Buffer.from('ok'), mime: 'image/jpeg' },
-      'virus.exe': { buf: Buffer.from('mz'), mime: 'application/x-msdownload' },
-      'huge.png': { buf: Buffer.alloc(2 * 1024 * 1024), mime: 'image/png' },
-      'noext': { buf: Buffer.from('??'), mime: null },
+  it('importRemoteFiles guesses mime from filename when the driver reports none', async () => {
+    prismaMock.mediaImportConnection.findFirst.mockResolvedValue({
+      id: 'c1', user_id: 'u1', provider: 'ftp',
+      credentials: enc({ host: 'h', user: 'u', password: 'p' }),
     });
-
-    const out = await svc.importFiles('user-1', 'conn-1', {
-      files: ['cat.jpg', 'virus.exe', 'huge.png', 'noext', 'gone.jpg'],
-      folder_id: 'folder-9',
-    }, deps);
-
-    expect(out.imported).toEqual([{ id: 'media-1', name: 'cat.jpg' }]);
-    expect(uploadMediaMock).toHaveBeenCalledTimes(1);
-    const file = uploadMediaMock.mock.calls[0][0];
-    expect(file).toMatchObject({ mimetype: 'image/jpeg', originalname: 'cat.jpg' });
-    expect(uploadMediaMock.mock.calls[0][1]).toBe('user-1');
-    expect(uploadMediaMock.mock.calls[0][2]).toBe('folder-9');
-
-    expect(out.skipped).toEqual([
-      { file: 'virus.exe', reason: expect.stringMatching(/not allowed/) },
-      { file: 'huge.png', reason: expect.stringMatching(/max size/) },
-      { file: 'noext', reason: expect.stringMatching(/not allowed/) },
-      { file: 'gone.jpg', reason: expect.stringMatching(/missing gone.jpg/) },
-    ]);
-  });
-
-  it('falls back to extension MIME when the provider gives none', async () => {
-    uploadMediaMock.mockResolvedValue({ id: 'media-2' });
-    const deps = s3deps({ 'scan.pdf': { buf: Buffer.from('%PDF'), mime: null } });
-    const out = await svc.importFiles('user-1', 'conn-1', { files: ['scan.pdf'] }, deps);
-    expect(out.imported).toHaveLength(1);
-    expect(uploadMediaMock.mock.calls[0][0].mimetype).toBe('application/pdf');
-  });
-
-  it('an uploadMedia failure skips that file but continues the batch', async () => {
-    uploadMediaMock
-      .mockRejectedValueOnce(new Error('disk full'))
-      .mockResolvedValueOnce({ id: 'media-3' });
-    const deps = s3deps({
-      'a.jpg': { buf: Buffer.from('a'), mime: 'image/jpeg' },
-      'b.jpg': { buf: Buffer.from('b'), mime: 'image/jpeg' },
+    ftpMocks.downloadTo.mockImplementationOnce(async (writable) => {
+      writable.write(Buffer.from('pdf-bytes'));
+      writable.end();
     });
-    const out = await svc.importFiles('user-1', 'conn-1', { files: ['a.jpg', 'b.jpg'] }, deps);
-    expect(out.imported).toEqual([{ id: 'media-3', name: 'b.jpg' }]);
-    expect(out.skipped).toEqual([{ file: 'a.jpg', reason: 'disk full' }]);
-  });
+    uploadMediaMock.mockResolvedValueOnce({ id: 'm2' });
 
-  it('404s when the connection belongs to another user', async () => {
-    prismaMock.mediaImportConnection.findUnique.mockResolvedValue(CONN_ROW({ user_id: 'other' }));
-    await expect(svc.importFiles('user-1', 'conn-1', { files: ['x'] }, {}))
-      .rejects.toMatchObject({ status: 404 });
-  });
-});
-
-describe('service: providers list', () => {
-  it('marks OAuth providers unconfigured without env creds, credential providers always available', () => {
-    delete process.env.DROPBOX_CLIENT_ID;
-    delete process.env.DROPBOX_CLIENT_SECRET;
-    const providers = Object.fromEntries(svc.listImportProviders().map((p) => [p.provider, p]));
-    expect(providers.s3).toMatchObject({ auth: 'credentials', configured: true });
-    expect(providers.ftp).toMatchObject({ auth: 'credentials', configured: true });
-    expect(providers.dropbox).toMatchObject({ auth: 'oauth', configured: false });
+    const out = await svc.importRemoteFiles('u1', 'c1', { fileIds: ['/doc.pdf'], folderId: null });
+    expect(out.imported).toEqual([{ id: 'm2', name: 'doc.pdf' }]);
+    expect(uploadMediaMock).toHaveBeenCalledWith(
+      expect.objectContaining({ mimetype: 'application/pdf' }),
+      'u1',
+      null,
+    );
   });
 });
