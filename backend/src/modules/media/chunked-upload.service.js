@@ -3,7 +3,7 @@ import { mkdir, writeFile, readFile, readdir, rm, stat } from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import { getUploadSettings } from './settings.js';
-import { uploadMedia } from './service.js';
+import { uploadMedia, resolveUrls } from './service.js';
 
 // Parts + manifest live on local disk so an interrupted upload can resume
 // across requests (and server restarts). Not shared across replicas — a
@@ -161,5 +161,5 @@ export const completeChunkedUpload = async (uploadId, userId) => {
   const media = await uploadMedia(file, userId, manifest.folder_id, { maxBytesOverride: settings.maxChunkedSizeBytes });
 
   await rm(uploadDir(uploadId), { recursive: true, force: true });
-  return media;
+  return resolveUrls(media);
 };

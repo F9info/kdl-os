@@ -4,7 +4,7 @@ import { prisma } from '../../config/database.js';
 import { writeActivityAsync } from '../user-management/shared/activity-logger.js';
 import { enqueueVariantJob } from './media.queue.js';
 import { enqueueReindex } from './media-search.service.js';
-import { uploadMedia } from './service.js';
+import { uploadMedia, resolveUrls } from './service.js';
 
 const SHARP_SAFE_MIMES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']);
 
@@ -79,7 +79,7 @@ export const copyMedia = async (id, { folder_id } = {}, actorId) => {
 
   enqueueReindex(record.id);
   writeActivityAsync({ actor: actorId, module: 'media', action: 'copied', description: `File "${src.original_name}" duplicated` });
-  return { media: record, duplicates };
+  return { media: await resolveUrls(record), duplicates };
 };
 
 // ─── Archive flag ────────────────────────────────────────────────────────────
@@ -166,5 +166,5 @@ export const uploadFilesWithPaths = async (files, relativePaths, baseFolderId, u
     const folderId = await ensureFolderPath(baseFolderId, segments, userId, cache);
     results.push(await uploadMedia(files[i], userId, folderId));
   }
-  return results;
+  return Promise.all(results.map((m) => resolveUrls(m)));
 };

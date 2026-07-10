@@ -129,7 +129,9 @@ export const uploadMedia = async (req, res, next) => {
       return successResponse(res, { media: results }, 201);
     }
 
-    const results = await Promise.all(files.map((f) => mediaService.uploadMedia(f, req.user.id, folderId)));
+    const results = await Promise.all(
+      files.map((f) => mediaService.uploadMedia(f, req.user.id, folderId).then((m) => mediaService.resolveUrls(m))),
+    );
     return successResponse(res, { media: results }, 201);
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);
@@ -1050,7 +1052,7 @@ export const reuploadAsVersion = async (req, res, next) => {
       data: { size: buf.length, checksum },
     });
 
-    return successResponse(res, { media: updated, version: nextVersion });
+    return successResponse(res, { media: await mediaService.resolveUrls(updated), version: nextVersion });
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);
     next(err);

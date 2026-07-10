@@ -73,6 +73,10 @@ export function ScreenCapture({ folderId, onUploaded }: CaptureWidgetProps) {
         try { video.srcObject = stream } catch { /* jsdom */ }
         video.play?.()?.catch?.(() => {})
       }
+      // The browser's own "Stop sharing" bar ends the track without going
+      // through our stop() button — without this listener the UI is left
+      // stuck showing "Recording" forever even though capture has ended.
+      stream.getVideoTracks()[0]?.addEventListener('ended', () => stop())
       chunksRef.current = []
       const rec = new MediaRecorder(stream)
       rec.ondataavailable = (e: BlobEvent) => {

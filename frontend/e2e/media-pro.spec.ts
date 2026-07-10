@@ -201,8 +201,9 @@ test.describe('Media Pro', () => {
     await expect(page).toHaveURL(/\/admin\/dashboard/)
 
     await page.goto('/admin/media')
-    // Folder sidebar should be present
-    await expect(page.getByText('Folders')).toBeVisible({ timeout: 10_000 })
+    // Folder sidebar should be present (matches both the sidebar tab label and
+    // the panel heading — assert the tab button specifically)
+    await expect(page.getByRole('button', { name: 'Folders' })).toBeVisible({ timeout: 10_000 })
     await expect(page.getByText('All files')).toBeVisible()
     await expect(page.getByText('Trash')).toBeVisible()
   })
