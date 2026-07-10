@@ -79,14 +79,6 @@ export const executeProcessingJob = async (job) => {
       const { runTranscribeJob } = await import('./ai/transcribe.service.js');
       return runTranscribeJob(job.data);
     }
-    case 'ai-recognize': {
-      const { runRecognitionJob } = await import('./ai/recognition.service.js');
-      return runRecognitionJob(job.data);
-    }
-    case 'barcode-decode': {
-      const { runBarcodeDecodeJob } = await import('./barcode.service.js');
-      return runBarcodeDecodeJob(job.data);
-    }
     case 'ai-embed': {
       const { runEmbedJob } = await import('./ai/media-semantic.service.js');
       return runEmbedJob(job.data);

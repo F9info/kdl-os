@@ -28,6 +28,8 @@ import {
   type SidebarView,
 } from '@/components/media/DamExtensions'
 import { WebcamCaptureButton, ScreenCaptureButton, VoiceRecorderButton } from '@/components/media/CaptureWidgets'
+import { CloudImportDialog } from '@/components/media/CloudImportDialog'
+import { CaptureDialog } from '@/components/media/capture/CaptureDialog'
 
 // ── API helpers ──────────────────────────────────────────────────────────────
 

@@ -387,18 +387,6 @@ export const getTranscriptSchema = z.object({
   }).optional(),
 });
 
-// AI image ops (Phase D6) — bg-removal/enhance take no params, upscale takes a
-// scale factor, object-removal needs the mask painted in the editor (base64 PNG).
-export const aiImageOpSchema = z.object({
-  params: z.object({ id: z.string().min(1) }),
-  body: z.discriminatedUnion('op', [
-    z.object({ op: z.literal('bg-removal') }),
-    z.object({ op: z.literal('upscale'), scale: z.coerce.number().refine((v) => v === 2 || v === 4, 'scale must be 2 or 4').optional().default(2) }),
-    z.object({ op: z.literal('enhance') }),
-    z.object({ op: z.literal('object-removal'), mask: z.string().min(1) }),
-  ]),
-});
-
 // Conversions
 export const convertMediaSchema = z.object({
   params: z.object({ id: z.string().cuid() }),
