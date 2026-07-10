@@ -113,6 +113,9 @@ services:
       # Root .env points MEILISEARCH_HOST at localhost for host-run backends;
       # inside the compose network the service name must be used instead.
       MEILISEARCH_HOST: http://meilisearch:7700
+      # Same reasoning as MEILISEARCH_HOST above — .env's localhost:8000 only
+      # resolves for host-run backends, not from inside the compose network.
+      CHROMADB_URL: http://chromadb:8000
       # Virus scan (A6): empty default keeps scans SKIPPED; set CLAMAV_HOST=clamav
       # in .env and start the `scan` profile to scan for real.
       CLAMAV_HOST: ${CLAMAV_HOST:-}
@@ -152,6 +155,9 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://redis:6379
+      # .env's localhost:8000 only resolves for host-run services, not from
+      # inside the compose network — see backend's CHROMADB_URL for the same fix.
+      CHROMA_URL: http://chromadb:8000
     ports:
       - "5001:5000"
     depends_on:
