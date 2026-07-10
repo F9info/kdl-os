@@ -42,9 +42,18 @@ interface CreateSharePayload {
 const shareApi = {
   list: (mediaId: string) =>
     api.get(`/media/${mediaId}/shares`).then((r) => r.data.data.shares as ShareLink[]),
+  // Backend route is `POST /media/shares` with `media_id` in the body (see
+  // routes.js + createShareSchema) — there is no `/media/:id/shares` POST
+  // route. This previously 404'd on every attempt; never caught because this
+  // dialog was never rendered anywhere in the app (KDL-148).
+  // createShareLink responds via `successResponse(res, share, 201)` — the
+  // share record IS `data` (flat), not `{ share }` like the list endpoint.
   create: (mediaId: string, payload: CreateSharePayload) =>
-    api.post(`/media/${mediaId}/shares`, payload).then((r) => r.data.data.share as ShareLink),
-  revoke: (token: string) => api.delete(`/media/shares/${token}`),
+    api.post(`/media/shares`, { ...payload, media_id: mediaId }).then((r) => r.data.data as ShareLink),
+  // Backend route is `DELETE /media/shares/:id` keyed by the share record's
+  // cuid `id`, not its public `token` — passing the token failed schema
+  // validation (shareIdParamSchema expects a cuid) on every revoke attempt.
+  revoke: (id: string) => api.delete(`/media/shares/${id}`),
 }
 
 // ─── Badge helper ─────────────────────────────────────────────────────────────
@@ -83,7 +92,7 @@ function ShareRow({
   const embed = embedHtml(share.token, mediaName)
 
   const revokeMut = useMutation({
-    mutationFn: () => shareApi.revoke(share.token),
+    mutationFn: () => shareApi.revoke(share.id),
     onSuccess: () => { toast({ title: 'Share revoked' }); onRevoked() },
     onError: () => toast({ title: 'Revoke failed', variant: 'destructive' }),
   })
