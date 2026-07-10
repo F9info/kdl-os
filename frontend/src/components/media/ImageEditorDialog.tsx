@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useState, useRef, useEffect, type ReactNode } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -21,8 +21,199 @@ import {
 } from '@/components/ui/select'
 import { toast } from '@/hooks/use-toast'
 import api from '@/lib/axios'
+import { cn } from '@/lib/utils'
 import { ChevronDown, ChevronRight, X } from 'lucide-react'
 import type { ImageOp, WatermarkPosition } from '@/types/processing.types'
+
+// ─── Interactive crop tool ─────────────────────────────────────────────────
+// Draggable/resizable crop box over the real image, plus a live canvas
+// preview of the pixels that would actually be cropped.
+
+interface CropRect { x: number; y: number; w: number; h: number }
+
+const HANDLE_POS: Record<string, string> = {
+  nw: '-left-1.5 -top-1.5 cursor-nwse-resize',
+  n: 'left-1/2 -translate-x-1/2 -top-1.5 cursor-ns-resize',
+  ne: '-right-1.5 -top-1.5 cursor-nesw-resize',
+  e: '-right-1.5 top-1/2 -translate-y-1/2 cursor-ew-resize',
+  se: '-right-1.5 -bottom-1.5 cursor-nwse-resize',
+  s: 'left-1/2 -translate-x-1/2 -bottom-1.5 cursor-ns-resize',
+  sw: '-left-1.5 -bottom-1.5 cursor-nesw-resize',
+  w: '-left-1.5 top-1/2 -translate-y-1/2 cursor-ew-resize',
+}
+
+function CropTool({
+  mediaUrl,
+  onAdd,
+}: {
+  mediaUrl: string
+  onAdd: (crop: { left: number; top: number; width: number; height: number }) => void
+}) {
+  const imgRef = useRef<HTMLImageElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [natural, setNatural] = useState<{ w: number; h: number } | null>(null)
+  const [display, setDisplay] = useState<{ w: number; h: number }>({ w: 0, h: 0 })
+  const [box, setBox] = useState<CropRect | null>(null)
+  const dragState = useRef<{
+    mode: 'new' | 'move' | 'resize'
+    handle?: string
+    startX: number
+    startY: number
+    orig: CropRect
+  } | null>(null)
+
+  const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max)
+
+  const onImgLoad = () => {
+    const img = imgRef.current!
+    setNatural({ w: img.naturalWidth, h: img.naturalHeight })
+    setDisplay({ w: img.clientWidth, h: img.clientHeight })
+    setBox({
+      x: img.clientWidth * 0.25,
+      y: img.clientHeight * 0.25,
+      w: img.clientWidth * 0.5,
+      h: img.clientHeight * 0.5,
+    })
+  }
+
+  // Live preview: redraw the crop region straight from the loaded <img> — no
+  // network round-trip, updates on every drag frame.
+  useEffect(() => {
+    if (!box || !natural || display.w === 0 || !imgRef.current || !canvasRef.current) return
+    const scaleX = natural.w / display.w
+    const scaleY = natural.h / display.h
+    const sx = box.x * scaleX
+    const sy = box.y * scaleY
+    const sw = Math.max(1, box.w * scaleX)
+    const sh = Math.max(1, box.h * scaleY)
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    canvas.width = 120
+    canvas.height = Math.max(1, Math.round(120 * (sh / sw)))
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.drawImage(imgRef.current, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height)
+  }, [box, natural, display])
+
+  const onPointerDown = (e: React.PointerEvent, mode: 'new' | 'move' | 'resize', handle?: string) => {
+    e.stopPropagation()
+    const rect = containerRef.current!.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    dragState.current =
+      mode === 'new'
+        ? { mode, startX: x, startY: y, orig: { x, y, w: 0, h: 0 } }
+        : { mode, handle, startX: x, startY: y, orig: { ...box! } }
+    if (mode === 'new') setBox({ x, y, w: 0, h: 0 })
+    ;(e.target as Element).setPointerCapture(e.pointerId)
+  }
+
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!dragState.current) return
+    const rect = containerRef.current!.getBoundingClientRect()
+    const x = clamp(e.clientX - rect.left, 0, display.w)
+    const y = clamp(e.clientY - rect.top, 0, display.h)
+    const { mode, handle, startX, startY, orig } = dragState.current
+    if (mode === 'new') {
+      setBox({ x: Math.min(startX, x), y: Math.min(startY, y), w: Math.abs(x - startX), h: Math.abs(y - startY) })
+    } else if (mode === 'move') {
+      const dx = x - startX
+      const dy = y - startY
+      setBox({
+        x: clamp(orig.x + dx, 0, Math.max(0, display.w - orig.w)),
+        y: clamp(orig.y + dy, 0, Math.max(0, display.h - orig.h)),
+        w: orig.w,
+        h: orig.h,
+      })
+    } else if (mode === 'resize' && handle) {
+      let bx = orig.x
+      let by = orig.y
+      let bw = orig.w
+      let bh = orig.h
+      const dx = x - startX
+      const dy = y - startY
+      if (handle.includes('e')) bw = clamp(orig.w + dx, 10, display.w - orig.x)
+      if (handle.includes('s')) bh = clamp(orig.h + dy, 10, display.h - orig.y)
+      if (handle.includes('w')) {
+        bw = clamp(orig.w - dx, 10, orig.x + orig.w)
+        bx = orig.x + orig.w - bw
+      }
+      if (handle.includes('n')) {
+        bh = clamp(orig.h - dy, 10, orig.y + orig.h)
+        by = orig.y + orig.h - bh
+      }
+      setBox({ x: bx, y: by, w: bw, h: bh })
+    }
+  }
+
+  const onPointerUp = () => {
+    dragState.current = null
+  }
+
+  const handleAdd = () => {
+    if (!box || !natural || box.w < 4 || box.h < 4) return
+    const scaleX = natural.w / display.w
+    const scaleY = natural.h / display.h
+    onAdd({
+      left: Math.round(box.x * scaleX),
+      top: Math.round(box.y * scaleY),
+      width: Math.round(box.w * scaleX),
+      height: Math.round(box.h * scaleY),
+    })
+  }
+
+  return (
+    <div className="space-y-2">
+      <div
+        ref={containerRef}
+        className="relative select-none border rounded bg-muted/30 inline-block max-w-full touch-none"
+        onPointerDown={(e) => !box && onPointerDown(e, 'new')}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          ref={imgRef}
+          src={mediaUrl}
+          alt="Crop source"
+          className="block max-w-full max-h-64 select-none pointer-events-none"
+          onLoad={onImgLoad}
+          draggable={false}
+        />
+        {box && display.w > 0 && (
+          <div
+            className="absolute border-2 border-primary bg-primary/10 cursor-move"
+            style={{ left: box.x, top: box.y, width: box.w, height: box.h }}
+            onPointerDown={(e) => onPointerDown(e, 'move')}
+          >
+            {Object.keys(HANDLE_POS).map((h) => (
+              <div
+                key={h}
+                onPointerDown={(e) => onPointerDown(e, 'resize', h)}
+                className={cn('absolute h-2.5 w-2.5 bg-primary rounded-full', HANDLE_POS[h])}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+      {box && natural && display.w > 0 && (
+        <div className="flex items-center gap-3">
+          <div>
+            <p className="text-[10px] text-muted-foreground mb-1">Live preview</p>
+            <canvas ref={canvasRef} className="border rounded bg-muted" />
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {Math.round(box.w * (natural.w / display.w))} × {Math.round(box.h * (natural.h / display.h))}px
+          </div>
+        </div>
+      )}
+      <Button size="sm" variant="outline" onClick={handleAdd} disabled={!box || box.w < 4 || box.h < 4}>
+        Add crop
+      </Button>
+    </div>
+  )
+}
 
 interface Props {
   mediaId: string
@@ -106,12 +297,6 @@ export function ImageEditorDialog({ mediaId, mediaUrl, open, onClose, onSaved }:
   const [resizeHeight, setResizeHeight] = useState('')
   const [resizeFit, setResizeFit] = useState<ResizeFit>('cover')
   const [rotateAngle, setRotateAngle] = useState('')
-
-  // Crop
-  const [cropLeft, setCropLeft] = useState('')
-  const [cropTop, setCropTop] = useState('')
-  const [cropWidth, setCropWidth] = useState('')
-  const [cropHeight, setCropHeight] = useState('')
 
   // Adjustments
   const [brightness, setBrightness] = useState(1)
@@ -270,57 +455,10 @@ export function ImageEditorDialog({ mediaId, mediaUrl, open, onClose, onSaved }:
 
               <div className="space-y-2 pt-2 border-t">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Crop</p>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Left"
-                    value={cropLeft}
-                    onChange={(e) => setCropLeft(e.target.value)}
-                    className="h-8 text-sm"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Top"
-                    value={cropTop}
-                    onChange={(e) => setCropTop(e.target.value)}
-                    className="h-8 text-sm"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Width"
-                    value={cropWidth}
-                    onChange={(e) => setCropWidth(e.target.value)}
-                    className="h-8 text-sm"
-                  />
-                  <span className="text-muted-foreground text-xs">×</span>
-                  <Input
-                    type="number"
-                    placeholder="Height"
-                    value={cropHeight}
-                    onChange={(e) => setCropHeight(e.target.value)}
-                    className="h-8 text-sm"
-                  />
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    const left = parseInt(cropLeft, 10)
-                    const top = parseInt(cropTop, 10)
-                    const width = parseInt(cropWidth, 10)
-                    const height = parseInt(cropHeight, 10)
-                    if (isNaN(left) || isNaN(top) || isNaN(width) || isNaN(height) || width < 1 || height < 1) return
-                    addOp({ op: 'crop', left, top, width, height })
-                    setCropLeft('')
-                    setCropTop('')
-                    setCropWidth('')
-                    setCropHeight('')
-                  }}
-                >
-                  Add crop
-                </Button>
+                <CropTool
+                  mediaUrl={mediaUrl}
+                  onAdd={(crop) => addOp({ op: 'crop', left: crop.left, top: crop.top, width: crop.width, height: crop.height })}
+                />
               </div>
             </Section>
 

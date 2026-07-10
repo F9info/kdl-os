@@ -234,9 +234,9 @@ export const uploadMedia = async (file, userId, folderId, opts = {}) => {
   return record;
 };
 
-export const listMedia = async (userId, query) => {
+export const listMedia = async (userId, query, { bypass = false } = {}) => {
   const { page, limit, skip } = getPaginationParams(query);
-  const { folder_id, type, search, date_from, date_to, sort, archived } = query;
+  const { folder_id, type, search, date_from, date_to, sort, archived, scope } = query;
 
   const where = { deleted_at: null };
   // Archived files are hidden by default; ?archived=true shows only them, ?archived=all shows both.
@@ -244,18 +244,35 @@ export const listMedia = async (userId, query) => {
   else if (archived !== 'all') where.is_archived = false;
   if (folder_id !== undefined) where.folder_id = folder_id === 'null' ? null : folder_id;
   if (type) where.type = type;
+
+  const andClauses = [];
   if (search) {
-    where.OR = [
-      { original_name: { contains: search, mode: 'insensitive' } },
-      { title: { contains: search, mode: 'insensitive' } },
-      { alt_text: { contains: search, mode: 'insensitive' } },
-    ];
+    andClauses.push({
+      OR: [
+        { original_name: { contains: search, mode: 'insensitive' } },
+        { title: { contains: search, mode: 'insensitive' } },
+        { alt_text: { contains: search, mode: 'insensitive' } },
+      ],
+    });
   }
   if (date_from || date_to) {
     where.created_at = {};
     if (date_from) where.created_at.gte = new Date(date_from);
     if (date_to) where.created_at.lte = new Date(date_to);
   }
+
+  // KDL-150 — per-user / shared visibility. Super Admin (bypass) sees every
+  // file by default; everyone else sees their own files plus anything marked
+  // SHARED, narrowed further by the My/Shared tabs.
+  if (scope === 'mine') {
+    where.user_id = userId;
+  } else if (scope === 'shared') {
+    where.visibility = 'SHARED';
+    where.user_id = { not: userId };
+  } else if (!bypass) {
+    andClauses.push({ OR: [{ user_id: userId }, { visibility: 'SHARED' }] });
+  }
+  if (andClauses.length) where.AND = andClauses;
 
   const sortMap = {
     created_at_desc: { created_at: 'desc' },
@@ -290,9 +307,12 @@ const shapeDamFields = (m) => {
   };
 };
 
-export const getMediaById = async (id) => {
+export const getMediaById = async (id, userId, { bypass = false } = {}) => {
   const record = await prisma.media.findFirst({ where: { id, deleted_at: null }, include: DAM_INCLUDE });
   if (!record) return null;
+  // KDL-150 — a file only a private read for its owner must 404 for everyone
+  // else (Super Admin bypasses this, same as listMedia).
+  if (!bypass && userId && record.user_id !== userId && record.visibility !== 'SHARED') return null;
   return resolveUrls(shapeDamFields(record));
 };
 
@@ -378,27 +398,33 @@ export const deleteMedia = async (id, actorId) => {
   return record;
 };
 
-export const listTrash = async (userId) => {
+export const listTrash = async (userId, { bypass = false } = {}) => {
+  const where = { deleted_at: { not: null } };
+  // KDL-150 — trash is per-user like the main library; Super Admin sees all.
+  if (!bypass) where.user_id = userId;
   const mediaItems = await prisma.media.findMany({
-    where: { deleted_at: { not: null } },
+    where,
     orderBy: { deleted_at: 'desc' },
   });
   return Promise.all(mediaItems.map(async (m) => resolveUrls(m)));
 };
 
-export const restoreTrash = async (mediaIds, actorId) => {
-  await prisma.media.updateMany({
-    where: { id: { in: mediaIds }, deleted_at: { not: null } },
-    data: { deleted_at: null },
-  });
+export const restoreTrash = async (mediaIds, actorId, { bypass = false } = {}) => {
+  const where = { id: { in: mediaIds }, deleted_at: { not: null } };
+  // KDL-150 — non-admins can only restore their own trashed files, even if
+  // they happen to know another user's media id.
+  if (!bypass) where.user_id = actorId;
+  const { count } = await prisma.media.updateMany({ where, data: { deleted_at: null } });
   mediaIds.forEach((mid) => enqueueReindex(mid));
   mediaIds.forEach((mid) => enqueueEmbed(mid));
-  writeActivityAsync({ actor: actorId, module: 'media', action: 'restored', description: `${mediaIds.length} file(s) restored from trash` });
-  return { restored: mediaIds.length };
+  writeActivityAsync({ actor: actorId, module: 'media', action: 'restored', description: `${count} file(s) restored from trash` });
+  return { restored: count };
 };
 
-export const purgeTrash = async (actorId) => {
-  const trashed = await prisma.media.findMany({ where: { deleted_at: { not: null } } });
+export const purgeTrash = async (actorId, { bypass = false } = {}) => {
+  const where = { deleted_at: { not: null } };
+  if (!bypass) where.user_id = actorId;
+  const trashed = await prisma.media.findMany({ where });
   if (trashed.length === 0) return { purged: 0 };
 
   // Delete objects from storage
@@ -418,6 +444,28 @@ export const purgeTrash = async (actorId) => {
   const fileListStr = fileList.slice(0, 50).join(', ') + (fileList.length > 50 ? ` … +${fileList.length - 50} more` : '');
   writeActivityAsync({ actor: actorId, module: 'media', action: 'purged', description: `Permanently deleted ${trashed.length} file(s): ${fileListStr}` });
   return { purged: trashed.length };
+};
+
+// Permanently delete a single trashed file — unlike purgeTrash (which wipes
+// everything in trash at once), this only touches the one row and only if
+// it's actually soft-deleted first.
+export const purgeSingle = async (mediaId, actorId, { bypass = false } = {}) => {
+  const where = { id: mediaId, deleted_at: { not: null } };
+  if (!bypass) where.user_id = actorId;
+  const media = await prisma.media.findFirst({ where });
+  if (!media) return null;
+
+  const paths = [media.path];
+  if (media.variants) {
+    for (const p of Object.values(media.variants)) {
+      if (p) paths.push(p);
+    }
+  }
+  await storageService.deleteFiles(paths);
+  await prisma.media.delete({ where: { id: mediaId } });
+
+  writeActivityAsync({ actor: actorId, module: 'media', action: 'purged', description: `Permanently deleted file "${media.original_name}"` });
+  return { purged: 1 };
 };
 
 // ─── Usage tracking ──────────────────────────────────────────────────────────

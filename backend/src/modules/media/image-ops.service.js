@@ -119,6 +119,15 @@ const buildPipeline = async (sharpInstance, ops, media) => {
   return pipe;
 };
 
+const EXT_TO_MIME = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  avif: 'image/avif',
+  gif: 'image/gif',
+};
+
 export const runImageEdit = async ({ mediaId, ops, note, createdBy }) => {
   const { default: sharp } = await import('sharp');
   const { minio } = await import('../../config/minio.js');
@@ -143,8 +152,39 @@ export const runImageEdit = async ({ mediaId, ops, note, createdBy }) => {
   }
 
   const outputBuffer = await finalPipe.toBuffer();
-  const { version } = await createMediaVersion(mediaId, { buffer: outputBuffer, ext, note, createdBy });
 
-  logger.info(`Image edit complete for media ${mediaId} → version ${version.version}`);
+  // Snapshot the pre-edit bytes as a version (separate versioned path, same
+  // convention as createMediaVersion elsewhere) so edits are undoable.
+  const { version } = await createMediaVersion(mediaId, {
+    buffer: inputBuffer,
+    ext: getMimeExt(media.mime_type),
+    note: note ?? 'pre-edit snapshot',
+    createdBy,
+  });
+
+  // Apply the edit to the actual served file, then regenerate variants +
+  // dimensions from the new bytes — this is the part that was previously missing.
+  await minio.putObject(process.env.MINIO_BUCKET, media.path, outputBuffer);
+
+  const checksum = createHash('sha256').update(outputBuffer).digest('hex');
+  const { generateVariants } = await import('./media.worker.js');
+  const { variants, width, height } = await generateVariants(outputBuffer, media.path);
+
+  await prisma.media.update({
+    where: { id: mediaId },
+    data: {
+      size: outputBuffer.length,
+      checksum,
+      mime_type: EXT_TO_MIME[ext] ?? media.mime_type,
+      width,
+      height,
+      variants,
+    },
+  });
+
+  const { indexMediaById } = await import('./media-search.service.js');
+  await indexMediaById(mediaId).catch((e) => logger.warn(`search reindex after image edit failed: ${e.message}`));
+
+  logger.info(`Image edit applied for media ${mediaId} → version ${version.version}`);
   return { version_id: version.id, version: version.version };
 };

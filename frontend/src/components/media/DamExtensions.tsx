@@ -118,6 +118,15 @@ export function SearchFacets({ onResults, onClear, semanticEnabled }: SearchFace
     if (!q && !tagFilter && !typeFilter) { onClear(); setActive(false) }
   }, [searchQuery.data, q, tagFilter, typeFilter, active, onResults, onClear])
 
+  // Typing in the box previously did nothing until Enter was pressed, unlike
+  // the type/tag <select>s which activate immediately on change — debounce
+  // the text input so it behaves the same way.
+  useEffect(() => {
+    if (!q) return
+    const t = setTimeout(() => setActive(true), 300)
+    return () => clearTimeout(t)
+  }, [q])
+
   const handleSearch = () => {
     if (!q && !tagFilter && !typeFilter) { onClear(); setActive(false); return }
     setActive(true)

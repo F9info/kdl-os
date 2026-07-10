@@ -100,6 +100,14 @@ export default function DashboardPage() {
         .then((r) => r.data.data as { users: User[]; pagination: { total: number } }),
   })
 
+  const { data: mediaData, isLoading: mediaLoading } = useQuery({
+    queryKey: ['media', 'stats'],
+    queryFn: () =>
+      api
+        .get('/media', { params: { limit: 1, scope: 'all' } })
+        .then((r) => r.data.data as { pagination: { total: number } }),
+  })
+
   return (
     <div>
       <PageHeader title="Dashboard" />
@@ -125,9 +133,9 @@ export default function DashboardPage() {
         />
         <StatsCard
           title="Media Files"
-          value="—"
+          value={mediaData?.pagination.total ?? 0}
           icon={Image}
-          isLoading={false}
+          isLoading={mediaLoading}
         />
       </div>
 

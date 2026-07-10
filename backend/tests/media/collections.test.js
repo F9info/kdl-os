@@ -141,7 +141,7 @@ describe('favorites + recents', () => {
   it('listRecents orders by last_used_at desc and excludes never-used', async () => {
     prisma.media.findMany.mockResolvedValue([{ id: 'm2' }, { id: 'm1' }]);
     prisma.media.count.mockResolvedValue(2);
-    const result = await listRecents({});
+    const result = await listRecents('u1', {}, { bypass: true });
     expect(prisma.media.findMany).toHaveBeenCalledWith(expect.objectContaining({
       where: { deleted_at: null, last_used_at: { not: null } },
       orderBy: { last_used_at: 'desc' },

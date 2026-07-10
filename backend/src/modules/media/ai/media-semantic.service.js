@@ -85,7 +85,7 @@ export const mergeHybrid = (semanticIds, meiliHits) => {
  * mode=semantic search: Chroma top-K ∩ Meili filters (existing filter params apply).
  * Returns hits (Meili docs, semantic order) + hydrated media rows for the UI.
  */
-export const searchMediaSemantic = async (provider, params) => {
+export const searchMediaSemantic = async (provider, params, access = {}) => {
   const q = (params.q ?? '').trim();
   const semanticIds = q ? await semanticSearchIds(provider, q) : [];
   if (!semanticIds.length) {
@@ -93,8 +93,8 @@ export const searchMediaSemantic = async (provider, params) => {
   }
 
   const { meili } = await import('../../../config/meilisearch.js');
-  const { MEDIA_INDEX, buildSearchFilter } = await import('../media-search.service.js');
-  const baseFilter = buildSearchFilter(params);
+  const { MEDIA_INDEX, buildSearchFilter, buildAccessFilter } = await import('../media-search.service.js');
+  const baseFilter = [buildSearchFilter(params), buildAccessFilter(access)].filter(Boolean).join(' AND ');
   const idFilter = `id IN [${semanticIds.map((id) => `"${String(id).replace(/"/g, '\\"')}"`).join(', ')}]`;
   const result = await meili.index(MEDIA_INDEX).search('', {
     filter: baseFilter ? `${idFilter} AND ${baseFilter}` : idFilter,

@@ -59,9 +59,9 @@ const OAUTH_CALLBACK_PATH = '/admin/media/import/callback'
 
 const importApi = {
   providers: () =>
-    api.get('/media/import/providers').then((r) => r.data.data as ImportProvider[]),
+    api.get('/media/import/providers').then((r) => (r.data.data?.items ?? []) as ImportProvider[]),
   connections: () =>
-    api.get('/media/import/connections').then((r) => r.data.data as ImportConnection[]),
+    api.get('/media/import/connections').then((r) => (r.data.data?.items ?? []) as ImportConnection[]),
   createConnection: (data: { provider: 's3' | 'ftp'; label: string; credentials: Record<string, unknown> }) =>
     api.post('/media/import/connections', data).then((r) => r.data.data as ImportConnection),
   deleteConnection: (id: string) => api.delete(`/media/import/connections/${id}`),

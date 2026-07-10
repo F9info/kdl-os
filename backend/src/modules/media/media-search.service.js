@@ -12,7 +12,7 @@ const INDEX_SETTINGS = {
   ],
   filterableAttributes: [
     'id', // semantic mode (D5) intersects Chroma top-K ids with Meili filters
-    'type', 'tags', 'meta_kv', 'folder_id', 'owner_id',
+    'type', 'tags', 'meta_kv', 'folder_id', 'owner_id', 'visibility',
     'created_at_ts', 'size', 'is_archived', 'camera_make', 'camera_model', 'has_gps',
   ],
   sortableAttributes: ['created_at_ts', 'size', 'name'],
@@ -61,6 +61,7 @@ export const buildMediaDoc = async (media) => {
     folder_id: media.folder_id ?? null,
     folder_path: await folderPath(media.folder),
     type: media.type,
+    visibility: media.visibility,
     owner_id: media.user_id,
     owner_name: media.user?.name ?? media.user?.email ?? null,
     mime_type: media.mime_type,
@@ -149,11 +150,19 @@ export const buildSearchFilter = (params) => {
   return clauses.join(' AND ');
 };
 
-export const searchMedia = async (params) => {
+// KDL-150 — server-enforced visibility filter, kept separate from
+// buildSearchFilter's user-supplied params so callers can never override it.
+export const buildAccessFilter = ({ userId, bypass } = {}) => {
+  if (bypass || !userId) return '';
+  return `(owner_id = ${escapeFilterValue(userId)} OR visibility = ${escapeFilterValue('SHARED')})`;
+};
+
+export const searchMedia = async (params, access = {}) => {
   const page = Math.max(1, Number(params.page) || 1);
   const limit = Math.min(100, Math.max(1, Number(params.limit) || 24));
+  const filter = [buildSearchFilter(params), buildAccessFilter(access)].filter(Boolean).join(' AND ') || undefined;
   const result = await meili.index(MEDIA_INDEX).search(params.q ?? '', {
-    filter: buildSearchFilter(params) || undefined,
+    filter,
     facets: ['type', 'tags', 'folder_id', 'owner_id', 'camera_make'],
     limit,
     offset: (page - 1) * limit,

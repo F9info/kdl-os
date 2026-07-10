@@ -11,6 +11,32 @@ const VARIANT_SIZES = {
   large: 1600,
 };
 
+// Shared by the upload worker and the image-edit worker (image-ops.service.js) so
+// crop/resize/rotate edits regenerate the same thumb/small/medium/large set.
+export const generateVariants = async (buffer, objectPath) => {
+  const { default: sharp } = await import('sharp');
+  const variants = {};
+  const dir = objectPath.substring(0, objectPath.lastIndexOf('/'));
+  const base = objectPath.substring(objectPath.lastIndexOf('/') + 1, objectPath.lastIndexOf('.'));
+
+  for (const [name, size] of Object.entries(VARIANT_SIZES)) {
+    const variantPath = `${dir}/variants/${base}_${name}.webp`;
+    const variantBuffer = await sharp(buffer)
+      .resize(size, size, { fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 80 })
+      .toBuffer();
+
+    await uploadFile(
+      { buffer: variantBuffer, size: variantBuffer.length, mimetype: 'image/webp', originalname: `${base}_${name}.webp` },
+      variantPath
+    );
+    variants[name] = variantPath;
+  }
+
+  const meta = await sharp(buffer).metadata();
+  return { variants, width: meta.width ?? null, height: meta.height ?? null };
+};
+
 export const mediaWorker = new Worker(
   'media',
   async (job) => {
@@ -37,30 +63,11 @@ export const mediaWorker = new Worker(
     // Validate it's actually an image (sharp will throw on fake images → 422 handled upstream)
     await sharp(buffer).metadata();
 
-    const variants = {};
-    const dir = objectPath.substring(0, objectPath.lastIndexOf('/'));
-    const base = objectPath.substring(objectPath.lastIndexOf('/') + 1, objectPath.lastIndexOf('.'));
-
-    for (const [name, size] of Object.entries(VARIANT_SIZES)) {
-      const variantPath = `${dir}/variants/${base}_${name}.webp`;
-      const variantBuffer = await sharp(buffer)
-        .resize(size, size, { fit: 'inside', withoutEnlargement: true })
-        .webp({ quality: 80 })
-        .toBuffer();
-
-      await uploadFile(
-        { buffer: variantBuffer, size: variantBuffer.length, mimetype: 'image/webp', originalname: `${base}_${name}.webp` },
-        variantPath
-      );
-      variants[name] = variantPath;
-    }
-
-    // Get final dimensions from large variant or original
-    const meta = await sharp(buffer).metadata();
+    const { variants, width, height } = await generateVariants(buffer, objectPath);
 
     await prisma.media.update({
       where: { id: mediaId },
-      data: { variants, width: meta.width ?? null, height: meta.height ?? null },
+      data: { variants, width, height },
     });
 
     // Refresh search doc with final dimensions (best-effort)

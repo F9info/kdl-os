@@ -26,6 +26,8 @@ export const searchMedia = async (req, res, next) => {
       );
     }
 
+    const access = { userId: req.user.userId ?? req.user.id, bypass: req.userPermissions?.bypass };
+
     // Phase D5: mode=semantic routes through ChromaDB embeddings ∩ Meili filters
     // instead of the plain keyword search below. 501 when no embeddings provider
     // is active (same shape as requireFeature()'s gate on the other AI routes).
@@ -34,11 +36,11 @@ export const searchMedia = async (req, res, next) => {
       const provider = await getActiveProvider('embeddings');
       if (!provider) return errorResponse(res, 'AI feature "embeddings" is not configured', 501);
       const { searchMediaSemantic } = await import('./ai/media-semantic.service.js');
-      const result = await searchMediaSemantic(provider, query);
+      const result = await searchMediaSemantic(provider, query, access);
       return successResponse(res, result);
     }
 
-    const result = await mediaSearchService.searchMedia(query);
+    const result = await mediaSearchService.searchMedia(query, access);
     return successResponse(res, result);
   } catch (err) {
     next(err);
@@ -231,7 +233,8 @@ export const importUrl = async (req, res, next) => {
 
 export const listMedia = async (req, res, next) => {
   try {
-    const result = await mediaService.listMedia(req.user.userId ?? req.user.id, req.validated.query || {});
+    const userId = req.user.userId ?? req.user.id;
+    const result = await mediaService.listMedia(userId, req.validated.query || {}, { bypass: req.userPermissions?.bypass });
     return successResponse(res, result);
   } catch (err) {
     next(err);
@@ -240,7 +243,8 @@ export const listMedia = async (req, res, next) => {
 
 export const getMedia = async (req, res, next) => {
   try {
-    const media = await mediaService.getMediaById(req.validated.params.id);
+    const userId = req.user.userId ?? req.user.id;
+    const media = await mediaService.getMediaById(req.validated.params.id, userId, { bypass: req.userPermissions?.bypass });
     if (!media) return errorResponse(res, 'Media not found', 404);
     const baseUrl = req.protocol + '://' + req.get('host');
     const srcset = media.type === 'IMAGE' ? buildSrcset(media.id, baseUrl) : null;
@@ -436,7 +440,8 @@ export const touchMedia = async (req, res, next) => {
 
 export const listRecents = async (req, res, next) => {
   try {
-    const result = await collectionsService.listRecents(req.validated?.query ?? {});
+    const userId = req.user.userId ?? req.user.id;
+    const result = await collectionsService.listRecents(userId, req.validated?.query ?? {}, { bypass: req.userPermissions?.bypass });
     return successResponse(res, result);
   } catch (err) {
     next(err);
@@ -513,7 +518,7 @@ export const bulkDelete = async (req, res, next) => {
 
 export const listTrash = async (req, res, next) => {
   try {
-    const media = await mediaService.listTrash(req.user.id);
+    const media = await mediaService.listTrash(req.user.userId ?? req.user.id, { bypass: req.userPermissions?.bypass });
     return successResponse(res, { media });
   } catch (err) {
     next(err);
@@ -522,7 +527,7 @@ export const listTrash = async (req, res, next) => {
 
 export const restoreTrash = async (req, res, next) => {
   try {
-    const result = await mediaService.restoreTrash(req.validated.body.media_ids, req.user.id);
+    const result = await mediaService.restoreTrash(req.validated.body.media_ids, req.user.userId ?? req.user.id, { bypass: req.userPermissions?.bypass });
     return successResponse(res, result);
   } catch (err) {
     next(err);
@@ -531,7 +536,17 @@ export const restoreTrash = async (req, res, next) => {
 
 export const purgeTrash = async (req, res, next) => {
   try {
-    const result = await mediaService.purgeTrash(req.user.id);
+    const result = await mediaService.purgeTrash(req.user.userId ?? req.user.id, { bypass: req.userPermissions?.bypass });
+    return successResponse(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const purgeSingle = async (req, res, next) => {
+  try {
+    const result = await mediaService.purgeSingle(req.validated.params.id, req.user.userId ?? req.user.id, { bypass: req.userPermissions?.bypass });
+    if (!result) return errorResponse(res, 'File not found in trash', 404);
     return successResponse(res, result);
   } catch (err) {
     next(err);
