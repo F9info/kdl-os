@@ -207,4 +207,76 @@ test.describe('Media Pro', () => {
     await expect(page.getByText('All files')).toBeVisible()
     await expect(page.getByText('Trash')).toBeVisible()
   })
+
+  test('8. upload preview renders and crop UI works end-to-end (KDL-148)', async ({ page }) => {
+    let uploadedMediaId: string | undefined
+
+    await page.goto('/login')
+    await page.getByPlaceholder('admin@kdl.com').fill(ADMIN.email)
+    await page.getByPlaceholder('••••••••').fill(ADMIN.password)
+    await page.getByRole('button', { name: 'Sign in' }).click()
+    await expect(page).toHaveURL(/\/admin\/dashboard/)
+
+    await page.goto('/admin/media')
+    await expect(page.getByText('All files')).toBeVisible({ timeout: 10_000 })
+
+    const uploadResponse = page.waitForResponse(
+      (res) => res.url().includes('/media/upload') && res.request().method() === 'POST',
+    )
+    const fileName = `e2e-crop-${RUN}.png`
+    await page.locator('input[type="file"]').first().setInputFiles({
+      name: fileName,
+      mimeType: 'image/png',
+      buffer: TINY_PNG_BUF,
+    })
+    const uploadRes = await uploadResponse
+    const uploadJson = await uploadRes.json()
+    uploadedMediaId = uploadJson?.data?.media?.[0]?.id ?? uploadJson?.data?.media?.id
+
+    try {
+      // Grid re-fetches after upload; the new item's thumbnail must resolve to
+      // a real (non-null) URL per the resolveUrls() fix — a broken/blank
+      // <img src> would leave naturalWidth at 0.
+      const gridImg = page.locator(`img[alt="${fileName}"]`).first()
+      await expect(gridImg).toBeVisible({ timeout: 10_000 })
+      await expect(async () => {
+        const ok = await gridImg.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)
+        expect(ok).toBe(true)
+      }).toPass({ timeout: 10_000 })
+
+      // Open the detail drawer for the uploaded file (Eye icon overlay).
+      const gridItem = gridImg.locator('xpath=ancestor::div[contains(@class,"cursor-pointer")][1]')
+      await gridItem.hover()
+      await gridItem.getByRole('button').first().click()
+
+      // Detail drawer preview + link must also resolve (same fix path).
+      const drawerImg = page.locator(`img[alt="${fileName}"]`).last()
+      await expect(drawerImg).toBeVisible({ timeout: 10_000 })
+      const drawerSrc = await drawerImg.getAttribute('src')
+      expect(drawerSrc).toBeTruthy()
+
+      // Open the image editor and exercise the new crop section.
+      await page.getByRole('button', { name: 'Edit image (crop, resize, rotate…)' }).click()
+      await expect(page.getByRole('heading', { name: 'Edit Image' })).toBeVisible()
+      await page.getByPlaceholder('Left').fill('0')
+      await page.getByPlaceholder('Top').fill('0')
+      await page.getByPlaceholder('Width').last().fill('1')
+      await page.getByPlaceholder('Height').last().fill('1')
+      await page.getByRole('button', { name: 'Add crop' }).click()
+      await expect(page.getByText('crop 1×1')).toBeVisible()
+
+      const editJobResponse = page.waitForResponse(
+        (res) => res.url().includes(`/media/${uploadedMediaId}/edit`) && res.request().method() === 'POST',
+      )
+      await page.getByRole('button', { name: /^Save \(1 op\)$/ }).click()
+      const editJobRes = await editJobResponse
+      expect(editJobRes.ok()).toBe(true)
+    } finally {
+      if (uploadedMediaId) {
+        await api.delete(`${API_URL}/media/${uploadedMediaId}`, {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }).catch(() => {})
+      }
+    }
+  })
 })
