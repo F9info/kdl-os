@@ -22,8 +22,9 @@ ai-services/dist/
 *.log
 npm-debug.log*
 pnpm-debug.log*
-logs/
+/logs/
 backend/logs/
+ai-services/logs/
 
 # test / coverage
 coverage/

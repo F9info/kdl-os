@@ -5,6 +5,14 @@ vi.mock('../src/modules/user-management/shared/permission-resolver.js', () => ({
   resolvePermissions: vi.fn(),
 }));
 
+vi.mock('../src/config/database.js', () => ({
+  prisma: {
+    user: {
+      update: vi.fn(() => Promise.resolve()),
+    },
+  },
+}));
+
 process.env.JWT_SECRET = 'test-jwt-secret-min-32-characters-long';
 process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-min-32-characters';
 
