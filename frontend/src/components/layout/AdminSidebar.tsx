@@ -75,8 +75,8 @@ const GROUPS: NavGroup[] = [
     icon: Image,
     children: [
       { label: 'Library', href: '/admin/media', icon: Image, permission: 'media:view' },
-      { label: 'AI Providers', href: '/admin/media/ai', icon: Sparkles, permission: 'media:edit' },
-      { label: 'Cloud Imports', href: '/admin/media/import', icon: CloudUpload, permission: 'media:edit' },
+      { label: 'AI Providers', href: '/admin/media/ai', icon: Sparkles, permission: 'media:ai-providers' },
+      { label: 'Cloud Imports', href: '/admin/media/import', icon: CloudUpload, permission: 'media:cloud-import' },
     ],
   },
   {

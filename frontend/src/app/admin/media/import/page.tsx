@@ -293,7 +293,7 @@ function MediaImportContent() {
   const statusFor = (p: ImportProvider) => providers.find((s) => s.provider === p)
 
   return (
-    <PermissionGuard permission="media:edit">
+    <PermissionGuard permission="media:cloud-import">
       <div>
         <PageHeader title="Cloud Imports" />
 

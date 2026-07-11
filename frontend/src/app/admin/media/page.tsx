@@ -206,6 +206,8 @@ function MediaItemGrid({
   onPreview: (item: Media) => void
   trashActions?: TrashRowActions
 }) {
+  const { can } = usePermissions()
+  const canPreview = can('media:preview')
   const thumb = item.variants?.thumb ?? (item.mime_type.startsWith('image/') ? item.url : null)
   return (
     <div
@@ -214,7 +216,7 @@ function MediaItemGrid({
         selected && 'border-primary ring-2 ring-primary/30'
       )}
       onClick={(e) => onToggle(item.id, e)}
-      onDoubleClick={(e) => { e.stopPropagation(); onPreview(item) }}
+      onDoubleClick={(e) => { e.stopPropagation(); if (canPreview) onPreview(item) }}
     >
       <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden">
         {thumb ? (
@@ -240,33 +242,39 @@ function MediaItemGrid({
       <div className="absolute top-1 right-1 flex gap-0.5">
         {trashActions ? (
           <>
-            <button
-              type="button"
-              title="Restore"
-              className="p-0.5 bg-background/80 rounded hover:bg-background"
-              onClick={(e) => { e.stopPropagation(); trashActions.onRestore(item.id) }}
-            >
-              <RefreshCcw className="h-3 w-3" />
-            </button>
-            <button
-              type="button"
-              title="Delete forever"
-              className="p-0.5 bg-background/80 rounded hover:bg-background hover:text-destructive"
-              onClick={(e) => { e.stopPropagation(); trashActions.onDeleteForever(item.id) }}
-            >
-              <Trash2 className="h-3 w-3" />
-            </button>
+            {can('media:restore') && (
+              <button
+                type="button"
+                title="Restore"
+                className="p-0.5 bg-background/80 rounded hover:bg-background"
+                onClick={(e) => { e.stopPropagation(); trashActions.onRestore(item.id) }}
+              >
+                <RefreshCcw className="h-3 w-3" />
+              </button>
+            )}
+            {can('media:purge') && (
+              <button
+                type="button"
+                title="Delete forever"
+                className="p-0.5 bg-background/80 rounded hover:bg-background hover:text-destructive"
+                onClick={(e) => { e.stopPropagation(); trashActions.onDeleteForever(item.id) }}
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            )}
           </>
         ) : (
           <>
-            <button
-              type="button"
-              title="Preview"
-              className="p-0.5 bg-background/80 rounded hover:bg-background"
-              onClick={(e) => { e.stopPropagation(); onPreview(item) }}
-            >
-              <Maximize2 className="h-3 w-3" />
-            </button>
+            {canPreview && (
+              <button
+                type="button"
+                title="Preview"
+                className="p-0.5 bg-background/80 rounded hover:bg-background"
+                onClick={(e) => { e.stopPropagation(); onPreview(item) }}
+              >
+                <Maximize2 className="h-3 w-3" />
+              </button>
+            )}
             <button
               type="button"
               title="Details"
@@ -297,6 +305,8 @@ function MediaItemList({
   onPreview: (item: Media) => void
   trashActions?: TrashRowActions
 }) {
+  const { can } = usePermissions()
+  const canPreview = can('media:preview')
   const thumb = item.variants?.thumb ?? (item.mime_type.startsWith('image/') ? item.url : null)
   return (
     <div
@@ -305,7 +315,7 @@ function MediaItemList({
         selected && 'bg-accent'
       )}
       onClick={(e) => onToggle(item.id, e)}
-      onDoubleClick={(e) => { e.stopPropagation(); onPreview(item) }}
+      onDoubleClick={(e) => { e.stopPropagation(); if (canPreview) onPreview(item) }}
     >
       <input
         type="checkbox"
@@ -329,33 +339,39 @@ function MediaItemList({
       <span className="text-xs text-muted-foreground">{formatDate(item.created_at)}</span>
       {trashActions ? (
         <>
-          <button
-            type="button"
-            title="Restore"
-            onClick={(e) => { e.stopPropagation(); trashActions.onRestore(item.id) }}
-            className="p-1 hover:text-foreground text-muted-foreground"
-          >
-            <RefreshCcw className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            title="Delete forever"
-            onClick={(e) => { e.stopPropagation(); trashActions.onDeleteForever(item.id) }}
-            className="p-1 hover:text-destructive text-muted-foreground"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+          {can('media:restore') && (
+            <button
+              type="button"
+              title="Restore"
+              onClick={(e) => { e.stopPropagation(); trashActions.onRestore(item.id) }}
+              className="p-1 hover:text-foreground text-muted-foreground"
+            >
+              <RefreshCcw className="h-4 w-4" />
+            </button>
+          )}
+          {can('media:purge') && (
+            <button
+              type="button"
+              title="Delete forever"
+              onClick={(e) => { e.stopPropagation(); trashActions.onDeleteForever(item.id) }}
+              className="p-1 hover:text-destructive text-muted-foreground"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
         </>
       ) : (
         <>
-          <button
-            type="button"
-            title="Preview"
-            onClick={(e) => { e.stopPropagation(); onPreview(item) }}
-            className="p-1 hover:text-foreground text-muted-foreground"
-          >
-            <Maximize2 className="h-4 w-4" />
-          </button>
+          {canPreview && (
+            <button
+              type="button"
+              title="Preview"
+              onClick={(e) => { e.stopPropagation(); onPreview(item) }}
+              className="p-1 hover:text-foreground text-muted-foreground"
+            >
+              <Maximize2 className="h-4 w-4" />
+            </button>
+          )}
           <button
             type="button"
             title="Details"
@@ -605,6 +621,7 @@ function DetailDrawer({
   onDeleted: () => void
   onPreview: () => void
 }) {
+  const { can } = usePermissions()
   const queryClient = useQueryClient()
   const [title, setTitle] = useState(item.title ?? '')
   const [altText, setAltText] = useState(item.alt_text ?? '')
@@ -679,7 +696,7 @@ function DetailDrawer({
         </button>
       </div>
 
-      {item.url && (
+      {item.url && can('media:preview') && (
         <button type="button" onClick={onPreview} className="w-full block" title="Open full preview">
           {item.mime_type.startsWith('image/') ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -692,12 +709,12 @@ function DetailDrawer({
         </button>
       )}
 
-      {isImage && item.url && (
+      {isImage && item.url && can('media:edit-image') && (
         <Button size="sm" variant="outline" className="w-full" onClick={() => setEditorOpen(true)}>
           Edit image (crop, resize, rotate…)
         </Button>
       )}
-      {isImage && item.url && (
+      {isImage && item.url && can('media:edit-image') && (
         <ImageEditorDialog
           mediaId={item.id}
           mediaUrl={item.url}
@@ -709,66 +726,74 @@ function DetailDrawer({
 
       {/* KDL-148: this button + dialog existed but were never rendered anywhere
           in the app, so there was no way to create or copy a share link. */}
-      <Button size="sm" variant="outline" className="w-full" onClick={() => setShareOpen(true)}>
-        Share / copy link
-      </Button>
-      <ShareDialog
-        open={shareOpen}
-        onClose={() => setShareOpen(false)}
-        mediaId={item.id}
-        mediaName={item.original_name}
-      />
+      {can('media:share-link') && (
+        <>
+          <Button size="sm" variant="outline" className="w-full" onClick={() => setShareOpen(true)}>
+            Share / copy link
+          </Button>
+          <ShareDialog
+            open={shareOpen}
+            onClose={() => setShareOpen(false)}
+            mediaId={item.id}
+            mediaName={item.original_name}
+          />
+        </>
+      )}
 
-      <div className="flex items-center justify-between rounded border px-2 py-1.5">
-        <span className="text-xs text-muted-foreground">
-          {item.visibility === 'SHARED' ? 'Shared with all users' : 'Private (only you)'}
-        </span>
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-7 px-2 text-xs"
-          onClick={() => visibilityMutation.mutate(item.visibility === 'SHARED' ? 'PRIVATE' : 'SHARED')}
-          disabled={visibilityMutation.isPending}
-        >
-          Make {item.visibility === 'SHARED' ? 'private' : 'shared'}
-        </Button>
-      </div>
+      {can('media:visibility-toggle') && (
+        <div className="flex items-center justify-between rounded border px-2 py-1.5">
+          <span className="text-xs text-muted-foreground">
+            {item.visibility === 'SHARED' ? 'Shared with all users' : 'Private (only you)'}
+          </span>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 px-2 text-xs"
+            onClick={() => visibilityMutation.mutate(item.visibility === 'SHARED' ? 'PRIVATE' : 'SHARED')}
+            disabled={visibilityMutation.isPending}
+          >
+            Make {item.visibility === 'SHARED' ? 'private' : 'shared'}
+          </Button>
+        </div>
+      )}
 
-      <div className="space-y-2">
-        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Metadata</p>
-        <label className="block text-sm">
-          Title
-          <Input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="mt-1 h-8 text-sm"
-          />
-        </label>
-        <label className="block text-sm">
-          Alt text
-          <Input
-            value={altText}
-            onChange={(e) => setAltText(e.target.value)}
-            className="mt-1 h-8 text-sm"
-          />
-        </label>
-        <label className="block text-sm">
-          Caption
-          <Input
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
-            className="mt-1 h-8 text-sm"
-          />
-        </label>
-        <Button
-          size="sm"
-          className="w-full"
-          onClick={() => updateMutation.mutate()}
-          disabled={updateMutation.isPending}
-        >
-          Save metadata
-        </Button>
-      </div>
+      {can('media:metadata-edit') && (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Metadata</p>
+          <label className="block text-sm">
+            Title
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="mt-1 h-8 text-sm"
+            />
+          </label>
+          <label className="block text-sm">
+            Alt text
+            <Input
+              value={altText}
+              onChange={(e) => setAltText(e.target.value)}
+              className="mt-1 h-8 text-sm"
+            />
+          </label>
+          <label className="block text-sm">
+            Caption
+            <Input
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+              className="mt-1 h-8 text-sm"
+            />
+          </label>
+          <Button
+            size="sm"
+            className="w-full"
+            onClick={() => updateMutation.mutate()}
+            disabled={updateMutation.isPending}
+          >
+            Save metadata
+          </Button>
+        </div>
+      )}
 
       <div className="space-y-1 text-xs text-muted-foreground">
         <p>File: <span className="text-foreground">{item.original_name}</span></p>
@@ -800,33 +825,39 @@ function DetailDrawer({
       )}
 
       {/* A8: tag chips */}
-      <div className="space-y-1">
-        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Tags</p>
-        <MediaTagChips
-          mediaId={item.id}
-          tags={item.tags ?? []}
-          onChange={() => queryClient.invalidateQueries({ queryKey: ['media'] })}
-        />
-      </div>
+      {can('media:tags') && (
+        <div className="space-y-1">
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Tags</p>
+          <MediaTagChips
+            mediaId={item.id}
+            tags={item.tags ?? []}
+            onChange={() => queryClient.invalidateQueries({ queryKey: ['media'] })}
+          />
+        </div>
+      )}
 
       {/* A8: custom meta fields */}
-      <CustomFieldEditor
-        mediaId={item.id}
-        meta={item.meta ?? {}}
-        onChange={() => queryClient.invalidateQueries({ queryKey: ['media'] })}
-      />
+      {can('media:custom-fields') && (
+        <CustomFieldEditor
+          mediaId={item.id}
+          meta={item.meta ?? {}}
+          onChange={() => queryClient.invalidateQueries({ queryKey: ['media'] })}
+        />
+      )}
 
       {/* A8: favorite toggle */}
-      <div className="flex items-center gap-2">
-        <FavoriteButton
-          mediaId={item.id}
-          isFav={isFav}
-          onChange={() => {
-            queryClient.invalidateQueries({ queryKey: ['media-favorites'] })
-          }}
-        />
-        <span className="text-xs text-muted-foreground">Favorite</span>
-      </div>
+      {can('media:favorites') && (
+        <div className="flex items-center gap-2">
+          <FavoriteButton
+            mediaId={item.id}
+            isFav={isFav}
+            onChange={() => {
+              queryClient.invalidateQueries({ queryKey: ['media-favorites'] })
+            }}
+          />
+          <span className="text-xs text-muted-foreground">Favorite</span>
+        </div>
+      )}
 
       {showAnalyze && <AiSuggestionsPanel item={item} />}
       {showTranscribe && <TranscriptPanel item={item} />}
@@ -843,24 +874,28 @@ function DetailDrawer({
         </div>
       )}
 
-      <Button
-        variant="destructive"
-        size="sm"
-        className="w-full"
-        onClick={() => setConfirmDelete(true)}
-        disabled={deleteMutation.isPending || (usages?.length ?? 0) > 0}
-      >
-        {(usages?.length ?? 0) > 0 ? 'In use — cannot delete' : 'Delete file'}
-      </Button>
+      {can('media:soft-delete') && (
+        <>
+          <Button
+            variant="destructive"
+            size="sm"
+            className="w-full"
+            onClick={() => setConfirmDelete(true)}
+            disabled={deleteMutation.isPending || (usages?.length ?? 0) > 0}
+          >
+            {(usages?.length ?? 0) > 0 ? 'In use — cannot delete' : 'Delete file'}
+          </Button>
 
-      <ConfirmDialog
-        open={confirmDelete}
-        onClose={() => setConfirmDelete(false)}
-        onConfirm={() => deleteMutation.mutate()}
-        title="Delete file?"
-        description="This will move the file to trash."
-        isLoading={deleteMutation.isPending}
-      />
+          <ConfirmDialog
+            open={confirmDelete}
+            onClose={() => setConfirmDelete(false)}
+            onConfirm={() => deleteMutation.mutate()}
+            title="Delete file?"
+            description="This will move the file to trash."
+            isLoading={deleteMutation.isPending}
+          />
+        </>
+      )}
     </div>
   )
 }
@@ -958,7 +993,7 @@ export default function MediaPage() {
       if (small.length) uploadMutation.mutate(small)
       if (large.length) { setChunkedFiles(large); setChunkedOpen(true) }
     }, []), // eslint-disable-line react-hooks/exhaustive-deps
-    can('media:add')
+    can('media:upload')
   )
 
   // A8: open detail by id — search hits / collection docs lack url+variants, so
@@ -1118,13 +1153,22 @@ export default function MediaPage() {
       <div className="flex h-[calc(100vh-64px)] overflow-hidden">
         {/* Sidebar */}
         <aside className="w-56 flex-shrink-0 border-r flex flex-col bg-background">
-          <SidebarNav current={sidebarView} onChange={(v) => { setSidebarView(v); if (v !== 'collections') setSelectedCollection(null) }} />
+          <SidebarNav
+            current={sidebarView}
+            onChange={(v) => { setSidebarView(v); if (v !== 'collections') setSelectedCollection(null) }}
+            visible={[
+              'folders',
+              ...(can('media:collections') ? (['collections'] as const) : []),
+              ...(can('media:favorites') ? (['favorites'] as const) : []),
+              'recents',
+            ]}
+          />
 
           {sidebarView === 'folders' && (
             <>
               <div className="p-2 border-b flex items-center justify-between">
                 <span className="text-sm font-medium">Folders</span>
-                {can('media:add') && (
+                {can('media:folders') && (
                   <button
                     type="button"
                     title="New folder"
@@ -1160,22 +1204,24 @@ export default function MediaPage() {
                   />
                 ))}
               </div>
-              <div className="border-t p-1">
-                <button
-                  type="button"
-                  className={cn(
-                    'flex items-center gap-2 rounded px-2 py-1 text-sm w-full hover:bg-accent',
-                    view === 'trash' && 'bg-accent font-medium'
-                  )}
-                  onClick={() => { setView('trash'); setSelected(new Set()) }}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Trash
-                  {trashCount > 0 && (
-                    <Badge variant="secondary" className="ml-auto text-xs px-1">{trashCount}</Badge>
-                  )}
-                </button>
-              </div>
+              {can('media:trash-view') && (
+                <div className="border-t p-1">
+                  <button
+                    type="button"
+                    className={cn(
+                      'flex items-center gap-2 rounded px-2 py-1 text-sm w-full hover:bg-accent',
+                      view === 'trash' && 'bg-accent font-medium'
+                    )}
+                    onClick={() => { setView('trash'); setSelected(new Set()) }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Trash
+                    {trashCount > 0 && (
+                      <Badge variant="secondary" className="ml-auto text-xs px-1">{trashCount}</Badge>
+                    )}
+                  </button>
+                </div>
+              )}
             </>
           )}
 
@@ -1200,7 +1246,7 @@ export default function MediaPage() {
           <div className="p-3 border-b flex items-center gap-2 flex-wrap bg-background">
             {view === 'files' && (
               <>
-                {can('media:add') && (
+                {can('media:upload') && (
                   <>
                     <UploadZone
                       onFiles={(files) => {
@@ -1212,15 +1258,31 @@ export default function MediaPage() {
                       disabled={uploadMutation.isPending}
                     />
                     <FolderUploadButton onFiles={handleFolderUpload} disabled={uploadMutation.isPending} />
-                    {/* D8: cloud import + capture entry points */}
-                    <button
-                      type="button"
-                      onClick={() => setCloudImportOpen(true)}
-                      className="flex items-center gap-1 px-3 h-9 text-sm rounded border hover:bg-accent transition-colors"
-                      title="Import from cloud"
-                    >
-                      <Cloud className="h-4 w-4" /> Cloud
-                    </button>
+                  </>
+                )}
+                {can('media:folders') && (
+                  <button
+                    type="button"
+                    onClick={() => setCreateFolderOpen(true)}
+                    className="flex items-center gap-1 px-3 h-9 text-sm rounded border hover:bg-accent transition-colors"
+                    title="New folder"
+                  >
+                    <Folder className="h-4 w-4" /> Folder
+                  </button>
+                )}
+                {/* D8: cloud import + capture entry points */}
+                {can('media:cloud-import') && (
+                  <button
+                    type="button"
+                    onClick={() => setCloudImportOpen(true)}
+                    className="flex items-center gap-1 px-3 h-9 text-sm rounded border hover:bg-accent transition-colors"
+                    title="Import from cloud"
+                  >
+                    <Cloud className="h-4 w-4" /> Cloud
+                  </button>
+                )}
+                {can('media:capture') && (
+                  <>
                     <button
                       type="button"
                       onClick={() => setCaptureOpen(true)}
@@ -1265,19 +1327,19 @@ export default function MediaPage() {
                 <span className="text-sm text-muted-foreground">{selected.size} selected</span>
                 {view === 'files' ? (
                   <>
-                    {can('media:edit') && (
+                    {can('media:folders') && (
                       <Button size="sm" variant="outline" onClick={() => setMoveOpen(true)}>
                         <Move className="h-3.5 w-3.5 mr-1" />Move
                       </Button>
                     )}
-                    {can('media:delete') && (
+                    {can('media:soft-delete') && (
                       <Button size="sm" variant="destructive" onClick={() => setConfirmBulkDelete(true)}>
                         <Trash2 className="h-3.5 w-3.5 mr-1" />Delete
                       </Button>
                     )}
                   </>
                 ) : (
-                  can('media:delete') && (
+                  can('media:restore') && (
                     <Button
                       size="sm"
                       variant="outline"
@@ -1299,7 +1361,7 @@ export default function MediaPage() {
             )}
 
             <div className="ml-auto flex items-center gap-1">
-              {view === 'trash' && can('media:delete') && (
+              {view === 'trash' && can('media:purge') && (
                 <Button
                   size="sm"
                   variant="destructive"

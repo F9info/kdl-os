@@ -5,6 +5,7 @@ import { prisma } from '../../config/database.js';
 import { loadedManifests } from '../../shared/modules/module-loader.js';
 import { invalidateModuleCache } from '../../middleware/module-gate.js';
 import { writeActivityAsync } from '../user-management/shared/activity-logger.js';
+import { resolvePermissionEntry, permissionModuleLabel } from '../../shared/modules/permission-actions.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MODULES_DIR = join(__dirname, '..');
@@ -19,13 +20,9 @@ function checkEnvVars(manifest) {
 }
 
 async function registerPermissions(manifest, tx = prisma) {
-  const ACTIONS = ['view', 'add', 'edit', 'delete', 'publish'];
-  for (const name of manifest.permissions ?? []) {
-    const label = name
-      .split(/[-_]/)
-      .filter((w) => w.length > 0)
-      .map((w) => w[0].toUpperCase() + w.slice(1))
-      .join(' ');
+  for (const entry of manifest.permissions ?? []) {
+    const { name, actions } = resolvePermissionEntry(entry);
+    const label = permissionModuleLabel(name);
 
     const pm = await tx.permissionModule.upsert({
       where: { name },
@@ -33,7 +30,7 @@ async function registerPermissions(manifest, tx = prisma) {
       update: {},
     });
 
-    for (const action of ACTIONS) {
+    for (const action of actions) {
       await tx.permission.upsert({
         where: { module_id_action: { module_id: pm.id, action } },
         create: { module_id: pm.id, action },
@@ -44,7 +41,8 @@ async function registerPermissions(manifest, tx = prisma) {
 }
 
 async function deregisterPermissions(manifest, tx = prisma) {
-  for (const name of manifest.permissions ?? []) {
+  for (const entry of manifest.permissions ?? []) {
+    const { name } = resolvePermissionEntry(entry);
     const pm = await tx.permissionModule.findUnique({ where: { name } });
     if (!pm) continue;
 

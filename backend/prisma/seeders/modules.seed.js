@@ -3,6 +3,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
 import { manifestSchema } from '../../src/shared/modules/manifest-schema.js';
+import { resolvePermissionEntry, permissionModuleLabel } from '../../src/shared/modules/permission-actions.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MODULES_DIR = join(__dirname, '../../src/modules');
@@ -15,8 +16,6 @@ export async function seedCoreModules(prisma) {
     console.log('modules.seed: modules directory not found, skipping');
     return;
   }
-
-  const ACTIONS = ['view', 'add', 'edit', 'delete', 'publish'];
 
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
@@ -62,12 +61,11 @@ export async function seedCoreModules(prisma) {
       },
     });
 
-    // Register permission modules for this core module (idempotent)
-    for (const name of manifest.permissions ?? []) {
-      const label = name
-        .split(/[-_]/)
-        .map((w) => w[0].toUpperCase() + w.slice(1))
-        .join(' ');
+    // Register permission modules for this core module (idempotent) — action
+    // lists come straight from the manifest, never hardcoded here.
+    for (const rawEntry of manifest.permissions ?? []) {
+      const { name, actions } = resolvePermissionEntry(rawEntry);
+      const label = permissionModuleLabel(name);
 
       const pm = await prisma.permissionModule.upsert({
         where: { name },
@@ -75,7 +73,7 @@ export async function seedCoreModules(prisma) {
         update: {},
       });
 
-      for (const action of ACTIONS) {
+      for (const action of actions) {
         await prisma.permission.upsert({
           where: { module_id_action: { module_id: pm.id, action } },
           create: { module_id: pm.id, action },

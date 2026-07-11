@@ -67,160 +67,167 @@ const router = Router();
 
 router.use(authenticate);
 
+// KDL-MEDIA-12: every route below is guarded by its own per-feature action
+// (not the generic view/add/edit/delete) so a role can be granted exactly
+// one feature — see module.json's permissions array for the full action list.
+
 // Folders
 router.get('/folders', requirePermission('media', 'view'), listFolders);
-router.post('/folders', requirePermission('media', 'add'), validate(createFolderSchema), createFolder);
-router.patch('/folders/:id', requirePermission('media', 'edit'), validate(updateFolderSchema), updateFolder);
-router.delete('/folders/:id', requirePermission('media', 'delete'), validate(deleteFolderSchema), deleteFolder);
+router.post('/folders', requirePermission('media', 'folders'), validate(createFolderSchema), createFolder);
+router.patch('/folders/:id', requirePermission('media', 'folders'), validate(updateFolderSchema), updateFolder);
+router.delete('/folders/:id', requirePermission('media', 'folders'), validate(deleteFolderSchema), deleteFolder);
 
 // Move files between folders
-router.post('/move', requirePermission('media', 'edit'), validate(moveMediaSchema), moveMedia);
+router.post('/move', requirePermission('media', 'folders'), validate(moveMediaSchema), moveMedia);
 
 // Bulk ops
-router.post('/bulk-delete', requirePermission('media', 'delete'), validate(bulkDeleteSchema), bulkDelete);
+router.post('/bulk-delete', requirePermission('media', 'soft-delete'), validate(bulkDeleteSchema), bulkDelete);
 
 // Trash
-router.get('/trash', requirePermission('media', 'delete'), listTrash);
-router.post('/trash/restore', requirePermission('media', 'delete'), validate(restoreTrashSchema), restoreTrash);
-router.delete('/trash/purge', requirePermission('media', 'delete'), purgeTrash);
+router.get('/trash', requirePermission('media', 'trash-view'), listTrash);
+router.post('/trash/restore', requirePermission('media', 'restore'), validate(restoreTrashSchema), restoreTrash);
+router.delete('/trash/purge', requirePermission('media', 'purge'), purgeTrash);
 // Single-file permanent delete — literal routes above must stay registered first
 // so 'purge'/'restore' are never matched as an :id.
-router.delete('/trash/:id', requirePermission('media', 'delete'), validate(mediaIdParamSchema), purgeSingle);
+router.delete('/trash/:id', requirePermission('media', 'purge'), validate(mediaIdParamSchema), purgeSingle);
 
 // Upload (multi-file)
-router.post('/upload', requirePermission('media', 'add'), upload.array('files', 20), uploadMedia);
+router.post('/upload', requirePermission('media', 'upload'), upload.array('files', 20), uploadMedia);
 
 // Backward-compat single-file upload alias
-router.post('/upload/single', requirePermission('media', 'add'), upload.single('file'), uploadMedia);
+router.post('/upload/single', requirePermission('media', 'upload'), upload.single('file'), uploadMedia);
 
 // Chunked + resumable upload (50MB+ files)
-router.post('/upload/chunked/init', requirePermission('media', 'add'), validate(chunkInitSchema), chunkInit);
-router.put('/upload/chunked/:uploadId/part', requirePermission('media', 'add'), upload.single('chunk'), validate(chunkPartSchema), chunkPart);
-router.get('/upload/chunked/:uploadId/status', requirePermission('media', 'add'), validate(chunkSessionSchema), chunkStatus);
-router.post('/upload/chunked/:uploadId/complete', requirePermission('media', 'add'), validate(chunkSessionSchema), chunkComplete);
+router.post('/upload/chunked/init', requirePermission('media', 'upload'), validate(chunkInitSchema), chunkInit);
+router.put('/upload/chunked/:uploadId/part', requirePermission('media', 'upload'), upload.single('chunk'), validate(chunkPartSchema), chunkPart);
+router.get('/upload/chunked/:uploadId/status', requirePermission('media', 'upload'), validate(chunkSessionSchema), chunkStatus);
+router.post('/upload/chunked/:uploadId/complete', requirePermission('media', 'upload'), validate(chunkSessionSchema), chunkComplete);
 
-// Imports
-router.post('/import/zip', requirePermission('media', 'add'), upload.single('file'), validate(zipImportSchema), importZip);
-router.post('/import/url', requirePermission('media', 'add'), validate(urlImportSchema), importUrl);
+// Imports (zip/url — bulk uploads, distinct from the cloud-provider import feature below)
+router.post('/import/zip', requirePermission('media', 'upload'), upload.single('file'), validate(zipImportSchema), importZip);
+router.post('/import/url', requirePermission('media', 'upload'), validate(urlImportSchema), importUrl);
 
 // Archive flag (bulk)
-router.post('/archive', requirePermission('media', 'edit'), validate(archiveMediaSchema), archiveMedia);
+router.post('/archive', requirePermission('media', 'metadata-edit'), validate(archiveMediaSchema), archiveMedia);
 
 // Usage tracking (test + integration endpoints)
-router.post('/usage/register', requirePermission('media', 'edit'), validate(registerUsageSchema), registerUsage);
-router.post('/usage/release', requirePermission('media', 'edit'), validate(releaseUsageSchema), releaseUsage);
+router.post('/usage/register', requirePermission('media', 'metadata-edit'), validate(registerUsageSchema), registerUsage);
+router.post('/usage/release', requirePermission('media', 'metadata-edit'), validate(releaseUsageSchema), releaseUsage);
 
 // Search (MeiliSearch-backed, faceted)
 router.get('/search', requirePermission('media', 'view'), validate(searchMediaSchema), searchMedia);
-router.post('/search/reindex', requirePermission('media', 'edit'), reindexMedia);
+router.post('/search/reindex', requirePermission('media', 'metadata-edit'), reindexMedia);
 
 // Tags
 router.get('/tags', requirePermission('media', 'view'), listTags);
-router.post('/tags', requirePermission('media', 'edit'), validate(createTagSchema), createTag);
-router.patch('/tags/:id', requirePermission('media', 'edit'), validate(updateTagSchema), renameTag);
-router.delete('/tags/:id', requirePermission('media', 'edit'), validate(deleteTagSchema), deleteTag);
-router.post('/tag', requirePermission('media', 'edit'), validate(tagMediaSchema), tagMedia);
-router.post('/untag', requirePermission('media', 'edit'), validate(tagMediaSchema), untagMedia);
+router.post('/tags', requirePermission('media', 'tags'), validate(createTagSchema), createTag);
+router.patch('/tags/:id', requirePermission('media', 'tags'), validate(updateTagSchema), renameTag);
+router.delete('/tags/:id', requirePermission('media', 'tags'), validate(deleteTagSchema), deleteTag);
+router.post('/tag', requirePermission('media', 'tags'), validate(tagMediaSchema), tagMedia);
+router.post('/untag', requirePermission('media', 'tags'), validate(tagMediaSchema), untagMedia);
 
 // Collections (smart + static)
 router.get('/collections', requirePermission('media', 'view'), listCollections);
-router.post('/collections', requirePermission('media', 'edit'), validate(createCollectionSchema), createCollection);
+router.post('/collections', requirePermission('media', 'collections'), validate(createCollectionSchema), createCollection);
 router.get('/collections/:id', requirePermission('media', 'view'), validate(collectionContentsSchema), getCollectionContents);
-router.patch('/collections/:id', requirePermission('media', 'edit'), validate(updateCollectionSchema), updateCollection);
-router.delete('/collections/:id', requirePermission('media', 'edit'), validate(collectionIdSchema), deleteCollection);
-router.post('/collections/:id/items', requirePermission('media', 'edit'), validate(collectionItemsSchema), addCollectionItems);
-router.delete('/collections/:id/items', requirePermission('media', 'edit'), validate(collectionItemsSchema), removeCollectionItems);
+router.patch('/collections/:id', requirePermission('media', 'collections'), validate(updateCollectionSchema), updateCollection);
+router.delete('/collections/:id', requirePermission('media', 'collections'), validate(collectionIdSchema), deleteCollection);
+router.post('/collections/:id/items', requirePermission('media', 'collections'), validate(collectionItemsSchema), addCollectionItems);
+router.delete('/collections/:id/items', requirePermission('media', 'collections'), validate(collectionItemsSchema), removeCollectionItems);
 
 // Favorites + recents
-router.get('/favorites', requirePermission('media', 'view'), validate(pagedListSchema), listFavorites);
+router.get('/favorites', requirePermission('media', 'favorites'), validate(pagedListSchema), listFavorites);
 router.get('/recent', requirePermission('media', 'view'), validate(pagedListSchema), listRecents);
 
-// Custom meta fields (admin)
+// Custom meta fields (admin-defined field schema)
 router.get('/meta-fields', requirePermission('media', 'view'), listMetaFields);
-router.post('/meta-fields', requirePermission('media', 'edit'), validate(createMetaFieldSchema), createMetaField);
-router.patch('/meta-fields/:id', requirePermission('media', 'edit'), validate(updateMetaFieldSchema), updateMetaField);
-router.delete('/meta-fields/:id', requirePermission('media', 'edit'), validate(deleteMetaFieldSchema), deleteMetaField);
+router.post('/meta-fields', requirePermission('media', 'custom-fields'), validate(createMetaFieldSchema), createMetaField);
+router.patch('/meta-fields/:id', requirePermission('media', 'custom-fields'), validate(updateMetaFieldSchema), updateMetaField);
+router.delete('/meta-fields/:id', requirePermission('media', 'custom-fields'), validate(deleteMetaFieldSchema), deleteMetaField);
 
 // Processing jobs status
 router.get('/jobs/:jobId', requirePermission('media', 'view'), validate(jobIdSchema), getJob);
 
 // AI provider config (Phase D — keep above the generic /:id routes)
 router.get('/ai/status', requirePermission('media', 'view'), getAiStatus);
-router.get('/ai/drivers', requirePermission('media', 'edit'), listAiDrivers);
-router.get('/ai/providers', requirePermission('media', 'edit'), listAiProviders);
-router.post('/ai/providers', requirePermission('media', 'edit'), createAiProvider);
-router.patch('/ai/providers/:id', requirePermission('media', 'edit'), updateAiProvider);
-router.delete('/ai/providers/:id', requirePermission('media', 'edit'), deleteAiProvider);
+router.get('/ai/drivers', requirePermission('media', 'ai-providers'), listAiDrivers);
+router.get('/ai/providers', requirePermission('media', 'ai-providers'), listAiProviders);
+router.post('/ai/providers', requirePermission('media', 'ai-providers'), createAiProvider);
+router.patch('/ai/providers/:id', requirePermission('media', 'ai-providers'), updateAiProvider);
+router.delete('/ai/providers/:id', requirePermission('media', 'ai-providers'), deleteAiProvider);
 
 // Cloud imports (Phase D8) — keep above the generic /:id routes. OAuth callback
 // itself lives in import/public-routes.js (mounted before this router, unauthenticated).
-router.get('/import/providers', requirePermission('media', 'view'), getImportProviders);
-router.get('/import/connections', requirePermission('media', 'view'), listImportConnections);
-router.post('/import/connections', requirePermission('media', 'edit'), validate(createManualConnectionSchema), createImportConnection);
-router.delete('/import/connections/:id', requirePermission('media', 'edit'), validate(connectionIdParamSchema), deleteImportConnection);
-router.get('/import/oauth/:provider/start', requirePermission('media', 'edit'), validate(oauthStartParamSchema), startImportOAuth);
-router.get('/import/connections/:id/files', requirePermission('media', 'view'), validate(listRemoteFilesSchema), listImportFiles);
-router.post('/import/connections/:id/import', requirePermission('media', 'edit'), validate(importFilesSchema), importRemoteFiles);
+router.get('/import/providers', requirePermission('media', 'cloud-import'), getImportProviders);
+router.get('/import/connections', requirePermission('media', 'cloud-import'), listImportConnections);
+router.post('/import/connections', requirePermission('media', 'cloud-import'), validate(createManualConnectionSchema), createImportConnection);
+router.delete('/import/connections/:id', requirePermission('media', 'cloud-import'), validate(connectionIdParamSchema), deleteImportConnection);
+router.get('/import/oauth/:provider/start', requirePermission('media', 'cloud-import'), validate(oauthStartParamSchema), startImportOAuth);
+router.get('/import/connections/:id/files', requirePermission('media', 'cloud-import'), validate(listRemoteFilesSchema), listImportFiles);
+router.post('/import/connections/:id/import', requirePermission('media', 'cloud-import'), validate(importFilesSchema), importRemoteFiles);
 
 // AI suggestions (Phase D2) — keep above the generic /:id routes
-router.post('/suggestions/:id/accept', requirePermission('media', 'edit'), validate(mediaIdParamSchema), acceptMediaSuggestion);
-router.post('/suggestions/:id/reject', requirePermission('media', 'edit'), validate(mediaIdParamSchema), rejectMediaSuggestion);
+router.post('/suggestions/:id/accept', requirePermission('media', 'metadata-edit'), validate(mediaIdParamSchema), acceptMediaSuggestion);
+router.post('/suggestions/:id/reject', requirePermission('media', 'metadata-edit'), validate(mediaIdParamSchema), rejectMediaSuggestion);
 
-// Transform (B2) — on-the-fly image resize/format/filter; cached in MinIO
-router.get('/:id/t', requirePermission('media', 'view'), validate(transformQuerySchema), getTransform);
+// Transform (B2) — on-the-fly image resize/format/filter; cached in MinIO. This
+// is what renders the preview/lightbox image, so it's gated by 'preview'.
+router.get('/:id/t', requirePermission('media', 'preview'), validate(transformQuerySchema), getTransform);
 
 // Share management (B4) — authenticated CRUD; static paths before /:id wildcards
-router.post('/shares', requirePermission('media', 'share'), validate(createShareSchema), createShareLink);
-router.delete('/shares/:id', requirePermission('media', 'share'), validate(shareIdParamSchema), revokeShareLink);
-router.get('/shares/:token/qr', requirePermission('media', 'share'), validate(shareTokenParamSchema), shareQr);
-router.get('/shares/:token/embed', requirePermission('media', 'share'), validate(shareTokenParamSchema), shareEmbed);
-router.get('/:id/shares', requirePermission('media', 'share'), validate(mediaIdParamSchema), listShareLinks);
+router.post('/shares', requirePermission('media', 'share-link'), validate(createShareSchema), createShareLink);
+router.delete('/shares/:id', requirePermission('media', 'share-link'), validate(shareIdParamSchema), revokeShareLink);
+router.get('/shares/:token/qr', requirePermission('media', 'share-link'), validate(shareTokenParamSchema), shareQr);
+router.get('/shares/:token/embed', requirePermission('media', 'share-link'), validate(shareTokenParamSchema), shareEmbed);
+router.get('/:id/shares', requirePermission('media', 'share-link'), validate(mediaIdParamSchema), listShareLinks);
 
 // Versioning (B5) — re-upload file onto existing media record → new MediaVersion
-router.post('/:id/upload', requirePermission('media', 'edit'), upload.single('file'), validate(reuploadVersionSchema), reuploadAsVersion);
+router.post('/:id/upload', requirePermission('media', 'upload'), upload.single('file'), validate(reuploadVersionSchema), reuploadAsVersion);
 
 // Comments (B5)
 router.get('/:id/comments', requirePermission('media', 'view'), validate(mediaIdParamSchema), listComments);
-router.post('/:id/comments', requirePermission('media', 'view'), validate(createCommentSchema), createComment);
-router.delete('/:id/comments/:commentId', requirePermission('media', 'view'), validate(commentIdParamSchema), deleteComment);
+router.post('/:id/comments', requirePermission('media', 'metadata-edit'), validate(createCommentSchema), createComment);
+router.delete('/:id/comments/:commentId', requirePermission('media', 'metadata-edit'), validate(commentIdParamSchema), deleteComment);
 
-// Workflow (B6)
+// Workflow (B6) — pre-existing approval feature, out of scope for KDL-MEDIA-12
 router.patch('/:id/workflow', requirePermission('media', 'approve'), validate(workflowTransitionSchema), transitionWorkflow);
 
 // List + CRUD
 router.get('/', requirePermission('media', 'view'), validate(listMediaSchema), listMedia);
-router.post('/:id/favorite', requirePermission('media', 'view'), validate(mediaIdParamSchema), favoriteMedia);
-router.delete('/:id/favorite', requirePermission('media', 'view'), validate(mediaIdParamSchema), unfavoriteMedia);
+router.post('/:id/favorite', requirePermission('media', 'favorites'), validate(mediaIdParamSchema), favoriteMedia);
+router.delete('/:id/favorite', requirePermission('media', 'favorites'), validate(mediaIdParamSchema), unfavoriteMedia);
 router.post('/:id/touch', requirePermission('media', 'view'), validate(mediaIdParamSchema), touchMedia);
-router.post('/:id/copy', requirePermission('media', 'add'), validate(copyMediaSchema), copyMedia);
+router.post('/:id/copy', requirePermission('media', 'upload'), validate(copyMediaSchema), copyMedia);
 router.get('/:id/usage', requirePermission('media', 'view'), validate(getMediaSchema), getMediaUsage);
 // Versions
 router.get('/:id/versions', requirePermission('media', 'view'), validate(mediaIdParamSchema), listVersions);
-router.post('/:id/versions/:versionId/restore', requirePermission('media', 'edit'), validate(restoreVersionSchema), restoreVersion);
-// Processing ops
-router.post('/:id/edit', requirePermission('media', 'edit'), validate(editMediaSchema), editMedia);
-router.post('/:id/pdf-op', requirePermission('media', 'edit'), validate(pdfOpSchema), pdfOp);
-router.post('/:id/video-op', requirePermission('media', 'edit'), validate(videoOpSchema), videoOp);
-router.post('/:id/audio-op', requirePermission('media', 'edit'), validate(audioOpSchema), audioOp);
-router.post('/:id/convert', requirePermission('media', 'edit'), validate(convertMediaSchema), convertMedia);
+router.post('/:id/versions/:versionId/restore', requirePermission('media', 'edit-image'), validate(restoreVersionSchema), restoreVersion);
+// Processing ops — all "edit the file" operations share the edit-image permission
+router.post('/:id/edit', requirePermission('media', 'edit-image'), validate(editMediaSchema), editMedia);
+router.post('/:id/pdf-op', requirePermission('media', 'edit-image'), validate(pdfOpSchema), pdfOp);
+router.post('/:id/video-op', requirePermission('media', 'edit-image'), validate(videoOpSchema), videoOp);
+router.post('/:id/audio-op', requirePermission('media', 'edit-image'), validate(audioOpSchema), audioOp);
+router.post('/:id/convert', requirePermission('media', 'edit-image'), validate(convertMediaSchema), convertMedia);
 // AI analyze (Phase D2) — 501 via requireFeature when vision is unconfigured
-router.post('/:id/analyze', requirePermission('media', 'edit'), validate(mediaIdParamSchema), requireFeature('vision'), analyzeMedia);
+router.post('/:id/analyze', requirePermission('media', 'edit-image'), validate(mediaIdParamSchema), requireFeature('vision'), analyzeMedia);
 router.get('/:id/suggestions', requirePermission('media', 'view'), validate(mediaIdParamSchema), listMediaSuggestions);
 // OCR (Phase D3) — local tesseract job, works without any AI provider
-router.post('/:id/ocr', requirePermission('media', 'edit'), validate(mediaIdParamSchema), ocrMedia);
+router.post('/:id/ocr', requirePermission('media', 'edit-image'), validate(mediaIdParamSchema), ocrMedia);
 // Speech-to-text (Phase D4) — 501 via requireFeature when unconfigured
-router.post('/:id/transcribe', requirePermission('media', 'edit'), validate(transcribeMediaSchema), requireFeature('speech_to_text'), transcribeMedia);
+router.post('/:id/transcribe', requirePermission('media', 'edit-image'), validate(transcribeMediaSchema), requireFeature('speech_to_text'), transcribeMedia);
 router.get('/:id/transcript', requirePermission('media', 'view'), validate(getTranscriptSchema), getTranscript);
 // AI image ops (Phase D6) — bg-removal/upscale/enhance/object-removal → new version; 501 via requireFeature when unconfigured
-router.post('/:id/ai-image-op', requirePermission('media', 'edit'), validate(aiImageOpSchema), requireFeature('image_ops'), aiImageOp);
+router.post('/:id/ai-image-op', requirePermission('media', 'edit-image'), validate(aiImageOpSchema), requireFeature('image_ops'), aiImageOp);
 // AI recognition (Phase D7) — OPTIONAL, default OFF: labels/logos/landmarks/products → tag suggestion; 501 via requireFeature when unconfigured
-router.post('/:id/recognize', requirePermission('media', 'edit'), validate(mediaIdParamSchema), requireFeature('vision'), recognizeMedia);
+router.post('/:id/recognize', requirePermission('media', 'edit-image'), validate(mediaIdParamSchema), requireFeature('vision'), recognizeMedia);
 // QR/barcode decode (Phase D7) — local zxing job, works without any AI provider
-router.post('/:id/qr-decode', requirePermission('media', 'edit'), validate(mediaIdParamSchema), qrDecodeMedia);
+router.post('/:id/qr-decode', requirePermission('media', 'edit-image'), validate(mediaIdParamSchema), qrDecodeMedia);
 // PDF merge (no parent id)
-router.post('/pdf-merge', requirePermission('media', 'add'), validate(pdfOpSchema), pdfOp);
+router.post('/pdf-merge', requirePermission('media', 'edit-image'), validate(pdfOpSchema), pdfOp);
 router.get('/:id', requirePermission('media', 'view'), validate(getMediaSchema), getMedia);
-router.patch('/:id', requirePermission('media', 'edit'), validate(updateMediaSchema), updateMedia);
-router.delete('/:id', requirePermission('media', 'delete'), validate(deleteMediaSchema), deleteMedia);
+// Metadata edit + visibility toggle share this endpoint — controller checks
+// which permission applies based on which body fields are present.
+router.patch('/:id', requirePermission('media', 'metadata-edit'), validate(updateMediaSchema), updateMedia);
+router.delete('/:id', requirePermission('media', 'soft-delete'), validate(deleteMediaSchema), deleteMedia);
 
 export default router;
