@@ -34,6 +34,14 @@ import { ImageEditorDialog } from '@/components/media/ImageEditorDialog'
 import { ShareDialog } from '@/components/media/ShareDialog'
 import { MediaLightbox } from '@/components/media/MediaLightbox'
 
+// Mime types the backend image editor can actually process (KDL-153) — svg is
+// vector-edited or rasterized server-side, the rest go through sharp directly.
+// Formats outside this set (tiff, heic, …) would otherwise silently corrupt,
+// so the Edit button stays hidden for them.
+const EDITABLE_IMAGE_MIMES = new Set([
+  'image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif', 'image/svg+xml',
+])
+
 // ── API helpers ──────────────────────────────────────────────────────────────
 
 const mediaApi = {
@@ -653,6 +661,7 @@ function DetailDrawer({
     staleTime: 60_000,
   })
   const isImage = item.mime_type.startsWith('image/')
+  const canEditImage = EDITABLE_IMAGE_MIMES.has(item.mime_type)
   const isAv = item.mime_type.startsWith('video/') || item.mime_type.startsWith('audio/')
   const showAnalyze = isImage && aiStatus?.vision?.configured
   const showTranscribe = isAv && aiStatus?.speech_to_text?.configured
@@ -709,12 +718,17 @@ function DetailDrawer({
         </button>
       )}
 
-      {isImage && item.url && can('media:edit-image') && (
+      {isImage && !canEditImage && item.url && can('media:edit-image') && (
+        <p className="text-xs text-muted-foreground text-center">
+          Editing isn&apos;t supported for {item.mime_type} files
+        </p>
+      )}
+      {isImage && canEditImage && item.url && can('media:edit-image') && (
         <Button size="sm" variant="outline" className="w-full" onClick={() => setEditorOpen(true)}>
           Edit image (crop, resize, rotate…)
         </Button>
       )}
-      {isImage && item.url && can('media:edit-image') && (
+      {isImage && canEditImage && item.url && can('media:edit-image') && (
         <ImageEditorDialog
           mediaId={item.id}
           mediaUrl={item.url}

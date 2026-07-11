@@ -2,11 +2,35 @@ import { createHash } from 'crypto';
 import { prisma } from '../../config/database.js';
 import { logger } from '../../shared/utils/logger.js';
 import { createMediaVersion } from './processing.service.js';
+import { isSvgMime } from './svg-sanitizer.js';
 
 const getMimeExt = (mime) => {
-  const map = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/avif': 'avif', 'image/gif': 'gif' };
+  const map = {
+    'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp',
+    'image/avif': 'avif', 'image/gif': 'gif', 'image/svg+xml': 'svg',
+  };
   return map[mime] ?? 'jpg';
 };
+
+// Mime types this service knows how to edit. Anything else (tiff, heic, …)
+// fails fast here instead of silently producing corrupted bytes — the
+// frontend also hides the Edit button for mimes outside this set.
+const EDITABLE_RASTER_MIMES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif']);
+
+// Ops that can be expressed as pure SVG markup edits (viewBox/width/height/
+// transform) without ever rasterizing — so vector SVGs stay vector and text
+// never gets rendered to glyphs (avoiding the missing-font "boxes" problem).
+const SVG_VECTOR_SAFE_OPS = new Set(['resize', 'crop', 'rotate', 'flip', 'flop']);
+
+const round2 = (n) => Math.round(n * 100) / 100;
+
+const swapFilenameExt = (filename, newExt) => {
+  const dot = filename.lastIndexOf('.');
+  const base = dot === -1 ? filename : filename.slice(0, dot);
+  return `${base}.${newExt}`;
+};
+
+const mediaFilename = (media) => media.filename ?? media.path.substring(media.path.lastIndexOf('/') + 1);
 
 const buildPipeline = async (sharpInstance, ops, media) => {
   const { default: sharp } = await import('sharp');
@@ -126,6 +150,139 @@ const EXT_TO_MIME = {
   webp: 'image/webp',
   avif: 'image/avif',
   gif: 'image/gif',
+  svg: 'image/svg+xml',
+};
+
+// ─── SVG vector editing ──────────────────────────────────────────────────────
+// Resize/crop/rotate/flip/flop are expressible as pure SVG attribute/transform
+// edits, so a resized SVG stays a valid, text-intact SVG instead of being
+// rasterized (which previously produced corrupt/boxed-text output). Any other
+// op (color adjustments, watermark, compress, …) genuinely needs pixels, so
+// those fall back to rasterizing to PNG first (see rasterizeSvg below).
+
+const SVG_TAG_RE = /<svg\b([^>]*)>/i;
+const SVG_CLOSE_RE = /<\/svg\s*>/i;
+
+const parseNum = (v) => {
+  if (v === undefined) return null;
+  const m = String(v).match(/-?[\d.]+/);
+  return m ? parseFloat(m[0]) : null;
+};
+
+const getAttr = (attrsStr, name) => {
+  const m = attrsStr.match(new RegExp(`${name}\\s*=\\s*("([^"]*)"|'([^']*)')`, 'i'));
+  return m ? (m[2] ?? m[3]) : undefined;
+};
+
+const parseSvg = (svgText) => {
+  const openMatch = svgText.match(SVG_TAG_RE);
+  const closeMatch = svgText.match(SVG_CLOSE_RE);
+  if (!openMatch || !closeMatch) throw new Error('Not a valid SVG document');
+
+  const attrsStr = openMatch[1];
+  const viewBoxRaw = getAttr(attrsStr, 'viewBox');
+  let minX = 0, minY = 0, vbW = null, vbH = null;
+  if (viewBoxRaw) {
+    const parts = viewBoxRaw.trim().split(/[\s,]+/).map(Number);
+    if (parts.length === 4 && parts.every((n) => Number.isFinite(n))) [minX, minY, vbW, vbH] = parts;
+  }
+  const width = parseNum(getAttr(attrsStr, 'width')) ?? vbW ?? 300;
+  const height = parseNum(getAttr(attrsStr, 'height')) ?? vbH ?? 150;
+  if (vbW === null) { vbW = width; vbH = height; }
+
+  const tagEnd = openMatch.index + openMatch[0].length;
+  return {
+    prefix: svgText.slice(0, openMatch.index),
+    attrsStr,
+    inner: svgText.slice(tagEnd, closeMatch.index),
+    suffix: svgText.slice(closeMatch.index + closeMatch[0].length),
+    minX, minY, vbW, vbH, width, height,
+  };
+};
+
+const buildSvgTag = (attrsStr, { minX, minY, vbW, vbH, width, height }) => {
+  const stripped = attrsStr.replace(/\s(width|height|viewBox)\s*=\s*("[^"]*"|'[^']*')/gi, '');
+  return `<svg${stripped} width="${round2(width)}" height="${round2(height)}" viewBox="${round2(minX)} ${round2(minY)} ${round2(vbW)} ${round2(vbH)}">`;
+};
+
+const computeResizeDims = (curW, curH, op) => {
+  let { width, height, fit = 'inside' } = op;
+  if (!width && !height) return { width: curW, height: curH };
+  if (width && !height) return { width, height: Math.round((curH / curW) * width) };
+  if (height && !width) return { width: Math.round((curW / curH) * height), height };
+  if (fit === 'fill') return { width, height };
+  const scale = fit === 'cover' || fit === 'outside' ? Math.max(width / curW, height / curH) : Math.min(width / curW, height / curH);
+  return { width: Math.round(curW * scale), height: Math.round(curH * scale) };
+};
+
+const applySvgVectorOps = (svgText, ops) => {
+  const parsed = parseSvg(svgText);
+  let { minX, minY, vbW, vbH, width, height, inner } = parsed;
+
+  for (const op of ops) {
+    switch (op.op) {
+      case 'resize': {
+        const dims = computeResizeDims(width, height, op);
+        width = dims.width;
+        height = dims.height;
+        break;
+      }
+      case 'crop': {
+        const scaleX = vbW / width;
+        const scaleY = vbH / height;
+        minX = minX + op.left * scaleX;
+        minY = minY + op.top * scaleY;
+        vbW = op.width * scaleX;
+        vbH = op.height * scaleY;
+        width = op.width;
+        height = op.height;
+        break;
+      }
+      case 'rotate': {
+        const rad = (op.angle * Math.PI) / 180;
+        const cx = minX + vbW / 2;
+        const cy = minY + vbH / 2;
+        const newVbW = Math.abs(vbW * Math.cos(rad)) + Math.abs(vbH * Math.sin(rad));
+        const newVbH = Math.abs(vbW * Math.sin(rad)) + Math.abs(vbH * Math.cos(rad));
+        inner = `<g transform="rotate(${op.angle} ${round2(cx)} ${round2(cy)})">${inner}</g>`;
+        width = round2(width * (newVbW / vbW));
+        height = round2(height * (newVbH / vbH));
+        minX = cx - newVbW / 2;
+        minY = cy - newVbH / 2;
+        vbW = newVbW;
+        vbH = newVbH;
+        break;
+      }
+      case 'flip':
+        inner = `<g transform="matrix(1,0,0,-1,0,${round2(2 * minY + vbH)})">${inner}</g>`;
+        break;
+      case 'flop':
+        inner = `<g transform="matrix(-1,0,0,1,${round2(2 * minX + vbW)},0)">${inner}</g>`;
+        break;
+      default:
+        throw new Error(`SVG vector op not supported: ${op.op}`);
+    }
+  }
+
+  const newTag = buildSvgTag(parsed.attrsStr, { minX, minY, vbW, vbH, width, height });
+  return { svgText: `${parsed.prefix}${newTag}${inner}</svg>${parsed.suffix}`, width: Math.round(width), height: Math.round(height) };
+};
+
+// SVG resize/crop/rotate/flip/flop stay vector. Any other op needs actual
+// pixels (brightness, watermark, compress, …), so we rasterize to PNG first —
+// bump the render density if the target size is larger than the source so
+// the rasterized bytes aren't blurry.
+const rasterizeSvg = async (svgBuffer, ops) => {
+  const { default: sharp } = await import('sharp');
+  const { width: srcW, height: srcH } = parseSvg(svgBuffer.toString('utf8'));
+  const resizeOp = ops.find((o) => o.op === 'resize');
+  let density = 96;
+  if (resizeOp) {
+    const targetMax = Math.max(resizeOp.width ?? 0, resizeOp.height ?? 0);
+    const curMax = Math.max(srcW, srcH);
+    if (targetMax > curMax) density = Math.min(1200, Math.round(96 * (targetMax / curMax)));
+  }
+  return sharp(svgBuffer, { density }).png().toBuffer();
 };
 
 export const runImageEdit = async ({ mediaId, ops, note, createdBy }) => {
@@ -134,24 +291,54 @@ export const runImageEdit = async ({ mediaId, ops, note, createdBy }) => {
   const media = await prisma.media.findUnique({ where: { id: mediaId } });
   if (!media) throw new Error(`Media ${mediaId} not found`);
 
+  const svgInput = isSvgMime(media.mime_type);
+  if (!svgInput && !EDITABLE_RASTER_MIMES.has(media.mime_type)) {
+    throw new Error(`Image editing is not supported for mime type "${media.mime_type}"`);
+  }
+
   const stream = await minio.getObject(process.env.MINIO_BUCKET, media.path);
   const chunks = [];
   for await (const chunk of stream) chunks.push(chunk);
   const inputBuffer = Buffer.concat(chunks);
 
-  const pipeline = await buildPipeline(sharp(inputBuffer), ops, media);
+  let outputBuffer;
+  let ext;
+  let width = null;
+  let height = null;
 
-  // Determine output format from last compress op or default to original
-  const compressOp = [...ops].reverse().find((o) => o.op === 'compress');
-  const ext = compressOp?.format ?? getMimeExt(media.mime_type);
-  let finalPipe = pipeline;
-  if (!compressOp) {
-    if (ext === 'jpg') finalPipe = pipeline.jpeg({ quality: 90 });
-    else if (ext === 'webp') finalPipe = pipeline.webp({ quality: 90 });
-    else if (ext === 'png') finalPipe = pipeline.png();
+  if (svgInput && ops.every((op) => SVG_VECTOR_SAFE_OPS.has(op.op))) {
+    // Pure vector edit — never touches pixels, text stays text.
+    const result = applySvgVectorOps(inputBuffer.toString('utf8'), ops);
+    outputBuffer = Buffer.from(result.svgText, 'utf8');
+    ext = 'svg';
+    width = result.width;
+    height = result.height;
+    // Validate the rewritten markup is still a well-formed SVG before saving.
+    await sharp(outputBuffer).metadata();
+  } else {
+    const media_ = svgInput ? { ...media, mime_type: 'image/png' } : media;
+    const sourceBuffer = svgInput ? await rasterizeSvg(inputBuffer, ops) : inputBuffer;
+    const animatedInput = media.mime_type === 'image/gif' || media.mime_type === 'image/webp';
+    const pipeline = await buildPipeline(sharp(sourceBuffer, animatedInput ? { animated: true } : undefined), ops, media_);
+
+    const compressOp = [...ops].reverse().find((o) => o.op === 'compress');
+    ext = compressOp?.format ?? (svgInput ? 'png' : getMimeExt(media.mime_type));
+    let finalPipe = pipeline;
+    if (!compressOp) {
+      if (ext === 'jpg' || ext === 'jpeg') finalPipe = pipeline.jpeg({ quality: 90 });
+      else if (ext === 'webp') finalPipe = pipeline.webp({ quality: 90 });
+      else if (ext === 'png') finalPipe = pipeline.png();
+      else if (ext === 'avif') finalPipe = pipeline.avif({ quality: 90 });
+      else if (ext === 'gif') finalPipe = pipeline.gif();
+    }
+
+    outputBuffer = await finalPipe.toBuffer();
+    // Validate before saving — a genuinely uneditable/corrupt result throws
+    // here instead of silently overwriting the stored file.
+    const outMeta = await sharp(outputBuffer).metadata();
+    width = outMeta.width ?? null;
+    height = outMeta.height ?? null;
   }
-
-  const outputBuffer = await finalPipe.toBuffer();
 
   // Snapshot the pre-edit bytes as a version (separate versioned path, same
   // convention as createMediaVersion elsewhere) so edits are undoable.
@@ -168,17 +355,18 @@ export const runImageEdit = async ({ mediaId, ops, note, createdBy }) => {
 
   const checksum = createHash('sha256').update(outputBuffer).digest('hex');
   const { generateVariants } = await import('./media.worker.js');
-  const { variants, width, height } = await generateVariants(outputBuffer, media.path);
+  const variantResult = await generateVariants(outputBuffer, media.path);
 
   await prisma.media.update({
     where: { id: mediaId },
     data: {
+      filename: swapFilenameExt(mediaFilename(media), ext),
       size: outputBuffer.length,
       checksum,
       mime_type: EXT_TO_MIME[ext] ?? media.mime_type,
-      width,
-      height,
-      variants,
+      width: width ?? variantResult.width,
+      height: height ?? variantResult.height,
+      variants: variantResult.variants,
     },
   });
 
