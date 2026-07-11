@@ -17,7 +17,7 @@ COPY src ./src
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-RUN apk add --no-cache ffmpeg qpdf tesseract-ocr poppler-utils \
+RUN apk add --no-cache ffmpeg qpdf tesseract-ocr poppler-utils fontconfig font-dejavu \
   && addgroup -S nodejs && adduser -S nodeuser -G nodejs && mkdir -p /app/logs && chown nodeuser:nodejs /app/logs
 COPY --from=deps --chown=nodeuser:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nodeuser:nodejs /app/node_modules/.prisma ./node_modules/.prisma

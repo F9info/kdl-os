@@ -19,9 +19,14 @@ export const generateVariants = async (buffer, objectPath) => {
   const dir = objectPath.substring(0, objectPath.lastIndexOf('/'));
   const base = objectPath.substring(objectPath.lastIndexOf('/') + 1, objectPath.lastIndexOf('.'));
 
+  const meta = await sharp(buffer).metadata();
+  // Multi-frame GIF/WebP: read all pages so variant thumbnails keep animating
+  // instead of freezing on the first frame.
+  const animatedOpts = meta.pages > 1 ? { animated: true } : undefined;
+
   for (const [name, size] of Object.entries(VARIANT_SIZES)) {
     const variantPath = `${dir}/variants/${base}_${name}.webp`;
-    const variantBuffer = await sharp(buffer)
+    const variantBuffer = await sharp(buffer, animatedOpts)
       .resize(size, size, { fit: 'inside', withoutEnlargement: true })
       .webp({ quality: 80 })
       .toBuffer();
@@ -33,7 +38,6 @@ export const generateVariants = async (buffer, objectPath) => {
     variants[name] = variantPath;
   }
 
-  const meta = await sharp(buffer).metadata();
   return { variants, width: meta.width ?? null, height: meta.height ?? null };
 };
 

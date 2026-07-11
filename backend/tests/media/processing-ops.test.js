@@ -153,6 +153,7 @@ vi.mock('../../src/modules/media/processing.service.js', () => ({
 import { PDFDocument }   from 'pdf-lib';
 import { execFile }      from 'child_process';
 import { prisma }        from '../../src/config/database.js';
+import { minio }         from '../../src/config/minio.js';
 import { uploadFile }    from '../../src/shared/services/storage.service.js';
 import { createMediaVersion } from '../../src/modules/media/processing.service.js';
 
@@ -166,6 +167,21 @@ import { runConversion }  from '../../src/modules/media/conversions.service.js';
 const IMAGE_MEDIA = {
   id: 'm1', user_id: 'u1', folder_id: null, bucket: 'media',
   path: 'u1/photo.jpg', mime_type: 'image/jpeg', size: 5000, type: 'IMAGE',
+};
+const SVG_MEDIA = {
+  id: 'm1', user_id: 'u1', folder_id: null, bucket: 'media',
+  path: 'u1/logo.svg', filename: 'logo.svg', mime_type: 'image/svg+xml', size: 274, type: 'IMAGE',
+};
+const TIFF_MEDIA = {
+  id: 'm1', user_id: 'u1', folder_id: null, bucket: 'media',
+  path: 'u1/scan.tiff', filename: 'scan.tiff', mime_type: 'image/tiff', size: 9000, type: 'IMAGE',
+};
+
+const mockSvgSource = (svgText) => {
+  minio.getObject.mockImplementationOnce(async () => {
+    async function* gen() { yield Buffer.from(svgText, 'utf8'); }
+    return gen();
+  });
 };
 const PDF_MEDIA = {
   id: 'm1', user_id: 'u1', folder_id: null, bucket: 'media',
@@ -241,6 +257,68 @@ describe('C2 Image ops', () => {
       'm1',
       expect.objectContaining({ buffer: expect.any(Buffer), ext: expect.any(String) }),
     );
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// C2b SVG image editing (KDL-153)
+// ═══════════════════════════════════════════════════════════════════════════
+describe('C2b SVG image editing', () => {
+  beforeEach(() => {
+    prisma.media.findUnique.mockResolvedValue(SVG_MEDIA);
+    createMediaVersion.mockResolvedValue({ version: { id: 'v1', version: 1 }, path: 'p', url: 'u' });
+    sharpFactory.first = null;
+  });
+
+  it('resize stays vector: mime/filename unchanged, dimensions scaled, text intact', async () => {
+    mockSvgSource('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="50"><text>Hi</text></svg>');
+    await runImageEdit({ mediaId: 'm1', ops: [{ op: 'resize', width: 200 }], createdBy: 'u1' });
+
+    const [, , savedBuffer] = minio.putObject.mock.calls[0];
+    const savedSvg = savedBuffer.toString('utf8');
+    expect(savedSvg).toContain('<text>Hi</text>');
+    expect(savedSvg).toMatch(/width="200"/);
+    expect(savedSvg).toMatch(/height="100"/);
+    expect(savedSvg.trim()).toMatch(/<\/svg>\s*$/); // well-formed XML, not just attribute-truncated
+
+    expect(prisma.media.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        filename: 'logo.svg',
+        mime_type: 'image/svg+xml',
+        width: 200,
+        height: 100,
+      }),
+    }));
+  });
+
+  it('crop stays vector and rewrites the viewBox', async () => {
+    mockSvgSource('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100"/></svg>');
+    await runImageEdit({ mediaId: 'm1', ops: [{ op: 'crop', left: 10, top: 10, width: 50, height: 50 }], createdBy: 'u1' });
+
+    const [, , savedBuffer] = minio.putObject.mock.calls[0];
+    const savedSvg = savedBuffer.toString('utf8');
+    expect(savedSvg).toMatch(/viewBox="10 10 50 50"/);
+    expect(savedSvg.trim()).toMatch(/<\/svg>\s*$/);
+    expect(prisma.media.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ mime_type: 'image/svg+xml', width: 50, height: 50 }),
+    }));
+  });
+
+  it('brightness (a pixel-level op) rasterizes SVG to PNG and updates filename+mime', async () => {
+    mockSvgSource('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="50"><text>Hi</text></svg>');
+    await runImageEdit({ mediaId: 'm1', ops: [{ op: 'brightness', factor: 1.2 }], createdBy: 'u1' });
+
+    expect(prisma.media.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ filename: 'logo.png', mime_type: 'image/png' }),
+    }));
+  });
+
+  it('rejects editing for a genuinely unsupported format instead of corrupting it', async () => {
+    prisma.media.findUnique.mockResolvedValue(TIFF_MEDIA);
+    await expect(
+      runImageEdit({ mediaId: 'm1', ops: [{ op: 'resize', width: 200 }], createdBy: 'u1' })
+    ).rejects.toThrow(/not supported/);
+    expect(minio.putObject).not.toHaveBeenCalled();
   });
 });
 
