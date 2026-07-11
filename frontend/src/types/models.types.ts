@@ -64,13 +64,7 @@ export interface PermissionModuleMatrix {
   is_system: boolean
   sort_order: number
   created_at: string
-  actions: {
-    view: string | null
-    add: string | null
-    edit: string | null
-    delete: string | null
-    publish: string | null
-  }
+  actions: Record<string, string | null>
 }
 
 export interface ActivityLog {
