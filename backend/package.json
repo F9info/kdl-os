@@ -40,8 +40,8 @@
     "jsonwebtoken": "^9.0.2",
     "meilisearch": "^0.41.0",
     "minio": "^8.0.0",
-    "multer": "^1.4.5-lts.1",
-    "nodemailer": "^6.9.0",
+    "multer": "^2.2.0",
+    "nodemailer": "^9.0.1",
     "pdf-lib": "^1.17.1",
     "pg": "^8.11.0",
     "prisma": "^7.0.0",
@@ -54,7 +54,7 @@
   "devDependencies": {
     "nodemon": "^3.1.0",
     "supertest": "^7.0.0",
-    "vitest": "^2.1.0"
+    "vitest": "^3.2.6"
   },
   "prisma": {
     "schema": "prisma/schema",
