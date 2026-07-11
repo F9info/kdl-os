@@ -1,9 +1,11 @@
 {
   "name": "kdl-ai-services",
   "version": "1.0.0",
-  "description": "KDL AI Services Layer — two-brain orchestration with LangChain.js + ChromaDB",
+  "description": "KDL AI Services Layer \u2014 two-brain orchestration with LangChain.js + ChromaDB",
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
@@ -35,6 +37,9 @@
   },
   "devDependencies": {
     "supertest": "^7.0.0",
-    "vitest": "^2.1.0"
+    "vitest": "^3.2.6"
+  },
+  "overrides": {
+    "langsmith": "^0.6.0"
   }
 }
