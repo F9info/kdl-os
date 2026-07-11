@@ -11,6 +11,9 @@ package-lock.json.bak
 .env.*.local
 !.env.example
 
+# local-only compose port overrides (per-clone, avoids project-name collisions)
+docker-compose.override.yml
+
 # build output
 frontend/.next/
 frontend/out/

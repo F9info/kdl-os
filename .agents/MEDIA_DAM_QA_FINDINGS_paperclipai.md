@@ -94,6 +94,19 @@ The Media DAM has a solid foundation — upload, variant generation, metadata, s
 
 ---
 
+## Required feature (not implemented) — Granular per-feature permissions
+
+### 12. 🟠 HIGH (FEATURE) — Every Media feature needs its own permission, and features show only when granted
+- **Requirement:** the whole Media module must be permission-gated at the **feature** level (not just coarse view/add/edit/delete). Each feature gets its own permission; if a user lacks it, that feature is **hidden** in the UI and its API returns **403**.
+- **Features to gate (each a distinct permission):** view library, upload, download, preview, edit image, share link (create/revoke), folders (create/rename/delete/move), collections (create/manage), tags (add/remove), favorites, metadata edit, custom fields edit, visibility toggle (make shared/private), soft delete, trash view, restore, purge (permanent delete), cloud import (connections + import), AI providers (view/manage), capture (webcam/screen/voice).
+- **Implementation (per CLAUDE.md RBAC):**
+  - Register permissions via the module manifest `permissions` array — never hand-edit the seeder. They must appear under Access Control → Permissions after install.
+  - Backend: `requirePermission('<module>', '<action>')` on every route (after `authenticate` + `moduleGate`); denied → 403 (auto activity-logged); Super Admin bypasses.
+  - Frontend: conditionally **render** each control/tab/nav entry from the user's effective permissions (hide, don't just disable); nav from `nav[].permission`.
+- **Acceptance:** a role with only `media:view` + `media:upload` sees only the library + Upload; all other controls hidden and their endpoints return 403. Granting the edit-image permission reveals the Edit button and unblocks its endpoint. Super Admin sees/does everything.
+
+---
+
 ## Confirmed working (do not regress)
 
 - **Login** and Media navigation.

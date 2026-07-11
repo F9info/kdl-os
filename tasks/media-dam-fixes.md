@@ -64,6 +64,15 @@
 - **Frontend:** **My Media / Shared / All(admin)** tabs wired to `scope`; a Private⇄Shared toggle in the detail panel; show current visibility.
 **Gate:** As a normal user, only own + shared files are listed; toggling a file to Shared makes it visible to a second user; a normal user cannot mutate another user's private file (403); Super Admin sees all. Distinct from the public `/share/:token` link feature (leave that intact). Tests cover the scope query + ownership. `vitest` exit 0.
 
+### KDL-MEDIA-12 — Granular per-feature permissions for the entire Media module *(feature)*
+**Requirement:** Every single Media feature must have its own permission. A feature is shown to a user **only if** that permission is granted — otherwise it is hidden in the UI and its API returns 403. This applies across the whole module, not just top-level view/add/edit/delete.
+**Do:**
+- **Define a permission per feature.** At minimum, distinct permissions for: view library, upload, download, preview, **edit image**, **share link** (create/revoke), **folders** (create/rename/delete/move), **collections** (create/manage), **tags** (add/remove), **favorites**, **metadata edit**, **custom fields edit**, **visibility toggle** (make shared / make private), **soft delete**, **trash view**, **restore**, **purge (permanent delete)**, **cloud import** (connections + import), **AI providers** (view/manage), **capture** (webcam/screen/voice). Group sensibly (e.g. a `media` module plus sub-actions, or split into `media`, `media-folders`, `media-cloud`, `media-ai` permission modules) — document the mapping.
+- **Register via the module manifest** `permissions` array (per CLAUDE.md — never hand-edit the seeder). New permissions must appear in Access Control → Permissions after install.
+- **Backend:** guard every route with `requirePermission('<module>', '<action>')` after `authenticate` + `moduleGate`. Denied → 403 (activity-logged automatically). Super Admin bypasses.
+- **Frontend:** conditionally **render** each control/button/tab/nav entry from the user's effective permission set (hide, don't just disable) — Upload, Edit image, Share, Folder/Collection create, Tag, Favorite, visibility toggle, Delete, Trash tab, Restore, Purge all, Cloud, AI Providers page, Capture, etc. Nav entries come from the manifest `nav[].permission`.
+**Gate:** Create a role with only `media:view` + `media:upload` and assign it to a fresh user → that user sees **only** the library and the Upload control; Edit image, Share, Delete, Folders, Collections, Tags, Favorite, Trash, Cloud, AI Providers are all **hidden**, and calling those endpoints directly returns **403**. Granting `media:edit` (or the edit-image permission) makes the Edit button appear and the endpoint succeed. Super Admin sees/does everything. Backend tests assert 403 for missing permission and 200 with it. `vitest` exit 0.
+
 ---
 
 ## P2 — Low / polish
