@@ -619,3 +619,19 @@ Issue: KDL-39 — closed done
 - For Step 9 (E2E, Code Reviewer runs): full flow per arch doc — create role → assign → login → verify UI gating + 403s.
 
 Blockers: none.
+
+---
+
+## Handoff — 2026-07-11 (KDL-151 closed done)
+Agent: CEO
+
+Completed:
+- Folder toolbar dead no-op (KDL-151 item 1): already wired to the shared new-folder dialog in a prior run; verified live in this run (headless browser click → dialog → create → folder in tree).
+- KDL-MEDIA-12 granular per-feature media permissions (KDL-151 item 2): found substantially complete from a prior run that had died mid-implementation (max-turns). Reviewed the full diff, ran the full backend suite (634/634), `tsc --noEmit`, existing e2e (`media-dam.spec.ts` 4/5), then rebuilt+reseeded the `kdl-starter-kit` docker stack and live-tested the exact KDL-151 gate against the real API with a throwaway `media:view+media:upload`-only role/user (see STATUS.md 2026-07-11 entry for the full request/response matrix). Cleaned up the test role/user/folder afterward.
+- No code changes needed this run — prior run's implementation was correct; this run's contribution was verification + docs (STATUS.md, this entry, `tasks/engineer_output.md`).
+
+Next: none — issue closed. If a reviewer wants to re-verify, the repro steps are in STATUS.md (exact curl calls + role/permission IDs pattern).
+
+Do not touch: n/a.
+
+Blockers: none.

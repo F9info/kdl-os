@@ -223,7 +223,7 @@ export default function MediaAiSettingsPage() {
   }
 
   return (
-    <PermissionGuard permission="media:edit">
+    <PermissionGuard permission="media:ai-providers">
       <div>
         <PageHeader
           title="AI Providers"

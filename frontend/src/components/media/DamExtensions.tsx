@@ -398,15 +398,19 @@ export type SidebarView = 'folders' | 'collections' | 'favorites' | 'recents'
 interface SidebarNavProps {
   current: SidebarView
   onChange: (v: SidebarView) => void
+  // KDL-MEDIA-12: tabs not in this list are hidden (collections/favorites are
+  // distinct granted features); omit to show all.
+  visible?: SidebarView[]
 }
 
-export function SidebarNav({ current, onChange }: SidebarNavProps) {
-  const tabs: { id: SidebarView; label: string; icon: React.ReactNode }[] = [
+export function SidebarNav({ current, onChange, visible }: SidebarNavProps) {
+  const allTabs: { id: SidebarView; label: string; icon: React.ReactNode }[] = [
     { id: 'folders', label: 'Folders', icon: <FolderIcon className="h-3.5 w-3.5" /> },
     { id: 'collections', label: 'Collections', icon: <Layers className="h-3.5 w-3.5" /> },
     { id: 'favorites', label: 'Favorites', icon: <Star className="h-3.5 w-3.5" /> },
     { id: 'recents', label: 'Recents', icon: <Clock className="h-3.5 w-3.5" /> },
   ]
+  const tabs = visible ? allTabs.filter((t) => visible.includes(t.id)) : allTabs
   return (
     <div className="flex border-b bg-muted/30">
       {tabs.map((t) => (
@@ -758,7 +762,7 @@ export function FolderUploadButton({ onFiles, disabled }: FolderUploadButtonProp
         )}
         title="Upload folder"
       >
-        <FolderIcon className="h-4 w-4" /> Folder
+        <FolderIcon className="h-4 w-4" /> Upload Folder
       </button>
       <input
         ref={inputRef}

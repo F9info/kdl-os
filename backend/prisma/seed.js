@@ -3,7 +3,6 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '../src/config/database.js';
 import { seedUserManagement } from './seeders/user-management.seed.js';
 import { seedCoreModules } from './seeders/modules.seed.js';
-import { seedMediaPhaseB } from './seeders/media-phase-b.seed.js';
 
 async function main() {
   const password_hash = await bcrypt.hash('Admin@123', 12);
@@ -21,9 +20,10 @@ async function main() {
 
   console.log('Seeded admin:', admin.email);
 
-  await seedUserManagement(prisma);
+  // Core modules (incl. media's manifest-driven permissions) must be
+  // registered before seedUserManagement so its Admin-role grant can see them.
   await seedCoreModules(prisma);
-  await seedMediaPhaseB(prisma);
+  await seedUserManagement(prisma);
 }
 
 main()

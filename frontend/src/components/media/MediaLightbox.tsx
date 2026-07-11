@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { X, Download } from 'lucide-react'
 import type { Media } from '@/types/media.types'
+import { usePermissions } from '@/hooks/usePermissions'
 
 interface MediaLightboxProps {
   item: Media | null
@@ -13,6 +14,7 @@ interface MediaLightboxProps {
 // "Preview" action. Renders the actual file (not a thumbnail) for image,
 // video, audio, and PDF; falls back to a download link for anything else.
 export function MediaLightbox({ item, onClose }: MediaLightboxProps) {
+  const { can } = usePermissions()
   useEffect(() => {
     if (!item) return
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
@@ -39,7 +41,7 @@ export function MediaLightbox({ item, onClose }: MediaLightboxProps) {
       <div className="flex items-center justify-between px-4 py-3 text-white flex-shrink-0" onClick={(e) => e.stopPropagation()}>
         <span className="text-sm truncate">{name}</span>
         <div className="flex items-center gap-2">
-          {item.url && (
+          {item.url && can('media:download') && (
             <a
               href={item.url}
               target="_blank"

@@ -803,3 +803,30 @@ Procedure (per the stale-image lesson from KDL-39): `docker compose build backen
 Note: image freshness was ambiguous before this run (frontend image finished building 29s after the last `StatusBadge.tsx` edit) — rebuild removed the doubt; results above are from clean images.
 
 **Next:** MODULE_PLUGIN_ARCH steps complete (Step 7 review PASS, Step 8 gate PASS, Step 9 docs done). Parent KDL-76 in_review awaits human approval. Carried-forward non-blocking findings: M6 permission-format mismatch, L1-L6.
+
+---
+
+## 2026-07-11 — KDL-151 Media DAM: Folder toolbar fix + granular per-feature permissions (KDL-MEDIA-12) — DONE
+
+**Agent:** CEO
+
+Follow-up to KDL-150. Two items, both verified against a freshly rebuilt + reseeded docker stack (`docker compose -p kdl-starter-kit build backend frontend && up -d` → `prisma migrate deploy` + `node prisma/seed.js` in the backend container).
+
+1. **Folder toolbar dead no-op** — the toolbar **Folder** button already wired to the same `createFolderOpen` state/dialog as the Folders-panel `+` icon (`frontend/src/app/admin/media/page.tsx`). Verified live in a headless browser: click → New-folder dialog opens → create → folder appears in the tree.
+
+2. **KDL-MEDIA-12 granular per-feature permissions** — full implementation, not partial:
+   - `manifest-schema.js` extended so a module's `permissions` entry can be a bare string (default 5 CRUD actions) or `{ name, actions }` (explicit per-feature list) — generic infra, not media-specific.
+   - `backend/src/modules/media/module.json` registers all 23 required actions (upload, download, preview, edit-image, share-link, folders, collections, tags, favorites, metadata-edit, custom-fields, visibility-toggle, soft-delete, trash-view, restore, purge, cloud-import, ai-providers, capture, + view/edit/publish/approve) via the manifest — never a manual seeder edit.
+   - Every route in `media/routes.js` guarded by `requirePermission('media', <action>)` after `authenticate`; `PATCH /:id` splits metadata-edit vs visibility-toggle in the controller since both share one endpoint.
+   - Seeders reordered (`seedCoreModules` before `seedUserManagement`) so Admin's auto-grant sees media's manifest-driven permission rows; `media` removed from the old hardcoded seeder list.
+   - Frontend: `usePermissions().can('media:<action>')` gates every control/tab/nav entry across `page.tsx`, `DamExtensions.tsx`, `MediaLightbox.tsx`.
+   - Super Admin bypass unaffected (existing `resolvePermissions`/`hasPermission` infra).
+
+**Gates verified:**
+- Backend: `vitest run` — **634/634 pass** (28 media test files incl. new `tests/media/rbac.test.js` 6/6), no regressions.
+- Frontend: `tsc --noEmit` exit 0.
+- E2E: existing `e2e/media-dam.spec.ts` 4/5 pass (1 pre-existing skip) against rebuilt images.
+- Live API gate (created a real `media:view + media:upload`-only test role/user via the running stack, deleted after): `GET /api/media` 200, `GET /api/media/folders` 200, `POST /api/media/folders` 403, `GET /api/media/trash` 403, `GET /api/media/ai/providers` 403, `POST /api/media/shares` 403, `GET /api/media/import/providers` 403. Granting `media:edit-image` unblocked `POST /:id/edit` (422 validation, not 403) while `share-link` stayed 403 — exact KDL-151 gate.
+- Live UI gate: folder toolbar button opens dialog + creates a folder (headless browser, screenshot-verified).
+
+**Next:** none — both items closed. No open blockers.

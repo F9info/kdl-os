@@ -44,3 +44,4 @@ frontend/test-results/
 
 # misc
 *.pem
+.gstack/

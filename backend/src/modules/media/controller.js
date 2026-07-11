@@ -11,6 +11,7 @@ import { transformMedia, buildSrcset } from './transform.service.js';
 import * as commentsService from './comments.service.js';
 import { transitionWorkflow as workflowTransition } from './workflow.service.js';
 import { successResponse, errorResponse } from '../../shared/utils/response.js';
+import { hasPermission } from '../user-management/shared/permission-resolver.js';
 
 // ─── Search ──────────────────────────────────────────────────────────────────
 
@@ -256,6 +257,12 @@ export const getMedia = async (req, res, next) => {
 
 export const updateMedia = async (req, res, next) => {
   try {
+    // The route guard covers 'metadata-edit'; 'visibility' is a distinct
+    // per-feature permission (KDL-MEDIA-12), checked here since both fields
+    // share this one PATCH endpoint.
+    if (req.validated.body.visibility !== undefined && !(await hasPermission(req.user.id, 'media', 'visibility-toggle'))) {
+      return errorResponse(res, 'Forbidden', 403);
+    }
     const media = await mediaService.updateMediaMeta(req.validated.params.id, req.validated.body, req.user.id);
     if (!media) return errorResponse(res, 'Media not found', 404);
     return successResponse(res, { media });
