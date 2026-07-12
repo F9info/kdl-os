@@ -1,8 +1,8 @@
 // KDL Phase D8 — RTL gate: CloudImportDialog (cloud imports).
-// Mocks mirror the backend contract:
-//   GET  /media/import/providers               → [{ provider, auth, configured }]
-//   GET  /media/import/connections             → [{ id, provider, label, created_at, updated_at }]
-//   POST /media/import/connections             → connection (s3/ftp credentials)
+// Mocks mirror the backend contract (see backend/src/modules/media/import/controller.js):
+//   GET  /media/import/providers               → { items: [{ provider, auth, configured }] }
+//   GET  /media/import/connections             → { items: [{ id, provider, label, created_at, updated_at }] }
+//   POST /media/import/connections             → { item: connection } (s3/ftp credentials)
 //   GET  /media/import/connections/:id/browse  → { entries, cursor }
 //   POST /media/import/connections/:id/import  → { imported, skipped }
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -48,9 +48,9 @@ const IMPORT_RESULT = {
 function setupApi({ connections = CONNECTIONS } = {}) {
   vi.mocked(api.get).mockImplementation((url: string) => {
     if (url === '/media/import/providers')
-      return Promise.resolve({ data: { data: PROVIDERS } }) as ReturnType<typeof api.get>
+      return Promise.resolve({ data: { data: { items: PROVIDERS } } }) as ReturnType<typeof api.get>
     if (url === '/media/import/connections')
-      return Promise.resolve({ data: { data: connections } }) as ReturnType<typeof api.get>
+      return Promise.resolve({ data: { data: { items: connections } } }) as ReturnType<typeof api.get>
     if (url === '/media/import/connections/c1/browse')
       return Promise.resolve({ data: { data: BROWSE_ROOT } }) as ReturnType<typeof api.get>
     return Promise.resolve({ data: { data: {} } }) as ReturnType<typeof api.get>
@@ -58,7 +58,7 @@ function setupApi({ connections = CONNECTIONS } = {}) {
   vi.mocked(api.post).mockImplementation((url: string) => {
     if (url === '/media/import/connections')
       return Promise.resolve({
-        data: { data: { id: 'c2', provider: 's3', label: 'New bucket', created_at: '', updated_at: '' } },
+        data: { data: { item: { id: 'c2', provider: 's3', label: 'New bucket', created_at: '', updated_at: '' } } },
       }) as ReturnType<typeof api.post>
     if (url === '/media/import/connections/c1/import')
       return Promise.resolve({ data: { data: IMPORT_RESULT } }) as ReturnType<typeof api.post>
@@ -167,9 +167,9 @@ describe('CloudImportDialog (Phase D8) — browser step', () => {
   it('shows Load more when cursor is non-null and passes it back', async () => {
     vi.mocked(api.get).mockImplementation((url: string, config?: { params?: Record<string, string> }) => {
       if (url === '/media/import/providers')
-        return Promise.resolve({ data: { data: PROVIDERS } }) as ReturnType<typeof api.get>
+        return Promise.resolve({ data: { data: { items: PROVIDERS } } }) as ReturnType<typeof api.get>
       if (url === '/media/import/connections')
-        return Promise.resolve({ data: { data: CONNECTIONS } }) as ReturnType<typeof api.get>
+        return Promise.resolve({ data: { data: { items: CONNECTIONS } } }) as ReturnType<typeof api.get>
       if (url === '/media/import/connections/c1/browse') {
         if (config?.params?.cursor === 'cur1')
           return Promise.resolve({
