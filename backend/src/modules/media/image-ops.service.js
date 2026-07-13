@@ -433,10 +433,14 @@ export const runImageEdit = async ({ mediaId, ops, note, createdBy }) => {
     },
   });
 
-  // Record now points at newPath — safe to drop the stale key + its variants.
+  // Record now points at newPath — safe to drop the stale original key.
+  // Variant keys are `variants/<uuid>_<size>.webp`, derived only from the
+  // media's uuid (never the extension), so generateVariants() above always
+  // overwrote the SAME variant keys the pre-edit record already pointed at —
+  // they're never orphaned. Deleting media.variants here would delete the
+  // variants that were just regenerated.
   if (extChanged) {
-    const oldVariantPaths = media.variants ? Object.values(media.variants).filter(Boolean) : [];
-    await storageService.deleteFiles([media.path, ...oldVariantPaths])
+    await storageService.deleteFiles([media.path])
       .catch((e) => logger.warn(`cleanup of stale media object after edit failed: ${e.message}`));
   }
 
