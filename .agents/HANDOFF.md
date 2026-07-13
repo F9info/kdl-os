@@ -665,3 +665,44 @@ Blockers: none.
 4. **rgba regex tightened** — `!/^rgba?\(\s*\d/` replaces `!/^rgba?\(/`; requires at least one digit after the opening paren.
 
 **Gates**: `vitest run src/modules/template-engine/` → 0. **49/49 pass** (38 api + 8 schema + 3 seed).
+
+## 2026-07-13 — KDL-177 Phase C frontend port (Frontend Coder)
+
+**Work done:**
+- `frontend/src/app/admin/template-engine/page.tsx` — full port of `template-engine.html` prototype (2746 lines → 1710 lines TSX).
+  - `<ModuleGuard slug="template-engine">` wrapper ✓
+  - Platform bar (webapp/tv/android/ios) with dirty indicators ✓
+  - macOS-style grouped sidebar with search + per-pane dirty dots ✓
+  - Per-pane live device previews (browser/phone/TV frames) ✓
+  - Dark/light toggle (scoped CSS variables) ✓
+  - Per-pane dirty tracking (`dirtyValues` map) ✓
+  - Footer Save/Reset buttons ✓
+  - `useQuery(GET /template-engine/schema?platform=)` for load ✓
+  - `useMutation(POST /template-engine/values)` for save (per active platform+pane) ✓
+  - `useMutation(POST /template-engine/reset)` for reset ✓
+  - `localStorage` only for UI prefs (platform, pane, theme, mode, device) ✓
+  - All API calls through `lib/axios.ts`; auth state from `auth.store` ✓
+- `frontend/tests/rtl/regression/template-engine.test.tsx` — 7 RTL tests covering:
+  - Platform switch (webapp → tv, schema re-fetched)
+  - Dirty → save (field change → POST /values → dirty cleared)
+  - Reset with dirty (confirm dialog → POST /reset)
+  - Reset without dirty (no dialog → POST /reset directly)
+  - Module disabled (ModuleGuard shows "not available")
+
+**Gates passed:**
+- `tsc --noEmit`: exit 0, no errors
+- `vitest run tests/rtl/regression/template-engine.test.tsx`: 7/7 pass
+
+**Next:** KDL-178 — Code review + E2E gate (Code Reviewer). Assignee: Code Reviewer agent.
+
+## 2026-07-13 — KDL-176 B-1 device-filter fix (Backend Coder)
+
+**Bug (review B-1):** `compileTokens` device filter classified any 3rd slug segment that was not a theme tag and not the pane slug as a device tag. Untagged fields (slug shape `{platform}.{pane}.{section}.{field}`, 3rd segment = section slug) were therefore treated as device-tagged and silently dropped for every `?device=` query — all 92 untagged webapp fields disappeared from `GET /tokens?device=…`.
+
+**Fix (`backend/src/modules/template-engine/service.js`):** Build `deviceIds = new Set(PLATFORMS.find(p=>p.id===platform).devices.map(d=>d.id))` (same source as `invalidateTokenCache`, from the `07fc272` cache fix). Device filter now mirrors theme matching — drop a field only when `deviceIds.has(slugParts[2]) && slugParts[2] !== device`. Untagged fields always survive.
+
+**Regression test (`api.test.js`):** "device filter keeps untagged fields and drops only mismatched real-device-tagged fields" — `compileTokens('webapp', null, 'desktop')` must include untagged `webapp.branding.colors.primary` and desktop-tagged field, and exclude `mobile_v`-tagged field. Verified it FAILS on the pre-fix code and PASSES on the fix.
+
+**Gates:** `vitest run src/modules/template-engine/` → exit 0, **51/51 pass** (40 api + 8 schema + 3 seed). Backend has no tsc (plain JS). Full backend suite: 6 pre-existing failures, all in the unrelated `media` module (present on clean HEAD `07fc272`); none touch template-engine.
+
+**Next:** back to `in_review` for Code Reviewer (KDL-176 maker≠grader).

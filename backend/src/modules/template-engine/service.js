@@ -278,6 +278,11 @@ export async function compileTokens(platform, theme, device) {
 
   const typeById = new Map(types.map((t) => [t.id, t]));
 
+  // Real device ids for this platform — same source as invalidateTokenCache.
+  // A field is device-tagged only when its 3rd slug segment is one of these.
+  const plat = PLATFORMS.find((p) => p.id === platform);
+  const deviceIds = new Set(plat ? plat.devices.map((d) => d.id) : []);
+
   const cssVars = {};
   const fontFaces = [];
   const imgClasses = {};
@@ -299,12 +304,12 @@ export async function compileTokens(platform, theme, device) {
       if (isThemeTagged && themeSegment !== theme) continue;
     }
 
-    // Filter by device if requested
+    // Filter by device if requested. Mirror theme matching: only drop a field
+    // when its 3rd segment is a REAL device id that differs from the requested
+    // device. Untagged fields (3rd segment = section slug) are always kept.
     if (device) {
       const deviceSegment = slugParts[2];
-      const isDeviceTagged = deviceSegment && !['dark', 'light', 'focus'].includes(deviceSegment) &&
-        deviceSegment !== slugParts[1]; // not the pane
-      if (isDeviceTagged && deviceSegment !== device) continue;
+      if (deviceIds.has(deviceSegment) && deviceSegment !== device) continue;
     }
 
     // Handle special field types

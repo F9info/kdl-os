@@ -574,6 +574,40 @@ describe('B3 — compileTokens', () => {
     expect(css).toMatch(/height:\s*150px/);
     expect(css).toMatch(/object-fit:\s*cover/);
   });
+
+  // Regression (B-1): device filter must classify by REAL device ids, not by
+  // "not-theme-and-not-pane". Untagged webapp fields (3rd slug segment = section
+  // slug) were silently dropped for every ?device= query. Slugs mirror the real
+  // seed shape: {platform}.{pane}.[{tag}.]{section}.{field}.
+  it('device filter keeps untagged fields and drops only mismatched real-device-tagged fields', async () => {
+    await stubPrismaWithFields([
+      // Untagged field — 3rd segment "colors" is a section slug, NOT a device id.
+      {
+        id: 'f-untagged', slug: 'webapp.branding.colors.primary',
+        field_name: 'Primary', input_type: 'color', value: '#123456',
+        type_id: 'type-1', category_id: null, setting_values: [],
+      },
+      // Real device-tagged field for the requested device (desktop).
+      {
+        id: 'f-desktop', slug: 'webapp.buttons.desktop.primary_button.background',
+        field_name: 'BG Desktop', input_type: 'color', value: '#aaaaaa',
+        type_id: 'type-1', category_id: null, setting_values: [],
+      },
+      // Real device-tagged field for a DIFFERENT device (mobile_v) — must drop.
+      {
+        id: 'f-mobile', slug: 'webapp.buttons.mobile_v.primary_button.background',
+        field_name: 'BG Mobile', input_type: 'color', value: '#bbbbbb',
+        type_id: 'type-1', category_id: null, setting_values: [],
+      },
+    ]);
+    const { css } = await service.compileTokens('webapp', null, 'desktop');
+    // Untagged field survives the device filter (was silently dropped pre-fix).
+    expect(css).toMatch(/--branding_colors_primary:\s*#123456/);
+    // Matching real-device-tagged field present.
+    expect(css).toMatch(/--buttons_desktop_primary_button_background:\s*#aaaaaa/);
+    // Mismatched real-device-tagged field excluded.
+    expect(css).not.toMatch(/mobile_v_primary_button/);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
