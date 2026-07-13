@@ -40,6 +40,9 @@ export interface Media {
   // A2 additions — API flattens pivots: tag names + {slug: value} map
   tags?: string[]
   meta?: Record<string, string>
+  // KDL-172 — true when this file has at least one active (non-revoked,
+  // non-expired, non-exhausted) share link; drives the "Shared" badge.
+  has_active_share?: boolean
 }
 
 export interface MediaFolder {

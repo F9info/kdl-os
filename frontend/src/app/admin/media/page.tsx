@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Folder, FolderPlus, ChevronRight, Upload, Grid, List, Search, Trash2,
-  Move, RefreshCcw, AlertTriangle, X, Eye, Pencil, Info, Cloud, Camera, Maximize2
+  Move, RefreshCcw, AlertTriangle, X, Eye, Pencil, Info, Cloud, Camera, Maximize2, Share2
 } from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
@@ -206,6 +206,8 @@ function MediaItemGrid({
   onDetail,
   onPreview,
   trashActions,
+  processing,
+  onManageShare,
 }: {
   item: Media
   selected: boolean
@@ -213,6 +215,8 @@ function MediaItemGrid({
   onDetail: (item: Media) => void
   onPreview: (item: Media) => void
   trashActions?: TrashRowActions
+  processing?: boolean
+  onManageShare: (item: Media) => void
 }) {
   const { can } = usePermissions()
   const canPreview = can('media:preview')
@@ -226,12 +230,27 @@ function MediaItemGrid({
       onClick={(e) => onToggle(item.id, e)}
       onDoubleClick={(e) => { e.stopPropagation(); if (canPreview) onPreview(item) }}
     >
-      <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden">
+      <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden relative">
         {thumb ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={thumb} alt={item.original_name} className="h-full w-full object-cover" />
         ) : (
           <span className="text-2xl text-muted-foreground font-bold">{item.type[0]}</span>
+        )}
+        {processing && (
+          <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
+            <span className="text-[10px] font-medium text-muted-foreground animate-pulse">Processing…</span>
+          </div>
+        )}
+        {item.has_active_share && (
+          <button
+            type="button"
+            title="Shared — manage or revoke links"
+            onClick={(e) => { e.stopPropagation(); onManageShare(item) }}
+            className="absolute bottom-1 left-1 flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-primary text-primary-foreground text-[10px] font-medium hover:opacity-90"
+          >
+            <Share2 className="h-2.5 w-2.5" /> Shared
+          </button>
         )}
       </div>
       <div className="p-1.5">
@@ -305,6 +324,8 @@ function MediaItemList({
   onDetail,
   onPreview,
   trashActions,
+  processing,
+  onManageShare,
 }: {
   item: Media
   selected: boolean
@@ -312,6 +333,8 @@ function MediaItemList({
   onDetail: (item: Media) => void
   onPreview: (item: Media) => void
   trashActions?: TrashRowActions
+  processing?: boolean
+  onManageShare: (item: Media) => void
 }) {
   const { can } = usePermissions()
   const canPreview = can('media:preview')
@@ -332,17 +355,33 @@ function MediaItemList({
         className="h-4 w-4 rounded"
         onClick={(e) => { e.stopPropagation(); onToggle(item.id, e as unknown as React.MouseEvent) }}
       />
-      <div className="h-8 w-8 flex-shrink-0 rounded overflow-hidden bg-muted flex items-center justify-center">
+      <div className="h-8 w-8 flex-shrink-0 rounded overflow-hidden bg-muted flex items-center justify-center relative">
         {thumb ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={thumb} alt={item.original_name} className="h-full w-full object-cover" />
         ) : (
           <span className="text-xs text-muted-foreground">{item.type[0]}</span>
         )}
+        {processing && <div className="absolute inset-0 bg-background/70 animate-pulse" />}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm truncate font-medium">{item.title || item.original_name}</p>
-        <p className="text-xs text-muted-foreground">{item.mime_type} · {formatBytes(item.size)}</p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-sm truncate font-medium">{item.title || item.original_name}</p>
+          {item.has_active_share && (
+            <button
+              type="button"
+              title="Shared — manage or revoke links"
+              onClick={(e) => { e.stopPropagation(); onManageShare(item) }}
+              className="flex-shrink-0 flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-primary text-primary-foreground text-[10px] font-medium hover:opacity-90"
+            >
+              <Share2 className="h-2.5 w-2.5" /> Shared
+            </button>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {item.mime_type} · {formatBytes(item.size)}
+          {processing && <span className="ml-1 text-primary">· Processing…</span>}
+        </p>
       </div>
       <span className="text-xs text-muted-foreground">{formatDate(item.created_at)}</span>
       {trashActions ? (
@@ -623,11 +662,15 @@ function DetailDrawer({
   onClose,
   onDeleted,
   onPreview,
+  processing,
+  onEditJobStarted,
 }: {
   item: Media
   onClose: () => void
   onDeleted: () => void
   onPreview: () => void
+  processing?: boolean
+  onEditJobStarted: (mediaId: string, jobId: string) => void
 }) {
   const { can } = usePermissions()
   const queryClient = useQueryClient()
@@ -723,9 +766,14 @@ function DetailDrawer({
           Editing isn&apos;t supported for {item.mime_type} files
         </p>
       )}
+      {processing && (
+        <p className="text-xs text-muted-foreground text-center animate-pulse">
+          Processing edit… this will update automatically.
+        </p>
+      )}
       {isImage && canEditImage && item.url && can('media:edit-image') && (
-        <Button size="sm" variant="outline" className="w-full" onClick={() => setEditorOpen(true)}>
-          Edit image (crop, resize, rotate…)
+        <Button size="sm" variant="outline" className="w-full" disabled={processing} onClick={() => setEditorOpen(true)}>
+          {processing ? 'Processing…' : 'Edit image (crop, resize, rotate…)'}
         </Button>
       )}
       {isImage && canEditImage && item.url && can('media:edit-image') && (
@@ -734,7 +782,7 @@ function DetailDrawer({
           mediaUrl={item.url}
           open={editorOpen}
           onClose={() => setEditorOpen(false)}
-          onSaved={() => queryClient.invalidateQueries({ queryKey: ['media'] })}
+          onSaved={(jobId) => onEditJobStarted(item.id, jobId)}
         />
       )}
 
@@ -742,8 +790,11 @@ function DetailDrawer({
           in the app, so there was no way to create or copy a share link. */}
       {can('media:share-link') && (
         <>
-          <Button size="sm" variant="outline" className="w-full" onClick={() => setShareOpen(true)}>
-            Share / copy link
+          <Button size="sm" variant="outline" className="w-full gap-1.5" onClick={() => setShareOpen(true)}>
+            {item.has_active_share && (
+              <Badge className="h-4 px-1 text-[10px] leading-none">Shared</Badge>
+            )}
+            Share / copy link{item.has_active_share ? ' / revoke' : ''}
           </Button>
           <ShareDialog
             open={shareOpen}
@@ -935,7 +986,16 @@ export default function MediaPage() {
   const [searchResults, setSearchResults] = useState<MediaSearchResult | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [detailItem, setDetailItem] = useState<Media | null>(null)
+  // KDL-172: media ids with an image-edit job in flight — drives the
+  // "processing…" indicator on the grid tile / File Details panel so the UI
+  // doesn't look frozen while the async job runs.
+  const [processingMediaIds, setProcessingMediaIds] = useState<Set<string>>(new Set())
+  const editPollIntervals = useRef<Set<ReturnType<typeof setInterval>>>(new Set())
+  useEffect(() => () => { editPollIntervals.current.forEach(clearInterval) }, [])
   const [lightboxItem, setLightboxItem] = useState<Media | null>(null)
+  // KDL-172: clicking a file's "Shared" badge opens share management/revoke
+  // directly, without needing to open the full File Details drawer first.
+  const [shareTarget, setShareTarget] = useState<Media | null>(null)
   const [lastClickIdx, setLastClickIdx] = useState<number | null>(null)
   // A8: chunked upload dialog
   const [chunkedFiles, setChunkedFiles] = useState<File[]>([])
@@ -970,6 +1030,11 @@ export default function MediaPage() {
 
   const foldersQuery = useQuery({ queryKey: ['media-folders'], queryFn: mediaApi.folders })
   const folders = foldersQuery.data ?? []
+  // KDL-172: uploads silently land in whatever folder happened to be
+  // selected, with no indication of where — surface it next to Upload.
+  const uploadDestinationName = selectedFolder
+    ? folders.find((f) => f.id === selectedFolder)?.name ?? 'Selected folder'
+    : 'Root (no folder)'
 
   // Phase D5: the search bar's semantic-mode toggle stays hidden until an
   // embeddings AI provider is configured (mirrors the per-item aiStatus gate
@@ -999,16 +1064,47 @@ export default function MediaPage() {
     enabled: view === 'trash',
   })
 
+  // KDL-172: shared entry point for any "files arrived from outside the app"
+  // source (paste, the toolbar Upload dropzone, drag-and-drop onto the grid) —
+  // large files route to the chunked-upload flow, everything else uploads
+  // straight into whatever folder is currently selected.
+  const handleIncomingFiles = useCallback((files: File[]) => {
+    const large = files.filter((f) => f.size > 50 * 1024 * 1024)
+    const small = files.filter((f) => f.size <= 50 * 1024 * 1024)
+    if (small.length) uploadMutation.mutate(small)
+    if (large.length) { setChunkedFiles(large); setChunkedOpen(true) }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   // A8: clipboard paste — attach images/files pasted anywhere on the page
-  useClipboardPaste(
-    useCallback((files: File[]) => {
-      const large = files.filter((f) => f.size > 50 * 1024 * 1024)
-      const small = files.filter((f) => f.size <= 50 * 1024 * 1024)
-      if (small.length) uploadMutation.mutate(small)
-      if (large.length) { setChunkedFiles(large); setChunkedOpen(true) }
-    }, []), // eslint-disable-line react-hooks/exhaustive-deps
-    can('media:upload')
-  )
+  useClipboardPaste(handleIncomingFiles, can('media:upload'))
+
+  // KDL-172: drag-and-drop onto the library grid. Tracks an enter/leave
+  // counter (not a plain boolean) because the grid has nested children —
+  // dragging over a child fires dragleave on the parent before dragenter on
+  // the child, which would otherwise flicker the overlay off mid-drag.
+  const [gridDragActive, setGridDragActive] = useState(false)
+  const dragDepth = useRef(0)
+  const gridDragHandlers = can('media:upload') && view === 'files'
+    ? {
+        onDragEnter: (e: React.DragEvent) => {
+          e.preventDefault()
+          dragDepth.current += 1
+          setGridDragActive(true)
+        },
+        onDragOver: (e: React.DragEvent) => e.preventDefault(),
+        onDragLeave: (e: React.DragEvent) => {
+          e.preventDefault()
+          dragDepth.current = Math.max(0, dragDepth.current - 1)
+          if (dragDepth.current === 0) setGridDragActive(false)
+        },
+        onDrop: (e: React.DragEvent) => {
+          e.preventDefault()
+          dragDepth.current = 0
+          setGridDragActive(false)
+          if (e.dataTransfer.files.length) handleIncomingFiles(Array.from(e.dataTransfer.files))
+        },
+      }
+    : {}
 
   // A8: open detail by id — search hits / collection docs lack url+variants, so
   // fetch the full row before showing the drawer
@@ -1064,6 +1160,47 @@ export default function MediaPage() {
     setTimeout(() => queryClient.invalidateQueries({ queryKey: ['media'] }), 8_000)
   }
 
+  // KDL-172: image edits run as an async job — invalidating the media query
+  // right when the job is *queued* just refetches the pre-edit row, which is
+  // what made edits look like a silent no-op until a manual page refresh.
+  // Poll the job and only refresh once it has actually finished.
+  const pollEditJob = useCallback((mediaId: string, jobId: string) => {
+    setProcessingMediaIds((prev) => new Set(prev).add(mediaId))
+    const stop = () => {
+      clearInterval(interval)
+      editPollIntervals.current.delete(interval)
+      setProcessingMediaIds((prev) => {
+        const next = new Set(prev)
+        next.delete(mediaId)
+        return next
+      })
+    }
+    const interval = setInterval(async () => {
+      try {
+        const res = await api.get<{ data: { state: string; failedReason: string | null } }>(`/media/jobs/${jobId}`)
+        const { state, failedReason } = res.data.data
+        if (state === 'completed') {
+          stop()
+          queryClient.invalidateQueries({ queryKey: ['media'] })
+          // Refresh the open File Details row too — it's a state snapshot,
+          // not derived from the ['media'] query, so it needs its own refetch.
+          setDetailItem((cur) => {
+            if (cur?.id === mediaId) mediaApi.get(mediaId).then(setDetailItem).catch(() => {})
+            return cur
+          })
+          toast({ title: 'Edit applied' })
+        } else if (state === 'failed') {
+          stop()
+          toast({ title: 'Edit failed', description: failedReason ?? undefined, variant: 'destructive' })
+        }
+      } catch {
+        stop()
+        toast({ title: 'Failed to check edit status', variant: 'destructive' })
+      }
+    }, 1500)
+    editPollIntervals.current.add(interval)
+  }, [queryClient]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const uploadMutation = useMutation({
     mutationFn: (files: File[]) => mediaApi.upload(files, selectedFolder ?? null),
     onSuccess: () => { invalidateAll(); toast({ title: 'Upload complete' }) },
@@ -1108,6 +1245,19 @@ export default function MediaPage() {
     mutationFn: () => mediaApi.move(Array.from(selected), moveTargetFolder),
     onSuccess: () => { invalidateAll(); setSelected(new Set()); setMoveOpen(false) },
     onError: () => toast({ title: 'Move failed', variant: 'destructive' }),
+  })
+
+  // KDL-172 — bulk "Make shared", since there's otherwise no way to mark
+  // files as Shared except opening each one's File Details individually.
+  const bulkShareMutation = useMutation({
+    mutationFn: () =>
+      Promise.all(Array.from(selected).map((id) => mediaApi.update(id, { visibility: 'SHARED' }))),
+    onSuccess: () => {
+      invalidateAll()
+      setSelected(new Set())
+      toast({ title: 'Marked as shared' })
+    },
+    onError: () => toast({ title: 'Failed to mark as shared', variant: 'destructive' }),
   })
 
   const restoreMutation = useMutation({
@@ -1263,15 +1413,13 @@ export default function MediaPage() {
                 {can('media:upload') && (
                   <>
                     <UploadZone
-                      onFiles={(files) => {
-                        const large = files.filter((f) => f.size > 50 * 1024 * 1024)
-                        const small = files.filter((f) => f.size <= 50 * 1024 * 1024)
-                        if (small.length) uploadMutation.mutate(small)
-                        if (large.length) { setChunkedFiles(large); setChunkedOpen(true) }
-                      }}
+                      onFiles={handleIncomingFiles}
                       disabled={uploadMutation.isPending}
                     />
                     <FolderUploadButton onFiles={handleFolderUpload} disabled={uploadMutation.isPending} />
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      Uploading to: <span className="font-medium text-foreground">{uploadDestinationName}</span>
+                    </span>
                   </>
                 )}
                 {can('media:folders') && (
@@ -1346,6 +1494,16 @@ export default function MediaPage() {
                         <Move className="h-3.5 w-3.5 mr-1" />Move
                       </Button>
                     )}
+                    {can('media:visibility-toggle') && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => bulkShareMutation.mutate()}
+                        disabled={bulkShareMutation.isPending}
+                      >
+                        <Share2 className="h-3.5 w-3.5 mr-1" />Make shared
+                      </Button>
+                    )}
                     {can('media:soft-delete') && (
                       <Button size="sm" variant="destructive" onClick={() => setConfirmBulkDelete(true)}>
                         <Trash2 className="h-3.5 w-3.5 mr-1" />Delete
@@ -1403,7 +1561,14 @@ export default function MediaPage() {
           </div>
 
           {/* Files area */}
-          <div className="flex-1 overflow-y-auto p-3">
+          <div className="flex-1 overflow-y-auto p-3 relative" {...gridDragHandlers}>
+            {gridDragActive && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-primary/10 border-2 border-dashed border-primary rounded-md pointer-events-none">
+                <p className="text-sm font-medium text-primary bg-background/90 px-4 py-2 rounded shadow">
+                  Drop files to upload to: {uploadDestinationName}
+                </p>
+              </div>
+            )}
             {/* A8: collection / favorites / recents special views */}
             {sidebarView === 'collections' && selectedCollection && (
               <CollectionItemsView collectionId={selectedCollection} onDetail={openDetailById} />
@@ -1438,6 +1603,8 @@ export default function MediaPage() {
                     onToggle={handleToggle}
                     onDetail={handleDetail}
                     onPreview={handlePreview}
+                    processing={processingMediaIds.has(item.id)}
+                    onManageShare={setShareTarget}
                     trashActions={view === 'trash' ? { onRestore: (id) => restoreOneMutation.mutate(id), onDeleteForever: setDeleteForeverTarget } : undefined}
                   />
                 ))}
@@ -1452,6 +1619,8 @@ export default function MediaPage() {
                     onToggle={handleToggle}
                     onDetail={handleDetail}
                     onPreview={handlePreview}
+                    processing={processingMediaIds.has(item.id)}
+                    onManageShare={setShareTarget}
                     trashActions={view === 'trash' ? { onRestore: (id) => restoreOneMutation.mutate(id), onDeleteForever: setDeleteForeverTarget } : undefined}
                   />
                 ))}
@@ -1471,11 +1640,23 @@ export default function MediaPage() {
               setDetailItem(null)
             }}
             onPreview={() => setLightboxItem(detailItem)}
+            processing={processingMediaIds.has(detailItem.id)}
+            onEditJobStarted={pollEditJob}
           />
         )}
       </div>
 
       <MediaLightbox item={lightboxItem} onClose={() => setLightboxItem(null)} />
+
+      {/* KDL-172: opened directly from the grid/list "Shared" badge */}
+      {shareTarget && (
+        <ShareDialog
+          open={Boolean(shareTarget)}
+          onClose={() => setShareTarget(null)}
+          mediaId={shareTarget.id}
+          mediaName={shareTarget.original_name}
+        />
+      )}
 
       {/* A8: chunked upload dialog */}
       {chunkedOpen && chunkedFiles.length > 0 && (
