@@ -1,30 +1,73 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Package, Lock, CheckCircle, XCircle, Settings } from 'lucide-react'
+import {
+  Package,
+  Lock,
+  CheckCircle,
+  XCircle,
+  Settings,
+  Search,
+  Image,
+  Sparkles,
+  Shield,
+  Activity,
+  Users,
+  Box,
+  FileText,
+  LayoutGrid,
+} from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
+import { cn } from '@/lib/utils'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PermissionGuard } from '@/components/shared/PermissionGuard'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { Modal } from '@/components/shared/Modal'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import type { Module, ModuleStatus } from '@/types/models.types'
 
+const MODULE_ICON_MAP: Record<string, React.ElementType> = {
+  Image,
+  Package,
+  Box,
+  FileText,
+  Settings,
+  Activity,
+  Lock,
+  Shield,
+  Users,
+  Sparkles,
+}
+
+function ModuleIcon({ icon }: { icon: string | null }) {
+  const Icon = (icon ? MODULE_ICON_MAP[icon] : null) ?? Package
+  return (
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted">
+      <Icon className="h-5 w-5 text-muted-foreground" />
+    </div>
+  )
+}
+
+const STATUS_META: Record<ModuleStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+  AVAILABLE: { label: 'Available', variant: 'outline' },
+  INSTALLED: { label: 'Installed', variant: 'secondary' },
+  ENABLED: { label: 'Enabled', variant: 'default' },
+  DISABLED: { label: 'Disabled', variant: 'destructive' },
+}
+
 function StatusBadgeModule({ status }: { status: ModuleStatus }) {
-  const map: Record<ModuleStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-    AVAILABLE: { label: 'Available', variant: 'outline' },
-    INSTALLED: { label: 'Installed', variant: 'secondary' },
-    ENABLED: { label: 'Enabled', variant: 'default' },
-    DISABLED: { label: 'Disabled', variant: 'destructive' },
-  }
-  const { label, variant } = map[status] ?? { label: status, variant: 'outline' }
+  const { label, variant } = STATUS_META[status] ?? { label: status, variant: 'outline' }
   return <Badge variant={variant}>{label}</Badge>
 }
+
+type StatusFilter = 'ALL' | ModuleStatus
 
 type Action = 'install' | 'enable' | 'disable'
 
@@ -44,6 +87,8 @@ export default function ModulesPage() {
   const queryClient = useQueryClient()
   const [confirm, setConfirm] = useState<ConfirmState>({ open: false, slug: '', action: 'enable' })
   const [settingsDialog, setSettingsDialog] = useState<SettingsState>({ open: false, slug: '', value: '' })
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
 
   const { data, isLoading } = useQuery({
     queryKey: ['modules'],
@@ -119,7 +164,40 @@ export default function ModulesPage() {
     closeConfirm()
   }
 
-  const modules = data ?? []
+  const modules = useMemo(() => data ?? [], [data])
+
+  const statusCounts = useMemo(() => {
+    const counts: Record<StatusFilter, number> = {
+      ALL: modules.length,
+      AVAILABLE: 0,
+      INSTALLED: 0,
+      ENABLED: 0,
+      DISABLED: 0,
+    }
+    for (const mod of modules) counts[mod.status] += 1
+    return counts
+  }, [modules])
+
+  const filteredModules = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    return modules.filter((mod) => {
+      if (statusFilter !== 'ALL' && mod.status !== statusFilter) return false
+      if (!query) return true
+      return (
+        mod.name.toLowerCase().includes(query) ||
+        mod.slug.toLowerCase().includes(query) ||
+        (mod.description ?? '').toLowerCase().includes(query)
+      )
+    })
+  }, [modules, search, statusFilter])
+
+  const filterChips: Array<{ key: StatusFilter; label: string }> = [
+    { key: 'ALL', label: 'All' },
+    { key: 'ENABLED', label: 'Enabled' },
+    { key: 'INSTALLED', label: 'Installed' },
+    { key: 'AVAILABLE', label: 'Available' },
+    { key: 'DISABLED', label: 'Disabled' },
+  ]
 
   const confirmLabels: Record<Action, { title: string; description: string; btn: string }> = {
     install: {
@@ -144,36 +222,102 @@ export default function ModulesPage() {
   return (
     <PermissionGuard permission="modules:view">
       <div className="p-6">
-        <PageHeader title="Modules" />
+        <PageHeader
+          title="Modules"
+          action={
+            !isLoading && (
+              <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <LayoutGrid className="h-4 w-4" />
+                {statusCounts.ALL} {statusCounts.ALL === 1 ? 'module' : 'modules'}
+              </span>
+            )
+          }
+        />
+
+        <div className="sticky top-0 z-10 -mx-6 flex flex-col gap-3 border-b bg-background/95 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative w-full sm:max-w-xs">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search modules…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8"
+              aria-label="Search modules"
+            />
+          </div>
+
+          <div className="flex flex-wrap gap-1.5">
+            {filterChips.map((chip) => (
+              <button
+                key={chip.key}
+                type="button"
+                onClick={() => setStatusFilter(chip.key)}
+                className={cn(
+                  'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                  statusFilter === chip.key
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-input bg-background text-muted-foreground hover:bg-muted'
+                )}
+              >
+                {chip.label}
+                <span className="ml-1 tabular-nums opacity-70">{statusCounts[chip.key]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
 
         {isLoading && (
-          <div className="mt-8 text-center text-gray-500">Loading modules…</div>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="rounded-lg border bg-white p-5">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-10 w-10 rounded-md" />
+                  <Skeleton className="h-4 w-2/3" />
+                </div>
+                <Skeleton className="mt-4 h-3 w-full" />
+                <Skeleton className="mt-2 h-3 w-4/5" />
+                <Skeleton className="mt-4 h-8 w-24" />
+              </div>
+            ))}
+          </div>
         )}
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {modules.map((mod) => (
-            <div
-              key={mod.slug}
-              className="rounded-lg border bg-white p-5 shadow-sm flex flex-col gap-3"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <Package className="h-5 w-5 text-gray-400 shrink-0" />
-                  <span className="font-medium text-gray-900">{mod.name}</span>
-                  {mod.core && (
-                    <Lock className="h-4 w-4 text-gray-400 shrink-0" aria-label="Core module — cannot be disabled" />
-                  )}
+        {!isLoading && filteredModules.length === 0 && (
+          <div className="mt-16 flex flex-col items-center gap-2 text-center text-muted-foreground">
+            <Package className="h-8 w-8 text-gray-300" />
+            <p className="font-medium text-gray-700">No modules match</p>
+            <p className="text-sm">Try a different search term or clear the status filter.</p>
+          </div>
+        )}
+
+        {!isLoading && filteredModules.length > 0 && (
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredModules.map((mod) => (
+              <div
+                key={mod.slug}
+                className="flex h-full flex-col gap-3 rounded-lg border bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <ModuleIcon icon={mod.icon} />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="truncate font-medium text-gray-900">{mod.name}</span>
+                        {mod.core && (
+                          <Lock className="h-3.5 w-3.5 shrink-0 text-gray-400" aria-label="Core module — cannot be disabled" />
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400">v{mod.version}</p>
+                    </div>
+                  </div>
+                  <StatusBadgeModule status={mod.status} />
                 </div>
-                <StatusBadgeModule status={mod.status} />
-              </div>
 
-              {mod.description && (
-                <p className="text-sm text-gray-500">{mod.description}</p>
-              )}
+                <p className="line-clamp-2 flex-1 text-sm text-gray-500">
+                  {mod.description ?? '—'}
+                </p>
 
-              <p className="text-xs text-gray-400">v{mod.version}</p>
-
-              <div className="flex flex-wrap gap-2 pt-1">
+                <div className="flex flex-wrap items-center gap-2 border-t pt-3">
                   {!mod.core && mod.status === 'AVAILABLE' && (
                     <Button size="sm" onClick={() => openConfirm(mod.slug, 'install')}>
                       <CheckCircle className="mr-1 h-4 w-4" />
@@ -205,9 +349,10 @@ export default function ModulesPage() {
                     </Button>
                   )}
                 </div>
-            </div>
-          ))}
-        </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         <ConfirmDialog
           open={confirm.open}
