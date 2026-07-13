@@ -191,7 +191,7 @@ Port `template-engine.html` into `frontend/src/app/admin/template-engine/page.ts
 |---|---|---|
 | A1 | Add `SettingValue` model + `SettingField.setting_values` back-relation to `core.prisma`; migrate | `npx prisma validate` exit 0; `npx prisma migrate dev` clean |
 | A2 | Port prototype schema (`BASE_TABS`/`PANE_OVERRIDES`/`EXTRA_TABS`/`PLATFORMS` + `C/N/…`, `slug`, `scaleField`, build loop) into `modules/template-engine/schema/` as ESM | `vitest`: schema builds all 4 platforms; pane counts = webapp 11 / tv 37 / android 20 / ios 18 |
-| A3 | `seed.js` generates Types/Categories/SettingFields (idempotent upsert on slug, TV scaling, input_type map) | `vitest`: re-run yields 0 duplicates; spot-check `webapp.buttons.desktop.primary_button.background_color` exists with correct default |
+| A3 | `seed.js` generates Types/Categories/SettingFields (idempotent upsert on slug, TV scaling, input_type map) | `vitest`: re-run yields 0 duplicates; spot-check `webapp.buttons.dark.primary_button.background_color` (`#4f8ef7`; light theme `#0a66f0`) exists with correct default — Primary Button is theme-tagged dark/light, not device-tagged |
 
 ### PHASE B — values API + tokens
 | # | Task | Gate |
