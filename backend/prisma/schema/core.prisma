@@ -139,13 +139,29 @@ model SettingField {
   created_at  DateTime  @default(now())
   updated_at  DateTime  @updatedAt
 
-  type     Type      @relation(fields: [type_id], references: [id], onDelete: Cascade)
-  category Category? @relation(fields: [category_id], references: [id], onDelete: SetNull)
+  type           Type           @relation(fields: [type_id], references: [id], onDelete: Cascade)
+  category       Category?      @relation(fields: [category_id], references: [id], onDelete: SetNull)
+  setting_values SettingValue[]
 
   @@index([type_id])
   @@index([category_id])
   @@index([sort])
   @@map("setting_fields")
+}
+
+model SettingValue {
+  id         String   @id @default(cuid())
+  platform   String // webapp | tv | android | ios  (denormalized for fast per-platform load)
+  field_id   String   @unique
+  value      String // stringified; JSON for imglist/fonts/multiselect
+  updated_by String?
+  updated_at DateTime @updatedAt
+  created_at DateTime @default(now())
+
+  field SettingField @relation(fields: [field_id], references: [id], onDelete: Cascade)
+
+  @@index([platform])
+  @@map("setting_values")
 }
 
 model Media {
