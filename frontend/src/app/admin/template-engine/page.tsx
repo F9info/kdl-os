@@ -23,35 +23,48 @@ interface TEFieldOptions {
 interface TEField {
   id: string
   slug: string
-  label: string
+  field_name: string
   input_type: string
   options: TEFieldOptions | null
   alt_text: string | null
   value: string
+  default_value: string
   sort: number
 }
 
 interface TEGroup {
   id: string
+  name: string
   slug: string
-  label: string
-  tag: string | null
   fields: TEField[]
 }
 
 interface TEPane {
-  id: string
-  slug: string
+  id: string // semantic id (e.g. "branding") — used only for UI/localStorage keys
+  type_id: string // Type cuid — the value /values and /reset require
   label: string
   icon: string
-  ic: string
+  ic?: string // optional accent colour for the sidebar chip (not sent by the API)
   modes: { id: string; label: string }[] | null
   devices: { id: string; label: string }[] | null
   groups: TEGroup[]
 }
 
-interface TESchemaResponse {
-  data: TEPane[]
+// GET /template-engine/schema?platform= → { success, data: { platform, schema } }
+interface TESchemaEnvelope {
+  success: boolean
+  data: { platform: string; schema: TEPane[] }
+}
+
+// A group is theme/device-scoped when its slug's final segment matches one of
+// the pane's mode or device ids (e.g. `webapp.branding.brand_colors.dark`).
+// Otherwise it is a plain, always-visible section. The API does not emit a
+// separate `tag`; it is derived here from the slug + the pane's mode/device sets.
+function groupTag(pane: TEPane, group: TEGroup): string | null {
+  const last = group.slug.split('.').pop() ?? ''
+  const isMode = pane.modes?.some((m) => m.id === last)
+  const isDevice = pane.devices?.some((d) => d.id === last)
+  return isMode || isDevice ? last : null
 }
 
 type ValuesMap = Record<string, string> // fieldId → current value
@@ -479,13 +492,16 @@ function TemplateEngineInner() {
   }
 
   // ── API: load schema ──────────────────────────────────────────────────────
-  const { data, isLoading, isError } = useQuery<TESchemaResponse>({
+  const { data, isLoading, isError } = useQuery<TEPane[]>({
     queryKey: ['template-engine-schema', platform],
-    queryFn: () => api.get(`/template-engine/schema?platform=${platform}`).then((r) => r.data),
+    queryFn: () =>
+      api
+        .get<TESchemaEnvelope>(`/template-engine/schema?platform=${platform}`)
+        .then((r) => r.data.data.schema),
     staleTime: 30_000,
   })
 
-  const panes: TEPane[] = data?.data ?? []
+  const panes: TEPane[] = data ?? []
 
   // ── Local editable values (never localStorage) ────────────────────────────
   // Keyed by pane.id → { field.id: value }
@@ -576,7 +592,7 @@ function TemplateEngineInner() {
       )
       return api.post('/template-engine/values', {
         platform: plat,
-        type_id: pane.id,
+        type_id: pane.type_id,
         values,
       })
     },
@@ -595,7 +611,7 @@ function TemplateEngineInner() {
     mutationFn: async ({ paneId, platform: plat }: { paneId: string; platform: string }) => {
       const pane = panes.find((p) => p.id === paneId)
       if (!pane) throw new Error('Pane not found')
-      return api.post('/template-engine/reset', { platform: plat, type_id: pane.id })
+      return api.post('/template-engine/reset', { platform: plat, type_id: pane.type_id })
     },
     onSuccess: (_, { paneId, platform: plat }) => {
       const k = vkeyOf(plat, paneId)
@@ -639,12 +655,11 @@ function TemplateEngineInner() {
     const activeMode = paneMode[activePane]
     const activeDevice = paneDevice[activePane]
     return activePaneData.groups.filter((g) => {
-      if (!g.tag) return true
-      const isMode = activePaneData.modes?.some((m) => m.id === g.tag)
-      const isDevice = activePaneData.devices?.some((d) => d.id === g.tag)
-      if (isMode) return g.tag === activeMode
-      if (isDevice) return g.tag === activeDevice
-      return true
+      const tag = groupTag(activePaneData, g)
+      if (!tag) return true
+      const isMode = activePaneData.modes?.some((m) => m.id === tag)
+      if (isMode) return tag === activeMode
+      return tag === activeDevice
     })
   }, [activePaneData, activePane, paneMode, paneDevice])
 
@@ -656,7 +671,7 @@ function TemplateEngineInner() {
       .map((g) => ({
         ...g,
         fields: g.fields.filter(
-          (f) => f.label.toLowerCase().includes(q) || g.label.toLowerCase().includes(q),
+          (f) => f.field_name.toLowerCase().includes(q) || g.name.toLowerCase().includes(q),
         ),
       }))
       .filter((g) => g.fields.length > 0)
@@ -674,7 +689,10 @@ function TemplateEngineInner() {
     const done = new Set<string>()
     const result: { cap: string | null; panes: TEPane[] }[] = []
     for (const [cap, ids] of groups) {
-      const ps = ids.map((id) => panes.find((p) => p.slug.endsWith('.' + id) || p.slug === id)).filter(Boolean) as TEPane[]
+      // Panes are matched by their semantic id (the API sends `id: "branding"`
+      // etc.); it is exactly what NAV_GROUPS is keyed on. The API does not send a
+      // pane-level slug, so never match on one.
+      const ps = ids.map((id) => panes.find((p) => p.id === id)).filter(Boolean) as TEPane[]
       if (!ps.length) continue
       ps.forEach((p) => done.add(p.id))
       result.push({ cap, panes: ps })
@@ -889,6 +907,7 @@ function TemplateEngineInner() {
             )}
             {filteredGroups.map((group) => {
               const sectionKey = `${activePane}-${group.id}`
+              const tag = activePaneData ? groupTag(activePaneData, group) : null
               return (
                 <div key={group.id} className="mt-5">
                   <button
@@ -903,10 +922,10 @@ function TemplateEngineInner() {
                     >
                       ▶
                     </span>
-                    {group.label}
-                    {group.tag && (
+                    {group.name}
+                    {tag && (
                       <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] normal-case text-muted-foreground">
-                        {group.tag}
+                        {tag}
                       </span>
                     )}
                   </button>
@@ -922,7 +941,7 @@ function TemplateEngineInner() {
                           data-testid={`field-row-${field.id}`}
                         >
                           <div>
-                            <div className="text-sm font-medium">{field.label}</div>
+                            <div className="text-sm font-medium">{field.field_name}</div>
                             {field.alt_text && (
                               <div className="mt-0.5 font-mono text-[11px] text-muted-foreground">
                                 {field.alt_text}

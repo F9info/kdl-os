@@ -38,30 +38,36 @@ const localStorageMock = (() => {
 Object.defineProperty(window, 'localStorage', { value: localStorageMock, writable: true })
 
 // ── Fixture ───────────────────────────────────────────────────────────────────
+// Mirrors the REAL backend contract (verified live against GET
+// /template-engine/schema): the envelope is { success, data: { platform, schema } },
+// a pane carries both a semantic `id` and a Type cuid `type_id`, groups expose
+// `name`/`slug` (no `tag` — theme/device scope is the slug's final segment), and
+// fields expose `field_name`/`default_value` (no `label`). The previous fixture
+// encoded a fictional shape that hid crash C-5 and 422 C-6 from RTL.
 
 const makePane = (id: string, label: string, platform = 'webapp') => ({
   id: `pane-${id}`,
-  slug: `${platform}.${id}`,
+  type_id: `type-${id}`,
   label,
   icon: '🎨',
-  ic: '#e8554d',
   modes: [{ id: 'dark', label: '🌙 Dark' }, { id: 'light', label: '☀️ Light' }],
   devices: null,
   groups: [
     {
       id: `grp-${id}-1`,
-      slug: `${platform}.${id}.colors`,
-      label: 'Colors',
-      tag: 'dark',
+      name: 'Colors',
+      // final slug segment 'dark' matches a mode id → this group is dark-scoped
+      slug: `${platform}.${id}.colors.dark`,
       fields: [
         {
           id: `field-${id}-bg`,
           slug: `${platform}.${id}.dark.colors.background`,
-          label: 'Background Color',
+          field_name: 'Background Color',
           input_type: 'color',
           options: null,
           alt_text: null,
           value: '#1e1e20',
+          default_value: '#1e1e20',
           sort: 0,
         },
       ],
@@ -69,13 +75,17 @@ const makePane = (id: string, label: string, platform = 'webapp') => ({
   ],
 })
 
-const webappSchema = {
-  data: [makePane('branding', 'Theme Color'), makePane('buttons', 'Buttons')],
-}
+const envelope = (platform: string, panes: ReturnType<typeof makePane>[]) => ({
+  success: true,
+  data: { platform, schema: panes },
+})
 
-const tvSchema = {
-  data: [makePane('branding', 'TV Branding', 'tv')],
-}
+const webappSchema = envelope('webapp', [
+  makePane('branding', 'Theme Color'),
+  makePane('buttons', 'Buttons'),
+])
+
+const tvSchema = envelope('tv', [makePane('branding', 'TV Branding', 'tv')])
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -187,7 +197,7 @@ describe('Template Engine page (KDL-177 C1 gates)', () => {
         '/template-engine/values',
         expect.objectContaining({
           platform: 'webapp',
-          type_id: 'pane-branding',
+          type_id: 'type-branding',
           values: expect.arrayContaining([
             expect.objectContaining({ field_id: 'field-branding-bg', value: '#ff0000' }),
           ]),
@@ -272,7 +282,7 @@ describe('Template Engine page (KDL-177 C1 gates)', () => {
         '/template-engine/reset',
         expect.objectContaining({
           platform: 'webapp',
-          type_id: 'pane-branding',
+          type_id: 'type-branding',
         }),
       )
     })
