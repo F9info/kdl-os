@@ -42,9 +42,24 @@ export const postResetBodySchema = z.object({
 });
 
 export const getTokensQuerySchema = z.object({
-  query: z.object({
-    platform: platformEnum,
-    theme: z.enum(['dark', 'light', 'focus']).optional(),
-    device: deviceEnum,
-  }),
+  query: z
+    .object({
+      platform: platformEnum,
+      theme: z.enum(['dark', 'light', 'focus']).optional(),
+      device: deviceEnum,
+    })
+    .superRefine((q, ctx) => {
+      // A device id must belong to the requested platform — a cross-platform
+      // pair compiles nothing useful and caches under a key that per-platform
+      // invalidation never deletes.
+      if (!q.device || q.device === 'all') return;
+      const plat = PLATFORM_DEFS.find((p) => p.id === q.platform);
+      if (!plat?.devices.some((d) => d.id === q.device)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['device'],
+          message: `device "${q.device}" does not belong to platform "${q.platform}"`,
+        });
+      }
+    }),
 });

@@ -94,30 +94,47 @@ export async function installModule(slug, actorId) {
 
   checkEnvVars(manifest);
 
+  // H3: resolve the module seed before opening the transaction. The seed must
+  // be the default export (or a `seed*`-named export) — grabbing the first
+  // function in namespace order silently ran the wrong helper (KDL-191 B1).
+  let seedFn = null;
+  const seedPath = join(MODULES_DIR, slug, 'seed.js');
+  if (existsSync(seedPath)) {
+    const seedMod = await import(seedPath);
+    seedFn =
+      seedMod.default ??
+      Object.entries(seedMod).find(([name, v]) => typeof v === 'function' && name.startsWith('seed'))?.[1];
+    if (typeof seedFn !== 'function') {
+      const err = new Error(`Module "${slug}" seed.js has no default or seed* function export`);
+      err.status = 422;
+      throw err;
+    }
+  }
+
   let mod;
   try {
-    mod = await prisma.$transaction(async (tx) => {
-      await registerPermissions(manifest, tx);
+    mod = await prisma.$transaction(
+      async (tx) => {
+        await registerPermissions(manifest, tx);
 
-      // H3: run module seed.js if present (idempotent; errors abort the transaction)
-      const seedPath = join(MODULES_DIR, slug, 'seed.js');
-      if (existsSync(seedPath)) {
-        const seedMod = await import(seedPath);
-        const seedFn = seedMod.default ?? Object.values(seedMod).find((v) => typeof v === 'function');
-        if (typeof seedFn === 'function') await seedFn();
-      }
+        // Seed runs on the transaction client so a failed install leaves no
+        // orphaned catalogue rows (idempotent; errors abort the transaction).
+        if (seedFn) await seedFn(tx);
 
-      return tx.module.create({
-        data: {
-          slug: manifest.slug,
-          name: manifest.name,
-          description: manifest.description ?? null,
-          version: manifest.version,
-          is_core: manifest.core ?? false,
-          status: 'INSTALLED',
-        },
-      });
-    });
+        return tx.module.create({
+          data: {
+            slug: manifest.slug,
+            name: manifest.name,
+            description: manifest.description ?? null,
+            version: manifest.version,
+            is_core: manifest.core ?? false,
+            status: 'INSTALLED',
+          },
+        });
+      },
+      // Module seeds can write thousands of rows — Prisma's 5s default is too small.
+      { timeout: 180_000, maxWait: 10_000 }
+    );
   } catch (err) {
     if (err.code === 'P2002') {
       const e = new Error(`Module "${slug}" is already installed`);
@@ -255,11 +272,29 @@ export async function uninstallModule(slug, actorId) {
     throw err;
   }
 
-  await prisma.$transaction(async (tx) => {
-    const manifest = loadedManifests.get(slug);
-    if (manifest) await deregisterPermissions(manifest, tx);
-    await tx.module.delete({ where: { slug } });
-  });
+  // Optional per-module cleanup hook: modules that seed shared tables ship an
+  // uninstall.js default export that removes their rows (KDL-191 B2).
+  let uninstallFn = null;
+  const uninstallPath = join(MODULES_DIR, slug, 'uninstall.js');
+  if (existsSync(uninstallPath)) {
+    const uninstallMod = await import(uninstallPath);
+    uninstallFn = uninstallMod.default;
+    if (typeof uninstallFn !== 'function') {
+      const err = new Error(`Module "${slug}" uninstall.js has no default function export`);
+      err.status = 422;
+      throw err;
+    }
+  }
+
+  await prisma.$transaction(
+    async (tx) => {
+      const manifest = loadedManifests.get(slug);
+      if (manifest) await deregisterPermissions(manifest, tx);
+      if (uninstallFn) await uninstallFn(tx);
+      await tx.module.delete({ where: { slug } });
+    },
+    { timeout: 180_000, maxWait: 10_000 }
+  );
 
   await invalidateModuleCache(slug);
 
@@ -269,7 +304,7 @@ export async function uninstallModule(slug, actorId) {
     action: 'uninstalled',
     subject_type: 'Module',
     subject_id: mod.id,
-    description: `Module "${slug}" uninstalled (tables retained)`,
+    description: `Module "${slug}" uninstalled${uninstallFn ? ' (module data removed)' : ' (tables retained)'}`,
   });
 }
 

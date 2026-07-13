@@ -17,6 +17,12 @@ vi.mock('../user-management/shared/activity-logger.js', () => ({
   writeActivityAsync: vi.fn(),
   getClientIp: vi.fn(() => '127.0.0.1'),
 }));
+vi.mock('../user-management/shared/permission-resolver.js', () => ({
+  resolvePermissions: vi.fn(async () => ({ bypass: false, permissions: [] })),
+  hasPermission: vi.fn(() => false),
+}));
+
+import { resolvePermissions } from '../user-management/shared/permission-resolver.js';
 
 import { redis } from '../../config/redis.js';
 import * as service from './service.js';
@@ -145,6 +151,7 @@ describe('B2 — validateFieldValue', () => {
   it('accepts valid hex color values', () => {
     const f = { input_type: 'color', options: null };
     expect(service.validateFieldValue(f, '#abc')).toBeNull();
+    expect(service.validateFieldValue(f, '#abcd')).toBeNull();
     expect(service.validateFieldValue(f, '#4f8ef7')).toBeNull();
     expect(service.validateFieldValue(f, '#00000000')).toBeNull();
     expect(service.validateFieldValue(f, 'rgba(0,0,0,0.5)')).toBeNull();
@@ -155,6 +162,15 @@ describe('B2 — validateFieldValue', () => {
     expect(service.validateFieldValue(f, 'red')).toBe('invalid color value');
     expect(service.validateFieldValue(f, '123456')).toBe('invalid color value');
     expect(service.validateFieldValue(f, '')).toBe('invalid color value');
+  });
+
+  it('rejects 5- and 7-digit hex and rgba with malformed body (B11)', () => {
+    const f = { input_type: 'color', options: null };
+    expect(service.validateFieldValue(f, '#abcde')).toBe('invalid color value');
+    expect(service.validateFieldValue(f, '#1234567')).toBe('invalid color value');
+    expect(service.validateFieldValue(f, 'rgba(1,2)')).toBe('invalid color value');
+    expect(service.validateFieldValue(f, 'rgba(1,2,3,junk)')).toBe('invalid color value');
+    expect(service.validateFieldValue(f, 'rgb(255,128,0')).toBe('invalid color value');
   });
 
   it('accepts valid select choices and rejects unknown ones', () => {
@@ -451,13 +467,14 @@ describe('B3 — compileTokens', () => {
       },
     ]);
     const { css, json } = await service.compileTokens('webapp', 'dark');
-    expect(css).toMatch(/--buttons_dark_primary_button_background_color:\s*#ff0000/);
+    // Spec contract: var names are theme-neutral (no "dark" segment).
+    expect(css).toMatch(/--buttons_primary_button_background_color:\s*#ff0000/);
     expect(css).not.toMatch(/#4f8ef7/);
-    // JSON tree also reflects saved value
-    expect(json.buttons).toBeDefined();
+    // JSON tree is pane → group → field and reflects the saved value.
+    expect(json.buttons.primary_button.background_color).toBe('#ff0000');
   });
 
-  it('light and dark theme blocks are both present in unfiltered compile', async () => {
+  it('unfiltered compile: dark in :root with neutral names, light in [data-theme="light"] block', async () => {
     await stubPrismaWithFields([
       {
         id: 'f-3', slug: 'webapp.buttons.dark.primary_button.background_color',
@@ -470,9 +487,16 @@ describe('B3 — compileTokens', () => {
         type_id: 'type-1', category_id: null, setting_values: [],
       },
     ]);
-    const { css } = await service.compileTokens('webapp'); // no theme filter
-    expect(css).toMatch(/--buttons_dark_primary_button_background_color:\s*#000000/);
-    expect(css).toMatch(/--buttons_light_primary_button_background_color:\s*#ffffff/);
+    const { css, json } = await service.compileTokens('webapp'); // no theme filter
+    // Same neutral var name in both blocks — theme never baked into the name.
+    const root = css.match(/:root \{[^}]*\}/)?.[0];
+    const light = css.match(/\[data-theme="light"\] \{[^}]*\}/)?.[0];
+    expect(root).toMatch(/--buttons_primary_button_background_color:\s*#000000/);
+    expect(light).toMatch(/--buttons_primary_button_background_color:\s*#ffffff/);
+    expect(css).not.toMatch(/--buttons_dark_/);
+    expect(css).not.toMatch(/--buttons_light_/);
+    // JSON mirrors :root (default dark theme).
+    expect(json.buttons.primary_button.background_color).toBe('#000000');
   });
 
   it('theme filter strips out opposite-theme fields', async () => {
@@ -489,8 +513,29 @@ describe('B3 — compileTokens', () => {
       },
     ]);
     const { css } = await service.compileTokens('webapp', 'dark');
-    expect(css).toMatch(/--buttons_dark_primary_button_background_color:\s*#000000/);
-    expect(css).not.toMatch(/light_primary_button/);
+    expect(css).toMatch(/--buttons_primary_button_background_color:\s*#000000/);
+    expect(css).not.toMatch(/#ffffff/);
+    expect(css).not.toMatch(/data-theme/);
+  });
+
+  it('excludes password fields from tokens (B6)', async () => {
+    await stubPrismaWithFields([
+      {
+        id: 'f-pw', slug: 'webapp.integrations.api.secret_key',
+        field_name: 'Secret Key', input_type: 'password', value: 'hunter2',
+        type_id: 'type-1', category_id: null, setting_values: [],
+      },
+      {
+        id: 'f-ok', slug: 'webapp.branding.colors.primary',
+        field_name: 'Primary', input_type: 'color', value: '#123456',
+        type_id: 'type-1', category_id: null, setting_values: [],
+      },
+    ]);
+    const { css, json } = await service.compileTokens('webapp');
+    expect(css).not.toMatch(/hunter2/);
+    expect(css).not.toMatch(/secret_key/);
+    expect(JSON.stringify(json)).not.toMatch(/hunter2/);
+    expect(css).toMatch(/--branding_colors_primary:\s*#123456/);
   });
 
   it('uses Redis cache on second call', async () => {
@@ -621,6 +666,7 @@ describe('B3 — controller.getTokens CSS content-type', () => {
 
   it('returns JSON by default', async () => {
     const { getTokens } = await import('./controller.js');
+    vi.spyOn(service, 'isTokensPublic').mockResolvedValue(true);
     vi.spyOn(service, 'compileTokens').mockResolvedValue({ css: ':root{}', json: { buttons: {} } });
 
     const req = {
@@ -645,6 +691,7 @@ describe('B3 — controller.getTokens CSS content-type', () => {
 
   it('serves raw CSS when format=css is requested', async () => {
     const { getTokens } = await import('./controller.js');
+    vi.spyOn(service, 'isTokensPublic').mockResolvedValue(true);
     vi.spyOn(service, 'compileTokens').mockResolvedValue({ css: ':root{ --x: 1; }', json: {} });
 
     const req = {
@@ -668,6 +715,7 @@ describe('B3 — controller.getTokens CSS content-type', () => {
 
   it('serves raw CSS when Accept: text/css header is set', async () => {
     const { getTokens } = await import('./controller.js');
+    vi.spyOn(service, 'isTokensPublic').mockResolvedValue(true);
     vi.spyOn(service, 'compileTokens').mockResolvedValue({ css: ':root{ --y: 2; }', json: {} });
 
     const req = {
@@ -735,5 +783,101 @@ describe('B3 — controller.getTokens CSS content-type', () => {
     // Should reach compileTokens (public allowed)
     expect(service.compileTokens).toHaveBeenCalled();
     expect(res.json).toHaveBeenCalled();
+  });
+
+  it('blocks authenticated users without template-engine:view when flag is false (B4)', async () => {
+    const { getTokens } = await import('./controller.js');
+    vi.spyOn(service, 'isTokensPublic').mockResolvedValue(false);
+    resolvePermissions.mockResolvedValue({ bypass: false, permissions: ['other:view'] });
+
+    const req = {
+      user: { id: 'u1' },
+      validated: { query: { platform: 'webapp' } },
+      query: {},
+      headers: {},
+    };
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+      send: vi.fn().mockReturnThis(),
+      setHeader: vi.fn(),
+    };
+
+    await getTokens(req, res, vi.fn());
+    expect(res.status).toHaveBeenCalledWith(403);
+  });
+
+  it('allows authenticated users with template-engine:view when flag is false (B4)', async () => {
+    const { getTokens } = await import('./controller.js');
+    vi.spyOn(service, 'isTokensPublic').mockResolvedValue(false);
+    vi.spyOn(service, 'compileTokens').mockResolvedValue({ css: ':root{}', json: {} });
+    resolvePermissions.mockResolvedValue({ bypass: false, permissions: ['template-engine:view'] });
+
+    const req = {
+      user: { id: 'u1' },
+      validated: { query: { platform: 'webapp' } },
+      query: {},
+      headers: {},
+    };
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+      send: vi.fn().mockReturnThis(),
+      setHeader: vi.fn(),
+    };
+
+    await getTokens(req, res, vi.fn());
+    expect(service.compileTokens).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// B5 — tokens query schema rejects cross-platform device params
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('B5 — getTokensQuerySchema platform/device pairing', () => {
+  it('rejects a device id from another platform', async () => {
+    const { getTokensQuerySchema } = await import('./schema.js');
+    const bad = getTokensQuerySchema.safeParse({ query: { platform: 'webapp', device: 'tv_4k' } });
+    expect(bad.success).toBe(false);
+    expect(JSON.stringify(bad.error.issues)).toMatch(/does not belong to platform/);
+  });
+
+  it('accepts a matching platform/device pair and device=all', async () => {
+    const { getTokensQuerySchema } = await import('./schema.js');
+    expect(getTokensQuerySchema.safeParse({ query: { platform: 'tv', device: 'tv_4k' } }).success).toBe(true);
+    expect(getTokensQuerySchema.safeParse({ query: { platform: 'webapp', device: 'desktop' } }).success).toBe(true);
+    expect(getTokensQuerySchema.safeParse({ query: { platform: 'webapp', device: 'all' } }).success).toBe(true);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// B8 — getValues enforces the same platform ownership guard as /values and /reset
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('B8 — getValues platform ownership guard', () => {
+  it('rejects when type_id belongs to a different platform', async () => {
+    const { prisma } = await import('../../config/database.js');
+    prisma.type = { findUnique: vi.fn().mockResolvedValue({ slug: 'tv.branding' }) };
+    prisma.settingField = { findMany: vi.fn() };
+
+    const result = await service.getValues('webapp', 'tv-type-id');
+    expect(result.errors).toBeDefined();
+    expect(result.errors[0]).toMatch(/does not belong to platform/);
+    expect(prisma.settingField.findMany).not.toHaveBeenCalled();
+  });
+
+  it('returns values for an owned pane', async () => {
+    const { prisma } = await import('../../config/database.js');
+    prisma.type = { findUnique: vi.fn().mockResolvedValue({ slug: 'webapp.branding' }) };
+    prisma.settingField = {
+      findMany: vi.fn().mockResolvedValue([
+        { id: 'f-1', slug: 'webapp.branding.colors.primary', value: '#ffffff', setting_values: [{ value: '#ff0000' }] },
+      ]),
+    };
+
+    const result = await service.getValues('webapp', 'type-1');
+    expect(result['webapp.branding.colors.primary']).toBe('#ff0000');
   });
 });
