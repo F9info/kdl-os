@@ -1,7 +1,11 @@
 import { z } from 'zod';
+import { PLATFORMS as PLATFORM_DEFS } from './schema/index.js';
 
-const PLATFORMS = ['webapp', 'tv', 'android', 'ios'];
-const platformEnum = z.enum(PLATFORMS);
+const PLATFORM_IDS = ['webapp', 'tv', 'android', 'ios'];
+const platformEnum = z.enum(PLATFORM_IDS);
+
+const ALL_DEVICE_IDS = [...new Set(PLATFORM_DEFS.flatMap((p) => p.devices.map((d) => d.id)))];
+const deviceEnum = z.enum([...ALL_DEVICE_IDS, 'all']).optional();
 
 export const getSchemaQuerySchema = z.object({
   query: z.object({
@@ -41,6 +45,6 @@ export const getTokensQuerySchema = z.object({
   query: z.object({
     platform: platformEnum,
     theme: z.enum(['dark', 'light', 'focus']).optional(),
-    device: z.string().optional(),
+    device: deviceEnum,
   }),
 });

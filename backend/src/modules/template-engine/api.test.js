@@ -276,6 +276,33 @@ describe('B2 — upsertValues rejects invalid fields and unknown field ids', () 
     expect(redis.del).toHaveBeenCalled();
   });
 
+  it('upsertValues invalidates real device-scoped cache keys (tv_4k, not base tags)', async () => {
+    const { prisma } = await import('../../config/database.js');
+    prisma.type = { findUnique: vi.fn().mockResolvedValue({ slug: 'tv.branding' }) };
+    prisma.settingField = {
+      findMany: vi.fn().mockResolvedValue([
+        { id: 'f-tv', slug: 'tv.branding.colors.primary', input_type: 'color', options: null },
+      ]),
+    };
+    prisma.settingValue = { upsert: vi.fn().mockResolvedValue({ id: 'sv-1' }) };
+    prisma.$transaction = vi.fn(async (ops) => Promise.all(ops));
+
+    await service.upsertValues('tv', 'type-tv', [{ field_id: 'f-tv', value: '#ff0000' }], 'user-1');
+
+    const delKeys = redis.del.mock.calls.map((c) => c[0]);
+    // Real tv device ids must be invalidated
+    expect(delKeys).toContain('te:tokens:tv:dark:tv_4k');
+    expect(delKeys).toContain('te:tokens:tv:dark:tv_1080p');
+    expect(delKeys).toContain('te:tokens:tv:dark:tv_720p');
+    expect(delKeys).toContain('te:tokens:tv:dark:tv_8k');
+    expect(delKeys).toContain('te:tokens:tv:dark:all');
+    // Authoring base tags must NOT appear as cache keys
+    expect(delKeys).not.toContain('te:tokens:tv:dark:desktop');
+    expect(delKeys).not.toContain('te:tokens:tv:dark:laptop');
+    expect(delKeys).not.toContain('te:tokens:tv:dark:ipad');
+    expect(delKeys).not.toContain('te:tokens:tv:dark:mobile');
+  });
+
   it('rejects enum field with invalid choice', async () => {
     const { prisma } = await import('../../config/database.js');
     prisma.settingField = {
@@ -497,25 +524,25 @@ describe('B3 — compileTokens', () => {
     );
   });
 
-  it('uses separate cache keys per device — tv request does not poison desktop cache', async () => {
+  it('uses separate cache keys per device — tv_4k request does not poison desktop cache', async () => {
     await stubPrismaWithFields([
       {
-        id: 'f-tv', slug: 'webapp.buttons.tv.btn.bg',
-        field_name: 'BG TV', input_type: 'color', value: '#111111',
+        id: 'f-tv', slug: 'tv.buttons.tv_4k.btn.bg',
+        field_name: 'BG TV 4K', input_type: 'color', value: '#111111',
         type_id: 'type-1', category_id: null, setting_values: [],
       },
     ]);
-    await service.compileTokens('webapp', 'dark', 'tv');
+    await service.compileTokens('tv', 'dark', 'tv_4k');
     expect(redis.set).toHaveBeenCalledWith(
-      'te:tokens:webapp:dark:tv',
+      'te:tokens:tv:dark:tv_4k',
       expect.any(String),
       'EX',
       600
     );
-    // desktop key must NOT have been written
+    // desktop and all keys must NOT have been written
     const setCalls = redis.set.mock.calls.map((c) => c[0]);
-    expect(setCalls).not.toContain('te:tokens:webapp:dark:desktop');
-    expect(setCalls).not.toContain('te:tokens:webapp:dark:all');
+    expect(setCalls).not.toContain('te:tokens:tv:dark:desktop');
+    expect(setCalls).not.toContain('te:tokens:tv:dark:all');
   });
 
   it('handles fonts fields: emits @import for google fonts, skips from CSS vars', async () => {

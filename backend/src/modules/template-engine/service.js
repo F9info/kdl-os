@@ -1,6 +1,6 @@
 import { prisma } from '../../config/database.js';
 import { redis } from '../../config/redis.js';
-import { PLAT_TABS, slug as slugify } from './schema/index.js';
+import { PLAT_TABS, PLATFORMS, slug as slugify } from './schema/index.js';
 
 const TOKEN_TTL = 600; // seconds
 const tokenKey = (platform, theme, device) => `te:tokens:${platform}:${theme ?? 'all'}:${device ?? 'all'}`;
@@ -239,7 +239,8 @@ export async function resetValues(platform, typeId) {
 
 async function invalidateTokenCache(platform) {
   const themes = ['dark', 'light', 'focus', 'all'];
-  const devices = ['desktop', 'laptop', 'ipad', 'mobile', 'all'];
+  const plat = PLATFORMS.find((p) => p.id === platform);
+  const devices = plat ? [...plat.devices.map((d) => d.id), 'all'] : ['all'];
   const keys = themes.flatMap((t) => devices.map((d) => tokenKey(platform, t, d)));
   await Promise.allSettled(keys.map((k) => redis.del(k)));
 }
