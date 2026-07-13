@@ -1,3 +1,12 @@
+## 2026-07-13 — KDL-176 Template Engine Phase B: values API + token resolver (Backend Coder)
+
+- **B1** `routes.js` created for the `template-engine` module — the missing piece that lets `module-loader.js` mount the module at `/api/template-engine`. Route chain: `moduleGate('template-engine')` (applied by loader at mount) → `authenticate` → `requirePermission('template-engine', <action>)` → `validate(Zod schema)` → controller. `GET /tokens` uses `optionalAuthenticate` instead (public-readable path); the controller enforces the `template_engine.tokens_public` app_setting flag for unauthenticated callers.
+- **B2** `service.js`: `validateFieldValue` (color hex/rgba, number, slider min/max, select/radio enum, toggle boolean, multiselect JSON array, any-string for text/textarea/password/file/fonts/imglist); `upsertValues` (load pane fields, validate each entry, reject unknown field_id/slug with errors array, transaction upsert into `setting_values`, invalidate Redis token cache); `resetValues` (delete `setting_values` for pane, invalidate cache). Controller maps errors→422. Activity logged fire-and-forget on every mutation.
+- **B3** `service.compileTokens`: loads all fields for platform, applies saved-value override over default, filters by theme/device segment in slug, emits CSS custom properties in `:root{…}`, `@import`/`@font-face` for `fonts` fields, `.{class}{…}` rules for `imglist` fields. JSON tree `{pane:{tokenKey:value}}` alongside. Redis cache key `te:tokens:{platform}:{theme}` TTL 600s, write-through on compile, invalidated on every save/reset. `GET /tokens?format=css` or `Accept: text/css` returns raw CSS with `Content-Type: text/css`.
+- **Gates (exit codes, not self-assessed)**: `vitest run src/modules/template-engine/` → 0. **44/44 tests pass** across 3 test files: 8 Phase A schema tests, 3 seed tests, 33 Phase B api tests (B1 route structure + schema tree shape; B2 validateFieldValue across all input types, upsertValues valid+invalid+unknown, resetValues; B3 compileTokens CSS output, dark+light both present, changed field reflects saved value, Redis cache TTL 600s, fonts/@import, imglist CSS classes; controller getTokens JSON vs CSS, public flag enforcement).
+- **Files created**: `backend/src/modules/template-engine/routes.js`, `backend/src/modules/template-engine/api.test.js`.
+- **Files pre-existing from prior run (Phase A output — complete, no changes needed)**: `controller.js`, `service.js`, `schema.js`, `module.json`, `schema/index.js`, `seed.js`, `schema.test.js`, `seed.test.js`.
+
 ## 2026-07-13 — KDL-175 Template Engine Phase A: schema + Prisma model + seed (Backend Architect)
 - **A1** `SettingValue` model + `SettingField.setting_values` back-relation in `backend/prisma/schema/core.prisma` (`setting_values` table: `field_id` unique FK→setting_fields cascade, denormalized `platform` indexed, string `value`, `updated_by`). Migration `20260713052617_template_engine_setting_values` applied clean. Existing `settings`/`app_settings` module untouched — diff is exactly the new model + back-relation.
 - **A2** Verbatim port of the `template-engine.html` prototype (`~/Downloads/template-engine.html` — issue said committed on master but it is NOT in the repo; `.agents/TEMPLATE_ENGINE_ARCH.md` was also untracked and is committed with this work) into `backend/src/modules/template-engine/schema/index.js` as ESM: BASE_TABS / PANE_OVERRIDES / EXTRA_TABS / PLATFORMS, C/N/SL/SE/TG/TX/PW/RA/MS/FI/TA constructors, `slug()`, `scaleField()`, build loop producing `PLAT_TABS`.
@@ -644,3 +653,15 @@ Next: none — issue closed. If a reviewer wants to re-verify, the repro steps a
 Do not touch: n/a.
 
 Blockers: none.
+
+## 2026-07-13 — KDL-176 Phase B review fixes (Backend Coder)
+
+**Bugs fixed (blocked merge):**
+1. **Cache key now includes `device`** — `tokenKey(platform, theme, device)` → `te:tokens:{platform}:{theme ?? 'all'}:{device ?? 'all'}`. `compileTokens` passes `device` to `tokenKey`. `invalidateTokenCache` now deletes all 4 themes × 5 devices = 20 keys.
+2. **Platform ownership guard in `upsertValues`/`resetValues`** — both functions now call `prisma.type.findUnique` and return `{ errors }` if the type's slug doesn't start with `${platform}.`. `postReset` controller checks for `result.errors` and returns 422 (same pattern as `postValues`).
+
+**Nits fixed:**
+3. **`Number('')` now rejected** — `value === ''` check added before `Number.isNaN` in `number` and `slider` cases.
+4. **rgba regex tightened** — `!/^rgba?\(\s*\d/` replaces `!/^rgba?\(/`; requires at least one digit after the opening paren.
+
+**Gates**: `vitest run src/modules/template-engine/` → 0. **49/49 pass** (38 api + 8 schema + 3 seed).
