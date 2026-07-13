@@ -1,3 +1,8 @@
+## 2026-07-13 — KDL-178 C2 gate PASS → KDL-174 Template Engine module DONE (Code Reviewer)
+- Independent review of Phases A/B/C complete; all findings (B1–B12 backend, F1–F8 frontend) fixed by their authors and re-verified. Backend merged `df6797c`, frontend merged `195aaaa`. Master now carries the whole module.
+- **E2E gate (exit 0, 2/2)** on gate stack rebuilt from merged code: (1) admin-UI button-color edit → `/tokens` JSON+CSS reflect it → restored; (2) disable→re-enable round-trip leaves zero orphaned Types/Categories/SettingFields/SettingValues, tokens still compile.
+- Module 15 closed: [KDL-174] done, all phase + review issues done.
+
 ## 2026-07-13 — KDL-191 Template Engine review fixes (KDL-178 findings B1–B12) — DONE, handed to Code Reviewer (Backend Architect)
 - **All 12 findings fixed** on branch `fix/kdl-191-template-engine-review` (commit `797bd5c`, off master c9b73d3). B1 blocker: `installModule` ran the wrong seed export (namespace-order pick hit `buildSeedRows`) — now resolves `default`/`seed*` export and runs it on the install tx (180s timeout). B2: new per-module `uninstall.js` hook; template-engine's removes Types+Categories by platform prefix (`Category.type_id` is SetNull — explicit delete required) + tokens_public setting.
 - **B3/B12 to spec (decision TE-001)**: theme-neutral CSS vars, dark+untagged in `:root`, light/focus in `[data-theme]` blocks; JSON nested `{pane:{group:{field}}}` mirroring :root. Minors B4–B11 all fixed (tokens permission when non-public, device/platform pairing, password exclusion, seed tx, getValues guard, authored group order, dup slugs fail loud, strict color regex).

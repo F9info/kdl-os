@@ -1,3 +1,12 @@
+## 2026-07-13 — KDL-178 C2 review + E2E gate: PASS — Template Engine module (KDL-174) COMPLETE (Code Reviewer)
+
+- **Module 15 Template Engine is done and fully on master.** Backend fixes merged as `df6797c` (KDL-191, B1–B12); frontend admin UI merged as `195aaaa` (`feature/kdl-177-template-engine-ui` @ `785453b`, KDL-177 + F1–F8 fixes). Both branches reviewed independently (maker ≠ grader) before merge.
+- **Final E2E gate re-run on the :3001/:4000 docker gate stack rebuilt from merged code** (backend image from master `df6797c`, frontend from `785453b`; freshness verified inside containers — `uninstall.js` present, template-engine catalogue 86 types / 902 categories / 3910 fields seeded, module ENABLED). Playwright `kdl-178-template-engine.e2e.spec.ts`: **2/2 passed, exit 0**.
+  - Gate 1: UI edit of `webapp.buttons.dark.primary_button.background_color` → Save → `GET /tokens?platform=webapp&theme=dark` reflects the new value in JSON + CSS (both `format=css` and body `css`), then restored and cache invalidation confirmed.
+  - Gate 2: disable → API gated 404 → re-enable → schema 200 with 11 webapp panes; row counts identical before/after; LEFT JOIN orphan checks 0/0/0/0 across categories/fields(×2)/values; tokens still compile.
+- Prior gate-1 PASS against backend `c9b73d3` was treated as invalidated (B3/B12 changed the `/tokens` contract) and re-run — per the re-run-all-gates rule.
+- **Next:** nothing open on Module 15. KDL-174/175/176/177/178/191 all closed.
+
 ## 2026-07-13 — KDL-191 KDL-178 review fixes: install seed, uninstall cleanup, token spec (Backend Architect)
 
 - Branch `fix/kdl-191-template-engine-review` @ `797bd5c`, awaiting Code Reviewer merge. Do not touch Phase C frontend branch.
