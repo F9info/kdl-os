@@ -314,6 +314,7 @@ export async function listModules() {
       version: manifest.version,
       core: manifest.core ?? false,
       apiPrefix: manifest.apiPrefix,
+      icon: manifest.nav?.[0]?.icon ?? null,
       status: dbMod?.status ?? 'AVAILABLE',
       installed_at: dbMod?.installed_at ?? null,
       enabled_at: dbMod?.enabled_at ?? null,

@@ -17,6 +17,7 @@ export interface Module {
   version: string
   core: boolean
   apiPrefix: string
+  icon: string | null
   status: ModuleStatus
   installed_at: string | null
   enabled_at: string | null
