@@ -1,5 +1,6 @@
 import { successResponse, errorResponse } from '../../shared/utils/response.js';
 import { writeActivityAsync, getClientIp } from '../user-management/shared/activity-logger.js';
+import { resolvePermissions } from '../user-management/shared/permission-resolver.js';
 import * as service from './service.js';
 
 export const getSchema = async (req, res, next) => {
@@ -17,6 +18,7 @@ export const getValues = async (req, res, next) => {
   try {
     const { platform, type } = req.validated.query;
     const values = await service.getValues(platform, type);
+    if (values.errors) return errorResponse(res, 'Validation failed', 422, { fieldErrors: {}, formErrors: values.errors });
     return successResponse(res, { platform, type_id: type, values });
   } catch (err) {
     next(err);
@@ -65,10 +67,15 @@ export const getTokens = async (req, res, next) => {
   try {
     const { platform, theme, device } = req.validated.query;
 
-    // Public access check: unauthenticated users allowed only if flag is true
-    if (!req.user) {
-      const isPublic = await service.isTokensPublic();
-      if (!isPublic) return errorResponse(res, 'Unauthorized', 401);
+    // Public access check: when tokens_public is off, the flag gates EVERYONE —
+    // anonymous callers get 401 and authenticated callers need template-engine:view.
+    const isPublic = await service.isTokensPublic();
+    if (!isPublic) {
+      if (!req.user) return errorResponse(res, 'Unauthorized', 401);
+      const perms = await resolvePermissions(req.user.id);
+      if (!perms.bypass && !perms.permissions.includes('template-engine:view')) {
+        return errorResponse(res, 'Forbidden', 403);
+      }
     }
 
     const tokens = await service.compileTokens(platform, theme, device);

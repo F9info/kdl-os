@@ -16,8 +16,10 @@ export function validateFieldValue(field, value) {
   const opts = parseOptions(field);
   switch (field.input_type) {
     case 'color': {
-      if (!/^#[0-9a-fA-F]{3,8}$/.test(value) && !/^rgba?\(\s*\d/.test(value))
-        return 'invalid color value';
+      // Hex: 3/4 (short), 6 or 8 digits — never 5 or 7. rgb()/rgba() validated in full.
+      const hexOk = /^#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(value);
+      const rgbOk = /^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(?:,\s*(?:0|1|[01]?\.\d+)\s*)?\)$/.test(value);
+      if (!hexOk && !rgbOk) return 'invalid color value';
       break;
     }
     case 'number': {
@@ -117,7 +119,11 @@ export async function getSchemaTree(platform) {
     const type = typeBySlug.get(typeSlug);
     if (!type) return { id: pane.id, label: pane.label, icon: pane.icon, groups: [] };
     const cats = catsByTypeId.get(type.id) ?? [];
-    const catBySlug = new Map(cats.map((c) => [c.slug, c]));
+    // Groups follow the authored prototype section order, not slug order.
+    const authoredOrder = new Map(
+      (pane.sections ?? []).map(([sec, , tag], i) => [`${typeSlug}.${slugify(sec)}${tag ? `.${tag}` : ''}`, i])
+    );
+    cats.sort((a, b) => (authoredOrder.get(a.slug) ?? Infinity) - (authoredOrder.get(b.slug) ?? Infinity));
     const groups = cats.map((cat) => ({
       id: cat.id,
       name: cat.name,
@@ -149,6 +155,12 @@ export async function getSchemaTree(platform) {
 // ── Values for one pane (GET /values) ────────────────────────────────────────
 
 export async function getValues(platform, typeId) {
+  // Same ownership guard as /values and /reset — no cross-platform reads.
+  const type = await prisma.type.findUnique({ where: { id: typeId }, select: { slug: true } });
+  if (!type || !type.slug.startsWith(`${platform}.`)) {
+    return { errors: [`type_id does not belong to platform "${platform}"`] };
+  }
+
   const fields = await prisma.settingField.findMany({
     where: { type_id: typeId },
     select: {
@@ -283,7 +295,14 @@ export async function compileTokens(platform, theme, device) {
   const plat = PLATFORMS.find((p) => p.id === platform);
   const deviceIds = new Set(plat ? plat.devices.map((d) => d.id) : []);
 
-  const cssVars = {};
+  const THEMES = new Set(['dark', 'light', 'focus']);
+
+  // Spec contract (ARCH §Token resolution): var names are theme-NEUTRAL; dark
+  // (the default theme) + untagged fields live in :root and the other themes
+  // land in [data-theme="…"] override blocks. The JSON tree mirrors :root —
+  // pane → group → field. Clients wanting another theme's JSON pass ?theme=.
+  const rootVars = {};
+  const themeVars = { light: {}, focus: {} };
   const fontFaces = [];
   const imgClasses = {};
   const jsonTree = {};
@@ -292,25 +311,29 @@ export async function compileTokens(platform, theme, device) {
     const effectiveValue = f.setting_values?.[0]?.value ?? f.value;
     if (effectiveValue == null) continue;
 
-    // Derive token name from slug: strip platform prefix, replace dots/non-alphanum with _
+    // Never compile secrets into the public token payload.
+    if (f.input_type === 'password') continue;
+
+    // Slug shape: {platform}.{pane}.[{tag}.]{section}.{field} where tag is a
+    // theme or a device id. Token names strip the platform AND the theme tag.
     const slugParts = f.slug.split('.');
-    const tokenParts = slugParts.slice(1); // drop platform
-    const tokenName = toTokenName(tokenParts);
+    const tagSegment = slugParts[2];
+    const themeTag = THEMES.has(tagSegment) ? tagSegment : null;
 
-    // Filter by theme if requested: slugs with dark/light/focus in 3rd segment
-    if (theme) {
-      const themeSegment = slugParts[2]; // e.g. "dark", "light", "focus"
-      const isThemeTagged = ['dark', 'light', 'focus'].includes(themeSegment);
-      if (isThemeTagged && themeSegment !== theme) continue;
-    }
+    // Filter by theme if requested.
+    if (theme && themeTag && themeTag !== theme) continue;
 
-    // Filter by device if requested. Mirror theme matching: only drop a field
-    // when its 3rd segment is a REAL device id that differs from the requested
-    // device. Untagged fields (3rd segment = section slug) are always kept.
+    // Filter by device if requested. Only drop a field when its tag is a REAL
+    // device id that differs from the requested device. Untagged fields
+    // (3rd segment = section slug) are always kept.
     if (device) {
-      const deviceSegment = slugParts[2];
-      if (deviceIds.has(deviceSegment) && deviceSegment !== device) continue;
+      if (deviceIds.has(tagSegment) && tagSegment !== device) continue;
     }
+
+    const neutralParts = themeTag
+      ? [slugParts[1], ...slugParts.slice(3)] // pane + section + field (theme stripped)
+      : slugParts.slice(1); // pane [+ device] + section + field
+    const tokenName = toTokenName(neutralParts);
 
     // Handle special field types
     if (f.input_type === 'fonts') {
@@ -342,27 +365,39 @@ export async function compileTokens(platform, theme, device) {
       continue;
     }
 
-    // CSS custom property
-    cssVars[`--${tokenName}`] = effectiveValue;
+    // CSS custom property. When a theme is requested, every surviving field is
+    // that theme's value → :root. Unfiltered: dark+untagged → :root, other
+    // themes → their [data-theme] override block.
+    const cssBucket = !theme && themeTag && themeTag !== 'dark' ? themeVars[themeTag] : rootVars;
+    cssBucket[`--${tokenName}`] = effectiveValue;
 
-    // JSON tree: pane → group → field
-    const paneKey = slugParts[1];
-    const fieldKey = tokenParts.join('_');
-    if (!jsonTree[paneKey]) jsonTree[paneKey] = {};
-    jsonTree[paneKey][fieldKey] = effectiveValue;
+    // JSON tree: pane → group → field, mirroring :root (untagged + requested
+    // theme, defaulting to dark). Group keeps the device tag — devices are
+    // distinct tokens, themes are variants of the same token.
+    if (cssBucket === rootVars) {
+      const paneKey = neutralParts[0];
+      const groupKey = neutralParts.slice(1, -1).join('_') || paneKey;
+      const fieldKey = neutralParts[neutralParts.length - 1];
+      if (!jsonTree[paneKey]) jsonTree[paneKey] = {};
+      if (!jsonTree[paneKey][groupKey]) jsonTree[paneKey][groupKey] = {};
+      jsonTree[paneKey][groupKey][fieldKey] = effectiveValue;
+    }
   }
 
   // Build CSS output
-  const rootVars = Object.entries(cssVars)
-    .map(([k, v]) => `  ${k}: ${v};`)
-    .join('\n');
+  const varBlock = (vars) => Object.entries(vars).map(([k, v]) => `  ${k}: ${v};`).join('\n');
+  const rootCss = varBlock(rootVars);
   const imgCss = Object.entries(imgClasses)
     .map(([cls, rules]) => `.${cls} { ${rules} }`)
     .join('\n');
 
   const css = [
     ...fontFaces,
-    rootVars ? `:root {\n${rootVars}\n}` : '',
+    rootCss ? `:root {\n${rootCss}\n}` : '',
+    ...Object.entries(themeVars).map(([t, vars]) => {
+      const block = varBlock(vars);
+      return block ? `[data-theme="${t}"] {\n${block}\n}` : '';
+    }),
     imgCss,
   ].filter(Boolean).join('\n\n');
 

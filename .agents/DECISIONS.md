@@ -78,3 +78,19 @@
 **Outcome:** `backend/tests/media/cloud-import.test.js` (35 vitest, +2 over D8's 33 — nonce-mismatch and missing-nonce rejection; existing state-tamper/expiry/success tests updated to carry a matching nonce). No schema/migration change — the nonce rides inside the existing encrypted `state` blob. No frontend change needed: `frontend/src/app/admin/media/import/page.tsx` already calls the API with `withCredentials: true`, so the cookie set on the `startOAuth` response is sent automatically when the provider redirects the browser back to the callback route.
 
 **Log:** Required by KDL-138.
+
+## TE-001 — /tokens CSS+JSON follow the spec contract; unfiltered output defaults to dark (2026-07-13)
+
+**Decision:** KDL-191 B3/B12 fixed to spec (TEMPLATE_ENGINE_ARCH.md §Token resolution): CSS custom-property names are theme-NEUTRAL (`--buttons_primary_button_background_color`, never `--buttons_dark_…`); dark + untagged fields compile into `:root` and light/focus into `[data-theme="light"]` / `[data-theme="focus"]` override blocks. JSON is nested `{ pane: { group: { field: value } } }`; device tags stay in the group key (devices are distinct tokens, themes are variants of one token).
+
+**Clarification the spec left open:** an unfiltered request (`no ?theme=`) can't hold two themes under one theme-neutral JSON key, so JSON mirrors `:root` — untagged + dark (the prototype's default theme). Clients wanting another theme's JSON pass `?theme=light|focus`; the CSS always carries all themes via the data-theme blocks.
+
+**Reason:** Phase C and native consumers are coded against the spec shape; the previous theme-baked flat output (asserted in api.test.js pre-KDL-191) was a port artifact, not a decision.
+
+**Log:** Required by KDL-191 ("B3 needs an explicit decision recorded").
+
+## TE-002 — module install/uninstall hooks own module data in shared tables (2026-07-13)
+
+**Decision:** KDL-191 B1/B2: `installModule` resolves a module's `seed.js` by `default` export (fallback: a `seed*`-named export) and runs it on the open transaction client with a 180s timeout; `uninstallModule` runs an optional `uninstall.js` default export inside the uninstall transaction. `template-engine/uninstall.js` deletes its Types + Categories by platform slug prefix (Category.type_id is onDelete:SetNull, so category deletion must be explicit; SettingField/SettingValue cascade from Type) and drops the `template_engine.tokens_public` app setting.
+
+**Gate evidence:** `backend/scripts/kdl191-gate.mjs` on a fresh DB — install seeds 86/902/3910 via the hook alone, enable→disable→uninstall leaves 0/0/0/0 and no module/permission rows, reinstall seeds cleanly again; exit 0.

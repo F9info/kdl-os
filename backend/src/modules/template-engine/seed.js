@@ -39,13 +39,17 @@ export function buildSeedRows() {
   for (const p of PLATFORMS) {
     for (const t of PLAT_TABS[p.id]) {
       const typeSlug = `${p.id}.${t.id}`;
-      if (!types.has(typeSlug)) types.set(typeSlug, { slug: typeSlug, name: t.label, is_active: true });
+      if (types.has(typeSlug)) {
+        throw new Error(`template-engine seed: duplicate type slug "${typeSlug}" — schema build bug, refusing to overwrite`);
+      }
+      types.set(typeSlug, { slug: typeSlug, name: t.label, is_active: true });
 
       for (const [sec, secFields, tag] of t.sections) {
         const catSlug = `${typeSlug}.${slug(sec)}${tag ? `.${tag}` : ''}`;
-        if (!categories.has(catSlug)) {
-          categories.set(catSlug, { slug: catSlug, name: sec, typeSlug, is_active: true });
+        if (categories.has(catSlug)) {
+          throw new Error(`template-engine seed: duplicate category slug "${catSlug}" — schema build bug, refusing to overwrite`);
         }
+        categories.set(catSlug, { slug: catSlug, name: sec, typeSlug, is_active: true });
 
         secFields.forEach((f, i) => {
           const fieldSlug = `${typeSlug}.${tag ? `${tag}.` : ''}${slug(sec)}.${slug(f.l)}`;
@@ -71,6 +75,19 @@ export function buildSeedRows() {
 }
 
 export async function seedTemplateEngine(prismaClient = prisma) {
+  // ARCH §Known Risks: seed must be atomic. Wrap in an interactive transaction
+  // when given a base client; a client without $transaction is already a tx
+  // (or a test double) — write through it directly. ~990 sequential upserts
+  // need far more than Prisma's 5s default timeout.
+  if (typeof prismaClient.$transaction === 'function') {
+    return prismaClient.$transaction((tx) => seedInto(tx), { timeout: 180_000, maxWait: 10_000 });
+  }
+  return seedInto(prismaClient);
+}
+
+export default seedTemplateEngine;
+
+async function seedInto(prismaClient) {
   const { types, categories, fields } = buildSeedRows();
 
   // Types (86) — upsert on slug.

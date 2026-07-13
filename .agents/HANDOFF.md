@@ -1,3 +1,10 @@
+## 2026-07-13 — KDL-191 KDL-178 review fixes: install seed, uninstall cleanup, token spec (Backend Architect)
+
+- Branch `fix/kdl-191-template-engine-review` @ `797bd5c`, awaiting Code Reviewer merge. Do not touch Phase C frontend branch.
+- **Install hooks contract changed** (`modules/service.js`): a module `seed.js` MUST export its seed as `default` (or a `seed*`-named export) and accept a Prisma client param — it now receives the install transaction client. Install/uninstall transactions run with `{timeout:180_000, maxWait:10_000}`. Optional `uninstall.js` (default export, receives tx client) removes module data from shared tables; template-engine's is the reference implementation.
+- **Token contract now matches TEMPLATE_ENGINE_ARCH.md** (decision TE-001/TE-002 in DECISIONS.md): theme-neutral var names, `[data-theme="light|focus"]` override blocks, nested JSON `{pane:{group:{field:value}}}` (group keeps device tag, drops theme tag); unfiltered JSON mirrors `:root` = dark default. Password fields never compiled into tokens. `tokens_public=false` requires `template-engine:view` even when authenticated. Cross-platform `?device=` rejected 422.
+- **Gate**: `backend/scripts/kdl191-gate.mjs` (fresh DB + `migrate deploy`, then run with DATABASE_URL/REDIS_URL) — 18/18 PASS exit 0. Full vitest 698/698. Note: run `npx prisma generate` if client is stale; `npm install` was needed for pre-existing missing `@zxing/library`.
+
 ## 2026-07-13 — KDL-176 Template Engine Phase B: values API + token resolver (Backend Coder)
 
 - **B1** `routes.js` created for the `template-engine` module — the missing piece that lets `module-loader.js` mount the module at `/api/template-engine`. Route chain: `moduleGate('template-engine')` (applied by loader at mount) → `authenticate` → `requirePermission('template-engine', <action>)` → `validate(Zod schema)` → controller. `GET /tokens` uses `optionalAuthenticate` instead (public-readable path); the controller enforces the `template_engine.tokens_public` app_setting flag for unauthenticated callers.
