@@ -6,3 +6,5 @@ ignoreBuildIssues: true
 onlyBuiltDependencies:
   - sharp
   - unrs-resolver
+overrides:
+  "postcss@8.4.31": 8.5.15
