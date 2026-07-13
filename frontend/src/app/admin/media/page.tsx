@@ -55,10 +55,11 @@ const mediaApi = {
     api.patch(`/media/folders/${id}`, data),
   deleteFolder: (id: string, cascade = false) =>
     api.delete(`/media/folders/${id}${cascade ? '?cascade=true' : ''}`),
-  upload: (files: File[], folderId?: string | null) => {
+  upload: (files: File[], folderId?: string | null, visibility?: 'SHARED') => {
     const fd = new FormData()
     files.forEach((f) => fd.append('files', f))
     if (folderId) fd.append('folder_id', folderId)
+    if (visibility) fd.append('visibility', visibility)
     return api.post('/media/upload', fd)
   },
   update: (id: string, data: Partial<Pick<Media, 'title' | 'alt_text' | 'caption' | 'original_name' | 'visibility'>>) =>
@@ -661,6 +662,7 @@ function DetailDrawer({
   item,
   onClose,
   onDeleted,
+  onUpdated,
   onPreview,
   processing,
   onEditJobStarted,
@@ -668,6 +670,7 @@ function DetailDrawer({
   item: Media
   onClose: () => void
   onDeleted: () => void
+  onUpdated: (mediaId: string) => void
   onPreview: () => void
   processing?: boolean
   onEditJobStarted: (mediaId: string, jobId: string) => void
@@ -722,7 +725,12 @@ function DetailDrawer({
   // KDL-150: private⇄shared toggle
   const visibilityMutation = useMutation({
     mutationFn: (visibility: 'PRIVATE' | 'SHARED') => mediaApi.update(item.id, { visibility }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['media'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['media'] })
+      // `item` here is the drawer's own prop snapshot, not derived from the
+      // ['media'] query — invalidation alone leaves the toggle label stale.
+      onUpdated(item.id)
+    },
     onError: () => toast({ title: 'Failed to change visibility', variant: 'destructive' }),
   })
 
@@ -1202,7 +1210,10 @@ export default function MediaPage() {
   }, [queryClient]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const uploadMutation = useMutation({
-    mutationFn: (files: File[]) => mediaApi.upload(files, selectedFolder ?? null),
+    // Uploading while the Shared tab is active lands the file shared —
+    // otherwise there's no way to get a new upload into Shared without a
+    // separate manual "Make shared" step afterward.
+    mutationFn: (files: File[]) => mediaApi.upload(files, selectedFolder ?? null, scope === 'shared' ? 'SHARED' : undefined),
     onSuccess: () => { invalidateAll(); toast({ title: 'Upload complete' }) },
     onError: () => toast({ title: 'Upload failed', variant: 'destructive' }),
   })
@@ -1638,6 +1649,12 @@ export default function MediaPage() {
             onDeleted={() => {
               queryClient.invalidateQueries({ queryKey: ['media'] })
               setDetailItem(null)
+            }}
+            onUpdated={(mediaId) => {
+              setDetailItem((cur) => {
+                if (cur?.id === mediaId) mediaApi.get(mediaId).then(setDetailItem).catch(() => {})
+                return cur
+              })
             }}
             onPreview={() => setLightboxItem(detailItem)}
             processing={processingMediaIds.has(detailItem.id)}
