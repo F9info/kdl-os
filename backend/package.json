@@ -22,7 +22,7 @@
     "@aws-sdk/s3-request-presigner": "^3.1081.0",
     "@prisma/adapter-pg": "^7.0.0",
     "@prisma/client": "^7.0.0",
-    "@sentry/node": "^8.0.0",
+    "@sentry/node": "^10.0.0",
     "@zxing/library": "^0.21.3",
     "adm-zip": "^0.5.18",
     "basic-ftp": "^6.0.1",
