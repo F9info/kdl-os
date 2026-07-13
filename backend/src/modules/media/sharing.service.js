@@ -80,3 +80,24 @@ export const getShareQr = async (token, baseUrl) => {
 export const getEmbedSnippet = (token, baseUrl) => {
   return '<iframe src="' + baseUrl + '/share/' + token + '" width="800" height="600" frameborder="0" allowfullscreen></iframe>';
 };
+
+// KDL-172 — batch-resolve which of the given media ids currently have at
+// least one active (not revoked, not expired, not download-exhausted) share
+// link, so listing/detail endpoints can surface a "Shared" badge without an
+// N+1 query per row.
+export const getActiveShareMediaIds = async (mediaIds) => {
+  if (!mediaIds.length) return new Set();
+  const rows = await prisma.mediaShare.findMany({
+    where: {
+      media_id: { in: mediaIds },
+      revoked: false,
+      OR: [{ expires_at: null }, { expires_at: { gt: new Date() } }],
+    },
+    select: { media_id: true, max_downloads: true, download_count: true },
+  });
+  return new Set(
+    rows
+      .filter((s) => s.max_downloads === null || s.download_count < s.max_downloads)
+      .map((s) => s.media_id)
+  );
+};

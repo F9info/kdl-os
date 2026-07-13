@@ -160,8 +160,12 @@ const EXT_TO_MIME = {
 // op (color adjustments, watermark, compress, …) genuinely needs pixels, so
 // those fall back to rasterizing to PNG first (see rasterizeSvg below).
 
-const SVG_TAG_RE = /<svg\b([^>]*)>/i;
-const SVG_CLOSE_RE = /<\/svg\s*>/i;
+// Matches either `<svg ...>` (capture group 1 empty) or a self-closing
+// `<svg .../>` (capture group 1 = the trailing slash), and separately any
+// `</svg>` close tag — used together below to find the close tag that
+// actually matches the outer <svg>, not just the first `</svg>` in the
+// document (icon sprites / `<symbol>` markup commonly nest <svg> elements).
+const SVG_ANY_TAG_RE = /<svg\b[^>]*?(\/)?>|<\/svg\s*>/gi;
 
 const parseNum = (v) => {
   if (v === undefined) return null;
@@ -175,11 +179,36 @@ const getAttr = (attrsStr, name) => {
 };
 
 const parseSvg = (svgText) => {
-  const openMatch = svgText.match(SVG_TAG_RE);
-  const closeMatch = svgText.match(SVG_CLOSE_RE);
-  if (!openMatch || !closeMatch) throw new Error('Not a valid SVG document');
+  SVG_ANY_TAG_RE.lastIndex = 0;
+  const openMatch = SVG_ANY_TAG_RE.exec(svgText);
+  if (!openMatch || openMatch[0].startsWith('</')) throw new Error('Not a valid SVG document');
 
-  const attrsStr = openMatch[1];
+  const selfClosing = Boolean(openMatch[1]);
+  const attrsStr = openMatch[0].slice(4, openMatch[0].length - (selfClosing ? 2 : 1));
+  const tagEnd = openMatch.index + openMatch[0].length;
+
+  let inner = '';
+  let suffixStart = tagEnd;
+  if (!selfClosing) {
+    // Walk remaining <svg>/</svg> tokens tracking nesting depth so a nested
+    // <svg> (sprite/symbol reuse) doesn't fool us into stopping at its close tag.
+    let depth = 1;
+    let m;
+    let closeIdx = -1;
+    let closeLen = 0;
+    while ((m = SVG_ANY_TAG_RE.exec(svgText))) {
+      if (m[0].startsWith('</')) {
+        depth -= 1;
+        if (depth === 0) { closeIdx = m.index; closeLen = m[0].length; break; }
+      } else if (!m[1]) {
+        depth += 1;
+      }
+    }
+    if (closeIdx === -1) throw new Error('Not a valid SVG document (no matching </svg>)');
+    inner = svgText.slice(tagEnd, closeIdx);
+    suffixStart = closeIdx + closeLen;
+  }
+
   const viewBoxRaw = getAttr(attrsStr, 'viewBox');
   let minX = 0, minY = 0, vbW = null, vbH = null;
   if (viewBoxRaw) {
@@ -190,12 +219,12 @@ const parseSvg = (svgText) => {
   const height = parseNum(getAttr(attrsStr, 'height')) ?? vbH ?? 150;
   if (vbW === null) { vbW = width; vbH = height; }
 
-  const tagEnd = openMatch.index + openMatch[0].length;
   return {
     prefix: svgText.slice(0, openMatch.index),
     attrsStr,
-    inner: svgText.slice(tagEnd, closeMatch.index),
-    suffix: svgText.slice(closeMatch.index + closeMatch[0].length),
+    inner,
+    suffix: svgText.slice(suffixStart),
+    selfClosing,
     minX, minY, vbW, vbH, width, height,
   };
 };
@@ -305,17 +334,30 @@ export const runImageEdit = async ({ mediaId, ops, note, createdBy }) => {
   let ext;
   let width = null;
   let height = null;
+  let vectorEdited = false;
 
   if (svgInput && ops.every((op) => SVG_VECTOR_SAFE_OPS.has(op.op))) {
-    // Pure vector edit — never touches pixels, text stays text.
-    const result = applySvgVectorOps(inputBuffer.toString('utf8'), ops);
-    outputBuffer = Buffer.from(result.svgText, 'utf8');
-    ext = 'svg';
-    width = result.width;
-    height = result.height;
-    // Validate the rewritten markup is still a well-formed SVG before saving.
-    await sharp(outputBuffer).metadata();
-  } else {
+    // Pure vector edit — never touches pixels, text stays text. If the source
+    // markup is unusual enough that rewriting/validating it fails (malformed
+    // tag, unsupported nesting, …), fall through to rasterizing below instead
+    // of aborting the whole job — a rasterized result beats a failed edit
+    // that silently leaves the original file untouched.
+    try {
+      const result = applySvgVectorOps(inputBuffer.toString('utf8'), ops);
+      const candidate = Buffer.from(result.svgText, 'utf8');
+      // Validate the rewritten markup is still a well-formed SVG before saving.
+      await sharp(candidate).metadata();
+      outputBuffer = candidate;
+      ext = 'svg';
+      width = result.width;
+      height = result.height;
+      vectorEdited = true;
+    } catch (err) {
+      logger.warn(`SVG vector edit failed for media ${mediaId}, falling back to raster: ${err.message}`);
+    }
+  }
+
+  if (!vectorEdited) {
     const media_ = svgInput ? { ...media, mime_type: 'image/png' } : media;
     const sourceBuffer = svgInput ? await rasterizeSvg(inputBuffer, ops) : inputBuffer;
     const animatedInput = media.mime_type === 'image/gif' || media.mime_type === 'image/webp';
@@ -357,13 +399,17 @@ export const runImageEdit = async ({ mediaId, ops, note, createdBy }) => {
   const { generateVariants } = await import('./media.worker.js');
   const variantResult = await generateVariants(outputBuffer, media.path);
 
+  const newMimeType = EXT_TO_MIME[ext] ?? media.mime_type;
+  const { MIME_TO_TYPE } = await import('./service.js');
+
   await prisma.media.update({
     where: { id: mediaId },
     data: {
       filename: swapFilenameExt(mediaFilename(media), ext),
       size: outputBuffer.length,
       checksum,
-      mime_type: EXT_TO_MIME[ext] ?? media.mime_type,
+      mime_type: newMimeType,
+      type: MIME_TO_TYPE(newMimeType),
       width: width ?? variantResult.width,
       height: height ?? variantResult.height,
       variants: variantResult.variants,

@@ -22,7 +22,7 @@ const enqueueEmbed = (mediaId) => {
     .catch(() => {});
 };
 
-const MIME_TO_TYPE = (mime) => {
+export const MIME_TO_TYPE = (mime) => {
   if (mime.startsWith('image/')) return 'IMAGE';
   if (mime.startsWith('video/')) return 'VIDEO';
   if (mime.startsWith('audio/')) return 'AUDIO';
@@ -288,7 +288,11 @@ export const listMedia = async (userId, query, { bypass = false } = {}) => {
     prisma.media.count({ where }),
   ]);
 
-  const media = await Promise.all(mediaItems.map(async (m) => resolveUrls(m)));
+  const { getActiveShareMediaIds } = await import('./sharing.service.js');
+  const activeShareIds = await getActiveShareMediaIds(mediaItems.map((m) => m.id));
+  const media = await Promise.all(
+    mediaItems.map(async (m) => resolveUrls({ ...m, has_active_share: activeShareIds.has(m.id) }))
+  );
   return { media, pagination: { page, limit, total, pages: Math.ceil(total / limit) } };
 };
 
@@ -313,7 +317,9 @@ export const getMediaById = async (id, userId, { bypass = false } = {}) => {
   // KDL-150 — a file only a private read for its owner must 404 for everyone
   // else (Super Admin bypasses this, same as listMedia).
   if (!bypass && userId && record.user_id !== userId && record.visibility !== 'SHARED') return null;
-  return resolveUrls(shapeDamFields(record));
+  const { getActiveShareMediaIds } = await import('./sharing.service.js');
+  const activeShareIds = await getActiveShareMediaIds([id]);
+  return resolveUrls({ ...shapeDamFields(record), has_active_share: activeShareIds.has(id) });
 };
 
 export const updateMediaMeta = async (id, data, actorId) => {
