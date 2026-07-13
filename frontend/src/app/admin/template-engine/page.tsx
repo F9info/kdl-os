@@ -50,10 +50,53 @@ interface TEPane {
   groups: TEGroup[]
 }
 
+// Raw wire shapes: the API serializes `field.options` as a JSON *string* (or
+// null) and can emit null for `value`/`default_value`. These differ from the
+// normalized `TEField` above, which every control downstream relies on.
+type TEFieldRaw = Omit<TEField, 'options' | 'value' | 'default_value'> & {
+  options: string | null
+  value: string | null
+  default_value: string | null
+}
+type TEGroupRaw = Omit<TEGroup, 'fields'> & { fields: TEFieldRaw[] }
+type TEPaneRaw = Omit<TEPane, 'groups'> & { groups: TEGroupRaw[] }
+
 // GET /template-engine/schema?platform= → { success, data: { platform, schema } }
 interface TESchemaEnvelope {
   success: boolean
-  data: { platform: string; schema: TEPane[] }
+  data: { platform: string; schema: TEPaneRaw[] }
+}
+
+// The API sends `options` as a JSON string; controls read it as an object.
+// Parse defensively — a malformed/empty string degrades to `null`, never throws.
+function parseFieldOptions(raw: string | null): TEFieldOptions | null {
+  if (raw == null) return null
+  if (typeof raw === 'object') return raw as TEFieldOptions // defensive: already parsed
+  const s = String(raw).trim()
+  if (!s) return null
+  try {
+    const parsed = JSON.parse(s)
+    return parsed && typeof parsed === 'object' ? (parsed as TEFieldOptions) : null
+  } catch {
+    return null
+  }
+}
+
+// Normalize the raw wire schema into the shape the UI relies on: parsed
+// `options`, and non-null string `value`/`default_value` (backend may null them).
+function normalizeSchema(schema: TEPaneRaw[]): TEPane[] {
+  return schema.map((pane) => ({
+    ...pane,
+    groups: pane.groups.map((group) => ({
+      ...group,
+      fields: group.fields.map((field) => ({
+        ...field,
+        options: parseFieldOptions(field.options),
+        value: field.value ?? '',
+        default_value: field.default_value ?? '',
+      })),
+    })),
+  }))
 }
 
 // A group is theme/device-scoped when its slug's final segment matches one of
@@ -126,6 +169,21 @@ function lsSet(key: string, val: string) {
   if (typeof window !== 'undefined') localStorage.setItem(key, val)
 }
 
+// Pull a human-readable reason out of a failed mutation. The backend 422 shape
+// is { success, message, errors: { fieldErrors, formErrors: string[] } } — the
+// formErrors name the exact offending field(s); surface them instead of a
+// generic "Could not save" so a bad value is diagnosable from the toast.
+function mutationErrorMessage(err: unknown, fallback: string): string {
+  const data = (err as { response?: { data?: unknown } })?.response?.data as
+    | { message?: string; errors?: { formErrors?: unknown } }
+    | undefined
+  const formErrors = data?.errors?.formErrors
+  if (Array.isArray(formErrors) && formErrors.length) return formErrors.join('; ')
+  if (typeof data?.message === 'string' && data.message) return data.message
+  if (err instanceof Error && err.message) return err.message
+  return fallback
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Field controls
 // ─────────────────────────────────────────────────────────────────────────────
@@ -153,40 +211,17 @@ function NumberControl({
   onChange: (v: string) => void
   options: TEFieldOptions | null
 }) {
+  // Backend validates `number` fields with `Number(value)` — a unit suffix
+  // ("40px") becomes NaN and 422s the whole pane save. So a number field always
+  // posts the bare number; the unit (e.g. px) is display-only metadata. Any unit
+  // conversion / scaling is applied once at seed time, not here.
   const unit = options?.unit
-  if (unit === 'px') {
-    const m = String(value).match(/^(-?[\d.]+)\s*([a-z%]*)$/i) ?? []
-    const num = m[1] ?? value
-    const u = m[2] || 'px'
-    const UNITS = ['px', 'em', 'rem', '%', 'vw', 'vh']
-    return (
-      <span className="inline-flex items-center gap-1">
-        <input
-          type="number"
-          value={num}
-          step="any"
-          className="w-20 rounded border border-border bg-muted px-2 py-1 text-sm"
-          onChange={(e) => onChange(e.target.value + u)}
-        />
-        <select
-          value={u}
-          className="rounded border border-border bg-muted px-1 py-1 text-xs"
-          onChange={(e) => onChange(num + e.target.value)}
-        >
-          {UNITS.map((uu) => (
-            <option key={uu} value={uu}>
-              {uu}
-            </option>
-          ))}
-        </select>
-      </span>
-    )
-  }
+  const num = String(value).match(/^-?[\d.]+/)?.[0] ?? value
   return (
     <span className="inline-flex items-center gap-1">
       <input
         type="number"
-        value={value}
+        value={num}
         step="any"
         className="w-24 rounded border border-border bg-muted px-2 py-1 text-sm"
         onChange={(e) => onChange(e.target.value)}
@@ -469,7 +504,7 @@ function TemplateEngineInner() {
   const [platform, setPlatformState] = useState(() => lsGet(LS_PLATFORM, 'webapp'))
   const [activePane, setActivePaneState] = useState(() => lsGet(LS_PANE, ''))
   const [theme, setThemeState] = useState<'dark' | 'light'>(() =>
-    lsGet(LS_THEME, 'dark') as 'dark' | 'light',
+    lsGet(LS_THEME, 'dark') === 'light' ? 'light' : 'dark',
   )
   const [search, setSearch] = useState('')
   // Per-pane active mode/device selectors (sub-tabs within a pane)
@@ -497,7 +532,7 @@ function TemplateEngineInner() {
     queryFn: () =>
       api
         .get<TESchemaEnvelope>(`/template-engine/schema?platform=${platform}`)
-        .then((r) => r.data.data.schema),
+        .then((r) => normalizeSchema(r.data.data.schema)),
     staleTime: 30_000,
   })
 
@@ -602,8 +637,12 @@ function TemplateEngineInner() {
       void qc.invalidateQueries({ queryKey: ['template-engine-schema', plat] })
       toast({ title: 'Saved', description: 'Settings saved successfully.' })
     },
-    onError: () => {
-      toast({ title: 'Save failed', description: 'Could not save settings.', variant: 'destructive' })
+    onError: (err) => {
+      toast({
+        title: 'Save failed',
+        description: mutationErrorMessage(err, 'Could not save settings.'),
+        variant: 'destructive',
+      })
     },
   })
 
@@ -611,6 +650,9 @@ function TemplateEngineInner() {
     mutationFn: async ({ paneId, platform: plat }: { paneId: string; platform: string }) => {
       const pane = panes.find((p) => p.id === paneId)
       if (!pane) throw new Error('Pane not found')
+      // Reset keys off the Type cuid; without it the backend Zod schema 400s on a
+      // missing type_id. Fail early with a clear message instead.
+      if (!pane.type_id) throw new Error('This section has no Type and cannot be reset.')
       return api.post('/template-engine/reset', { platform: plat, type_id: pane.type_id })
     },
     onSuccess: (_, { paneId, platform: plat }) => {
@@ -631,8 +673,12 @@ function TemplateEngineInner() {
       })
       toast({ title: 'Reset', description: 'Settings reset to defaults.' })
     },
-    onError: () => {
-      toast({ title: 'Reset failed', description: 'Could not reset settings.', variant: 'destructive' })
+    onError: (err) => {
+      toast({
+        title: 'Reset failed',
+        description: mutationErrorMessage(err, 'Could not reset settings.'),
+        variant: 'destructive',
+      })
     },
   })
 
