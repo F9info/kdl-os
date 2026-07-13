@@ -61,6 +61,12 @@ vi.mock('../src/config/database.js', () => ({
       upsert: vi.fn(),
       deleteMany: vi.fn(),
     },
+    mediaShare: {
+      create: vi.fn(),
+      findMany: vi.fn().mockResolvedValue([]),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+    },
   },
 }));
 
