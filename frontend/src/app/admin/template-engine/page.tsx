@@ -150,21 +150,15 @@ function NumberControl({
       <span className="inline-flex items-center gap-1">
         <input
           type="number"
-          defaultValue={num}
+          value={num}
           step="any"
           className="w-20 rounded border border-border bg-muted px-2 py-1 text-sm"
-          onChange={(e) => {
-            const sel = e.currentTarget.parentElement?.querySelector('select') as HTMLSelectElement | null
-            onChange(e.target.value + (sel?.value ?? 'px'))
-          }}
+          onChange={(e) => onChange(e.target.value + u)}
         />
         <select
-          defaultValue={u}
+          value={u}
           className="rounded border border-border bg-muted px-1 py-1 text-xs"
-          onChange={(e) => {
-            const inp = e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement | null
-            onChange((inp?.value ?? '0') + e.target.value)
-          }}
+          onChange={(e) => onChange(num + e.target.value)}
         >
           {UNITS.map((uu) => (
             <option key={uu} value={uu}>
@@ -499,16 +493,23 @@ function TemplateEngineInner() {
   // Saved snapshot (to compute dirty) — refreshed from API on load / after save
   const [savedValues, setSavedValues] = useState<Record<string, ValuesMap>>({})
 
+  // Value maps are namespaced by platform: pane ids repeat across platforms
+  // (branding/buttons/… exist on all 4). Keying by pane id alone let one
+  // platform's unsaved edits bleed into another — the other platform's same-id
+  // pane showed dirty and Save posted mismatched field_ids → 422 (KDL-190 C-1).
+  const vkeyOf = (plat: string, paneId: string) => `${plat}:${paneId}`
+  const vkey = (paneId: string) => vkeyOf(platform, paneId)
+
   // When schema loads, initialize or refresh values for panes we haven't touched
   useEffect(() => {
     if (!panes.length) return
     setLocalValues((prev) => {
       const next = { ...prev }
       panes.forEach((pane) => {
-        if (!next[pane.id]) {
+        if (!next[vkey(pane.id)]) {
           const m: ValuesMap = {}
           pane.groups.forEach((g) => g.fields.forEach((f) => (m[f.id] = f.value)))
-          next[pane.id] = m
+          next[vkey(pane.id)] = m
         }
       })
       return next
@@ -516,10 +517,10 @@ function TemplateEngineInner() {
     setSavedValues((prev) => {
       const next = { ...prev }
       panes.forEach((pane) => {
-        if (!next[pane.id]) {
+        if (!next[vkey(pane.id)]) {
           const m: ValuesMap = {}
           pane.groups.forEach((g) => g.fields.forEach((f) => (m[f.id] = f.value)))
-          next[pane.id] = m
+          next[vkey(pane.id)] = m
         }
       })
       return next
@@ -551,12 +552,13 @@ function TemplateEngineInner() {
   // ── Dirty tracking ────────────────────────────────────────────────────────
   const isDirtyPane = useCallback(
     (paneId: string) => {
-      const local = localValues[paneId]
-      const saved = savedValues[paneId]
+      const local = localValues[vkey(paneId)]
+      const saved = savedValues[vkey(paneId)]
       if (!local || !saved) return false
       return JSON.stringify(local) !== JSON.stringify(saved)
     },
-    [localValues, savedValues],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [localValues, savedValues, platform],
   )
 
   const isPlatformDirty = useCallback(() => {
@@ -565,22 +567,23 @@ function TemplateEngineInner() {
 
   // ── Mutations ────────────────────────────────────────────────────────────
   const saveMutation = useMutation({
-    mutationFn: async ({ paneId }: { paneId: string }) => {
+    mutationFn: async ({ paneId, platform: plat }: { paneId: string; platform: string }) => {
       const pane = panes.find((p) => p.id === paneId)
       if (!pane) throw new Error('Pane not found')
-      const local = localValues[paneId] ?? {}
+      const local = localValues[vkeyOf(plat, paneId)] ?? {}
       const values = pane.groups.flatMap((g) =>
         g.fields.map((f) => ({ field_id: f.id, value: local[f.id] ?? f.value })),
       )
       return api.post('/template-engine/values', {
-        platform,
+        platform: plat,
         type_id: pane.id,
         values,
       })
     },
-    onSuccess: (_, { paneId }) => {
-      setSavedValues((prev) => ({ ...prev, [paneId]: { ...(localValues[paneId] ?? {}) } }))
-      void qc.invalidateQueries({ queryKey: ['template-engine-schema', platform] })
+    onSuccess: (_, { paneId, platform: plat }) => {
+      const k = vkeyOf(plat, paneId)
+      setSavedValues((prev) => ({ ...prev, [k]: { ...(localValues[k] ?? {}) } }))
+      void qc.invalidateQueries({ queryKey: ['template-engine-schema', plat] })
       toast({ title: 'Saved', description: 'Settings saved successfully.' })
     },
     onError: () => {
@@ -589,23 +592,24 @@ function TemplateEngineInner() {
   })
 
   const resetMutation = useMutation({
-    mutationFn: async ({ paneId }: { paneId: string }) => {
+    mutationFn: async ({ paneId, platform: plat }: { paneId: string; platform: string }) => {
       const pane = panes.find((p) => p.id === paneId)
       if (!pane) throw new Error('Pane not found')
-      return api.post('/template-engine/reset', { platform, type_id: pane.id })
+      return api.post('/template-engine/reset', { platform: plat, type_id: pane.id })
     },
-    onSuccess: (_, { paneId }) => {
+    onSuccess: (_, { paneId, platform: plat }) => {
+      const k = vkeyOf(plat, paneId)
       // After reset, invalidate to reload defaults
-      void qc.invalidateQueries({ queryKey: ['template-engine-schema', platform] }).then(() => {
+      void qc.invalidateQueries({ queryKey: ['template-engine-schema', plat] }).then(() => {
         // Clear local and saved so the effect re-initializes from fresh API data
         setLocalValues((prev) => {
           const next = { ...prev }
-          delete next[paneId]
+          delete next[k]
           return next
         })
         setSavedValues((prev) => {
           const next = { ...prev }
-          delete next[paneId]
+          delete next[k]
           return next
         })
       })
@@ -617,15 +621,16 @@ function TemplateEngineInner() {
   })
 
   const handleFieldChange = (paneId: string, fieldId: string, value: string) => {
+    const k = vkey(paneId)
     setLocalValues((prev) => ({
       ...prev,
-      [paneId]: { ...(prev[paneId] ?? {}), [fieldId]: value },
+      [k]: { ...(prev[k] ?? {}), [fieldId]: value },
     }))
   }
 
   // ── Active pane data ──────────────────────────────────────────────────────
   const activePaneData = panes.find((p) => p.id === activePane)
-  const activePaneValues = localValues[activePane] ?? {}
+  const activePaneValues = localValues[vkey(activePane)] ?? {}
   const activePaneIsDirty = isDirtyPane(activePane)
 
   // Visible groups (filtered by active mode/device)
@@ -715,7 +720,6 @@ function TemplateEngineInner() {
         data-testid="platform-bar"
       >
         {PLATFORMS.map((p) => {
-          const platformPanes = panes // only relevant when platform matches
           const dirty = p.id === platform && isPlatformDirty()
           return (
             <button
@@ -952,7 +956,7 @@ function TemplateEngineInner() {
             <div className="flex gap-2">
               <button
                 data-testid="btn-reset"
-                onClick={() => resetMutation.mutate({ paneId: activePane })}
+                onClick={() => resetMutation.mutate({ paneId: activePane, platform })}
                 disabled={isResetting || !activePane}
                 className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary disabled:opacity-50"
               >
@@ -961,7 +965,7 @@ function TemplateEngineInner() {
               </button>
               <button
                 data-testid="btn-save"
-                onClick={() => saveMutation.mutate({ paneId: activePane })}
+                onClick={() => saveMutation.mutate({ paneId: activePane, platform })}
                 disabled={isSaving || !activePane || !activePaneIsDirty}
                 className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
               >

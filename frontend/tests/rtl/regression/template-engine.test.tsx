@@ -196,6 +196,61 @@ describe('Template Engine page (KDL-177 C1 gates)', () => {
     })
   })
 
+  // KDL-190 C-1 regression: dirty state must NOT bleed across platforms.
+  // Pane ids repeat across platforms (pane-branding exists on webapp AND tv);
+  // editing a webapp pane must not mark the same-id pane dirty on another
+  // platform (which previously enabled Save and posted mismatched field_ids → 422).
+  it('does not bleed dirty state across platforms (C-1 regression)', async () => {
+    const Page = await importPage()
+    wrapWithQueryClient(<Page />)
+    await waitFor(() => screen.getByTestId('pane-btn-pane-branding'))
+
+    // Select + edit the webapp branding pane
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('pane-btn-pane-branding'))
+    })
+    await waitFor(() => screen.getByTestId('field-row-field-branding-bg'))
+    const colorInput = screen
+      .getByTestId('field-row-field-branding-bg')
+      .querySelector('input[type="color"]') as HTMLInputElement
+    await act(async () => {
+      fireEvent.change(colorInput, { target: { value: '#ff0000' } })
+    })
+    await waitFor(() => {
+      expect((screen.getByTestId('btn-save') as HTMLButtonElement).disabled).toBe(false)
+    })
+
+    // Switch to TV (same pane id, untouched) — must be clean
+    apiGet.mockResolvedValueOnce({ data: tvSchema })
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('platform-btn-tv'))
+    })
+    await waitFor(() => {
+      const tvCall = apiGet.mock.calls.find((c) => String(c[0]).includes('platform=tv'))
+      expect(tvCall).toBeTruthy()
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('pane-btn-pane-branding'))
+    })
+    await waitFor(() => screen.getByTestId('field-row-field-branding-bg'))
+
+    // The TV pane with the same id must NOT be dirty → Save disabled, no bleed
+    expect((screen.getByTestId('btn-save') as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByText('All changes saved')).toBeTruthy()
+
+    // Switching back to webapp preserves that platform's unsaved edit
+    apiGet.mockResolvedValueOnce({ data: webappSchema })
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('platform-btn-webapp'))
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('pane-btn-pane-branding'))
+    })
+    await waitFor(() => {
+      expect((screen.getByTestId('btn-save') as HTMLButtonElement).disabled).toBe(false)
+    })
+  })
+
   it('Reset posts to /template-engine/reset with correct pane id', async () => {
     const Page = await importPage()
     wrapWithQueryClient(<Page />)
