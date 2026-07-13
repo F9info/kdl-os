@@ -135,6 +135,7 @@ vi.mock('../../src/config/minio.js', () => ({
 vi.mock('../../src/shared/services/storage.service.js', () => ({
   uploadFile:  vi.fn().mockResolvedValue(undefined),
   getFileUrl:  vi.fn().mockResolvedValue('http://fake/url'),
+  deleteFiles: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('../../src/shared/utils/logger.js', () => ({
@@ -154,7 +155,7 @@ import { PDFDocument }   from 'pdf-lib';
 import { execFile }      from 'child_process';
 import { prisma }        from '../../src/config/database.js';
 import { minio }         from '../../src/config/minio.js';
-import { uploadFile }    from '../../src/shared/services/storage.service.js';
+import { uploadFile, deleteFiles } from '../../src/shared/services/storage.service.js';
 import { createMediaVersion } from '../../src/modules/media/processing.service.js';
 
 import { runImageEdit }   from '../../src/modules/media/image-ops.service.js';
@@ -274,8 +275,8 @@ describe('C2b SVG image editing', () => {
     mockSvgSource('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="50"><text>Hi</text></svg>');
     await runImageEdit({ mediaId: 'm1', ops: [{ op: 'resize', width: 200 }], createdBy: 'u1' });
 
-    const [, , savedBuffer] = minio.putObject.mock.calls[0];
-    const savedSvg = savedBuffer.toString('utf8');
+    const [savedFile] = uploadFile.mock.calls[0];
+    const savedSvg = savedFile.buffer.toString('utf8');
     expect(savedSvg).toContain('<text>Hi</text>');
     expect(savedSvg).toMatch(/width="200"/);
     expect(savedSvg).toMatch(/height="100"/);
@@ -295,8 +296,8 @@ describe('C2b SVG image editing', () => {
     mockSvgSource('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100"/></svg>');
     await runImageEdit({ mediaId: 'm1', ops: [{ op: 'crop', left: 10, top: 10, width: 50, height: 50 }], createdBy: 'u1' });
 
-    const [, , savedBuffer] = minio.putObject.mock.calls[0];
-    const savedSvg = savedBuffer.toString('utf8');
+    const [savedFile] = uploadFile.mock.calls[0];
+    const savedSvg = savedFile.buffer.toString('utf8');
     expect(savedSvg).toMatch(/viewBox="10 10 50 50"/);
     expect(savedSvg.trim()).toMatch(/<\/svg>\s*$/);
     expect(prisma.media.update).toHaveBeenCalledWith(expect.objectContaining({
@@ -311,6 +312,20 @@ describe('C2b SVG image editing', () => {
     expect(prisma.media.update).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ filename: 'logo.png', mime_type: 'image/png' }),
     }));
+  });
+
+  it('extension-changing edit deletes only the stale original, not the freshly regenerated variants (KDL-173 follow-up)', async () => {
+    prisma.media.findUnique.mockResolvedValue({
+      ...SVG_MEDIA,
+      variants: { thumb: 'u1/variants/logo_thumb.webp', small: 'u1/variants/logo_small.webp' },
+    });
+    mockSvgSource('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="50"><text>Hi</text></svg>');
+    await runImageEdit({ mediaId: 'm1', ops: [{ op: 'brightness', factor: 1.2 }], createdBy: 'u1' });
+
+    // Variant keys are derived only from the media uuid, so generateVariants()
+    // above overwrote the same keys the pre-edit record already had — they
+    // must not be deleted, only the stale original (extension-changed) key.
+    expect(deleteFiles).toHaveBeenCalledWith(['u1/logo.svg']);
   });
 
   it('rejects editing for a genuinely unsupported format instead of corrupting it', async () => {
