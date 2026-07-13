@@ -1,0 +1,739 @@
+/**
+ * Phase B gate tests — values API + token resolver
+ *
+ * B1: schema tree shape; routes behind gate+authenticate+requirePermission
+ * B2: valid upsert; invalid color/enum rejected 422; reset restores default
+ * B3: token for changed field reflects saved value; light+dark blocks present; CSS served
+ */
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// ── Database / Redis / activity-logger mocks must be hoisted before imports ──
+vi.mock('../../config/database.js', () => ({ prisma: {} }));
+vi.mock('../../config/redis.js', () => ({
+  redis: { get: vi.fn(), set: vi.fn(), del: vi.fn() },
+}));
+vi.mock('../user-management/shared/activity-logger.js', () => ({
+  writeActivityAsync: vi.fn(),
+  getClientIp: vi.fn(() => '127.0.0.1'),
+}));
+
+import { redis } from '../../config/redis.js';
+import * as service from './service.js';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// B1 — routes.js structure + schema tree shape
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('B1 — routes.js structure', () => {
+  it('routes file exists and exports a default Express router', async () => {
+    const mod = await import('./routes.js');
+    const router = mod.default;
+    // An express Router has a 'stack' property of middleware layers
+    expect(router).toBeDefined();
+    expect(typeof router).toBe('function');
+    expect(Array.isArray(router.stack)).toBe(true);
+  });
+
+  it('GET /schema and GET /values layers include authenticate middleware', async () => {
+    const mod = await import('./routes.js');
+    const router = mod.default;
+
+    const namedHandlers = (layer) =>
+      (layer.route?.stack ?? []).map((l) => l.handle?.name ?? '');
+
+    const routes = router.stack.filter((l) => l.route);
+    const schemaRoute = routes.find((l) => l.route.path === '/schema' && l.route.methods.get);
+    const valuesGetRoute = routes.find((l) => l.route.path === '/values' && l.route.methods.get);
+    const valuesPostRoute = routes.find((l) => l.route.path === '/values' && l.route.methods.post);
+    const resetRoute = routes.find((l) => l.route.path === '/reset' && l.route.methods.post);
+    const tokensRoute = routes.find((l) => l.route.path === '/tokens' && l.route.methods.get);
+
+    expect(schemaRoute).toBeDefined();
+    expect(valuesGetRoute).toBeDefined();
+    expect(valuesPostRoute).toBeDefined();
+    expect(resetRoute).toBeDefined();
+    expect(tokensRoute).toBeDefined();
+
+    // Authenticated routes must have 'authenticate' in middleware chain
+    for (const route of [schemaRoute, valuesGetRoute, valuesPostRoute, resetRoute]) {
+      const names = namedHandlers(route);
+      expect(names).toContain('authenticate');
+      // requirePermission factory returns an anonymous or named fn; verify it's present (length > 2: authenticate + permission + validate + handler)
+      expect(names.length).toBeGreaterThanOrEqual(3);
+    }
+
+    // /tokens uses optionalAuthenticate, NOT authenticate
+    const tokenNames = namedHandlers(tokensRoute);
+    expect(tokenNames).toContain('optionalAuthenticate');
+    expect(tokenNames).not.toContain('authenticate');
+  });
+});
+
+describe('B1 — service.getSchemaTree shape', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    redis.get.mockResolvedValue(null);
+    redis.set.mockResolvedValue('OK');
+    redis.del.mockResolvedValue(1);
+  });
+
+  it('returns null for unknown platform', async () => {
+    const { prisma } = await import('../../config/database.js');
+    prisma.type = { findMany: vi.fn().mockResolvedValue([]) };
+    prisma.category = { findMany: vi.fn().mockResolvedValue([]) };
+    prisma.settingField = { findMany: vi.fn().mockResolvedValue([]) };
+
+    const result = await service.getSchemaTree('unknown');
+    expect(result).toBeNull();
+  });
+
+  it('returns pane array for webapp with type_id and groups', async () => {
+    const { prisma } = await import('../../config/database.js');
+    // Simulate one type seeded for webapp.branding
+    const fakeType = { id: 'type-1', name: 'Theme Color', slug: 'webapp.branding' };
+    const fakeCat = { id: 'cat-1', name: 'Colors', slug: 'webapp.branding.colors', type_id: 'type-1' };
+    const fakeField = {
+      id: 'f-1', field_name: 'Primary', slug: 'webapp.branding.colors.primary',
+      input_type: 'color', value: '#ffffff', alt_text: null, options: null, sort: 0,
+      type_id: 'type-1', category_id: 'cat-1',
+      setting_values: [],
+    };
+
+    prisma.type = { findMany: vi.fn().mockResolvedValue([fakeType]) };
+    prisma.category = { findMany: vi.fn().mockResolvedValue([fakeCat]) };
+    prisma.settingField = { findMany: vi.fn().mockResolvedValue([fakeField]) };
+
+    const tree = await service.getSchemaTree('webapp');
+    expect(Array.isArray(tree)).toBe(true);
+    const branding = tree.find((p) => p.id === 'branding');
+    expect(branding).toBeDefined();
+    expect(branding.type_id).toBe('type-1');
+    expect(branding.groups).toHaveLength(1);
+    expect(branding.groups[0].fields[0].input_type).toBe('color');
+    // effective_value falls back to field default when no setting_values
+    expect(branding.groups[0].fields[0].value).toBe('#ffffff');
+  });
+
+  it('overrides default with saved setting_value when present', async () => {
+    const { prisma } = await import('../../config/database.js');
+    const fakeType = { id: 'type-2', name: 'Theme Color', slug: 'webapp.branding' };
+    const fakeCat = { id: 'cat-2', name: 'Colors', slug: 'webapp.branding.colors', type_id: 'type-2' };
+    const fakeField = {
+      id: 'f-2', field_name: 'Primary', slug: 'webapp.branding.colors.primary',
+      input_type: 'color', value: '#ffffff', alt_text: null, options: null, sort: 0,
+      type_id: 'type-2', category_id: 'cat-2',
+      setting_values: [{ value: '#ff0000' }],
+    };
+
+    prisma.type = { findMany: vi.fn().mockResolvedValue([fakeType]) };
+    prisma.category = { findMany: vi.fn().mockResolvedValue([fakeCat]) };
+    prisma.settingField = { findMany: vi.fn().mockResolvedValue([fakeField]) };
+
+    const tree = await service.getSchemaTree('webapp');
+    const branding = tree.find((p) => p.id === 'branding');
+    expect(branding.groups[0].fields[0].value).toBe('#ff0000');
+    expect(branding.groups[0].fields[0].default_value).toBe('#ffffff');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// B2 — validateFieldValue, upsertValues, resetValues
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('B2 — validateFieldValue', () => {
+  it('accepts valid hex color values', () => {
+    const f = { input_type: 'color', options: null };
+    expect(service.validateFieldValue(f, '#abc')).toBeNull();
+    expect(service.validateFieldValue(f, '#4f8ef7')).toBeNull();
+    expect(service.validateFieldValue(f, '#00000000')).toBeNull();
+    expect(service.validateFieldValue(f, 'rgba(0,0,0,0.5)')).toBeNull();
+  });
+
+  it('rejects invalid color strings', () => {
+    const f = { input_type: 'color', options: null };
+    expect(service.validateFieldValue(f, 'red')).toBe('invalid color value');
+    expect(service.validateFieldValue(f, '123456')).toBe('invalid color value');
+    expect(service.validateFieldValue(f, '')).toBe('invalid color value');
+  });
+
+  it('accepts valid select choices and rejects unknown ones', () => {
+    const f = { input_type: 'select', options: JSON.stringify({ choices: ['Inter', 'Roboto'] }) };
+    expect(service.validateFieldValue(f, 'Inter')).toBeNull();
+    expect(service.validateFieldValue(f, 'Comic Sans')).toMatch(/must be one of/);
+  });
+
+  it('accepts valid enum for radio type', () => {
+    const f = { input_type: 'radio', options: JSON.stringify({ choices: ['yes', 'no'] }) };
+    expect(service.validateFieldValue(f, 'yes')).toBeNull();
+    expect(service.validateFieldValue(f, 'maybe')).toMatch(/must be one of/);
+  });
+
+  it('accepts slider within range and rejects out-of-range', () => {
+    const f = { input_type: 'slider', options: JSON.stringify({ min: 0, max: 24, unit: 'px' }) };
+    expect(service.validateFieldValue(f, '12')).toBeNull();
+    expect(service.validateFieldValue(f, '0')).toBeNull();
+    expect(service.validateFieldValue(f, '24')).toBeNull();
+    expect(service.validateFieldValue(f, '25')).toMatch(/<=\s*24/);
+    expect(service.validateFieldValue(f, '-1')).toMatch(/>=/);
+  });
+
+  it('accepts toggle true/false and rejects other values', () => {
+    const f = { input_type: 'toggle', options: null };
+    expect(service.validateFieldValue(f, 'true')).toBeNull();
+    expect(service.validateFieldValue(f, 'false')).toBeNull();
+    expect(service.validateFieldValue(f, '1')).toMatch(/true.*false/);
+  });
+
+  it('accepts valid multiselect JSON array', () => {
+    const f = { input_type: 'multiselect', options: JSON.stringify({ choices: ['a', 'b', 'c'] }) };
+    expect(service.validateFieldValue(f, '["a","b"]')).toBeNull();
+    expect(service.validateFieldValue(f, '["x"]')).toMatch(/invalid choice/);
+    expect(service.validateFieldValue(f, 'not-json')).toMatch(/valid JSON array/);
+  });
+
+  it('accepts any string for text/textarea/password/file/fonts/imglist', () => {
+    for (const type of ['text', 'textarea', 'password', 'file', 'fonts', 'imglist']) {
+      expect(service.validateFieldValue({ input_type: type, options: null }, 'anything')).toBeNull();
+    }
+  });
+
+  it('rejects empty string for number and slider', () => {
+    expect(service.validateFieldValue({ input_type: 'number', options: null }, '')).toBe('value must be a number');
+    expect(service.validateFieldValue({ input_type: 'slider', options: JSON.stringify({ min: 0, max: 24 }) }, '')).toBe('value must be a number');
+  });
+
+  it('rejects rgba strings without digits after paren', () => {
+    const f = { input_type: 'color', options: null };
+    expect(service.validateFieldValue(f, 'rgba(garbage')).toBe('invalid color value');
+    expect(service.validateFieldValue(f, 'rgba( ')).toBe('invalid color value');
+    expect(service.validateFieldValue(f, 'rgba(0,0,0,0.5)')).toBeNull();
+    expect(service.validateFieldValue(f, 'rgb(255, 128, 0)')).toBeNull();
+  });
+});
+
+describe('B2 — upsertValues rejects invalid fields and unknown field ids', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    redis.del.mockResolvedValue(1);
+    // Default: type belongs to webapp platform
+    const { prisma } = await import('../../config/database.js');
+    prisma.type = { findUnique: vi.fn().mockResolvedValue({ slug: 'webapp.branding' }) };
+  });
+
+  it('returns errors array when a color value is invalid', async () => {
+    const { prisma } = await import('../../config/database.js');
+    prisma.settingField = {
+      findMany: vi.fn().mockResolvedValue([
+        { id: 'f-1', slug: 'webapp.branding.colors.primary', input_type: 'color', options: null },
+      ]),
+    };
+
+    const result = await service.upsertValues(
+      'webapp', 'type-1',
+      [{ field_id: 'f-1', value: 'red' }],
+      'user-1'
+    );
+    expect(result.errors).toBeDefined();
+    expect(result.errors[0]).toMatch(/invalid color/);
+    // No DB write
+    expect(prisma.settingField.findMany).toHaveBeenCalled();
+  });
+
+  it('returns errors array when field_id is unknown', async () => {
+    const { prisma } = await import('../../config/database.js');
+    prisma.settingField = { findMany: vi.fn().mockResolvedValue([]) };
+
+    const result = await service.upsertValues(
+      'webapp', 'type-1',
+      [{ field_id: 'unknown-id', value: '#ffffff' }],
+      'user-1'
+    );
+    expect(result.errors).toBeDefined();
+    expect(result.errors[0]).toMatch(/Unknown field/);
+  });
+
+  it('upserts valid entries and returns saved count', async () => {
+    const { prisma } = await import('../../config/database.js');
+    prisma.settingField = {
+      findMany: vi.fn().mockResolvedValue([
+        { id: 'f-1', slug: 'webapp.branding.colors.primary', input_type: 'color', options: null },
+      ]),
+    };
+    prisma.settingValue = {
+      upsert: vi.fn().mockResolvedValue({ id: 'sv-1' }),
+    };
+    prisma.$transaction = vi.fn(async (ops) => Promise.all(ops));
+
+    const result = await service.upsertValues(
+      'webapp', 'type-1',
+      [{ field_id: 'f-1', value: '#ff0000' }],
+      'user-1'
+    );
+    expect(result.saved).toBe(1);
+    expect(result.errors).toBeUndefined();
+    expect(prisma.$transaction).toHaveBeenCalled();
+    expect(redis.del).toHaveBeenCalled();
+  });
+
+  it('upsertValues invalidates real device-scoped cache keys (tv_4k, not base tags)', async () => {
+    const { prisma } = await import('../../config/database.js');
+    prisma.type = { findUnique: vi.fn().mockResolvedValue({ slug: 'tv.branding' }) };
+    prisma.settingField = {
+      findMany: vi.fn().mockResolvedValue([
+        { id: 'f-tv', slug: 'tv.branding.colors.primary', input_type: 'color', options: null },
+      ]),
+    };
+    prisma.settingValue = { upsert: vi.fn().mockResolvedValue({ id: 'sv-1' }) };
+    prisma.$transaction = vi.fn(async (ops) => Promise.all(ops));
+
+    await service.upsertValues('tv', 'type-tv', [{ field_id: 'f-tv', value: '#ff0000' }], 'user-1');
+
+    const delKeys = redis.del.mock.calls.map((c) => c[0]);
+    // Real tv device ids must be invalidated
+    expect(delKeys).toContain('te:tokens:tv:dark:tv_4k');
+    expect(delKeys).toContain('te:tokens:tv:dark:tv_1080p');
+    expect(delKeys).toContain('te:tokens:tv:dark:tv_720p');
+    expect(delKeys).toContain('te:tokens:tv:dark:tv_8k');
+    expect(delKeys).toContain('te:tokens:tv:dark:all');
+    // Authoring base tags must NOT appear as cache keys
+    expect(delKeys).not.toContain('te:tokens:tv:dark:desktop');
+    expect(delKeys).not.toContain('te:tokens:tv:dark:laptop');
+    expect(delKeys).not.toContain('te:tokens:tv:dark:ipad');
+    expect(delKeys).not.toContain('te:tokens:tv:dark:mobile');
+  });
+
+  it('rejects enum field with invalid choice', async () => {
+    const { prisma } = await import('../../config/database.js');
+    prisma.settingField = {
+      findMany: vi.fn().mockResolvedValue([
+        {
+          id: 'f-2', slug: 'webapp.typography.font.body',
+          input_type: 'select',
+          options: JSON.stringify({ choices: ['Inter', 'Roboto'] }),
+        },
+      ]),
+    };
+
+    const result = await service.upsertValues(
+      'webapp', 'type-1',
+      [{ slug: 'webapp.typography.font.body', value: 'Arial' }],
+      'user-1'
+    );
+    expect(result.errors).toBeDefined();
+    expect(result.errors[0]).toMatch(/must be one of/);
+  });
+
+  it('rejects upsert when type_id belongs to a different platform', async () => {
+    const { prisma } = await import('../../config/database.js');
+    // type belongs to mobile, not webapp
+    prisma.type = { findUnique: vi.fn().mockResolvedValue({ slug: 'mobile.branding' }) };
+    prisma.settingField = { findMany: vi.fn() };
+
+    const result = await service.upsertValues(
+      'webapp', 'mobile-type-id',
+      [{ field_id: 'f-x', value: '#ffffff' }],
+      'user-1'
+    );
+    expect(result.errors).toBeDefined();
+    expect(result.errors[0]).toMatch(/does not belong to platform/);
+    expect(prisma.settingField.findMany).not.toHaveBeenCalled();
+  });
+});
+
+describe('B2 — resetValues restores defaults', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    redis.del.mockResolvedValue(1);
+    const { prisma } = await import('../../config/database.js');
+    prisma.type = { findUnique: vi.fn().mockResolvedValue({ slug: 'webapp.branding' }) };
+  });
+
+  it('deletes all setting_values rows for the pane and invalidates cache', async () => {
+    const { prisma } = await import('../../config/database.js');
+    prisma.settingField = {
+      findMany: vi.fn().mockResolvedValue([{ id: 'f-1' }, { id: 'f-2' }]),
+    };
+    prisma.settingValue = {
+      deleteMany: vi.fn().mockResolvedValue({ count: 2 }),
+    };
+
+    const result = await service.resetValues('webapp', 'type-1');
+    expect(result.deleted).toBe(2);
+    expect(prisma.settingValue.deleteMany).toHaveBeenCalledWith({
+      where: { field_id: { in: ['f-1', 'f-2'] } },
+    });
+    expect(redis.del).toHaveBeenCalled();
+  });
+
+  it('returns 0 deleted when no saved values existed', async () => {
+    const { prisma } = await import('../../config/database.js');
+    prisma.settingField = {
+      findMany: vi.fn().mockResolvedValue([{ id: 'f-3' }]),
+    };
+    prisma.settingValue = {
+      deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+    };
+
+    const result = await service.resetValues('webapp', 'type-1');
+    expect(result.deleted).toBe(0);
+  });
+
+  it('rejects reset when type_id belongs to a different platform', async () => {
+    const { prisma } = await import('../../config/database.js');
+    prisma.type = { findUnique: vi.fn().mockResolvedValue({ slug: 'mobile.branding' }) };
+    prisma.settingField = { findMany: vi.fn() };
+
+    const result = await service.resetValues('webapp', 'mobile-type-id');
+    expect(result.errors).toBeDefined();
+    expect(result.errors[0]).toMatch(/does not belong to platform/);
+    expect(prisma.settingField.findMany).not.toHaveBeenCalled();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// B3 — compileTokens: CSS output, light+dark blocks, changed field reflected
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('B3 — compileTokens', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    redis.get.mockResolvedValue(null);
+    redis.set.mockResolvedValue('OK');
+    redis.del.mockResolvedValue(1);
+  });
+
+  async function stubPrismaWithFields(fields) {
+    const { prisma } = await import('../../config/database.js');
+    const type = { id: 'type-1', slug: 'webapp.buttons', name: 'Buttons' };
+    prisma.type = { findMany: vi.fn().mockResolvedValue([type]) };
+    prisma.settingField = { findMany: vi.fn().mockResolvedValue(fields) };
+  }
+
+  it('returns a { css, json } object', async () => {
+    await stubPrismaWithFields([
+      {
+        id: 'f-1', slug: 'webapp.buttons.desktop.btn.background',
+        field_name: 'Background', input_type: 'color',
+        value: '#ffffff', type_id: 'type-1', category_id: null,
+        setting_values: [],
+      },
+    ]);
+    const result = await service.compileTokens('webapp');
+    expect(result).toHaveProperty('css');
+    expect(result).toHaveProperty('json');
+    expect(typeof result.css).toBe('string');
+    expect(typeof result.json).toBe('object');
+  });
+
+  it('CSS contains :root block with custom properties', async () => {
+    await stubPrismaWithFields([
+      {
+        id: 'f-1', slug: 'webapp.buttons.desktop.btn.background',
+        field_name: 'Background', input_type: 'color',
+        value: '#4f8ef7', type_id: 'type-1', category_id: null,
+        setting_values: [],
+      },
+    ]);
+    const { css } = await service.compileTokens('webapp');
+    expect(css).toMatch(/:root\s*\{/);
+    expect(css).toMatch(/--buttons_desktop_btn_background:\s*#4f8ef7/);
+  });
+
+  it('token for a changed (saved) field reflects the saved value, not the default', async () => {
+    await stubPrismaWithFields([
+      {
+        id: 'f-2', slug: 'webapp.buttons.dark.primary_button.background_color',
+        field_name: 'Background Color', input_type: 'color',
+        value: '#4f8ef7',
+        type_id: 'type-1', category_id: null,
+        setting_values: [{ value: '#ff0000' }],  // user-saved override
+      },
+    ]);
+    const { css, json } = await service.compileTokens('webapp', 'dark');
+    expect(css).toMatch(/--buttons_dark_primary_button_background_color:\s*#ff0000/);
+    expect(css).not.toMatch(/#4f8ef7/);
+    // JSON tree also reflects saved value
+    expect(json.buttons).toBeDefined();
+  });
+
+  it('light and dark theme blocks are both present in unfiltered compile', async () => {
+    await stubPrismaWithFields([
+      {
+        id: 'f-3', slug: 'webapp.buttons.dark.primary_button.background_color',
+        field_name: 'BG Dark', input_type: 'color', value: '#000000',
+        type_id: 'type-1', category_id: null, setting_values: [],
+      },
+      {
+        id: 'f-4', slug: 'webapp.buttons.light.primary_button.background_color',
+        field_name: 'BG Light', input_type: 'color', value: '#ffffff',
+        type_id: 'type-1', category_id: null, setting_values: [],
+      },
+    ]);
+    const { css } = await service.compileTokens('webapp'); // no theme filter
+    expect(css).toMatch(/--buttons_dark_primary_button_background_color:\s*#000000/);
+    expect(css).toMatch(/--buttons_light_primary_button_background_color:\s*#ffffff/);
+  });
+
+  it('theme filter strips out opposite-theme fields', async () => {
+    await stubPrismaWithFields([
+      {
+        id: 'f-3', slug: 'webapp.buttons.dark.primary_button.background_color',
+        field_name: 'BG Dark', input_type: 'color', value: '#000000',
+        type_id: 'type-1', category_id: null, setting_values: [],
+      },
+      {
+        id: 'f-4', slug: 'webapp.buttons.light.primary_button.background_color',
+        field_name: 'BG Light', input_type: 'color', value: '#ffffff',
+        type_id: 'type-1', category_id: null, setting_values: [],
+      },
+    ]);
+    const { css } = await service.compileTokens('webapp', 'dark');
+    expect(css).toMatch(/--buttons_dark_primary_button_background_color:\s*#000000/);
+    expect(css).not.toMatch(/light_primary_button/);
+  });
+
+  it('uses Redis cache on second call', async () => {
+    const cachedResult = { css: ':root { --cached: true; }', json: {} };
+    redis.get.mockResolvedValueOnce(JSON.stringify(cachedResult));
+
+    const result = await service.compileTokens('webapp', 'dark');
+    expect(result.css).toContain('--cached: true');
+    // prisma was never called — short-circuited by cache
+    const { prisma } = await import('../../config/database.js');
+    // type.findMany was NOT called (prisma.type may be undefined from earlier test)
+    // Just verify the result matches the cache
+    expect(result).toEqual(cachedResult);
+  });
+
+  it('stores compiled result in Redis with TTL 600', async () => {
+    await stubPrismaWithFields([
+      {
+        id: 'f-5', slug: 'webapp.buttons.desktop.btn.bg',
+        field_name: 'BG', input_type: 'color', value: '#abc',
+        type_id: 'type-1', category_id: null, setting_values: [],
+      },
+    ]);
+    await service.compileTokens('webapp', 'dark');
+    // cache key includes device (no device arg → 'all')
+    expect(redis.set).toHaveBeenCalledWith(
+      expect.stringMatching(/^te:tokens:webapp:dark:all$/),
+      expect.any(String),
+      'EX',
+      600
+    );
+  });
+
+  it('uses separate cache keys per device — tv_4k request does not poison desktop cache', async () => {
+    await stubPrismaWithFields([
+      {
+        id: 'f-tv', slug: 'tv.buttons.tv_4k.btn.bg',
+        field_name: 'BG TV 4K', input_type: 'color', value: '#111111',
+        type_id: 'type-1', category_id: null, setting_values: [],
+      },
+    ]);
+    await service.compileTokens('tv', 'dark', 'tv_4k');
+    expect(redis.set).toHaveBeenCalledWith(
+      'te:tokens:tv:dark:tv_4k',
+      expect.any(String),
+      'EX',
+      600
+    );
+    // desktop and all keys must NOT have been written
+    const setCalls = redis.set.mock.calls.map((c) => c[0]);
+    expect(setCalls).not.toContain('te:tokens:tv:dark:desktop');
+    expect(setCalls).not.toContain('te:tokens:tv:dark:all');
+  });
+
+  it('handles fonts fields: emits @import for google fonts, skips from CSS vars', async () => {
+    await stubPrismaWithFields([
+      {
+        id: 'f-6', slug: 'webapp.typography.font_family.body_font',
+        field_name: 'Body Font', input_type: 'fonts',
+        value: JSON.stringify([{ type: 'google', name: 'Inter', src: 'https://fonts.googleapis.com/css2?family=Inter' }]),
+        type_id: 'type-1', category_id: null, setting_values: [],
+      },
+    ]);
+    const { css } = await service.compileTokens('webapp');
+    expect(css).toMatch(/@import url\('https:\/\/fonts\.googleapis\.com/);
+    expect(css).not.toMatch(/--typography_font_family_body_font/);
+  });
+
+  it('handles imglist fields: emits CSS class rules', async () => {
+    await stubPrismaWithFields([
+      {
+        id: 'f-7', slug: 'webapp.images.desktop.image_classes.image_classes',
+        field_name: 'Image Classes', input_type: 'imglist',
+        value: JSON.stringify([{ name: 'thumbnail-image', w: 150, h: 150, fit: 'cover' }]),
+        type_id: 'type-1', category_id: null, setting_values: [],
+      },
+    ]);
+    const { css } = await service.compileTokens('webapp');
+    expect(css).toMatch(/\.thumbnail_image\s*\{/);
+    expect(css).toMatch(/width:\s*150px/);
+    expect(css).toMatch(/height:\s*150px/);
+    expect(css).toMatch(/object-fit:\s*cover/);
+  });
+
+  // Regression (B-1): device filter must classify by REAL device ids, not by
+  // "not-theme-and-not-pane". Untagged webapp fields (3rd slug segment = section
+  // slug) were silently dropped for every ?device= query. Slugs mirror the real
+  // seed shape: {platform}.{pane}.[{tag}.]{section}.{field}.
+  it('device filter keeps untagged fields and drops only mismatched real-device-tagged fields', async () => {
+    await stubPrismaWithFields([
+      // Untagged field — 3rd segment "colors" is a section slug, NOT a device id.
+      {
+        id: 'f-untagged', slug: 'webapp.branding.colors.primary',
+        field_name: 'Primary', input_type: 'color', value: '#123456',
+        type_id: 'type-1', category_id: null, setting_values: [],
+      },
+      // Real device-tagged field for the requested device (desktop).
+      {
+        id: 'f-desktop', slug: 'webapp.buttons.desktop.primary_button.background',
+        field_name: 'BG Desktop', input_type: 'color', value: '#aaaaaa',
+        type_id: 'type-1', category_id: null, setting_values: [],
+      },
+      // Real device-tagged field for a DIFFERENT device (mobile_v) — must drop.
+      {
+        id: 'f-mobile', slug: 'webapp.buttons.mobile_v.primary_button.background',
+        field_name: 'BG Mobile', input_type: 'color', value: '#bbbbbb',
+        type_id: 'type-1', category_id: null, setting_values: [],
+      },
+    ]);
+    const { css } = await service.compileTokens('webapp', null, 'desktop');
+    // Untagged field survives the device filter (was silently dropped pre-fix).
+    expect(css).toMatch(/--branding_colors_primary:\s*#123456/);
+    // Matching real-device-tagged field present.
+    expect(css).toMatch(/--buttons_desktop_primary_button_background:\s*#aaaaaa/);
+    // Mismatched real-device-tagged field excluded.
+    expect(css).not.toMatch(/mobile_v_primary_button/);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// B3 — controller.getTokens: serves CSS when format=css or Accept: text/css
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('B3 — controller.getTokens CSS content-type', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns JSON by default', async () => {
+    const { getTokens } = await import('./controller.js');
+    vi.spyOn(service, 'compileTokens').mockResolvedValue({ css: ':root{}', json: { buttons: {} } });
+
+    const req = {
+      user: { id: 'u1' },
+      validated: { query: { platform: 'webapp' } },
+      query: {},
+      headers: {},
+    };
+    const res = {
+      statusCode: 200,
+      _headers: {},
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+      send: vi.fn().mockReturnThis(),
+      setHeader: vi.fn((k, v) => { res._headers[k] = v; }),
+    };
+
+    await getTokens(req, res, vi.fn());
+    expect(res.json).toHaveBeenCalled();
+    expect(res.send).not.toHaveBeenCalled();
+  });
+
+  it('serves raw CSS when format=css is requested', async () => {
+    const { getTokens } = await import('./controller.js');
+    vi.spyOn(service, 'compileTokens').mockResolvedValue({ css: ':root{ --x: 1; }', json: {} });
+
+    const req = {
+      user: { id: 'u1' },
+      validated: { query: { platform: 'webapp' } },
+      query: { format: 'css' },
+      headers: {},
+    };
+    const res = {
+      _headers: {},
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+      send: vi.fn().mockReturnThis(),
+      setHeader: vi.fn((k, v) => { res._headers[k] = v; }),
+    };
+
+    await getTokens(req, res, vi.fn());
+    expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'text/css; charset=utf-8');
+    expect(res.send).toHaveBeenCalledWith(':root{ --x: 1; }');
+  });
+
+  it('serves raw CSS when Accept: text/css header is set', async () => {
+    const { getTokens } = await import('./controller.js');
+    vi.spyOn(service, 'compileTokens').mockResolvedValue({ css: ':root{ --y: 2; }', json: {} });
+
+    const req = {
+      user: { id: 'u1' },
+      validated: { query: { platform: 'webapp' } },
+      query: {},
+      headers: { accept: 'text/css' },
+    };
+    const res = {
+      _headers: {},
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+      send: vi.fn().mockReturnThis(),
+      setHeader: vi.fn((k, v) => { res._headers[k] = v; }),
+    };
+
+    await getTokens(req, res, vi.fn());
+    expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'text/css; charset=utf-8');
+    expect(res.send).toHaveBeenCalledWith(':root{ --y: 2; }');
+  });
+
+  it('blocks unauthenticated access when tokens_public flag is false', async () => {
+    const { getTokens } = await import('./controller.js');
+    vi.spyOn(service, 'isTokensPublic').mockResolvedValue(false);
+
+    const req = {
+      user: null,
+      validated: { query: { platform: 'webapp' } },
+      query: {},
+      headers: {},
+    };
+    const res = {
+      statusCode: 200,
+      _headers: {},
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+      send: vi.fn().mockReturnThis(),
+      setHeader: vi.fn(),
+    };
+
+    await getTokens(req, res, vi.fn());
+    expect(res.status).toHaveBeenCalledWith(401);
+  });
+
+  it('allows unauthenticated access when tokens_public flag is true', async () => {
+    const { getTokens } = await import('./controller.js');
+    vi.spyOn(service, 'isTokensPublic').mockResolvedValue(true);
+    vi.spyOn(service, 'compileTokens').mockResolvedValue({ css: ':root{}', json: {} });
+
+    const req = {
+      user: null,
+      validated: { query: { platform: 'webapp' } },
+      query: {},
+      headers: {},
+    };
+    const res = {
+      _headers: {},
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+      send: vi.fn().mockReturnThis(),
+      setHeader: vi.fn(),
+    };
+
+    await getTokens(req, res, vi.fn());
+    // Should reach compileTokens (public allowed)
+    expect(service.compileTokens).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
+  });
+});

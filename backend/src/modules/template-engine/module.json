@@ -1,0 +1,15 @@
+{
+  "slug": "template-engine",
+  "name": "Template Engine",
+  "version": "1.0.0",
+  "description": "Multi-platform design-system / theming engine",
+  "core": false,
+  "apiPrefix": "/api/template-engine",
+  "permissions": ["template-engine"],
+  "nav": [
+    { "label": "Template Engine", "path": "/admin/template-engine", "icon": "Palette", "permission": "template-engine:view" }
+  ],
+  "dependsOn": [],
+  "queues": [],
+  "env": []
+}
