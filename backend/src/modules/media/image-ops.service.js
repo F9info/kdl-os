@@ -3,6 +3,7 @@ import { prisma } from '../../config/database.js';
 import { logger } from '../../shared/utils/logger.js';
 import { createMediaVersion } from './processing.service.js';
 import { isSvgMime } from './svg-sanitizer.js';
+import * as storageService from '../../shared/services/storage.service.js';
 
 const getMimeExt = (mime) => {
   const map = {
@@ -391,21 +392,37 @@ export const runImageEdit = async ({ mediaId, ops, note, createdBy }) => {
     createdBy,
   });
 
-  // Apply the edit to the actual served file, then regenerate variants +
-  // dimensions from the new bytes — this is the part that was previously missing.
-  await minio.putObject(process.env.MINIO_BUCKET, media.path, outputBuffer);
+  // Apply the edit to the served file. Write through storageService (not the
+  // raw minio client) so Content-Type is set from the new mime — a bare
+  // putObject() defaults to binary/octet-stream, which MinIO's nosniff header
+  // then stops browsers from ever decoding as an <img>. When the format
+  // changes (SVG rasterized to PNG, `compress` reformat, …) write to a NEW
+  // key with the correct extension instead of reusing the old one, so path/
+  // filename/content-type all agree — the old object (and its now-orphaned
+  // variants) is only deleted after the record no longer points at it.
+  const newMimeType = EXT_TO_MIME[ext] ?? media.mime_type;
+  const currentExt = media.path.slice(media.path.lastIndexOf('.') + 1);
+  const extChanged = ext !== currentExt;
+  const dir = media.path.substring(0, media.path.lastIndexOf('/'));
+  const base = media.path.substring(media.path.lastIndexOf('/') + 1, media.path.lastIndexOf('.'));
+  const newPath = extChanged ? `${dir}/${base}.${ext}` : media.path;
+
+  await storageService.uploadFile(
+    { buffer: outputBuffer, size: outputBuffer.length, mimetype: newMimeType, originalname: `${base}.${ext}` },
+    newPath
+  );
 
   const checksum = createHash('sha256').update(outputBuffer).digest('hex');
   const { generateVariants } = await import('./media.worker.js');
-  const variantResult = await generateVariants(outputBuffer, media.path);
+  const variantResult = await generateVariants(outputBuffer, newPath);
 
-  const newMimeType = EXT_TO_MIME[ext] ?? media.mime_type;
   const { MIME_TO_TYPE } = await import('./service.js');
 
   await prisma.media.update({
     where: { id: mediaId },
     data: {
       filename: swapFilenameExt(mediaFilename(media), ext),
+      path: newPath,
       size: outputBuffer.length,
       checksum,
       mime_type: newMimeType,
@@ -415,6 +432,13 @@ export const runImageEdit = async ({ mediaId, ops, note, createdBy }) => {
       variants: variantResult.variants,
     },
   });
+
+  // Record now points at newPath — safe to drop the stale key + its variants.
+  if (extChanged) {
+    const oldVariantPaths = media.variants ? Object.values(media.variants).filter(Boolean) : [];
+    await storageService.deleteFiles([media.path, ...oldVariantPaths])
+      .catch((e) => logger.warn(`cleanup of stale media object after edit failed: ${e.message}`));
+  }
 
   const { indexMediaById } = await import('./media-search.service.js');
   await indexMediaById(mediaId).catch((e) => logger.warn(`search reindex after image edit failed: ${e.message}`));
