@@ -189,7 +189,20 @@ export function AdminSidebar() {
         )}
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto p-2" aria-label="Main navigation">
+      <nav
+        className="flex-1 space-y-1 overflow-y-auto p-2"
+        aria-label="Main navigation"
+        // Nav font family + size driven by the Template Engine's Typography
+        // Scale table's "Navigation" row (desktop variant — the admin shell is
+        // desktop-first) — same var-with-fallback pattern as the sidebar
+        // width style above. This is the single source of truth for nav font
+        // size now — the old separate Navigation > Menu Font Size field was
+        // removed so the two could never drift out of sync.
+        style={{
+          fontFamily: 'var(--typography_desktop_typography_scale_typography_scale_navigation_family, inherit)',
+          fontSize: 'var(--typography_desktop_typography_scale_typography_scale_navigation_size, inherit)',
+        }}
+      >
         {visibleFlat.map((item) => {
           const active = isLeafActive(item.href) || pathname.startsWith(item.href + '/')
           const Icon = item.icon

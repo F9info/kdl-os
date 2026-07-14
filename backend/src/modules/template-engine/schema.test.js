@@ -6,16 +6,17 @@ import { PLATFORMS, PLAT_TABS, BASE_TABS, slug } from './schema/index.js';
 import { buildSeedRows } from './seed.js';
 
 describe('template-engine schema build (A2 gate)', () => {
-  it('builds all 4 platforms', () => {
-    expect(PLATFORMS.map((p) => p.id)).toEqual(['webapp', 'tv', 'android', 'ios']);
+  it('builds all 5 platforms', () => {
+    expect(PLATFORMS.map((p) => p.id)).toEqual(['webapp', 'webapp_admin', 'tv', 'android', 'ios']);
     for (const p of PLATFORMS) {
       expect(PLAT_TABS[p.id]).toBeDefined();
       expect(PLAT_TABS[p.id].length).toBeGreaterThan(0);
     }
   });
 
-  it('pane counts = webapp 11 / tv 37 / android 20 / ios 18', () => {
+  it('pane counts = webapp 11 / webapp_admin 11 / tv 37 / android 20 / ios 18', () => {
     expect(PLAT_TABS.webapp.length).toBe(11);
+    expect(PLAT_TABS.webapp_admin.length).toBe(11);
     expect(PLAT_TABS.tv.length).toBe(37);
     expect(PLAT_TABS.android.length).toBe(20);
     expect(PLAT_TABS.ios.length).toBe(18);
@@ -32,9 +33,9 @@ describe('template-engine schema build (A2 gate)', () => {
   it('field slugs are globally unique across all platforms (no collisions)', () => {
     const { types, categories, fields } = buildSeedRows();
     // buildSeedRows throws on duplicate field slug; reaching here means 0 dupes.
-    expect(types.size).toBe(86);
-    expect(categories.size).toBe(902);
-    expect(fields.size).toBe(3910);
+    expect(types.size).toBe(97);
+    expect(categories.size).toBe(968);
+    expect(fields.size).toBe(4084);
   });
 
   it('TV px defaults are scaled per resolution (4K = 3x 720p)', () => {
@@ -76,7 +77,7 @@ describe('template-engine schema build (A2 gate)', () => {
     expect(tg.input_type).toBe('toggle');
     expect(tg.value).toBe('true');
     // select → choices
-    const se = fields.get('webapp.typography.font_family.body_font');
+    const se = fields.get('webapp.buttons.button_defaults.button_font');
     expect(se.input_type).toBe('select');
     expect(JSON.parse(se.options).choices).toContain('Inter');
     // imglist → JSON array value

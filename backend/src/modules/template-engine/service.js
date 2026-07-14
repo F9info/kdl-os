@@ -12,7 +12,23 @@ function parseOptions(field) {
   try { return JSON.parse(field.options); } catch { return null; }
 }
 
-export function validateFieldValue(field, value) {
+// Font Family selects (Heading/Body/Navigation/Button Font) are seeded from a
+// static choice list but must also accept names from the sibling "Custom Fonts"
+// repeater field saved in the same request — mirrors the frontend's merge in
+// template-engine/page.tsx (isFontFamilySelect / customFontNames).
+const isFontFamilySelect = (field) => field.input_type === 'select' && /font/i.test(field.field_name ?? '');
+
+function parseCustomFontNames(value) {
+  try {
+    const rows = JSON.parse(value || '[]');
+    if (!Array.isArray(rows)) return [];
+    return rows.map((r) => (typeof r?.name === 'string' ? r.name.trim() : '')).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+export function validateFieldValue(field, value, customFontNames = []) {
   const opts = parseOptions(field);
   switch (field.input_type) {
     case 'color': {
@@ -34,7 +50,8 @@ export function validateFieldValue(field, value) {
       break;
     }
     case 'select': {
-      if (!opts?.choices?.includes(value)) return `value must be one of: ${opts?.choices?.join(', ')}`;
+      const choices = isFontFamilySelect(field) ? [...(opts?.choices ?? []), ...customFontNames] : opts?.choices;
+      if (!choices?.includes(value)) return `value must be one of: ${choices?.join(', ')}`;
       break;
     }
     case 'radio': {
@@ -188,10 +205,18 @@ export async function upsertValues(platform, typeId, values, actorId) {
   // Load all fields for the pane
   const fields = await prisma.settingField.findMany({
     where: { type_id: typeId },
-    select: { id: true, slug: true, input_type: true, options: true },
+    select: { id: true, slug: true, field_name: true, input_type: true, options: true },
   });
   const byId = new Map(fields.map((f) => [f.id, f]));
   const bySlug = new Map(fields.map((f) => [f.slug, f]));
+
+  // The whole pane's fields (including "Custom Fonts") save in one request —
+  // pull any custom font names out of this same batch so Font Family selects
+  // can validate against them (see isFontFamilySelect).
+  const customFontNames = values.flatMap((entry) => {
+    const field = entry.field_id ? byId.get(entry.field_id) : bySlug.get(entry.slug);
+    return field?.input_type === 'fonts' ? parseCustomFontNames(entry.value) : [];
+  });
 
   const errors = [];
   const upserts = [];
@@ -202,7 +227,7 @@ export async function upsertValues(platform, typeId, values, actorId) {
       errors.push(`Unknown field: ${entry.field_id ?? entry.slug}`);
       continue;
     }
-    const valError = validateFieldValue(field, entry.value);
+    const valError = validateFieldValue(field, entry.value, customFontNames);
     if (valError) {
       errors.push(`${field.slug}: ${valError}`);
       continue;
@@ -359,6 +384,25 @@ export async function compileTokens(platform, theme, device) {
           for (const item of items) {
             const cls = slugify(item.name || tokenName);
             imgClasses[cls] = `width: ${item.w}px; height: ${item.h}px; object-fit: ${item.fit || 'cover'};`;
+          }
+        }
+      } catch { /* skip malformed */ }
+      continue;
+    }
+
+    if (f.input_type === 'typo_table') {
+      try {
+        const rows = JSON.parse(effectiveValue);
+        if (Array.isArray(rows)) {
+          const bucket = !theme && themeTag && themeTag !== 'dark' ? themeVars[themeTag] : rootVars;
+          for (const row of rows) {
+            const rowKey = slugify(row.name || '');
+            if (!rowKey) continue;
+            bucket[`--${tokenName}_${rowKey}_size`] = `${row.size}${row.sizeUnit || 'px'}`;
+            bucket[`--${tokenName}_${rowKey}_family`] = row.family;
+            bucket[`--${tokenName}_${rowKey}_weight`] = row.weight;
+            bucket[`--${tokenName}_${rowKey}_line_height`] = row.lineHeight;
+            bucket[`--${tokenName}_${rowKey}_letter_spacing`] = `${row.letterSpacing}px`;
           }
         }
       } catch { /* skip malformed */ }

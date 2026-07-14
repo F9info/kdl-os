@@ -18,7 +18,7 @@ interface FontRow {
   src: string
 }
 
-function parseRows(value: string): FontRow[] {
+export function parseRows(value: string): FontRow[] {
   try {
     const parsed = JSON.parse(value || '[]')
     if (!Array.isArray(parsed)) return []

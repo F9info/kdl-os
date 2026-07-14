@@ -33,11 +33,13 @@ function injectCss(css: string) {
   styleEl.textContent = css
 }
 
-// The web app only ever consumes its own (`webapp`) compiled tokens — native
-// clients (tv/android/ios) fetch the same endpoint with their own `platform`
-// and apply the JSON form themselves; this provider never reads their tokens.
+// This Next.js app IS the admin panel — its own chrome (sidebar, etc.) must
+// consume the `webapp_admin` platform's compiled tokens, not `webapp` (the
+// public-facing site, a separate consumer that fetches this same endpoint
+// with platform=webapp itself). Native clients (tv/android/ios) likewise
+// fetch this endpoint with their own `platform` and apply the JSON form.
 async function fetchAndApply(): Promise<ActiveTheme> {
-  const res = await api.get<TokensResponse>('/template-engine/tokens', { params: { platform: 'webapp' } })
+  const res = await api.get<TokensResponse>('/template-engine/tokens', { params: { platform: 'webapp_admin' } })
   const { css, activeTheme } = res.data.data
   injectCss(css)
   return activeTheme ?? 'system'
@@ -45,7 +47,7 @@ async function fetchAndApply(): Promise<ActiveTheme> {
 
 /**
  * Applies Module 15 Template Engine tokens at runtime: injects the compiled
- * `webapp` CSS custom properties into `<style id="te-tokens">` and sets
+ * `webapp_admin` CSS custom properties into `<style id="te-tokens">` and sets
  * `data-theme` from the saved Active Theme (or the OS preference when
  * "system"). The Template Engine admin page calls `refreshTemplateEngineTokens()`
  * after a save so the change is visible without a hard reload.
