@@ -14,6 +14,11 @@ const FIELD_INCLUDE = {
 // MinIO object prefix for files uploaded through Application Settings fields.
 const SETTING_FILE_PREFIX = 'settings';
 
+// The generic admin API manages only standalone rows (owner_module = null).
+// Module-owned rows (e.g. template-engine) must never be mutated or deleted here,
+// and generic writes may only reference standalone types/categories.
+const WRITABLE = { owner_module: null };
+
 export const listFields = async (query) => {
   const { page, limit, skip } = getPaginationParams(query);
 
@@ -43,6 +48,10 @@ export const listFields = async (query) => {
 export const getFieldById = (id) =>
   prisma.settingField.findUnique({ where: { id }, include: FIELD_INCLUDE });
 
+// Existence check for generic write paths — resolves only standalone fields.
+export const getWritableFieldById = (id) =>
+  prisma.settingField.findFirst({ where: { id, ...WRITABLE }, include: FIELD_INCLUDE });
+
 export const createField = async (data) => {
   const slug = await uniqueSlug(prisma.settingField, data.field_name);
   // New fields go to the bottom of their Type's list unless an explicit sort is given.
@@ -66,11 +75,18 @@ export const updateField = async (id, data) => {
   if (data.field_name !== undefined) {
     updateData.slug = await uniqueSlug(prisma.settingField, data.field_name, id);
   }
-  return prisma.settingField.update({ where: { id }, data: updateData, include: FIELD_INCLUDE });
+  // Scope the write so module-owned rows can't be mutated; null signals not-found.
+  const { count } = await prisma.settingField.updateMany({
+    where: { id, ...WRITABLE },
+    data: updateData,
+  });
+  if (count === 0) return null;
+  return prisma.settingField.findUnique({ where: { id }, include: FIELD_INCLUDE });
 };
 
 export const deleteField = async (id) => {
-  const field = await prisma.settingField.findUnique({ where: { id } });
+  // Resolve only standalone fields so module-owned rows can't be deleted here.
+  const field = await prisma.settingField.findFirst({ where: { id, ...WRITABLE } });
   if (field) {
     await removeStoredFiles(field);
     await prisma.settingField.delete({ where: { id } });
@@ -79,19 +95,21 @@ export const deleteField = async (id) => {
 };
 
 // Persist a new sort order. `ids` is the desired order; index becomes `sort`.
+// Scoped to standalone fields so module-owned rows keep their engine-defined order.
 export const reorderFields = async (ids) => {
   await prisma.$transaction(
     ids.map((id, index) =>
-      prisma.settingField.update({ where: { id }, data: { sort: index } })
+      prisma.settingField.updateMany({ where: { id, ...WRITABLE }, data: { sort: index } })
     )
   );
 };
 
+// Generic writes may only reference standalone types/categories.
 export const typeExists = (id) =>
-  prisma.type.findUnique({ where: { id }, select: { id: true } });
+  prisma.type.findFirst({ where: { id, ...WRITABLE }, select: { id: true } });
 
 export const categoryExists = (id) =>
-  prisma.category.findUnique({ where: { id }, select: { id: true } });
+  prisma.category.findFirst({ where: { id, ...WRITABLE }, select: { id: true } });
 
 // Used only by the generic Application-Settings "view by slug" screen — module-owned
 // Types (owner_module set) are excluded so engine internals aren't editable there.
@@ -112,7 +130,8 @@ export const getFieldsForType = async (typeId) => {
 // Bulk-save submitted values for a Type's fields. Only fields belonging to the
 // given type are updated; unknown ids and valueless types (heading) are ignored.
 export const saveValues = async (typeId, values) => {
-  const fields = await prisma.settingField.findMany({ where: { type_id: typeId } });
+  // Only standalone fields are writable through the generic values endpoint.
+  const fields = await prisma.settingField.findMany({ where: { type_id: typeId, ...WRITABLE } });
   const byId = new Map(fields.map((f) => [f.id, f]));
 
   const updates = [];
@@ -151,7 +170,8 @@ export const uploadSettingFile = async (file) => {
 
 // Remove one image from a multiple-files field's JSON array and delete it from storage.
 export const removeGalleryItem = async (id, index) => {
-  const field = await prisma.settingField.findUnique({ where: { id } });
+  // Scoped to standalone fields — module-owned galleries aren't editable here.
+  const field = await prisma.settingField.findFirst({ where: { id, ...WRITABLE } });
   if (!field || field.input_type !== 'multiple-files') return null;
 
   const paths = parseJsonArray(field.value);

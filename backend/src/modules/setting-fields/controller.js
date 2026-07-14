@@ -45,11 +45,13 @@ export const createField = async (req, res, next) => {
 export const updateField = async (req, res, next) => {
   try {
     const { id } = req.validated.params;
-    const exists = await fieldService.getFieldById(id);
+    // Resolve only standalone fields; module-owned ids are treated as not-found.
+    const exists = await fieldService.getWritableFieldById(id);
     if (!exists) return errorResponse(res, 'Setting field not found', 404);
     const refError = await checkRefs(req.validated.body);
     if (refError) return errorResponse(res, refError, 422);
     const field = await fieldService.updateField(id, req.validated.body);
+    if (!field) return errorResponse(res, 'Setting field not found', 404);
     return successResponse(res, { field });
   } catch (err) {
     next(err);

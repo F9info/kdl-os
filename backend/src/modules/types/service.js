@@ -4,6 +4,12 @@ import { uniqueSlug } from '../../shared/utils/slug.js';
 
 const SORTABLE = ['name', 'created_at', 'is_active'];
 
+// The generic admin API manages only standalone rows (owner_module = null).
+// Rows stamped with an owner_module belong to that module (e.g. template-engine)
+// and must never be read-for-write, mutated, or deleted through this API even
+// when their id is known.
+const WRITABLE = { owner_module: null };
+
 export const listTypes = async (query) => {
   const { page, limit, skip } = getPaginationParams(query);
 
@@ -24,6 +30,10 @@ export const listTypes = async (query) => {
 
 export const getTypeById = (id) => prisma.type.findUnique({ where: { id } });
 
+// Existence check for generic write paths — resolves only standalone types.
+export const getWritableTypeById = (id) =>
+  prisma.type.findFirst({ where: { id, ...WRITABLE } });
+
 export const createType = async (data) => {
   const slug = await uniqueSlug(prisma.type, data.name);
   return prisma.type.create({ data: { ...data, slug } });
@@ -35,7 +45,10 @@ export const updateType = async (id, data) => {
   if (data.name !== undefined) {
     updateData.slug = await uniqueSlug(prisma.type, data.name, id);
   }
-  return prisma.type.update({ where: { id }, data: updateData });
+  // Scope the write so module-owned rows can't be mutated; null signals not-found.
+  const { count } = await prisma.type.updateMany({ where: { id, ...WRITABLE }, data: updateData });
+  if (count === 0) return null;
+  return prisma.type.findUnique({ where: { id } });
 };
 
 // Count records that depend on this Type, so deletion can be blocked while any exist.
@@ -47,4 +60,8 @@ export const getTypeDependents = async (id) => {
   return { fields, categories };
 };
 
-export const deleteType = (id) => prisma.type.delete({ where: { id } });
+// Scoped delete — refuses module-owned rows. Returns true only when a row was removed.
+export const deleteType = async (id) => {
+  const { count } = await prisma.type.deleteMany({ where: { id, ...WRITABLE } });
+  return count > 0;
+};
