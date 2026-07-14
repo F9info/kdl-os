@@ -8,6 +8,13 @@ import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { ModuleGuard } from '@/components/shared/ModuleGuard'
 import { refreshTemplateEngineTokens } from '@/components/providers/TemplateEngineThemeProvider'
+import { DeviceShell } from './previews/DeviceShell'
+import { DefaultShellPreview } from './previews/ThemeDevicePreviews'
+import { DEVICE_PANE_PREVIEWS } from './previews/registry'
+import { COMPONENT_PANE_PREVIEWS } from './previews/componentRegistry'
+import { BrandingFileControl } from './controls/BrandingFileControl'
+import { FontsEditorControl } from './controls/FontsEditorControl'
+import { ImageClassesEditorControl } from './controls/ImageClassesEditorControl'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // API types — shape returned by GET /template-engine/schema?platform=
@@ -454,7 +461,10 @@ function FieldControl({
   if (t === 'radio') return <RadioControl value={value} onChange={onChange} options={field.options} />
   if (t === 'textarea') return <TextareaControl value={value} onChange={onChange} />
   if (t === 'multiselect') return <MultiSelectControl value={value} onChange={onChange} options={field.options} />
-  // text, password, fonts, imglist, file → text input as baseline
+  if (t === 'file') return <BrandingFileControl value={value} onChange={onChange} />
+  if (t === 'fonts') return <FontsEditorControl value={value} onChange={onChange} />
+  if (t === 'imglist') return <ImageClassesEditorControl value={value} onChange={onChange} />
+  // text, password → text input as baseline
   return <TextControl value={value} onChange={onChange} />
 }
 
@@ -462,58 +472,20 @@ function FieldControl({
 // Device frame previews
 // ─────────────────────────────────────────────────────────────────────────────
 
-function PreviewFrame({ platform }: { platform: string }) {
-  if (platform === 'tv') {
-    return (
-      <div className="flex flex-col items-center gap-0">
-        <div className="w-[280px] rounded-[8px] border-[7px] border-[#0b0b0c] bg-black shadow-[0_14px_40px_rgba(0,0,0,.5)]">
-          <div className="min-h-[158px] bg-[#0d0d0f]" />
-        </div>
-        <div
-          className="h-3.5 w-16 bg-[#0b0b0c]"
-          style={{ clipPath: 'polygon(22% 0, 78% 0, 100% 100%, 0 100%)' }}
-        />
-        <div className="h-1 w-32 rounded-sm bg-[#141416]" />
-      </div>
-    )
-  }
-  if (platform === 'android') {
-    return (
-      <div className="flex flex-col">
-        <div className="w-[240px] overflow-hidden rounded-[28px] border-[8px] border-[#0b0b0c] shadow-[0_16px_44px_rgba(0,0,0,.5)]">
-          <div className="min-h-[420px] bg-card" />
-          <div className="flex justify-around bg-[#0b0b0c] px-10 py-2 text-xs text-[#9a9aa2]">
-            <span>◁</span>
-            <span>○</span>
-            <span>▢</span>
-          </div>
-        </div>
-      </div>
-    )
-  }
-  if (platform === 'ios') {
-    return (
-      <div className="w-[240px] overflow-hidden rounded-[28px] border-[8px] border-[#0b0b0c] shadow-[0_16px_44px_rgba(0,0,0,.5)]">
-        <div className="flex justify-center bg-black py-1.5">
-          <span className="h-3 w-20 rounded-full border border-[#232325] bg-[#0b0b0c]" />
-        </div>
-        <div className="min-h-[420px] bg-card" />
-      </div>
-    )
-  }
-  // webapp → browser frame
+function PreviewFrame({
+  platform,
+  pane,
+  values,
+}: {
+  platform: string
+  pane: TEPane | undefined
+  values: Record<string, string>
+}) {
+  const renderer = pane ? { ...DEVICE_PANE_PREVIEWS, ...COMPONENT_PANE_PREVIEWS }[pane.id] : undefined
   return (
-    <div className="w-[280px] overflow-hidden rounded-[8px] border border-border shadow-lg">
-      <div className="flex items-center gap-1.5 border-b border-border bg-muted px-2 py-1.5">
-        <span className="h-2 w-2 rounded-full bg-[#ff5f57]" />
-        <span className="h-2 w-2 rounded-full bg-[#febc2e]" />
-        <span className="h-2 w-2 rounded-full bg-[#28c840]" />
-        <span className="ml-1.5 flex-1 rounded bg-background px-2 py-0.5 text-[10px] text-muted-foreground">
-          app.kdl.dev
-        </span>
-      </div>
-      <div className="min-h-[220px] bg-card" />
-    </div>
+    <DeviceShell platform={platform}>
+      {renderer && pane ? renderer({ pane, values }) : <DefaultShellPreview platform={platform} />}
+    </DeviceShell>
   )
 }
 
@@ -1176,7 +1148,7 @@ function TemplateEngineInner() {
           <div className="self-start text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
             Live Preview
           </div>
-          <PreviewFrame platform={platform} />
+          <PreviewFrame platform={platform} pane={activePaneData} values={activePaneValues} />
           <div className="text-center text-[11px] text-muted-foreground">
             {activePaneData?.label ?? 'Select a pane'} — updates live as you edit
           </div>
