@@ -8,7 +8,7 @@ export const listTypesSchema = z.object({
     is_active: z.enum(['true', 'false']).optional(),
     sortBy: z.enum(['name', 'created_at', 'is_active']).optional(),
     sortOrder: z.enum(['asc', 'desc']).optional(),
-    ownerModule: z.string().optional(),
+    ownerModule: z.string().min(1).optional(),
   }),
 });
 

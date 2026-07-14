@@ -32,9 +32,8 @@ export const createType = async (req, res, next) => {
 export const updateType = async (req, res, next) => {
   try {
     const { id } = req.validated.params;
-    const exists = await typeService.getTypeById(id);
-    if (!exists) return errorResponse(res, 'Type not found', 404);
     const type = await typeService.updateType(id, req.validated.body);
+    if (!type) return errorResponse(res, 'Type not found', 404);
     return successResponse(res, { type });
   } catch (err) {
     next(err);
@@ -44,7 +43,8 @@ export const updateType = async (req, res, next) => {
 export const deleteType = async (req, res, next) => {
   try {
     const { id } = req.validated.params;
-    const exists = await typeService.getTypeById(id);
+    // Resolve only standalone types; module-owned ids are treated as not-found.
+    const exists = await typeService.getWritableTypeById(id);
     if (!exists) return errorResponse(res, 'Type not found', 404);
 
     // Block deletion while dependents exist — never auto-remove fields/categories.
