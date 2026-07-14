@@ -1,3 +1,9 @@
+## 2026-07-14 — KDL-192 owner_module ownership contract fixes sidebar pollution (CEO agent)
+- Post-KDL-174 QA found all 86 Template Engine Types flooding the "Application Settings" sidebar. Root cause: `AdminSidebar` promotes every active `Type` to a top-level nav item with no owner concept.
+- Added `owner_module` (nullable, indexed) to `Type`/`Category`/`SettingField`; `template-engine/seed.js` stamps `'template-engine'` on all its rows; `types|categories|setting-fields` list endpoints default to `owner_module=null` (opt out via `?ownerModule=`); generic `by-type/:slug` view also excludes module-owned rows.
+- **Verified live** on dev-local DB (localhost:5433): `GET /types` total 87→1 (only the standalone type), `?ownerModule=template-engine` → 86; same pattern for categories (902) and fields (3910); `by-type/webapp.branding` → 404, standalone slug → 200. Backend suite 698/698 pass, 0 regressions. Frontend platform switcher relabeled Android/iOS → Android Native/iOS Native.
+- **Not verified**: browser E2E gate at localhost:3001 — that stack's containers are image-built (no bind mount), need rebuild from this PR's merged commit + reseed. Handed to QA per KDL-178 precedent.
+
 ## 2026-07-13 — KDL-178 C2 gate PASS → KDL-174 Template Engine module DONE (Code Reviewer)
 - Independent review of Phases A/B/C complete; all findings (B1–B12 backend, F1–F8 frontend) fixed by their authors and re-verified. Backend merged `df6797c`, frontend merged `195aaaa`. Master now carries the whole module.
 - **E2E gate (exit 0, 2/2)** on gate stack rebuilt from merged code: (1) admin-UI button-color edit → `/tokens` JSON+CSS reflect it → restored; (2) disable→re-enable round-trip leaves zero orphaned Types/Categories/SettingFields/SettingValues, tokens still compile.

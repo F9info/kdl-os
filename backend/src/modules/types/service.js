@@ -7,7 +7,7 @@ const SORTABLE = ['name', 'created_at', 'is_active'];
 export const listTypes = async (query) => {
   const { page, limit, skip } = getPaginationParams(query);
 
-  const where = {};
+  const where = { owner_module: query.ownerModule ?? null };
   if (query.search) where.name = { contains: query.search, mode: 'insensitive' };
   if (query.is_active !== undefined) where.is_active = query.is_active === 'true';
 
