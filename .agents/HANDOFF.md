@@ -1,3 +1,25 @@
+## 2026-07-14 — KDL-192 sidebar pollution fix: Type/Category/SettingField ownership contract (CEO agent, standing in as Backend Coder)
+
+**Bug:** post-KDL-174/175/176/177/178/191, the Template Engine's 86 seeded panes (Types) all auto-promoted to top-level `AdminSidebar` menu items (`typeLeaves` from unfiltered `GET /types?is_active=true`), flooding "Application Settings" with every `webapp.*|tv.*|android.*|ios.*` pane. Root cause: no way to mark a Type/Category/SettingField as module-private data vs a standalone Application-Settings entry.
+
+**Fix — general ownership contract (also future-proofs modules 9-14 reusing these tables):**
+1. `owner_module String? @@index` added to `Type`, `Category`, `SettingField` in `core.prisma`; migration `20260714035014_add_owner_module_to_settings_tables`.
+2. `template-engine/seed.js` stamps `owner_module: 'template-engine'` on every Type/Category/SettingField it upserts (idempotent — verified via direct re-run against the dev DB: 0 created, 3910 updated on first pass after migration, all rows backfilled).
+3. `types|categories|setting-fields` `service.js`: `listX` defaults `where.owner_module = null` unless an explicit `?ownerModule=` query param is passed (added to each `schema.js`). This alone fixes the sidebar.
+4. `setting-fields/service.js` `getTypeBySlug` (used only by the generic `/admin/settings/view/[slug]` → `GET /setting-fields/by-type/:slug`) now filters `owner_module: null` too, so a module-owned slug can't be reached by direct URL either — verified `webapp.branding` → 404, standalone type → 200.
+5. `frontend/.../template-engine/page.tsx` platform switcher relabeled Android → "Android Native", iOS → "iOS Native" (ids unchanged); Web App/TV already matched.
+
+**Verified live** against the dev-local Postgres (`localhost:5433/kdl_db`, isolated `npm ci` + `prisma generate` in a scratch worktree, backend started on a scratch port `4099`, real login as `admin@kdl.com`):
+- `GET /types` (no param): **total 1** (was 87) — only the standalone "Theme Settigns" type; `?ownerModule=template-engine` → 86.
+- `GET /categories` / `GET /setting-fields` same pattern: 1 / 902 and 2 / 3910.
+- `GET /setting-fields/by-type/webapp.branding` → 404; `GET /setting-fields/by-type/theme-settigns` → 200.
+- `template-engine/{schema,values,tokens}` endpoints unaffected (they query Prisma directly, never through the generic type/category/field services).
+- Backend suite: **698/698 pass**, 59 files, 0 regressions.
+
+**Not verified — needs QA (Maker ≠ Grader), targets localhost:3001:** the `kdl-starter-kit-*` containers serving :3001/:4000 are built-from-source images (no bind mount), so this branch's code isn't live there yet. Per the KDL-178 precedent above, QA must rebuild `backend`+`frontend` images from this PR's merged commit, `prisma migrate deploy` + re-run `template-engine` seed (idempotent) against that stack's DB, then run the full gate: sidebar shows exactly one "Template Engine" item, zero `settings/view/{webapp.*|tv.*|android.*|ios.*}` entries, open it → 4 platform options (Web App/TV/Android Native/iOS Native), switch platform swaps pane sidebar, edit a Web App button color + Save → `GET /tokens` reflects it.
+
+**Next:** PR opened, awaiting Code Reviewer + QA browser E2E gate on rebuilt :3001 stack.
+
 ## 2026-07-13 — KDL-178 C2 review + E2E gate: PASS — Template Engine module (KDL-174) COMPLETE (Code Reviewer)
 
 - **Module 15 Template Engine is done and fully on master.** Backend fixes merged as `df6797c` (KDL-191, B1–B12); frontend admin UI merged as `195aaaa` (`feature/kdl-177-template-engine-ui` @ `785453b`, KDL-177 + F1–F8 fixes). Both branches reviewed independently (maker ≠ grader) before merge.

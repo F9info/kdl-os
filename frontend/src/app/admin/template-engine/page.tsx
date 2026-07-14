@@ -153,8 +153,8 @@ const NAV_GROUPS: Record<string, [string, string[]][]> = {
 const PLATFORMS = [
   { id: 'webapp', label: '🌐 Web App' },
   { id: 'tv', label: '📺 TV' },
-  { id: 'android', label: '🤖 Android' },
-  { id: 'ios', label: '🍎 iOS' },
+  { id: 'android', label: '🤖 Android Native' },
+  { id: 'ios', label: '🍎 iOS Native' },
 ]
 
 const LS_PLATFORM = 'te_platform'

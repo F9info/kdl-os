@@ -17,7 +17,7 @@ const SETTING_FILE_PREFIX = 'settings';
 export const listFields = async (query) => {
   const { page, limit, skip } = getPaginationParams(query);
 
-  const where = {};
+  const where = { owner_module: query.ownerModule ?? null };
   if (query.search) where.field_name = { contains: query.search, mode: 'insensitive' };
   if (query.type_id) where.type_id = query.type_id;
   if (query.category_id) where.category_id = query.category_id;
@@ -93,7 +93,10 @@ export const typeExists = (id) =>
 export const categoryExists = (id) =>
   prisma.category.findUnique({ where: { id }, select: { id: true } });
 
-export const getTypeBySlug = (slug) => prisma.type.findUnique({ where: { slug } });
+// Used only by the generic Application-Settings "view by slug" screen — module-owned
+// Types (owner_module set) are excluded so engine internals aren't editable there.
+export const getTypeBySlug = (slug) =>
+  prisma.type.findFirst({ where: { slug, owner_module: null } });
 
 // Returns all fields for a Type (by slug), ordered for rendering, with file values
 // resolved to fresh presigned URLs for display (never persisted — per storage rules).

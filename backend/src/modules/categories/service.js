@@ -9,7 +9,7 @@ const CATEGORY_INCLUDE = { type: { select: { id: true, name: true } } };
 export const listCategories = async (query) => {
   const { page, limit, skip } = getPaginationParams(query);
 
-  const where = {};
+  const where = { owner_module: query.ownerModule ?? null };
   if (query.search) where.name = { contains: query.search, mode: 'insensitive' };
   if (query.type_id) where.type_id = query.type_id;
   if (query.is_active !== undefined) where.is_active = query.is_active === 'true';

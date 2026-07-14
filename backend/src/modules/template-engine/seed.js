@@ -12,7 +12,13 @@ import { PLATFORMS, PLAT_TABS, slug } from './schema/index.js';
  *
  * Idempotent: upsert-on-slug, safe to re-run, never duplicates. A slug
  * collision inside the schema is a build bug — fail loud, don't overwrite.
+ *
+ * Every Type/Category/SettingField row is stamped owner_module='template-engine'
+ * so the generic Application-Settings UI (sidebar, /admin/settings/*) hides
+ * this module's private data store — see core.prisma ownership contract.
  */
+
+const OWNER_MODULE = 'template-engine';
 
 const stringifyValue = (v) => {
   if (v == null) return '';
@@ -95,8 +101,8 @@ async function seedInto(prismaClient) {
   for (const t of types.values()) {
     const row = await prismaClient.type.upsert({
       where: { slug: t.slug },
-      update: { name: t.name, is_active: t.is_active },
-      create: t,
+      update: { name: t.name, is_active: t.is_active, owner_module: OWNER_MODULE },
+      create: { ...t, owner_module: OWNER_MODULE },
     });
     typeIds.set(t.slug, row.id);
   }
@@ -104,7 +110,12 @@ async function seedInto(prismaClient) {
   // Categories (~900) — upsert on slug.
   const catIds = new Map();
   for (const c of categories.values()) {
-    const data = { name: c.name, type_id: typeIds.get(c.typeSlug), is_active: c.is_active };
+    const data = {
+      name: c.name,
+      type_id: typeIds.get(c.typeSlug),
+      is_active: c.is_active,
+      owner_module: OWNER_MODULE,
+    };
     const row = await prismaClient.category.upsert({
       where: { slug: c.slug },
       update: data,
@@ -119,7 +130,7 @@ async function seedInto(prismaClient) {
   const existing = new Map(
     (await prismaClient.settingField.findMany({
       where: { slug: { in: slugs } },
-      select: { slug: true, field_name: true, input_type: true, value: true, options: true, alt_text: true, type_id: true, category_id: true, sort: true },
+      select: { slug: true, field_name: true, input_type: true, value: true, options: true, alt_text: true, type_id: true, category_id: true, sort: true, owner_module: true },
     })).map((r) => [r.slug, r])
   );
 
@@ -133,6 +144,7 @@ async function seedInto(prismaClient) {
     type_id: typeIds.get(f.typeSlug),
     category_id: catIds.get(f.catSlug),
     sort: f.sort,
+    owner_module: OWNER_MODULE,
   });
 
   const creates = [];
@@ -146,7 +158,8 @@ async function seedInto(prismaClient) {
       cur.field_name !== row.field_name || cur.input_type !== row.input_type ||
       cur.value !== row.value || cur.options !== row.options ||
       cur.alt_text !== row.alt_text || cur.type_id !== row.type_id ||
-      cur.category_id !== row.category_id || cur.sort !== row.sort
+      cur.category_id !== row.category_id || cur.sort !== row.sort ||
+      cur.owner_module !== row.owner_module
     ) {
       await prismaClient.settingField.update({ where: { slug: f.slug }, data: row });
       updated += 1;
