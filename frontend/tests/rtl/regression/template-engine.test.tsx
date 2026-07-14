@@ -5,7 +5,7 @@
  *   - reset
  */
 import React from 'react'
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
@@ -135,6 +135,40 @@ const webappSchema = envelope('webapp', [
 ])
 
 const tvSchema = envelope('tv', [makePane('branding', 'TV Branding', 'tv')])
+
+// KDL-207: Images pane carries an `imglist` field ("Image Classes"). It must
+// render the structured ImageClassesEditorControl (name/w/h/fit rows + Add class),
+// NOT the raw-text FieldControl fallback, and must be reachable via search.
+const imagesSchema = envelope('webapp', [
+  {
+    id: 'pane-images',
+    type_id: 'type-images',
+    label: 'Images',
+    icon: '🖼️',
+    modes: [{ id: 'dark', label: '🌙 Dark' }, { id: 'light', label: '☀️ Light' }],
+    devices: null,
+    groups: [
+      {
+        id: 'grp-images-classes',
+        name: 'Image Classes',
+        slug: 'webapp.images.image-classes',
+        fields: [
+          {
+            id: 'field-images-classes',
+            slug: 'webapp.images.classes',
+            field_name: 'Image Classes',
+            input_type: 'imglist',
+            options: null,
+            alt_text: null,
+            value: JSON.stringify([{ name: 'thumb', w: 150, h: 150, fit: 'cover' }]),
+            default_value: '[]',
+            sort: 0,
+          },
+        ],
+      },
+    ],
+  },
+])
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -465,6 +499,32 @@ describe('Template Engine page (KDL-177 C1 gates)', () => {
         }),
       )
     })
+  })
+
+  it('imglist field renders the Image Classes editor + is searchable (KDL-207)', async () => {
+    apiGet.mockReset()
+    apiGet.mockResolvedValue({ data: imagesSchema })
+    const Page = await importPage()
+    wrapWithQueryClient(<Page />)
+    await waitFor(() => screen.getByTestId('pane-btn-pane-images'))
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('pane-btn-pane-images'))
+    })
+
+    const row = await screen.findByTestId('field-row-field-images-classes')
+    // Structured editor — existing row's class name, object-fit select, Add class.
+    // (The raw-text fallback would show a single input holding the JSON blob.)
+    expect(within(row).getByDisplayValue('thumb')).toBeTruthy()
+    expect(within(row).getByText('Add class')).toBeTruthy()
+    expect(row.querySelector('select')).toBeTruthy()
+
+    // Search by field name surfaces the field (previously "No settings match").
+    await act(async () => {
+      fireEvent.change(screen.getByTestId('sidebar-search'), {
+        target: { value: 'image class' },
+      })
+    })
+    expect(screen.getByTestId('field-row-field-images-classes')).toBeTruthy()
   })
 
   it('shows an error state when the schema fails to load', async () => {

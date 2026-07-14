@@ -8,6 +8,9 @@ import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { ModuleGuard } from '@/components/shared/ModuleGuard'
 import { refreshTemplateEngineTokens } from '@/components/providers/TemplateEngineThemeProvider'
+import { ImageClassesEditorControl } from './controls/ImageClassesEditorControl'
+import { FontsEditorControl } from './controls/FontsEditorControl'
+import { BrandingFileControl } from './controls/BrandingFileControl'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // API types — shape returned by GET /template-engine/schema?platform=
@@ -454,7 +457,10 @@ function FieldControl({
   if (t === 'radio') return <RadioControl value={value} onChange={onChange} options={field.options} />
   if (t === 'textarea') return <TextareaControl value={value} onChange={onChange} />
   if (t === 'multiselect') return <MultiSelectControl value={value} onChange={onChange} options={field.options} />
-  // text, password, fonts, imglist, file → text input as baseline
+  if (t === 'imglist') return <ImageClassesEditorControl value={value} onChange={onChange} />
+  if (t === 'fonts') return <FontsEditorControl value={value} onChange={onChange} />
+  if (t === 'file') return <BrandingFileControl value={value} onChange={onChange} />
+  // text, password → text input as baseline
   return <TextControl value={value} onChange={onChange} />
 }
 
