@@ -401,7 +401,8 @@ export async function compileTokens(platform, theme, device) {
     imgCss,
   ].filter(Boolean).join('\n\n');
 
-  const result = { css, json: jsonTree };
+  const activeTheme = await getActiveTheme(platform);
+  const result = { css, json: jsonTree, activeTheme };
 
   try {
     await redis.set(cacheKey, JSON.stringify(result), 'EX', TOKEN_TTL);
@@ -416,4 +417,34 @@ export async function isTokensPublic() {
   const setting = await prisma.appSetting.findUnique({ where: { key: 'template_engine.tokens_public' } });
   // Default true if not set
   return setting ? setting.value !== 'false' : true;
+}
+
+// ── Active/Default theme per platform (dark|light|system) ────────────────────
+// Stored the same way as the tokens_public flag above: an AppSetting row, not a
+// new Prisma column — the module already uses AppSetting as its own tiny KV
+// store for cross-cutting flags, so a per-platform "current theme" fits the
+// same shape instead of adding a migration.
+
+export const ACTIVE_THEMES = ['dark', 'light', 'system'];
+const activeThemeKey = (platform) => `template_engine.active_theme.${platform}`;
+
+export async function getActiveTheme(platform) {
+  const setting = await prisma.appSetting.findUnique({ where: { key: activeThemeKey(platform) } });
+  return setting && ACTIVE_THEMES.includes(setting.value) ? setting.value : 'system';
+}
+
+export async function setActiveTheme(platform, theme) {
+  if (!ACTIVE_THEMES.includes(theme)) {
+    return { errors: [`theme must be one of: ${ACTIVE_THEMES.join(', ')}`] };
+  }
+  await prisma.appSetting.upsert({
+    where: { key: activeThemeKey(platform) },
+    create: { key: activeThemeKey(platform), value: theme, type: 'string', is_public: true },
+    update: { value: theme },
+  });
+  // The tokens payload embeds activeTheme (see compileTokens) so the public
+  // runtime consumer can pick it up in the same request — stale cache would
+  // serve the old choice until TTL expiry otherwise.
+  await invalidateTokenCache(platform);
+  return { activeTheme: theme };
 }
