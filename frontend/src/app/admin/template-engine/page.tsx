@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Sun, Moon, Save, RotateCcw } from 'lucide-react'
+import { Search, Save, RotateCcw } from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
@@ -162,7 +162,6 @@ const PLATFORMS = [
 
 const LS_PLATFORM = 'te_platform'
 const LS_PANE = 'te_pane'
-const LS_THEME = 'te_theme'
 
 function lsGet(key: string, fallback: string) {
   if (typeof window === 'undefined') return fallback
@@ -536,9 +535,6 @@ function TemplateEngineInner() {
   // ── UI prefs (localStorage only) ──────────────────────────────────────────
   const [platform, setPlatformState] = useState(() => lsGet(LS_PLATFORM, 'webapp'))
   const [activePane, setActivePaneState] = useState(() => lsGet(LS_PANE, ''))
-  const [theme, setThemeState] = useState<'dark' | 'light'>(() =>
-    lsGet(LS_THEME, 'dark') === 'light' ? 'light' : 'dark',
-  )
   const [search, setSearch] = useState('')
   // Per-pane active mode/device selectors (sub-tabs within a pane)
   const [paneMode, setPaneMode] = useState<Record<string, string>>({})
@@ -553,10 +549,6 @@ function TemplateEngineInner() {
   const setActivePane = (p: string) => {
     setActivePaneState(p)
     lsSet(LS_PANE, p)
-  }
-  const setTheme = (t: 'dark' | 'light') => {
-    setThemeState(t)
-    lsSet(LS_THEME, t)
   }
 
   // ── API: load schema ──────────────────────────────────────────────────────
@@ -879,13 +871,6 @@ function TemplateEngineInner() {
         <span className="flex-1 text-center text-sm font-semibold text-muted-foreground">
           Application Settings — Template Engine
         </span>
-        <button
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="rounded border border-border px-3 py-1 text-xs text-muted-foreground hover:text-foreground"
-          aria-label="Toggle preview theme"
-        >
-          {theme === 'dark' ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
-        </button>
       </div>
 
       {/* ── Platform bar ─────────────────────────────────────────────────── */}
@@ -1056,7 +1041,10 @@ function TemplateEngineInner() {
                   )}
                   {activePaneData.modes && activePaneData.modes.length > 0 && (
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">Theme</span>
+                      {/* Distinct from the "Active Theme" bar above (KDL-199 Problem
+                          2): this only picks which theme's *field values* are being
+                          edited here, not the app's live theme. */}
+                      <span className="text-xs text-muted-foreground">Editing values for</span>
                       <div className="flex gap-1">
                         {activePaneData.modes.map((m) => (
                           <button
