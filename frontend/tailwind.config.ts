@@ -15,43 +15,47 @@ const config: Config = {
     },
     extend: {
       colors: {
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
         // `--branding_*`/`--buttons_*` are compiled at runtime by the Module 15
         // Template Engine (TemplateEngineThemeProvider injects them into
         // <style id="te-tokens">, dark in :root / light in [data-theme="light"]).
         // The `hsl(var(--x))` fallback keeps the original shadcn palette before
         // the provider's first fetch resolves or when a token is unset.
+        // Every slot below MUST have a branding token — a slot left on the
+        // static shadcn fallback stays dark-theme-colored when the app
+        // switches to Light (KDL-199: invisible text, dark navy cards on a
+        // light page).
+        border: 'var(--branding_text_interaction_border_color, hsl(var(--border)))',
+        input: 'var(--branding_text_interaction_border_color, hsl(var(--input)))',
+        ring: 'var(--branding_brand_colors_primary_color, hsl(var(--ring)))',
         background: 'var(--branding_surfaces_background_color, hsl(var(--background)))',
-        foreground: 'hsl(var(--foreground))',
+        foreground: 'var(--branding_text_interaction_text_primary, hsl(var(--foreground)))',
         primary: {
           DEFAULT: 'var(--branding_brand_colors_primary_color, hsl(var(--primary)))',
           foreground: 'var(--buttons_primary_button_text_color, hsl(var(--primary-foreground)))',
         },
         secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
+          DEFAULT: 'var(--branding_brand_colors_secondary_color, hsl(var(--secondary)))',
+          foreground: 'var(--branding_text_interaction_text_primary, hsl(var(--secondary-foreground)))',
         },
         destructive: {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
         },
         muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
+          DEFAULT: 'var(--branding_surfaces_surface_color, hsl(var(--muted)))',
+          foreground: 'var(--branding_text_interaction_text_secondary, hsl(var(--muted-foreground)))',
         },
         accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
+          DEFAULT: 'var(--branding_brand_colors_accent_color, hsl(var(--accent)))',
+          foreground: 'var(--branding_text_interaction_text_primary, hsl(var(--accent-foreground)))',
         },
         popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))',
+          DEFAULT: 'var(--branding_surfaces_surface_color, hsl(var(--popover)))',
+          foreground: 'var(--branding_text_interaction_text_primary, hsl(var(--popover-foreground)))',
         },
         card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
+          DEFAULT: 'var(--branding_surfaces_card_color, hsl(var(--card)))',
+          foreground: 'var(--branding_text_interaction_text_primary, hsl(var(--card-foreground)))',
         },
       },
       borderRadius: {
