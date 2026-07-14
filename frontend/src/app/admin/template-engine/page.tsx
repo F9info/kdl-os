@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Search, Sun, Moon, Save, RotateCcw } from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { ModuleGuard } from '@/components/shared/ModuleGuard'
+import { refreshTemplateEngineTokens } from '@/components/providers/TemplateEngineThemeProvider'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // API types — shape returned by GET /template-engine/schema?platform=
@@ -61,10 +62,12 @@ type TEFieldRaw = Omit<TEField, 'options' | 'value' | 'default_value'> & {
 type TEGroupRaw = Omit<TEGroup, 'fields'> & { fields: TEFieldRaw[] }
 type TEPaneRaw = Omit<TEPane, 'groups'> & { groups: TEGroupRaw[] }
 
-// GET /template-engine/schema?platform= → { success, data: { platform, schema } }
+type TEActiveTheme = 'dark' | 'light' | 'system'
+
+// GET /template-engine/schema?platform= → { success, data: { platform, schema, activeTheme } }
 interface TESchemaEnvelope {
   success: boolean
-  data: { platform: string; schema: TEPaneRaw[] }
+  data: { platform: string; schema: TEPaneRaw[]; activeTheme: TEActiveTheme }
 }
 
 // The API sends `options` as a JSON string; controls read it as an object.
@@ -188,7 +191,26 @@ function mutationErrorMessage(err: unknown, fallback: string): string {
 // Field controls
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Mirrors the backend's hex acceptance (service.js validateFieldValue): 3/4,
+// 6 or 8 hex digits. rgb()/rgba() values are left untouched (edited via the
+// swatch, which only emits hex) — the text field only ever needs to validate
+// what a human can type.
+const HEX_COLOR_RE = /^#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/
+
 function ColorControl({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [text, setText] = useState(value)
+  useEffect(() => setText(value), [value])
+
+  const commit = (raw: string) => {
+    const trimmed = raw.trim()
+    const withHash = trimmed && !trimmed.startsWith('#') ? `#${trimmed}` : trimmed
+    if (HEX_COLOR_RE.test(withHash)) {
+      onChange(withHash)
+    } else {
+      setText(value) // invalid — revert to last committed value
+    }
+  }
+
   return (
     <span className="inline-flex items-center gap-2">
       <input
@@ -197,7 +219,18 @@ function ColorControl({ value, onChange }: { value: string; onChange: (v: string
         className="h-8 w-8 cursor-pointer rounded border border-border bg-transparent p-0.5"
         onChange={(e) => onChange(e.target.value)}
       />
-      <span className="min-w-[90px] rounded border border-border bg-muted px-2 py-1 font-mono text-xs">{value}</span>
+      <input
+        type="text"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={(e) => commit(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.currentTarget.blur()
+        }}
+        spellCheck={false}
+        className="min-w-[90px] rounded border border-border bg-muted px-2 py-1 font-mono text-xs"
+        data-testid="color-hex-input"
+      />
     </span>
   )
 }
@@ -527,16 +560,41 @@ function TemplateEngineInner() {
   }
 
   // ── API: load schema ──────────────────────────────────────────────────────
-  const { data, isLoading, isError } = useQuery<TEPane[]>({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['template-engine-schema', platform],
     queryFn: () =>
-      api
-        .get<TESchemaEnvelope>(`/template-engine/schema?platform=${platform}`)
-        .then((r) => normalizeSchema(r.data.data.schema)),
+      api.get<TESchemaEnvelope>(`/template-engine/schema?platform=${platform}`).then((r) => ({
+        panes: normalizeSchema(r.data.data.schema),
+        activeTheme: r.data.data.activeTheme,
+      })),
     staleTime: 30_000,
   })
 
-  const panes: TEPane[] = data ?? []
+  const panes: TEPane[] = data?.panes ?? []
+
+  // ── Active/Default Theme (per platform: dark | light | system) ───────────
+  // Distinct from `paneMode` above: paneMode only picks which theme's *field
+  // values* are being edited in the current pane. This is the platform-wide
+  // "the running app should render in ___" setting the runtime
+  // TemplateEngineThemeProvider reads via GET /tokens.
+  const [activeThemeSaved, setActiveThemeSaved] = useState<Record<string, TEActiveTheme>>({})
+  const [activeThemeLocal, setActiveThemeLocal] = useState<Record<string, TEActiveTheme>>({})
+
+  useEffect(() => {
+    if (!data) return
+    setActiveThemeSaved((prev) => (prev[platform] ? prev : { ...prev, [platform]: data.activeTheme }))
+    setActiveThemeLocal((prev) => (prev[platform] ? prev : { ...prev, [platform]: data.activeTheme }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, platform])
+
+  const isThemeDirty = useCallback(
+    (plat: string) => {
+      const saved = activeThemeSaved[plat]
+      const local = activeThemeLocal[plat]
+      return saved != null && local != null && saved !== local
+    },
+    [activeThemeSaved, activeThemeLocal],
+  )
 
   // ── Local editable values (never localStorage) ────────────────────────────
   // Keyed by pane.id → { field.id: value }
@@ -576,11 +634,23 @@ function TemplateEngineInner() {
       })
       return next
     })
-    // Initialize mode/device defaults for panes
+    // Initialize mode/device defaults for panes. Default to the saved Active
+    // Theme (KDL-198 Problem 2) rather than always the first mode — otherwise
+    // a Dark-first `modes` array makes the editor reset to Dark on every
+    // reload regardless of which theme is actually active.
+    const resolvedSystemMode =
+      typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: light)').matches
+        ? 'light'
+        : 'dark'
+    const savedActiveTheme = data?.activeTheme ?? 'system'
+    const preferredMode = savedActiveTheme === 'system' ? resolvedSystemMode : savedActiveTheme
     setPaneMode((prev) => {
       const next = { ...prev }
       panes.forEach((pane) => {
-        if (!next[pane.id] && pane.modes?.length) next[pane.id] = pane.modes![0]!.id
+        if (!next[pane.id] && pane.modes?.length) {
+          const hasPreferred = pane.modes!.some((m) => m.id === preferredMode)
+          next[pane.id] = hasPreferred ? preferredMode : pane.modes![0]!.id
+        }
       })
       return next
     })
@@ -613,15 +683,24 @@ function TemplateEngineInner() {
   )
 
   const isPlatformDirty = useCallback(() => {
-    return panes.some((p) => isDirtyPane(p.id))
-  }, [panes, isDirtyPane])
+    return panes.some((p) => isDirtyPane(p.id)) || isThemeDirty(platform)
+  }, [panes, isDirtyPane, isThemeDirty, platform])
+
+  // Read inside mutation callbacks via ref, not the closed-over `localValues`
+  // — useMutation's onSuccess otherwise risks acting on the render's snapshot
+  // from when the mutation was *defined*, not the latest edits made while the
+  // request was in flight (the "Save needs two clicks" report on this pane).
+  const localValuesRef = useRef(localValues)
+  useEffect(() => {
+    localValuesRef.current = localValues
+  }, [localValues])
 
   // ── Mutations ────────────────────────────────────────────────────────────
   const saveMutation = useMutation({
     mutationFn: async ({ paneId, platform: plat }: { paneId: string; platform: string }) => {
       const pane = panes.find((p) => p.id === paneId)
       if (!pane) throw new Error('Pane not found')
-      const local = localValues[vkeyOf(plat, paneId)] ?? {}
+      const local = localValuesRef.current[vkeyOf(plat, paneId)] ?? {}
       const values = pane.groups.flatMap((g) =>
         g.fields.map((f) => ({ field_id: f.id, value: local[f.id] ?? f.value })),
       )
@@ -633,7 +712,7 @@ function TemplateEngineInner() {
     },
     onSuccess: (_, { paneId, platform: plat }) => {
       const k = vkeyOf(plat, paneId)
-      setSavedValues((prev) => ({ ...prev, [k]: { ...(localValues[k] ?? {}) } }))
+      setSavedValues((prev) => ({ ...prev, [k]: { ...(localValuesRef.current[k] ?? {}) } }))
       void qc.invalidateQueries({ queryKey: ['template-engine-schema', plat] })
       toast({ title: 'Saved', description: 'Settings saved successfully.' })
     },
@@ -641,6 +720,22 @@ function TemplateEngineInner() {
       toast({
         title: 'Save failed',
         description: mutationErrorMessage(err, 'Could not save settings.'),
+        variant: 'destructive',
+      })
+    },
+  })
+
+  const activeThemeMutation = useMutation({
+    mutationFn: async ({ platform: plat, theme }: { platform: string; theme: TEActiveTheme }) =>
+      api.post('/template-engine/active-theme', { platform: plat, theme }),
+    onSuccess: (_, { platform: plat, theme }) => {
+      setActiveThemeSaved((prev) => ({ ...prev, [plat]: theme }))
+      toast({ title: 'Saved', description: 'Active theme updated.' })
+    },
+    onError: (err) => {
+      toast({
+        title: 'Save failed',
+        description: mutationErrorMessage(err, 'Could not save the active theme.'),
         variant: 'destructive',
       })
     },
@@ -694,6 +789,21 @@ function TemplateEngineInner() {
   const activePaneData = panes.find((p) => p.id === activePane)
   const activePaneValues = localValues[vkey(activePane)] ?? {}
   const activePaneIsDirty = isDirtyPane(activePane)
+  const activeThemeIsDirty = isThemeDirty(platform)
+
+  const handleSave = async () => {
+    try {
+      if (activePaneIsDirty) await saveMutation.mutateAsync({ paneId: activePane, platform })
+      if (activeThemeIsDirty) {
+        await activeThemeMutation.mutateAsync({ platform, theme: activeThemeLocal[platform]! })
+      }
+      // Let the runtime provider re-fetch compiled tokens so the admin sees
+      // the change immediately instead of needing a hard reload.
+      refreshTemplateEngineTokens()
+    } catch {
+      // Individual mutations already surface their own error toast.
+    }
+  }
 
   // Visible groups (filtered by active mode/device)
   const visibleGroups = useMemo(() => {
@@ -752,7 +862,7 @@ function TemplateEngineInner() {
   // Render
   // ─────────────────────────────────────────────────────────────────────────
 
-  const isSaving = saveMutation.isPending
+  const isSaving = saveMutation.isPending || activeThemeMutation.isPending
   const isResetting = resetMutation.isPending
 
   return (
@@ -809,6 +919,38 @@ function TemplateEngineInner() {
             </button>
           )
         })}
+      </div>
+
+      {/* ── Active theme bar ─────────────────────────────────────────────── */}
+      {/* Platform-wide "the running app should render in ___" — distinct from
+          the per-pane Dark/Light mode tabs below, which only pick which
+          theme's field values are being edited. Read by the runtime
+          TemplateEngineThemeProvider via GET /tokens. */}
+      <div
+        className="flex flex-shrink-0 items-center justify-center gap-2 border-b bg-sidebar px-4 py-1.5"
+        data-testid="active-theme-bar"
+      >
+        <span className="text-xs text-muted-foreground">Active Theme</span>
+        <div className="flex gap-1">
+          {(['dark', 'light', 'system'] as const).map((t) => {
+            const current = activeThemeLocal[platform] ?? activeThemeSaved[platform] ?? 'system'
+            return (
+              <button
+                key={t}
+                data-testid={`active-theme-btn-${t}`}
+                onClick={() => setActiveThemeLocal((prev) => ({ ...prev, [platform]: t }))}
+                className={cn(
+                  'rounded px-2.5 py-1 text-xs font-medium capitalize transition-colors',
+                  current === t
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-secondary',
+                )}
+              >
+                {t}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* ── Body ─────────────────────────────────────────────────────────── */}
@@ -1016,7 +1158,7 @@ function TemplateEngineInner() {
             data-testid="footer"
           >
             <span className="text-xs text-muted-foreground">
-              {activePaneIsDirty ? 'Unsaved changes' : 'All changes saved'}
+              {activePaneIsDirty || activeThemeIsDirty ? 'Unsaved changes' : 'All changes saved'}
             </span>
             <div className="flex gap-2">
               <button
@@ -1030,8 +1172,8 @@ function TemplateEngineInner() {
               </button>
               <button
                 data-testid="btn-save"
-                onClick={() => saveMutation.mutate({ paneId: activePane, platform })}
-                disabled={isSaving || !activePane || !activePaneIsDirty}
+                onClick={handleSave}
+                disabled={isSaving || !activePane || (!activePaneIsDirty && !activeThemeIsDirty)}
                 className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
               >
                 <Save className="h-3.5 w-3.5" />

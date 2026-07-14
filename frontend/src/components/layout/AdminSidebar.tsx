@@ -161,8 +161,18 @@ export function AdminSidebar() {
     <aside
       className={cn(
         'flex flex-col border-r bg-card transition-all duration-200',
-        sidebarOpen ? 'w-64' : 'w-16'
+        sidebarOpen ? '' : 'w-16'
       )}
+      // Expanded width driven by the Template Engine's Layout > Sidebar Width
+      // (Desktop) token when the runtime provider has injected it — the
+      // compiled token is a bare number (its "px" unit is display-only
+      // metadata in the editor), so it's multiplied by 1px via calc() rather
+      // than used directly; 256 is the w-64 (16rem) fallback.
+      style={
+        sidebarOpen
+          ? { width: 'calc(var(--layout_desktop_structure_sidebar_width, 256) * 1px)' }
+          : undefined
+      }
     >
       <div className="flex h-16 items-center border-b px-4">
         {logoUrl ? (

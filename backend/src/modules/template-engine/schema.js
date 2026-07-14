@@ -41,6 +41,13 @@ export const postResetBodySchema = z.object({
   }),
 });
 
+export const postActiveThemeBodySchema = z.object({
+  body: z.object({
+    platform: platformEnum,
+    theme: z.enum(['dark', 'light', 'system']),
+  }),
+});
+
 export const getTokensQuerySchema = z.object({
   query: z
     .object({

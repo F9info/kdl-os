@@ -15,7 +15,16 @@ export default async function uninstallTemplateEngine(prismaClient = prisma) {
 
   const categories = await prismaClient.category.deleteMany({ where: byPrefix });
   const types = await prismaClient.type.deleteMany({ where: byPrefix });
-  await prismaClient.appSetting.deleteMany({ where: { key: 'template_engine.tokens_public' } });
+  await prismaClient.appSetting.deleteMany({
+    where: {
+      key: {
+        in: [
+          'template_engine.tokens_public',
+          ...PLATFORMS.map((p) => `template_engine.active_theme.${p.id}`),
+        ],
+      },
+    },
+  });
 
   return { types: types.count, categories: categories.count };
 }

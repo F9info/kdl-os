@@ -8,7 +8,27 @@ export const getSchema = async (req, res, next) => {
     const { platform } = req.validated.query;
     const tree = await service.getSchemaTree(platform);
     if (!tree) return errorResponse(res, 'Platform not found', 404);
-    return successResponse(res, { platform, schema: tree });
+    const activeTheme = await service.getActiveTheme(platform);
+    return successResponse(res, { platform, schema: tree, activeTheme });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const postActiveTheme = async (req, res, next) => {
+  try {
+    const { platform, theme } = req.validated.body;
+    const result = await service.setActiveTheme(platform, theme);
+    if (result.errors) return errorResponse(res, 'Validation failed', 422, { fieldErrors: {}, formErrors: result.errors });
+    writeActivityAsync({
+      actor: req.user?.id,
+      module: 'template-engine',
+      action: 'active_theme_saved',
+      description: `Set active theme=${theme} for platform=${platform}`,
+      properties: { platform, theme },
+      ip_address: getClientIp(req),
+    });
+    return successResponse(res, result);
   } catch (err) {
     next(err);
   }
