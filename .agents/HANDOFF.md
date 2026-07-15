@@ -752,3 +752,21 @@ Blockers: none.
 **Gates:** `vitest run src/modules/template-engine/` → exit 0, **51/51 pass** (40 api + 8 schema + 3 seed). Backend has no tsc (plain JS). Full backend suite: 6 pre-existing failures, all in the unrelated `media` module (present on clean HEAD `07fc272`); none touch template-engine.
 
 **Next:** back to `in_review` for Code Reviewer (KDL-176 maker≠grader).
+
+## 2026-07-15 — KDL-212 Layout token consumption VERIFIED (Frontend Architect)
+
+**Scope:** admin shell + content area obey Template Engine > Layout tokens via device-neutral @media-scoped vars (KDL-209 contract).
+
+**Wiring (already committed in 7c92771 alongside KDL-211):**
+- `frontend/src/app/te-layout.css` — maps `--layout_structure_*` / `--layout_container_grid_*` / `--layout_surface_style_*` contract vars onto semantic `--te-layout-*` layer + `.te-*` classes; enum fields (Sidebar Position, Container Width=Custom, Shadow Level 0–5) handled with `@container style()` queries with safe fallbacks.
+- Consumers: `AdminShell.tsx` (te-admin-shell/te-page/te-container/te-footer), `TopBar.tsx` (te-header), `AdminSidebar.tsx` (inline `width: var(--te-layout-sidebar-width)` + te-header logo row), `admin/dashboard/page.tsx` (te-card-grid), `--radius` now follows Layout > Border Radius.
+
+**Browser E2E (hard gate, localhost:3101, admin@kdl.com):**
+- Sidebar Width 320→260 + Container Width Custom(800)→1140px → Save → full reload → aside=260px, .te-container max-width=1140px. Restored 320/Custom(800) → Save → reload → aside=320px, max-width=800px. Both directions pass.
+- Per-device @media confirmed in injected `#te-tokens`: 7 device blocks (desktop/laptop↔/laptop↕/tablet↔/tablet↕/mobile↔/mobile↕); viewport 1100px → sidebar 220px (laptop value), 1280px → 260px (desktop value). No hardcoded single-device values.
+- Header 60 / footer 48 / page padding 24 / grid gap 24 / card spacing 16 / radius 10 / shadow level 2 all match pane values in computed styles.
+- KDL-192 regression check: sidebar shows 8 clean nav entries, no owner_module Type pollution.
+- app_settings untouched (values saved via template-engine POST /values only).
+- Known unrelated noise: `/api/notifications/stream` intermittently 429s (SSE rate limit) — pre-existing, not layout-related.
+
+**Next:** KDL-213 (component tokens) continues on wip commit b21f17b.

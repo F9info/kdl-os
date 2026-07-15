@@ -856,3 +856,6 @@ Follow-up to KDL-150. Two items, both verified against a freshly rebuilt + resee
 
 ## 2026-07-15 — KDL-209 done (Frontend Architect)
 Device @media scoping + neutral alias vars in compileTokens (commit b90e9b6, pushed); var/class naming contract in KDL-209 plan doc. Gates: backend TE suite 77/77, frontend TE regression 9/9. Unblocks KDL-208 Layout/Components children.
+
+## 2026-07-15 — KDL-212 done (Frontend Architect)
+Layout token consumption verified end-to-end in browser: sidebar/container width changes in Template Engine > Layout visibly apply after Save+reload; per-device @media vars confirmed (laptop 220px vs desktop 260px sidebar at different viewports); header/footer/padding/grid/radius/shadow wired via te-layout.css. KDL-192 sidebar contract intact. app_settings untouched.
