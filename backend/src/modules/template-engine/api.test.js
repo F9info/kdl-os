@@ -659,6 +659,198 @@ describe('B3 — compileTokens', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// KDL-209 — responsive device emission: @media blocks + device-neutral aliases
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('KDL-209 — deviceMediaQuery', () => {
+  it('maps webapp devices to breakpoint bands with orientation', () => {
+    const webapp = { devices: [
+      { id: 'desktop', from: 'desktop' },
+      { id: 'laptop_h', from: 'laptop' }, { id: 'laptop_v', from: 'laptop' },
+      { id: 'tablet_h', from: 'ipad' }, { id: 'tablet_v', from: 'ipad' },
+      { id: 'mobile_h', from: 'mobile' }, { id: 'mobile_v', from: 'mobile' },
+    ] };
+    expect(service.deviceMediaQuery(webapp, 'desktop')).toBe('(min-width: 1280px)');
+    expect(service.deviceMediaQuery(webapp, 'laptop_h'))
+      .toBe('(min-width: 1024px) and (max-width: 1279px) and (orientation: landscape)');
+    expect(service.deviceMediaQuery(webapp, 'tablet_v'))
+      .toBe('(min-width: 768px) and (max-width: 1023px) and (orientation: portrait)');
+    expect(service.deviceMediaQuery(webapp, 'mobile_v'))
+      .toBe('(max-width: 767px) and (orientation: portrait)');
+  });
+
+  it('maps TV resolutions to panel-width bands', () => {
+    expect(service.deviceMediaQuery(null, 'tv_720p')).toBe('(max-width: 1919px)');
+    expect(service.deviceMediaQuery(null, 'tv_4k')).toBe('(min-width: 3840px) and (max-width: 7679px)');
+    expect(service.deviceMediaQuery(null, 'tv_8k')).toBe('(min-width: 7680px)');
+  });
+
+  it('returns null for unknown device ids', () => {
+    expect(service.deviceMediaQuery({ devices: [] }, 'nope')).toBeNull();
+  });
+});
+
+describe('KDL-209 — compileTokens device @media emission', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    redis.get.mockResolvedValue(null);
+    redis.set.mockResolvedValue('OK');
+    redis.del.mockResolvedValue(1);
+  });
+
+  async function stubPrismaWithFields(fields) {
+    const { prisma } = await import('../../config/database.js');
+    const type = { id: 'type-1', slug: 'webapp.layout', name: 'Layout' };
+    prisma.type = { findMany: vi.fn().mockResolvedValue([type]) };
+    prisma.settingField = { findMany: vi.fn().mockResolvedValue(fields) };
+    prisma.appSetting = { findUnique: vi.fn().mockResolvedValue(null) };
+  }
+
+  it('wraps device-tagged vars in @media blocks with device-neutral, unit-suffixed alias names', async () => {
+    await stubPrismaWithFields([
+      {
+        id: 'f-d', slug: 'webapp.layout.desktop.structure.sidebar_width',
+        field_name: 'Sidebar Width', input_type: 'slider',
+        value: '240', options: JSON.stringify({ min: 180, max: 360, unit: 'px' }),
+        type_id: 'type-1', category_id: null, setting_values: [],
+      },
+      {
+        id: 'f-m', slug: 'webapp.layout.mobile_v.structure.sidebar_width',
+        field_name: 'Sidebar Width', input_type: 'slider',
+        value: '280', options: JSON.stringify({ min: 220, max: 360, unit: 'px' }),
+        type_id: 'type-1', category_id: null, setting_values: [],
+      },
+    ]);
+    const { css } = await service.compileTokens('webapp');
+    // Raw device-prefixed vars stay in :root, unitless (existing consumers).
+    const root = css.match(/:root \{[^}]*\}/)?.[0];
+    expect(root).toMatch(/--layout_desktop_structure_sidebar_width:\s*240;/);
+    expect(root).toMatch(/--layout_mobile_v_structure_sidebar_width:\s*280;/);
+    // Each device gets an @media block with the SAME neutral alias name.
+    const desktopBlock = css.match(/@media \(min-width: 1280px\) \{[\s\S]*?\n\}/)?.[0];
+    const mobileBlock = css.match(/@media \(max-width: 767px\) and \(orientation: portrait\) \{[\s\S]*?\n\}/)?.[0];
+    expect(desktopBlock).toMatch(/--layout_structure_sidebar_width:\s*240px;/);
+    expect(mobileBlock).toMatch(/--layout_structure_sidebar_width:\s*280px;/);
+  });
+
+  it('with ?device= filter, neutral aliases land directly in :root without @media', async () => {
+    await stubPrismaWithFields([
+      {
+        id: 'f-d', slug: 'webapp.layout.desktop.structure.header_height',
+        field_name: 'Header Height', input_type: 'number',
+        value: '60', options: JSON.stringify({ unit: 'px' }),
+        type_id: 'type-1', category_id: null, setting_values: [],
+      },
+    ]);
+    const { css } = await service.compileTokens('webapp', null, 'desktop');
+    expect(css).not.toMatch(/@media/);
+    const root = css.match(/:root \{[^}]*\}/)?.[0];
+    expect(root).toMatch(/--layout_desktop_structure_header_height:\s*60;/);
+    expect(root).toMatch(/--layout_structure_header_height:\s*60px;/);
+  });
+
+  it('non-numeric device-tagged fields alias without a unit suffix', async () => {
+    await stubPrismaWithFields([
+      {
+        id: 'f-r', slug: 'webapp.layout.desktop.structure.sidebar_position',
+        field_name: 'Sidebar Position', input_type: 'radio',
+        value: 'Left', options: JSON.stringify({ choices: ['Left', 'Right'] }),
+        type_id: 'type-1', category_id: null, setting_values: [],
+      },
+    ]);
+    const { css } = await service.compileTokens('webapp');
+    expect(css).toMatch(/--layout_structure_sidebar_position:\s*Left;/);
+  });
+
+  it('typo_table rows emit device-neutral aliases per device', async () => {
+    await stubPrismaWithFields([
+      {
+        id: 'f-t', slug: 'webapp.typography.desktop.typography_scale.typography_scale',
+        field_name: 'Typography Scale', input_type: 'typo_table',
+        value: JSON.stringify([{ name: 'H1 (Title)', size: 32, sizeUnit: 'px', family: 'Poppins', weight: '700', lineHeight: 1.5, letterSpacing: 0 }]),
+        options: null, type_id: 'type-1', category_id: null, setting_values: [],
+      },
+      {
+        id: 'f-t2', slug: 'webapp.typography.mobile_v.typography_scale.typography_scale',
+        field_name: 'Typography Scale', input_type: 'typo_table',
+        value: JSON.stringify([{ name: 'H1 (Title)', size: 24, sizeUnit: 'px', family: 'Poppins', weight: '700', lineHeight: 1.4, letterSpacing: 0 }]),
+        options: null, type_id: 'type-1', category_id: null, setting_values: [],
+      },
+    ]);
+    const { css } = await service.compileTokens('webapp');
+    // Raw device-prefixed rows still in :root.
+    const root = css.match(/:root \{[^}]*\}/)?.[0];
+    expect(root).toMatch(/--typography_desktop_typography_scale_typography_scale_h1_title_size:\s*32px;/);
+    // Neutral aliases inside their device's @media block.
+    const desktopBlock = css.match(/@media \(min-width: 1280px\) \{[\s\S]*?\n\}/)?.[0];
+    const mobileBlock = css.match(/@media \(max-width: 767px\) and \(orientation: portrait\) \{[\s\S]*?\n\}/)?.[0];
+    expect(desktopBlock).toMatch(/--typography_typography_scale_typography_scale_h1_title_size:\s*32px;/);
+    expect(mobileBlock).toMatch(/--typography_typography_scale_typography_scale_h1_title_size:\s*24px;/);
+    expect(mobileBlock).toMatch(/--typography_typography_scale_typography_scale_h1_title_family:\s*Poppins;/);
+  });
+
+  it('device-tagged image classes no longer clobber each other — each device gets its own @media block', async () => {
+    await stubPrismaWithFields([
+      {
+        id: 'f-i1', slug: 'webapp.images.desktop.image_classes.image_classes',
+        field_name: 'Image Classes', input_type: 'imglist',
+        value: JSON.stringify([{ name: 'thumbnail-image', w: 150, h: 150, fit: 'cover' }]),
+        options: null, type_id: 'type-1', category_id: null, setting_values: [],
+      },
+      {
+        id: 'f-i2', slug: 'webapp.images.mobile_v.image_classes.image_classes',
+        field_name: 'Image Classes', input_type: 'imglist',
+        value: JSON.stringify([{ name: 'thumbnail-image', w: 90, h: 90, fit: 'cover' }]),
+        options: null, type_id: 'type-1', category_id: null, setting_values: [],
+      },
+    ]);
+    const { css } = await service.compileTokens('webapp');
+    // Pre-fix, the flat map kept only the last device (90px everywhere).
+    const desktopBlock = css.match(/@media \(min-width: 1280px\) \{[\s\S]*?\n\}/)?.[0];
+    const mobileBlock = css.match(/@media \(max-width: 767px\) and \(orientation: portrait\) \{[\s\S]*?\n\}/)?.[0];
+    expect(desktopBlock).toMatch(/\.thumbnail_image \{ width: 150px; height: 150px;/);
+    expect(mobileBlock).toMatch(/\.thumbnail_image \{ width: 90px; height: 90px;/);
+  });
+
+  it('imglist "auto" dimensions emit auto, not autopx', async () => {
+    await stubPrismaWithFields([
+      {
+        id: 'f-i3', slug: 'webapp.images.desktop.image_classes.image_classes',
+        field_name: 'Image Classes', input_type: 'imglist',
+        value: JSON.stringify([{ name: 'icon-image', w: 'auto', h: 75, fit: 'contain' }]),
+        options: null, type_id: 'type-1', category_id: null, setting_values: [],
+      },
+    ]);
+    const { css } = await service.compileTokens('webapp');
+    expect(css).toMatch(/\.icon_image \{ width: auto; height: 75px;/);
+    expect(css).not.toMatch(/autopx/);
+  });
+
+  it('theme blocks stay free of device vars; device blocks stay free of theme vars', async () => {
+    await stubPrismaWithFields([
+      {
+        id: 'f-l', slug: 'webapp.buttons.light.primary_button.background_color',
+        field_name: 'BG Light', input_type: 'color', value: '#ffffff',
+        options: null, type_id: 'type-1', category_id: null, setting_values: [],
+      },
+      {
+        id: 'f-d', slug: 'webapp.buttons.desktop.button_sizes.height',
+        field_name: 'Height', input_type: 'number',
+        value: '38', options: JSON.stringify({ unit: 'px' }),
+        type_id: 'type-1', category_id: null, setting_values: [],
+      },
+    ]);
+    const { css } = await service.compileTokens('webapp');
+    const light = css.match(/\[data-theme="light"\] \{[^}]*\}/)?.[0];
+    const desktopBlock = css.match(/@media \(min-width: 1280px\) \{[\s\S]*?\n\}/)?.[0];
+    expect(light).toMatch(/--buttons_primary_button_background_color:\s*#ffffff/);
+    expect(light).not.toMatch(/button_sizes_height/);
+    expect(desktopBlock).toMatch(/--buttons_button_sizes_height:\s*38px;/);
+    expect(desktopBlock).not.toMatch(/background_color/);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // B3 — controller.getTokens: serves CSS when format=css or Accept: text/css
 // ─────────────────────────────────────────────────────────────────────────────
 
