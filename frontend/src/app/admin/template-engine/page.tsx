@@ -13,8 +13,9 @@ import { DefaultShellPreview } from './previews/ThemeDevicePreviews'
 import { DEVICE_PANE_PREVIEWS } from './previews/registry'
 import { COMPONENT_PANE_PREVIEWS } from './previews/componentRegistry'
 import { BrandingFileControl } from './controls/BrandingFileControl'
-import { FontsEditorControl } from './controls/FontsEditorControl'
+import { FontsEditorControl, parseRows as parseFontRows } from './controls/FontsEditorControl'
 import { ImageClassesEditorControl } from './controls/ImageClassesEditorControl'
+import { TypographyTableControl } from './controls/TypographyTableControl'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // API types — shape returned by GET /template-engine/schema?platform=
@@ -160,15 +161,37 @@ const NAV_GROUPS: Record<string, [string, string[]][]> = {
   ],
 }
 
-const PLATFORMS = [
-  { id: 'webapp', label: '🌐 Web App' },
-  { id: 'tv', label: '📺 TV' },
-  { id: 'android', label: '🤖 Android Native' },
-  { id: 'ios', label: '🍎 iOS Native' },
+// Landing screen shown before the editor — step 1 (top-level platform) and
+// step 2 (sub-section within it) of the three-step flow.
+const LANDING_PLATFORMS = [
+  { id: 'webapp', icon: '🌐', label: 'Webapp' },
+  { id: 'tv', icon: '📺', label: 'TV' },
+  { id: 'android', icon: '🤖', label: 'Android Native' },
+  { id: 'ios', icon: '🍎', label: 'iOS Native' },
 ]
+
+// Sub-cards per top-level platform. `platformId` is the real backend platform
+// this sub-section edits — a UI grouping only for now, no new data per sub
+// (e.g. Webapp's Frontend and Landing Page both edit the 'webapp' platform
+// until a dedicated Landing Page platform is actually requested). TV/Android/
+// iOS have one sub each today since there's no real split yet — more to come
+// per user direction, one at a time.
+const LANDING_SUBTABS: Record<string, { key: string; platformId: string; icon: string; label: string }[]> = {
+  webapp: [
+    { key: 'webapp-frontend', platformId: 'webapp', icon: '🖥️', label: 'Frontend' },
+    { key: 'webapp-admin', platformId: 'webapp_admin', icon: '🛠️', label: 'Admin' },
+    { key: 'webapp-landing', platformId: 'webapp', icon: '📄', label: 'Landing Page' },
+  ],
+  tv: [{ key: 'tv-app', platformId: 'tv', icon: '📺', label: 'TV App' }],
+  android: [{ key: 'android-app', platformId: 'android', icon: '🤖', label: 'Android App' }],
+  ios: [{ key: 'ios-app', platformId: 'ios', icon: '🍎', label: 'iOS App' }],
+}
 
 const LS_PLATFORM = 'te_platform'
 const LS_PANE = 'te_pane'
+const LS_TOP_PLATFORM = 'te_top_platform'
+const LS_SUB_LABEL = 'te_sub_label'
+const LS_ENTERED = 'te_entered'
 
 function lsGet(key: string, fallback: string) {
   if (typeof window === 'undefined') return fallback
@@ -443,20 +466,36 @@ function MultiSelectControl({
   )
 }
 
+// Select fields that let the user pick a font family (Heading/Body/Navigation/Button
+// Font) all share the backend's static FONTS list baked into `options.choices` at
+// seed time — they never see fonts added later via the sibling "Custom Fonts"
+// repeater. Every such field is named "*Font*" and is the only select convention
+// that is (Font Weight/Size fields use different field names) — see FieldControl.
+const isFontFamilySelect = (field: TEField) => field.input_type === 'select' && /font/i.test(field.field_name)
+
 function FieldControl({
   field,
   value,
   onChange,
+  customFontNames,
 }: {
   field: TEField
   value: string
   onChange: (v: string) => void
+  customFontNames: string[]
 }) {
   const t = field.input_type
   if (t === 'color') return <ColorControl value={value} onChange={onChange} />
   if (t === 'number') return <NumberControl value={value} onChange={onChange} options={field.options} />
   if (t === 'slider') return <SliderControl value={value} onChange={onChange} options={field.options} />
-  if (t === 'select') return <SelectControl value={value} onChange={onChange} options={field.options} />
+  if (t === 'select') {
+    const choices = field.options?.choices ?? []
+    const options =
+      isFontFamilySelect(field) && customFontNames.length
+        ? { ...field.options, choices: [...choices, ...customFontNames.filter((n) => !choices.includes(n))] }
+        : field.options
+    return <SelectControl value={value} onChange={onChange} options={options} />
+  }
   if (t === 'toggle') return <ToggleControl value={value} onChange={onChange} />
   if (t === 'radio') return <RadioControl value={value} onChange={onChange} options={field.options} />
   if (t === 'textarea') return <TextareaControl value={value} onChange={onChange} />
@@ -464,6 +503,10 @@ function FieldControl({
   if (t === 'file') return <BrandingFileControl value={value} onChange={onChange} />
   if (t === 'fonts') return <FontsEditorControl value={value} onChange={onChange} />
   if (t === 'imglist') return <ImageClassesEditorControl value={value} onChange={onChange} />
+  if (t === 'typo_table') {
+    const choices = [...(field.options?.choices ?? []), ...customFontNames]
+    return <TypographyTableControl value={value} onChange={onChange} choices={choices} />
+  }
   // text, password → text input as baseline
   return <TextControl value={value} onChange={onChange} />
 }
@@ -505,6 +548,13 @@ function TemplateEngineInner() {
   const qc = useQueryClient()
 
   // ── UI prefs (localStorage only) ──────────────────────────────────────────
+  // Three-step flow, persisted like everything else here — a refresh must land
+  // back where you were, not reset to step 1: 1) pick a top-level platform
+  // card, 2) pick a sub-section card within it, 3) the existing full editor
+  // for whichever platform that sub-section edits.
+  const [topPlatform, setTopPlatformState] = useState<string | null>(() => lsGet(LS_TOP_PLATFORM, '') || null)
+  const [subLabel, setSubLabelState] = useState<string | null>(() => lsGet(LS_SUB_LABEL, '') || null)
+  const [entered, setEnteredState] = useState(() => lsGet(LS_ENTERED, '') === 'true')
   const [platform, setPlatformState] = useState(() => lsGet(LS_PLATFORM, 'webapp'))
   const [activePane, setActivePaneState] = useState(() => lsGet(LS_PANE, ''))
   const [search, setSearch] = useState('')
@@ -514,6 +564,18 @@ function TemplateEngineInner() {
   // Which sections are open (default: all open)
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({})
 
+  const setTopPlatform = (p: string | null) => {
+    setTopPlatformState(p)
+    lsSet(LS_TOP_PLATFORM, p ?? '')
+  }
+  const setSubLabel = (s: string | null) => {
+    setSubLabelState(s)
+    lsSet(LS_SUB_LABEL, s ?? '')
+  }
+  const setEntered = (v: boolean) => {
+    setEnteredState(v)
+    lsSet(LS_ENTERED, String(v))
+  }
   const setPlatform = (p: string) => {
     setPlatformState(p)
     lsSet(LS_PLATFORM, p)
@@ -646,10 +708,6 @@ function TemplateEngineInner() {
     [localValues, savedValues, platform],
   )
 
-  const isPlatformDirty = useCallback(() => {
-    return panes.some((p) => isDirtyPane(p.id)) || isThemeDirty(platform)
-  }, [panes, isDirtyPane, isThemeDirty, platform])
-
   // Read inside mutation callbacks via ref, not the closed-over `localValues`
   // — useMutation's onSuccess otherwise risks acting on the render's snapshot
   // from when the mutation was *defined*, not the latest edits made while the
@@ -755,6 +813,17 @@ function TemplateEngineInner() {
   const activePaneIsDirty = isDirtyPane(activePane)
   const activeThemeIsDirty = isThemeDirty(platform)
 
+  // Names from the pane's "Custom Fonts" repeater (if any), live-edited value
+  // included — these get appended to every Font Family select's choices below.
+  const customFontNames = useMemo(() => {
+    const fontsField = activePaneData?.groups.flatMap((g) => g.fields).find((f) => f.input_type === 'fonts')
+    if (!fontsField) return []
+    const raw = activePaneValues[fontsField.id] ?? fontsField.value
+    return parseFontRows(raw)
+      .map((r) => r.name.trim())
+      .filter(Boolean)
+  }, [activePaneData, activePaneValues])
+
   const handleSave = async () => {
     try {
       if (activePaneIsDirty) await saveMutation.mutateAsync({ paneId: activePane, platform })
@@ -829,6 +898,76 @@ function TemplateEngineInner() {
   const isSaving = saveMutation.isPending || activeThemeMutation.isPending
   const isResetting = resetMutation.isPending
 
+  if (!topPlatform) {
+    return (
+      <div
+        className="-m-6 flex flex-col items-center justify-center gap-10 bg-muted/30"
+        data-testid="template-engine-landing"
+        style={{ height: 'calc(100dvh - 4rem)' }}
+      >
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Template Engine</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Choose a platform to configure</p>
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-4">
+          {LANDING_PLATFORMS.map((p) => (
+            <button
+              key={p.id}
+              data-testid={`landing-card-${p.id}`}
+              onClick={() => setTopPlatform(p.id)}
+              className="flex w-40 flex-col items-center gap-2 rounded-xl border border-border bg-card p-6 text-center transition-colors hover:border-primary hover:bg-secondary"
+            >
+              <span className="text-4xl">{p.icon}</span>
+              <span className="text-sm font-semibold">{p.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (!entered) {
+    const subtabs = LANDING_SUBTABS[topPlatform] ?? []
+    return (
+      <div
+        className="-m-6 flex flex-col items-center justify-center gap-10 bg-muted/30"
+        data-testid="template-engine-sublanding"
+        style={{ height: 'calc(100dvh - 4rem)' }}
+      >
+        <div className="text-center">
+          <button
+            data-testid="landing-back"
+            onClick={() => setTopPlatform(null)}
+            className="mb-3 text-sm text-muted-foreground hover:text-foreground"
+          >
+            ← Back
+          </button>
+          <h1 className="text-2xl font-bold">
+            {LANDING_PLATFORMS.find((p) => p.id === topPlatform)?.label}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">Choose a section to configure</p>
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-4">
+          {subtabs.map((s) => (
+            <button
+              key={s.key}
+              data-testid={`landing-subcard-${s.key}`}
+              onClick={() => {
+                setPlatform(s.platformId)
+                setSubLabel(s.label)
+                setEntered(true)
+              }}
+              className="flex w-40 flex-col items-center gap-2 rounded-xl border border-border bg-card p-6 text-center transition-colors hover:border-primary hover:bg-secondary"
+            >
+              <span className="text-4xl">{s.icon}</span>
+              <span className="text-sm font-semibold">{s.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div
       className="-m-6 flex flex-col overflow-hidden bg-muted/30"
@@ -845,37 +984,35 @@ function TemplateEngineInner() {
         </span>
       </div>
 
-      {/* ── Platform bar ─────────────────────────────────────────────────── */}
+      {/* ── Breadcrumb — back out of the 3-step platform/section flow ───────── */}
       <div
-        className="flex flex-shrink-0 flex-wrap items-center justify-center gap-1 border-b bg-sidebar px-4 py-2"
-        data-testid="platform-bar"
+        className="flex flex-shrink-0 items-center gap-1.5 border-b bg-sidebar px-4 py-2 text-sm"
+        data-testid="breadcrumb"
       >
-        {PLATFORMS.map((p) => {
-          const dirty = p.id === platform && isPlatformDirty()
-          return (
-            <button
-              key={p.id}
-              data-testid={`platform-btn-${p.id}`}
-              onClick={() => setPlatform(p.id)}
-              className={cn(
-                'inline-flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-sm font-semibold transition-colors',
-                p.id === platform
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
-              )}
-            >
-              {p.label}
-              {dirty && (
-                <span
-                  className={cn(
-                    'h-1.5 w-1.5 rounded-full',
-                    p.id === platform ? 'bg-white' : 'bg-amber-400',
-                  )}
-                />
-              )}
-            </button>
-          )
-        })}
+        <button
+          data-testid="breadcrumb-root"
+          onClick={() => {
+            setTopPlatform(null)
+            setEntered(false)
+          }}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          Template Engine
+        </button>
+        <span className="text-muted-foreground">/</span>
+        <button
+          data-testid="breadcrumb-platform"
+          onClick={() => setEntered(false)}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          {LANDING_PLATFORMS.find((p) => p.id === topPlatform)?.label ?? topPlatform}
+        </button>
+        {subLabel && (
+          <>
+            <span className="text-muted-foreground">/</span>
+            <span className="font-medium text-foreground">{subLabel}</span>
+          </>
+        )}
       </div>
 
       {/* ── Active theme bar ─────────────────────────────────────────────── */}
@@ -1079,32 +1216,41 @@ function TemplateEngineInner() {
                   </button>
                   {isSectionOpen(sectionKey) && (
                     <div className="overflow-hidden rounded-lg border bg-card">
-                      {group.fields.map((field, fi) => (
-                        <div
-                          key={field.id}
-                          className={cn(
-                            'grid grid-cols-[minmax(200px,340px)_1fr] items-center gap-3 px-5 py-3',
-                            fi < group.fields.length - 1 ? 'border-b' : '',
-                          )}
-                          data-testid={`field-row-${field.id}`}
-                        >
-                          <div>
-                            <div className="text-sm font-medium">{field.field_name}</div>
-                            {field.alt_text && (
-                              <div className="mt-0.5 font-mono text-[11px] text-muted-foreground">
-                                {field.alt_text}
+                      {group.fields.map((field, fi) => {
+                        // The Typography Scale table is self-labeling (column
+                        // headers + row names) — the generic field_name/alt_text
+                        // label column would just repeat the group name above it.
+                        const isTable = field.input_type === 'typo_table'
+                        return (
+                          <div
+                            key={field.id}
+                            className={cn(
+                              isTable ? 'p-3' : 'grid grid-cols-[minmax(200px,340px)_1fr] items-center gap-3 px-5 py-3',
+                              fi < group.fields.length - 1 ? 'border-b' : '',
+                            )}
+                            data-testid={`field-row-${field.id}`}
+                          >
+                            {!isTable && (
+                              <div>
+                                <div className="text-sm font-medium">{field.field_name}</div>
+                                {field.alt_text && (
+                                  <div className="mt-0.5 font-mono text-[11px] text-muted-foreground">
+                                    {field.alt_text}
+                                  </div>
+                                )}
                               </div>
                             )}
+                            <div className={isTable ? '' : 'flex flex-wrap items-center justify-end gap-2'}>
+                              <FieldControl
+                                field={field}
+                                value={activePaneValues[field.id] ?? field.value}
+                                onChange={(v) => handleFieldChange(activePane, field.id, v)}
+                                customFontNames={customFontNames}
+                              />
+                            </div>
                           </div>
-                          <div className="flex flex-wrap items-center justify-end gap-2">
-                            <FieldControl
-                              field={field}
-                              value={activePaneValues[field.id] ?? field.value}
-                              onChange={(v) => handleFieldChange(activePane, field.id, v)}
-                            />
-                          </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   )}
                 </div>

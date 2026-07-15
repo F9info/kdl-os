@@ -700,7 +700,10 @@ export function NavPreview({ pane, values }: { pane: TEPaneLite; values: Values 
   const hov = fieldValue(pane, 'Menu Colors', 'Menu Hover Color', values) || '#323236'
   const act = fieldValue(pane, 'Menu Colors', 'Active Menu Color', values) || '#4f8ef7'
   const actBg = fieldValue(pane, 'Menu Colors', 'Active Background', values) || '#1f3a63'
-  const fs = px(fieldValue(pane, 'Sidebar & Menu', 'Menu Font Size', values)) || '13px'
+  // Menu font size now comes from Typography Scale's "Navigation" row (single
+  // source of truth) rather than this pane's own field — cross-pane data isn't
+  // available to this preview, so it just uses the shared default.
+  const fs = '13px'
   const ics = px(fieldValue(pane, 'Sidebar & Menu', 'Menu Icon Size', values)) || '18px'
 
   const item = (ic: string, label: string, extra: CSSProperties): ReactNode => (

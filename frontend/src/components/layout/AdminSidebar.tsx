@@ -164,17 +164,14 @@ export function AdminSidebar() {
         sidebarOpen ? '' : 'w-16'
       )}
       // Expanded width driven by the Template Engine's Layout > Sidebar Width
-      // (Desktop) token when the runtime provider has injected it — the
-      // compiled token is a bare number (its "px" unit is display-only
-      // metadata in the editor), so it's multiplied by 1px via calc() rather
-      // than used directly; 256 is the w-64 (16rem) fallback.
-      style={
-        sidebarOpen
-          ? { width: 'calc(var(--layout_desktop_structure_sidebar_width, 256) * 1px)' }
-          : undefined
-      }
+      // token — the device-neutral, unit-suffixed alias from te-layout.css,
+      // self-selecting per viewport via the @media blocks compileTokens emits
+      // (KDL-209 contract; the old device-prefixed raw var is legacy).
+      style={sidebarOpen ? { width: 'var(--te-layout-sidebar-width)' } : undefined}
     >
-      <div className="flex h-16 items-center border-b px-4">
+      {/* te-header keeps the logo row the same height as the TopBar when
+          Layout > Header Height changes. */}
+      <div className="te-header flex items-center border-b px-4">
         {logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -198,7 +195,7 @@ export function AdminSidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                'flex items-center gap-3 rounded-md px-3 py-2 transition-colors',
                 active
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
@@ -220,7 +217,7 @@ export function AdminSidebar() {
               key={item.path}
               href={item.path}
               className={cn(
-                'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                'flex items-center gap-3 rounded-md px-3 py-2 transition-colors',
                 active
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
@@ -243,7 +240,7 @@ export function AdminSidebar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                  'flex items-center gap-3 rounded-md px-3 py-2 transition-colors',
                   active
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
@@ -267,7 +264,7 @@ export function AdminSidebar() {
                 onClick={() => toggleGroup(group.label)}
                 aria-expanded={open}
                 className={cn(
-                  'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                  'flex w-full items-center gap-3 rounded-md px-3 py-2 transition-colors',
                   hasActive
                     ? 'text-foreground font-medium'
                     : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
@@ -299,7 +296,7 @@ export function AdminSidebar() {
                         key={child.href}
                         href={child.href}
                         className={cn(
-                          'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                          'flex items-center gap-3 rounded-md px-3 py-2 transition-colors',
                           active
                             ? 'bg-primary text-primary-foreground'
                             : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'

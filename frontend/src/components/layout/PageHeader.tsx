@@ -11,17 +11,10 @@ export function PageHeader({ title, breadcrumbs, action }: PageHeaderProps) {
   return (
     <div className="flex items-center justify-between mb-6">
       <div className="space-y-1">
-        {/* font-size driven by the Template Engine's Typography > H1 (Desktop)
-            token when the runtime provider has injected it — the compiled
-            token is a bare number (its "px" unit is display-only metadata in
-            the editor), so it's multiplied by 1px via calc() rather than
-            used directly; 24 is the text-2xl (1.5rem) fallback. */}
-        <h1
-          className="font-semibold tracking-tight"
-          style={{ fontSize: 'calc(var(--typography_desktop_font_size_h1_title, 24) * 1px)' }}
-        >
-          {title}
-        </h1>
+        {/* Size/family/weight come from the Template Engine's Typography
+            Scale H1 tokens via the bare h1 rule in te-typography.css —
+            no size or weight utilities here so the tokens stay in charge. */}
+        <h1>{title}</h1>
         {breadcrumbs && breadcrumbs.length > 0 && (
           <nav className="flex items-center gap-1 text-sm text-muted-foreground">
             {breadcrumbs.map((crumb, i) => (

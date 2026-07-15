@@ -12,7 +12,7 @@ export function PermissionDenied({ message }: PermissionDeniedProps) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center px-4">
       <ShieldAlert className="h-16 w-16 text-destructive opacity-80" />
-      <h1 className="text-2xl font-bold">Access Denied</h1>
+      <h1>Access Denied</h1>
       <p className="text-muted-foreground max-w-sm">
         {message ?? "You don't have permission to access this page. Contact your administrator if you believe this is an error."}
       </p>

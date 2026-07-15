@@ -67,11 +67,15 @@ async function fetchTokens(platform: string, expectOk = true) {
 
 // slug {platform}.{rest...} → css var --{rest joined by _, non-alnum → _}
 function cssVarFromSlug(slug: string): string {
+  // KDL-209 contract: compileTokens strips theme tags from the var name and
+  // scopes the declaration under a theme selector block instead.
+  const THEME_TAGS = new Set(['dark', 'light', 'focus'])
   return (
     '--' +
     slug
       .split('.')
       .slice(1)
+      .filter((s) => !THEME_TAGS.has(s))
       .map((s) => s.replace(/[^a-z0-9]/gi, '_').toLowerCase())
       .join('_')
   )
@@ -141,13 +145,20 @@ test('Gate 1 — admin UI edit → Save → /tokens reflects new value (css + js
   await loginUi(page)
   await page.goto('/admin/template-engine')
 
+  // Step 1: platform-picker landing screen — pick Webapp to enter the editor.
+  await page.getByTestId('landing-card-webapp').click()
+  await page.getByTestId('landing-subcard-webapp-frontend').click()
+
   // Pane sidebar must render from the REAL API payload.
   await expect(
     page.getByTestId(`pane-btn-${targetPaneId}`),
     'pane sidebar did not render from the real /schema payload',
   ).toBeVisible({ timeout: 15_000 })
-  await page.getByTestId(`platform-btn-webapp`).click()
   await page.getByTestId(`pane-btn-${targetPaneId}`).click()
+
+  // The target field is dark-tagged; the pane's "Editing values for" mode
+  // tabs only mount the selected theme's rows, so switch to Dark first.
+  await page.getByTestId('mode-tab-dark').click()
 
   const fieldRow = page.getByTestId(`field-row-${targetFieldId}`)
   await expect(fieldRow, `field row ${targetFieldSlug} not rendered`).toBeVisible({ timeout: 10_000 })
@@ -192,10 +203,10 @@ test('Gate 2 — disable → routes 404 → re-enable → schema/tokens identica
   const tokensRes = await fetchTokens('webapp', false)
   expect(tokensRes.status(), 'public tokens must 404 while disabled').toBe(404)
 
-  // UI: module page must not render the editor while disabled.
+  // UI: module page must not render the landing screen while disabled.
   await loginUi(page)
   await page.goto('/admin/template-engine')
-  await expect(page.getByTestId('platform-bar')).not.toBeVisible({ timeout: 10_000 })
+  await expect(page.getByTestId('template-engine-landing')).not.toBeVisible({ timeout: 10_000 })
 
   // Re-enable.
   const en = await api.post(`${API_URL}/modules/template-engine/enable`, { headers: authHeaders() })
@@ -209,5 +220,92 @@ test('Gate 2 — disable → routes 404 → re-enable → schema/tokens identica
 
   // UI back.
   await page.goto('/admin/template-engine')
-  await expect(page.getByTestId('platform-bar')).toBeVisible({ timeout: 15_000 })
+  await page.getByTestId('landing-card-webapp').click()
+  await page.getByTestId('landing-subcard-webapp-frontend').click()
+  await expect(page.getByTestId('template-engine-page')).toBeVisible({ timeout: 15_000 })
+})
+
+// ── Gate 3 (KDL-211) — Typography: edit H1 size + family in the admin UI →
+//    Save → reload → every real <h1> in the app renders with the new values.
+//    The admin app consumes the `webapp_admin` platform's tokens; its desktop
+//    Typography Scale drives :root (no @media), so run at a ≥1440px viewport.
+const TYPO_H1_SIZE = 57 // deliberately absurd so a match can't be a default
+const TYPO_H1_FAMILY = 'Montserrat' // in the schema's base FONTS choice list
+
+test('Gate 3 — typography edit → Save → reload → h1 size/family obey tokens', async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 900 })
+
+  // Locate the desktop Typography Scale field in the REAL webapp_admin schema.
+  const schemaData = await fetchSchema('webapp_admin')
+  const panes: any[] = schemaData.schema ?? schemaData
+  const typoPane = panes.find((p) => p.id === 'typography')
+  expect(typoPane, 'webapp_admin schema has no typography pane').toBeTruthy()
+  // The device tag lives in the group slug suffix (…typography_scale.desktop),
+  // not a `tag` key — see the seeded slugs from schema/index.js sections.
+  let typoField: any
+  for (const group of typoPane.groups ?? []) {
+    if (!String(group.slug ?? '').endsWith('.desktop')) continue
+    typoField = (group.fields ?? []).find((f: any) => f.input_type === 'typo_table')
+    if (typoField) break
+  }
+  expect(typoField, 'no desktop typo_table field in webapp_admin typography pane').toBeTruthy()
+  const originalTypoValue: string = typoField.effective_value ?? typoField.value
+  const originalRows = JSON.parse(originalTypoValue)
+  expect(originalRows[0]?.name, 'first Typography Scale row must be H1').toMatch(/^H1/i)
+
+  try {
+    // UI: landing → Webapp → Admin → Typography pane → desktop tab.
+    await loginUi(page)
+    await page.goto('/admin/template-engine')
+    await page.getByTestId('landing-card-webapp').click()
+    await page.getByTestId('landing-subcard-webapp-admin').click()
+    await page.getByTestId('pane-btn-typography').click()
+    await page.getByTestId('device-tab-desktop').click()
+
+    const fieldRow = page.getByTestId(`field-row-${typoField.id}`)
+    await expect(fieldRow, 'Typography Scale field row not rendered').toBeVisible({ timeout: 10_000 })
+
+    // Row 0 = H1: first number input is Size, the 2nd select is Family
+    // (1st is the size unit) — see TypographyTableControl column order.
+    const h1Row = fieldRow.locator('tbody tr').first()
+    await h1Row.locator('input[type="number"]').first().fill(String(TYPO_H1_SIZE))
+    await h1Row.locator('select').nth(1).selectOption(TYPO_H1_FAMILY)
+
+    const saveBtn = page.getByTestId('btn-save')
+    await expect(saveBtn, 'Save did not enable after typography edit').toBeEnabled()
+    const [saveResponse] = await Promise.all([
+      page.waitForResponse((r) => r.url().includes('/template-engine/values') && r.request().method() === 'POST'),
+      saveBtn.click(),
+    ])
+    expect(saveResponse.status(), `POST /values returned ${saveResponse.status()}`).toBe(200)
+
+    // Tokens endpoint must emit the per-row vars with the new values.
+    const tokens = await fetchTokens('webapp_admin')
+    expect(tokens.css).toContain(`_h1_title_size: ${TYPO_H1_SIZE}px`)
+    expect(tokens.css).toContain(`_h1_title_family: ${TYPO_H1_FAMILY}`)
+
+    // Hard reload onto a page with a real <h1> — computed style must obey.
+    await page.goto('/admin/dashboard')
+    // Provider injected compiled tokens (<style> is never "visible" — wait
+    // for attachment, not visibility).
+    await page.waitForSelector('#te-tokens', { state: 'attached' })
+    const h1 = page.locator('h1').first()
+    await expect(h1).toBeVisible({ timeout: 10_000 })
+    await expect
+      .poll(async () => h1.evaluate((el) => getComputedStyle(el).fontSize), {
+        message: 'h1 font-size did not follow the Typography Scale token',
+      })
+      .toBe(`${TYPO_H1_SIZE}px`)
+    expect(await h1.evaluate((el) => getComputedStyle(el).fontFamily)).toContain(TYPO_H1_FAMILY)
+  } finally {
+    // Restore the original Typography Scale rows.
+    await api.post(`${API_URL}/template-engine/values`, {
+      headers: authHeaders(),
+      data: {
+        platform: 'webapp_admin',
+        type_id: typoPane.type_id,
+        values: [{ field_id: typoField.id, value: originalTypoValue }],
+      },
+    })
+  }
 })

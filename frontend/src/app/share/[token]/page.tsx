@@ -153,7 +153,7 @@ export default function SharePage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
       <div className="w-full max-w-md bg-background border rounded-lg shadow-sm p-6 space-y-4">
-        <h1 className="text-lg font-semibold">Shared file</h1>
+        <h1>Shared file</h1>
 
         {status === 'loading' && (
           <p className="text-sm text-muted-foreground">Loading…</p>
