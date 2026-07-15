@@ -32,6 +32,7 @@ import { usePermissions } from '@/hooks/usePermissions'
 import { useModules } from '@/hooks/useModules'
 import api from '@/lib/axios'
 import { cn } from '@/lib/utils'
+import { AppImage } from '@/components/shared/AppImage'
 import type { Type, SettingField } from '@/types/models.types'
 
 const MODULE_ICON_MAP: Record<string, React.ElementType> = {
@@ -173,11 +174,15 @@ export function AdminSidebar() {
           Layout > Header Height changes. */}
       <div className="te-header flex items-center border-b px-4">
         {logoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          // Expanded: logo_image class sizes the logo from the Template
+          // Engine's Images pane. Collapsed: the 64px rail is fixed chrome, so
+          // an inline style (beats the class) pins the logo to fit it.
+          <AppImage
+            size="logo"
             src={logoUrl}
             alt="Logo"
-            className={cn('object-contain', sidebarOpen ? 'h-10 max-w-[180px]' : 'h-8 w-8')}
+            className="max-w-full"
+            style={sidebarOpen ? undefined : { width: '2rem', height: '2rem' }}
           />
         ) : sidebarOpen ? (
           <span className="font-bold text-lg tracking-tight">KDL Admin</span>

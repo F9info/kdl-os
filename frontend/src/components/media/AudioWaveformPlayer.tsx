@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select'
 import { toast } from '@/hooks/use-toast'
 import api from '@/lib/axios'
+import { AppImage } from '@/components/shared/AppImage'
 
 interface Props {
   mediaId: string
@@ -148,8 +149,7 @@ export function AudioWaveformPlayer({ mediaId, mediaSrc }: Props) {
           </p>
         )}
         {waveformUrl !== null && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={waveformUrl} alt="Audio waveform" className="w-full rounded border" />
+          <AppImage size="content" src={waveformUrl} alt="Audio waveform" className="max-w-full rounded border" />
         )}
         {peaks.length > 0 && (
           <svg

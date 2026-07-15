@@ -23,6 +23,7 @@ import { useParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { formatBytes } from '@/lib/utils'
+import { AppImage } from '@/components/shared/AppImage'
 
 interface SharedMediaItem {
   id: string
@@ -51,8 +52,7 @@ function MediaPreview({ item }: { item: SharedMediaItem }) {
   return (
     <div className="space-y-3">
       {isImage && item.url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={item.url} alt={item.original_name} className="w-full rounded border" />
+        <AppImage size="content" src={item.url} alt={item.original_name} className="max-w-full rounded border" />
       )}
       {isVideo && item.url && (
         // eslint-disable-next-line jsx-a11y/media-has-caption
