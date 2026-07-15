@@ -31,7 +31,14 @@ api.interceptors.response.use(
     const axiosError = error as { config: AxiosRequestConfig & { _retry?: boolean }; response?: { status: number } }
     const original = axiosError.config
 
-    if (axiosError.response?.status === 401 && !original._retry) {
+    // A 401 from an auth endpoint means the credentials themselves failed
+    // (wrong password) or the session cannot be refreshed — not an expired
+    // access token that a silent refresh could renew. Let these reject so the
+    // caller (e.g. the login form) can surface the error, instead of firing a
+    // refresh-and-redirect that full-page-reloads and wipes the error state.
+    const isAuthEndpoint = /\/auth\/(login|refresh)$/.test(original?.url ?? '')
+
+    if (axiosError.response?.status === 401 && !original._retry && !isAuthEndpoint) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failQueue.push({ resolve, reject })
