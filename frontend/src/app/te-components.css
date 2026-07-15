@@ -1,0 +1,285 @@
+/*
+ * Module 15 Template Engine — Component consumption (KDL-213).
+ *
+ * Wires the shadcn/ui primitives (button/card/table/alert/dialog/input) to
+ * the compiled Template Engine tokens per the KDL-209 contract (issue plan
+ * document §3): theme-scoped colors land in :root (dark) and
+ * [data-theme="light"], device-tagged Button Sizes arrive as device-NEUTRAL
+ * unit-suffixed aliases inside per-device @media blocks, and untagged numeric
+ * fields (cards/alerts/popup radius+padding, table row height, forms sizes)
+ * are unitless — consumed via calc(var(x) * 1px).
+ *
+ * Everything lives in the `te-components` cascade layer so ANY unlayered
+ * Tailwind utility — including call-site overrides like `rounded-full` or
+ * `h-7` passed through cn() — still beats these rules. The primitives had
+ * their replaced base utilities removed instead of fighting the cascade.
+ * The var() fallbacks mirror the pre-token static design so the app renders
+ * correctly before the provider's first fetch.
+ *
+ * Enum-valued fields (Card Style/Shadow, Table Border Style, Alert Border
+ * Style, Overlay Blur) are data values mapped with `@container style(...)`
+ * queries — same pattern and caveats as te-layout.css: the vars inherit from
+ * :root so every element style-queries its parent successfully; browsers
+ * without custom-property style queries keep the defaults.
+ *
+ * NOT wired here (out of the color/radius/padding/height/shadow scope of
+ * KDL-213): button Loading Style, card Header/Footer/Hover motion enums,
+ * table Tools enums, alert Behavior (toast) enums, popup Width enum (the
+ * app-level Modal `size` prop remains the width API) and popup Behavior.
+ * Primary button BACKGROUND intentionally stays on Tailwind `bg-primary`
+ * (branding Primary Color) — the KDL-197 hard gate: changing Primary Color
+ * must keep recoloring primary buttons/links/active-nav.
+ */
+
+@layer te-components {
+  /* ── Buttons ─────────────────────────────────────────────────────────── */
+  .te-btn {
+    font-family: var(--buttons_button_defaults_button_font, inherit);
+    font-weight: var(--buttons_button_defaults_font_weight, 500);
+    transition: var(
+      --buttons_button_defaults_transition,
+      color 0.15s ease,
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      box-shadow 0.15s ease
+    );
+    /* Neutral alias from the per-device @media blocks (unit-suffixed). */
+    border-radius: var(--buttons_button_sizes_border_radius, calc(var(--radius) - 2px));
+  }
+  /* Sizing applies to the default cva size only — sm/lg/icon keep their
+     proportional Tailwind sizes (radius/font/colors still token-driven). */
+  .te-btn-size-default {
+    height: var(--buttons_button_sizes_height, 2.5rem);
+    padding: var(--buttons_button_sizes_padding, 0.5rem 1rem);
+    font-size: var(--buttons_button_sizes_font_size, 0.875rem);
+  }
+
+  /* Background stays `bg-primary` (branding) — see header comment. */
+  .te-btn-primary {
+    border: var(--buttons_primary_button_border, none);
+    box-shadow: calc(var(--buttons_primary_button_shadow_x, 0) * 1px)
+      calc(var(--buttons_primary_button_shadow_y, 0) * 1px)
+      calc(var(--buttons_primary_button_shadow_blur, 0) * 1px)
+      calc(var(--buttons_primary_button_shadow_spread, 0) * 1px)
+      color-mix(
+        in srgb,
+        var(--buttons_primary_button_shadow_color, transparent)
+          calc(var(--buttons_primary_button_shadow_opacity, 0) * 1%),
+        transparent
+      );
+  }
+  .te-btn-primary:hover {
+    background-color: var(
+      --buttons_primary_button_hover_color,
+      color-mix(in srgb, var(--branding_brand_colors_primary_color, hsl(var(--primary))) 90%, transparent)
+    );
+  }
+
+  .te-btn-secondary {
+    background-color: var(--buttons_secondary_button_background_color, hsl(var(--secondary)));
+    color: var(--buttons_secondary_button_text_color, hsl(var(--secondary-foreground)));
+    border: var(--buttons_secondary_button_border, none);
+    box-shadow: calc(var(--buttons_secondary_button_shadow_x, 0) * 1px)
+      calc(var(--buttons_secondary_button_shadow_y, 0) * 1px)
+      calc(var(--buttons_secondary_button_shadow_blur, 0) * 1px)
+      calc(var(--buttons_secondary_button_shadow_spread, 0) * 1px)
+      color-mix(
+        in srgb,
+        var(--buttons_secondary_button_shadow_color, transparent)
+          calc(var(--buttons_secondary_button_shadow_opacity, 0) * 1%),
+        transparent
+      );
+  }
+  .te-btn-secondary:hover {
+    background-color: var(
+      --buttons_secondary_button_hover_color,
+      color-mix(in srgb, hsl(var(--secondary)) 80%, transparent)
+    );
+  }
+
+  .te-btn-outline {
+    background-color: var(--buttons_outline_button_background_color, hsl(var(--background)));
+    color: var(--buttons_outline_button_text_color, hsl(var(--foreground)));
+    border: var(--buttons_outline_button_border, 1px solid hsl(var(--input)));
+  }
+  .te-btn-outline:hover {
+    background-color: var(--buttons_outline_button_hover_color, hsl(var(--accent)));
+  }
+
+  /* ── Cards ───────────────────────────────────────────────────────────── */
+  .te-card {
+    background-color: var(
+      --cards_card_colors_background_color,
+      var(--branding_surfaces_card_color, hsl(var(--card)))
+    );
+    /* Transparent keeps geometry identical across Flat/Elevated/Bordered. */
+    border: 1px solid transparent;
+    border-radius: calc(var(--cards_surface_border_radius, 8) * 1px);
+    box-shadow: var(--te-card-shadow, 0 1px 2px 0 rgb(0 0 0 / 0.05));
+  }
+  .te-card-header {
+    padding: calc(var(--cards_surface_padding, 24) * 1px);
+  }
+  .te-card-content,
+  .te-card-footer {
+    padding: 0 calc(var(--cards_surface_padding, 24) * 1px)
+      calc(var(--cards_surface_padding, 24) * 1px);
+  }
+
+  /* ── Tables ──────────────────────────────────────────────────────────── */
+  .te-table-header {
+    background-color: var(--tables_table_colors_header_background, transparent);
+  }
+  .te-table-head {
+    color: var(--tables_table_colors_header_text_color, hsl(var(--muted-foreground)));
+  }
+  .te-table-row {
+    border-bottom: var(--te-table-border-width, 1px) solid
+      var(--tables_table_colors_row_border_color, hsl(var(--border)));
+  }
+  tbody .te-table-row {
+    height: calc(var(--tables_rows_borders_row_height, 48) * 1px);
+    color: var(--tables_table_colors_row_text_color, hsl(var(--foreground)));
+  }
+  tbody .te-table-row:nth-child(even) {
+    background-color: var(--tables_table_colors_alternate_row_color, transparent);
+  }
+
+  /* ── Alerts ──────────────────────────────────────────────────────────── */
+  .te-alert {
+    border: var(--te-alert-border-width, 1px) solid hsl(var(--border));
+    border-radius: calc(var(--alerts_shape_border_radius, 8) * 1px);
+    padding: calc(var(--alerts_shape_padding, 16) * 1px);
+  }
+  .te-alert-success {
+    background-color: var(--alerts_success_alert_background_color, transparent);
+    color: var(--alerts_success_alert_text_color, inherit);
+    border-color: var(--alerts_success_alert_border_color, hsl(var(--border)));
+  }
+  .te-alert-success > svg {
+    color: var(--alerts_success_alert_icon_color, currentColor);
+  }
+  .te-alert-warning {
+    background-color: var(--alerts_warning_alert_background_color, transparent);
+    color: var(--alerts_warning_alert_text_color, inherit);
+    border-color: var(--alerts_warning_alert_border_color, hsl(var(--border)));
+  }
+  .te-alert-warning > svg {
+    color: var(--alerts_warning_alert_icon_color, currentColor);
+  }
+  .te-alert-error {
+    background-color: var(--alerts_error_alert_background_color, transparent);
+    color: var(--alerts_error_alert_text_color, hsl(var(--destructive)));
+    border-color: var(--alerts_error_alert_border_color, hsl(var(--destructive) / 0.5));
+  }
+  .te-alert-error > svg {
+    color: var(--alerts_error_alert_icon_color, hsl(var(--destructive)));
+  }
+  .te-alert-info {
+    background-color: var(--alerts_info_alert_background_color, transparent);
+    color: var(--alerts_info_alert_text_color, inherit);
+    border-color: var(--alerts_info_alert_border_color, hsl(var(--border)));
+  }
+  .te-alert-info > svg {
+    color: var(--alerts_info_alert_icon_color, currentColor);
+  }
+
+  /* ── Popup / Modal (ui/dialog) ───────────────────────────────────────── */
+  .te-popup {
+    background-color: var(--popup_popup_colors_background_color, hsl(var(--background)));
+    color: var(--popup_popup_colors_text_color, hsl(var(--foreground)));
+    border: 1px solid var(--popup_popup_colors_border_color, hsl(var(--border)));
+    border-radius: calc(var(--popup_size_shape_border_radius, 8) * 1px);
+    padding: calc(var(--popup_size_shape_padding, 24) * 1px);
+    box-shadow: var(
+      --popup_size_shape_box_shadow,
+      0 10px 15px -3px rgb(0 0 0 / 0.1),
+      0 4px 6px -4px rgb(0 0 0 / 0.1)
+    );
+  }
+  .te-popup-overlay {
+    background-color: color-mix(
+      in srgb,
+      var(--popup_popup_colors_overlay_color, #000000)
+        calc(var(--popup_overlay_overlay_opacity, 80) * 1%),
+      transparent
+    );
+  }
+  .te-popup-close {
+    color: var(--popup_popup_colors_close_icon_color, currentColor);
+  }
+
+  /* ── Inputs (Forms pane, Full Border style — the app's input shape) ──── */
+  .te-input {
+    height: calc(var(--forms_full_border_settings_height, 40) * 1px);
+    padding: var(--forms_full_border_settings_padding, 0.5rem 0.75rem);
+    font-size: calc(var(--forms_full_border_settings_font_size, 14) * 1px);
+    font-family: var(--forms_full_border_settings_font_family, inherit);
+    border: solid var(--forms_full_border_colors_border_color, hsl(var(--input)));
+    border-width: calc(var(--forms_full_border_settings_border_width, 1) * 1px);
+    border-radius: calc(var(--forms_full_border_settings_radius, 6) * 1px);
+    background-color: var(--forms_full_border_colors_background_color, hsl(var(--background)));
+    color: var(--forms_full_border_colors_text_color, inherit);
+  }
+  .te-input::placeholder {
+    color: var(--forms_full_border_colors_placeholder_color, hsl(var(--muted-foreground)));
+  }
+  .te-input:focus-visible {
+    border-color: var(
+      --forms_full_border_colors_focus_color,
+      var(--forms_full_border_colors_border_color, hsl(var(--input)))
+    );
+  }
+
+  /* ── Data-value enum mappings (@container style queries) ─────────────── */
+
+  /* Cards: Shadow ladder (None/Soft/Medium/Hard — ComponentPreviews scale) +
+     Card Style (Flat kills the shadow, Bordered shows the border color). */
+  :root {
+    --te-card-shadow: 0 2px 10px rgba(0, 0, 0, 0.15); /* Soft (seed) */
+  }
+  @container style(--cards_surface_shadow: None) {
+    body { --te-card-shadow: none; }
+  }
+  @container style(--cards_surface_shadow: Soft) {
+    body { --te-card-shadow: 0 2px 10px rgba(0, 0, 0, 0.15); }
+  }
+  @container style(--cards_surface_shadow: Medium) {
+    body { --te-card-shadow: 0 6px 22px rgba(0, 0, 0, 0.25); }
+  }
+  @container style(--cards_surface_shadow: Hard) {
+    body { --te-card-shadow: 0 12px 34px rgba(0, 0, 0, 0.4); }
+  }
+  @container style(--cards_surface_card_style: Flat) {
+    .te-card { box-shadow: none; }
+  }
+  @container style(--cards_surface_card_style: Bordered) {
+    .te-card {
+      border-color: var(--cards_card_colors_border_color, hsl(var(--border)));
+    }
+  }
+
+  /* Tables: Border Style (None / Horizontal / Full grid). */
+  @container style(--tables_rows_borders_border_style: None) {
+    body { --te-table-border-width: 0px; }
+  }
+  @container style(--tables_rows_borders_border_style: Full grid) {
+    .te-table-head:not(:last-child),
+    .te-table-cell:not(:last-child) {
+      border-right: 1px solid var(--tables_table_colors_row_border_color, hsl(var(--border)));
+    }
+  }
+
+  /* Alerts: Border Style (None / Full border / Left accent — seed). */
+  @container style(--alerts_shape_border_style: None) {
+    .te-alert { border-width: 0; }
+  }
+  @container style(--alerts_shape_border_style: Left accent) {
+    .te-alert { border-width: 0 0 0 3px; }
+  }
+
+  /* Popup: Overlay Blur toggle. */
+  @container style(--popup_overlay_overlay_blur: true) {
+    .te-popup-overlay { backdrop-filter: blur(4px); }
+  }
+}

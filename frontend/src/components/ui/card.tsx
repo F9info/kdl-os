@@ -5,13 +5,12 @@ const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElemen
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      // rounded-lg resolves to var(--radius), which te-layout.css points at the
-      // Layout > Border Radius token; the shadow follows Layout > Shadow Level
-      // through the --te-layout-shadow ladder defined there.
-      className={cn(
-        'rounded-lg border bg-card text-card-foreground shadow-[var(--te-layout-shadow,0_1px_2px_0_rgb(0_0_0/0.05))]',
-        className
-      )}
+      // Card chrome (background/border/radius/padding/shadow) follows the
+      // Cards pane tokens via te-card (te-components.css, KDL-213) — the
+      // KDL-209 contract gives the Cards pane, not Layout, authority over
+      // card surfaces. Layout > Border Radius/Shadow Level still drive the
+      // generic --radius/--te-layout-shadow used by non-card surfaces.
+      className={cn('te-card text-card-foreground', className)}
       {...props}
     />
   )
@@ -20,7 +19,7 @@ Card.displayName = 'Card'
 
 const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn('flex flex-col space-y-1.5 p-6', className)} {...props} />
+    <div ref={ref} className={cn('te-card-header flex flex-col space-y-1.5', className)} {...props} />
   )
 )
 CardHeader.displayName = 'CardHeader'
@@ -45,14 +44,14 @@ CardDescription.displayName = 'CardDescription'
 
 const CardContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn('p-6 pt-0', className)} {...props} />
+    <div ref={ref} className={cn('te-card-content', className)} {...props} />
   )
 )
 CardContent.displayName = 'CardContent'
 
 const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn('flex items-center p-6 pt-0', className)} {...props} />
+    <div ref={ref} className={cn('te-card-footer flex items-center', className)} {...props} />
   )
 )
 CardFooter.displayName = 'CardFooter'
