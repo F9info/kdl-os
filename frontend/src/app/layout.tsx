@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import './te-typography.css'
 import './te-layout.css'
+import './te-components.css'
 import { Providers } from './providers'
 
 const inter = Inter({ subsets: ['latin'] })
