@@ -1,3 +1,11 @@
+## 2026-07-15 — KDL-209 TE-CONSUME: device @media scoping + var/class naming contract (Frontend Architect)
+
+- **Commit `b90e9b6`** on `fix/kdl-205-te-preview-integration` (pushed): `compileTokens` wraps each device's tokens in `@media` blocks (desktop ≥1280 / laptop 1024–1279 / tablet 768–1023 / mobile <768; `_h`/`_v` → orientation; TV panel widths) mirroring the `[data-theme]` pattern, and emits **device-neutral unit-suffixed alias vars** (e.g. `--layout_structure_sidebar_width: 240px`) alongside the legacy raw device-prefixed `:root` vars. `?device=X` collapses aliases into `:root`. Also fixed device-tagged imglist classes clobbering each other (last device won everywhere) and `auto` image dims emitting `autopx`.
+- **Contract doc**: full var/class naming contract (all 8 categories + spacing/radius/shadow decision + consumption recipe) lives in the KDL-209 issue `plan` document — Layout/Components children under KDL-208 must code against the neutral alias names there, not raw device-prefixed slugs.
+- **No new generic scale tokens** — per-component radius/shadow fields already exist in `schema/index.js` (decision in plan §4).
+- **Gates**: backend `vitest run src/modules/template-engine/` 77/77; frontend `tests/rtl/regression/template-engine.test.tsx` 9/9 (KDL-197/198/199/201 no regression). `app_settings` untouched.
+- **Note**: working tree also carries uncommitted WIP (Typography Scale `typo_table` schema redesign + `TypographyTableControl.tsx`, page.tsx changes) belonging to sibling TE-CONSUME issues — intentionally NOT committed with KDL-209. Do not discard.
+
 ## 2026-07-14 — KDL-192 sidebar pollution fix: Type/Category/SettingField ownership contract (CEO agent, standing in as Backend Coder)
 
 **Bug:** post-KDL-174/175/176/177/178/191, the Template Engine's 86 seeded panes (Types) all auto-promoted to top-level `AdminSidebar` menu items (`typeLeaves` from unfiltered `GET /types?is_active=true`), flooding "Application Settings" with every `webapp.*|tv.*|android.*|ios.*` pane. Root cause: no way to mark a Type/Category/SettingField as module-private data vs a standalone Application-Settings entry.

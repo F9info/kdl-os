@@ -853,3 +853,6 @@ Follow-up to KDL-150. Two items, both verified against a freshly rebuilt + resee
 - Live UI gate: folder toolbar button opens dialog + creates a folder (headless browser, screenshot-verified).
 
 **Next:** none — both items closed. No open blockers.
+
+## 2026-07-15 — KDL-209 done (Frontend Architect)
+Device @media scoping + neutral alias vars in compileTokens (commit b90e9b6, pushed); var/class naming contract in KDL-209 plan doc. Gates: backend TE suite 77/77, frontend TE regression 9/9. Unblocks KDL-208 Layout/Components children.
