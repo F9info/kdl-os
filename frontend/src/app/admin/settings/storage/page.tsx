@@ -143,6 +143,7 @@ export default function StorageSettingsPage() {
       queryClient.invalidateQueries({ queryKey: ['storage-settings'] })
       toast({ title: 'Storage settings saved' })
       setFormError(null)
+      setForm((prev) => ({ ...prev, accessKey: '', secretKey: '', replaceSecrets: false }))
     },
     onError: (err: unknown) => {
       setFormError(err)
@@ -170,12 +171,17 @@ export default function StorageSettingsPage() {
   const hasExistingSecrets = settings?.isConfigured && settings.provider === currentProvider && hasSecrets
   const showSecretInputs = !hasExistingSecrets || form.replaceSecrets
 
+  function setFormField(key: keyof FormState, value: string) {
+    setForm((prev) => ({ ...prev, [key]: value }))
+    setTestResult(null)
+  }
+
   function buildTestPayload(): Record<string, unknown> {
     const payload: Record<string, unknown> = { provider: currentProvider }
     if (currentProvider !== 'local') {
-      if (form.endpoint) payload.endpoint = form.endpoint
-      if (form.region) payload.region = form.region
-      if (form.bucket) payload.bucket = form.bucket
+      payload.endpoint = form.endpoint || null
+      payload.region = form.region || null
+      payload.bucket = form.bucket || null
       if (showSecretInputs && form.accessKey) payload.accessKey = form.accessKey
       if (showSecretInputs && form.secretKey) payload.secretKey = form.secretKey
     }
@@ -213,8 +219,8 @@ export default function StorageSettingsPage() {
       payload.region = form.region || null
       payload.bucket = form.bucket || null
       if (showSecretInputs) {
-        payload.accessKey = form.accessKey || null
-        payload.secretKey = form.secretKey || null
+        if (form.accessKey || !hasExistingSecrets) payload.accessKey = form.accessKey || null
+        if (form.secretKey || !hasExistingSecrets) payload.secretKey = form.secretKey || null
       }
     }
 
@@ -228,6 +234,24 @@ export default function StorageSettingsPage() {
     if (!currentProvider) {
       setTestError('Select a provider before testing.')
       return
+    }
+    if (currentProvider !== 'local') {
+      for (const f of nonSecretFields.filter((f) => f.required)) {
+        const val = form[f.key as keyof FormState] as string
+        if (!val?.trim()) {
+          setTestError(`${f.label} is required.`)
+          return
+        }
+      }
+      if (showSecretInputs) {
+        for (const f of secretFields.filter((f) => f.required && !hasExistingSecrets)) {
+          const val = form[f.key as keyof FormState] as string
+          if (!val?.trim()) {
+            setTestError(`${f.label} is required.`)
+            return
+          }
+        }
+      }
     }
     setTestResult(null)
     setTestError(null)
@@ -249,12 +273,14 @@ export default function StorageSettingsPage() {
               <Select
                 value={form.provider}
                 onValueChange={(v) => {
+                  const newProvider = v as Provider
+                  const isSaved = settings?.provider === newProvider && settings?.isConfigured
                   setForm((f) => ({
                     ...f,
-                    provider: v as Provider,
-                    endpoint: '',
-                    region: '',
-                    bucket: '',
+                    provider: newProvider,
+                    endpoint: isSaved ? (settings?.endpoint ?? '') : '',
+                    region: isSaved ? (settings?.region ?? '') : '',
+                    bucket: isSaved ? (settings?.bucket ?? '') : '',
                     accessKey: '',
                     secretKey: '',
                     replaceSecrets: false,
@@ -303,9 +329,7 @@ export default function StorageSettingsPage() {
                   >
                     <Input
                       value={form[f.key as keyof FormState] as string}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, [f.key]: e.target.value }))
-                      }
+                      onChange={(e) => setFormField(f.key as keyof FormState, e.target.value)}
                       placeholder={f.placeholder}
                     />
                   </FormField>
@@ -352,9 +376,7 @@ export default function StorageSettingsPage() {
                           <Input
                             type="password"
                             value={form[f.key as keyof FormState] as string}
-                            onChange={(e) =>
-                              setForm((prev) => ({ ...prev, [f.key]: e.target.value }))
-                            }
+                            onChange={(e) => setFormField(f.key as keyof FormState, e.target.value)}
                             autoComplete="new-password"
                           />
                         </FormField>
