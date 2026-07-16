@@ -33,6 +33,11 @@ const ROLES = [
     slug: 'user',
     description: 'Standard user — app-level features only',
   },
+  {
+    name: 'Media Sharer',
+    slug: 'media-sharer',
+    description: 'Can share and approve media assets (media:share + media:approve)',
+  },
 ];
 
 export async function seedUserManagement(prisma) {
@@ -88,6 +93,21 @@ export async function seedUserManagement(prisma) {
       update: {},
       create: { role_id: roleBySlug.admin.id, permission_id },
     });
+  }
+
+  // Media Sharer: media:share + media:approve only
+  const mediaSharerPermKeys = ['media:share', 'media:approve'];
+  for (const key of mediaSharerPermKeys) {
+    const permId = permIdByKey.get(key);
+    if (permId) {
+      await prisma.rolePermission.upsert({
+        where: {
+          role_id_permission_id: { role_id: roleBySlug['media-sharer'].id, permission_id: permId },
+        },
+        update: {},
+        create: { role_id: roleBySlug['media-sharer'].id, permission_id: permId },
+      });
+    }
   }
 
   // Existing seed user admin@kdl.com gets super-admin

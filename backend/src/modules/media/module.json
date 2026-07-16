@@ -9,7 +9,7 @@
     {
       "name": "media",
       "actions": [
-        "view", "edit", "publish", "approve",
+        "view", "edit", "publish", "approve", "share",
         "upload", "download", "preview", "edit-image", "share-link",
         "folders", "collections", "tags", "favorites",
         "metadata-edit", "custom-fields", "visibility-toggle",
