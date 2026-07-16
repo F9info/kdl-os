@@ -1,12 +1,13 @@
-name: CI
+name: Dependency Audit
 
 on:
-  pull_request:
-    branches:
-      - master
+  schedule:
+    - cron: '0 6 * * 1'  # Every Monday at 06:00 UTC
+  workflow_dispatch:
 
 jobs:
-  backend-check:
+  audit-backend:
+    name: Audit backend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,22 +22,16 @@ jobs:
         working-directory: backend
         run: npm ci
 
-      - name: Audit dependencies
+      - name: Report all advisories
+        working-directory: backend
+        run: npm audit --audit-level=info || true
+
+      - name: Fail on High/Critical
         working-directory: backend
         run: npm audit --audit-level=high
 
-      - name: Syntax check
-        working-directory: backend
-        run: node --check src/index.js
-
-      - name: Run tests
-        working-directory: backend
-        env:
-          JWT_SECRET: ci-jwt-secret-must-be-at-least-32-characters-long
-          JWT_REFRESH_SECRET: ci-refresh-secret-must-be-at-least-32-characters
-        run: npm test
-
-  frontend-check:
+  audit-frontend:
+    name: Audit frontend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -55,27 +50,16 @@ jobs:
         working-directory: frontend
         run: pnpm install --frozen-lockfile
 
-      - name: Audit dependencies
+      - name: Report all advisories
+        working-directory: frontend
+        run: pnpm audit --audit-level=info || true
+
+      - name: Fail on High/Critical
         working-directory: frontend
         run: pnpm audit --audit-level=high
 
-      - name: Lint
-        working-directory: frontend
-        run: pnpm lint
-
-      - name: Typecheck
-        working-directory: frontend
-        run: pnpm type-check
-
-      - name: Build
-        working-directory: frontend
-        run: pnpm build
-
-      - name: Run tests
-        working-directory: frontend
-        run: pnpm test
-
-  ai-services-check:
+  audit-ai-services:
+    name: Audit ai-services
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -90,16 +74,10 @@ jobs:
         working-directory: ai-services
         run: npm ci
 
-      - name: Audit dependencies
+      - name: Report all advisories
+        working-directory: ai-services
+        run: npm audit --audit-level=info || true
+
+      - name: Fail on High/Critical
         working-directory: ai-services
         run: npm audit --audit-level=high
-
-      - name: Syntax check
-        working-directory: ai-services
-        run: node --check src/index.js
-
-      - name: Run tests
-        working-directory: ai-services
-        env:
-          JWT_SECRET: ci-jwt-secret-must-be-at-least-32-characters-long
-        run: npm test
