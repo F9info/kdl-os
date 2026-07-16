@@ -4,6 +4,7 @@ import {
   ListObjectsV2Command,
   GetObjectCommand,
 } from '@aws-sdk/client-s3';
+import { assertNotSSRF } from '../../../../shared/utils/ssrf-guard.js';
 
 const credentialsSchema = z.object({
   access_key_id: z.string().min(1),
@@ -13,7 +14,12 @@ const credentialsSchema = z.object({
   endpoint: z.string().url().optional(),
 });
 
-const makeClient = (credentials) => new S3Client({
+const makeClient = async (credentials) => {
+  if (credentials.endpoint) {
+    const { hostname } = new URL(credentials.endpoint);
+    await assertNotSSRF(hostname);
+  }
+  return new S3Client({
   region: credentials.region || 'us-east-1',
   credentials: {
     accessKeyId: credentials.access_key_id,
