@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import fsPromises from 'node:fs/promises';
 import path from 'node:path';
@@ -12,6 +13,30 @@ const getBaseUrl = () =>
 
 const resolveFilePath = (objectName) =>
   path.join(getStorageDir(), objectName);
+
+// HMAC key for signing/verifying presign URLs (same parity as S3 presign security model).
+const getSigningKey = () => {
+  const k = process.env.APP_ENCRYPTION_KEY || process.env.JWT_SECRET;
+  if (!k) throw new Error('APP_ENCRYPTION_KEY or JWT_SECRET is required for local storage presign');
+  return k;
+};
+
+const sign = (objectName, expiresAt) =>
+  crypto
+    .createHmac('sha256', getSigningKey())
+    .update(`${objectName}:${expiresAt}`)
+    .digest('base64url');
+
+export const verifyLocalPresignToken = (objectName, token, expiresAtStr) => {
+  const expiresAt = parseInt(expiresAtStr, 10);
+  if (!expiresAt || Date.now() > expiresAt) return false;
+  const expected = sign(objectName, expiresAt);
+  try {
+    return crypto.timingSafeEqual(Buffer.from(token), Buffer.from(expected));
+  } catch {
+    return false;
+  }
+};
 
 export const makeLocalDriver = () => ({
   async put(file, objectName) {
@@ -34,8 +59,12 @@ export const makeLocalDriver = () => ({
     await Promise.all(objectNames.map((n) => this.delete(n)));
   },
 
-  async presign(objectName) {
-    return `${getBaseUrl()}/api/storage/local/${objectName}`;
+  // Returns a time-limited HMAC-signed URL — same security model as S3 presigned URLs.
+  async presign(objectName, expirySeconds = 7 * 24 * 60 * 60) {
+    const expiresAt = Date.now() + expirySeconds * 1000;
+    const token = sign(objectName, expiresAt);
+    const encoded = objectName.split('/').map(encodeURIComponent).join('/');
+    return `${getBaseUrl()}/api/storage/local/${encoded}?token=${token}&exp=${expiresAt}`;
   },
 
   async copy(srcObjectName, destObjectName) {
