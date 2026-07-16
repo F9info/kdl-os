@@ -1,6 +1,11 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
+import { useEditor, EditorContent, type Editor } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import TiptapLink from '@tiptap/extension-link'
+import TiptapUnderline from '@tiptap/extension-underline'
+import DOMPurify from 'dompurify'
 import { Bold, Italic, Underline, List, ListOrdered, Link2, Eraser } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -10,89 +15,156 @@ interface RichTextEditorProps {
   placeholder?: string
 }
 
-interface ToolButton {
-  icon: React.ElementType
-  label: string
-  command: string
-  prompt?: boolean
+const PURIFY_CONFIG = {
+  ALLOWED_TAGS: ['b', 'strong', 'i', 'em', 'u', 's', 'strike', 'a', 'ul', 'ol', 'li', 'p', 'br'] as string[],
+  ALLOWED_ATTR: ['href', 'rel', 'target'] as string[],
+  FORCE_BODY: true,
 }
 
-const BUTTONS: ToolButton[] = [
-  { icon: Bold, label: 'Bold', command: 'bold' },
-  { icon: Italic, label: 'Italic', command: 'italic' },
-  { icon: Underline, label: 'Underline', command: 'underline' },
-  { icon: List, label: 'Bulleted list', command: 'insertUnorderedList' },
-  { icon: ListOrdered, label: 'Numbered list', command: 'insertOrderedList' },
-  { icon: Link2, label: 'Insert link', command: 'createLink', prompt: true },
-  { icon: Eraser, label: 'Clear formatting', command: 'removeFormat' },
-]
+function sanitize(html: string): string {
+  // TrustedHTML is a union type in DOMPurify's typings; string is always returned with FORCE_BODY
+  return DOMPurify.sanitize(html, PURIFY_CONFIG) as unknown as string
+}
 
-/**
- * Minimal contentEditable rich-text editor backed by document.execCommand.
- * Emits HTML via onChange. Dependency-free — adequate for admin content fields.
- */
 export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorProps) {
-  const ref = useRef<HTMLDivElement>(null)
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        // Disable heading/code/blockquote — not needed for admin content fields
+        heading: false,
+        code: false,
+        codeBlock: false,
+        blockquote: false,
+      }),
+      TiptapUnderline,
+      TiptapLink.configure({
+        openOnClick: false,
+        HTMLAttributes: { rel: 'noopener noreferrer nofollow', target: '_blank' },
+      }),
+    ],
+    content: sanitize(value || ''),
+    onUpdate({ editor: ed }: { editor: Editor }) {
+      onChange(sanitize(ed.getHTML()))
+    },
+    editorProps: {
+      attributes: {
+        role: 'textbox',
+        'aria-multiline': 'true',
+        ...(placeholder ? { 'data-placeholder': placeholder } : {}),
+        class: cn(
+          'min-h-[140px] px-3 py-2 text-sm focus:outline-none',
+          'prose prose-sm max-w-none [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5',
+          placeholder
+            ? 'empty:before:text-muted-foreground empty:before:content-[attr(data-placeholder)]'
+            : ''
+        ),
+      },
+    },
+  })
 
-  // Sync external value into the DOM only when it diverges, so typing isn't disrupted.
+  // Sync external value when it diverges from editor state (e.g. form reset).
   useEffect(() => {
-    const el = ref.current
-    if (el && el.innerHTML !== value) {
-      el.innerHTML = value || ''
+    if (!editor) return
+    const current = editor.getHTML()
+    const incoming = sanitize(value || '')
+    // Avoid disrupting an active edit session — only sync when truly diverged.
+    if (current !== incoming && !editor.isFocused) {
+      editor.commands.setContent(incoming, { emitUpdate: false })
     }
-  }, [value])
+  }, [editor, value])
 
-  function exec(button: ToolButton) {
-    if (button.prompt) {
-      const url = window.prompt('Enter URL')
-      if (!url) return
-      document.execCommand(button.command, false, url)
-    } else {
-      document.execCommand(button.command, false)
-    }
-    ref.current?.focus()
-    emit()
+  function setLink() {
+    if (!editor) return
+    const url = window.prompt('Enter URL')
+    if (!url) return
+    editor.chain().focus().setLink({ href: url }).run()
   }
 
-  function emit() {
-    if (ref.current) onChange(ref.current.innerHTML)
+  function clearFormatting() {
+    editor?.chain().focus().clearNodes().unsetAllMarks().run()
   }
 
   return (
     <div className="rounded-md border border-input">
       <div className="flex flex-wrap items-center gap-1 border-b bg-muted/40 p-1">
-        {BUTTONS.map((b) => {
-          const Icon = b.icon
-          return (
-            <button
-              key={b.command}
-              type="button"
-              title={b.label}
-              aria-label={b.label}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => exec(b)}
-              className="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-            >
-              <Icon className="h-4 w-4" />
-            </button>
-          )
-        })}
+        <ToolBtn
+          label="Bold"
+          active={editor?.isActive('bold')}
+          onMouseDown={(e) => { e.preventDefault(); editor?.chain().focus().toggleBold().run() }}
+        >
+          <Bold className="h-4 w-4" />
+        </ToolBtn>
+        <ToolBtn
+          label="Italic"
+          active={editor?.isActive('italic')}
+          onMouseDown={(e) => { e.preventDefault(); editor?.chain().focus().toggleItalic().run() }}
+        >
+          <Italic className="h-4 w-4" />
+        </ToolBtn>
+        <ToolBtn
+          label="Underline"
+          active={editor?.isActive('underline')}
+          onMouseDown={(e) => { e.preventDefault(); editor?.chain().focus().toggleUnderline().run() }}
+        >
+          <Underline className="h-4 w-4" />
+        </ToolBtn>
+        <ToolBtn
+          label="Bulleted list"
+          active={editor?.isActive('bulletList')}
+          onMouseDown={(e) => { e.preventDefault(); editor?.chain().focus().toggleBulletList().run() }}
+        >
+          <List className="h-4 w-4" />
+        </ToolBtn>
+        <ToolBtn
+          label="Numbered list"
+          active={editor?.isActive('orderedList')}
+          onMouseDown={(e) => { e.preventDefault(); editor?.chain().focus().toggleOrderedList().run() }}
+        >
+          <ListOrdered className="h-4 w-4" />
+        </ToolBtn>
+        <ToolBtn
+          label="Insert link"
+          active={editor?.isActive('link')}
+          onMouseDown={(e) => { e.preventDefault(); setLink() }}
+        >
+          <Link2 className="h-4 w-4" />
+        </ToolBtn>
+        <ToolBtn
+          label="Clear formatting"
+          onMouseDown={(e) => { e.preventDefault(); clearFormatting() }}
+        >
+          <Eraser className="h-4 w-4" />
+        </ToolBtn>
       </div>
-      <div
-        ref={ref}
-        contentEditable
-        role="textbox"
-        aria-multiline="true"
-        data-placeholder={placeholder}
-        onInput={emit}
-        onBlur={emit}
-        className={cn(
-          'min-h-[140px] px-3 py-2 text-sm focus:outline-none',
-          'prose prose-sm max-w-none [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5',
-          'empty:before:text-muted-foreground empty:before:content-[attr(data-placeholder)]'
-        )}
-        suppressContentEditableWarning
-      />
+      <EditorContent editor={editor} />
     </div>
+  )
+}
+
+function ToolBtn({
+  label,
+  active,
+  onMouseDown,
+  children,
+}: {
+  label: string
+  active?: boolean
+  onMouseDown: (e: React.MouseEvent) => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      aria-pressed={active}
+      onMouseDown={onMouseDown}
+      className={cn(
+        'rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+        active && 'bg-accent text-accent-foreground'
+      )}
+    >
+      {children}
+    </button>
   )
 }

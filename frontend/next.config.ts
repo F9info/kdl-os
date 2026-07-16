@@ -1,12 +1,74 @@
 import type { NextConfig } from 'next'
 
+// Parse comma-separated image host entries from the env var.
+// Format: "protocol:hostname:port" where port is optional.
+// Example: NEXT_PUBLIC_IMAGE_HOSTS="http:localhost:9000,https:cdn.example.com"
+function parseImageHosts(): Array<{ protocol: 'http' | 'https'; hostname: string; port?: string }> {
+  const raw = process.env.NEXT_PUBLIC_IMAGE_HOSTS
+  if (raw) {
+    return raw.split(',').map((entry) => {
+      const [protocol, hostname, port] = entry.trim().split(':')
+      const pattern: { protocol: 'http' | 'https'; hostname: string; port?: string } = {
+        protocol: (protocol as 'http' | 'https') ?? 'https',
+        hostname: hostname ?? '',
+      }
+      if (port) pattern.port = port
+      return pattern
+    })
+  }
+  // Dev default: MinIO on localhost:9000
+  return [{ protocol: 'http', hostname: 'localhost', port: '9000' }]
+}
+
+// Derives the img-src hosts string for CSP from the same env var.
+function cspImageSrc(): string {
+  const raw = process.env.NEXT_PUBLIC_IMAGE_HOSTS
+  if (!raw) return 'http://localhost:9000'
+  return raw
+    .split(',')
+    .map((entry) => {
+      const [protocol, hostname, port] = entry.trim().split(':')
+      return port ? `${protocol}://${hostname}:${port}` : `${protocol}://${hostname}`
+    })
+    .join(' ')
+}
+
 const config: NextConfig = {
   output: 'standalone',
   reactStrictMode: true,
   images: {
-    remotePatterns: [
-      { protocol: 'http', hostname: 'localhost', port: '9000' },
-    ],
+    remotePatterns: parseImageHosts(),
+  },
+  async headers() {
+    const imgSrc = cspImageSrc()
+    // Next.js App Router injects inline scripts for hydration, requiring
+    // 'unsafe-inline'. Nonce-based CSP would remove this but needs middleware
+    // (out of scope for this task — tracked as a follow-up).
+    const csp = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline'",
+      `img-src 'self' data: blob: ${imgSrc}`,
+      "font-src 'self'",
+      "connect-src 'self'",
+      "frame-ancestors 'none'",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join('; ')
+
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          { key: 'Content-Security-Policy', value: csp },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+        ],
+      },
+    ]
   },
   async rewrites() {
     // Proxy API calls through the Next.js origin so the browser only ever talks to
