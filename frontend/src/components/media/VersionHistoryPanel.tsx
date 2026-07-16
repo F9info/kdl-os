@@ -10,6 +10,7 @@ import { toast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { AppImage } from '@/components/shared/AppImage'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,11 +70,11 @@ function CompareView({
               {v.note && <span className="text-muted-foreground ml-1">({v.note})</span>}
             </div>
             <div className="flex-1 flex items-center justify-center p-2 overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <AppImage
+                size="gallery"
                 src={v.download_url}
                 alt={`Version ${v.version_number}`}
-                className="max-w-full max-h-full object-contain"
+                className="max-w-full max-h-full"
               />
             </div>
           </div>

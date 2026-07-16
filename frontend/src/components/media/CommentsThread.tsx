@@ -9,6 +9,7 @@ import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { AppImage } from '@/components/shared/AppImage'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -42,11 +43,11 @@ const commentApi = {
 function Avatar({ user }: { user: CommentUser }) {
   if (user.avatar) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      <AppImage
+        size="avatar"
         src={user.avatar}
         alt={user.name}
-        className="h-7 w-7 rounded-full object-cover flex-shrink-0 border"
+        className="rounded-full flex-shrink-0 border"
       />
     )
   }

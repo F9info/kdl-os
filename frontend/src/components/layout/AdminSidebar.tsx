@@ -32,6 +32,7 @@ import { usePermissions } from '@/hooks/usePermissions'
 import { useModules } from '@/hooks/useModules'
 import api from '@/lib/axios'
 import { cn } from '@/lib/utils'
+import { AppImage } from '@/components/shared/AppImage'
 import type { Type, SettingField } from '@/types/models.types'
 
 const MODULE_ICON_MAP: Record<string, React.ElementType> = {
@@ -164,23 +165,24 @@ export function AdminSidebar() {
         sidebarOpen ? '' : 'w-16'
       )}
       // Expanded width driven by the Template Engine's Layout > Sidebar Width
-      // (Desktop) token when the runtime provider has injected it — the
-      // compiled token is a bare number (its "px" unit is display-only
-      // metadata in the editor), so it's multiplied by 1px via calc() rather
-      // than used directly; 256 is the w-64 (16rem) fallback.
-      style={
-        sidebarOpen
-          ? { width: 'calc(var(--layout_desktop_structure_sidebar_width, 256) * 1px)' }
-          : undefined
-      }
+      // token — the device-neutral, unit-suffixed alias from te-layout.css,
+      // self-selecting per viewport via the @media blocks compileTokens emits
+      // (KDL-209 contract; the old device-prefixed raw var is legacy).
+      style={sidebarOpen ? { width: 'var(--te-layout-sidebar-width)' } : undefined}
     >
-      <div className="flex h-16 items-center border-b px-4">
+      {/* te-header keeps the logo row the same height as the TopBar when
+          Layout > Header Height changes. */}
+      <div className="te-header flex items-center border-b px-4">
         {logoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          // Expanded: logo_image class sizes the logo from the Template
+          // Engine's Images pane. Collapsed: the 64px rail is fixed chrome, so
+          // an inline style (beats the class) pins the logo to fit it.
+          <AppImage
+            size="logo"
             src={logoUrl}
             alt="Logo"
-            className={cn('object-contain', sidebarOpen ? 'h-10 max-w-[180px]' : 'h-8 w-8')}
+            className="max-w-full"
+            style={sidebarOpen ? undefined : { width: '2rem', height: '2rem' }}
           />
         ) : sidebarOpen ? (
           <span className="font-bold text-lg tracking-tight">KDL Admin</span>
@@ -189,20 +191,7 @@ export function AdminSidebar() {
         )}
       </div>
 
-      <nav
-        className="flex-1 space-y-1 overflow-y-auto p-2"
-        aria-label="Main navigation"
-        // Nav font family + size driven by the Template Engine's Typography
-        // Scale table's "Navigation" row (desktop variant — the admin shell is
-        // desktop-first) — same var-with-fallback pattern as the sidebar
-        // width style above. This is the single source of truth for nav font
-        // size now — the old separate Navigation > Menu Font Size field was
-        // removed so the two could never drift out of sync.
-        style={{
-          fontFamily: 'var(--typography_desktop_typography_scale_typography_scale_navigation_family, inherit)',
-          fontSize: 'var(--typography_desktop_typography_scale_typography_scale_navigation_size, inherit)',
-        }}
-      >
+      <nav className="flex-1 space-y-1 overflow-y-auto p-2" aria-label="Main navigation">
         {visibleFlat.map((item) => {
           const active = isLeafActive(item.href) || pathname.startsWith(item.href + '/')
           const Icon = item.icon
@@ -211,7 +200,7 @@ export function AdminSidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                'flex items-center gap-3 rounded-md px-3 py-2 transition-colors',
                 active
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
@@ -233,7 +222,7 @@ export function AdminSidebar() {
               key={item.path}
               href={item.path}
               className={cn(
-                'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                'flex items-center gap-3 rounded-md px-3 py-2 transition-colors',
                 active
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
@@ -256,7 +245,7 @@ export function AdminSidebar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                  'flex items-center gap-3 rounded-md px-3 py-2 transition-colors',
                   active
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
@@ -280,7 +269,7 @@ export function AdminSidebar() {
                 onClick={() => toggleGroup(group.label)}
                 aria-expanded={open}
                 className={cn(
-                  'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                  'flex w-full items-center gap-3 rounded-md px-3 py-2 transition-colors',
                   hasActive
                     ? 'text-foreground font-medium'
                     : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
@@ -312,7 +301,7 @@ export function AdminSidebar() {
                         key={child.href}
                         href={child.href}
                         className={cn(
-                          'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                          'flex items-center gap-3 rounded-md px-3 py-2 transition-colors',
                           active
                             ? 'bg-primary text-primary-foreground'
                             : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
