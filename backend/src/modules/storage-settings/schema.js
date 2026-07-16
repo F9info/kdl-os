@@ -16,6 +16,8 @@ const safeEndpoint = z
     const host = parsed.hostname;
     if (host === 'localhost') return false;
     if (PRIVATE_IP_RE.test(host)) return false;
+    if (host === '0.0.0.0' || host === '::' || host === '[::]') return false;
+    if (/^::ffff:/i.test(host)) return false;
     return true;
   }, {
     message: process.env.NODE_ENV === 'production'
