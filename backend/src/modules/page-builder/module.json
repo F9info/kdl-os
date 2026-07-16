@@ -1,0 +1,20 @@
+{
+  "slug": "page-builder",
+  "name": "Page Builder",
+  "version": "1.0.0",
+  "description": "Drag-and-drop, fully responsive visual page builder (Puck).",
+  "core": false,
+  "apiPrefix": "/api/page-builder",
+  "permissions": ["page-builder"],
+  "nav": [
+    {
+      "label": "Page Builder",
+      "path": "/admin/page-builder",
+      "icon": "LayoutTemplate",
+      "permission": "page-builder:view"
+    }
+  ],
+  "dependsOn": [],
+  "queues": [],
+  "env": []
+}

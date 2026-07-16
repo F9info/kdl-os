@@ -16,8 +16,6 @@
 // reflects the current theme without needing the raw colour values passed in.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import type { CSSProperties } from 'react'
-
 // Local, intentionally decoupled from page.tsx's TEPane (duplicate is fine —
 // avoids a hard import coupling; integration KDL-205 passes a compatible shape).
 export interface TEPaneLite {
@@ -227,11 +225,40 @@ export function PalettePreview({
 }
 
 // ── TypographyPreview (Typography pane, id === 'typography') ──────────────────────
-// A type-specimen sheet: H1–H6 + body + small, each sized/weighted per the
-// pane's current Font Size / Font Weight groups (first device group found),
-// using the Heading / Body font families. Ports `updateTypoPreview()`.
+// A type-specimen sheet: H1–H6 + body + small, each sized/weighted/spaced per
+// the pane's "Typography Scale" table (first device group found) — one row per
+// text style, replacing the old separate Font Size / Font Weight / Text Rules
+// groups (KDL typo-table redesign). Ports `updateTypoPreview()`.
 
 const SPECIMEN = 'The quick brown fox jumps over the lazy dog'
+
+interface TypoRow {
+  name: string
+  size: number
+  sizeUnit?: string
+  family: string
+  weight: string
+  lineHeight: number
+  letterSpacing: number
+}
+
+/** The pane's "Typography Scale" table field, parsed into rows keyed by name. */
+function typoRows(pane: TEPaneLite, values: Values): Map<string, TypoRow> {
+  const field = groupByName(pane, 'Typography Scale')?.fields.find(
+    (f) => f.field_name.toLowerCase() === 'typography scale',
+  )
+  const map = new Map<string, TypoRow>()
+  if (!field) return map
+  try {
+    const rows = JSON.parse(resolve(field, values))
+    if (Array.isArray(rows)) {
+      for (const r of rows) if (r?.name) map.set(r.name, r)
+    }
+  } catch {
+    /* malformed — empty map, callers fall back to defaults */
+  }
+  return map
+}
 
 export function TypographyPreview({
   pane,
@@ -240,66 +267,65 @@ export function TypographyPreview({
   pane: TEPaneLite
   values: Values
 }): JSX.Element {
-  const heading = fieldValue(pane, 'Font Family', 'Heading Font', values) || 'Inter'
-  const body = fieldValue(pane, 'Font Family', 'Body Font', values) || 'Inter'
+  const rows = typoRows(pane, values)
+  const row = (name: string, fallback: TypoRow) => rows.get(name) ?? fallback
 
-  const size = (fieldName: string) => fieldValue(pane, 'Font Size', fieldName, values)
-  const bold = fieldValue(pane, 'Font Weight', 'Bold', values) || '700'
-  const semi = fieldValue(pane, 'Font Weight', 'Semi Bold', values) || '600'
-  const regular = fieldValue(pane, 'Font Weight', 'Regular', values) || '400'
-
-  const lineHeight = fieldValue(pane, 'Text Rules', 'Line Height', values) || '1.5'
-  const letterSpacing = fieldValue(pane, 'Text Rules', 'Letter Spacing', values) || '0'
-  const transformRaw = (fieldValue(pane, 'Text Rules', 'Text Transform', values) || 'None').toLowerCase()
-  const textTransform = (transformRaw === 'none' ? 'none' : transformRaw) as CSSProperties['textTransform']
-
-  // px-suffix a bare numeric font-size ('32' → '32px'); leave unit-bearing values as-is.
-  const px = (v: string) => (v && /^-?\d+(\.\d+)?$/.test(v) ? `${v}px` : v)
-
-  const headings: { tag: string; field: string; weight: string }[] = [
-    { tag: 'H1', field: 'H1 (Title)', weight: bold },
-    { tag: 'H2', field: 'H2', weight: semi },
-    { tag: 'H3', field: 'H3', weight: semi },
-    { tag: 'H4', field: 'H4', weight: semi },
-    { tag: 'H5', field: 'H5', weight: semi },
-    { tag: 'H6', field: 'H6', weight: semi },
+  const headings: { tag: string; field: string; fallbackWeight: string }[] = [
+    { tag: 'H1', field: 'H1 (Title)', fallbackWeight: '700' },
+    { tag: 'H2', field: 'H2', fallbackWeight: '700' },
+    { tag: 'H3', field: 'H3', fallbackWeight: '600' },
+    { tag: 'H4', field: 'H4', fallbackWeight: '600' },
+    { tag: 'H5', field: 'H5', fallbackWeight: '500' },
+    { tag: 'H6', field: 'H6', fallbackWeight: '500' },
   ]
 
+  const paragraph = row('Paragraph', {
+    name: 'Paragraph', size: 14, family: 'Inter', weight: '400', lineHeight: 1.5, letterSpacing: 0,
+  })
+  const small = row('Small Text', {
+    name: 'Small Text', size: 12, family: 'Inter', weight: '400', lineHeight: 1.5, letterSpacing: 0,
+  })
+
   return (
-    <div className="flex flex-col gap-2 p-[18px]" style={{ textTransform }}>
+    <div className="flex flex-col gap-2 p-[18px]">
       {headings.map((h) => {
-        const s = px(size(h.field))
+        const r = row(h.field, {
+          name: h.field, size: 24, family: 'Inter', weight: h.fallbackWeight, lineHeight: 1.5, letterSpacing: 0,
+        })
+        const unit = r.sizeUnit || 'px'
         return (
           <div
             key={h.tag}
             style={{
-              fontFamily: `'${heading}', sans-serif`,
-              fontWeight: Number(h.weight) || h.weight,
-              fontSize: s || undefined,
+              fontFamily: `'${r.family}', sans-serif`,
+              fontWeight: Number(r.weight) || r.weight,
+              fontSize: `${r.size}${unit}`,
+              letterSpacing: `${r.letterSpacing}px`,
               color: 'var(--foreground, hsl(var(--foreground)))',
             }}
           >
-            {h.tag} Heading{s ? ` ${s}` : ''}
+            {h.tag} Heading {r.size}{unit}
           </div>
         )
       })}
       <p
         className="max-w-[480px] text-muted-foreground"
         style={{
-          fontFamily: `'${body}', sans-serif`,
-          fontWeight: Number(regular) || regular,
-          fontSize: px(size('Paragraph (Body)')) || undefined,
-          lineHeight,
-          letterSpacing: /^-?\d+(\.\d+)?$/.test(letterSpacing) ? `${letterSpacing}px` : letterSpacing,
+          fontFamily: `'${paragraph.family}', sans-serif`,
+          fontWeight: Number(paragraph.weight) || paragraph.weight,
+          fontSize: `${paragraph.size}${paragraph.sizeUnit || 'px'}`,
+          lineHeight: paragraph.lineHeight,
+          letterSpacing: `${paragraph.letterSpacing}px`,
         }}
       >
-        Paragraph — {SPECIMEN}, showing line-height {lineHeight} and letter-spacing {letterSpacing}px.
+        Paragraph — {SPECIMEN}, showing line-height {paragraph.lineHeight} and letter-spacing {paragraph.letterSpacing}px.
       </p>
       <small
         className="text-muted-foreground"
         style={{
-          fontFamily: `'${body}', sans-serif`,
-          fontSize: px(size('Small Text')) || undefined,
+          fontFamily: `'${small.family}', sans-serif`,
+          fontWeight: Number(small.weight) || small.weight,
+          fontSize: `${small.size}${small.sizeUnit || 'px'}`,
         }}
       >
         Small text — {SPECIMEN}.

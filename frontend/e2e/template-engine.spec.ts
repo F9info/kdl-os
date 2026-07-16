@@ -141,12 +141,15 @@ test('Gate 1 — admin UI edit → Save → /tokens reflects new value (css + js
   await loginUi(page)
   await page.goto('/admin/template-engine')
 
+  // Step 1: platform-picker landing screen — pick Webapp to enter the editor.
+  await page.getByTestId('landing-card-webapp').click()
+  await page.getByTestId('landing-subcard-webapp-frontend').click()
+
   // Pane sidebar must render from the REAL API payload.
   await expect(
     page.getByTestId(`pane-btn-${targetPaneId}`),
     'pane sidebar did not render from the real /schema payload',
   ).toBeVisible({ timeout: 15_000 })
-  await page.getByTestId(`platform-btn-webapp`).click()
   await page.getByTestId(`pane-btn-${targetPaneId}`).click()
 
   const fieldRow = page.getByTestId(`field-row-${targetFieldId}`)
@@ -192,10 +195,10 @@ test('Gate 2 — disable → routes 404 → re-enable → schema/tokens identica
   const tokensRes = await fetchTokens('webapp', false)
   expect(tokensRes.status(), 'public tokens must 404 while disabled').toBe(404)
 
-  // UI: module page must not render the editor while disabled.
+  // UI: module page must not render the landing screen while disabled.
   await loginUi(page)
   await page.goto('/admin/template-engine')
-  await expect(page.getByTestId('platform-bar')).not.toBeVisible({ timeout: 10_000 })
+  await expect(page.getByTestId('template-engine-landing')).not.toBeVisible({ timeout: 10_000 })
 
   // Re-enable.
   const en = await api.post(`${API_URL}/modules/template-engine/enable`, { headers: authHeaders() })
@@ -209,5 +212,7 @@ test('Gate 2 — disable → routes 404 → re-enable → schema/tokens identica
 
   // UI back.
   await page.goto('/admin/template-engine')
-  await expect(page.getByTestId('platform-bar')).toBeVisible({ timeout: 15_000 })
+  await page.getByTestId('landing-card-webapp').click()
+  await page.getByTestId('landing-subcard-webapp-frontend').click()
+  await expect(page.getByTestId('template-engine-page')).toBeVisible({ timeout: 15_000 })
 })

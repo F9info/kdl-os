@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { AppImage } from '@/components/shared/AppImage'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -236,12 +237,12 @@ export function TransformPlayground({ mediaId, mediaType }: TransformPlaygroundP
             'min-h-[200px]'
           )}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <AppImage
+            size="gallery"
             key={previewUrl}
             src={previewUrl}
             alt="Transform preview"
-            className="max-w-full max-h-[500px] object-contain"
+            className="max-w-full max-h-[500px]"
           />
         </div>
 

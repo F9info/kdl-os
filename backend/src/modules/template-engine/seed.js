@@ -171,7 +171,28 @@ async function seedInto(prismaClient) {
     await prismaClient.settingField.createMany({ data: creates.slice(i, i + CHUNK), skipDuplicates: true });
   }
 
-  const summary = `template-engine seed: ${types.size} types, ${categories.size} categories, ${fields.size} fields (${creates.length} created, ${updated} updated)`;
+  // Prune rows this module owns but no longer generates. The seed loop above
+  // only creates/updates by slug — a field renamed or removed from the schema
+  // (e.g. the Typography Font Size/Weight/Text Rules → Typography Scale table
+  // migration) would otherwise orphan its old Category/SettingField rows in
+  // the DB forever, contradicting the "schema is the single source of truth"
+  // contract. SettingValue cascades on SettingField delete (schema/core.prisma).
+  const deletedFields = await prismaClient.settingField.deleteMany({
+    where: { owner_module: OWNER_MODULE, slug: { notIn: [...fields.keys()] } },
+  });
+  const deletedCategories = await prismaClient.category.deleteMany({
+    where: { owner_module: OWNER_MODULE, slug: { notIn: [...categories.keys()] } },
+  });
+
+  const summary = `template-engine seed: ${types.size} types, ${categories.size} categories, ${fields.size} fields (${creates.length} created, ${updated} updated, ${deletedFields.count} fields pruned, ${deletedCategories.count} categories pruned)`;
   console.log(summary);
-  return { types: types.size, categories: categories.size, fields: fields.size, created: creates.length, updated };
+  return {
+    types: types.size,
+    categories: categories.size,
+    fields: fields.size,
+    created: creates.length,
+    updated,
+    prunedFields: deletedFields.count,
+    prunedCategories: deletedCategories.count,
+  };
 }

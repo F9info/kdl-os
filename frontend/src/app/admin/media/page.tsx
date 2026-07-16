@@ -14,6 +14,7 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { PermissionGuard } from '@/components/shared/PermissionGuard'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { Modal } from '@/components/shared/Modal'
+import { AppImage } from '@/components/shared/AppImage'
 import { ErrorAlert } from '@/components/shared/ErrorAlert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -233,8 +234,7 @@ function MediaItemGrid({
     >
       <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden relative">
         {thumb ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={thumb} alt={item.original_name} className="h-full w-full object-cover" />
+          <AppImage size="thumbnail" src={thumb} alt={item.original_name} className="max-h-full max-w-full" />
         ) : (
           <span className="text-2xl text-muted-foreground font-bold">{item.type[0]}</span>
         )}
@@ -356,10 +356,11 @@ function MediaItemList({
         className="h-4 w-4 rounded"
         onClick={(e) => { e.stopPropagation(); onToggle(item.id, e as unknown as React.MouseEvent) }}
       />
+      {/* List rows are dense chrome: the 32px box crops the token-sized
+          thumbnail via overflow-hidden rather than letting it set row height. */}
       <div className="h-8 w-8 flex-shrink-0 rounded overflow-hidden bg-muted flex items-center justify-center relative">
         {thumb ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={thumb} alt={item.original_name} className="h-full w-full object-cover" />
+          <AppImage size="thumbnail" src={thumb} alt={item.original_name} />
         ) : (
           <span className="text-xs text-muted-foreground">{item.type[0]}</span>
         )}
@@ -759,8 +760,7 @@ function DetailDrawer({
       {item.url && can('media:preview') && (
         <button type="button" onClick={onPreview} className="w-full block" title="Open full preview">
           {item.mime_type.startsWith('image/') ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={item.url} alt={item.original_name} className="w-full rounded border hover:opacity-90" />
+            <AppImage size="content" src={item.url} alt={item.original_name} className="max-w-full rounded border hover:opacity-90" />
           ) : (
             <span className="flex items-center justify-center h-24 rounded border bg-muted text-xs text-muted-foreground hover:bg-accent">
               Open preview
