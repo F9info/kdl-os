@@ -1228,6 +1228,8 @@ export default function MediaPage() {
       if (ids.length > 0) {
         setProcessingMediaIds((prev) => { const next = new Set(prev); ids.forEach((id) => next.add(id)); return next })
         setTimeout(() => setProcessingMediaIds((prev) => { const next = new Set(prev); ids.forEach((id) => next.delete(id)); return next }), 10_000)
+        setTimeout(() => queryClient.invalidateQueries({ queryKey: ['media'] }), 3_000)
+        setTimeout(() => queryClient.invalidateQueries({ queryKey: ['media'] }), 8_000)
       }
     },
     onError: () => toast({ title: 'Upload failed', variant: 'destructive' }),
