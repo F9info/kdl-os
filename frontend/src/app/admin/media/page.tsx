@@ -61,7 +61,7 @@ const mediaApi = {
     files.forEach((f) => fd.append('files', f))
     if (folderId) fd.append('folder_id', folderId)
     if (visibility) fd.append('visibility', visibility)
-    return api.post('/media/upload', fd)
+    return api.post<{ data: { media: Media[] } }>('/media/upload', fd).then((r) => r.data.data.media)
   },
   update: (id: string, data: Partial<Pick<Media, 'title' | 'alt_text' | 'caption' | 'original_name' | 'visibility'>>) =>
     api.patch(`/media/${id}`, data),
@@ -1190,6 +1190,11 @@ export default function MediaPage() {
         if (state === 'completed') {
           stop()
           queryClient.invalidateQueries({ queryKey: ['media'] })
+          // Thumbnail generation is a separate async step after the edit job
+          // completes — schedule deferred refetches to pick up variants once
+          // the thumbnail worker has had time to run.
+          setTimeout(() => queryClient.invalidateQueries({ queryKey: ['media'] }), 3_000)
+          setTimeout(() => queryClient.invalidateQueries({ queryKey: ['media'] }), 8_000)
           // Refresh the open File Details row too — it's a state snapshot,
           // not derived from the ['media'] query, so it needs its own refetch.
           setDetailItem((cur) => {
@@ -1214,7 +1219,19 @@ export default function MediaPage() {
     // otherwise there's no way to get a new upload into Shared without a
     // separate manual "Make shared" step afterward.
     mutationFn: (files: File[]) => mediaApi.upload(files, selectedFolder ?? null, scope === 'shared' ? 'SHARED' : undefined),
-    onSuccess: () => { invalidateAll(); toast({ title: 'Upload complete' }) },
+    onSuccess: (uploaded) => {
+      invalidateAll()
+      toast({ title: 'Upload complete' })
+      // Track IDs in processingMediaIds so the grid card shows "Processing…"
+      // while the async thumbnail worker generates variants.
+      const ids = (uploaded ?? []).map((m) => m.id)
+      if (ids.length > 0) {
+        setProcessingMediaIds((prev) => { const next = new Set(prev); ids.forEach((id) => next.add(id)); return next })
+        setTimeout(() => setProcessingMediaIds((prev) => { const next = new Set(prev); ids.forEach((id) => next.delete(id)); return next }), 10_000)
+        setTimeout(() => queryClient.invalidateQueries({ queryKey: ['media'] }), 3_000)
+        setTimeout(() => queryClient.invalidateQueries({ queryKey: ['media'] }), 8_000)
+      }
+    },
     onError: () => toast({ title: 'Upload failed', variant: 'destructive' }),
   })
 
