@@ -47,9 +47,14 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
+      "esbuild",
       "sharp",
       "unrs-resolver"
-    ]
+    ],
+    "overrides": {
+      "postcss": "8.5.16"
+    },
+    "ignoreBuildIssues": true
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.0.0",
