@@ -12,7 +12,7 @@ vi.mock('next/server', () => ({
   },
 }));
 
-import { middleware } from '../../middleware';
+import { middleware } from '../../src/middleware';
 
 function makeRequest(pathname: string, token?: string) {
   return {
