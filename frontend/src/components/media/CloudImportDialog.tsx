@@ -13,96 +13,52 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { formatBytes, cn } from '@/lib/utils'
-
-// ─── Backend contract types ───────────────────────────────────────────────────
-
-export type CloudProvider = 'gdrive' | 'dropbox' | 'onedrive' | 's3' | 'ftp'
-
-export interface ImportProvider {
-  provider: CloudProvider
-  auth: 'oauth' | 'credentials'
-  configured: boolean
-}
-
-export interface ImportConnection {
-  id: string
-  provider: CloudProvider
-  label: string
-  created_at: string
-  updated_at: string
-}
-
-export interface BrowseEntry {
-  id: string
-  name: string
-  size: number
-  mime: string | null
-  is_folder: boolean
-}
-
-export interface ImportResult {
-  imported: { id: string; name: string }[]
-  skipped: { file: string; reason: string }[]
-}
-
-export const PROVIDER_LABELS: Record<CloudProvider, string> = {
-  gdrive: 'Google Drive',
-  dropbox: 'Dropbox',
-  onedrive: 'OneDrive',
-  s3: 'Amazon S3',
-  ftp: 'FTP',
-}
-
-const OAUTH_CALLBACK_PATH = '/admin/media/import/callback'
+import {
+  OAUTH_PROVIDERS, MANUAL_PROVIDERS, PROVIDER_LABELS, MANUAL_PROVIDER_FIELDS,
+  type ImportProvider, type ImportProviderStatus, type ImportConnection,
+  type RemoteFile, type RemoteFileList, type ImportResult,
+} from '@/types/media-import.types'
 
 // ─── API helpers ──────────────────────────────────────────────────────────────
 
 const importApi = {
   providers: () =>
-    api.get('/media/import/providers').then((r) => (r.data.data?.items ?? []) as ImportProvider[]),
+    api.get('/media/import/providers').then((r) => (r.data.data?.items ?? []) as ImportProviderStatus[]),
   connections: () =>
     api.get('/media/import/connections').then((r) => (r.data.data?.items ?? []) as ImportConnection[]),
-  createConnection: (data: { provider: 's3' | 'ftp'; label: string; credentials: Record<string, unknown> }) =>
+  createConnection: (data: { provider: string; label: string; credentials: Record<string, unknown> }) =>
     api.post('/media/import/connections', data).then((r) => r.data.data as ImportConnection),
   deleteConnection: (id: string) => api.delete(`/media/import/connections/${id}`),
-  oauthUrl: (provider: CloudProvider, redirect_uri: string) =>
-    api.post(`/media/import/oauth/${provider}/url`, { redirect_uri })
-      .then((r) => r.data.data as { url: string; state: string }),
-  oauthCallback: (provider: CloudProvider, body: { code: string; state: string; redirect_uri: string; label?: string }) =>
-    api.post(`/media/import/oauth/${provider}/callback`, body).then((r) => r.data.data as ImportConnection),
-  browse: (id: string, params: { path?: string; cursor?: string }) =>
-    api.get(`/media/import/connections/${id}/browse`, { params })
-      .then((r) => r.data.data as { entries: BrowseEntry[]; cursor: string | null }),
-  importFiles: (id: string, files: string[], folder_id?: string | null) =>
+  oauthStart: (provider: ImportProvider) =>
+    api.get(`/media/import/oauth/${provider}/start`).then((r) => r.data.data as { url: string }),
+  browse: (id: string, params: { folder_id?: string; cursor?: string }) =>
+    api.get(`/media/import/connections/${id}/files`, { params })
+      .then((r) => r.data.data as RemoteFileList),
+  importFiles: (id: string, file_ids: string[], folder_id?: string | null) =>
     api.post(`/media/import/connections/${id}/import`, {
-      files,
+      file_ids,
       ...(folder_id ? { folder_id } : {}),
     }).then((r) => r.data.data as ImportResult),
 }
 
 // ─── Credential forms (S3 / FTP) ──────────────────────────────────────────────
 
-function S3CredentialForm({ onCreated, onCancel }: { onCreated: () => void; onCancel: () => void }) {
+function ManualConnectionForm({ onCreated, onCancel }: { onCreated: () => void; onCancel: () => void }) {
+  const [provider, setProvider] = useState<'s3' | 'ftp'>('s3')
   const [label, setLabel] = useState('')
-  const [accessKeyId, setAccessKeyId] = useState('')
-  const [secretAccessKey, setSecretAccessKey] = useState('')
-  const [bucket, setBucket] = useState('')
-  const [region, setRegion] = useState('')
-  const [endpoint, setEndpoint] = useState('')
+  const [fields, setFields] = useState<Record<string, string>>({})
+
+  const fieldDefs = MANUAL_PROVIDER_FIELDS[provider]
 
   const createMut = useMutation({
-    mutationFn: () =>
-      importApi.createConnection({
-        provider: 's3',
-        label: label.trim(),
-        credentials: {
-          access_key_id: accessKeyId.trim(),
-          secret_access_key: secretAccessKey,
-          bucket: bucket.trim(),
-          ...(region.trim() ? { region: region.trim() } : {}),
-          ...(endpoint.trim() ? { endpoint: endpoint.trim() } : {}),
-        },
-      }),
+    mutationFn: () => {
+      const credentials: Record<string, unknown> = {}
+      for (const f of fieldDefs) {
+        if (f.type === 'checkbox') credentials[f.key] = fields[f.key] === 'true'
+        else if (fields[f.key]?.trim()) credentials[f.key] = fields[f.key]
+      }
+      return importApi.createConnection({ provider, label: label.trim(), credentials })
+    },
     onSuccess: () => { toast({ title: 'Connection added' }); onCreated() },
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to add connection'
@@ -110,69 +66,46 @@ function S3CredentialForm({ onCreated, onCancel }: { onCreated: () => void; onCa
     },
   })
 
-  const valid = label.trim() && accessKeyId.trim() && secretAccessKey && bucket.trim()
+  const valid = label.trim() && fieldDefs.filter((f) => f.required).every((f) => fields[f.key]?.trim())
 
   return (
     <div className="border rounded p-3 space-y-2 bg-muted/30">
-      <p className="text-sm font-medium">Connect Amazon S3</p>
-      <Input placeholder="Connection label" value={label} onChange={(e) => setLabel(e.target.value)} className="h-8 text-sm" />
-      <Input placeholder="Access key ID" value={accessKeyId} onChange={(e) => setAccessKeyId(e.target.value)} className="h-8 text-sm" />
-      <Input placeholder="Secret access key" type="password" value={secretAccessKey} onChange={(e) => setSecretAccessKey(e.target.value)} className="h-8 text-sm" />
-      <Input placeholder="Bucket" value={bucket} onChange={(e) => setBucket(e.target.value)} className="h-8 text-sm" />
-      <Input placeholder="Region (optional)" value={region} onChange={(e) => setRegion(e.target.value)} className="h-8 text-sm" />
-      <Input placeholder="Endpoint (optional)" value={endpoint} onChange={(e) => setEndpoint(e.target.value)} className="h-8 text-sm" />
-      <div className="flex gap-2 justify-end">
-        <Button size="sm" variant="outline" onClick={onCancel}>Cancel</Button>
-        <Button size="sm" onClick={() => createMut.mutate()} disabled={!valid || createMut.isPending}>
-          {createMut.isPending ? 'Saving…' : 'Save connection'}
-        </Button>
+      <p className="text-sm font-medium">Add connection</p>
+      <div className="flex gap-2">
+        {MANUAL_PROVIDERS.map((p) => (
+          <button
+            key={p}
+            type="button"
+            onClick={() => { setProvider(p as 's3' | 'ftp'); setFields({}) }}
+            className={cn('px-3 py-1 text-xs rounded border', provider === p ? 'bg-accent font-medium' : 'hover:bg-accent/50')}
+          >
+            {PROVIDER_LABELS[p]}
+          </button>
+        ))}
       </div>
-    </div>
-  )
-}
-
-function FtpCredentialForm({ onCreated, onCancel }: { onCreated: () => void; onCancel: () => void }) {
-  const [label, setLabel] = useState('')
-  const [host, setHost] = useState('')
-  const [port, setPort] = useState('')
-  const [user, setUser] = useState('')
-  const [password, setPassword] = useState('')
-  const [secure, setSecure] = useState(false)
-
-  const createMut = useMutation({
-    mutationFn: () =>
-      importApi.createConnection({
-        provider: 'ftp',
-        label: label.trim(),
-        credentials: {
-          host: host.trim(),
-          ...(port.trim() ? { port: Number(port) } : {}),
-          user: user.trim(),
-          password,
-          secure,
-        },
-      }),
-    onSuccess: () => { toast({ title: 'Connection added' }); onCreated() },
-    onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to add connection'
-      toast({ title: msg, variant: 'destructive' })
-    },
-  })
-
-  const valid = label.trim() && host.trim() && user.trim() && password
-
-  return (
-    <div className="border rounded p-3 space-y-2 bg-muted/30">
-      <p className="text-sm font-medium">Connect FTP</p>
       <Input placeholder="Connection label" value={label} onChange={(e) => setLabel(e.target.value)} className="h-8 text-sm" />
-      <Input placeholder="Host" value={host} onChange={(e) => setHost(e.target.value)} className="h-8 text-sm" />
-      <Input placeholder="Port (optional)" type="number" value={port} onChange={(e) => setPort(e.target.value)} className="h-8 text-sm" />
-      <Input placeholder="User" value={user} onChange={(e) => setUser(e.target.value)} className="h-8 text-sm" />
-      <Input placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-8 text-sm" />
-      <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" checked={secure} onChange={(e) => setSecure(e.target.checked)} className="h-4 w-4 rounded" />
-        Use FTPS (secure)
-      </label>
+      {fieldDefs.map((f) => (
+        f.type === 'checkbox' ? (
+          <label key={f.key} className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={fields[f.key] === 'true'}
+              onChange={(e) => setFields((prev) => ({ ...prev, [f.key]: String(e.target.checked) }))}
+              className="h-4 w-4 rounded"
+            />
+            {f.label}
+          </label>
+        ) : (
+          <Input
+            key={f.key}
+            placeholder={f.label + (f.required ? '' : ' (optional)')}
+            type={f.type === 'password' ? 'password' : 'text'}
+            value={fields[f.key] ?? ''}
+            onChange={(e) => setFields((prev) => ({ ...prev, [f.key]: e.target.value }))}
+            className="h-8 text-sm"
+          />
+        )
+      ))}
       <div className="flex gap-2 justify-end">
         <Button size="sm" variant="outline" onClick={onCancel}>Cancel</Button>
         <Button size="sm" onClick={() => createMut.mutate()} disabled={!valid || createMut.isPending}>
@@ -187,8 +120,8 @@ function FtpCredentialForm({ onCreated, onCancel }: { onCreated: () => void; onC
 
 function ConnectionsStep({ onOpen }: { onOpen: (c: ImportConnection) => void }) {
   const queryClient = useQueryClient()
-  const [credForm, setCredForm] = useState<'s3' | 'ftp' | null>(null)
-  const pendingOauth = useRef<CloudProvider | null>(null)
+  const [credForm, setCredForm] = useState(false)
+  const popupRef = useRef<Window | null>(null)
 
   const { data: providers } = useQuery({
     queryKey: ['media-import-providers'],
@@ -210,38 +143,31 @@ function ConnectionsStep({ onOpen }: { onOpen: (c: ImportConnection) => void }) 
     onError: () => toast({ title: 'Failed to remove connection', variant: 'destructive' }),
   })
 
-  // OAuth popup flow: the callback page posts { type, code, state } back to us.
-  useEffect(() => {
-    const handler = (e: MessageEvent) => {
-      if (e.origin !== window.location.origin) return
-      const d = e.data as { type?: string; code?: string; state?: string } | null
-      if (!d || d.type !== 'media-import-oauth' || !d.code || !d.state) return
-      const provider = pendingOauth.current
-      if (!provider) return
-      pendingOauth.current = null
-      importApi
-        .oauthCallback(provider, {
-          code: d.code,
-          state: d.state,
-          redirect_uri: window.location.origin + OAUTH_CALLBACK_PATH,
-        })
-        .then(() => { toast({ title: 'Connection added' }); invalidateConnections() })
-        .catch(() => toast({ title: 'Failed to complete authorization', variant: 'destructive' }))
-    }
-    window.addEventListener('message', handler)
-    return () => window.removeEventListener('message', handler)
-  }, [invalidateConnections])
-
-  const startOauth = async (provider: CloudProvider) => {
+  const startOauth = async (provider: ImportProvider) => {
     try {
-      const redirect_uri = window.location.origin + OAUTH_CALLBACK_PATH
-      const { url } = await importApi.oauthUrl(provider, redirect_uri)
-      pendingOauth.current = provider
-      window.open(url, 'media-import-oauth', 'width=600,height=700')
+      const { url } = await importApi.oauthStart(provider)
+      const popup = window.open(url, 'media-import-oauth', 'width=600,height=700')
+      if (!popup) {
+        toast({ title: 'Allow popups to connect cloud storage', variant: 'destructive' })
+        return
+      }
+      popupRef.current = popup
+      // Refresh connections once the OAuth popup completes and closes.
+      // The backend redirects back to /admin/media/import?connected=... so the
+      // popup lands on the import page, not a postMessage callback page.
+      const timer = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(timer)
+          popupRef.current = null
+          invalidateConnections()
+        }
+      }, 500)
     } catch {
       toast({ title: 'Failed to start authorization', variant: 'destructive' })
     }
   }
+
+  const oauthProviders = (providers ?? []).filter((p) => p.oauth)
 
   return (
     <div className="space-y-4">
@@ -275,49 +201,38 @@ function ConnectionsStep({ onOpen }: { onOpen: (c: ImportConnection) => void }) 
       <div className="space-y-2">
         <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Add connection</p>
         <div className="flex flex-wrap gap-2">
-          {(providers ?? []).map((p) => {
+          {oauthProviders.map((p) => {
             const label = PROVIDER_LABELS[p.provider] ?? p.provider
-            if (p.auth === 'oauth') {
-              return (
-                <div key={p.provider} className="flex items-center gap-1">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={!p.configured}
-                    onClick={() => startOauth(p.provider)}
-                    title={p.configured ? `Connect ${label}` : `${label} is not configured on the server`}
-                  >
-                    <Plus className="h-3 w-3 mr-1" /> {label}
-                  </Button>
-                  {!p.configured && (
-                    <span className="text-[10px] text-muted-foreground">Not configured</span>
-                  )}
-                </div>
-              )
-            }
             return (
-              <Button
-                key={p.provider}
-                size="sm"
-                variant="outline"
-                onClick={() => setCredForm(p.provider as 's3' | 'ftp')}
-                title={`Connect ${label}`}
-              >
-                <Plus className="h-3 w-3 mr-1" /> {label}
-              </Button>
+              <div key={p.provider} className="flex items-center gap-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={!p.configured}
+                  onClick={() => startOauth(p.provider)}
+                  title={p.configured ? `Connect ${label}` : `${label} is not configured on the server`}
+                >
+                  <Plus className="h-3 w-3 mr-1" /> {label}
+                </Button>
+                {!p.configured && (
+                  <span className="text-[10px] text-muted-foreground">Not configured</span>
+                )}
+              </div>
             )
           })}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setCredForm(true)}
+            title="Connect S3 or FTP"
+          >
+            <Plus className="h-3 w-3 mr-1" /> S3 / FTP
+          </Button>
         </div>
-        {credForm === 's3' && (
-          <S3CredentialForm
-            onCreated={() => { setCredForm(null); invalidateConnections() }}
-            onCancel={() => setCredForm(null)}
-          />
-        )}
-        {credForm === 'ftp' && (
-          <FtpCredentialForm
-            onCreated={() => { setCredForm(null); invalidateConnections() }}
-            onCancel={() => setCredForm(null)}
+        {credForm && (
+          <ManualConnectionForm
+            onCreated={() => { setCredForm(false); invalidateConnections() }}
+            onCancel={() => setCredForm(false)}
           />
         )}
       </div>
@@ -335,30 +250,30 @@ function ConnectionBrowser({
   onImported?: (result: ImportResult) => void
 }) {
   const [pathStack, setPathStack] = useState<{ id: string; name: string }[]>([])
-  const [entries, setEntries] = useState<BrowseEntry[]>([])
+  const [entries, setEntries] = useState<RemoteFile[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [importing, setImporting] = useState(false)
   const [result, setResult] = useState<ImportResult | null>(null)
 
-  const currentPath = pathStack[pathStack.length - 1]?.id
+  const currentFolderId = pathStack[pathStack.length - 1]?.id ?? undefined
 
   const load = useCallback(async (append: boolean, cur?: string | null) => {
     setLoading(true)
     try {
       const data = await importApi.browse(connection.id, {
-        ...(currentPath ? { path: currentPath } : {}),
+        ...(currentFolderId ? { folder_id: currentFolderId } : {}),
         ...(cur ? { cursor: cur } : {}),
       })
-      setEntries((prev) => (append ? [...prev, ...data.entries] : data.entries))
-      setCursor(data.cursor ?? null)
+      setEntries((prev) => (append ? [...prev, ...data.items] : data.items))
+      setCursor(data.nextCursor ?? null)
     } catch {
       toast({ title: 'Failed to browse connection', variant: 'destructive' })
     } finally {
       setLoading(false)
     }
-  }, [connection.id, currentPath])
+  }, [connection.id, currentFolderId])
 
   // (Re)load whenever the connection or current folder changes
   useEffect(() => {
@@ -426,7 +341,7 @@ function ConnectionBrowser({
           <p className="p-3 text-sm text-muted-foreground">This folder is empty.</p>
         )}
         {entries.map((e) =>
-          e.is_folder ? (
+          e.isFolder ? (
             <button
               key={e.id}
               type="button"
@@ -451,7 +366,9 @@ function ConnectionBrowser({
               />
               <FileIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <span className="truncate flex-1">{e.name}</span>
-              <span className="text-xs text-muted-foreground flex-shrink-0">{formatBytes(e.size)}</span>
+              {e.size != null && (
+                <span className="text-xs text-muted-foreground flex-shrink-0">{formatBytes(e.size)}</span>
+              )}
             </label>
           )
         )}
@@ -481,7 +398,7 @@ function ConnectionBrowser({
           </p>
           {result.skipped.map((s, i) => (
             <p key={i} className="text-xs text-destructive">
-              {s.file}: {s.reason}
+              {s.file_id}: {s.reason}
             </p>
           ))}
         </div>
@@ -532,3 +449,7 @@ export function CloudImportDialog({ folderId, onClose, onImported }: CloudImport
     </div>
   )
 }
+
+// Re-export types used by parent pages so they don't need to import from two places.
+export type { ImportConnection, ImportResult }
+export { PROVIDER_LABELS, OAUTH_PROVIDERS, MANUAL_PROVIDERS }
