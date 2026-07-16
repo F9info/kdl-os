@@ -25,6 +25,7 @@ import {
   Lock,
   Sparkles,
   CloudUpload,
+  HardDrive,
 } from 'lucide-react'
 import { useUiStore } from '@/stores/ui.store'
 import { useAuth } from '@/hooks/useAuth'
@@ -95,6 +96,7 @@ const GROUPS: NavGroup[] = [
       { label: 'Types', href: '/admin/settings/types', icon: ListChecks, permission: 'types:view' },
       { label: 'Categories', href: '/admin/settings/categories', icon: Briefcase, permission: 'categories:view' },
       { label: 'Fields', href: '/admin/settings/fields', icon: SlidersHorizontal, permission: 'setting-fields:view' },
+      { label: 'Storage', href: '/admin/settings/storage', icon: HardDrive, permission: 'settings:view' },
     ],
   },
 ]
@@ -107,7 +109,7 @@ export function AdminSidebar() {
   const pathname = usePathname()
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
 
-  const canViewSettings = can('types:view') || can('categories:view') || can('setting-fields:view')
+  const canViewSettings = can('types:view') || can('categories:view') || can('setting-fields:view') || can('settings:view')
 
   // Active types become top-level menu items automatically — one per type,
   // each linking to its own settings page. New types appear as soon as created.
