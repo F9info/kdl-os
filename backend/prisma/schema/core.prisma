@@ -52,6 +52,7 @@ model RefreshToken {
   id         String   @id @default(cuid())
   user_id    String
   token_hash String   @unique
+  family_id  String?
   expires_at DateTime
   revoked    Boolean  @default(false)
   created_at DateTime @default(now())
@@ -59,6 +60,7 @@ model RefreshToken {
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id])
+  @@index([family_id])
   @@index([expires_at, revoked])
   @@map("refresh_tokens")
 }
