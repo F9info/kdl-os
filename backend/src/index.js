@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import path from 'node:path';
+import fs from 'node:fs';
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -30,6 +32,7 @@ import roleRoutes from './modules/user-management/roles/routes.js';
 import permissionRoutes from './modules/user-management/permissions/routes.js';
 import activityLogRoutes from './modules/user-management/activity/routes.js';
 import moduleRoutes from './modules/modules/routes.js';
+import storageSettingsRoutes from './modules/storage-settings/routes.js';
 import { loadModules } from './shared/modules/module-loader.js';
 
 const app = express();
@@ -69,6 +72,24 @@ app.use('/api/roles', roleRoutes);
 app.use('/api/permissions', permissionRoutes);
 app.use('/api/activity-log', activityLogRoutes);
 app.use('/api/modules', moduleRoutes);
+app.use('/api/storage-settings', storageSettingsRoutes);
+
+// ─── Local storage file server ────────────────────────────────────────────────
+// Serves files stored by the local FS driver. Security: path traversal check only;
+// filenames are UUIDs so enumeration is not a practical concern.
+app.use('/api/storage/local', (req, res) => {
+  const storageDir = path.resolve(process.env.LOCAL_STORAGE_PATH || 'uploads/media');
+  const objectName = decodeURIComponent(req.path.slice(1)); // strip leading /
+  const resolved = path.resolve(path.join(storageDir, objectName));
+
+  if (!resolved.startsWith(storageDir + path.sep) && resolved !== storageDir) {
+    return res.status(403).end();
+  }
+  if (!fs.existsSync(resolved) || !fs.statSync(resolved).isFile()) {
+    return res.status(404).end();
+  }
+  res.sendFile(resolved);
+});
 
 // Mount plugin modules (those with module.json + routes.js) behind moduleGate
 await loadModules(app);
@@ -129,10 +150,10 @@ const server = app.listen(PORT, () => {
   logger.info(`Backend running on port ${PORT}`);
 });
 
-// Ensure the storage bucket exists so media / setting-field uploads succeed.
+// Ensure the active storage backend is ready (creates bucket/directory if needed).
 ensureBucketExists()
-  .then(() => logger.info(`MinIO bucket "${process.env.MINIO_BUCKET}" ready`))
-  .catch((err) => logger.error(`MinIO bucket init failed: ${err.message}`));
+  .then(() => logger.info('Storage backend ready'))
+  .catch((err) => logger.error(`Storage init failed: ${err.message}`));
 
 const shutdown = async () => {
   logger.info('Shutting down...');
