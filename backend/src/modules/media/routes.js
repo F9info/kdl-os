@@ -189,8 +189,8 @@ router.get('/:id/comments', requirePermission('media', 'view'), validate(mediaId
 router.post('/:id/comments', requirePermission('media', 'metadata-edit'), validate(createCommentSchema), createComment);
 router.delete('/:id/comments/:commentId', requirePermission('media', 'metadata-edit'), validate(commentIdParamSchema), deleteComment);
 
-// Workflow (B6) — pre-existing approval feature, out of scope for KDL-MEDIA-12
-router.patch('/:id/workflow', requirePermission('media', 'approve'), validate(workflowTransitionSchema), transitionWorkflow);
+// Workflow (B6) — per-transition auth handled in transitionWorkflow(); route gate is view-only
+router.patch('/:id/workflow', requirePermission('media', 'view'), validate(workflowTransitionSchema), transitionWorkflow);
 
 // List + CRUD
 router.get('/', requirePermission('media', 'view'), validate(listMediaSchema), listMedia);
