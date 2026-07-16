@@ -113,6 +113,26 @@ export async function assertPublicHost(host) {
     return;
   }
 
+  // Reject non-standard IP encodings before DNS (integer, hex, octal-octet)
+  if (/^\d+$/.test(stripped)) {
+    throw Object.assign(
+      new Error(`SSRF guard: "${stripped}" is an integer-encoded IP — not allowed`),
+      { status: 400 },
+    );
+  }
+  if (/^0x[0-9a-f]+$/i.test(stripped)) {
+    throw Object.assign(
+      new Error(`SSRF guard: "${stripped}" is a hex-encoded IP — not allowed`),
+      { status: 400 },
+    );
+  }
+  if (/(?:^|\.)0\d/.test(stripped)) {
+    throw Object.assign(
+      new Error(`SSRF guard: "${stripped}" contains octal IP notation — not allowed`),
+      { status: 400 },
+    );
+  }
+
   // Hostname — resolve all addresses and check each
   let results;
   try {
