@@ -34,6 +34,33 @@ export const listShares = async (mediaId) => {
   return prisma.mediaShare.findMany({ where: { media_id: mediaId }, orderBy: { created_at: 'desc' } });
 };
 
+const publicMediaFields = (media, url) => ({
+  id: media.id,
+  filename: media.filename,
+  original_name: media.original_name,
+  mime_type: media.mime_type,
+  size: media.size,
+  title: media.title,
+  alt_text: media.alt_text,
+  caption: media.caption,
+  width: media.width,
+  height: media.height,
+  duration: media.duration,
+  type: media.type,
+  url,
+});
+
+const publicShareFields = (share) => ({
+  expires_at: share.expires_at,
+  max_downloads: share.max_downloads,
+  download_count: share.download_count,
+});
+
+const publicFolderFields = (folder) => ({
+  id: folder.id,
+  name: folder.name,
+});
+
 // Resolve share token (used by public route — no auth)
 export const resolveShare = async (token, password) => {
   const share = await prisma.mediaShare.findUnique({ where: { token } });
@@ -54,17 +81,20 @@ export const resolveShare = async (token, password) => {
   // Increment download counter
   await prisma.mediaShare.update({ where: { id: share.id }, data: { download_count: { increment: 1 } } });
 
-  // Return media or folder
+  // Return sanitized media or folder — never expose storage internals or password_hash
   if (share.media_id) {
     const media = await prisma.media.findUnique({ where: { id: share.media_id, deleted_at: null } });
     if (!media) throw Object.assign(new Error('Gone'), { status: 410 });
     const url = await getFileUrl(media.path);
-    return { type: 'media', media: { ...media, url }, share };
+    return { type: 'media', media: publicMediaFields(media, url), share: publicShareFields(share) };
   }
   if (share.folder_id) {
     const folder = await prisma.mediaFolder.findUnique({ where: { id: share.folder_id } });
     const items = await prisma.media.findMany({ where: { folder_id: share.folder_id, deleted_at: null }, take: 100 });
-    return { type: 'folder', folder, items, share };
+    const itemsWithUrls = await Promise.all(
+      items.map(async (item) => publicMediaFields(item, await getFileUrl(item.path)))
+    );
+    return { type: 'folder', folder: publicFolderFields(folder), items: itemsWithUrls, share: publicShareFields(share) };
   }
   throw Object.assign(new Error('Gone'), { status: 410 });
 };
