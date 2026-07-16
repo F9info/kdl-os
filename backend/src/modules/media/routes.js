@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../../middleware/auth.js';
 import { upload } from '../../middleware/upload.js';
 import { validate } from '../../middleware/validate.js';
-import { requirePermission } from '../../middleware/permission.js';
+import { requirePermission, loadPermissions } from '../../middleware/permission.js';
 import {
   listMediaSchema, getMediaSchema, deleteMediaSchema, updateMediaSchema,
   createFolderSchema, updateFolderSchema, deleteFolderSchema,
@@ -175,11 +175,11 @@ router.post('/suggestions/:id/reject', requirePermission('media', 'metadata-edit
 router.get('/:id/t', requirePermission('media', 'preview'), validate(transformQuerySchema), getTransform);
 
 // Share management (B4) — authenticated CRUD; static paths before /:id wildcards
-router.post('/shares', requirePermission('media', 'share-link'), validate(createShareSchema), createShareLink);
-router.delete('/shares/:id', requirePermission('media', 'share-link'), validate(shareIdParamSchema), revokeShareLink);
-router.get('/shares/:token/qr', requirePermission('media', 'share-link'), validate(shareTokenParamSchema), shareQr);
-router.get('/shares/:token/embed', requirePermission('media', 'share-link'), validate(shareTokenParamSchema), shareEmbed);
-router.get('/:id/shares', requirePermission('media', 'share-link'), validate(mediaIdParamSchema), listShareLinks);
+router.post('/shares', requirePermission('media', 'share'), validate(createShareSchema), createShareLink);
+router.delete('/shares/:id', requirePermission('media', 'share'), validate(shareIdParamSchema), revokeShareLink);
+router.get('/shares/:token/qr', requirePermission('media', 'share'), validate(shareTokenParamSchema), shareQr);
+router.get('/shares/:token/embed', requirePermission('media', 'share'), validate(shareTokenParamSchema), shareEmbed);
+router.get('/:id/shares', requirePermission('media', 'share'), validate(mediaIdParamSchema), listShareLinks);
 
 // Versioning (B5) — re-upload file onto existing media record → new MediaVersion
 router.post('/:id/upload', requirePermission('media', 'upload'), upload.single('file'), validate(reuploadVersionSchema), reuploadAsVersion);
@@ -189,8 +189,11 @@ router.get('/:id/comments', requirePermission('media', 'view'), validate(mediaId
 router.post('/:id/comments', requirePermission('media', 'metadata-edit'), validate(createCommentSchema), createComment);
 router.delete('/:id/comments/:commentId', requirePermission('media', 'metadata-edit'), validate(commentIdParamSchema), deleteComment);
 
-// Workflow (B6) — pre-existing approval feature, out of scope for KDL-MEDIA-12
-router.patch('/:id/workflow', requirePermission('media', 'approve'), validate(workflowTransitionSchema), transitionWorkflow);
+// Workflow (B6) — route loads permissions only; per-transition authorization is
+// enforced by transitionWorkflow() in workflow.service.js (the single source of
+// truth). Removing the blanket media:approve gate here fixes KDL-242 so users
+// with media:edit or media:publish can reach submit/publish transitions.
+router.patch('/:id/workflow', loadPermissions(), validate(workflowTransitionSchema), transitionWorkflow);
 
 // List + CRUD
 router.get('/', requirePermission('media', 'view'), validate(listMediaSchema), listMedia);
