@@ -72,10 +72,11 @@ export function savePage(id: string, data: Data) {
   const pages = readAll()
   const idx = pages.findIndex((p) => p.id === id)
   if (idx === -1) return
+  const existing = pages[idx]!
   pages[idx] = {
-    ...pages[idx],
+    ...existing,
     data,
-    title: (data.root?.props?.title as string) || pages[idx].title,
+    title: (data.root?.props?.title as string) || existing.title,
     updatedAt: new Date().toISOString(),
   }
   writeAll(pages)
