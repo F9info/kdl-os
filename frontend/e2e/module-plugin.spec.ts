@@ -10,9 +10,9 @@
  *   cd frontend && E2E_BASE_URL=http://localhost:3001 pnpm e2e e2e/module-plugin.spec.ts
  */
 import { test, expect, request, type APIRequestContext } from '@playwright/test'
+import { ADMIN } from './helpers/credentials'
 
 const API_URL = process.env.E2E_API_URL ?? 'http://localhost:4000/api'
-const ADMIN = { email: 'admin@kdl.com', password: 'Admin@123' }
 
 let api: APIRequestContext
 let adminToken: string

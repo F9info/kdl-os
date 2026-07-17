@@ -57,13 +57,13 @@ describe('LoginPage regression', () => {
     render(<LoginPage />);
 
     await user.type(screen.getByPlaceholderText('admin@kdl.com'), 'admin@kdl.com');
-    await user.type(screen.getByPlaceholderText('••••••••'), 'Admin@123');
+    await user.type(screen.getByPlaceholderText('••••••••'), 'test-fixture-password');
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => {
       expect(api.post).toHaveBeenCalledWith('/auth/login', {
         email: 'admin@kdl.com',
-        password: 'Admin@123',
+        password: 'test-fixture-password',
       });
     });
     expect(mockPush).toHaveBeenCalledWith('/admin/dashboard');

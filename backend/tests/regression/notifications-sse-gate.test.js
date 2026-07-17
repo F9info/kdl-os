@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import jwt from 'jsonwebtoken';
 
 // Pass-through module gate — this suite targets the SSE auth middleware only.
 vi.mock('../../src/middleware/module-gate.js', () => ({
@@ -34,7 +33,15 @@ vi.mock('../../src/config/database.js', () => ({
   },
 }));
 
+vi.mock('../../src/config/redis.js', () => ({
+  redis: {
+    set: vi.fn(),
+    getdel: vi.fn(),
+  },
+}));
+
 import { prisma } from '../../src/config/database.js';
+import { redis } from '../../src/config/redis.js';
 import notificationRoutes from '../../src/modules/notifications/routes.js';
 import { agent, bearer } from '../helpers/app.js';
 
@@ -47,6 +54,8 @@ const mockUser = (overrides = {}) => ({
   must_change_password: false,
   ...overrides,
 });
+
+const VALID_TICKET = 'a'.repeat(64);
 
 describe('SSE stream forced-password-change gate (KDL-309)', () => {
   beforeEach(() => {
@@ -64,11 +73,23 @@ describe('SSE stream forced-password-change gate (KDL-309)', () => {
     expect(res.body.errors.code).toBe('PASSWORD_CHANGE_REQUIRED');
   });
 
-  it('blocks the stream via ?token= query fallback while must_change_password is set', async () => {
+  it('blocks ticket issuance while must_change_password is set', async () => {
     prisma.user.findUnique.mockResolvedValue(mockUser({ must_change_password: true }));
-    const token = jwt.sign({ userId: 'usr_1', email: 'admin@kdl.com' }, process.env.JWT_SECRET);
 
-    const res = await makeApp().get(`/api/notifications/stream?token=${token}`);
+    const res = await makeApp()
+      .post('/api/notifications/stream/ticket')
+      .set('Authorization', bearer({ userId: 'usr_1', email: 'admin@kdl.com' }));
+
+    expect(res.status).toBe(403);
+    expect(res.body.errors.code).toBe('PASSWORD_CHANGE_REQUIRED');
+    expect(redis.set).not.toHaveBeenCalled();
+  });
+
+  it('blocks the stream via ticket if the flag is set after issuance', async () => {
+    redis.getdel.mockResolvedValue('usr_1');
+    prisma.user.findUnique.mockResolvedValue(mockUser({ must_change_password: true }));
+
+    const res = await makeApp().get(`/api/notifications/stream?ticket=${VALID_TICKET}`);
 
     expect(res.status).toBe(403);
     expect(res.body.errors.code).toBe('PASSWORD_CHANGE_REQUIRED');
@@ -85,20 +106,37 @@ describe('SSE stream forced-password-change gate (KDL-309)', () => {
     expect(res.body.data).toBe('stream-open');
   });
 
-  it('opens the stream once the flag is cleared (query token fallback)', async () => {
+  it('issues a ticket and opens the stream once the flag is cleared', async () => {
     prisma.user.findUnique.mockResolvedValue(mockUser());
-    const token = jwt.sign({ userId: 'usr_1', email: 'admin@kdl.com' }, process.env.JWT_SECRET);
+    redis.set.mockResolvedValue('OK');
 
-    const res = await makeApp().get(`/api/notifications/stream?token=${token}`);
+    const issued = await makeApp()
+      .post('/api/notifications/stream/ticket')
+      .set('Authorization', bearer({ userId: 'usr_1', email: 'admin@kdl.com' }));
+
+    expect(issued.status).toBe(200);
+    expect(issued.body.data.ticket).toMatch(/^[a-f0-9]{64}$/);
+
+    redis.getdel.mockResolvedValue('usr_1');
+    const res = await makeApp().get(`/api/notifications/stream?ticket=${issued.body.data.ticket}`);
 
     expect(res.status).toBe(200);
     expect(res.body.data).toBe('stream-open');
   });
 
-  it('still rejects a missing token with 401', async () => {
+  it('still rejects missing credentials with 401', async () => {
     const res = await makeApp().get('/api/notifications/stream');
 
     expect(res.status).toBe(401);
+  });
+
+  it('still rejects an unknown or already-consumed ticket with 401', async () => {
+    redis.getdel.mockResolvedValue(null);
+
+    const res = await makeApp().get(`/api/notifications/stream?ticket=${VALID_TICKET}`);
+
+    expect(res.status).toBe(401);
+    expect(prisma.user.findUnique).not.toHaveBeenCalled();
   });
 
   it('still rejects a suspended account with 403', async () => {

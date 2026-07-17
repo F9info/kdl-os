@@ -87,7 +87,7 @@ const {
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function makeReq(overrides = {}) {
-  return {
+  const req = {
     user: { id: 'user-a', roles: [] },
     query: {},
     params: {},
@@ -95,6 +95,10 @@ function makeReq(overrides = {}) {
     headers: {},
     ...overrides,
   };
+  // Controllers read whitelisted input from req.validated (set by the validate
+  // middleware in production); mirror that here from the raw body/params.
+  req.validated = { body: req.body, params: req.params, query: req.query };
+  return req;
 }
 
 function makeRes() {

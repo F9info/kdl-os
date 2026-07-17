@@ -118,7 +118,7 @@ app_settings     → id, key, value, type, description
 media            → id, filename, original_name, mime_type, size, bucket, path, url, uploaded_by
 ```
 
-Seed: 1 SUPER_ADMIN (admin@kdl.com / Admin@123), base settings.
+Seed: 1 SUPER_ADMIN (`SEED_ADMIN_EMAIL`, default admin@kdl.com; password from `SEED_ADMIN_PASSWORD`, else random and printed once), base settings.
 
 ---
 

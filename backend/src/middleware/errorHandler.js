@@ -14,7 +14,9 @@ export const errorHandler = (err, req, res, next) => {
   }
 
   const statusCode = err.statusCode || err.status || 500;
-  const message = process.env.NODE_ENV === 'production' && statusCode === 500
+  // Mask 500 details everywhere except local development — staging/test builds
+  // must not leak stack-adjacent messages (DB errors, file paths) to clients.
+  const message = statusCode === 500 && process.env.NODE_ENV !== 'development'
     ? 'Internal server error'
     : err.message || 'Internal server error';
 

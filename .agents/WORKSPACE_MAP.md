@@ -39,7 +39,7 @@ Pattern: `routes → controller → service → Prisma`. Prisma client singleton
 | MeiliSearch | 7700 | search |
 | ChromaDB | 8000 | vector store (ai-services) |
 | ai-services | 5000 | `/api/ai/chat`, `/embed`, `/transcribe` (501) |
-| Frontend app (local QA) | 3101 | admin login `admin@kdl.com` / `Admin@123` |
+| Frontend app (local QA) | 3101 | admin login `admin@kdl.com` / `SEED_ADMIN_PASSWORD` (docker default `kdl-dev-seed-password`) |
 
 ## Where to look first for common tasks
 

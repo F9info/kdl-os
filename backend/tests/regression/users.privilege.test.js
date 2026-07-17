@@ -293,3 +293,87 @@ describe('permission override ceiling (KDL-273 H4)', () => {
     expect(tx.userPermission.createMany).toHaveBeenCalled();
   });
 });
+
+describe('DB-backed super-admin guard (regression KDL-307)', () => {
+  // actorIsSuperAdmin must consult resolvePermissions().bypass (DB/cache-backed),
+  // never the JWT roles claim. A revert to the claims-based check makes the
+  // "demoted" cases below pass the guard (the token still says super-admin)
+  // and fails this suite.
+  const superTarget = mockUser({ id: 'usr_super', roles: superAdminRoles });
+  const demotedActor = { id: 'usr_demoted', status: 'ACTIVE', deleted_at: null };
+  const demotedBearer = () =>
+    bearer({ userId: demotedActor.id, email: 'demoted@kdl.com', roles: ['super-admin'] });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prisma.rbacRole.findFirst.mockResolvedValue(null);
+    prisma.user.findUnique.mockImplementation(({ where }) => {
+      if (where.id === demotedActor.id) return Promise.resolve(demotedActor);
+      if (where.id === superTarget.id) return Promise.resolve(superTarget);
+      return Promise.resolve(null);
+    });
+  });
+
+  describe('demoted super admin (JWT still claims super-admin, DB says bypass: false)', () => {
+    beforeEach(() => {
+      resolvePermissions.mockResolvedValue({
+        bypass: false,
+        permissions: ['users:view', 'users:edit', 'users:delete'],
+      });
+    });
+
+    it('cannot update a super-admin target', async () => {
+      const res = await makeApp()
+        .patch(`/api/users/${superTarget.id}`)
+        .set('Authorization', demotedBearer())
+        .send({ name: 'Should Fail' });
+
+      expect(res.status).toBe(403);
+      expect(prisma.user.update).not.toHaveBeenCalled();
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('cannot delete a super-admin target', async () => {
+      const res = await makeApp()
+        .delete(`/api/users/${superTarget.id}`)
+        .set('Authorization', demotedBearer());
+
+      expect(res.status).toBe(403);
+      expect(prisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it('cannot reset a super-admin password', async () => {
+      const res = await makeApp()
+        .post(`/api/users/${superTarget.id}/reset-password`)
+        .set('Authorization', demotedBearer())
+        .send({ password: 'Str0ngPass!123' });
+
+      expect(res.status).toBe(403);
+      expect(prisma.user.update).not.toHaveBeenCalled();
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('bypass actor (DB says bypass: true)', () => {
+    beforeEach(() => {
+      resolvePermissions.mockResolvedValue({ bypass: true, permissions: [] });
+    });
+
+    it('can update a super-admin target', async () => {
+      const tx = {
+        user: { update: vi.fn().mockResolvedValue({ ...superTarget, name: 'Renamed' }) },
+      };
+      prisma.$transaction.mockImplementation(async (fn) => fn(tx));
+
+      const res = await makeApp()
+        .patch(`/api/users/${superTarget.id}`)
+        .set('Authorization', demotedBearer())
+        .send({ name: 'Renamed' });
+
+      expect(res.status).toBe(200);
+      expect(tx.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: superTarget.id } })
+      );
+    });
+  });
+});
