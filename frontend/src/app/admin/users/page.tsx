@@ -396,7 +396,6 @@ export default function UsersPage() {
           data={data?.users ?? []}
           isLoading={isLoading}
           error={error}
-          onRetry={() => refetch()}
           pagination={
             data
               ? {

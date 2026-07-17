@@ -1,6 +1,7 @@
 'use client'
 
 import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from '@tanstack/react-table'
+import { AlertCircle } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -11,16 +12,15 @@ import {
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
-import { ErrorState } from '@/components/ui/error-state'
 import { Pagination } from './Pagination'
+import { getErrorMessage } from './ErrorAlert'
 
 interface DataTableProps<T> {
   columns: ColumnDef<T>[]
   data: T[]
   isLoading: boolean
-  /** List-fetch error — renders ErrorState in place of the rows/empty state. */
+  /** List-fetch error — renders an in-table alert row in place of rows/empty state. */
   error?: unknown
-  onRetry?: () => void
   pagination?: {
     page: number
     totalPages: number
@@ -34,7 +34,6 @@ export function DataTable<T>({
   data,
   isLoading,
   error,
-  onRetry,
   pagination,
   emptyMessage = 'No results found.',
 }: DataTableProps<T>) {
@@ -76,7 +75,13 @@ export function DataTable<T>({
             ) : error ? (
               <TableRow>
                 <TableCell colSpan={columns.length}>
-                  <ErrorState error={error} onRetry={onRetry} />
+                  <div
+                    className="flex h-32 items-center justify-center gap-2 text-center"
+                    role="alert"
+                  >
+                    <AlertCircle className="h-4 w-4 text-destructive" aria-hidden />
+                    <span className="text-destructive">{getErrorMessage(error)}</span>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : table.getRowModel().rows.length === 0 ? (
@@ -106,7 +111,7 @@ export function DataTable<T>({
             page={pagination.page}
             totalPages={pagination.totalPages}
             onPageChange={pagination.onPageChange}
-            disabled={isLoading}
+            disabled={isLoading || !!error}
           />
         </div>
       )}
