@@ -19,6 +19,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       return
     }
 
+    // Forced password change (KDL-283): the backend already 403s every API
+    // call, so keep the user out of the admin shell entirely.
+    if (user?.must_change_password) {
+      router.replace('/change-password')
+      return
+    }
+
     if (isAuthenticated && !accessToken && !refreshing.current) {
       refreshing.current = true
       // Use raw fetch to bypass the axios interceptor — prevents interceptor loop
@@ -45,7 +52,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return <LoadingSpinner fullPage />
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || user?.must_change_password) {
     return null
   }
 
