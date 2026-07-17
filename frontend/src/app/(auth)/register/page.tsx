@@ -41,7 +41,11 @@ export default function RegisterPage() {
     formState: { errors },
   } = useForm<RegisterFormData>({ resolver: zodResolver(registerSchema) })
 
-  const { mutate: registerUser, isPending, error } = useMutation({
+  const {
+    mutate: registerUser,
+    isPending,
+    error,
+  } = useMutation({
     mutationFn: (data: Omit<RegisterFormData, 'confirmPassword'>) =>
       api.post('/auth/register', data),
     onSuccess: () => {
@@ -67,7 +71,12 @@ export default function RegisterPage() {
         </FormField>
 
         <FormField label="Email" error={errors.email?.message} required>
-          <Input type="email" placeholder="you@example.com" autoComplete="email" {...register('email')} />
+          <Input
+            type="email"
+            placeholder="you@example.com"
+            autoComplete="email"
+            {...register('email')}
+          />
         </FormField>
 
         <FormField label="Password" error={errors.password?.message} required>

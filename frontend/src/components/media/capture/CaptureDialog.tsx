@@ -27,7 +27,11 @@ export function CaptureDialog({ folderId, onUploaded, onClose }: CaptureDialogPr
   ]
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" role="dialog" aria-label="Capture media">
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      role="dialog"
+      aria-label="Capture media"
+    >
       <div className="bg-background rounded-lg shadow-xl p-6 w-[560px] max-w-[95vw] max-h-[85vh] overflow-y-auto space-y-4">
         <div className="flex justify-between items-center">
           <h3 className="font-semibold text-lg">Capture media</h3>
@@ -56,9 +60,15 @@ export function CaptureDialog({ folderId, onUploaded, onClose }: CaptureDialogPr
         </div>
 
         {/* key ensures device streams are fully torn down when switching tabs */}
-        {mode === 'webcam' && <WebcamCapture key="webcam" folderId={folderId} onUploaded={onUploaded} />}
-        {mode === 'screen' && <ScreenCapture key="screen" folderId={folderId} onUploaded={onUploaded} />}
-        {mode === 'voice' && <VoiceRecorder key="voice" folderId={folderId} onUploaded={onUploaded} />}
+        {mode === 'webcam' && (
+          <WebcamCapture key="webcam" folderId={folderId} onUploaded={onUploaded} />
+        )}
+        {mode === 'screen' && (
+          <ScreenCapture key="screen" folderId={folderId} onUploaded={onUploaded} />
+        )}
+        {mode === 'voice' && (
+          <VoiceRecorder key="voice" folderId={folderId} onUploaded={onUploaded} />
+        )}
       </div>
     </div>
   )

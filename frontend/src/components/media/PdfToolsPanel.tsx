@@ -35,10 +35,7 @@ export function PdfToolsPanel({ mediaId, onJobStarted }: Props) {
   const callOp = async (payload: Record<string, unknown>) => {
     setLoading(true)
     try {
-      const res = await api.post<{ data: { job_id: string } }>(
-        `/media/${mediaId}/pdf-op`,
-        payload,
-      )
+      const res = await api.post<{ data: { job_id: string } }>(`/media/${mediaId}/pdf-op`, payload)
       const jobId = res.data.data.job_id
       onJobStarted(jobId)
       toast({ title: `Job started`, description: jobId })
@@ -93,11 +90,7 @@ export function PdfToolsPanel({ mediaId, onJobStarted }: Props) {
       {/* Compress */}
       <div className="space-y-2 border-t pt-4">
         <h3 className="text-sm font-semibold">Compress</h3>
-        <Button
-          size="sm"
-          onClick={() => callOp({ op: 'compress' })}
-          disabled={loading}
-        >
+        <Button size="sm" onClick={() => callOp({ op: 'compress' })} disabled={loading}>
           Compress PDF
         </Button>
       </div>
@@ -179,11 +172,7 @@ export function PdfToolsPanel({ mediaId, onJobStarted }: Props) {
       {/* Thumbnail */}
       <div className="space-y-2 border-t pt-4">
         <h3 className="text-sm font-semibold">Thumbnail</h3>
-        <Button
-          size="sm"
-          onClick={() => callOp({ op: 'thumbnail' })}
-          disabled={loading}
-        >
+        <Button size="sm" onClick={() => callOp({ op: 'thumbnail' })} disabled={loading}>
           Generate Thumbnail
         </Button>
       </div>

@@ -5,6 +5,7 @@ import './te-typography.css'
 import './te-layout.css'
 import './te-components.css'
 import { Providers } from './providers'
+import { WebVitals } from '@/components/WebVitals'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         className={inter.className}
         style={{ fontFamily: 'var(--te-typo-body-family), ui-sans-serif, system-ui, sans-serif' }}
       >
+        <WebVitals />
         <Providers>{children}</Providers>
       </body>
     </html>

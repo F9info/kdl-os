@@ -27,15 +27,13 @@ export default function RolesPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['roles', page],
     queryFn: () =>
-      api
-        .get('/roles', { params: { page, limit: 20 } })
-        .then(
-          (r) =>
-            r.data.data as {
-              roles: RbacRole[]
-              pagination: { total: number; pages: number }
-            }
-        ),
+      api.get('/roles', { params: { page, limit: 20 } }).then(
+        (r) =>
+          r.data.data as {
+            roles: RbacRole[]
+            pagination: { total: number; pages: number }
+          }
+      ),
   })
 
   const createMutation = useMutation({
@@ -74,8 +72,7 @@ export default function RolesPage() {
 
   const { data: editRoleDetail } = useQuery({
     queryKey: ['role', editRole?.id],
-    queryFn: () =>
-      api.get(`/roles/${editRole!.id}`).then((r) => r.data.data.role as RbacRole),
+    queryFn: () => api.get(`/roles/${editRole!.id}`).then((r) => r.data.data.role as RbacRole),
     enabled: !!editRole?.id,
   })
 
@@ -94,9 +91,7 @@ export default function RolesPage() {
       accessorKey: 'description',
       header: 'Description',
       cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">
-          {row.original.description ?? '—'}
-        </span>
+        <span className="text-sm text-muted-foreground">{row.original.description ?? '—'}</span>
       ),
     },
     {
@@ -156,62 +151,58 @@ export default function RolesPage() {
 
   return (
     <PermissionGuard permission="roles:view">
-    <div>
-      <PageHeader
-        title="Roles"
-        action={
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create role
-          </Button>
-        }
-      />
+      <div>
+        <PageHeader
+          title="Roles"
+          action={
+            <Button onClick={() => setDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create role
+            </Button>
+          }
+        />
 
-      <DataTable
-        columns={columns}
-        data={data?.roles ?? []}
-        isLoading={isLoading}
-        pagination={
-          data
-            ? { page, totalPages: data.pagination.pages, onPageChange: setPage }
-            : undefined
-        }
-        emptyMessage="No roles found."
-      />
+        <DataTable
+          columns={columns}
+          data={data?.roles ?? []}
+          isLoading={isLoading}
+          pagination={
+            data ? { page, totalPages: data.pagination.pages, onPageChange: setPage } : undefined
+          }
+          emptyMessage="No roles found."
+        />
 
-      <RoleFormDialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        onSubmit={(formData) => createMutation.mutate(formData)}
-        isPending={createMutation.isPending}
-        error={createMutation.error}
-        role={null}
-      />
+        <RoleFormDialog
+          open={dialogOpen}
+          onClose={() => setDialogOpen(false)}
+          onSubmit={(formData) => createMutation.mutate(formData)}
+          isPending={createMutation.isPending}
+          error={createMutation.error}
+          role={null}
+        />
 
-      <RoleFormDialog
-        open={!!editRole}
-        onClose={() => setEditRole(null)}
-        onSubmit={(formData) =>
-          updateMutation.mutate({ id: editRole!.id, body: formData })
-        }
-        isPending={updateMutation.isPending}
-        error={updateMutation.error}
-        role={editRoleDetail ?? editRole}
-      />
+        <RoleFormDialog
+          open={!!editRole}
+          onClose={() => setEditRole(null)}
+          onSubmit={(formData) => updateMutation.mutate({ id: editRole!.id, body: formData })}
+          isPending={updateMutation.isPending}
+          error={updateMutation.error}
+          role={editRoleDetail ?? editRole}
+        />
 
-      <ConfirmDialog
-        open={deleteId !== null}
-        onClose={() => setDeleteId(null)}
-        onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
-        title={`Delete "${deletingRole?.name}"?`}
-        description={
-          (deletingRole?.user_count ?? 0) > 0
-            ? `This role has ${deletingRole?.user_count} user(s) assigned. Remove the role assignments first.`
-            : 'This action cannot be undone.'
-        }
-        isLoading={deleteMutation.isPending}
-      />
-    </div>
+        <ConfirmDialog
+          open={deleteId !== null}
+          onClose={() => setDeleteId(null)}
+          onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
+          title={`Delete "${deletingRole?.name}"?`}
+          description={
+            (deletingRole?.user_count ?? 0) > 0
+              ? `This role has ${deletingRole?.user_count} user(s) assigned. Remove the role assignments first.`
+              : 'This action cannot be undone.'
+          }
+          isLoading={deleteMutation.isPending}
+        />
+      </div>
     </PermissionGuard>
   )
 }

@@ -13,8 +13,7 @@ export function usePermissions() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['me-permissions'],
-    queryFn: () =>
-      api.get('/auth/me/permissions').then((r) => r.data.data as PermissionsResponse),
+    queryFn: () => api.get('/auth/me/permissions').then((r) => r.data.data as PermissionsResponse),
     staleTime: 5 * 60 * 1000,
     enabled: isAuthenticated,
   })

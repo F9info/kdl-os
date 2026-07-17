@@ -43,15 +43,7 @@ function formatBytes(bytes: number): string {
 
 // ─── Compare view ─────────────────────────────────────────────────────────────
 
-function CompareView({
-  a,
-  b,
-  onClose,
-}: {
-  a: MediaVersion
-  b: MediaVersion
-  onClose: () => void
-}) {
+function CompareView({ a, b, onClose }: { a: MediaVersion; b: MediaVersion; onClose: () => void }) {
   return (
     <div className="fixed inset-0 bg-black/80 z-50 flex flex-col">
       <div className="flex items-center justify-between p-3 bg-background/90 backdrop-blur">
@@ -177,20 +169,18 @@ export function VersionHistoryPanel({ mediaId, mediaType, onRestored }: VersionH
                 )}
                 <span className="text-sm font-medium">v{v.version_number}</span>
                 {isCurrent && (
-                  <Badge variant="default" className="text-xs px-1.5 py-0">Current</Badge>
+                  <Badge variant="default" className="text-xs px-1.5 py-0">
+                    Current
+                  </Badge>
                 )}
-                <span className="text-xs text-muted-foreground ml-auto">
-                  {formatBytes(v.size)}
-                </span>
+                <span className="text-xs text-muted-foreground ml-auto">{formatBytes(v.size)}</span>
               </div>
 
               <p className="text-xs text-muted-foreground">
                 {new Date(v.created_at).toLocaleString()}
               </p>
 
-              {v.note && (
-                <p className="text-xs italic text-muted-foreground">{v.note}</p>
-              )}
+              {v.note && <p className="text-xs italic text-muted-foreground">{v.note}</p>}
 
               <div className="flex items-center gap-2 pt-1">
                 <a

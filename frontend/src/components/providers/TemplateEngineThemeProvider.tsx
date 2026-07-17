@@ -39,7 +39,9 @@ function injectCss(css: string) {
 // with platform=webapp itself). Native clients (tv/android/ios) likewise
 // fetch this endpoint with their own `platform` and apply the JSON form.
 async function fetchAndApply(): Promise<ActiveTheme> {
-  const res = await api.get<TokensResponse>('/template-engine/tokens', { params: { platform: 'webapp_admin' } })
+  const res = await api.get<TokensResponse>('/template-engine/tokens', {
+    params: { platform: 'webapp_admin' },
+  })
   const { css, activeTheme } = res.data.data
   injectCss(css)
   return activeTheme ?? 'system'

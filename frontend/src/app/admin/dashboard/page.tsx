@@ -60,9 +60,7 @@ const recentColumns: ColumnDef<User>[] = [
   {
     accessorKey: 'is_active',
     header: 'Status',
-    cell: ({ row }) => (
-      <StatusBadge variant={row.original.is_active ? 'active' : 'inactive'} />
-    ),
+    cell: ({ row }) => <StatusBadge variant={row.original.is_active ? 'active' : 'inactive'} />,
   },
   {
     accessorKey: 'created_at',
@@ -75,7 +73,9 @@ export default function DashboardPage() {
   const { data: usersData, isLoading: usersLoading } = useQuery({
     queryKey: ['users', 'stats'],
     queryFn: () =>
-      api.get('/users', { params: { limit: 1 } }).then((r) => r.data.data as { users: User[]; pagination: { total: number } }),
+      api
+        .get('/users', { params: { limit: 1 } })
+        .then((r) => r.data.data as { users: User[]; pagination: { total: number } }),
   })
 
   const { data: activeData, isLoading: activeLoading } = useQuery({
@@ -88,8 +88,7 @@ export default function DashboardPage() {
 
   const { data: settingsData, isLoading: settingsLoading } = useQuery({
     queryKey: ['settings', 'stats'],
-    queryFn: () =>
-      api.get('/settings').then((r) => r.data.data as { settings: unknown[] }),
+    queryFn: () => api.get('/settings').then((r) => r.data.data as { settings: unknown[] }),
   })
 
   const { data: recentUsers, isLoading: recentLoading } = useQuery({
