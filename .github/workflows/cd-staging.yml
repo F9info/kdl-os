@@ -20,8 +20,31 @@ on:
   workflow_dispatch:
 
 jobs:
+  preflight:
+    name: Check staging secrets
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - name: Check if staging secrets are provisioned
+        id: check
+        env:
+          _STAGING_HOST: ${{ secrets.STAGING_HOST }}
+        run: |
+          if [[ -n "$_STAGING_HOST" ]]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "## Staging deploy skipped" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Staging secrets (\`STAGING_HOST\` / \`STAGING_SSH_KEY\`) are not yet provisioned." >> "$GITHUB_STEP_SUMMARY"
+            echo "See **MANUAL_TASKS.md → staging runbook** or the parent task KDL-373 for provisioning steps." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   deploy-staging:
     name: Deploy to staging
+    needs: [preflight]
+    if: needs.preflight.outputs.enabled == 'true'
     runs-on: ubuntu-latest
     environment:
       name: staging
