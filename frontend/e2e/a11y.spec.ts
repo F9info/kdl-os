@@ -21,29 +21,44 @@ async function assertNoSeriousViolations(page: Page, label: string) {
   ).toHaveLength(0)
 }
 
-async function loginAsAdmin(page: Page) {
-  await page.goto('/login')
-  await page.getByPlaceholder('admin@kdl.com').fill(ADMIN.email)
-  await page.getByPlaceholder('••••••••').fill(ADMIN.password)
-  await page.getByRole('button', { name: 'Sign in' }).click()
-  // Seeded admin has must_change_password=true on first login → handle redirect.
-  // On subsequent calls (password already changed) login goes directly to dashboard.
-  await page.waitForURL(/\/change-password|\/admin\/dashboard|\/login/, { timeout: 15_000 })
-  if (page.url().includes('/change-password')) {
-    await page.locator('input[autocomplete="current-password"]').fill(ADMIN.password)
-    await page.locator('input[autocomplete="new-password"]').first().fill(ADMIN.changedPassword)
-    await page.locator('input[autocomplete="new-password"]').last().fill(ADMIN.changedPassword)
-    await page.getByRole('button', { name: 'Change password' }).click()
-    await expect(page).toHaveURL(/\/admin\/dashboard/, { timeout: 15_000 })
-  } else if (page.url().includes('/login')) {
-    // Password was already changed by an earlier test — use the new password.
+test.describe('A11y smoke — WCAG 2.2 AA', () => {
+  // Handle must_change_password on the seeded admin once per suite.
+  // Tests that need auth use changedPassword directly so each test is
+  // independent of ordering and there are no double-click races.
+  test.beforeAll(async ({ browser }) => {
+    const context = await browser.newContext()
+    const page = await context.newPage()
+    try {
+      await page.goto('/login')
+      await page.getByPlaceholder('admin@kdl.com').fill(ADMIN.email)
+      await page.getByPlaceholder('••••••••').fill(ADMIN.password)
+      // Fire click and wait for navigation simultaneously so waitForURL
+      // registers before the click resolves (avoids the current-URL race).
+      await Promise.all([
+        page.waitForURL(/\/change-password|\/admin\/dashboard/, { timeout: 15_000 }),
+        page.getByRole('button', { name: 'Sign in' }).click(),
+      ])
+      if (page.url().includes('/change-password')) {
+        await page.locator('input[autocomplete="current-password"]').fill(ADMIN.password)
+        await page.locator('input[autocomplete="new-password"]').first().fill(ADMIN.changedPassword)
+        await page.locator('input[autocomplete="new-password"]').last().fill(ADMIN.changedPassword)
+        await page.getByRole('button', { name: 'Change password' }).click()
+        await expect(page).toHaveURL(/\/admin\/dashboard/, { timeout: 15_000 })
+      }
+      // else: password already changed (re-run against same DB) — done.
+    } finally {
+      await context.close()
+    }
+  })
+
+  async function loginAsAdmin(page: Page) {
+    await page.goto('/login')
+    await page.getByPlaceholder('admin@kdl.com').fill(ADMIN.email)
     await page.getByPlaceholder('••••••••').fill(ADMIN.changedPassword)
     await page.getByRole('button', { name: 'Sign in' }).click()
     await expect(page).toHaveURL(/\/admin\/dashboard/, { timeout: 15_000 })
   }
-}
 
-test.describe('A11y smoke — WCAG 2.2 AA', () => {
   test('login page', async ({ page }) => {
     await page.goto('/login')
     await assertNoSeriousViolations(page, '/login')
