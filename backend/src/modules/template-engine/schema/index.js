@@ -37,8 +37,8 @@ const INPUT_STYLE_SECTIONS=(()=>{const out=[];
 const BASE_TABS=[
 {id:'branding',icon:'🎨',ic:'#e8554d',label:'Theme Color',desc:'Theme colors — dark and light',
  modes:[{id:'dark',label:'🌙 Dark Theme'},{id:'light',label:'☀️ Light Theme'}],sections:[
-  ['Brand Colors',[C('Primary Color','#4f8ef7'),C('Secondary Color','#0ea5e9'),C('Tertiary Color','#64d2ff'),C('Accent Color','#a855f7'),C('Titles Text Color','#f2f2f5'),C('Body Text Color','#c7c7ce')],'dark'],
-  ['Brand Colors',[C('Primary Color','#0a66f0'),C('Secondary Color','#0284c7'),C('Tertiary Color','#0891b2'),C('Accent Color','#7c3aed'),C('Titles Text Color','#1d1d21'),C('Body Text Color','#3a3a40')],'light'],
+  ['Brand Colors',[C('Primary Color','#7468F3'),C('Secondary Color','#0ea5e9'),C('Tertiary Color','#64d2ff'),C('Accent Color','#F7B23B'),C('Titles Text Color','#f2f2f5'),C('Body Text Color','#c7c7ce')],'dark'],
+  ['Brand Colors',[C('Primary Color','#2119B3'),C('Secondary Color','#0284c7'),C('Tertiary Color','#0891b2'),C('Accent Color','#F9941F'),C('Titles Text Color','#1d1d21'),C('Body Text Color','#3a3a40')],'light'],
   ['Surfaces',[C('Background Color','#1e1e20'),C('Surface Color','#2a2a2e'),C('Card Color','#323236'),C('Sidebar Color','#26262a'),C('Header Color','#2a2a2e'),C('Footer Color','#26262a')],'dark'],
   ['Text & Interaction',[C('Text Primary','#f2f2f5'),C('Text Secondary','#a5a5ad'),C('Text Tertiary','#6e6e76'),C('Link Color','#4f8ef7'),C('Hover Color','#5e9bff'),C('Border Color','#3d3d42'),C('Divider Color','#38383d')],'dark'],
   ['Surfaces',[C('Background Color','#f2f2f7'),C('Surface Color','#ffffff'),C('Card Color','#ffffff'),C('Sidebar Color','#eeeef1'),C('Header Color','#ffffff'),C('Footer Color','#f6f6f8')],'light'],
