@@ -6,7 +6,13 @@ import { AlertTriangle } from 'lucide-react'
 // global-error wraps the root <html> element — it must render a complete HTML
 // skeleton. The design system classes are unavailable here (providers haven't
 // mounted), so we use minimal inline styles.
-export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function GlobalError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string }
+  reset: () => void
+}) {
   useEffect(() => {
     console.error('Fatal application error:', error)
   }, [error])

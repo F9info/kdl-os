@@ -2,15 +2,18 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/axios'
-import type { Notification, PreferenceMatrix, NotificationPreference } from '@/types/notifications.types'
+import type {
+  Notification,
+  PreferenceMatrix,
+  NotificationPreference,
+} from '@/types/notifications.types'
 import { useAuthStore } from '@/stores/auth.store'
 
 export function useUnreadCount() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   return useQuery({
     queryKey: ['notifications', 'unread-count'],
-    queryFn: () =>
-      api.get('/notifications/unread-count').then((r) => r.data.data.count as number),
+    queryFn: () => api.get('/notifications/unread-count').then((r) => r.data.data.count as number),
     refetchInterval: 30_000,
     enabled: isAuthenticated,
   })

@@ -29,7 +29,11 @@ export default function ForgotPasswordPage() {
     formState: { errors },
   } = useForm<ForgotPasswordFormData>({ resolver: zodResolver(forgotPasswordSchema) })
 
-  const { mutate: requestReset, isPending, error } = useMutation({
+  const {
+    mutate: requestReset,
+    isPending,
+    error,
+  } = useMutation({
     mutationFn: (data: ForgotPasswordFormData) =>
       api.post('/auth/forgot-password', data).then((r) => r.data),
     onSuccess: () => setSubmitted(true),
@@ -65,7 +69,12 @@ export default function ForgotPasswordPage() {
 
       <form onSubmit={handleSubmit((data) => requestReset(data))} className="space-y-4" noValidate>
         <FormField label="Email" error={errors.email?.message} required>
-          <Input type="email" placeholder="you@example.com" autoComplete="email" {...register('email')} />
+          <Input
+            type="email"
+            placeholder="you@example.com"
+            autoComplete="email"
+            {...register('email')}
+          />
         </FormField>
 
         {error && <ErrorAlert error={error} />}

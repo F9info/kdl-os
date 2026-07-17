@@ -22,8 +22,7 @@ const authHeaders = () => ({ Authorization: `Bearer ${adminToken}` })
 async function getExampleStatus(): Promise<string | null> {
   const res = await api.get(`${API_URL}/modules`, { headers: authHeaders() })
   if (!res.ok()) return null
-  const modules: Array<{ slug: string; status: string }> =
-    (await res.json()).data?.modules ?? []
+  const modules: Array<{ slug: string; status: string }> = (await res.json()).data?.modules ?? []
   return modules.find((m) => m.slug === 'example')?.status ?? null
 }
 
@@ -83,7 +82,7 @@ test('3. nav item appears and page loads after enable', async ({ page }) => {
   // Fresh login — module is already ENABLED, so modules/enabled returns it immediately.
   // Wait for modules/enabled before asserting the sidebar.
   const modulesResponsePromise = page.waitForResponse(
-    (r) => r.url().includes('/modules/enabled') && r.request().method() === 'GET',
+    (r) => r.url().includes('/modules/enabled') && r.request().method() === 'GET'
   )
   await loginUi(page)
   await modulesResponsePromise
@@ -107,7 +106,7 @@ test('4. disable example module — status becomes DISABLED', async () => {
 test('5. nav item gone + API 404 after disable', async ({ page }) => {
   // Fresh login — module is now DISABLED, so modules/enabled no longer returns it.
   const modulesResponsePromise = page.waitForResponse(
-    (r) => r.url().includes('/modules/enabled') && r.request().method() === 'GET',
+    (r) => r.url().includes('/modules/enabled') && r.request().method() === 'GET'
   )
   await loginUi(page)
   await modulesResponsePromise

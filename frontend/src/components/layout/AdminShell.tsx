@@ -1,5 +1,6 @@
 import { AdminSidebar } from './AdminSidebar'
 import { TopBar } from './TopBar'
+import { CommandMenu } from '@/components/command/CommandMenu'
 
 interface AdminShellProps {
   children: React.ReactNode
@@ -21,6 +22,7 @@ export function AdminShell({ children }: AdminShellProps) {
           KDL Admin
         </footer>
       </div>
+      <CommandMenu />
     </div>
   )
 }

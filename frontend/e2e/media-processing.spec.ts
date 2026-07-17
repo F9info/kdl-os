@@ -75,11 +75,7 @@ function headers() {
   return { Authorization: `Bearer ${adminToken}` }
 }
 
-async function uploadMedia(
-  buf: Buffer,
-  filename: string,
-  mimeType: string,
-): Promise<string> {
+async function uploadMedia(buf: Buffer, filename: string, mimeType: string): Promise<string> {
   const res = await api.post(`${API_URL}/media/upload`, {
     headers: headers(),
     multipart: { files: { name: filename, mimeType, buffer: buf } },
@@ -93,7 +89,7 @@ async function uploadMedia(
 
 async function pollJob(
   jobId: string,
-  { timeoutMs = 30_000, intervalMs = 500 } = {},
+  { timeoutMs = 30_000, intervalMs = 500 } = {}
 ): Promise<{ state: string; result: unknown; failedReason?: string }> {
   const deadline = Date.now() + timeoutMs
   while (Date.now() < deadline) {
@@ -155,8 +151,16 @@ test.describe('C8 — Processing Studio E2E', () => {
 
   // ── 2. Merge 2 PDFs → new Media record ───────────────────────────────────
   test('2. merge two PDFs creates a new media record', async () => {
-    const pdf1Id = await uploadMedia(makePdf(`E2E-PDF-A-${RUN}`), `e2e-pdf-a-${RUN}.pdf`, 'application/pdf')
-    const pdf2Id = await uploadMedia(makePdf(`E2E-PDF-B-${RUN}`), `e2e-pdf-b-${RUN}.pdf`, 'application/pdf')
+    const pdf1Id = await uploadMedia(
+      makePdf(`E2E-PDF-A-${RUN}`),
+      `e2e-pdf-a-${RUN}.pdf`,
+      'application/pdf'
+    )
+    const pdf2Id = await uploadMedia(
+      makePdf(`E2E-PDF-B-${RUN}`),
+      `e2e-pdf-b-${RUN}.pdf`,
+      'application/pdf'
+    )
 
     const mergeRes = await api.post(`${API_URL}/media/pdf-merge`, {
       headers: headers(),

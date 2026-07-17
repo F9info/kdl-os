@@ -221,9 +221,7 @@ test('4b. non-super-admin with types:view can access the PermissionGuard-protect
   await expect(page.getByText('Permission Denied')).toHaveCount(0)
 })
 
-test('4c. non-super-admin with users:view sees Users link but not Roles link', async ({
-  page,
-}) => {
+test('4c. non-super-admin with users:view sees Users link but not Roles link', async ({ page }) => {
   // Create a role with users:view only via the API (role-creation UI is already covered by test 1).
   const roleRes = await api.post(`${API_URL}/roles`, {
     headers: authHeaders(adminToken),
@@ -373,7 +371,7 @@ test('8. soft-deleted user cannot log in', async ({ page }) => {
   await page.getByPlaceholder('admin@kdl.com').fill(DELETED_EMAIL)
   await page.getByPlaceholder('••••••••').fill(PASSWORD)
   const loginResponse = page.waitForResponse(
-    (r) => r.url().includes('/auth/login') && r.request().method() === 'POST',
+    (r) => r.url().includes('/auth/login') && r.request().method() === 'POST'
   )
   await page.getByRole('button', { name: 'Sign in' }).click()
   expect((await loginResponse).status()).toBe(401)

@@ -13,7 +13,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useModules } from '@/hooks/useModules'
-import { useUnreadCount, useNotifications, useMarkRead, useMarkAllRead } from '@/hooks/useNotifications'
+import {
+  useUnreadCount,
+  useNotifications,
+  useMarkRead,
+  useMarkAllRead,
+} from '@/hooks/useNotifications'
 import { useNotificationStream } from '@/hooks/useNotificationStream'
 import { toast } from '@/hooks/use-toast'
 import type { Notification } from '@/types/notifications.types'
@@ -58,10 +63,19 @@ export function NotificationBell() {
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative" aria-label="Notifications" data-testid="notification-bell">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative"
+          aria-label="Notifications"
+          data-testid="notification-bell"
+        >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <span data-testid="notification-bell-badge" className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+            <span
+              data-testid="notification-bell-badge"
+              className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground"
+            >
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}

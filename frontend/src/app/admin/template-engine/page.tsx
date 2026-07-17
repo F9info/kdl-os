@@ -131,10 +131,16 @@ const NAV_GROUPS: Record<string, [string, string[]][]> = {
   tv: [
     ['Foundations', ['branding', 'typography', 'layout', 'dimensions']],
     ['Navigation', ['navigation', 'search']],
-    ['Core Components', ['buttons', 'controls', 'forms', 'lists', 'cards', 'tables', 'surfaces', 'icons']],
+    [
+      'Core Components',
+      ['buttons', 'controls', 'forms', 'lists', 'cards', 'tables', 'surfaces', 'icons'],
+    ],
     ['Media & Playback', ['details', 'playback', 'images']],
     ['Patterns', ['popup', 'progress', 'recommendations', 'alerts', 'emptystates', 'onboarding']],
-    ['Advanced', ['accessibility', 'motion', 'gestures', 'assets', 'customcomponents', 'tokens', 'guidelines']],
+    [
+      'Advanced',
+      ['accessibility', 'motion', 'gestures', 'assets', 'customcomponents', 'tokens', 'guidelines'],
+    ],
     ['TV OS Style Guides', ['androidtv', 'leanback', 'tvos', 'firetv', 'roku', 'tizen', 'webos']],
   ],
   android: [
@@ -176,7 +182,10 @@ const LANDING_PLATFORMS = [
 // until a dedicated Landing Page platform is actually requested). TV/Android/
 // iOS have one sub each today since there's no real split yet — more to come
 // per user direction, one at a time.
-const LANDING_SUBTABS: Record<string, { key: string; platformId: string; icon: string; label: string }[]> = {
+const LANDING_SUBTABS: Record<
+  string,
+  { key: string; platformId: string; icon: string; label: string }[]
+> = {
   webapp: [
     { key: 'webapp-frontend', platformId: 'webapp', icon: '🖥️', label: 'Frontend' },
     { key: 'webapp-admin', platformId: 'webapp_admin', icon: '🛠️', label: 'Admin' },
@@ -207,8 +216,7 @@ function lsSet(key: string, val: string) {
 // generic "Could not save" so a bad value is diagnosable from the toast.
 function mutationErrorMessage(err: unknown, fallback: string): string {
   const data = (err as { response?: { data?: unknown } })?.response?.data as
-    | { message?: string; errors?: { formErrors?: unknown } }
-    | undefined
+    { message?: string; errors?: { formErrors?: unknown } } | undefined
   const formErrors = data?.errors?.formErrors
   if (Array.isArray(formErrors) && formErrors.length) return formErrors.join('; ')
   if (typeof data?.message === 'string' && data.message) return data.message
@@ -364,13 +372,13 @@ function ToggleControl({ value, onChange }: { value: string; onChange: (v: strin
       <div
         className={cn(
           'h-6 w-11 rounded-full border-2 transition-colors',
-          checked ? 'border-primary bg-primary' : 'border-border bg-muted',
+          checked ? 'border-primary bg-primary' : 'border-border bg-muted'
         )}
       >
         <div
           className={cn(
             'h-4 w-4 translate-y-[1px] rounded-full bg-white shadow transition-transform',
-            checked ? 'translate-x-[21px]' : 'translate-x-[1px]',
+            checked ? 'translate-x-[21px]' : 'translate-x-[1px]'
           )}
         />
       </div>
@@ -456,7 +464,7 @@ function MultiSelectControl({
             'rounded-full border px-3 py-0.5 text-xs transition-colors',
             cur.includes(c)
               ? 'border-primary bg-primary text-primary-foreground'
-              : 'border-border bg-muted text-muted-foreground hover:border-primary',
+              : 'border-border bg-muted text-muted-foreground hover:border-primary'
           )}
         >
           {c}
@@ -471,7 +479,8 @@ function MultiSelectControl({
 // seed time — they never see fonts added later via the sibling "Custom Fonts"
 // repeater. Every such field is named "*Font*" and is the only select convention
 // that is (Font Weight/Size fields use different field names) — see FieldControl.
-const isFontFamilySelect = (field: TEField) => field.input_type === 'select' && /font/i.test(field.field_name)
+const isFontFamilySelect = (field: TEField) =>
+  field.input_type === 'select' && /font/i.test(field.field_name)
 
 function FieldControl({
   field,
@@ -486,20 +495,27 @@ function FieldControl({
 }) {
   const t = field.input_type
   if (t === 'color') return <ColorControl value={value} onChange={onChange} />
-  if (t === 'number') return <NumberControl value={value} onChange={onChange} options={field.options} />
-  if (t === 'slider') return <SliderControl value={value} onChange={onChange} options={field.options} />
+  if (t === 'number')
+    return <NumberControl value={value} onChange={onChange} options={field.options} />
+  if (t === 'slider')
+    return <SliderControl value={value} onChange={onChange} options={field.options} />
   if (t === 'select') {
     const choices = field.options?.choices ?? []
     const options =
       isFontFamilySelect(field) && customFontNames.length
-        ? { ...field.options, choices: [...choices, ...customFontNames.filter((n) => !choices.includes(n))] }
+        ? {
+            ...field.options,
+            choices: [...choices, ...customFontNames.filter((n) => !choices.includes(n))],
+          }
         : field.options
     return <SelectControl value={value} onChange={onChange} options={options} />
   }
   if (t === 'toggle') return <ToggleControl value={value} onChange={onChange} />
-  if (t === 'radio') return <RadioControl value={value} onChange={onChange} options={field.options} />
+  if (t === 'radio')
+    return <RadioControl value={value} onChange={onChange} options={field.options} />
   if (t === 'textarea') return <TextareaControl value={value} onChange={onChange} />
-  if (t === 'multiselect') return <MultiSelectControl value={value} onChange={onChange} options={field.options} />
+  if (t === 'multiselect')
+    return <MultiSelectControl value={value} onChange={onChange} options={field.options} />
   if (t === 'file') return <BrandingFileControl value={value} onChange={onChange} />
   if (t === 'fonts') return <FontsEditorControl value={value} onChange={onChange} />
   if (t === 'imglist') return <ImageClassesEditorControl value={value} onChange={onChange} />
@@ -524,7 +540,9 @@ function PreviewFrame({
   pane: TEPane | undefined
   values: Record<string, string>
 }) {
-  const renderer = pane ? { ...DEVICE_PANE_PREVIEWS, ...COMPONENT_PANE_PREVIEWS }[pane.id] : undefined
+  const renderer = pane
+    ? { ...DEVICE_PANE_PREVIEWS, ...COMPONENT_PANE_PREVIEWS }[pane.id]
+    : undefined
   return (
     <DeviceShell platform={platform}>
       {renderer && pane ? renderer({ pane, values }) : <DefaultShellPreview platform={platform} />}
@@ -552,8 +570,12 @@ function TemplateEngineInner() {
   // back where you were, not reset to step 1: 1) pick a top-level platform
   // card, 2) pick a sub-section card within it, 3) the existing full editor
   // for whichever platform that sub-section edits.
-  const [topPlatform, setTopPlatformState] = useState<string | null>(() => lsGet(LS_TOP_PLATFORM, '') || null)
-  const [subLabel, setSubLabelState] = useState<string | null>(() => lsGet(LS_SUB_LABEL, '') || null)
+  const [topPlatform, setTopPlatformState] = useState<string | null>(
+    () => lsGet(LS_TOP_PLATFORM, '') || null
+  )
+  const [subLabel, setSubLabelState] = useState<string | null>(
+    () => lsGet(LS_SUB_LABEL, '') || null
+  )
   const [entered, setEnteredState] = useState(() => lsGet(LS_ENTERED, '') === 'true')
   const [platform, setPlatformState] = useState(() => lsGet(LS_PLATFORM, 'webapp'))
   const [activePane, setActivePaneState] = useState(() => lsGet(LS_PANE, ''))
@@ -608,9 +630,12 @@ function TemplateEngineInner() {
 
   useEffect(() => {
     if (!data) return
-    setActiveThemeSaved((prev) => (prev[platform] ? prev : { ...prev, [platform]: data.activeTheme }))
-    setActiveThemeLocal((prev) => (prev[platform] ? prev : { ...prev, [platform]: data.activeTheme }))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setActiveThemeSaved((prev) =>
+      prev[platform] ? prev : { ...prev, [platform]: data.activeTheme }
+    )
+    setActiveThemeLocal((prev) =>
+      prev[platform] ? prev : { ...prev, [platform]: data.activeTheme }
+    )
   }, [data, platform])
 
   const isThemeDirty = useCallback(
@@ -619,7 +644,7 @@ function TemplateEngineInner() {
       const local = activeThemeLocal[plat]
       return saved != null && local != null && saved !== local
     },
-    [activeThemeSaved, activeThemeLocal],
+    [activeThemeSaved, activeThemeLocal]
   )
 
   // ── Local editable values (never localStorage) ────────────────────────────
@@ -705,7 +730,7 @@ function TemplateEngineInner() {
       return JSON.stringify(local) !== JSON.stringify(saved)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [localValues, savedValues, platform],
+    [localValues, savedValues, platform]
   )
 
   // Read inside mutation callbacks via ref, not the closed-over `localValues`
@@ -724,7 +749,7 @@ function TemplateEngineInner() {
       if (!pane) throw new Error('Pane not found')
       const local = localValuesRef.current[vkeyOf(plat, paneId)] ?? {}
       const values = pane.groups.flatMap((g) =>
-        g.fields.map((f) => ({ field_id: f.id, value: local[f.id] ?? f.value })),
+        g.fields.map((f) => ({ field_id: f.id, value: local[f.id] ?? f.value }))
       )
       return api.post('/template-engine/values', {
         platform: plat,
@@ -816,7 +841,9 @@ function TemplateEngineInner() {
   // Names from the pane's "Custom Fonts" repeater (if any), live-edited value
   // included — these get appended to every Font Family select's choices below.
   const customFontNames = useMemo(() => {
-    const fontsField = activePaneData?.groups.flatMap((g) => g.fields).find((f) => f.input_type === 'fonts')
+    const fontsField = activePaneData?.groups
+      .flatMap((g) => g.fields)
+      .find((f) => f.input_type === 'fonts')
     if (!fontsField) return []
     const raw = activePaneValues[fontsField.id] ?? fontsField.value
     return parseFontRows(raw)
@@ -860,7 +887,7 @@ function TemplateEngineInner() {
       .map((g) => ({
         ...g,
         fields: g.fields.filter(
-          (f) => f.field_name.toLowerCase().includes(q) || g.name.toLowerCase().includes(q),
+          (f) => f.field_name.toLowerCase().includes(q) || g.name.toLowerCase().includes(q)
         ),
       }))
       .filter((g) => g.fields.length > 0)
@@ -1037,7 +1064,7 @@ function TemplateEngineInner() {
                   'rounded px-2.5 py-1 text-xs font-medium capitalize transition-colors',
                   current === t
                     ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-secondary',
+                    : 'bg-muted text-muted-foreground hover:bg-secondary'
                 )}
               >
                 {t}
@@ -1064,9 +1091,7 @@ function TemplateEngineInner() {
           </div>
           {/* Pane list */}
           <nav className="flex-1 overflow-y-auto py-2 scrollbar-thin">
-            {isLoading && (
-              <div className="px-3 py-4 text-xs text-muted-foreground">Loading…</div>
-            )}
+            {isLoading && <div className="px-3 py-4 text-xs text-muted-foreground">Loading…</div>}
             {isError && (
               <div className="px-3 py-2 text-xs text-destructive">Failed to load schema.</div>
             )}
@@ -1086,7 +1111,7 @@ function TemplateEngineInner() {
                       'flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors',
                       pane.id === activePane
                         ? 'bg-primary text-primary-foreground'
-                        : 'text-foreground hover:bg-secondary',
+                        : 'text-foreground hover:bg-secondary'
                     )}
                   >
                     <span
@@ -1100,7 +1125,7 @@ function TemplateEngineInner() {
                       <span
                         className={cn(
                           'h-1.5 w-1.5 rounded-full',
-                          pane.id === activePane ? 'bg-white' : 'bg-amber-400',
+                          pane.id === activePane ? 'bg-white' : 'bg-amber-400'
                         )}
                       />
                     )}
@@ -1134,12 +1159,14 @@ function TemplateEngineInner() {
                           <button
                             key={d.id}
                             data-testid={`device-tab-${d.id}`}
-                            onClick={() => setPaneDevice((prev) => ({ ...prev, [activePane]: d.id }))}
+                            onClick={() =>
+                              setPaneDevice((prev) => ({ ...prev, [activePane]: d.id }))
+                            }
                             className={cn(
                               'rounded px-2.5 py-1 text-xs font-medium transition-colors',
                               (paneDevice[activePane] ?? activePaneData.devices![0]!.id) === d.id
                                 ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted text-muted-foreground hover:bg-secondary',
+                                : 'bg-muted text-muted-foreground hover:bg-secondary'
                             )}
                           >
                             {d.label}
@@ -1164,7 +1191,7 @@ function TemplateEngineInner() {
                               'rounded px-2.5 py-1 text-xs font-medium transition-colors',
                               (paneMode[activePane] ?? activePaneData.modes![0]!.id) === m.id
                                 ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted text-muted-foreground hover:bg-secondary',
+                                : 'bg-muted text-muted-foreground hover:bg-secondary'
                             )}
                           >
                             {m.label}
@@ -1202,7 +1229,7 @@ function TemplateEngineInner() {
                     <span
                       className={cn(
                         'text-[9px] transition-transform',
-                        isSectionOpen(sectionKey) ? 'rotate-90' : '',
+                        isSectionOpen(sectionKey) ? 'rotate-90' : ''
                       )}
                     >
                       ▶
@@ -1225,8 +1252,10 @@ function TemplateEngineInner() {
                           <div
                             key={field.id}
                             className={cn(
-                              isTable ? 'p-3' : 'grid grid-cols-[minmax(200px,340px)_1fr] items-center gap-3 px-5 py-3',
-                              fi < group.fields.length - 1 ? 'border-b' : '',
+                              isTable
+                                ? 'p-3'
+                                : 'grid grid-cols-[minmax(200px,340px)_1fr] items-center gap-3 px-5 py-3',
+                              fi < group.fields.length - 1 ? 'border-b' : ''
                             )}
                             data-testid={`field-row-${field.id}`}
                           >
@@ -1240,7 +1269,11 @@ function TemplateEngineInner() {
                                 )}
                               </div>
                             )}
-                            <div className={isTable ? '' : 'flex flex-wrap items-center justify-end gap-2'}>
+                            <div
+                              className={
+                                isTable ? '' : 'flex flex-wrap items-center justify-end gap-2'
+                              }
+                            >
                               <FieldControl
                                 field={field}
                                 value={activePaneValues[field.id] ?? field.value}

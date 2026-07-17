@@ -54,7 +54,9 @@ describe('MediaImage (B3)', () => {
   })
 
   it('passes className and dimensions to the img', () => {
-    const { container } = render(<MediaImage id="m2" alt="" className="rounded" width={640} height={480} />)
+    const { container } = render(
+      <MediaImage id="m2" alt="" className="rounded" width={640} height={480} />
+    )
     const img = container.querySelector('img')!
     expect(img.getAttribute('width')).toBe('640')
     expect(img.getAttribute('height')).toBe('480')
@@ -82,7 +84,13 @@ describe('WorkflowBadge (B6)', () => {
   })
 
   it('opens dropdown and shows transition options on click', async () => {
-    render(<WorkflowBadge status="REVIEW" mediaId="m1" permissions={['media:review:approve', 'media:review:reject']} />)
+    render(
+      <WorkflowBadge
+        status="REVIEW"
+        mediaId="m1"
+        permissions={['media:review:approve', 'media:review:reject']}
+      />
+    )
     const trigger = screen.getByTitle('Workflow actions')
     fireEvent.click(trigger)
     expect(screen.getByText('Approve')).toBeTruthy()
@@ -94,15 +102,29 @@ describe('WorkflowBadge (B6)', () => {
     render(<WorkflowBadge status="REVIEW" mediaId="m1" permissions={['media:review:approve']} />)
     fireEvent.click(screen.getByTitle('Workflow actions'))
     fireEvent.click(screen.getByText('Approve'))
-    await waitFor(() => expect(mockApi.patch).toHaveBeenCalledWith('/media/m1/workflow', { status: 'APPROVED' }))
+    await waitFor(() =>
+      expect(mockApi.patch).toHaveBeenCalledWith('/media/m1/workflow', { status: 'APPROVED' })
+    )
   })
 })
 
 // ─── CommentsThread (B5) ─────────────────────────────────────────────────────
 
 const COMMENTS = [
-  { id: 'c1', user_id: 'u1', user: { id: 'u1', name: 'Alice' }, body: 'Great shot', created_at: '2026-01-01T10:00:00Z' },
-  { id: 'c2', user_id: 'u2', user: { id: 'u2', name: 'Bob' }, body: 'Thanks!', created_at: '2026-01-01T11:00:00Z' },
+  {
+    id: 'c1',
+    user_id: 'u1',
+    user: { id: 'u1', name: 'Alice' },
+    body: 'Great shot',
+    created_at: '2026-01-01T10:00:00Z',
+  },
+  {
+    id: 'c2',
+    user_id: 'u2',
+    user: { id: 'u2', name: 'Bob' },
+    body: 'Thanks!',
+    created_at: '2026-01-01T11:00:00Z',
+  },
 ]
 
 describe('CommentsThread (B5)', () => {
@@ -122,7 +144,13 @@ describe('CommentsThread (B5)', () => {
   })
 
   it('submits a new comment on form submit', async () => {
-    const newComment = { id: 'c3', user_id: 'u1', user: { id: 'u1', name: 'Alice' }, body: 'Nice!', created_at: '2026-01-01T12:00:00Z' }
+    const newComment = {
+      id: 'c3',
+      user_id: 'u1',
+      user: { id: 'u1', name: 'Alice' },
+      body: 'Nice!',
+      created_at: '2026-01-01T12:00:00Z',
+    }
     mockApi.post.mockResolvedValue({ data: { data: { comment: newComment } } })
     render(<CommentsThread mediaId="m1" currentUserId="u1" />)
     await waitFor(() => screen.getByText('Great shot'))
@@ -131,7 +159,9 @@ describe('CommentsThread (B5)', () => {
     // Submit via the button
     const btn = screen.getByRole('button', { name: /send|post|submit/i })
     fireEvent.click(btn)
-    await waitFor(() => expect(mockApi.post).toHaveBeenCalledWith('/media/m1/comments', { body: 'Nice!' }))
+    await waitFor(() =>
+      expect(mockApi.post).toHaveBeenCalledWith('/media/m1/comments', { body: 'Nice!' })
+    )
   })
 
   it('shows delete button only for own comments', async () => {
@@ -163,7 +193,15 @@ describe('ShareDialog (B4)', () => {
     mockApi.post.mockResolvedValue({
       data: {
         data: {
-          share: { id: 's2', token: 'tok2', has_password: false, expires_at: null, max_downloads: null, download_count: 0, created_at: '2026-01-02T00:00:00Z' },
+          share: {
+            id: 's2',
+            token: 'tok2',
+            has_password: false,
+            expires_at: null,
+            max_downloads: null,
+            download_count: 0,
+            created_at: '2026-01-02T00:00:00Z',
+          },
         },
       },
     })
@@ -194,8 +232,24 @@ describe('ShareDialog (B4)', () => {
 // ─── VersionHistoryPanel (B5) ────────────────────────────────────────────────
 
 const VERSIONS = [
-  { id: 'v1', version_number: 1, size: 1024, note: 'Initial', created_at: '2026-01-01T00:00:00Z', download_url: '/dl/v1', mime_type: 'image/png' },
-  { id: 'v2', version_number: 2, size: 2048, note: 'Updated', created_at: '2026-01-02T00:00:00Z', download_url: '/dl/v2', mime_type: 'image/png' },
+  {
+    id: 'v1',
+    version_number: 1,
+    size: 1024,
+    note: 'Initial',
+    created_at: '2026-01-01T00:00:00Z',
+    download_url: '/dl/v1',
+    mime_type: 'image/png',
+  },
+  {
+    id: 'v2',
+    version_number: 2,
+    size: 2048,
+    note: 'Updated',
+    created_at: '2026-01-02T00:00:00Z',
+    download_url: '/dl/v2',
+    mime_type: 'image/png',
+  },
 ]
 
 describe('VersionHistoryPanel (B5)', () => {

@@ -28,7 +28,7 @@ let api: APIRequestContext
 let token: string
 let h: Record<string, string>
 const createdMediaIds: string[] = []
-let createdFolderId: string | null = null
+const createdFolderId: string | null = null
 let createdCollectionId: string | null = null
 let createdTagId: string | null = null
 let createdFieldId: string | null = null
@@ -49,7 +49,10 @@ async function login() {
 /** Poll MeiliSearch until a query returns a hit (indexing is async via BullMQ). */
 async function searchUntilHit(params: Record<string, string>, timeoutMs = 15000) {
   const deadline = Date.now() + timeoutMs
-  let last: { hits: Array<{ id: string }>; pagination: { total: number } } = { hits: [], pagination: { total: 0 } }
+  let last: { hits: Array<{ id: string }>; pagination: { total: number } } = {
+    hits: [],
+    pagination: { total: 0 },
+  }
   while (Date.now() < deadline) {
     const res = await api.get(`${API_URL}/media/search`, { params, headers: h })
     if (res.ok()) {
@@ -72,10 +75,20 @@ test.afterAll(async () => {
     await api.delete(`${API_URL}/media/${id}`, { headers: h }).catch(() => {})
   }
   await api.delete(`${API_URL}/media/trash/purge`, { headers: h }).catch(() => {})
-  if (createdCollectionId) await api.delete(`${API_URL}/media/collections/${createdCollectionId}`, { headers: h }).catch(() => {})
-  if (createdTagId) await api.delete(`${API_URL}/media/tags/${createdTagId}`, { headers: h }).catch(() => {})
-  if (createdFieldId) await api.delete(`${API_URL}/media/meta-fields/${createdFieldId}`, { headers: h }).catch(() => {})
-  if (createdFolderId) await api.delete(`${API_URL}/media/folders/${createdFolderId}?cascade=true`, { headers: h }).catch(() => {})
+  if (createdCollectionId)
+    await api
+      .delete(`${API_URL}/media/collections/${createdCollectionId}`, { headers: h })
+      .catch(() => {})
+  if (createdTagId)
+    await api.delete(`${API_URL}/media/tags/${createdTagId}`, { headers: h }).catch(() => {})
+  if (createdFieldId)
+    await api
+      .delete(`${API_URL}/media/meta-fields/${createdFieldId}`, { headers: h })
+      .catch(() => {})
+  if (createdFolderId)
+    await api
+      .delete(`${API_URL}/media/folders/${createdFolderId}?cascade=true`, { headers: h })
+      .catch(() => {})
   await api.dispose()
 })
 
@@ -104,19 +117,25 @@ test.describe('Media DAM Phase A (KDL-119 A9)', () => {
       const res = await api.put(`${API_URL}/media/upload/chunked/${uploadId}/part`, {
         headers: h,
         params: { index: String(i) },
-        multipart: { chunk: { name: `p${i}`, mimeType: 'application/octet-stream', buffer: partBuf(i) } },
+        multipart: {
+          chunk: { name: `p${i}`, mimeType: 'application/octet-stream', buffer: partBuf(i) },
+        },
       })
       expect(res.ok()).toBeTruthy()
     }
 
     // status reflects the partial upload — this is what a resuming client reads
-    const statusRes = await api.get(`${API_URL}/media/upload/chunked/${uploadId}/status`, { headers: h })
+    const statusRes = await api.get(`${API_URL}/media/upload/chunked/${uploadId}/status`, {
+      headers: h,
+    })
     const status = (await statusRes.json()).data
     expect(status.received_parts.sort((a: number, b: number) => a - b)).toEqual([0, 1, 2, 3])
     expect(status.complete).toBe(false)
 
     // completing now must fail — parts are missing
-    const earlyComplete = await api.post(`${API_URL}/media/upload/chunked/${uploadId}/complete`, { headers: h })
+    const earlyComplete = await api.post(`${API_URL}/media/upload/chunked/${uploadId}/complete`, {
+      headers: h,
+    })
     expect(earlyComplete.status()).toBe(422)
 
     // resume: upload the remaining parts (skip the 4 already received)
@@ -126,12 +145,16 @@ test.describe('Media DAM Phase A (KDL-119 A9)', () => {
       const res = await api.put(`${API_URL}/media/upload/chunked/${uploadId}/part`, {
         headers: h,
         params: { index: String(i) },
-        multipart: { chunk: { name: `p${i}`, mimeType: 'application/octet-stream', buffer: partBuf(i) } },
+        multipart: {
+          chunk: { name: `p${i}`, mimeType: 'application/octet-stream', buffer: partBuf(i) },
+        },
       })
       expect(res.ok()).toBeTruthy()
     }
 
-    const completeRes = await api.post(`${API_URL}/media/upload/chunked/${uploadId}/complete`, { headers: h })
+    const completeRes = await api.post(`${API_URL}/media/upload/chunked/${uploadId}/complete`, {
+      headers: h,
+    })
     expect(completeRes.status()).toBe(201)
     const media = (await completeRes.json()).data.media
     expect(media.size).toBe(size)
@@ -143,13 +166,20 @@ test.describe('Media DAM Phase A (KDL-119 A9)', () => {
     const res = await api.post(`${API_URL}/media/import/zip`, {
       headers: h,
       multipart: {
-        file: { name: `bundle-${RUN}.zip`, mimeType: 'application/zip', buffer: Buffer.from(ZIP_B64, 'base64') },
+        file: {
+          name: `bundle-${RUN}.zip`,
+          mimeType: 'application/zip',
+          buffer: Buffer.from(ZIP_B64, 'base64'),
+        },
       },
     })
     expect(res.ok()).toBeTruthy()
     const json = await res.json()
     // both PNG entries (incl. the nested one) import; skipped stays empty
-    const { imported, skipped } = json.data as { imported: Array<{ id: string; name: string }>; skipped: unknown[] }
+    const { imported, skipped } = json.data as {
+      imported: Array<{ id: string; name: string }>
+      skipped: unknown[]
+    }
     expect(imported.length).toBe(2)
     expect(skipped.length).toBe(0)
     expect(imported.map((m) => m.name).sort()).toEqual(['pic1.png', 'pic2.png'])
@@ -160,7 +190,7 @@ test.describe('Media DAM Phase A (KDL-119 A9)', () => {
     // upload a searchable image
     const png = Buffer.from(
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI6QAAAABJRU5ErkJggg==',
-      'base64',
+      'base64'
     )
     const upRes = await api.post(`${API_URL}/media/upload`, {
       headers: h,
@@ -174,7 +204,8 @@ test.describe('Media DAM Phase A (KDL-119 A9)', () => {
     const tagName = `e2etag${RUN}`
     const fieldSlug = `e2e_campaign_${RUN}`.toLowerCase().replace(/[^a-z0-9_]/g, '')
     const fieldRes = await api.post(`${API_URL}/media/meta-fields`, {
-      headers: h, data: { slug: fieldSlug, label: 'E2E Campaign', field_type: 'TEXT' },
+      headers: h,
+      data: { slug: fieldSlug, label: 'E2E Campaign', field_type: 'TEXT' },
     })
     expect(fieldRes.status()).toBe(201)
     createdFieldId = (await fieldRes.json()).data.field.id
@@ -183,8 +214,14 @@ test.describe('Media DAM Phase A (KDL-119 A9)', () => {
     expect(tagRes.status()).toBe(201)
     createdTagId = (await tagRes.json()).data.tag.id
 
-    await api.post(`${API_URL}/media/tag`, { headers: h, data: { media_ids: [mediaId], tags: [tagName] } })
-    await api.patch(`${API_URL}/media/${mediaId}`, { headers: h, data: { meta: { [fieldSlug]: 'summer2026' } } })
+    await api.post(`${API_URL}/media/tag`, {
+      headers: h,
+      data: { media_ids: [mediaId], tags: [tagName] },
+    })
+    await api.patch(`${API_URL}/media/${mediaId}`, {
+      headers: h,
+      data: { meta: { [fieldSlug]: 'summer2026' } },
+    })
 
     // free-text search finds the file by its (indexed) meta value
     const byMeta = await searchUntilHit({ q: 'summer2026' })
@@ -207,7 +244,9 @@ test.describe('Media DAM Phase A (KDL-119 A9)', () => {
     expect(collection.is_smart).toBe(true)
 
     // contents are evaluated live from the rules → all IMAGE media come back
-    const contentsRes = await api.get(`${API_URL}/media/collections/${collection.id}`, { headers: h })
+    const contentsRes = await api.get(`${API_URL}/media/collections/${collection.id}`, {
+      headers: h,
+    })
     expect(contentsRes.ok()).toBeTruthy()
     const contents = (await contentsRes.json()).data
     expect(Array.isArray(contents.hits)).toBe(true)
@@ -222,7 +261,7 @@ test.describe('Media DAM Phase A (KDL-119 A9)', () => {
     // 60s settings cache, so this E2E focuses on the cache-independent invariants.
     const png = Buffer.from(
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI6QAAAABJRU5ErkJggg==',
-      'base64',
+      'base64'
     )
     const upRes = await api.post(`${API_URL}/media/upload`, {
       headers: h,
@@ -242,7 +281,9 @@ test.describe('Media DAM Phase A (KDL-119 A9)', () => {
     // (soft-deleted). Skip cleanly when scanning is not configured in this env.
     const eicarRes = await api.post(`${API_URL}/media/upload`, {
       headers: h,
-      multipart: { files: { name: `eicar-${RUN}.txt`, mimeType: 'text/plain', buffer: Buffer.from(EICAR) } },
+      multipart: {
+        files: { name: `eicar-${RUN}.txt`, mimeType: 'text/plain', buffer: Buffer.from(EICAR) },
+      },
     })
     if (eicarRes.status() !== 201) {
       test.skip(true, 'upload of eicar rejected by mime policy in this env')
@@ -256,9 +297,15 @@ test.describe('Media DAM Phase A (KDL-119 A9)', () => {
     const deadline = Date.now() + 12000
     while (Date.now() < deadline) {
       const r = await api.get(`${API_URL}/media/${eicarId}`, { headers: h })
-      if (r.status() === 404) { quarantined = true; break }
+      if (r.status() === 404) {
+        quarantined = true
+        break
+      }
       const m = (await r.json()).data?.media
-      if (m?.scan_result === 'INFECTED' || m?.deleted_at) { quarantined = true; break }
+      if (m?.scan_result === 'INFECTED' || m?.deleted_at) {
+        quarantined = true
+        break
+      }
       await new Promise((res) => setTimeout(res, 1000))
     }
     test.skip(!quarantined, 'no clamd reachable — EICAR quarantine path not exercised')
