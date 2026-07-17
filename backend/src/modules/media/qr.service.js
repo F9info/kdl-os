@@ -25,7 +25,7 @@ const decodeBarcodes = async (imageBuffer) => {
   const bitmap = new BinaryBitmap(new HybridBinarizer(source));
   const reader = new MultiFormatReader();
   try {
-    const result = reader.decode(bitmap);
+    const result = reader.decodeWithState(bitmap);
     return [{ value: result.getText(), format: String(result.getBarcodeFormat()) }];
   } catch (err) {
     if (err instanceof NotFoundException) return [];
