@@ -55,7 +55,10 @@ function ModuleIcon({ icon }: { icon: string | null }) {
   )
 }
 
-const STATUS_META: Record<ModuleStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+const STATUS_META: Record<
+  ModuleStatus,
+  { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
+> = {
   AVAILABLE: { label: 'Available', variant: 'outline' },
   INSTALLED: { label: 'Installed', variant: 'secondary' },
   ENABLED: { label: 'Enabled', variant: 'default' },
@@ -86,7 +89,11 @@ interface SettingsState {
 export default function ModulesPage() {
   const queryClient = useQueryClient()
   const [confirm, setConfirm] = useState<ConfirmState>({ open: false, slug: '', action: 'enable' })
-  const [settingsDialog, setSettingsDialog] = useState<SettingsState>({ open: false, slug: '', value: '' })
+  const [settingsDialog, setSettingsDialog] = useState<SettingsState>({
+    open: false,
+    slug: '',
+    value: '',
+  })
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
 
@@ -108,7 +115,10 @@ export default function ModulesPage() {
         enable: 'enabled',
         disable: 'disabled',
       }
-      toast({ title: `Module ${labels[action]}`, description: `"${slug}" was ${labels[action]} successfully.` })
+      toast({
+        title: `Module ${labels[action]}`,
+        description: `"${slug}" was ${labels[action]} successfully.`,
+      })
       queryClient.invalidateQueries({ queryKey: ['modules'] })
       queryClient.invalidateQueries({ queryKey: ['modules-enabled'] })
     },
@@ -145,7 +155,11 @@ export default function ModulesPage() {
     try {
       parsed = JSON.parse(settingsDialog.value)
     } catch {
-      toast({ title: 'Invalid JSON', description: 'Fix the JSON syntax before saving.', variant: 'destructive' })
+      toast({
+        title: 'Invalid JSON',
+        description: 'Fix the JSON syntax before saving.',
+        variant: 'destructive',
+      })
       return
     }
     settingsMutation.mutate({ slug: settingsDialog.slug, settings: parsed })
@@ -304,7 +318,10 @@ export default function ModulesPage() {
                       <div className="flex items-center gap-1.5">
                         <span className="truncate font-medium text-gray-900">{mod.name}</span>
                         {mod.core && (
-                          <Lock className="h-3.5 w-3.5 shrink-0 text-gray-400" aria-label="Core module — cannot be disabled" />
+                          <Lock
+                            className="h-3.5 w-3.5 shrink-0 text-gray-400"
+                            aria-label="Core module — cannot be disabled"
+                          />
                         )}
                       </div>
                       <p className="text-xs text-gray-400">v{mod.version}</p>
@@ -331,7 +348,11 @@ export default function ModulesPage() {
                     </Button>
                   )}
                   {!mod.core && mod.status === 'ENABLED' && (
-                    <Button size="sm" variant="outline" onClick={() => openConfirm(mod.slug, 'disable')}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openConfirm(mod.slug, 'disable')}
+                    >
                       <XCircle className="mr-1 h-4 w-4" />
                       Disable
                     </Button>
@@ -373,7 +394,10 @@ export default function ModulesPage() {
           size="md"
           footer={
             <>
-              <Button variant="outline" onClick={() => setSettingsDialog((s) => ({ ...s, open: false }))}>
+              <Button
+                variant="outline"
+                onClick={() => setSettingsDialog((s) => ({ ...s, open: false }))}
+              >
                 Cancel
               </Button>
               <Button onClick={handleSettingsSave} disabled={settingsMutation.isPending}>

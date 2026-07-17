@@ -33,7 +33,9 @@ const commentApi = {
   list: (mediaId: string) =>
     api.get(`/media/${mediaId}/comments`).then((r) => r.data.data.comments as MediaComment[]),
   create: (mediaId: string, body: string) =>
-    api.post(`/media/${mediaId}/comments`, { body }).then((r) => r.data.data.comment as MediaComment),
+    api
+      .post(`/media/${mediaId}/comments`, { body })
+      .then((r) => r.data.data.comment as MediaComment),
   delete: (mediaId: string, commentId: string) =>
     api.delete(`/media/${mediaId}/comments/${commentId}`),
 }

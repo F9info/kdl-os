@@ -7,12 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Copy, QrCode, Code2, Trash2, Plus, Eye, EyeOff } from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -50,7 +45,9 @@ const shareApi = {
   // createShareLink responds via `successResponse(res, share, 201)` — the
   // share record IS `data` (flat), not `{ share }` like the list endpoint.
   create: (mediaId: string, payload: CreateSharePayload) =>
-    api.post(`/media/shares`, { ...payload, media_id: mediaId }).then((r) => r.data.data as ShareLink),
+    api
+      .post(`/media/shares`, { ...payload, media_id: mediaId })
+      .then((r) => r.data.data as ShareLink),
   // Backend route is `DELETE /media/shares/:id` keyed by the share record's
   // cuid `id`, not its public `token` — passing the token failed schema
   // validation (shareIdParamSchema expects a cuid) on every revoke attempt.
@@ -94,7 +91,10 @@ function ShareRow({
 
   const revokeMut = useMutation({
     mutationFn: () => shareApi.revoke(share.id),
-    onSuccess: () => { toast({ title: 'Share revoked' }); onRevoked() },
+    onSuccess: () => {
+      toast({ title: 'Share revoked' })
+      onRevoked()
+    },
     onError: () => toast({ title: 'Revoke failed', variant: 'destructive' }),
   })
 
@@ -110,7 +110,9 @@ function ShareRow({
   return (
     <div className="border rounded-md p-3 space-y-2">
       <div className="flex items-center gap-2 flex-wrap">
-        <Badge variant={badge.variant} className="text-xs">{badge.label}</Badge>
+        <Badge variant={badge.variant} className="text-xs">
+          {badge.label}
+        </Badge>
         <span className="text-xs text-muted-foreground truncate flex-1 min-w-0">{link}</span>
         <span className="text-xs text-muted-foreground flex-shrink-0">
           {share.download_count} dl{share.download_count !== 1 ? 's' : ''}
@@ -123,9 +125,7 @@ function ShareRow({
         </p>
       )}
       {share.max_downloads != null && (
-        <p className="text-xs text-muted-foreground">
-          Max downloads: {share.max_downloads}
-        </p>
+        <p className="text-xs text-muted-foreground">Max downloads: {share.max_downloads}</p>
       )}
 
       <div className="flex items-center gap-1 flex-wrap">
@@ -184,13 +184,7 @@ function ShareRow({
 
 // ─── Create share form ────────────────────────────────────────────────────────
 
-function CreateShareForm({
-  mediaId,
-  onCreated,
-}: {
-  mediaId: string
-  onCreated: () => void
-}) {
+function CreateShareForm({ mediaId, onCreated }: { mediaId: string; onCreated: () => void }) {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [expiresAt, setExpiresAt] = useState('')
@@ -207,7 +201,10 @@ function CreateShareForm({
     },
     onSuccess: () => {
       toast({ title: 'Share link created' })
-      setPassword(''); setExpiresAt(''); setMaxDownloads(''); setOpen(false)
+      setPassword('')
+      setExpiresAt('')
+      setMaxDownloads('')
+      setOpen(false)
       onCreated()
     },
     onError: () => toast({ title: 'Create failed', variant: 'destructive' }),
@@ -269,11 +266,7 @@ function CreateShareForm({
       </div>
 
       <div className="flex gap-2">
-        <Button
-          size="sm"
-          onClick={() => createMut.mutate()}
-          disabled={createMut.isPending}
-        >
+        <Button size="sm" onClick={() => createMut.mutate()} disabled={createMut.isPending}>
           Create link
         </Button>
         <Button
@@ -326,12 +319,7 @@ export function ShareDialog({ open, onClose, mediaId, mediaName }: ShareDialogPr
           )}
 
           {(shares ?? []).map((share) => (
-            <ShareRow
-              key={share.id}
-              share={share}
-              mediaName={mediaName}
-              onRevoked={invalidate}
-            />
+            <ShareRow key={share.id} share={share} mediaName={mediaName} onRevoked={invalidate} />
           ))}
         </div>
       </DialogContent>

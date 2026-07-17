@@ -77,54 +77,57 @@ export default function TypeSettingsPage() {
 
   return (
     <PermissionGuard permission="setting-fields:view">
-    <div>
-      <PageHeader
-        title={data?.type?.name ?? 'Settings'}
-        breadcrumbs={[{ label: 'Application Settings' }, { label: data?.type?.name ?? 'Settings' }]}
-      />
+      <div>
+        <PageHeader
+          title={data?.type?.name ?? 'Settings'}
+          breadcrumbs={[
+            { label: 'Application Settings' },
+            { label: data?.type?.name ?? 'Settings' },
+          ]}
+        />
 
-      {isLoading ? (
-        <LoadingSpinner />
-      ) : error ? (
-        <ErrorAlert error={error} />
-      ) : fields.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
-          <Settings2 className="mb-3 h-10 w-10 text-muted-foreground/50" />
-          <p className="font-medium">No fields for this type yet.</p>
-          <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-            Add fields under this type from the Fields page to start configuring it.
-          </p>
-        </div>
-      ) : (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            saveMutation.mutate()
-          }}
-          className="max-w-3xl space-y-6"
-        >
-          <div className="space-y-6 rounded-lg border bg-card p-6">
-            {fields.map((field) => (
-              <FieldControl
-                key={field.id}
-                field={field}
-                state={form[field.id] ?? { value: '', alt_text: '' }}
-                onChange={(patch) => updateField(field.id, patch)}
-              />
-            ))}
+        {isLoading ? (
+          <LoadingSpinner />
+        ) : error ? (
+          <ErrorAlert error={error} />
+        ) : fields.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
+            <Settings2 className="mb-3 h-10 w-10 text-muted-foreground/50" />
+            <p className="font-medium">No fields for this type yet.</p>
+            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+              Add fields under this type from the Fields page to start configuring it.
+            </p>
           </div>
+        ) : (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              saveMutation.mutate()
+            }}
+            className="max-w-3xl space-y-6"
+          >
+            <div className="space-y-6 rounded-lg border bg-card p-6">
+              {fields.map((field) => (
+                <FieldControl
+                  key={field.id}
+                  field={field}
+                  state={form[field.id] ?? { value: '', alt_text: '' }}
+                  onChange={(patch) => updateField(field.id, patch)}
+                />
+              ))}
+            </div>
 
-          {saveMutation.error && <ErrorAlert error={saveMutation.error} />}
+            {saveMutation.error && <ErrorAlert error={saveMutation.error} />}
 
-          <div className="flex justify-end">
-            <Button type="submit" disabled={saveMutation.isPending}>
-              <Save className="h-4 w-4" />
-              {saveMutation.isPending ? 'Saving…' : 'Save settings'}
-            </Button>
-          </div>
-        </form>
-      )}
-    </div>
+            <div className="flex justify-end">
+              <Button type="submit" disabled={saveMutation.isPending}>
+                <Save className="h-4 w-4" />
+                {saveMutation.isPending ? 'Saving…' : 'Save settings'}
+              </Button>
+            </div>
+          </form>
+        )}
+      </div>
     </PermissionGuard>
   )
 }

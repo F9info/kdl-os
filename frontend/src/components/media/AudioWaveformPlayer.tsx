@@ -134,7 +134,7 @@ export function AudioWaveformPlayer({ mediaId, mediaSrc }: Props) {
 
   return (
     <div className="space-y-5 p-4">
-      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+      {}
       <audio src={mediaSrc} controls className="w-full" />
 
       {/* Waveform */}
@@ -149,7 +149,12 @@ export function AudioWaveformPlayer({ mediaId, mediaSrc }: Props) {
           </p>
         )}
         {waveformUrl !== null && (
-          <AppImage size="content" src={waveformUrl} alt="Audio waveform" className="max-w-full rounded border" />
+          <AppImage
+            size="content"
+            src={waveformUrl}
+            alt="Audio waveform"
+            className="max-w-full rounded border"
+          />
         )}
         {peaks.length > 0 && (
           <svg

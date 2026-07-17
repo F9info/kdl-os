@@ -16,7 +16,7 @@ function CallbackRelay() {
     if (code && state) {
       window.opener?.postMessage(
         { type: 'media-import-oauth', code, state },
-        window.location.origin,
+        window.location.origin
       )
     }
   }, [params])

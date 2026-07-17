@@ -8,8 +8,7 @@ export function useModules() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['modules-enabled'],
-    queryFn: () =>
-      api.get('/modules/enabled').then((r) => r.data.data.modules as EnabledModule[]),
+    queryFn: () => api.get('/modules/enabled').then((r) => r.data.data.modules as EnabledModule[]),
     staleTime: 60 * 1000,
     enabled: isAuthenticated,
   })

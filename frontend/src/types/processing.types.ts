@@ -1,6 +1,11 @@
 export type ImageOp =
   | { op: 'crop'; left: number; top: number; width: number; height: number }
-  | { op: 'resize'; width?: number; height?: number; fit?: 'cover' | 'contain' | 'fill' | 'inside' | 'outside' }
+  | {
+      op: 'resize'
+      width?: number
+      height?: number
+      fit?: 'cover' | 'contain' | 'fill' | 'inside' | 'outside'
+    }
   | { op: 'rotate'; angle: number; background?: string }
   | { op: 'flip' }
   | { op: 'flop' }
@@ -11,8 +16,21 @@ export type ImageOp =
   | { op: 'blur'; sigma?: number }
   | { op: 'sharpen' }
   | { op: 'negate' }
-  | { op: 'text_watermark'; text: string; position?: WatermarkPosition; opacity?: number; font_size?: number; color?: string }
-  | { op: 'logo_watermark'; logo_media_id: string; position?: WatermarkPosition; opacity?: number; scale?: number }
+  | {
+      op: 'text_watermark'
+      text: string
+      position?: WatermarkPosition
+      opacity?: number
+      font_size?: number
+      color?: string
+    }
+  | {
+      op: 'logo_watermark'
+      logo_media_id: string
+      position?: WatermarkPosition
+      opacity?: number
+      scale?: number
+    }
   | { op: 'compress'; quality?: number; format?: 'jpeg' | 'webp' | 'avif' | 'png' }
 
 export type WatermarkPosition =

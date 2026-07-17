@@ -24,7 +24,10 @@ export function extFromMime(mime: string, fallback = 'webm'): string {
 }
 
 /** Upload a captured File through the normal media upload endpoint. */
-export async function uploadCapture(file: File, folderId?: string | null): Promise<Media | undefined> {
+export async function uploadCapture(
+  file: File,
+  folderId?: string | null
+): Promise<Media | undefined> {
   const fd = new FormData()
   fd.append('files', file)
   if (folderId) fd.append('folder_id', folderId)

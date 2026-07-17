@@ -81,17 +81,13 @@ export default function ActivityLogPage() {
     {
       accessorKey: 'action',
       header: 'Action',
-      cell: ({ row }) => (
-        <span className="text-sm capitalize">{row.original.action}</span>
-      ),
+      cell: ({ row }) => <span className="text-sm capitalize">{row.original.action}</span>,
     },
     {
       accessorKey: 'description',
       header: 'Description',
       cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">
-          {row.original.description ?? '—'}
-        </span>
+        <span className="text-sm text-muted-foreground">{row.original.description ?? '—'}</span>
       ),
     },
     {
@@ -118,75 +114,85 @@ export default function ActivityLogPage() {
 
   return (
     <PermissionGuard permission="activity-log:view">
-    <div>
-      <PageHeader title="Activity Log" />
+      <div>
+        <PageHeader title="Activity Log" />
 
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Filter by actor…"
-            value={actorSearch}
-            onChange={(e) => { setActorSearch(e.target.value); setPage(1) }}
-            className="pl-9 w-48"
-          />
+        <div className="flex flex-wrap items-center gap-3 mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Filter by actor…"
+              value={actorSearch}
+              onChange={(e) => {
+                setActorSearch(e.target.value)
+                setPage(1)
+              }}
+              className="pl-9 w-48"
+            />
+          </div>
+
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Filter by module…"
+              value={moduleFilter}
+              onChange={(e) => {
+                setModuleFilter(e.target.value)
+                setPage(1)
+              }}
+              className="pl-9 w-44"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-muted-foreground">From</label>
+            <Input
+              type="date"
+              value={fromDate}
+              onChange={(e) => {
+                setFromDate(e.target.value)
+                setPage(1)
+              }}
+              className="w-36"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-muted-foreground">To</label>
+            <Input
+              type="date"
+              value={toDate}
+              onChange={(e) => {
+                setToDate(e.target.value)
+                setPage(1)
+              }}
+              className="w-36"
+            />
+          </div>
+
+          {hasFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters}>
+              Clear filters
+            </Button>
+          )}
+
+          {data && (
+            <span className="text-sm text-muted-foreground ml-auto">
+              {data.pagination.total} entries
+            </span>
+          )}
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Filter by module…"
-            value={moduleFilter}
-            onChange={(e) => { setModuleFilter(e.target.value); setPage(1) }}
-            className="pl-9 w-44"
-          />
-        </div>
-
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-muted-foreground">From</label>
-          <Input
-            type="date"
-            value={fromDate}
-            onChange={(e) => { setFromDate(e.target.value); setPage(1) }}
-            className="w-36"
-          />
-        </div>
-
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-muted-foreground">To</label>
-          <Input
-            type="date"
-            value={toDate}
-            onChange={(e) => { setToDate(e.target.value); setPage(1) }}
-            className="w-36"
-          />
-        </div>
-
-        {hasFilters && (
-          <Button variant="ghost" size="sm" onClick={clearFilters}>
-            Clear filters
-          </Button>
-        )}
-
-        {data && (
-          <span className="text-sm text-muted-foreground ml-auto">
-            {data.pagination.total} entries
-          </span>
-        )}
+        <DataTable
+          columns={columns}
+          data={data?.logs ?? []}
+          isLoading={isLoading}
+          pagination={
+            data ? { page, totalPages: data.pagination.pages, onPageChange: setPage } : undefined
+          }
+          emptyMessage="No activity logged yet."
+        />
       </div>
-
-      <DataTable
-        columns={columns}
-        data={data?.logs ?? []}
-        isLoading={isLoading}
-        pagination={
-          data
-            ? { page, totalPages: data.pagination.pages, onPageChange: setPage }
-            : undefined
-        }
-        emptyMessage="No activity logged yet."
-      />
-    </div>
     </PermissionGuard>
   )
 }
