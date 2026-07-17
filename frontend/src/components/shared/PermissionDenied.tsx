@@ -14,7 +14,8 @@ export function PermissionDenied({ message }: PermissionDeniedProps) {
       <ShieldAlert className="h-16 w-16 text-destructive opacity-80" />
       <h1 className="text-2xl font-bold">Access Denied</h1>
       <p className="text-muted-foreground max-w-sm">
-        {message ?? "You don't have permission to access this page. Contact your administrator if you believe this is an error."}
+        {message ??
+          "You don't have permission to access this page. Contact your administrator if you believe this is an error."}
       </p>
       <Button asChild variant="outline">
         <Link href="/admin/dashboard">Go to Dashboard</Link>

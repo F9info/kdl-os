@@ -12,6 +12,7 @@ const BASE = process.env.E2E_BASE_URL ?? 'http://localhost:3101'
 let api: APIRequestContext
 let adminToken: string
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const authHeaders = () => ({ Authorization: `Bearer ${adminToken}` })
 
 async function loginAPI() {
@@ -36,8 +37,14 @@ async function getTokensCSS(): Promise<string> {
   return (await res.json()).data.css as string
 }
 
-async function getCSSVarFromPage(page: import('@playwright/test').Page, varName: string): Promise<string> {
-  return page.evaluate((v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim(), varName)
+async function getCSSVarFromPage(
+  page: import('@playwright/test').Page,
+  varName: string
+): Promise<string> {
+  return page.evaluate(
+    (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim(),
+    varName
+  )
 }
 
 async function getTeTokensContent(page: import('@playwright/test').Page): Promise<string> {
@@ -61,8 +68,9 @@ test.afterAll(async () => {
 test('(a) thumbnail-image: API emits 90px, app renders 90px', async ({ page }) => {
   // 1) Check API tokens emit .thumbnail_image { width: 90px }
   const css = await getTokensCSS()
-  expect(css, '(a) API CSS must contain .thumbnail_image { width: 90px }')
-    .toContain('.thumbnail_image { width: 90px')
+  expect(css, '(a) API CSS must contain .thumbnail_image { width: 90px }').toContain(
+    '.thumbnail_image { width: 90px'
+  )
 
   // 2) Load app and check in-browser
   await loginUI(page)
@@ -70,8 +78,9 @@ test('(a) thumbnail-image: API emits 90px, app renders 90px', async ({ page }) =
 
   const teContent = await getTeTokensContent(page)
   expect(teContent, '(a) te-tokens style tag must exist').not.toBe('')
-  expect(teContent, '(a) te-tokens must contain .thumbnail_image { width: 90px }')
-    .toContain('.thumbnail_image { width: 90px')
+  expect(teContent, '(a) te-tokens must contain .thumbnail_image { width: 90px }').toContain(
+    '.thumbnail_image { width: 90px'
+  )
 
   // 3) Find any .thumbnail_image element and check computed width
   const thumbEl = page.locator('.thumbnail_image').first()
@@ -80,8 +89,9 @@ test('(a) thumbnail-image: API emits 90px, app renders 90px', async ({ page }) =
 
   if (thumbCount > 0) {
     const computedW = await thumbEl.evaluate((el) => getComputedStyle(el).width)
-    expect(computedW, `(a) .thumbnail_image computed width must be 90px, got ${computedW}`)
-      .toBe('90px')
+    expect(computedW, `(a) .thumbnail_image computed width must be 90px, got ${computedW}`).toBe(
+      '90px'
+    )
   } else {
     // Take a screenshot to document the admin dashboard
     await page.screenshot({ path: '/tmp/te_screenshots/a_admin_dashboard.png' })
@@ -99,8 +109,10 @@ test('(a) thumbnail-image: API emits 90px, app renders 90px', async ({ page }) =
 test('(b) typography: te-tokens emits h1 vars; h1 uses te-typo-h1-size', async ({ page }) => {
   const css = await getTokensCSS()
   // Check h1 size var is emitted
-  expect(css, '(b) API CSS must emit --typography_desktop_typography_scale_typography_scale_h1_title_size')
-    .toContain('--typography_desktop_typography_scale_typography_scale_h1_title_size')
+  expect(
+    css,
+    '(b) API CSS must emit --typography_desktop_typography_scale_typography_scale_h1_title_size'
+  ).toContain('--typography_desktop_typography_scale_typography_scale_h1_title_size')
 
   await loginUI(page)
   await page.goto(`${BASE}/admin`, { waitUntil: 'networkidle' })
@@ -139,8 +151,9 @@ test('(b) typography: te-tokens emits h1 vars; h1 uses te-typo-h1-size', async (
 // =====================================================================
 test('(c) primary color: branding var present, primary buttons use it', async ({ page }) => {
   const css = await getTokensCSS()
-  expect(css, '(c) API CSS must emit --branding_brand_colors_primary_color')
-    .toContain('--branding_brand_colors_primary_color')
+  expect(css, '(c) API CSS must emit --branding_brand_colors_primary_color').toContain(
+    '--branding_brand_colors_primary_color'
+  )
 
   await loginUI(page)
   await page.goto(`${BASE}/admin`, { waitUntil: 'networkidle' })
@@ -151,7 +164,7 @@ test('(c) primary color: branding var present, primary buttons use it', async ({
 
   // Check --primary (shadcn/Tailwind) is wired to branding
   // The app uses bg-primary on buttons — check a primary button's bg
-  const primaryBtn = page.locator('button.te-btn-primary, button[class*="te-btn-primary"]').first()
+  const _primaryBtn = page.locator('button.te-btn-primary, button[class*="te-btn-primary"]').first()
   const btnCount = await page.locator('button').count()
   console.log(`(c) Total buttons: ${btnCount}`)
 
@@ -167,8 +180,9 @@ test('(c) primary color: branding var present, primary buttons use it', async ({
 // =====================================================================
 test('(d) layout: sidebar uses --te-layout-sidebar-width from TE tokens', async ({ page }) => {
   const css = await getTokensCSS()
-  expect(css, '(d) API CSS must emit --layout_structure_sidebar_width')
-    .toContain('--layout_structure_sidebar_width')
+  expect(css, '(d) API CSS must emit --layout_structure_sidebar_width').toContain(
+    '--layout_structure_sidebar_width'
+  )
 
   await loginUI(page)
   await page.goto(`${BASE}/admin`, { waitUntil: 'networkidle' })
@@ -185,7 +199,9 @@ test('(d) layout: sidebar uses --te-layout-sidebar-width from TE tokens', async 
     const computed = getComputedStyle(el).width
     return { inlineStyle: style, computed }
   })
-  console.log(`(d) Sidebar inline style=${sidebarWidth.inlineStyle}, computed=${sidebarWidth.computed}`)
+  console.log(
+    `(d) Sidebar inline style=${sidebarWidth.inlineStyle}, computed=${sidebarWidth.computed}`
+  )
 
   // Container width
   const containerWidthVar = await getCSSVarFromPage(page, '--layout_container_grid_container_width')
@@ -199,8 +215,9 @@ test('(d) layout: sidebar uses --te-layout-sidebar-width from TE tokens', async 
 // =====================================================================
 test('(e) button radius: --buttons_button_sizes_border_radius drives buttons', async ({ page }) => {
   const css = await getTokensCSS()
-  expect(css, '(e) API CSS must emit --buttons_button_sizes_border_radius')
-    .toContain('--buttons_button_sizes_border_radius')
+  expect(css, '(e) API CSS must emit --buttons_button_sizes_border_radius').toContain(
+    '--buttons_button_sizes_border_radius'
+  )
 
   await loginUI(page)
   await page.goto(`${BASE}/admin`, { waitUntil: 'networkidle' })
@@ -232,18 +249,22 @@ test('(f) components: card/table/alert vars emitted and wired', async ({ page })
   const css = await getTokensCSS()
 
   // Cards
-  expect(css, '(f) API CSS must emit --cards_card_colors_background_color')
-    .toContain('--cards_card_colors_background_color')
-  expect(css, '(f) API CSS must emit --cards_surface_border_radius')
-    .toContain('--cards_surface_border_radius')
+  expect(css, '(f) API CSS must emit --cards_card_colors_background_color').toContain(
+    '--cards_card_colors_background_color'
+  )
+  expect(css, '(f) API CSS must emit --cards_surface_border_radius').toContain(
+    '--cards_surface_border_radius'
+  )
 
   // Tables
-  expect(css, '(f) API CSS must emit --tables_table_colors_header_background')
-    .toContain('--tables_table_colors_header_background')
+  expect(css, '(f) API CSS must emit --tables_table_colors_header_background').toContain(
+    '--tables_table_colors_header_background'
+  )
 
   // Alerts
-  expect(css, '(f) API CSS must emit --alerts_shape_border_radius')
-    .toContain('--alerts_shape_border_radius')
+  expect(css, '(f) API CSS must emit --alerts_shape_border_radius').toContain(
+    '--alerts_shape_border_radius'
+  )
 
   await loginUI(page)
   await page.goto(`${BASE}/admin`, { waitUntil: 'networkidle' })
@@ -257,7 +278,7 @@ test('(f) components: card/table/alert vars emitted and wired', async ({ page })
   console.log(`(f) --alerts_shape_border_radius = ${alertRadiusVar}`)
 
   // Find a card element and check its styles
-  const card = page.locator('[class*="te-card"], .te-card, [data-testid*="card"]').first()
+  const _card = page.locator('[class*="te-card"], .te-card, [data-testid*="card"]').first()
   const cardCount = await page.locator('[class*="te-card"]').count()
   console.log(`(f) Found ${cardCount} te-card elements`)
 

@@ -46,9 +46,7 @@ export function RoleFormDialog({
   const { data: matrix, isLoading: matrixLoading } = useQuery({
     queryKey: ['permissions-matrix'],
     queryFn: () =>
-      api
-        .get('/permissions/matrix')
-        .then((r) => r.data.data.matrix as PermissionModuleMatrix[]),
+      api.get('/permissions/matrix').then((r) => r.data.data.matrix as PermissionModuleMatrix[]),
     staleTime: 60_000,
     enabled: open,
   })
@@ -113,11 +111,7 @@ export function RoleFormDialog({
         </FormField>
 
         <FormField label="Description" error={errors.description?.message}>
-          <Textarea
-            {...register('description')}
-            placeholder="Optional description"
-            rows={2}
-          />
+          <Textarea {...register('description')} placeholder="Optional description" rows={2} />
         </FormField>
 
         <FormField label="Permissions" error={undefined}>

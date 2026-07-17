@@ -24,11 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
-import type {
-  IntegrationChannel,
-  IntegrationProvider,
-  DriverKey,
-} from '@/types/integrations.types'
+import type { IntegrationChannel, IntegrationProvider, DriverKey } from '@/types/integrations.types'
 import { DRIVER_FIELDS, CHANNEL_DRIVERS } from '@/types/integrations.types'
 
 const CHANNELS: IntegrationChannel[] = ['EMAIL', 'SMS', 'WHATSAPP']
@@ -100,9 +96,7 @@ export default function IntegrationsPage() {
   const { data: providers, isLoading } = useQuery({
     queryKey: ['integrations-providers'],
     queryFn: () =>
-      api
-        .get('/integrations/providers')
-        .then((r) => r.data.data.items as IntegrationProvider[]),
+      api.get('/integrations/providers').then((r) => r.data.data.items as IntegrationProvider[]),
   })
 
   const channelProviders = providers?.filter((p) => p.channel === activeChannel) ?? []
@@ -155,9 +149,7 @@ export default function IntegrationsPage() {
       is_default: p.is_default,
       is_fallback: p.is_fallback,
       credentials: {},
-      config: Object.fromEntries(
-        Object.entries(p.config ?? {}).map(([k, v]) => [k, String(v)])
-      ),
+      config: Object.fromEntries(Object.entries(p.config ?? {}).map(([k, v]) => [k, String(v)])),
       replaceCredentials: false,
     })
     setFormError(null)
@@ -200,9 +192,7 @@ export default function IntegrationsPage() {
       is_active: form.is_active,
       is_default: form.is_default,
       is_fallback: form.is_fallback,
-      config: Object.fromEntries(
-        Object.entries(form.config).filter(([, v]) => v.trim())
-      ),
+      config: Object.fromEntries(Object.entries(form.config).filter(([, v]) => v.trim())),
     }
 
     if (needsCreds) {
@@ -284,7 +274,9 @@ export default function IntegrationsPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <div className="font-medium text-sm">{p.name}</div>
-                      <div className="text-xs text-muted-foreground font-mono mt-0.5">{p.driver}</div>
+                      <div className="text-xs text-muted-foreground font-mono mt-0.5">
+                        {p.driver}
+                      </div>
                     </div>
                     <div className="flex gap-1 shrink-0">
                       <PermissionGuard permission="integrations:edit">

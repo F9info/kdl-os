@@ -76,7 +76,9 @@ export default function FieldsPage() {
     queryKey: ['types-options'],
     queryFn: () =>
       api
-        .get('/types', { params: { limit: 100, is_active: 'true', sortBy: 'name', sortOrder: 'asc' } })
+        .get('/types', {
+          params: { limit: 100, is_active: 'true', sortBy: 'name', sortOrder: 'asc' },
+        })
         .then((r) => r.data.data as { types: Type[] }),
   })
   const typeOptions = typesData?.types ?? []
@@ -190,7 +192,9 @@ export default function FieldsPage() {
     {
       accessorKey: 'input_type',
       header: 'Input Type',
-      cell: ({ row }) => <Badge variant="secondary">{INPUT_TYPE_LABELS[row.original.input_type]}</Badge>,
+      cell: ({ row }) => (
+        <Badge variant="secondary">{INPUT_TYPE_LABELS[row.original.input_type]}</Badge>
+      ),
     },
     {
       accessorKey: 'type',
@@ -248,198 +252,209 @@ export default function FieldsPage() {
   }
 
   // Categories filtered to the chosen Type (plus uncategorized ones).
-  const formCategories = categoryOptions.filter((c) => !typeId || !c.type_id || c.type_id === typeId)
+  const formCategories = categoryOptions.filter(
+    (c) => !typeId || !c.type_id || c.type_id === typeId
+  )
 
   return (
     <PermissionGuard permission="setting-fields:view">
-    <div>
-      <PageHeader
-        title="Fields"
-        breadcrumbs={[{ label: 'Application Settings' }, { label: 'Fields' }]}
-        action={
-          <Button onClick={openCreate}>
-            <Plus className="h-4 w-4" />
-            New Field
-          </Button>
-        }
-      />
+      <div>
+        <PageHeader
+          title="Fields"
+          breadcrumbs={[{ label: 'Application Settings' }, { label: 'Fields' }]}
+          action={
+            <Button onClick={openCreate}>
+              <Plus className="h-4 w-4" />
+              New Field
+            </Button>
+          }
+        />
 
-      <div className="mb-6 flex flex-wrap items-center gap-4">
-        <div className="relative min-w-[200px] max-w-sm flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search fields..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value)
+        <div className="mb-6 flex flex-wrap items-center gap-4">
+          <div className="relative min-w-[200px] max-w-sm flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search fields..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setPage(1)
+              }}
+              className="pl-9"
+            />
+          </div>
+          <Select
+            value={typeFilter || NONE}
+            onValueChange={(v) => {
+              setTypeFilter(v === NONE ? '' : v)
               setPage(1)
             }}
-            className="pl-9"
-          />
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="All types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NONE}>All types</SelectItem>
+              {typeOptions.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={inputTypeFilter || NONE}
+            onValueChange={(v) => {
+              setInputTypeFilter(v === NONE ? '' : v)
+              setPage(1)
+            }}
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="All input types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NONE}>All input types</SelectItem>
+              {INPUT_TYPE_OPTIONS.map(([key, label]) => (
+                <SelectItem key={key} value={key}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <Select
-          value={typeFilter || NONE}
-          onValueChange={(v) => {
-            setTypeFilter(v === NONE ? '' : v)
-            setPage(1)
-          }}
+
+        <DataTable
+          columns={columns}
+          data={data?.fields ?? []}
+          isLoading={isLoading}
+          emptyMessage="No fields found. Create one to start building a settings screen."
+          pagination={
+            data ? { page, totalPages: data.pagination.pages, onPageChange: setPage } : undefined
+          }
+        />
+
+        <Modal
+          open={formOpen}
+          onClose={() => setFormOpen(false)}
+          title={editing ? 'Edit Field' : 'New Field'}
+          size="lg"
+          footer={
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setFormOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSubmit(onSubmit)} disabled={isSaving}>
+                {editing ? 'Save changes' : 'Create'}
+              </Button>
+            </div>
+          }
         >
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="All types" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={NONE}>All types</SelectItem>
-            {typeOptions.map((t) => (
-              <SelectItem key={t.id} value={t.id}>
-                {t.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={inputTypeFilter || NONE}
-          onValueChange={(v) => {
-            setInputTypeFilter(v === NONE ? '' : v)
-            setPage(1)
-          }}
-        >
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="All input types" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={NONE}>All input types</SelectItem>
-            {INPUT_TYPE_OPTIONS.map(([key, label]) => (
-              <SelectItem key={key} value={key}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <FormField label="Field Name" error={errors.field_name?.message} required>
+                <Input placeholder="e.g. Site Logo" {...register('field_name')} />
+              </FormField>
+              <FormField label="Slug" hint="Auto-generated from the field name.">
+                <Input
+                  value={slugPreview}
+                  readOnly
+                  tabIndex={-1}
+                  placeholder="auto-generated"
+                  className="bg-muted text-muted-foreground"
+                />
+              </FormField>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <FormField label="Input Type" error={errors.input_type?.message} required>
+                <Select
+                  value={inputType}
+                  onValueChange={(v) =>
+                    setValue('input_type', v as InputType, { shouldValidate: true })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {INPUT_TYPE_OPTIONS.map(([key, label]) => (
+                      <SelectItem key={key} value={key}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormField>
+              <FormField
+                label="Type"
+                error={errors.type_id?.message}
+                required
+                hint="The settings screen this field belongs to."
+              >
+                <Select
+                  value={typeId || NONE}
+                  onValueChange={(v) =>
+                    setValue('type_id', v === NONE ? '' : v, { shouldValidate: true })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE}>Select a type</SelectItem>
+                    {typeOptions.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormField>
+            </div>
+
+            {isOptionType(inputType) && (
+              <FormField
+                label="Options"
+                error={errors.options?.message}
+                required
+                hint="Comma-separated, e.g. Small, Medium, Large"
+              >
+                <Textarea placeholder="Option A, Option B, Option C" {...register('options')} />
+              </FormField>
+            )}
+
+            <FormField label="Category" hint="Optional grouping label.">
+              <Select
+                value={categoryId || NONE}
+                onValueChange={(v) => setValue('category_id', v === NONE ? '' : v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="No category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>No category</SelectItem>
+                  {formCategories.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormField>
+
+            {formError && <ErrorAlert error={formError} />}
+          </form>
+        </Modal>
+
+        <ConfirmDialog
+          open={deleteId !== null}
+          onClose={() => setDeleteId(null)}
+          onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
+          title="Delete field?"
+          description="This permanently deletes the field definition and its saved value (and any uploaded files)."
+          isLoading={deleteMutation.isPending}
+        />
       </div>
-
-      <DataTable
-        columns={columns}
-        data={data?.fields ?? []}
-        isLoading={isLoading}
-        emptyMessage="No fields found. Create one to start building a settings screen."
-        pagination={
-          data ? { page, totalPages: data.pagination.pages, onPageChange: setPage } : undefined
-        }
-      />
-
-      <Modal
-        open={formOpen}
-        onClose={() => setFormOpen(false)}
-        title={editing ? 'Edit Field' : 'New Field'}
-        size="lg"
-        footer={
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setFormOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit(onSubmit)} disabled={isSaving}>
-              {editing ? 'Save changes' : 'Create'}
-            </Button>
-          </div>
-        }
-      >
-        <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FormField label="Field Name" error={errors.field_name?.message} required>
-              <Input placeholder="e.g. Site Logo" {...register('field_name')} />
-            </FormField>
-            <FormField label="Slug" hint="Auto-generated from the field name.">
-              <Input
-                value={slugPreview}
-                readOnly
-                tabIndex={-1}
-                placeholder="auto-generated"
-                className="bg-muted text-muted-foreground"
-              />
-            </FormField>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FormField label="Input Type" error={errors.input_type?.message} required>
-              <Select
-                value={inputType}
-                onValueChange={(v) => setValue('input_type', v as InputType, { shouldValidate: true })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {INPUT_TYPE_OPTIONS.map(([key, label]) => (
-                    <SelectItem key={key} value={key}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormField>
-            <FormField label="Type" error={errors.type_id?.message} required hint="The settings screen this field belongs to.">
-              <Select
-                value={typeId || NONE}
-                onValueChange={(v) => setValue('type_id', v === NONE ? '' : v, { shouldValidate: true })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE}>Select a type</SelectItem>
-                  {typeOptions.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormField>
-          </div>
-
-          {isOptionType(inputType) && (
-            <FormField
-              label="Options"
-              error={errors.options?.message}
-              required
-              hint="Comma-separated, e.g. Small, Medium, Large"
-            >
-              <Textarea placeholder="Option A, Option B, Option C" {...register('options')} />
-            </FormField>
-          )}
-
-          <FormField label="Category" hint="Optional grouping label.">
-            <Select
-              value={categoryId || NONE}
-              onValueChange={(v) => setValue('category_id', v === NONE ? '' : v)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="No category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NONE}>No category</SelectItem>
-                {formCategories.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormField>
-
-          {formError && <ErrorAlert error={formError} />}
-        </form>
-      </Modal>
-
-      <ConfirmDialog
-        open={deleteId !== null}
-        onClose={() => setDeleteId(null)}
-        onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
-        title="Delete field?"
-        description="This permanently deletes the field definition and its saved value (and any uploaded files)."
-        isLoading={deleteMutation.isPending}
-      />
-    </div>
     </PermissionGuard>
   )
 }

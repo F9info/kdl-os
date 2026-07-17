@@ -58,9 +58,7 @@ export function PermissionMatrix({ matrix, value, onChange, disabled }: Permissi
   }
 
   if (!matrix.length) {
-    return (
-      <p className="text-sm text-muted-foreground py-4">No permission modules defined.</p>
-    )
+    return <p className="text-sm text-muted-foreground py-4">No permission modules defined.</p>
   }
 
   const allIds = getAllIds(matrix)
@@ -73,7 +71,9 @@ export function PermissionMatrix({ matrix, value, onChange, disabled }: Permissi
         <input
           type="checkbox"
           checked={allChecked}
-          ref={(el) => { if (el) el.indeterminate = someChecked }}
+          ref={(el) => {
+            if (el) el.indeterminate = someChecked
+          }}
           onChange={toggleAll}
           disabled={disabled}
           className="h-4 w-4 rounded border-input accent-primary cursor-pointer"
@@ -96,7 +96,9 @@ export function PermissionMatrix({ matrix, value, onChange, disabled }: Permissi
                   <input
                     type="checkbox"
                     checked={rowAllChecked}
-                    ref={(el) => { if (el) el.indeterminate = rowSomeChecked }}
+                    ref={(el) => {
+                      if (el) el.indeterminate = rowSomeChecked
+                    }}
                     onChange={() => toggleRow(module)}
                     disabled={disabled}
                     className="h-4 w-4 rounded border-input accent-primary cursor-pointer"
@@ -111,7 +113,12 @@ export function PermissionMatrix({ matrix, value, onChange, disabled }: Permissi
                   {rowIds.filter((id) => selected.has(id)).length}/{rowIds.length}
                 </span>
               </div>
-              <div className={cn('flex flex-wrap gap-x-4 gap-y-2 px-3 py-2', !rowIds.length && 'hidden')}>
+              <div
+                className={cn(
+                  'flex flex-wrap gap-x-4 gap-y-2 px-3 py-2',
+                  !rowIds.length && 'hidden'
+                )}
+              >
                 {actionEntries.map(([action, id]) => (
                   <label
                     key={action}

@@ -23,7 +23,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { NotificationTemplate, NotificationCategory, NotificationChannel } from '@/types/notifications.types'
+import type {
+  NotificationTemplate,
+  NotificationCategory,
+  NotificationChannel,
+} from '@/types/notifications.types'
 
 const CHANNELS: NotificationChannel[] = ['IN_APP', 'EMAIL', 'SMS', 'WHATSAPP']
 const CHANNEL_LABELS: Record<NotificationChannel, string> = {
@@ -78,13 +82,17 @@ export default function NotificationTemplatesPage() {
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ['notification-templates'],
     queryFn: () =>
-      api.get('/notifications/templates').then((r) => r.data.data.templates as NotificationTemplate[]),
+      api
+        .get('/notifications/templates')
+        .then((r) => r.data.data.templates as NotificationTemplate[]),
   })
 
   const { data: categories = [] } = useQuery({
     queryKey: ['notification-categories'],
     queryFn: () =>
-      api.get('/notifications/categories').then((r) => r.data.data.categories as NotificationCategory[]),
+      api
+        .get('/notifications/categories')
+        .then((r) => r.data.data.categories as NotificationCategory[]),
   })
 
   const saveMutation = useMutation({
@@ -146,7 +154,10 @@ export default function NotificationTemplatesPage() {
     }
     const payload = {
       ...form,
-      variables: form.variables.split(',').map((v) => v.trim()).filter(Boolean),
+      variables: form.variables
+        .split(',')
+        .map((v) => v.trim())
+        .filter(Boolean),
       in_app_body: form.in_app_body || null,
       email_subject: form.email_subject || null,
       email_body: form.email_body || null,
@@ -161,11 +172,17 @@ export default function NotificationTemplatesPage() {
     if (!previewId) return
     try {
       let data: Record<string, string> = {}
-      try { data = JSON.parse(previewData) } catch { data = {} }
+      try {
+        data = JSON.parse(previewData)
+      } catch {
+        data = {}
+      }
       const resp = await api.post(`/notifications/templates/${previewId}/preview`, { data })
       setPreviewResult(resp.data.data.preview)
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Preview failed'
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        'Preview failed'
       toast({ title: 'Preview failed', description: msg, variant: 'destructive' })
     }
   }
@@ -216,7 +233,9 @@ export default function NotificationTemplatesPage() {
                       <td className="p-3">{t.name}</td>
                       <td className="p-3 text-muted-foreground">{t.category?.name}</td>
                       <td className="p-3">
-                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${t.is_active ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'}`}>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${t.is_active ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'}`}
+                        >
                           {t.is_active ? 'Active' : 'Inactive'}
                         </span>
                       </td>
@@ -235,7 +254,12 @@ export default function NotificationTemplatesPage() {
                             <Eye className="h-3.5 w-3.5" />
                           </Button>
                           <PermissionGuard permission="notifications:edit">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(t)}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => openEdit(t)}
+                            >
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>
                           </PermissionGuard>
@@ -266,7 +290,9 @@ export default function NotificationTemplatesPage() {
             size="lg"
             footer={
               <div className="flex gap-2 justify-end w-full">
-                <Button variant="outline" onClick={() => setDialog({ open: false, editing: null })}>Cancel</Button>
+                <Button variant="outline" onClick={() => setDialog({ open: false, editing: null })}>
+                  Cancel
+                </Button>
                 <Button onClick={handleSave} disabled={saveMutation.isPending}>
                   {saveMutation.isPending ? 'Saving…' : 'Save'}
                 </Button>
@@ -297,10 +323,14 @@ export default function NotificationTemplatesPage() {
                   value={form.category_id}
                   onValueChange={(v) => setForm((f) => ({ ...f, category_id: v }))}
                 >
-                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
                   <SelectContent>
                     {categories.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -340,7 +370,9 @@ export default function NotificationTemplatesPage() {
                   <textarea
                     className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
                     value={form[channelBodyField[activeChannel]] as string}
-                    onChange={(e) => setForm((f) => ({ ...f, [channelBodyField[activeChannel]]: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, [channelBodyField[activeChannel]]: e.target.value }))
+                    }
                     placeholder="Use {{variable}} placeholders"
                   />
                 </FormField>
@@ -360,11 +392,22 @@ export default function NotificationTemplatesPage() {
           {/* Preview Dialog */}
           <Modal
             open={!!previewId}
-            onClose={() => { setPreviewId(null); setPreviewResult(null) }}
+            onClose={() => {
+              setPreviewId(null)
+              setPreviewResult(null)
+            }}
             title="Preview Template"
             footer={
               <div className="flex gap-2 justify-end w-full">
-                <Button variant="outline" onClick={() => { setPreviewId(null); setPreviewResult(null) }}>Close</Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setPreviewId(null)
+                    setPreviewResult(null)
+                  }}
+                >
+                  Close
+                </Button>
                 <Button onClick={handlePreview}>Preview</Button>
               </div>
             }
@@ -382,7 +425,9 @@ export default function NotificationTemplatesPage() {
                 <div className="space-y-3">
                   {Object.entries(previewResult).map(([ch, content]) => (
                     <div key={ch} className="rounded-md border p-3">
-                      <div className="text-xs font-medium text-muted-foreground uppercase mb-1">{ch}</div>
+                      <div className="text-xs font-medium text-muted-foreground uppercase mb-1">
+                        {ch}
+                      </div>
                       <div className="text-sm whitespace-pre-wrap">{content}</div>
                     </div>
                   ))}

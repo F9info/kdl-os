@@ -10,14 +10,7 @@ import { cn } from '@/lib/utils'
 // callers should not pass w-*/h-*/object-* utilities; max-w-*/max-h-* ceilings
 // compose fine and are welcome.
 export type AppImageSize =
-  | 'thumbnail'
-  | 'avatar'
-  | 'card'
-  | 'banner'
-  | 'gallery'
-  | 'logo'
-  | 'content'
-  | 'icon'
+  'thumbnail' | 'avatar' | 'card' | 'banner' | 'gallery' | 'logo' | 'content' | 'icon'
 
 interface AppImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   size: AppImageSize
