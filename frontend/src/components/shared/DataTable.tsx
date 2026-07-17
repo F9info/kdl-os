@@ -68,13 +68,7 @@ export function DataTable<T>({
             ))}
           </TableHeader>
           <TableBody>
-            {error ? (
-              <TableRow>
-                <TableCell colSpan={columns.length}>
-                  <ErrorState error={error} onRetry={onRetry} />
-                </TableCell>
-              </TableRow>
-            ) : isLoading ? (
+            {isLoading ? (
               Array.from({ length: 5 }).map((_, rowIdx) => (
                 <TableRow key={rowIdx}>
                   {columns.map((_, colIdx) => (
@@ -84,6 +78,12 @@ export function DataTable<T>({
                   ))}
                 </TableRow>
               ))
+            ) : error ? (
+              <TableRow>
+                <TableCell colSpan={columns.length}>
+                  <ErrorState error={error} onRetry={onRetry} />
+                </TableCell>
+              </TableRow>
             ) : table.getRowModel().rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={columns.length}>
