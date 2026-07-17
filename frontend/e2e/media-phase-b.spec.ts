@@ -13,10 +13,10 @@
  *   cd frontend && E2E_API_URL=http://localhost:4000/api pnpm exec playwright test e2e/media-phase-b.spec.ts
  */
 import { test, expect, request, type APIRequestContext } from '@playwright/test'
+import { ADMIN } from './helpers/credentials'
 
 const API_URL = process.env.E2E_API_URL ?? 'http://localhost:4000/api'
 const BASE_URL = process.env.E2E_BASE_URL ?? 'http://localhost:4000'
-const ADMIN = { email: 'admin@kdl.com', password: 'Admin@123' }
 const RUN = `${Date.now().toString(36)}`
 
 // 10×10 red PNG — sharp-compatible test image for transform

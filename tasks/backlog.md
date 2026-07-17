@@ -33,7 +33,7 @@
 ## PHASE 2 — Backend Foundation *(locked until Phase 1 approved)*
 
 - [ ] prisma/schema.prisma (4 base tables: users, refresh_tokens, app_settings, media)
-- [ ] prisma/seed.js (admin@kdl.com / Admin@123)
+- [ ] prisma/seed.js (admin via SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD)
 - [ ] backend/package.json (all deps)
 - [ ] backend/src/config/ (database, redis, minio, meilisearch, chromadb)
 - [ ] backend/src/middleware/ (auth, rbac, validate, upload, errorHandler)
