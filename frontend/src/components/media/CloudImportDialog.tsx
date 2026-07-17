@@ -6,7 +6,16 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { X, Cloud, Folder as FolderIcon, File as FileIcon, ChevronRight, ArrowLeft, Trash2, Plus } from 'lucide-react'
+import {
+  X,
+  Cloud,
+  Folder as FolderIcon,
+  File as FileIcon,
+  ChevronRight,
+  ArrowLeft,
+  Trash2,
+  Plus,
+} from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
@@ -61,28 +70,48 @@ const importApi = {
   providers: () =>
     api.get('/media/import/providers').then((r) => (r.data.data?.items ?? []) as ImportProvider[]),
   connections: () =>
-    api.get('/media/import/connections').then((r) => (r.data.data?.items ?? []) as ImportConnection[]),
-  createConnection: (data: { provider: 's3' | 'ftp'; label: string; credentials: Record<string, unknown> }) =>
-    api.post('/media/import/connections', data).then((r) => r.data.data as ImportConnection),
+    api
+      .get('/media/import/connections')
+      .then((r) => (r.data.data?.items ?? []) as ImportConnection[]),
+  createConnection: (data: {
+    provider: 's3' | 'ftp'
+    label: string
+    credentials: Record<string, unknown>
+  }) => api.post('/media/import/connections', data).then((r) => r.data.data as ImportConnection),
   deleteConnection: (id: string) => api.delete(`/media/import/connections/${id}`),
   oauthUrl: (provider: CloudProvider, redirect_uri: string) =>
-    api.post(`/media/import/oauth/${provider}/url`, { redirect_uri })
+    api
+      .post(`/media/import/oauth/${provider}/url`, { redirect_uri })
       .then((r) => r.data.data as { url: string; state: string }),
-  oauthCallback: (provider: CloudProvider, body: { code: string; state: string; redirect_uri: string; label?: string }) =>
-    api.post(`/media/import/oauth/${provider}/callback`, body).then((r) => r.data.data as ImportConnection),
+  oauthCallback: (
+    provider: CloudProvider,
+    body: { code: string; state: string; redirect_uri: string; label?: string }
+  ) =>
+    api
+      .post(`/media/import/oauth/${provider}/callback`, body)
+      .then((r) => r.data.data as ImportConnection),
   browse: (id: string, params: { path?: string; cursor?: string }) =>
-    api.get(`/media/import/connections/${id}/browse`, { params })
+    api
+      .get(`/media/import/connections/${id}/browse`, { params })
       .then((r) => r.data.data as { entries: BrowseEntry[]; cursor: string | null }),
   importFiles: (id: string, files: string[], folder_id?: string | null) =>
-    api.post(`/media/import/connections/${id}/import`, {
-      files,
-      ...(folder_id ? { folder_id } : {}),
-    }).then((r) => r.data.data as ImportResult),
+    api
+      .post(`/media/import/connections/${id}/import`, {
+        files,
+        ...(folder_id ? { folder_id } : {}),
+      })
+      .then((r) => r.data.data as ImportResult),
 }
 
 // ─── Credential forms (S3 / FTP) ──────────────────────────────────────────────
 
-function S3CredentialForm({ onCreated, onCancel }: { onCreated: () => void; onCancel: () => void }) {
+function S3CredentialForm({
+  onCreated,
+  onCancel,
+}: {
+  onCreated: () => void
+  onCancel: () => void
+}) {
   const [label, setLabel] = useState('')
   const [accessKeyId, setAccessKeyId] = useState('')
   const [secretAccessKey, setSecretAccessKey] = useState('')
@@ -103,9 +132,14 @@ function S3CredentialForm({ onCreated, onCancel }: { onCreated: () => void; onCa
           ...(endpoint.trim() ? { endpoint: endpoint.trim() } : {}),
         },
       }),
-    onSuccess: () => { toast({ title: 'Connection added' }); onCreated() },
+    onSuccess: () => {
+      toast({ title: 'Connection added' })
+      onCreated()
+    },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to add connection'
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        'Failed to add connection'
       toast({ title: msg, variant: 'destructive' })
     },
   })
@@ -115,15 +149,52 @@ function S3CredentialForm({ onCreated, onCancel }: { onCreated: () => void; onCa
   return (
     <div className="border rounded p-3 space-y-2 bg-muted/30">
       <p className="text-sm font-medium">Connect Amazon S3</p>
-      <Input placeholder="Connection label" value={label} onChange={(e) => setLabel(e.target.value)} className="h-8 text-sm" />
-      <Input placeholder="Access key ID" value={accessKeyId} onChange={(e) => setAccessKeyId(e.target.value)} className="h-8 text-sm" />
-      <Input placeholder="Secret access key" type="password" value={secretAccessKey} onChange={(e) => setSecretAccessKey(e.target.value)} className="h-8 text-sm" />
-      <Input placeholder="Bucket" value={bucket} onChange={(e) => setBucket(e.target.value)} className="h-8 text-sm" />
-      <Input placeholder="Region (optional)" value={region} onChange={(e) => setRegion(e.target.value)} className="h-8 text-sm" />
-      <Input placeholder="Endpoint (optional)" value={endpoint} onChange={(e) => setEndpoint(e.target.value)} className="h-8 text-sm" />
+      <Input
+        placeholder="Connection label"
+        value={label}
+        onChange={(e) => setLabel(e.target.value)}
+        className="h-8 text-sm"
+      />
+      <Input
+        placeholder="Access key ID"
+        value={accessKeyId}
+        onChange={(e) => setAccessKeyId(e.target.value)}
+        className="h-8 text-sm"
+      />
+      <Input
+        placeholder="Secret access key"
+        type="password"
+        value={secretAccessKey}
+        onChange={(e) => setSecretAccessKey(e.target.value)}
+        className="h-8 text-sm"
+      />
+      <Input
+        placeholder="Bucket"
+        value={bucket}
+        onChange={(e) => setBucket(e.target.value)}
+        className="h-8 text-sm"
+      />
+      <Input
+        placeholder="Region (optional)"
+        value={region}
+        onChange={(e) => setRegion(e.target.value)}
+        className="h-8 text-sm"
+      />
+      <Input
+        placeholder="Endpoint (optional)"
+        value={endpoint}
+        onChange={(e) => setEndpoint(e.target.value)}
+        className="h-8 text-sm"
+      />
       <div className="flex gap-2 justify-end">
-        <Button size="sm" variant="outline" onClick={onCancel}>Cancel</Button>
-        <Button size="sm" onClick={() => createMut.mutate()} disabled={!valid || createMut.isPending}>
+        <Button size="sm" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button
+          size="sm"
+          onClick={() => createMut.mutate()}
+          disabled={!valid || createMut.isPending}
+        >
           {createMut.isPending ? 'Saving…' : 'Save connection'}
         </Button>
       </div>
@@ -131,7 +202,13 @@ function S3CredentialForm({ onCreated, onCancel }: { onCreated: () => void; onCa
   )
 }
 
-function FtpCredentialForm({ onCreated, onCancel }: { onCreated: () => void; onCancel: () => void }) {
+function FtpCredentialForm({
+  onCreated,
+  onCancel,
+}: {
+  onCreated: () => void
+  onCancel: () => void
+}) {
   const [label, setLabel] = useState('')
   const [host, setHost] = useState('')
   const [port, setPort] = useState('')
@@ -152,9 +229,14 @@ function FtpCredentialForm({ onCreated, onCancel }: { onCreated: () => void; onC
           secure,
         },
       }),
-    onSuccess: () => { toast({ title: 'Connection added' }); onCreated() },
+    onSuccess: () => {
+      toast({ title: 'Connection added' })
+      onCreated()
+    },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to add connection'
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        'Failed to add connection'
       toast({ title: msg, variant: 'destructive' })
     },
   })
@@ -164,18 +246,56 @@ function FtpCredentialForm({ onCreated, onCancel }: { onCreated: () => void; onC
   return (
     <div className="border rounded p-3 space-y-2 bg-muted/30">
       <p className="text-sm font-medium">Connect FTP</p>
-      <Input placeholder="Connection label" value={label} onChange={(e) => setLabel(e.target.value)} className="h-8 text-sm" />
-      <Input placeholder="Host" value={host} onChange={(e) => setHost(e.target.value)} className="h-8 text-sm" />
-      <Input placeholder="Port (optional)" type="number" value={port} onChange={(e) => setPort(e.target.value)} className="h-8 text-sm" />
-      <Input placeholder="User" value={user} onChange={(e) => setUser(e.target.value)} className="h-8 text-sm" />
-      <Input placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-8 text-sm" />
+      <Input
+        placeholder="Connection label"
+        value={label}
+        onChange={(e) => setLabel(e.target.value)}
+        className="h-8 text-sm"
+      />
+      <Input
+        placeholder="Host"
+        value={host}
+        onChange={(e) => setHost(e.target.value)}
+        className="h-8 text-sm"
+      />
+      <Input
+        placeholder="Port (optional)"
+        type="number"
+        value={port}
+        onChange={(e) => setPort(e.target.value)}
+        className="h-8 text-sm"
+      />
+      <Input
+        placeholder="User"
+        value={user}
+        onChange={(e) => setUser(e.target.value)}
+        className="h-8 text-sm"
+      />
+      <Input
+        placeholder="Password"
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        className="h-8 text-sm"
+      />
       <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" checked={secure} onChange={(e) => setSecure(e.target.checked)} className="h-4 w-4 rounded" />
+        <input
+          type="checkbox"
+          checked={secure}
+          onChange={(e) => setSecure(e.target.checked)}
+          className="h-4 w-4 rounded"
+        />
         Use FTPS (secure)
       </label>
       <div className="flex gap-2 justify-end">
-        <Button size="sm" variant="outline" onClick={onCancel}>Cancel</Button>
-        <Button size="sm" onClick={() => createMut.mutate()} disabled={!valid || createMut.isPending}>
+        <Button size="sm" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button
+          size="sm"
+          onClick={() => createMut.mutate()}
+          disabled={!valid || createMut.isPending}
+        >
           {createMut.isPending ? 'Saving…' : 'Save connection'}
         </Button>
       </div>
@@ -201,7 +321,7 @@ function ConnectionsStep({ onOpen }: { onOpen: (c: ImportConnection) => void }) 
 
   const invalidateConnections = useCallback(
     () => queryClient.invalidateQueries({ queryKey: ['media-import-connections'] }),
-    [queryClient],
+    [queryClient]
   )
 
   const deleteMut = useMutation({
@@ -225,7 +345,10 @@ function ConnectionsStep({ onOpen }: { onOpen: (c: ImportConnection) => void }) 
           state: d.state,
           redirect_uri: window.location.origin + OAUTH_CALLBACK_PATH,
         })
-        .then(() => { toast({ title: 'Connection added' }); invalidateConnections() })
+        .then(() => {
+          toast({ title: 'Connection added' })
+          invalidateConnections()
+        })
         .catch(() => toast({ title: 'Failed to complete authorization', variant: 'destructive' }))
     }
     window.addEventListener('message', handler)
@@ -246,7 +369,9 @@ function ConnectionsStep({ onOpen }: { onOpen: (c: ImportConnection) => void }) 
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Connections</p>
+        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+          Connections
+        </p>
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
         {!isLoading && (connections ?? []).length === 0 && (
           <p className="text-sm text-muted-foreground">No connections yet. Add one below.</p>
@@ -254,9 +379,16 @@ function ConnectionsStep({ onOpen }: { onOpen: (c: ImportConnection) => void }) 
         {(connections ?? []).map((c) => (
           <div key={c.id} className="flex items-center gap-2 border rounded px-2 py-1.5">
             <Cloud className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <Badge variant="outline" className="text-[10px]">{PROVIDER_LABELS[c.provider] ?? c.provider}</Badge>
+            <Badge variant="outline" className="text-[10px]">
+              {PROVIDER_LABELS[c.provider] ?? c.provider}
+            </Badge>
             <span className="text-sm truncate flex-1">{c.label}</span>
-            <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => onOpen(c)}>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 px-2 text-xs"
+              onClick={() => onOpen(c)}
+            >
               Browse
             </Button>
             <button
@@ -273,7 +405,9 @@ function ConnectionsStep({ onOpen }: { onOpen: (c: ImportConnection) => void }) 
       </div>
 
       <div className="space-y-2">
-        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Add connection</p>
+        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+          Add connection
+        </p>
         <div className="flex flex-wrap gap-2">
           {(providers ?? []).map((p) => {
             const label = PROVIDER_LABELS[p.provider] ?? p.provider
@@ -285,7 +419,9 @@ function ConnectionsStep({ onOpen }: { onOpen: (c: ImportConnection) => void }) 
                     variant="outline"
                     disabled={!p.configured}
                     onClick={() => startOauth(p.provider)}
-                    title={p.configured ? `Connect ${label}` : `${label} is not configured on the server`}
+                    title={
+                      p.configured ? `Connect ${label}` : `${label} is not configured on the server`
+                    }
                   >
                     <Plus className="h-3 w-3 mr-1" /> {label}
                   </Button>
@@ -310,13 +446,19 @@ function ConnectionsStep({ onOpen }: { onOpen: (c: ImportConnection) => void }) 
         </div>
         {credForm === 's3' && (
           <S3CredentialForm
-            onCreated={() => { setCredForm(null); invalidateConnections() }}
+            onCreated={() => {
+              setCredForm(null)
+              invalidateConnections()
+            }}
             onCancel={() => setCredForm(null)}
           />
         )}
         {credForm === 'ftp' && (
           <FtpCredentialForm
-            onCreated={() => { setCredForm(null); invalidateConnections() }}
+            onCreated={() => {
+              setCredForm(null)
+              invalidateConnections()
+            }}
             onCancel={() => setCredForm(null)}
           />
         )}
@@ -328,7 +470,9 @@ function ConnectionsStep({ onOpen }: { onOpen: (c: ImportConnection) => void }) 
 // ─── Browser step ─────────────────────────────────────────────────────────────
 
 function ConnectionBrowser({
-  connection, folderId, onImported,
+  connection,
+  folderId,
+  onImported,
 }: {
   connection: ImportConnection
   folderId?: string | null
@@ -344,21 +488,24 @@ function ConnectionBrowser({
 
   const currentPath = pathStack[pathStack.length - 1]?.id
 
-  const load = useCallback(async (append: boolean, cur?: string | null) => {
-    setLoading(true)
-    try {
-      const data = await importApi.browse(connection.id, {
-        ...(currentPath ? { path: currentPath } : {}),
-        ...(cur ? { cursor: cur } : {}),
-      })
-      setEntries((prev) => (append ? [...prev, ...data.entries] : data.entries))
-      setCursor(data.cursor ?? null)
-    } catch {
-      toast({ title: 'Failed to browse connection', variant: 'destructive' })
-    } finally {
-      setLoading(false)
-    }
-  }, [connection.id, currentPath])
+  const load = useCallback(
+    async (append: boolean, cur?: string | null) => {
+      setLoading(true)
+      try {
+        const data = await importApi.browse(connection.id, {
+          ...(currentPath ? { path: currentPath } : {}),
+          ...(cur ? { cursor: cur } : {}),
+        })
+        setEntries((prev) => (append ? [...prev, ...data.entries] : data.entries))
+        setCursor(data.cursor ?? null)
+      } catch {
+        toast({ title: 'Failed to browse connection', variant: 'destructive' })
+      } finally {
+        setLoading(false)
+      }
+    },
+    [connection.id, currentPath]
+  )
 
   // (Re)load whenever the connection or current folder changes
   useEffect(() => {
@@ -385,7 +532,9 @@ function ConnectionBrowser({
       setSelected(new Set())
       onImported?.(res)
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Import failed'
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        'Import failed'
       toast({ title: msg, variant: 'destructive' })
     } finally {
       setImporting(false)
@@ -408,7 +557,10 @@ function ConnectionBrowser({
             <ChevronRight className="h-3 w-3 text-muted-foreground" />
             <button
               type="button"
-              className={cn('hover:underline', i === pathStack.length - 1 ? 'font-medium' : 'text-primary')}
+              className={cn(
+                'hover:underline',
+                i === pathStack.length - 1 ? 'font-medium' : 'text-primary'
+              )}
               onClick={() => setPathStack((prev) => prev.slice(0, i + 1))}
             >
               {p.name}
@@ -451,7 +603,9 @@ function ConnectionBrowser({
               />
               <FileIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <span className="truncate flex-1">{e.name}</span>
-              <span className="text-xs text-muted-foreground flex-shrink-0">{formatBytes(e.size)}</span>
+              <span className="text-xs text-muted-foreground flex-shrink-0">
+                {formatBytes(e.size)}
+              </span>
             </label>
           )
         )}
@@ -468,7 +622,9 @@ function ConnectionBrowser({
           {selected.size} file{selected.size !== 1 ? 's' : ''} selected
         </span>
         <Button size="sm" onClick={runImport} disabled={selected.size === 0 || importing}>
-          {importing ? 'Importing…' : `Import ${selected.size} file${selected.size !== 1 ? 's' : ''}`}
+          {importing
+            ? 'Importing…'
+            : `Import ${selected.size} file${selected.size !== 1 ? 's' : ''}`}
         </Button>
       </div>
 
@@ -502,7 +658,11 @@ export function CloudImportDialog({ folderId, onClose, onImported }: CloudImport
   const [activeConnection, setActiveConnection] = useState<ImportConnection | null>(null)
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" role="dialog" aria-label="Import from cloud">
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      role="dialog"
+      aria-label="Import from cloud"
+    >
       <div className="bg-background rounded-lg shadow-xl p-6 w-[640px] max-w-[95vw] max-h-[85vh] overflow-y-auto space-y-4">
         <div className="flex justify-between items-center">
           <h3 className="font-semibold text-lg flex items-center gap-2">
@@ -524,7 +684,11 @@ export function CloudImportDialog({ folderId, onClose, onImported }: CloudImport
         </div>
 
         {activeConnection ? (
-          <ConnectionBrowser connection={activeConnection} folderId={folderId} onImported={onImported} />
+          <ConnectionBrowser
+            connection={activeConnection}
+            folderId={folderId}
+            onImported={onImported}
+          />
         ) : (
           <ConnectionsStep onOpen={setActiveConnection} />
         )}

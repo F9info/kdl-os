@@ -73,11 +73,16 @@ export function FileUpload({
       <div
         className={cn(
           'flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors cursor-pointer',
-          dragging ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50',
+          dragging
+            ? 'border-primary bg-primary/5'
+            : 'border-muted-foreground/25 hover:border-primary/50',
           disabled && 'pointer-events-none opacity-50'
         )}
         onClick={() => inputRef.current?.click()}
-        onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+        onDragOver={(e) => {
+          e.preventDefault()
+          setDragging(true)
+        }}
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
       >

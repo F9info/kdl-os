@@ -55,7 +55,11 @@ export default function ChangePasswordPage() {
     formState: { errors },
   } = useForm<ChangePasswordFormData>({ resolver: zodResolver(changePasswordSchema) })
 
-  const { mutate: changePassword, isPending, error } = useMutation({
+  const {
+    mutate: changePassword,
+    isPending,
+    error,
+  } = useMutation({
     mutationFn: (data: ChangePasswordFormData) =>
       api
         .post<ApiResponse<ChangePasswordResponseData>>('/auth/change-password', {

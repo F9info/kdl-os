@@ -8,7 +8,11 @@ import { Camera, Circle, Square } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import {
-  uploadCapture, extFromMime, mediaErrorMessage, formatDuration, stopStream,
+  uploadCapture,
+  extFromMime,
+  mediaErrorMessage,
+  formatDuration,
+  stopStream,
   type CaptureWidgetProps,
 } from './captureUtils'
 
@@ -30,14 +34,22 @@ export function WebcamCapture({ folderId, onUploaded }: CaptureWidgetProps) {
       setError('Camera capture is not supported in this browser.')
       return
     }
-    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+    navigator.mediaDevices
+      .getUserMedia({ video: true, audio: true })
       .then((stream) => {
-        if (cancelled) { stopStream(stream); return }
+        if (cancelled) {
+          stopStream(stream)
+          return
+        }
         streamRef.current = stream
         setReady(true)
         const video = videoRef.current
         if (video) {
-          try { video.srcObject = stream } catch { /* jsdom */ }
+          try {
+            video.srcObject = stream
+          } catch {
+            /* jsdom */
+          }
           video.play?.()?.catch?.(() => {})
         }
       })
@@ -48,7 +60,11 @@ export function WebcamCapture({ folderId, onUploaded }: CaptureWidgetProps) {
       if (rec && rec.state !== 'inactive') {
         rec.ondataavailable = null
         rec.onstop = null
-        try { rec.stop() } catch { /* already stopped */ }
+        try {
+          rec.stop()
+        } catch {
+          /* already stopped */
+        }
       }
       recorderRef.current = null
       stopStream(streamRef.current)
@@ -88,13 +104,17 @@ export function WebcamCapture({ folderId, onUploaded }: CaptureWidgetProps) {
       return
     }
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-    canvas.toBlob((blob) => {
-      if (!blob) {
-        toast({ title: 'Could not capture photo', variant: 'destructive' })
-        return
-      }
-      handleUpload(new File([blob], `webcam-${Date.now()}.jpg`, { type: 'image/jpeg' }))
-    }, 'image/jpeg', 0.92)
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          toast({ title: 'Could not capture photo', variant: 'destructive' })
+          return
+        }
+        handleUpload(new File([blob], `webcam-${Date.now()}.jpg`, { type: 'image/jpeg' }))
+      },
+      'image/jpeg',
+      0.92
+    )
   }
 
   const startRecording = () => {
@@ -111,7 +131,11 @@ export function WebcamCapture({ folderId, onUploaded }: CaptureWidgetProps) {
     }
     rec.onstop = () => {
       const mime = rec.mimeType || 'video/webm'
-      const file = new File(chunksRef.current, `webcam-${Date.now()}.${extFromMime(mime, 'webm')}`, { type: mime })
+      const file = new File(
+        chunksRef.current,
+        `webcam-${Date.now()}.${extFromMime(mime, 'webm')}`,
+        { type: mime }
+      )
       chunksRef.current = []
       handleUpload(file)
     }
@@ -125,15 +149,20 @@ export function WebcamCapture({ folderId, onUploaded }: CaptureWidgetProps) {
     setRecording(false)
     const rec = recorderRef.current
     recorderRef.current = null
-    try { rec?.stop() } catch { /* already stopped */ }
+    try {
+      rec?.stop()
+    } catch {
+      /* already stopped */
+    }
   }
 
   return (
     <div className="space-y-3">
       {error ? (
-        <p role="alert" className="text-sm text-destructive">{error}</p>
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
       ) : (
-        // eslint-disable-next-line jsx-a11y/media-has-caption
         <video
           ref={videoRef}
           autoPlay
@@ -152,7 +181,12 @@ export function WebcamCapture({ folderId, onUploaded }: CaptureWidgetProps) {
             <Square className="h-4 w-4 mr-1" /> Stop recording
           </Button>
         ) : (
-          <Button size="sm" variant="outline" onClick={startRecording} disabled={!ready || uploading}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={startRecording}
+            disabled={!ready || uploading}
+          >
             <Circle className="h-4 w-4 mr-1 text-red-500 fill-current" /> Start recording
           </Button>
         )}

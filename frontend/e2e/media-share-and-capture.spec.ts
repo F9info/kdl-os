@@ -60,7 +60,10 @@ test.afterAll(async () => {
 })
 
 test.describe('Media Share + Capture (KDL-148 re-verification)', () => {
-  test('Share / copy link: button is wired up and the copied link resolves anonymously', async ({ page, browser }) => {
+  test('Share / copy link: button is wired up and the copied link resolves anonymously', async ({
+    page,
+    browser,
+  }) => {
     let mediaId: string | undefined
     try {
       await login(page)
@@ -69,7 +72,7 @@ test.describe('Media Share + Capture (KDL-148 re-verification)', () => {
 
       const fileName = `e2e-share-${RUN}.png`
       const uploadResponse = page.waitForResponse(
-        (res) => res.url().includes('/media/upload') && res.request().method() === 'POST',
+        (res) => res.url().includes('/media/upload') && res.request().method() === 'POST'
       )
       await page.locator('input[type="file"]').first().setInputFiles({
         name: fileName,
@@ -94,7 +97,7 @@ test.describe('Media Share + Capture (KDL-148 re-verification)', () => {
 
       await page.getByRole('button', { name: 'New share link' }).click()
       const createResponse = page.waitForResponse(
-        (res) => res.url().includes('/shares') && res.request().method() === 'POST',
+        (res) => res.url().includes('/shares') && res.request().method() === 'POST'
       )
       await page.getByRole('button', { name: 'Create link' }).click()
       const createRes = await createResponse
@@ -116,21 +119,27 @@ test.describe('Media Share + Capture (KDL-148 re-verification)', () => {
       const sharedImg = anonPage.locator('img').first()
       await expect(sharedImg).toBeVisible({ timeout: 10_000 })
       await expect(async () => {
-        const ok = await sharedImg.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)
+        const ok = await sharedImg.evaluate(
+          (img: HTMLImageElement) => img.complete && img.naturalWidth > 0
+        )
         expect(ok).toBe(true)
       }).toPass({ timeout: 10_000 })
 
       await anonContext.close()
     } finally {
       if (mediaId) {
-        await api.delete(`${API_URL}/media/${mediaId}`, {
-          headers: { Authorization: `Bearer ${adminToken}` },
-        }).catch(() => {})
+        await api
+          .delete(`${API_URL}/media/${mediaId}`, {
+            headers: { Authorization: `Bearer ${adminToken}` },
+          })
+          .catch(() => {})
       }
     }
   })
 
-  test('Screen recording (toolbar button) recovers when the browser ends the track natively', async ({ page }) => {
+  test('Screen recording (toolbar button) recovers when the browser ends the track natively', async ({
+    page,
+  }) => {
     // Grant camera/mic permissions defensively; the fake-device Chromium flags
     // (set in playwright.config.ts launchOptions below) make getDisplayMedia
     // resolve without a real picker.
@@ -154,7 +163,9 @@ test.describe('Media Share + Capture (KDL-148 re-verification)', () => {
 
     // Recorder.onstop should fire, transitioning the widget out of the
     // recording state into the "preview" / "Use recording" state.
-    await expect(page.getByRole('button', { name: /use recording/i })).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('button', { name: /use recording/i })).toBeVisible({
+      timeout: 10_000,
+    })
     await expect(page.getByRole('button', { name: /^stop$/i })).toHaveCount(0)
   })
 })

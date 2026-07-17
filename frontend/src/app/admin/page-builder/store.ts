@@ -52,11 +52,12 @@ export function getPageBySlug(slug: string): PageRecord | undefined {
 
 export function createPage(title: string): PageRecord {
   const id = crypto.randomUUID()
-  const slug = title
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '') || id.slice(0, 8)
+  const slug =
+    title
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '') || id.slice(0, 8)
   const record: PageRecord = {
     id,
     slug,

@@ -32,8 +32,7 @@ export function parseRows(value: string): FontRow[] {
   }
 }
 
-const inputCls =
-  'min-w-0 flex-1 rounded border border-border bg-muted px-2 py-1 text-sm'
+const inputCls = 'min-w-0 flex-1 rounded border border-border bg-muted px-2 py-1 text-sm'
 
 export function FontsEditorControl({
   value,
@@ -62,11 +61,19 @@ export function FontsEditorControl({
           {/* Type toggle: Google Font ⇄ Uploaded font */}
           <button
             type="button"
-            title={row.type === 'google' ? 'Google Font — click for Upload' : 'Uploaded font — click for Google'}
+            title={
+              row.type === 'google'
+                ? 'Google Font — click for Upload'
+                : 'Uploaded font — click for Google'
+            }
             onClick={() => updateRow(i, { type: row.type === 'google' ? 'upload' : 'google' })}
             className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded border border-border bg-muted text-muted-foreground transition-colors hover:border-primary"
           >
-            {row.type === 'google' ? <Globe className="h-4 w-4" /> : <FolderUp className="h-4 w-4" />}
+            {row.type === 'google' ? (
+              <Globe className="h-4 w-4" />
+            ) : (
+              <FolderUp className="h-4 w-4" />
+            )}
           </button>
 
           <input
@@ -89,7 +96,11 @@ export function FontsEditorControl({
             <button
               type="button"
               onClick={() => setPickerIndex(i)}
-              className={cn(inputCls, 'text-left transition-colors hover:border-primary', !row.src && 'text-muted-foreground')}
+              className={cn(
+                inputCls,
+                'text-left transition-colors hover:border-primary',
+                !row.src && 'text-muted-foreground'
+              )}
               title="Choose font file"
             >
               <span className="block truncate">{row.src || 'Choose font file…'}</span>
@@ -127,8 +138,11 @@ export function FontsEditorControl({
             const url = m?.url
             if (url) {
               // Default the name from the filename when the row has none yet.
-              const derived = (m.original_name || (url.split(/[?#]/)[0] ?? '').split('/').pop() || '')
-                .replace(/\.[^.]+$/, '')
+              const derived = (
+                m.original_name ||
+                (url.split(/[?#]/)[0] ?? '').split('/').pop() ||
+                ''
+              ).replace(/\.[^.]+$/, '')
               updateRow(pickerIndex, {
                 src: url,
                 name: rows[pickerIndex]?.name || derived,

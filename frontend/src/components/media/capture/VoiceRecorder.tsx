@@ -9,7 +9,11 @@ import { toast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
-  uploadCapture, extFromMime, mediaErrorMessage, formatDuration, stopStream,
+  uploadCapture,
+  extFromMime,
+  mediaErrorMessage,
+  formatDuration,
+  stopStream,
   type CaptureWidgetProps,
 } from './captureUtils'
 
@@ -26,27 +30,37 @@ export function VoiceRecorder({ folderId, onUploaded }: CaptureWidgetProps) {
   const [uploading, setUploading] = useState(false)
 
   const teardownLevelMeter = () => {
-    if (levelTimerRef.current) { clearInterval(levelTimerRef.current); levelTimerRef.current = null }
+    if (levelTimerRef.current) {
+      clearInterval(levelTimerRef.current)
+      levelTimerRef.current = null
+    }
     audioCtxRef.current?.close().catch(() => {})
     audioCtxRef.current = null
     setLevel(0)
   }
 
   // Stop everything on unmount
-  useEffect(() => () => {
-    const rec = recorderRef.current
-    if (rec && rec.state !== 'inactive') {
-      rec.ondataavailable = null
-      rec.onstop = null
-      try { rec.stop() } catch { /* already stopped */ }
-    }
-    recorderRef.current = null
-    stopStream(streamRef.current)
-    streamRef.current = null
-    if (levelTimerRef.current) clearInterval(levelTimerRef.current)
-    audioCtxRef.current?.close().catch(() => {})
-    audioCtxRef.current = null
-  }, [])
+  useEffect(
+    () => () => {
+      const rec = recorderRef.current
+      if (rec && rec.state !== 'inactive') {
+        rec.ondataavailable = null
+        rec.onstop = null
+        try {
+          rec.stop()
+        } catch {
+          /* already stopped */
+        }
+      }
+      recorderRef.current = null
+      stopStream(streamRef.current)
+      streamRef.current = null
+      if (levelTimerRef.current) clearInterval(levelTimerRef.current)
+      audioCtxRef.current?.close().catch(() => {})
+      audioCtxRef.current = null
+    },
+    []
+  )
 
   useEffect(() => {
     if (!recording) return
@@ -57,7 +71,9 @@ export function VoiceRecorder({ folderId, onUploaded }: CaptureWidgetProps) {
   // Best-effort input level meter (skipped where AudioContext is unavailable, e.g. jsdom)
   const setupLevelMeter = (stream: MediaStream) => {
     try {
-      const Ctx = window.AudioContext ?? (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+      const Ctx =
+        window.AudioContext ??
+        (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
       if (!Ctx) return
       const ctx = new Ctx()
       const source = ctx.createMediaStreamSource(stream)
@@ -72,7 +88,9 @@ export function VoiceRecorder({ folderId, onUploaded }: CaptureWidgetProps) {
         for (const v of data) peak = Math.max(peak, Math.abs(v - 128) / 128)
         setLevel(peak)
       }, 100)
-    } catch { /* level meter is cosmetic */ }
+    } catch {
+      /* level meter is cosmetic */
+    }
   }
 
   const handleUpload = async (file: File) => {
@@ -109,7 +127,11 @@ export function VoiceRecorder({ folderId, onUploaded }: CaptureWidgetProps) {
       }
       rec.onstop = () => {
         const mime = rec.mimeType || 'audio/webm'
-        const file = new File(chunksRef.current, `voice-${Date.now()}.${extFromMime(mime, 'webm')}`, { type: mime })
+        const file = new File(
+          chunksRef.current,
+          `voice-${Date.now()}.${extFromMime(mime, 'webm')}`,
+          { type: mime }
+        )
         chunksRef.current = []
         stopStream(streamRef.current)
         streamRef.current = null
@@ -129,17 +151,28 @@ export function VoiceRecorder({ folderId, onUploaded }: CaptureWidgetProps) {
     teardownLevelMeter()
     const rec = recorderRef.current
     recorderRef.current = null
-    try { rec?.stop() } catch { /* already stopped */ }
+    try {
+      rec?.stop()
+    } catch {
+      /* already stopped */
+    }
   }
 
   return (
     <div className="space-y-3">
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
       {recording && (
         <div className="flex items-center gap-3">
           <Mic className="h-5 w-5 text-red-500 animate-pulse" />
           {/* Level meter */}
-          <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden" data-testid="voice-level">
+          <div
+            className="flex-1 h-2 bg-muted rounded-full overflow-hidden"
+            data-testid="voice-level"
+          >
             <div
               className={cn('h-full bg-red-500 rounded-full transition-all duration-100')}
               style={{ width: `${Math.max(4, Math.round(level * 100))}%` }}

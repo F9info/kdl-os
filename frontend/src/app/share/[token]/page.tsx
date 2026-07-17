@@ -52,12 +52,14 @@ function MediaPreview({ item }: { item: SharedMediaItem }) {
   return (
     <div className="space-y-3">
       {isImage && item.url && (
-        <AppImage size="content" src={item.url} alt={item.original_name} className="max-w-full rounded border" />
+        <AppImage
+          size="content"
+          src={item.url}
+          alt={item.original_name}
+          className="max-w-full rounded border"
+        />
       )}
-      {isVideo && item.url && (
-        // eslint-disable-next-line jsx-a11y/media-has-caption
-        <video src={item.url} controls className="w-full rounded border" />
-      )}
+      {isVideo && item.url && <video src={item.url} controls className="w-full rounded border" />}
       {isAudio && item.url && <audio src={item.url} controls className="w-full" />}
       {!isImage && !isVideo && !isAudio && (
         <div className="rounded border p-6 text-center text-sm text-muted-foreground">
@@ -93,49 +95,52 @@ export default function SharePage() {
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  const resolve = useCallback(async (pwd?: string) => {
-    try {
-      const res = await fetch(`/api/public-share/${token}`, {
-        method: pwd ? 'POST' : 'GET',
-        headers: pwd ? { 'Content-Type': 'application/json' } : undefined,
-        body: pwd ? JSON.stringify({ password: pwd }) : undefined,
-        cache: 'no-store',
-      })
-      const json = (await res.json().catch(() => null)) as
-        | { success: true; data: ShareData }
-        | { success: false; message: string }
-        | null
+  const resolve = useCallback(
+    async (pwd?: string) => {
+      try {
+        const res = await fetch(`/api/public-share/${token}`, {
+          method: pwd ? 'POST' : 'GET',
+          headers: pwd ? { 'Content-Type': 'application/json' } : undefined,
+          body: pwd ? JSON.stringify({ password: pwd }) : undefined,
+          cache: 'no-store',
+        })
+        const json = (await res.json().catch(() => null)) as
+          { success: true; data: ShareData } | { success: false; message: string } | null
 
-      if (res.ok && json?.success) {
-        setData(json.data)
-        setStatus('ready')
-        setPasswordError(null)
-        return
-      }
+        if (res.ok && json?.success) {
+          setData(json.data)
+          setStatus('ready')
+          setPasswordError(null)
+          return
+        }
 
-      if (res.status === 401) {
-        setStatus('needs-password')
-        return
+        if (res.status === 401) {
+          setStatus('needs-password')
+          return
+        }
+        if (res.status === 403) {
+          setStatus('needs-password')
+          setPasswordError(json && !json.success ? json.message : 'Incorrect password')
+          return
+        }
+        if (res.status === 410) {
+          setStatus('gone')
+          setMessage(
+            (json && !json.success && json.message) || 'This link has expired or been revoked.'
+          )
+          return
+        }
+        setStatus('error')
+        setMessage((json && !json.success && json.message) || 'This link is not available.')
+      } catch {
+        setStatus('error')
+        setMessage('Could not reach the server. Please try again.')
+      } finally {
+        setSubmitting(false)
       }
-      if (res.status === 403) {
-        setStatus('needs-password')
-        setPasswordError(json && !json.success ? json.message : 'Incorrect password')
-        return
-      }
-      if (res.status === 410) {
-        setStatus('gone')
-        setMessage((json && !json.success && json.message) || 'This link has expired or been revoked.')
-        return
-      }
-      setStatus('error')
-      setMessage((json && !json.success && json.message) || 'This link is not available.')
-    } catch {
-      setStatus('error')
-      setMessage('Could not reach the server. Please try again.')
-    } finally {
-      setSubmitting(false)
-    }
-  }, [token])
+    },
+    [token]
+  )
 
   useEffect(() => {
     if (token) void resolve()
@@ -155,23 +160,15 @@ export default function SharePage() {
       <div className="w-full max-w-md bg-background border rounded-lg shadow-sm p-6 space-y-4">
         <h1>Shared file</h1>
 
-        {status === 'loading' && (
-          <p className="text-sm text-muted-foreground">Loading…</p>
-        )}
+        {status === 'loading' && <p className="text-sm text-muted-foreground">Loading…</p>}
 
-        {status === 'gone' && (
-          <p className="text-sm text-destructive">{message}</p>
-        )}
+        {status === 'gone' && <p className="text-sm text-destructive">{message}</p>}
 
-        {status === 'error' && (
-          <p className="text-sm text-destructive">{message}</p>
-        )}
+        {status === 'error' && <p className="text-sm text-destructive">{message}</p>}
 
         {status === 'needs-password' && (
           <form onSubmit={handlePasswordSubmit} className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              This link is password-protected.
-            </p>
+            <p className="text-sm text-muted-foreground">This link is password-protected.</p>
             <Input
               type="password"
               placeholder="Password"
@@ -196,7 +193,11 @@ export default function SharePage() {
                 <li key={item.id} className="flex items-center justify-between gap-2 p-2 text-sm">
                   <span className="truncate">{item.original_name}</span>
                   {item.url && (
-                    <a href={item.url} download={item.original_name} className="text-primary underline shrink-0">
+                    <a
+                      href={item.url}
+                      download={item.original_name}
+                      className="text-primary underline shrink-0"
+                    >
                       Download
                     </a>
                   )}

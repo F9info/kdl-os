@@ -23,11 +23,24 @@ import { cn } from '@/lib/utils'
 type Provider = 'local' | 'minio' | 's3' | 'spaces' | 'r2'
 
 const PROVIDERS: { value: Provider; label: string; description: string }[] = [
-  { value: 'local', label: 'Local Filesystem', description: 'Store files on the server filesystem. Good for development and single-server deployments.' },
+  {
+    value: 'local',
+    label: 'Local Filesystem',
+    description:
+      'Store files on the server filesystem. Good for development and single-server deployments.',
+  },
   { value: 'minio', label: 'MinIO', description: 'Self-hosted S3-compatible object storage.' },
   { value: 's3', label: 'Amazon S3', description: 'AWS Simple Storage Service.' },
-  { value: 'spaces', label: 'DigitalOcean Spaces', description: 'S3-compatible object storage by DigitalOcean. Region auto-derives the endpoint.' },
-  { value: 'r2', label: 'Cloudflare R2', description: 'Zero-egress-fee object storage. Requires R2_ACCOUNT_ID in server env.' },
+  {
+    value: 'spaces',
+    label: 'DigitalOcean Spaces',
+    description: 'S3-compatible object storage by DigitalOcean. Region auto-derives the endpoint.',
+  },
+  {
+    value: 'r2',
+    label: 'Cloudflare R2',
+    description: 'Zero-egress-fee object storage. Requires R2_ACCOUNT_ID in server env.',
+  },
 ]
 
 type FieldKey = 'endpoint' | 'region' | 'bucket' | 'accessKey' | 'secretKey'
@@ -44,7 +57,14 @@ interface FieldDef {
 const PROVIDER_FIELDS: Record<Provider, FieldDef[]> = {
   local: [],
   minio: [
-    { key: 'endpoint', label: 'Endpoint URL', placeholder: 'http://minio:9000', hint: 'MinIO server URL including port.', required: true, isSecret: false },
+    {
+      key: 'endpoint',
+      label: 'Endpoint URL',
+      placeholder: 'http://minio:9000',
+      hint: 'MinIO server URL including port.',
+      required: true,
+      isSecret: false,
+    },
     { key: 'bucket', label: 'Bucket', placeholder: 'my-bucket', required: true, isSecret: false },
     { key: 'accessKey', label: 'Access Key', placeholder: '', required: true, isSecret: true },
     { key: 'secretKey', label: 'Secret Key', placeholder: '', required: true, isSecret: true },
@@ -53,19 +73,63 @@ const PROVIDER_FIELDS: Record<Provider, FieldDef[]> = {
     { key: 'region', label: 'Region', placeholder: 'us-east-1', required: true, isSecret: false },
     { key: 'bucket', label: 'Bucket', placeholder: 'my-bucket', required: true, isSecret: false },
     { key: 'accessKey', label: 'Access Key ID', placeholder: '', required: true, isSecret: true },
-    { key: 'secretKey', label: 'Secret Access Key', placeholder: '', required: true, isSecret: true },
+    {
+      key: 'secretKey',
+      label: 'Secret Access Key',
+      placeholder: '',
+      required: true,
+      isSecret: true,
+    },
   ],
   spaces: [
-    { key: 'region', label: 'Region', placeholder: 'nyc3', hint: 'DigitalOcean region slug (e.g. nyc3, sfo3, ams3). Endpoint is auto-derived.', required: true, isSecret: false },
-    { key: 'bucket', label: 'Bucket / Space Name', placeholder: 'my-space', required: true, isSecret: false },
-    { key: 'accessKey', label: 'Spaces Access Key', placeholder: '', required: true, isSecret: true },
-    { key: 'secretKey', label: 'Spaces Secret Key', placeholder: '', required: true, isSecret: true },
+    {
+      key: 'region',
+      label: 'Region',
+      placeholder: 'nyc3',
+      hint: 'DigitalOcean region slug (e.g. nyc3, sfo3, ams3). Endpoint is auto-derived.',
+      required: true,
+      isSecret: false,
+    },
+    {
+      key: 'bucket',
+      label: 'Bucket / Space Name',
+      placeholder: 'my-space',
+      required: true,
+      isSecret: false,
+    },
+    {
+      key: 'accessKey',
+      label: 'Spaces Access Key',
+      placeholder: '',
+      required: true,
+      isSecret: true,
+    },
+    {
+      key: 'secretKey',
+      label: 'Spaces Secret Key',
+      placeholder: '',
+      required: true,
+      isSecret: true,
+    },
   ],
   r2: [
-    { key: 'endpoint', label: 'Endpoint URL', placeholder: 'https://<account-id>.r2.cloudflarestorage.com', hint: 'R2 endpoint from your Cloudflare dashboard.', required: true, isSecret: false },
+    {
+      key: 'endpoint',
+      label: 'Endpoint URL',
+      placeholder: 'https://<account-id>.r2.cloudflarestorage.com',
+      hint: 'R2 endpoint from your Cloudflare dashboard.',
+      required: true,
+      isSecret: false,
+    },
     { key: 'bucket', label: 'Bucket', placeholder: 'my-bucket', required: true, isSecret: false },
     { key: 'accessKey', label: 'Access Key ID', placeholder: '', required: true, isSecret: true },
-    { key: 'secretKey', label: 'Secret Access Key', placeholder: '', required: true, isSecret: true },
+    {
+      key: 'secretKey',
+      label: 'Secret Access Key',
+      placeholder: '',
+      required: true,
+      isSecret: true,
+    },
   ],
 }
 
@@ -126,8 +190,7 @@ export default function StorageSettingsPage() {
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['storage-settings'],
-    queryFn: () =>
-      api.get('/storage-settings').then((r) => r.data.data as StorageSettings),
+    queryFn: () => api.get('/storage-settings').then((r) => r.data.data as StorageSettings),
   })
 
   useEffect(() => {
@@ -168,7 +231,8 @@ export default function StorageSettingsPage() {
   const secretFields = fields.filter((f) => f.isSecret)
   const nonSecretFields = fields.filter((f) => !f.isSecret)
   const hasSecrets = secretFields.length > 0
-  const hasExistingSecrets = settings?.isConfigured && settings.provider === currentProvider && hasSecrets
+  const hasExistingSecrets =
+    settings?.isConfigured && settings.provider === currentProvider && hasSecrets
   const showSecretInputs = !hasExistingSecrets || form.replaceSecrets
 
   function setFormField(key: keyof FormState, value: string) {
@@ -314,19 +378,15 @@ export default function StorageSettingsPage() {
                   <HardDrive className="h-4 w-4" />
                   Local Filesystem
                 </div>
-                Files are stored on the server and served via HMAC-signed URLs. No credentials required.
+                Files are stored on the server and served via HMAC-signed URLs. No credentials
+                required.
               </div>
             )}
 
             {currentProvider && currentProvider !== 'local' && (
               <>
                 {nonSecretFields.map((f) => (
-                  <FormField
-                    key={f.key}
-                    label={f.label}
-                    required={f.required}
-                    hint={f.hint}
-                  >
+                  <FormField key={f.key} label={f.label} required={f.required} hint={f.hint}>
                     <Input
                       value={form[f.key as keyof FormState] as string}
                       onChange={(e) => setFormField(f.key as keyof FormState, e.target.value)}
@@ -371,7 +431,9 @@ export default function StorageSettingsPage() {
                           key={f.key}
                           label={f.label}
                           required={f.required && !hasExistingSecrets}
-                          hint={hasExistingSecrets ? 'Leave blank to keep existing value.' : undefined}
+                          hint={
+                            hasExistingSecrets ? 'Leave blank to keep existing value.' : undefined
+                          }
                         >
                           <Input
                             type="password"
@@ -401,7 +463,11 @@ export default function StorageSettingsPage() {
                 ) : (
                   <XCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
                 )}
-                <span className={testResult.ok ? 'text-green-800 dark:text-green-300' : 'text-destructive'}>
+                <span
+                  className={
+                    testResult.ok ? 'text-green-800 dark:text-green-300' : 'text-destructive'
+                  }
+                >
                   {testResult.message}
                 </span>
               </div>
