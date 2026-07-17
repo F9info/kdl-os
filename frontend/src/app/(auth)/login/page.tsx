@@ -52,7 +52,7 @@ export default function LoginPage() {
     onSuccess: (res) => {
       const { user, accessToken } = res.data
       setAuth(user, accessToken)
-      router.push('/admin/dashboard')
+      router.push(user.must_change_password ? '/change-password' : '/admin/dashboard')
     },
   })
 

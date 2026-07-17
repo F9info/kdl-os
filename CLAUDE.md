@@ -15,6 +15,8 @@ A generic, production-ready SaaS boilerplate that is also AI-agent buildable fro
 
 ## Tech Stack
 
+> **The tech stack below is LOCKED (2026-07-16).** Agents must not change, replace, swap, or remove any part of it. If a genuine gap exists (a missing library/tool/service the project needs), the CEO *proposes* it to the board for approval — it is never added unilaterally.
+
 | Layer | Technology |
 |-------|-----------|
 | Backend | Node.js 20 + Express 5 + Prisma 6 |
@@ -263,7 +265,7 @@ activity_logs          id, actor_id, module, action, subject_type, subject_id, d
 - `RbacRole` → many `RolePermission` → `Permission` → `PermissionModule`
 - `User` → many `ActivityLog` (as actor)
 
-Seed: 1 SUPER_ADMIN → `admin@kdl.com / Admin@123`. System roles: `super-admin`, `admin`, `user`. System modules: `users`, `roles`, `permissions`, `settings`, `media`, `activity-log`.
+Seed: 1 SUPER_ADMIN → `SEED_ADMIN_EMAIL` (default `admin@kdl.com`) with `SEED_ADMIN_PASSWORD` if set, else a random password printed once (production refuses to seed without it). The local docker stack pins `kdl-dev-seed-password`. System roles: `super-admin`, `admin`, `user`. System modules: `users`, `roles`, `permissions`, `settings`, `media`, `activity-log`.
 
 ---
 
@@ -302,7 +304,7 @@ All agents run on the **Claude Code adapter (Claude subscription)** via the Pape
 1. **Maker ≠ Grader** — the agent that writes code never reviews it
 2. **Every loop has a `maxIterations` hard cap** — no infinite loops
 3. **On max iterations hit → write `BLOCKERS.md`** — never silently fail
-4. **Never skip a phase approval gate** — Prasanna must confirm before next phase
+4. **(Updated 2026-07-16)** Full autonomy — the CEO drives all phases without human approval gates. The user's only steering lever is the company Goal/milestones; all work must trace to them and stay in scope. (Supersedes the earlier "Prasanna must confirm before next phase" rule.)
 5. **(Retired)** OpenRouter budget rule no longer applies — all agents run on the Claude subscription adapter (see Model Allocation). `BUDGET.md` is deprecated.
 6. **Security hook always-on** for backend agents (Agents 2, 3, 7)
 

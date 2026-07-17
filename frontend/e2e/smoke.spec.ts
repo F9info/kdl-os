@@ -1,6 +1,7 @@
 // Rewritten for KDL-41: the original scaffold spec targeted routes and copy that
 // never existed in this app (/auth/login, "Welcome", "Password reset email sent.").
 import { test, expect } from '@playwright/test';
+import { ADMIN } from './helpers/credentials';
 
 test.describe('Smoke Tests', () => {
   test('root redirects to the login page', async ({ page }) => {
@@ -11,8 +12,8 @@ test.describe('Smoke Tests', () => {
 
   test('seeded super admin can log in and reach the dashboard', async ({ page }) => {
     await page.goto('/login');
-    await page.getByPlaceholder('admin@kdl.com').fill('admin@kdl.com');
-    await page.getByPlaceholder('••••••••').fill('Admin@123');
+    await page.getByPlaceholder('admin@kdl.com').fill(ADMIN.email);
+    await page.getByPlaceholder('••••••••').fill(ADMIN.password);
     await page.getByRole('button', { name: 'Sign in' }).click();
     await expect(page).toHaveURL(/\/admin\/dashboard/);
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();

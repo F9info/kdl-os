@@ -10,6 +10,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Button } from '@/components/ui/button'
+import { ErrorAlert } from './ErrorAlert'
 import { Pagination } from './Pagination'
 
 interface DataTableProps<T> {
@@ -22,6 +24,8 @@ interface DataTableProps<T> {
     onPageChange: (page: number) => void
   }
   emptyMessage?: string
+  error?: unknown
+  onRetry?: () => void
 }
 
 export function DataTable<T>({
@@ -30,6 +34,8 @@ export function DataTable<T>({
   isLoading,
   pagination,
   emptyMessage = 'No results found.',
+  error,
+  onRetry,
 }: DataTableProps<T>) {
   const table = useReactTable({
     data,
@@ -66,6 +72,19 @@ export function DataTable<T>({
                   ))}
                 </TableRow>
               ))
+            ) : error ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-32">
+                  <div className="flex flex-col items-center justify-center gap-3">
+                    <ErrorAlert error={error} className="max-w-md" />
+                    {onRetry && (
+                      <Button variant="outline" size="sm" onClick={onRetry}>
+                        Try again
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
             ) : table.getRowModel().rows.length === 0 ? (
               <TableRow>
                 <TableCell

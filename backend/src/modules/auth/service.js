@@ -153,7 +153,8 @@ export const resetPassword = async (token, password) => {
   await prisma.$transaction([
     prisma.user.update({
       where: { id: record.user.id },
-      data: { password_hash },
+      // A reset password is user-chosen, so any pending forced change is satisfied.
+      data: { password_hash, must_change_password: false },
     }),
     prisma.passwordResetToken.update({
       where: { id: record.id },
@@ -162,4 +163,30 @@ export const resetPassword = async (token, password) => {
   ]);
 
   return record.user;
+};
+
+export const changePassword = async (userId, currentPassword, newPassword) => {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || !user.is_active || user.status === 'SUSPENDED' || user.deleted_at) {
+    return { ok: false, reason: 'inactive' };
+  }
+
+  const valid = await comparePassword(currentPassword, user.password_hash);
+  if (!valid) return { ok: false, reason: 'invalid_current_password' };
+
+  const password_hash = await hashPassword(newPassword);
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: userId },
+      data: { password_hash, must_change_password: false },
+    }),
+    // Old sessions may predate the rotation (e.g. leaked seeded credentials) —
+    // revoke them all; the caller issues a fresh token pair for this session.
+    prisma.refreshToken.updateMany({
+      where: { user_id: userId },
+      data: { revoked: true },
+    }),
+  ]);
+
+  return { ok: true };
 };

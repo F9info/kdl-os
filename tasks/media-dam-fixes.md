@@ -2,7 +2,7 @@
 
 **Owner:** PaperclipAI (engineer)
 **Source of truth:** `MEDIA_DAM_QA_FINDINGS_paperclipai.md` (repo root) — full repro steps + console errors.
-**Env:** `http://localhost:3001` · login `admin@kdl.com / Admin@123` · MinIO on :9002.
+**Env:** `http://localhost:3001` · login with seeded admin (`SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`; docker stack default `admin@kdl.com` / `kdl-dev-seed-password`) · MinIO on :9002.
 **Areas:** `frontend/src/app/admin/media/` · `backend/src/modules/media/`
 
 ## Working agreement (per CLAUDE.md — non-negotiable)
