@@ -25,14 +25,7 @@ describe('DataTable regression', () => {
   })
 
   it('renders in-table error alert instead of rows', () => {
-    render(
-      <DataTable
-        columns={columns}
-        data={[]}
-        isLoading={false}
-        error="Failed to load users"
-      />
-    )
+    render(<DataTable columns={columns} data={[]} isLoading={false} error="Failed to load users" />)
 
     expect(screen.getByRole('alert')).toBeInTheDocument()
     expect(screen.getByText('Failed to load users')).toBeInTheDocument()
@@ -61,12 +54,7 @@ describe('DataTable regression', () => {
 
   it('disables pagination while loading', () => {
     render(
-      <DataTable
-        columns={columns}
-        data={[{ name: 'Alice' }]}
-        isLoading
-        pagination={pagination}
-      />
+      <DataTable columns={columns} data={[{ name: 'Alice' }]} isLoading pagination={pagination} />
     )
 
     expect(screen.getByRole('navigation')).toBeInTheDocument()

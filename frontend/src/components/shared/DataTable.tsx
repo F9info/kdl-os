@@ -75,7 +75,10 @@ export function DataTable<T>({
             ) : error ? (
               <TableRow>
                 <TableCell colSpan={columns.length}>
-                  <div className="flex h-32 items-center justify-center gap-2 text-center" role="alert">
+                  <div
+                    className="flex h-32 items-center justify-center gap-2 text-center"
+                    role="alert"
+                  >
                     <AlertCircle className="h-4 w-4 text-destructive" aria-hidden />
                     <span className="text-destructive">{getErrorMessage(error)}</span>
                   </div>
