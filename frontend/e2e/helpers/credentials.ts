@@ -14,4 +14,6 @@
 export const ADMIN = {
   email: process.env.E2E_ADMIN_EMAIL ?? 'admin@kdl.com',
   password: process.env.E2E_ADMIN_PASSWORD ?? 'kdl-dev-seed-password',
+  /** Password used after the forced-change flow clears must_change_password. */
+  changedPassword: process.env.E2E_ADMIN_CHANGED_PASSWORD ?? 'kdl-e2e-ch@nged-pw!',
 }
