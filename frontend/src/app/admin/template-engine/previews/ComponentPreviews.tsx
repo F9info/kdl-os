@@ -62,10 +62,10 @@ function fieldValue(
   pane: TEPaneLite,
   groupName: string,
   fieldName: string,
-  values: Values,
+  values: Values
 ): string {
   const field = groupByName(pane, groupName)?.fields.find(
-    (f) => f.field_name.toLowerCase() === fieldName.toLowerCase(),
+    (f) => f.field_name.toLowerCase() === fieldName.toLowerCase()
   )
   return field ? resolve(field, values) : ''
 }
@@ -90,7 +90,14 @@ const bool = (v: string): boolean => v === 'true' || v === '1' || v === 'on'
  *  prototype's per-variant shadow colour builder. Bad input → transparent. */
 function rgba(hex: string, opacityPct: string): string {
   const raw = String(hex).replace('#', '')
-  const full = (raw.length === 3 ? raw.split('').map((c) => c + c).join('') : raw).slice(0, 6)
+  const full = (
+    raw.length === 3
+      ? raw
+          .split('')
+          .map((c) => c + c)
+          .join('')
+      : raw
+  ).slice(0, 6)
   const n = parseInt(full, 16)
   if (full.length < 6 || Number.isNaN(n)) return 'rgba(0,0,0,0)'
   const a = (Number(opacityPct) || 0) / 100
@@ -143,7 +150,7 @@ export function ButtonPreview({ pane, values }: { pane: TEPaneLite; values: Valu
           px(fieldValue(pane, group, 'Shadow Spread', values)) || '0px'
         } ${rgba(
           fieldValue(pane, group, 'Shadow Color', values),
-          fieldValue(pane, group, 'Shadow Opacity', values),
+          fieldValue(pane, group, 'Shadow Opacity', values)
         )}`
         const style: CSSProperties = {
           background: bg,
@@ -213,7 +220,12 @@ function inputBoxCss(st: string, p: StyleParams, focused: boolean): CSSPropertie
   const edge = focused ? p.fc : p.bd
   const bw = p.bw === '0px' || !p.bw ? '1.5px' : p.bw
   if (st === 'Underline') {
-    return { background: 'transparent', border: 0, borderBottom: `${bw} solid ${edge}`, borderRadius: 0 }
+    return {
+      background: 'transparent',
+      border: 0,
+      borderBottom: `${bw} solid ${edge}`,
+      borderRadius: 0,
+    }
   }
   if (st === 'Filled') {
     return { background: p.bg, border: focused ? `${bw} solid ${p.fc}` : '0', borderRadius: p.rad }
@@ -284,7 +296,9 @@ export function FormPreview({ pane, values }: { pane: TEPaneLite; values: Values
       })}
 
       {/* choice controls */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginTop: 8, flexWrap: 'wrap' }}>
+      <div
+        style={{ display: 'flex', alignItems: 'center', gap: 20, marginTop: 8, flexWrap: 'wrap' }}
+      >
         <span style={{ display: 'flex', alignItems: 'center', gap: 8, color: lbl, fontSize: 12 }}>
           <Checkbox on style={cbStyle} chk={chk} cbd={cbd} ico={ico} />
           Checkbox
@@ -326,7 +340,10 @@ function Checkbox({
     fontSize: 13,
     fontWeight: 700,
   }
-  if (!on) return <span style={{ ...base, border: style === 'Tick Only' ? undefined : `2px solid ${cbd}` }} />
+  if (!on)
+    return (
+      <span style={{ ...base, border: style === 'Tick Only' ? undefined : `2px solid ${cbd}` }} />
+    )
   if (style === 'Outline Tick')
     return <span style={{ ...base, border: `2px solid ${chk}`, color: chk }}>✓</span>
   if (style === 'Tick Only') return <span style={{ ...base, color: chk, fontSize: 19 }}>✓</span>
@@ -376,9 +393,13 @@ function Radio({
       </span>
     )
   if (style === 'Check')
-    return <span style={{ ...base, ...shape, background: chk, fontSize: 12, fontWeight: 700 }}>✓</span>
+    return (
+      <span style={{ ...base, ...shape, background: chk, fontSize: 12, fontWeight: 700 }}>✓</span>
+    )
   // Filled
-  return <span style={{ ...base, ...shape, background: chk, boxShadow: `inset 0 0 0 3px ${paneBg}` }} />
+  return (
+    <span style={{ ...base, ...shape, background: chk, boxShadow: `inset 0 0 0 3px ${paneBg}` }} />
+  )
 }
 
 function Switch({
@@ -630,7 +651,9 @@ export function PopupPreview({ pane, values }: { pane: TEPaneLite; values: Value
           boxShadow: sh,
         }}
       >
-        <span style={{ position: 'absolute', top: 8, right: 12, color: cl, cursor: 'pointer' }}>✕</span>
+        <span style={{ position: 'absolute', top: 8, right: 12, color: cl, cursor: 'pointer' }}>
+          ✕
+        </span>
         <b style={{ color: tc, fontSize: 14 }}>Popup title</b>
         <p style={{ color: tc, opacity: 0.7, fontSize: 12, marginTop: 6 }}>
           This is an example modal dialog rendered from your settings.
@@ -726,7 +749,15 @@ export function NavPreview({ pane, values }: { pane: TEPaneLite; values: Values 
   )
 
   return (
-    <div style={{ maxWidth: 240, borderRadius: 9, padding: '10px 8px', margin: 16, background: '#26262a' }}>
+    <div
+      style={{
+        maxWidth: 240,
+        borderRadius: 9,
+        padding: '10px 8px',
+        margin: 16,
+        background: '#26262a',
+      }}
+    >
       {item('📊', 'Dashboard (active)', { background: actBg, color: act, fontWeight: 600 })}
       {item('👤', 'Users (hover)', { background: hov, color: txt })}
       {item('🖼️', 'Media', { color: txt })}
@@ -839,7 +870,9 @@ export function ImagesPreview({ pane, values }: { pane: TEPaneLite; values: Valu
   const rad = px(fieldValue(pane, 'Defaults', 'Image Border Radius', values)) || '6px'
 
   return (
-    <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'flex-end', padding: 18 }}>
+    <div
+      style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'flex-end', padding: 18 }}
+    >
       {list.map((r, i) => {
         const nw = r.w === 'auto' ? null : Number(r.w)
         const nh = r.h === 'auto' ? null : Number(r.h)

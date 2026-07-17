@@ -5,9 +5,10 @@ import { getDriver } from './drivers/index.js';
 import { encrypt, decrypt } from './shared/crypto.js';
 import { integrationsQueue } from './integrations.queue.js';
 import { maskRecipient, scrubPii } from './service.js';
-import { createProviderSchema, updateProviderSchema, testSendSchema } from './schema.js';
+import { createProviderSchema, updateProviderSchema, testSendSchema, getLogsQuerySchema } from './schema.js';
 import { getPaginationParams } from '../../shared/utils/pagination.js';
 import { logger } from '../../shared/utils/logger.js';
+import { assertPublicHost } from '../../shared/utils/ssrf-guard.js';
 
 const SAFE_SELECT = {
   id: true,
@@ -56,6 +57,11 @@ export const createProvider = async (req, res, next) => {
     const credResult = driver.credentialsSchema.safeParse(data.credentials);
     if (!credResult.success) {
       return errorResponse(res, `Invalid credentials: ${credResult.error.message}`, 422);
+    }
+
+    // L7: async DNS-based SSRF guard for drivers that connect to a user-supplied host.
+    if (data.driver === 'smtp' && credResult.data.host) {
+      await assertPublicHost(credResult.data.host);
     }
 
     if (driver.configSchema && data.config && Object.keys(data.config).length > 0) {
@@ -135,6 +141,10 @@ export const updateProvider = async (req, res, next) => {
       const credResult = driver.credentialsSchema.safeParse(data.credentials);
       if (!credResult.success) {
         return errorResponse(res, `Invalid credentials: ${credResult.error.message}`, 422);
+      }
+      // L7: async DNS-based SSRF guard on host update.
+      if (existing.driver === 'smtp' && credResult.data.host) {
+        await assertPublicHost(credResult.data.host);
       }
       encryptedCredentials = encrypt(JSON.stringify(credResult.data));
     }
@@ -305,10 +315,31 @@ export const webhookHandler = async (req, res, next) => {
     return errorResponse(res, 'Unknown driver', 404);
   }
 
-  const providers = await prisma.integrationProvider.findMany({
+  // L10: narrow provider search using a payload-derived identifier when the
+  // driver supports it, so we only try providers that plausibly match.
+  const providerKey = driver.getWebhookProviderKey?.(req) ?? null;
+
+  let allProviders = await prisma.integrationProvider.findMany({
     where: { driver: driverName, is_active: true },
     select: { id: true, credentials: true, config: true },
   }).catch(() => []);
+
+  // Filter in-memory by the payload identifier (e.g. phone_number_id for meta-cloud).
+  // Fall back to all providers when the driver exposes no key or the payload lacks it.
+  const providers = providerKey && driver.getWebhookProviderKey
+    ? allProviders.filter((p) => {
+        try {
+          const cfg = p.config ?? {};
+          return Object.values(cfg).includes(providerKey);
+        } catch { return false; }
+      }).length > 0
+      ? allProviders.filter((p) => {
+          try {
+            return Object.values(p.config ?? {}).includes(providerKey);
+          } catch { return false; }
+        })
+      : allProviders // fall back if filter yields nothing (safety net)
+    : allProviders;
 
   let verified = false;
   for (const provider of providers) {
@@ -359,16 +390,17 @@ export const webhookHandler = async (req, res, next) => {
 
 export const getLogs = async (req, res, next) => {
   try {
-    const { page, limit, skip } = getPaginationParams(req.query);
+    const q = req.validated?.query ?? req.query;
+    const { page, limit, skip } = getPaginationParams(q);
     const where = {};
 
-    if (req.query.channel) where.channel = req.query.channel;
-    if (req.query.status) where.status = req.query.status;
-    if (req.query.source) where.source = req.query.source;
+    if (q.channel) where.channel = q.channel;
+    if (q.status) where.status = q.status;
+    if (q.source) where.source = q.source;
 
     const range = {};
-    if (req.query.from) range.gte = new Date(req.query.from);
-    if (req.query.to) range.lte = new Date(req.query.to);
+    if (q.from) range.gte = new Date(q.from);
+    if (q.to) range.lte = new Date(q.to);
     if (Object.keys(range).length) where.created_at = range;
 
     const [logs, total] = await Promise.all([

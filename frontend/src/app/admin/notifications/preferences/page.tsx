@@ -7,7 +7,11 @@ import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { toast } from '@/hooks/use-toast'
 import { useNotificationPreferences, useSavePreferences } from '@/hooks/useNotifications'
-import type { NotificationChannel, CategoryPreferenceRow, NotificationPreference } from '@/types/notifications.types'
+import type {
+  NotificationChannel,
+  CategoryPreferenceRow,
+  NotificationPreference,
+} from '@/types/notifications.types'
 
 const CHANNELS: NotificationChannel[] = ['IN_APP', 'EMAIL', 'SMS', 'WHATSAPP']
 const CHANNEL_LABELS: Record<NotificationChannel, string> = {

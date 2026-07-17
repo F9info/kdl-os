@@ -39,6 +39,12 @@ vi.mock('basic-ftp', () => ({
   Client: vi.fn(() => ftpMocks),
   FileType: { Unknown: 0, File: 1, Directory: 2, SymbolicLink: 3 },
 }));
+// SSRF guard is tested in isolation (tests/shared/ssrf-guard.test.js); stub it
+// here so driver tests can use synthetic hosts without triggering DNS lookups.
+vi.mock('../../src/shared/utils/ssrf-guard.js', () => ({
+  assertPublicHost: vi.fn().mockResolvedValue(undefined),
+  assertPublicEndpoint: vi.fn().mockResolvedValue(undefined),
+}));
 
 const enc = (obj) => Buffer.from(JSON.stringify(obj)).toString('base64');
 

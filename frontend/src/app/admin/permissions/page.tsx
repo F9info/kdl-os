@@ -143,134 +143,125 @@ export default function PermissionsPage() {
 
   return (
     <PermissionGuard permission="permissions:view">
-    <div>
-      <PageHeader
-        title="Permissions"
-        action={
-          <Button onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add module
-          </Button>
-        }
-      />
+      <div>
+        <PageHeader
+          title="Permissions"
+          action={
+            <Button onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add module
+            </Button>
+          }
+        />
 
-      <p className="text-sm text-muted-foreground mb-6">
-        Each module auto-creates 5 permissions: view, add, edit, delete, publish.
-      </p>
+        <p className="text-sm text-muted-foreground mb-6">
+          Each module auto-creates 5 permissions: view, add, edit, delete, publish.
+        </p>
 
-      <DataTable
-        columns={columns}
-        data={matrix ?? []}
-        isLoading={isLoading}
-        emptyMessage="No permission modules defined."
-      />
+        <DataTable
+          columns={columns}
+          data={matrix ?? []}
+          isLoading={isLoading}
+          emptyMessage="No permission modules defined."
+        />
 
-      {/* Create module dialog */}
-      <Modal
-        open={createOpen}
-        onClose={() => {
-          setCreateOpen(false)
-          createForm.reset()
-        }}
-        title="Add Permission Module"
-        footer={
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setCreateOpen(false)
-                createForm.reset()
-              }}
+        {/* Create module dialog */}
+        <Modal
+          open={createOpen}
+          onClose={() => {
+            setCreateOpen(false)
+            createForm.reset()
+          }}
+          title="Add Permission Module"
+          footer={
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCreateOpen(false)
+                  createForm.reset()
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={createForm.handleSubmit((data) => createMutation.mutate(data))}
+                disabled={createMutation.isPending}
+              >
+                {createMutation.isPending && <LoadingSpinner size="sm" />}
+                Create module
+              </Button>
+            </div>
+          }
+        >
+          <form className="space-y-4">
+            <FormField
+              label="Name (slug)"
+              error={createForm.formState.errors.name?.message}
+              required
+              hint="Lowercase, hyphens only. e.g. blog-posts"
             >
-              Cancel
-            </Button>
-            <Button
-              onClick={createForm.handleSubmit((data) => createMutation.mutate(data))}
-              disabled={createMutation.isPending}
+              <Input {...createForm.register('name')} placeholder="e.g. blog-posts" />
+            </FormField>
+            <FormField
+              label="Label"
+              error={createForm.formState.errors.label?.message}
+              required
+              hint="Human-readable name shown in the UI"
             >
-              {createMutation.isPending && <LoadingSpinner size="sm" />}
-              Create module
-            </Button>
-          </div>
-        }
-      >
-        <form className="space-y-4">
-          <FormField
-            label="Name (slug)"
-            error={createForm.formState.errors.name?.message}
-            required
-            hint="Lowercase, hyphens only. e.g. blog-posts"
-          >
-            <Input {...createForm.register('name')} placeholder="e.g. blog-posts" />
-          </FormField>
-          <FormField
-            label="Label"
-            error={createForm.formState.errors.label?.message}
-            required
-            hint="Human-readable name shown in the UI"
-          >
-            <Input {...createForm.register('label')} placeholder="e.g. Blog Posts" />
-          </FormField>
-          {createMutation.error && <ErrorAlert error={createMutation.error} />}
-        </form>
-      </Modal>
+              <Input {...createForm.register('label')} placeholder="e.g. Blog Posts" />
+            </FormField>
+            {createMutation.error && <ErrorAlert error={createMutation.error} />}
+          </form>
+        </Modal>
 
-      {/* Edit module dialog */}
-      <Modal
-        open={!!editModule}
-        onClose={() => setEditModule(null)}
-        title="Edit Permission Module"
-        footer={
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setEditModule(null)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={editForm.handleSubmit((data) =>
-                updateMutation.mutate({ id: editModule!.id, body: data })
+        {/* Edit module dialog */}
+        <Modal
+          open={!!editModule}
+          onClose={() => setEditModule(null)}
+          title="Edit Permission Module"
+          footer={
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setEditModule(null)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={editForm.handleSubmit((data) =>
+                  updateMutation.mutate({ id: editModule!.id, body: data })
+                )}
+                disabled={updateMutation.isPending}
+              >
+                {updateMutation.isPending && <LoadingSpinner size="sm" />}
+                Save changes
+              </Button>
+            </div>
+          }
+        >
+          <form className="space-y-4">
+            <FormField label="Name (slug)" error={editForm.formState.errors.name?.message} required>
+              <Input {...editForm.register('name')} disabled={editModule?.is_system} />
+              {editModule?.is_system && (
+                <p className="text-xs text-muted-foreground">
+                  System module names cannot be changed.
+                </p>
               )}
-              disabled={updateMutation.isPending}
-            >
-              {updateMutation.isPending && <LoadingSpinner size="sm" />}
-              Save changes
-            </Button>
-          </div>
-        }
-      >
-        <form className="space-y-4">
-          <FormField
-            label="Name (slug)"
-            error={editForm.formState.errors.name?.message}
-            required
-          >
-            <Input
-              {...editForm.register('name')}
-              disabled={editModule?.is_system}
-            />
-            {editModule?.is_system && (
-              <p className="text-xs text-muted-foreground">System module names cannot be changed.</p>
-            )}
-          </FormField>
-          <FormField
-            label="Label"
-            error={editForm.formState.errors.label?.message}
-            required
-          >
-            <Input {...editForm.register('label')} />
-          </FormField>
-          {updateMutation.error && <ErrorAlert error={updateMutation.error} />}
-        </form>
-      </Modal>
+            </FormField>
+            <FormField label="Label" error={editForm.formState.errors.label?.message} required>
+              <Input {...editForm.register('label')} />
+            </FormField>
+            {updateMutation.error && <ErrorAlert error={updateMutation.error} />}
+          </form>
+        </Modal>
 
-      <ConfirmDialog
-        open={deleteId !== null}
-        onClose={() => setDeleteId(null)}
-        onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
-        title={`Delete module "${deletingModule?.label}"?`}
-        description="This will delete the module and all 5 of its permissions. Roles and users referencing these permissions must have them removed first."
-        isLoading={deleteMutation.isPending}
-      />
-    </div>
+        <ConfirmDialog
+          open={deleteId !== null}
+          onClose={() => setDeleteId(null)}
+          onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
+          title={`Delete module "${deletingModule?.label}"?`}
+          description="This will delete the module and all 5 of its permissions. Roles and users referencing these permissions must have them removed first."
+          isLoading={deleteMutation.isPending}
+        />
+      </div>
     </PermissionGuard>
   )
 }

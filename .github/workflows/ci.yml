@@ -51,6 +51,10 @@ jobs:
         working-directory: frontend
         run: pnpm install --frozen-lockfile
 
+      - name: Format check
+        working-directory: frontend
+        run: pnpm format:check
+
       - name: Lint
         working-directory: frontend
         run: pnpm lint
@@ -58,6 +62,14 @@ jobs:
       - name: Typecheck
         working-directory: frontend
         run: pnpm type-check
+
+      - name: Audit dependencies (warn — all severities)
+        working-directory: frontend
+        run: pnpm audit --audit-level=low || true
+
+      - name: Audit dependencies (gate — high/critical)
+        working-directory: frontend
+        run: pnpm audit --audit-level=high
 
       - name: Build
         working-directory: frontend

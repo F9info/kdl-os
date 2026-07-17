@@ -25,10 +25,23 @@ const TAGS = [
 const SEARCH_RESULT = {
   hits: [
     {
-      id: 'm1', name: 'sky.jpg', title: null, alt: null, caption: null,
-      tags: ['nature'], meta: {}, folder_id: null, folder_path: null,
-      type: 'IMAGE', mime_type: 'image/jpeg', size: 1024, width: 800, height: 600,
-      owner_id: 'u1', owner_name: 'Admin', is_archived: false,
+      id: 'm1',
+      name: 'sky.jpg',
+      title: null,
+      alt: null,
+      caption: null,
+      tags: ['nature'],
+      meta: {},
+      folder_id: null,
+      folder_path: null,
+      type: 'IMAGE',
+      mime_type: 'image/jpeg',
+      size: 1024,
+      width: 800,
+      height: 600,
+      owner_id: 'u1',
+      owner_name: 'Admin',
+      is_archived: false,
       created_at: '2026-01-01T00:00:00.000Z',
     },
   ],
@@ -38,8 +51,10 @@ const SEARCH_RESULT = {
 
 function setupApiForSearch() {
   vi.mocked(api.get).mockImplementation((url: string) => {
-    if (url === '/media/tags') return Promise.resolve({ data: { data: { tags: TAGS } } }) as ReturnType<typeof api.get>
-    if (url === '/media/search') return Promise.resolve({ data: { data: SEARCH_RESULT } }) as ReturnType<typeof api.get>
+    if (url === '/media/tags')
+      return Promise.resolve({ data: { data: { tags: TAGS } } }) as ReturnType<typeof api.get>
+    if (url === '/media/search')
+      return Promise.resolve({ data: { data: SEARCH_RESULT } }) as ReturnType<typeof api.get>
     return Promise.resolve({ data: { data: {} } }) as ReturnType<typeof api.get>
   })
 }
@@ -47,7 +62,10 @@ function setupApiForSearch() {
 // ─── SearchFacets ─────────────────────────────────────────────────────────────
 
 describe('SearchFacets (KDL-119 A8)', () => {
-  beforeEach(() => { vi.clearAllMocks(); setupApiForSearch() })
+  beforeEach(() => {
+    vi.clearAllMocks()
+    setupApiForSearch()
+  })
 
   it('renders search input and type/tag selects', async () => {
     render(<SearchFacets onResults={vi.fn()} onClear={vi.fn()} />)
@@ -65,10 +83,12 @@ describe('SearchFacets (KDL-119 A8)', () => {
     fireEvent.change(input, { target: { value: 'sky' } })
     fireEvent.keyDown(input, { key: 'Enter' })
     await waitFor(() => {
-      expect(onResults).toHaveBeenCalledWith(expect.objectContaining({
-        hits: [expect.objectContaining({ id: 'm1', name: 'sky.jpg' })],
-        pagination: { total: 1, page: 1, limit: 24, pages: 1 },
-      }))
+      expect(onResults).toHaveBeenCalledWith(
+        expect.objectContaining({
+          hits: [expect.objectContaining({ id: 'm1', name: 'sky.jpg' })],
+          pagination: { total: 1, page: 1, limit: 24, pages: 1 },
+        })
+      )
     })
   })
 
@@ -89,7 +109,10 @@ describe('SearchFacets (KDL-119 A8)', () => {
     const typeSelect = screen.getAllByRole('combobox')[0]!
     fireEvent.change(typeSelect, { target: { value: 'IMAGE' } })
     await waitFor(() => {
-      expect(api.get).toHaveBeenCalledWith('/media/search', expect.objectContaining({ params: expect.objectContaining({ type: 'IMAGE' }) }))
+      expect(api.get).toHaveBeenCalledWith(
+        '/media/search',
+        expect.objectContaining({ params: expect.objectContaining({ type: 'IMAGE' }) })
+      )
     })
   })
 
@@ -118,9 +141,13 @@ const UPLOAD_ID = 'upload-abc123'
 function setupApiForChunk({ receivedParts = [] as number[] } = {}) {
   vi.mocked(api.post).mockImplementation((url: string) => {
     if (url === '/media/upload/chunked/init')
-      return Promise.resolve({ data: { data: { upload_id: UPLOAD_ID, total_parts: 2 } } }) as ReturnType<typeof api.post>
+      return Promise.resolve({
+        data: { data: { upload_id: UPLOAD_ID, total_parts: 2 } },
+      }) as ReturnType<typeof api.post>
     if (url.includes('/complete'))
-      return Promise.resolve({ data: { data: { media: { id: 'm99', original_name: 'big.jpg' } } } }) as ReturnType<typeof api.post>
+      return Promise.resolve({
+        data: { data: { media: { id: 'm99', original_name: 'big.jpg' } } },
+      }) as ReturnType<typeof api.post>
     return Promise.resolve({ data: { data: {} } }) as ReturnType<typeof api.post>
   })
   vi.mocked(api.put).mockResolvedValue({ data: { data: {} } } as never)
@@ -129,8 +156,12 @@ function setupApiForChunk({ receivedParts = [] as number[] } = {}) {
       return Promise.resolve({
         data: {
           data: {
-            upload_id: UPLOAD_ID, filename: 'big.jpg', size: 6 * 1024 * 1024,
-            total_parts: 2, received_parts: receivedParts, complete: false,
+            upload_id: UPLOAD_ID,
+            filename: 'big.jpg',
+            size: 6 * 1024 * 1024,
+            total_parts: 2,
+            received_parts: receivedParts,
+            complete: false,
           },
         },
       }) as ReturnType<typeof api.get>
@@ -139,7 +170,9 @@ function setupApiForChunk({ receivedParts = [] as number[] } = {}) {
 }
 
 describe('ChunkedUploadDialog (KDL-119 A8)', () => {
-  beforeEach(() => { vi.clearAllMocks() })
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
 
   it('renders dialog with filename', () => {
     setupApiForChunk()
@@ -156,22 +189,33 @@ describe('ChunkedUploadDialog (KDL-119 A8)', () => {
     const file = makeFile('big.jpg', 6 * 1024 * 1024)
     const onComplete = vi.fn()
     render(
-      <ChunkedUploadDialog files={[file]} folderId={null} onComplete={onComplete} onClose={vi.fn()} />
+      <ChunkedUploadDialog
+        files={[file]}
+        folderId={null}
+        onComplete={onComplete}
+        onClose={vi.fn()}
+      />
     )
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith('/media/upload/chunked/init', expect.objectContaining({
-        filename: 'big.jpg',
-        size: 6 * 1024 * 1024,
-        mime_type: 'image/jpeg',
-        total_parts: 2,
-      }))
+      expect(api.post).toHaveBeenCalledWith(
+        '/media/upload/chunked/init',
+        expect.objectContaining({
+          filename: 'big.jpg',
+          size: 6 * 1024 * 1024,
+          mime_type: 'image/jpeg',
+          total_parts: 2,
+        })
+      )
     })
-    await waitFor(() => {
-      expect(api.put).toHaveBeenCalledTimes(2) // parts 0 and 1
-      const postCalls = vi.mocked(api.post).mock.calls.map(([url]) => String(url))
-      expect(postCalls).toContain(`/media/upload/chunked/${UPLOAD_ID}/complete`)
-      expect(onComplete).toHaveBeenCalled()
-    }, { timeout: 3000 })
+    await waitFor(
+      () => {
+        expect(api.put).toHaveBeenCalledTimes(2) // parts 0 and 1
+        const postCalls = vi.mocked(api.post).mock.calls.map(([url]) => String(url))
+        expect(postCalls).toContain(`/media/upload/chunked/${UPLOAD_ID}/complete`)
+        expect(onComplete).toHaveBeenCalled()
+      },
+      { timeout: 3000 }
+    )
   })
 
   it('resumes: skips parts the server already has (received_parts)', async () => {
@@ -180,21 +224,26 @@ describe('ChunkedUploadDialog (KDL-119 A8)', () => {
     render(
       <ChunkedUploadDialog files={[file]} folderId={null} onComplete={vi.fn()} onClose={vi.fn()} />
     )
-    await waitFor(() => {
-      // only part 1 uploaded — index param says which
-      expect(api.put).toHaveBeenCalledTimes(1)
-      expect(api.put).toHaveBeenCalledWith(
-        `/media/upload/chunked/${UPLOAD_ID}/part`,
-        expect.anything(),
-        expect.objectContaining({ params: { index: '1' } }),
-      )
-    }, { timeout: 3000 })
+    await waitFor(
+      () => {
+        // only part 1 uploaded — index param says which
+        expect(api.put).toHaveBeenCalledTimes(1)
+        expect(api.put).toHaveBeenCalledWith(
+          `/media/upload/chunked/${UPLOAD_ID}/part`,
+          expect.anything(),
+          expect.objectContaining({ params: { index: '1' } })
+        )
+      },
+      { timeout: 3000 }
+    )
   })
 
   it('shows error state when upload fails', async () => {
     vi.mocked(api.post).mockImplementation((url: string) => {
       if (url === '/media/upload/chunked/init')
-        return Promise.resolve({ data: { data: { upload_id: UPLOAD_ID, total_parts: 2 } } }) as ReturnType<typeof api.post>
+        return Promise.resolve({
+          data: { data: { upload_id: UPLOAD_ID, total_parts: 2 } },
+        }) as ReturnType<typeof api.post>
       return Promise.reject({ response: { data: { message: 'Server error' } } })
     })
     vi.mocked(api.get).mockRejectedValue(new Error('no session'))
@@ -203,9 +252,12 @@ describe('ChunkedUploadDialog (KDL-119 A8)', () => {
     render(
       <ChunkedUploadDialog files={[file]} folderId={null} onComplete={vi.fn()} onClose={vi.fn()} />
     )
-    await waitFor(() => {
-      expect(screen.getByText('Server error')).toBeInTheDocument()
-    }, { timeout: 3000 })
+    await waitFor(
+      () => {
+        expect(screen.getByText('Server error')).toBeInTheDocument()
+      },
+      { timeout: 3000 }
+    )
   })
 
   it('does not call onComplete when a file failed', async () => {
@@ -218,11 +270,19 @@ describe('ChunkedUploadDialog (KDL-119 A8)', () => {
     const onComplete = vi.fn()
     const file = makeFile('bad.exe', 6 * 1024 * 1024)
     render(
-      <ChunkedUploadDialog files={[file]} folderId={null} onComplete={onComplete} onClose={vi.fn()} />
+      <ChunkedUploadDialog
+        files={[file]}
+        folderId={null}
+        onComplete={onComplete}
+        onClose={vi.fn()}
+      />
     )
-    await waitFor(() => {
-      expect(screen.getByText('File type not allowed')).toBeInTheDocument()
-    }, { timeout: 3000 })
+    await waitFor(
+      () => {
+        expect(screen.getByText('File type not allowed')).toBeInTheDocument()
+      },
+      { timeout: 3000 }
+    )
     expect(onComplete).not.toHaveBeenCalled()
   })
 })

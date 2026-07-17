@@ -34,16 +34,21 @@ type Values = Record<string, string>
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 /** Resolve a field's live value: local unsaved edit wins over the saved value. */
-const resolve = (
-  field: { id: string; value: string },
-  values: Values,
-): string => values[field.id] ?? field.value
+const resolve = (field: { id: string; value: string }, values: Values): string =>
+  values[field.id] ?? field.value
 
 /** Convert a hex colour to a `rgb(r, g, b)` string (prototype `hexToRgb`, but in
  *  the css `rgb(...)` form the issue spec asks for). Returns '' for bad input. */
 function hexToRgb(hex: string): string {
   const raw = String(hex).replace('#', '')
-  const full = (raw.length === 3 ? raw.split('').map((c) => c + c).join('') : raw).slice(0, 6)
+  const full = (
+    raw.length === 3
+      ? raw
+          .split('')
+          .map((c) => c + c)
+          .join('')
+      : raw
+  ).slice(0, 6)
   const n = parseInt(full, 16)
   if (full.length < 6 || Number.isNaN(n)) return ''
   return `rgb(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255})`
@@ -54,9 +59,14 @@ const groupByName = (pane: TEPaneLite, name: string) =>
   pane.groups.find((g) => g.name.toLowerCase() === name.toLowerCase())
 
 /** Resolved value of a named field inside a named group ('' when absent). */
-function fieldValue(pane: TEPaneLite, groupName: string, fieldName: string, values: Values): string {
+function fieldValue(
+  pane: TEPaneLite,
+  groupName: string,
+  fieldName: string,
+  values: Values
+): string {
   const field = groupByName(pane, groupName)?.fields.find(
-    (f) => f.field_name.toLowerCase() === fieldName.toLowerCase(),
+    (f) => f.field_name.toLowerCase() === fieldName.toLowerCase()
   )
   return field ? resolve(field, values) : ''
 }
@@ -130,7 +140,9 @@ export function DefaultShellPreview({ platform }: { platform: string }): JSX.Ele
               </span>
             ))}
           </div>
-          {ios && <div className="mx-auto mb-1.5 mt-0.5 h-1 w-[66px] rounded-full bg-foreground opacity-60" />}
+          {ios && (
+            <div className="mx-auto mb-1.5 mt-0.5 h-1 w-[66px] rounded-full bg-foreground opacity-60" />
+          )}
         </div>
       </div>
     )
@@ -196,11 +208,11 @@ export function PalettePreview({
   // Cards for the colour groups, in the prototype's order. Fall back to every
   // group when the expected names aren't present (keeps it robust to schema drift).
   const groups = pane.groups.filter((g) =>
-    PALETTE_GROUPS.some((n) => n.toLowerCase() === g.name.toLowerCase()),
+    PALETTE_GROUPS.some((n) => n.toLowerCase() === g.name.toLowerCase())
   )
   const source = groups.length ? groups : pane.groups
   const cards = source.flatMap((g) =>
-    g.fields.map((f) => ({ id: f.id, name: f.field_name, hex: resolve(f, values) })),
+    g.fields.map((f) => ({ id: f.id, name: f.field_name, hex: resolve(f, values) }))
   )
 
   return (
@@ -245,7 +257,7 @@ interface TypoRow {
 /** The pane's "Typography Scale" table field, parsed into rows keyed by name. */
 function typoRows(pane: TEPaneLite, values: Values): Map<string, TypoRow> {
   const field = groupByName(pane, 'Typography Scale')?.fields.find(
-    (f) => f.field_name.toLowerCase() === 'typography scale',
+    (f) => f.field_name.toLowerCase() === 'typography scale'
   )
   const map = new Map<string, TypoRow>()
   if (!field) return map
@@ -280,17 +292,32 @@ export function TypographyPreview({
   ]
 
   const paragraph = row('Paragraph', {
-    name: 'Paragraph', size: 14, family: 'Inter', weight: '400', lineHeight: 1.5, letterSpacing: 0,
+    name: 'Paragraph',
+    size: 14,
+    family: 'Inter',
+    weight: '400',
+    lineHeight: 1.5,
+    letterSpacing: 0,
   })
   const small = row('Small Text', {
-    name: 'Small Text', size: 12, family: 'Inter', weight: '400', lineHeight: 1.5, letterSpacing: 0,
+    name: 'Small Text',
+    size: 12,
+    family: 'Inter',
+    weight: '400',
+    lineHeight: 1.5,
+    letterSpacing: 0,
   })
 
   return (
     <div className="flex flex-col gap-2 p-[18px]">
       {headings.map((h) => {
         const r = row(h.field, {
-          name: h.field, size: 24, family: 'Inter', weight: h.fallbackWeight, lineHeight: 1.5, letterSpacing: 0,
+          name: h.field,
+          size: 24,
+          family: 'Inter',
+          weight: h.fallbackWeight,
+          lineHeight: 1.5,
+          letterSpacing: 0,
         })
         const unit = r.sizeUnit || 'px'
         return (
@@ -304,7 +331,8 @@ export function TypographyPreview({
               color: 'var(--foreground, hsl(var(--foreground)))',
             }}
           >
-            {h.tag} Heading {r.size}{unit}
+            {h.tag} Heading {r.size}
+            {unit}
           </div>
         )
       })}
@@ -318,7 +346,8 @@ export function TypographyPreview({
           letterSpacing: `${paragraph.letterSpacing}px`,
         }}
       >
-        Paragraph — {SPECIMEN}, showing line-height {paragraph.lineHeight} and letter-spacing {paragraph.letterSpacing}px.
+        Paragraph — {SPECIMEN}, showing line-height {paragraph.lineHeight} and letter-spacing{' '}
+        {paragraph.letterSpacing}px.
       </p>
       <small
         className="text-muted-foreground"

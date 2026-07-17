@@ -28,8 +28,8 @@ export default function PageBuilderList() {
           <h1 className="text-2xl font-semibold">Page Builder</h1>
         </div>
         <p className="text-slate-500 mb-6">
-          Drag-and-drop, fully responsive pages powered by Puck. Author once, preview mobile / tablet /
-          desktop, publish to a public URL.
+          Drag-and-drop, fully responsive pages powered by Puck. Author once, preview mobile /
+          tablet / desktop, publish to a public URL.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-2 mb-8">
@@ -55,7 +55,10 @@ export default function PageBuilderList() {
         ) : (
           <ul className="divide-y divide-slate-200 rounded-xl border border-slate-200">
             {pages.map((p) => (
-              <li key={p.id} className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-slate-50">
+              <li
+                key={p.id}
+                className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-slate-50"
+              >
                 <div className="min-w-0">
                   <p className="font-medium truncate">{p.title}</p>
                   <p className="text-xs text-slate-400 truncate">

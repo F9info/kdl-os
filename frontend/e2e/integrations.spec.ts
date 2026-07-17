@@ -14,7 +14,14 @@
  * Run standalone:
  *   cd frontend && E2E_BASE_URL=http://localhost:3001 pnpm e2e e2e/integrations.spec.ts
  */
-import { test, expect, request, type APIRequestContext, type Page, type Locator } from '@playwright/test'
+import {
+  test,
+  expect,
+  request,
+  type APIRequestContext,
+  type Page,
+  type Locator,
+} from '@playwright/test'
 import { ADMIN } from './helpers/credentials'
 
 const API_URL = process.env.E2E_API_URL ?? 'http://localhost:4000/api'
@@ -35,8 +42,7 @@ const authHeaders = () => ({ Authorization: `Bearer ${adminToken}` })
 async function getModuleStatus(): Promise<string | null> {
   const res = await api.get(`${API_URL}/modules`, { headers: authHeaders() })
   if (!res.ok()) return null
-  const modules: Array<{ slug: string; status: string }> =
-    (await res.json()).data?.modules ?? []
+  const modules: Array<{ slug: string; status: string }> = (await res.json()).data?.modules ?? []
   return modules.find((m) => m.slug === 'integrations')?.status ?? null
 }
 
@@ -93,10 +99,7 @@ async function loginUi(page: Page) {
 // FormField renders <div><Label/><Input/></div> without htmlFor — locate the
 // wrapper by its direct-child label text, then take its input/textarea.
 function fieldInput(scope: Locator, label: string): Locator {
-  return scope
-    .locator(`div:has(> label:has-text("${label}"))`)
-    .locator('input, textarea')
-    .first()
+  return scope.locator(`div:has(> label:has-text("${label}"))`).locator('input, textarea').first()
 }
 
 test.describe.configure({ mode: 'serial' })
@@ -136,7 +139,9 @@ test('1. install + enable integrations module via API', async () => {
   expect((await enable.json()).data.module.status).toBe('ENABLED')
 })
 
-test('2. add SMTP provider (mailhog) via UI and set as default EMAIL provider', async ({ page }) => {
+test('2. add SMTP provider (mailhog) via UI and set as default EMAIL provider', async ({
+  page,
+}) => {
   await loginUi(page)
   await page.goto('/admin/integrations')
   await expect(page.getByRole('heading', { name: 'Integrations' })).toBeVisible()
@@ -201,7 +206,7 @@ test('3. test-send via UI → log entry reaches status SENT', async ({ page }) =
         const entry = logs.find((l) => l.id === testLogId)
         return entry ? `${entry.status}${entry.error ? `:${entry.error}` : ''}` : 'log-missing'
       },
-      { timeout: 30_000, message: `log ${testLogId} must reach status SENT` },
+      { timeout: 30_000, message: `log ${testLogId} must reach status SENT` }
     )
     .toBe('SENT')
 })

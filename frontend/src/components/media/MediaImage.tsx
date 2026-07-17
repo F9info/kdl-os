@@ -15,7 +15,8 @@ interface MediaImageProps {
 
 const WIDTHS = [400, 800, 1200, 1600] as const
 
-const SIZES = '(max-width: 400px) 400px, (max-width: 800px) 800px, (max-width: 1200px) 1200px, 1600px'
+const SIZES =
+  '(max-width: 400px) 400px, (max-width: 800px) 800px, (max-width: 1200px) 1200px, 1600px'
 
 function tUrl(id: string, w: number, format: string) {
   return `/api/media/${id}/t?w=${w}&format=${format}`
@@ -25,7 +26,14 @@ function srcset(id: string, format: string) {
   return WIDTHS.map((w) => `${tUrl(id, w, format)} ${w}w`).join(', ')
 }
 
-export function MediaImage({ id, className, alt = '', width, height, size = 'content' }: MediaImageProps) {
+export function MediaImage({
+  id,
+  className,
+  alt = '',
+  width,
+  height,
+  size = 'content',
+}: MediaImageProps) {
   return (
     <picture>
       <source type="image/avif" srcSet={srcset(id, 'avif')} sizes={SIZES} />
