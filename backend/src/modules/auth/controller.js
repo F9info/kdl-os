@@ -111,8 +111,13 @@ export const login = async (req, res, next) => {
 
     const roleSlugs = user.roles?.map((ur) => ur.role?.slug).filter(Boolean) || [];
     const roleObjects = user.roles?.map((ur) => ur.role).filter(Boolean) || [];
-    const { password_hash: _ph, roles: _r, must_change_password, ...safeUser } = user;
+    // KDL-324: keep must_change_password on the returned user — the frontend
+    // (login page, admin/auth layouts, User type) reads user.must_change_password
+    // to drive the forced-change redirect. The top-level mustChangePassword flag
+    // below is kept for consumers of the KDL-287 contract.
+    const { password_hash: _ph, roles: _r, ...safeUser } = user;
     safeUser.roles = roleObjects;
+    const { must_change_password } = user;
 
     const accessToken = authService.signAccessToken(buildAccessTokenPayload(user, roleSlugs));
     const refreshToken = authService.signRefreshToken({ userId: user.id });

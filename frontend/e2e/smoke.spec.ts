@@ -19,9 +19,12 @@ test.describe('Smoke Tests', () => {
     // The seeded admin has must_change_password=true — handle the forced change screen.
     await page.waitForURL(/\/change-password|\/admin\/dashboard/, { timeout: 8000 })
     if (page.url().includes('/change-password')) {
-      await page.getByLabel('Current password').fill(ADMIN.password)
-      await page.getByLabel('New password').fill(ADMIN.changedPassword)
-      await page.getByLabel('Confirm new password').fill(ADMIN.changedPassword)
+      // getByLabel('New password') is ambiguous — "Confirm new password" contains
+      // "new password" as a substring, causing a strict-mode violation. Use explicit
+      // autocomplete attributes instead (set on the inputs in change-password/page.tsx).
+      await page.locator('input[autocomplete="current-password"]').fill(ADMIN.password)
+      await page.locator('input[autocomplete="new-password"]').first().fill(ADMIN.changedPassword)
+      await page.locator('input[autocomplete="new-password"]').last().fill(ADMIN.changedPassword)
       await page.getByRole('button', { name: 'Change password' }).click()
     }
 
