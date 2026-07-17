@@ -68,7 +68,9 @@ export function RoleFormDialog({
   useEffect(() => {
     if (open) {
       if (initialRole) {
-        const ids = initialRole.permission_matrix ? Object.values(initialRole.permission_matrix) : []
+        const ids = initialRole.permission_matrix
+          ? Object.values(initialRole.permission_matrix)
+          : []
         reset({
           name: initialRole.name,
           description: initialRole.description ?? '',

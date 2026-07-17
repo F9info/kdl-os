@@ -42,7 +42,10 @@ export function MediaLightbox({ item, onClose }: MediaLightboxProps) {
       onKeyDown={(e) => e.key === 'Escape' && onClose()}
     >
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- stopPropagation wrapper, not interactive */}
-      <div className="flex items-center justify-between px-4 py-3 text-white flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="flex items-center justify-between px-4 py-3 text-white flex-shrink-0"
+        onClick={(e) => e.stopPropagation()}
+      >
         <span className="text-sm truncate">{name}</span>
         <div className="flex items-center gap-2">
           {item.url && can('media:download') && (
@@ -69,7 +72,10 @@ export function MediaLightbox({ item, onClose }: MediaLightboxProps) {
       </div>
 
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- stopPropagation wrapper, not interactive */}
-      <div className="flex-1 flex items-center justify-center min-h-0 p-4" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="flex-1 flex items-center justify-center min-h-0 p-4"
+        onClick={(e) => e.stopPropagation()}
+      >
         {!item.url ? (
           <p className="text-white/70 text-sm">This file has no preview available yet.</p>
         ) : isImage ? (

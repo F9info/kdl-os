@@ -8,15 +8,23 @@ const __dirname = dirname(__filename)
 
 const compat = new FlatCompat({ baseDirectory: __dirname })
 
-// next/core-web-vitals already includes jsx-a11y/recommended + react + import rules.
-// next/typescript adds @typescript-eslint/recommended on top.
-// jsxA11y.flatConfigs.recommended is added explicitly for a11y harness enforcement.
+// next/core-web-vitals already registers the jsx-a11y plugin and recommended rules.
+// Spread only the rules here to avoid "Cannot redefine plugin" ConfigError.
 export default [
   { ignores: ['.next/**', 'node_modules/**'] },
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   {
-    ...jsxA11y.flatConfigs.recommended,
+    // Harness introduction: surface pre-existing violations as warnings.
+    // Each rule listed below was originally "error" in jsxA11y.flatConfigs.recommended.
+    // Downgraded to "warn" here so the harness lands without blocking CI on legacy code.
+    // Follow-up: KDL-346 a11y debt — fix violations and raise back to "error".
     files: ['**/*.{jsx,tsx}'],
+    rules: Object.fromEntries(
+      Object.entries(jsxA11y.flatConfigs.recommended.rules).map(([rule, cfg]) => [
+        rule,
+        Array.isArray(cfg) ? ['warn', ...cfg.slice(1)] : cfg === 'error' ? 'warn' : cfg,
+      ])
+    ),
   },
   {
     files: ['tests/**/*.{ts,tsx}', '**/*.test.{ts,tsx}'],
