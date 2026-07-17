@@ -19,9 +19,11 @@ test.describe('Smoke Tests', () => {
     // The seeded admin has must_change_password=true — handle the forced change screen.
     await page.waitForURL(/\/change-password|\/admin\/dashboard/, { timeout: 8000 })
     if (page.url().includes('/change-password')) {
-      await page.getByLabel('Current password').fill(ADMIN.password)
-      await page.getByLabel('New password').fill(ADMIN.changedPassword)
-      await page.getByLabel('Confirm new password').fill(ADMIN.changedPassword)
+      // FormField does not link label htmlFor→id, so getByLabel won't resolve.
+      // Use autocomplete attributes which are explicit in the change-password page.
+      await page.locator('input[autocomplete="current-password"]').fill(ADMIN.password)
+      await page.locator('input[autocomplete="new-password"]').first().fill(ADMIN.changedPassword)
+      await page.locator('input[autocomplete="new-password"]').last().fill(ADMIN.changedPassword)
       await page.getByRole('button', { name: 'Change password' }).click()
     }
 
