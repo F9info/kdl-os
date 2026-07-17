@@ -289,7 +289,7 @@ export default function UsersPage() {
             {userRoles.map((r) => (
               <span
                 key={r.id}
-                className="inline-flex items-center rounded px-1.5 py-0.5 text-xs bg-muted text-muted-foreground"
+                className="inline-flex items-center rounded px-1.5 py-0.5 text-xs bg-muted text-secondary-foreground"
               >
                 {r.name}
               </span>
@@ -379,7 +379,7 @@ export default function UsersPage() {
             />
           </div>
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as UserStatus | '')}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-40" aria-label="Filter by status">
               <SelectValue placeholder="All statuses" />
             </SelectTrigger>
             <SelectContent>
