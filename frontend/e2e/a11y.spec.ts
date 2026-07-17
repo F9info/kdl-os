@@ -35,8 +35,13 @@ test.describe('A11y smoke — WCAG 2.2 AA', () => {
       await page.getByPlaceholder('••••••••').fill(ADMIN.password)
       // Fire click and wait for navigation simultaneously so waitForURL
       // registers before the click resolves (avoids the current-URL race).
+      // Use 'commit' so the promise resolves on URL change; Next.js SPA
+      // router.push does not fire a 'load' event on client-side navigation.
       await Promise.all([
-        page.waitForURL(/\/change-password|\/admin\/dashboard/, { timeout: 15_000 }),
+        page.waitForURL(/\/change-password|\/admin\/dashboard/, {
+          timeout: 20_000,
+          waitUntil: 'commit',
+        }),
         page.getByRole('button', { name: 'Sign in' }).click(),
       ])
       if (page.url().includes('/change-password')) {
@@ -44,7 +49,7 @@ test.describe('A11y smoke — WCAG 2.2 AA', () => {
         await page.locator('input[autocomplete="new-password"]').first().fill(ADMIN.changedPassword)
         await page.locator('input[autocomplete="new-password"]').last().fill(ADMIN.changedPassword)
         await page.getByRole('button', { name: 'Change password' }).click()
-        await expect(page).toHaveURL(/\/admin\/dashboard/, { timeout: 15_000 })
+        await page.waitForURL(/\/admin\/dashboard/, { timeout: 20_000, waitUntil: 'commit' })
       }
       // else: password already changed (re-run against same DB) — done.
     } finally {
@@ -56,8 +61,10 @@ test.describe('A11y smoke — WCAG 2.2 AA', () => {
     await page.goto('/login')
     await page.getByPlaceholder('admin@kdl.com').fill(ADMIN.email)
     await page.getByPlaceholder('••••••••').fill(ADMIN.changedPassword)
-    await page.getByRole('button', { name: 'Sign in' }).click()
-    await expect(page).toHaveURL(/\/admin\/dashboard/, { timeout: 15_000 })
+    await Promise.all([
+      page.waitForURL(/\/admin\/dashboard/, { timeout: 20_000, waitUntil: 'commit' }),
+      page.getByRole('button', { name: 'Sign in' }).click(),
+    ])
   }
 
   test('login page', async ({ page }) => {
