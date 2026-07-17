@@ -265,7 +265,7 @@ activity_logs          id, actor_id, module, action, subject_type, subject_id, d
 - `RbacRole` → many `RolePermission` → `Permission` → `PermissionModule`
 - `User` → many `ActivityLog` (as actor)
 
-Seed: 1 SUPER_ADMIN → `admin@kdl.com / Admin@123`. System roles: `super-admin`, `admin`, `user`. System modules: `users`, `roles`, `permissions`, `settings`, `media`, `activity-log`.
+Seed: 1 SUPER_ADMIN → `SEED_ADMIN_EMAIL` (default `admin@kdl.com`) with `SEED_ADMIN_PASSWORD` if set, else a random password printed once (production refuses to seed without it). The local docker stack pins `kdl-dev-seed-password`. System roles: `super-admin`, `admin`, `user`. System modules: `users`, `roles`, `permissions`, `settings`, `media`, `activity-log`.
 
 ---
 

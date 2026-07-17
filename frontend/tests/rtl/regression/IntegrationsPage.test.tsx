@@ -157,7 +157,9 @@ describe('IntegrationsPage — providers', () => {
 
     await waitFor(() => {
       // Dialog opens — credential inputs exist
-      const inputs = document.querySelectorAll('input[type="password"], input[type="text"], input[type="number"]')
+      const inputs = document.querySelectorAll(
+        'input[type="password"], input[type="text"], input[type="number"]'
+      )
       expect(inputs.length).toBeGreaterThan(0)
     })
 
@@ -246,7 +248,9 @@ describe('IntegrationsPage — providers', () => {
     // After Replace click: password inputs appear with empty values (never pre-filled)
     fireEvent.click(screen.getByText('Replace Credentials'))
     await waitFor(() => {
-      const pwdInputs = document.querySelectorAll('input[type="password"]') as NodeListOf<HTMLInputElement>
+      const pwdInputs = document.querySelectorAll(
+        'input[type="password"]'
+      ) as NodeListOf<HTMLInputElement>
       expect(pwdInputs.length).toBeGreaterThan(0)
       pwdInputs.forEach((inp) => expect(inp.value).toBe(''))
     })
@@ -261,10 +265,38 @@ describe('IntegrationsPage — credential security gate (KDL-95)', () => {
 
   const allDriverProviders: IntegrationProvider[] = [
     { ...smtpProvider, id: 'p-smtp', driver: 'smtp', channel: 'EMAIL', name: 'SMTP' },
-    { ...smtpProvider, id: 'p-msg91', driver: 'msg91', channel: 'SMS', name: 'MSG91', credentials_set: true },
-    { ...smtpProvider, id: 'p-twilio', driver: 'twilio', channel: 'SMS', name: 'Twilio', credentials_set: true },
-    { ...smtpProvider, id: 'p-meta', driver: 'meta-cloud', channel: 'WHATSAPP', name: 'Meta', credentials_set: true },
-    { ...smtpProvider, id: 'p-gupshup', driver: 'gupshup', channel: 'WHATSAPP', name: 'Gupshup', credentials_set: true },
+    {
+      ...smtpProvider,
+      id: 'p-msg91',
+      driver: 'msg91',
+      channel: 'SMS',
+      name: 'MSG91',
+      credentials_set: true,
+    },
+    {
+      ...smtpProvider,
+      id: 'p-twilio',
+      driver: 'twilio',
+      channel: 'SMS',
+      name: 'Twilio',
+      credentials_set: true,
+    },
+    {
+      ...smtpProvider,
+      id: 'p-meta',
+      driver: 'meta-cloud',
+      channel: 'WHATSAPP',
+      name: 'Meta',
+      credentials_set: true,
+    },
+    {
+      ...smtpProvider,
+      id: 'p-gupshup',
+      driver: 'gupshup',
+      channel: 'WHATSAPP',
+      name: 'Gupshup',
+      credentials_set: true,
+    },
   ]
 
   it.each([

@@ -13,16 +13,16 @@
  *   cd frontend && E2E_API_URL=http://localhost:4000/api pnpm exec playwright test e2e/media-phase-b.spec.ts
  */
 import { test, expect, request, type APIRequestContext } from '@playwright/test'
+import { ADMIN } from './helpers/credentials'
 
 const API_URL = process.env.E2E_API_URL ?? 'http://localhost:4000/api'
 const BASE_URL = process.env.E2E_BASE_URL ?? 'http://localhost:4000'
-const ADMIN = { email: 'admin@kdl.com', password: 'Admin@123' }
 const RUN = `${Date.now().toString(36)}`
 
 // 10×10 red PNG — sharp-compatible test image for transform
 const PNG_1PX = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAFElEQVQYlWP4z8CABzGMSjNgCQMAt8pjnanKDKUAAAAASUVORK5CYII=',
-  'base64',
+  'base64'
 )
 
 let api: APIRequestContext
@@ -74,7 +74,9 @@ test.describe('Media DAM Phase B (KDL-120 B8)', () => {
       },
     })
     expect(shareRes.status()).toBe(201)
-    const { token: shareToken } = await shareRes.json().then((j: { data: { token: string } }) => j.data)
+    const { token: shareToken } = await shareRes
+      .json()
+      .then((j: { data: { token: string } }) => j.data)
     expect(shareToken).toBeTruthy()
 
     // Unauthenticated GET with wrong password → 403
@@ -128,7 +130,9 @@ test.describe('Media DAM Phase B (KDL-120 B8)', () => {
     // List versions — must have at least 1
     const listRes = await api.get(`${API_URL}/media/${mediaId}/versions`, { headers: h })
     expect(listRes.ok()).toBeTruthy()
-    const { versions } = await listRes.json().then((j: { data: { versions: Array<{ id: string; version: number }> } }) => j.data)
+    const { versions } = await listRes
+      .json()
+      .then((j: { data: { versions: Array<{ id: string; version: number }> } }) => j.data)
     expect(versions.length).toBeGreaterThanOrEqual(1)
 
     const versionId = versions[0]!.id
@@ -138,7 +142,9 @@ test.describe('Media DAM Phase B (KDL-120 B8)', () => {
       headers: h,
     })
     expect(restoreRes.ok()).toBeTruthy()
-    const { restored } = await restoreRes.json().then((j: { data: { restored: boolean } }) => j.data)
+    const { restored } = await restoreRes
+      .json()
+      .then((j: { data: { restored: boolean } }) => j.data)
     expect(restored).toBe(true)
   })
 
@@ -148,7 +154,9 @@ test.describe('Media DAM Phase B (KDL-120 B8)', () => {
 
     // Check initial status is DRAFT
     const getRes = await api.get(`${API_URL}/media/${mediaId}`, { headers: h })
-    const initial = await getRes.json().then((j: { data: { media: { workflow_status: string } } }) => j.data.media)
+    const initial = await getRes
+      .json()
+      .then((j: { data: { media: { workflow_status: string } } }) => j.data.media)
     expect(initial.workflow_status).toBe('DRAFT')
 
     // Transition DRAFT→REVIEW
@@ -166,11 +174,16 @@ test.describe('Media DAM Phase B (KDL-120 B8)', () => {
       data: { media_id: mediaId },
     })
     expect(shareRes2.status()).toBe(201)
-    const { token: reviewToken } = await shareRes2.json().then((j: { data: { token: string } }) => j.data)
+    const { token: _reviewToken } = await shareRes2
+      .json()
+      .then((j: { data: { token: string } }) => j.data)
 
     // Unauthenticated share resolver should work (resolveShare doesn't check workflow status)
     // but the transform endpoint enforces it
-    const transformReview = await api.get(`${BASE_URL}/api/media/${mediaId}/t?w=100&format=webp`, {})
+    const transformReview = await api.get(
+      `${BASE_URL}/api/media/${mediaId}/t?w=100&format=webp`,
+      {}
+    )
     // Without auth, expect 401 (auth middleware) — the gate is at transform service level for authenticated calls
     expect([401, 403]).toContain(transformReview.status())
 

@@ -15,10 +15,10 @@
  *   cd frontend && E2E_BASE_URL=http://localhost:3001 pnpm e2e e2e/notifications.spec.ts
  */
 import { test, expect, request, type APIRequestContext, type Page } from '@playwright/test'
+import { ADMIN } from './helpers/credentials'
 
 const API_URL = process.env.E2E_API_URL ?? 'http://localhost:4000/api'
 const MAILHOG_URL = process.env.E2E_MAILHOG_URL ?? 'http://localhost:8025'
-const ADMIN = { email: 'admin@kdl.com', password: 'Admin@123' }
 
 const RUN_ID = Date.now().toString(36)
 const MEMBER_EMAIL = `e2e-notif-${RUN_ID}@test.local`
@@ -35,8 +35,7 @@ const authHeaders = (token: string) => ({ Authorization: `Bearer ${token}` })
 async function getModuleStatus(slug: string): Promise<string | null> {
   const res = await api.get(`${API_URL}/modules`, { headers: authHeaders(adminToken) })
   if (!res.ok()) return null
-  const modules: Array<{ slug: string; status: string }> =
-    (await res.json()).data?.modules ?? []
+  const modules: Array<{ slug: string; status: string }> = (await res.json()).data?.modules ?? []
   return modules.find((m) => m.slug === slug)?.status ?? null
 }
 
@@ -148,7 +147,8 @@ test('4. admin broadcasts inline notification to all users', async () => {
   expect(body.data.sent !== undefined || body.data.batch_id !== undefined).toBeTruthy()
 })
 
-test('5. member unread-count rises to 1 after broadcast', async ({ page: _ }) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+test('5. member unread-count rises to 1 after broadcast', async ({ page: _page }) => {
   // Allow up to 5s for the BullMQ worker to process the batch
   let count = 0
   for (let i = 0; i < 10; i++) {
@@ -197,10 +197,12 @@ test('9. badge disappears after mark-all-read (UI)', async ({ page }) => {
   await loginUi(page, MEMBER_EMAIL, MEMBER_PASSWORD)
   // Badge element should be gone or show 0
   const badge = page.locator('[data-testid="notification-bell-badge"]')
-  await expect(badge).toBeHidden({ timeout: 5_000 }).catch(async () => {
-    // Acceptable: badge visible but count is 0
-    expect(Number(await badge.textContent())).toBe(0)
-  })
+  await expect(badge)
+    .toBeHidden({ timeout: 5_000 })
+    .catch(async () => {
+      // Acceptable: badge visible but count is 0
+      expect(Number(await badge.textContent())).toBe(0)
+    })
 })
 
 // ─── Preferences opt-out suppresses next broadcast ──────────────────────────
@@ -311,14 +313,12 @@ test('12. EMAIL channel — dispatchMessage logs SENT via mailhog (conditional)'
   for (let i = 0; i < 30; i++) {
     const logRes = await api.get(
       `${API_URL}/integrations/logs?channel=EMAIL&source=notifications&limit=50`,
-      { headers: authHeaders(adminToken) },
+      { headers: authHeaders(adminToken) }
     )
     expect(logRes.ok(), await logRes.text()).toBeTruthy()
     const logs: Array<{ channel: string; status: string; subject?: string | null }> =
       (await logRes.json()).data?.logs ?? []
-    sentLog = logs.find(
-      (l) => l.status === 'SENT' && (l.subject ?? '').includes(RUN_ID),
-    )
+    sentLog = logs.find((l) => l.status === 'SENT' && (l.subject ?? '').includes(RUN_ID))
     if (sentLog) break
     await new Promise((r) => setTimeout(r, 1000))
   }

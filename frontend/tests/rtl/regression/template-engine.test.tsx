@@ -30,9 +30,15 @@ const localStorageMock = (() => {
   let store: Record<string, string> = {}
   return {
     getItem: (k: string) => store[k] ?? null,
-    setItem: (k: string, v: string) => { store[k] = v },
-    removeItem: (k: string) => { delete store[k] },
-    clear: () => { store = {} },
+    setItem: (k: string, v: string) => {
+      store[k] = v
+    },
+    removeItem: (k: string) => {
+      delete store[k]
+    },
+    clear: () => {
+      store = {}
+    },
   }
 })()
 Object.defineProperty(window, 'localStorage', { value: localStorageMock, writable: true })
@@ -56,7 +62,10 @@ const makePane = (id: string, label: string, platform = 'webapp') => ({
   type_id: `type-${id}`,
   label,
   icon: '🎨',
-  modes: [{ id: 'dark', label: '🌙 Dark' }, { id: 'light', label: '☀️ Light' }],
+  modes: [
+    { id: 'dark', label: '🌙 Dark' },
+    { id: 'light', label: '☀️ Light' },
+  ],
   devices: null,
   groups: [
     {
@@ -239,7 +248,9 @@ describe('Template Engine page (KDL-177 C1 gates)', () => {
     expect(saveBtn.disabled).toBe(true)
 
     // Change the color field
-    const colorInput = screen.getByTestId('field-row-field-branding-bg').querySelector('input[type="color"]') as HTMLInputElement
+    const colorInput = screen
+      .getByTestId('field-row-field-branding-bg')
+      .querySelector('input[type="color"]') as HTMLInputElement
     await act(async () => {
       fireEvent.change(colorInput, { target: { value: '#ff0000' } })
     })
@@ -263,7 +274,7 @@ describe('Template Engine page (KDL-177 C1 gates)', () => {
           values: expect.arrayContaining([
             expect.objectContaining({ field_id: 'field-branding-bg', value: '#ff0000' }),
           ]),
-        }),
+        })
       )
     })
   })
@@ -291,7 +302,7 @@ describe('Template Engine page (KDL-177 C1 gates)', () => {
         expect.objectContaining({
           platform: 'webapp',
           type_id: 'type-branding',
-        }),
+        })
       )
     })
   })
@@ -369,13 +380,13 @@ describe('Template Engine page (KDL-177 C1 gates)', () => {
           values: expect.arrayContaining([
             expect.objectContaining({ field_id: 'field-branding-weight', value: '600' }),
           ]),
-        }),
+        })
       )
     })
     // the posted weight value carries no unit
     const call = apiPost.mock.calls.find((c) => c[0] === '/template-engine/values')
     const weight = call?.[1]?.values?.find(
-      (v: { field_id: string }) => v.field_id === 'field-branding-weight',
+      (v: { field_id: string }) => v.field_id === 'field-branding-weight'
     )
     expect(weight.value).toBe('600')
     expect(String(weight.value)).not.toMatch(/px$/)
@@ -425,7 +436,7 @@ describe('Template Engine page (KDL-177 C1 gates)', () => {
         expect.objectContaining({
           variant: 'destructive',
           description: expect.stringContaining('radius: value must be <= 24'),
-        }),
+        })
       )
     })
   })

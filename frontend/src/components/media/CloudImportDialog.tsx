@@ -6,7 +6,16 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { X, Cloud, Folder as FolderIcon, File as FileIcon, ChevronRight, ArrowLeft, Trash2, Plus } from 'lucide-react'
+import {
+  X,
+  Cloud,
+  Folder as FolderIcon,
+  File as FileIcon,
+  ChevronRight,
+  ArrowLeft,
+  Trash2,
+  Plus,
+} from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
@@ -14,36 +23,59 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { formatBytes, cn } from '@/lib/utils'
 import {
-  OAUTH_PROVIDERS, MANUAL_PROVIDERS, PROVIDER_LABELS, MANUAL_PROVIDER_FIELDS,
-  type ImportProvider, type ImportProviderStatus, type ImportConnection,
-  type RemoteFile, type RemoteFileList, type ImportResult,
+  OAUTH_PROVIDERS,
+  MANUAL_PROVIDERS,
+  PROVIDER_LABELS,
+  MANUAL_PROVIDER_FIELDS,
+  type ImportProvider,
+  type ImportProviderStatus,
+  type ImportConnection,
+  type RemoteFile,
+  type RemoteFileList,
+  type ImportResult,
 } from '@/types/media-import.types'
 
 // ─── API helpers ──────────────────────────────────────────────────────────────
 
 const importApi = {
   providers: () =>
-    api.get('/media/import/providers').then((r) => (r.data.data?.items ?? []) as ImportProviderStatus[]),
+    api
+      .get('/media/import/providers')
+      .then((r) => (r.data.data?.items ?? []) as ImportProviderStatus[]),
   connections: () =>
-    api.get('/media/import/connections').then((r) => (r.data.data?.items ?? []) as ImportConnection[]),
-  createConnection: (data: { provider: string; label: string; credentials: Record<string, unknown> }) =>
-    api.post('/media/import/connections', data).then((r) => r.data.data as ImportConnection),
+    api
+      .get('/media/import/connections')
+      .then((r) => (r.data.data?.items ?? []) as ImportConnection[]),
+  createConnection: (data: {
+    provider: string
+    label: string
+    credentials: Record<string, unknown>
+  }) => api.post('/media/import/connections', data).then((r) => r.data.data as ImportConnection),
   deleteConnection: (id: string) => api.delete(`/media/import/connections/${id}`),
   oauthStart: (provider: ImportProvider) =>
     api.get(`/media/import/oauth/${provider}/start`).then((r) => r.data.data as { url: string }),
   browse: (id: string, params: { folder_id?: string; cursor?: string }) =>
-    api.get(`/media/import/connections/${id}/files`, { params })
+    api
+      .get(`/media/import/connections/${id}/files`, { params })
       .then((r) => r.data.data as RemoteFileList),
   importFiles: (id: string, file_ids: string[], folder_id?: string | null) =>
-    api.post(`/media/import/connections/${id}/import`, {
-      file_ids,
-      ...(folder_id ? { folder_id } : {}),
-    }).then((r) => r.data.data as ImportResult),
+    api
+      .post(`/media/import/connections/${id}/import`, {
+        file_ids,
+        ...(folder_id ? { folder_id } : {}),
+      })
+      .then((r) => r.data.data as ImportResult),
 }
 
 // ─── Credential forms (S3 / FTP) ──────────────────────────────────────────────
 
-function ManualConnectionForm({ onCreated, onCancel }: { onCreated: () => void; onCancel: () => void }) {
+function ManualConnectionForm({
+  onCreated,
+  onCancel,
+}: {
+  onCreated: () => void
+  onCancel: () => void
+}) {
   const [provider, setProvider] = useState<'s3' | 'ftp'>('s3')
   const [label, setLabel] = useState('')
   const [fields, setFields] = useState<Record<string, string>>({})
@@ -59,14 +91,20 @@ function ManualConnectionForm({ onCreated, onCancel }: { onCreated: () => void; 
       }
       return importApi.createConnection({ provider, label: label.trim(), credentials })
     },
-    onSuccess: () => { toast({ title: 'Connection added' }); onCreated() },
+    onSuccess: () => {
+      toast({ title: 'Connection added' })
+      onCreated()
+    },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to add connection'
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        'Failed to add connection'
       toast({ title: msg, variant: 'destructive' })
     },
   })
 
-  const valid = label.trim() && fieldDefs.filter((f) => f.required).every((f) => fields[f.key]?.trim())
+  const valid =
+    label.trim() && fieldDefs.filter((f) => f.required).every((f) => fields[f.key]?.trim())
 
   return (
     <div className="border rounded p-3 space-y-2 bg-muted/30">
@@ -76,21 +114,34 @@ function ManualConnectionForm({ onCreated, onCancel }: { onCreated: () => void; 
           <button
             key={p}
             type="button"
-            onClick={() => { setProvider(p as 's3' | 'ftp'); setFields({}) }}
-            className={cn('px-3 py-1 text-xs rounded border', provider === p ? 'bg-accent font-medium' : 'hover:bg-accent/50')}
+            onClick={() => {
+              setProvider(p as 's3' | 'ftp')
+              setFields({})
+            }}
+            className={cn(
+              'px-3 py-1 text-xs rounded border',
+              provider === p ? 'bg-accent font-medium' : 'hover:bg-accent/50'
+            )}
           >
             {PROVIDER_LABELS[p]}
           </button>
         ))}
       </div>
-      <Input placeholder="Connection label" value={label} onChange={(e) => setLabel(e.target.value)} className="h-8 text-sm" />
-      {fieldDefs.map((f) => (
+      <Input
+        placeholder="Connection label"
+        value={label}
+        onChange={(e) => setLabel(e.target.value)}
+        className="h-8 text-sm"
+      />
+      {fieldDefs.map((f) =>
         f.type === 'checkbox' ? (
           <label key={f.key} className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
               checked={fields[f.key] === 'true'}
-              onChange={(e) => setFields((prev) => ({ ...prev, [f.key]: String(e.target.checked) }))}
+              onChange={(e) =>
+                setFields((prev) => ({ ...prev, [f.key]: String(e.target.checked) }))
+              }
               className="h-4 w-4 rounded"
             />
             {f.label}
@@ -105,10 +156,16 @@ function ManualConnectionForm({ onCreated, onCancel }: { onCreated: () => void; 
             className="h-8 text-sm"
           />
         )
-      ))}
+      )}
       <div className="flex gap-2 justify-end">
-        <Button size="sm" variant="outline" onClick={onCancel}>Cancel</Button>
-        <Button size="sm" onClick={() => createMut.mutate()} disabled={!valid || createMut.isPending}>
+        <Button size="sm" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button
+          size="sm"
+          onClick={() => createMut.mutate()}
+          disabled={!valid || createMut.isPending}
+        >
           {createMut.isPending ? 'Saving…' : 'Save connection'}
         </Button>
       </div>
@@ -134,7 +191,7 @@ function ConnectionsStep({ onOpen }: { onOpen: (c: ImportConnection) => void }) 
 
   const invalidateConnections = useCallback(
     () => queryClient.invalidateQueries({ queryKey: ['media-import-connections'] }),
-    [queryClient],
+    [queryClient]
   )
 
   const deleteMut = useMutation({
@@ -172,7 +229,9 @@ function ConnectionsStep({ onOpen }: { onOpen: (c: ImportConnection) => void }) 
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Connections</p>
+        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+          Connections
+        </p>
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
         {!isLoading && (connections ?? []).length === 0 && (
           <p className="text-sm text-muted-foreground">No connections yet. Add one below.</p>
@@ -180,9 +239,16 @@ function ConnectionsStep({ onOpen }: { onOpen: (c: ImportConnection) => void }) 
         {(connections ?? []).map((c) => (
           <div key={c.id} className="flex items-center gap-2 border rounded px-2 py-1.5">
             <Cloud className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <Badge variant="outline" className="text-[10px]">{PROVIDER_LABELS[c.provider] ?? c.provider}</Badge>
+            <Badge variant="outline" className="text-[10px]">
+              {PROVIDER_LABELS[c.provider] ?? c.provider}
+            </Badge>
             <span className="text-sm truncate flex-1">{c.label}</span>
-            <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => onOpen(c)}>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 px-2 text-xs"
+              onClick={() => onOpen(c)}
+            >
               Browse
             </Button>
             <button
@@ -199,7 +265,9 @@ function ConnectionsStep({ onOpen }: { onOpen: (c: ImportConnection) => void }) 
       </div>
 
       <div className="space-y-2">
-        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Add connection</p>
+        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+          Add connection
+        </p>
         <div className="flex flex-wrap gap-2">
           {oauthProviders.map((p) => {
             const label = PROVIDER_LABELS[p.provider] ?? p.provider
@@ -210,7 +278,9 @@ function ConnectionsStep({ onOpen }: { onOpen: (c: ImportConnection) => void }) 
                   variant="outline"
                   disabled={!p.configured}
                   onClick={() => startOauth(p.provider)}
-                  title={p.configured ? `Connect ${label}` : `${label} is not configured on the server`}
+                  title={
+                    p.configured ? `Connect ${label}` : `${label} is not configured on the server`
+                  }
                 >
                   <Plus className="h-3 w-3 mr-1" /> {label}
                 </Button>
@@ -231,7 +301,10 @@ function ConnectionsStep({ onOpen }: { onOpen: (c: ImportConnection) => void }) 
         </div>
         {credForm && (
           <ManualConnectionForm
-            onCreated={() => { setCredForm(false); invalidateConnections() }}
+            onCreated={() => {
+              setCredForm(false)
+              invalidateConnections()
+            }}
             onCancel={() => setCredForm(false)}
           />
         )}
@@ -243,7 +316,9 @@ function ConnectionsStep({ onOpen }: { onOpen: (c: ImportConnection) => void }) 
 // ─── Browser step ─────────────────────────────────────────────────────────────
 
 function ConnectionBrowser({
-  connection, folderId, onImported,
+  connection,
+  folderId,
+  onImported,
 }: {
   connection: ImportConnection
   folderId?: string | null
@@ -259,21 +334,24 @@ function ConnectionBrowser({
 
   const currentFolderId = pathStack[pathStack.length - 1]?.id ?? undefined
 
-  const load = useCallback(async (append: boolean, cur?: string | null) => {
-    setLoading(true)
-    try {
-      const data = await importApi.browse(connection.id, {
-        ...(currentFolderId ? { folder_id: currentFolderId } : {}),
-        ...(cur ? { cursor: cur } : {}),
-      })
-      setEntries((prev) => (append ? [...prev, ...data.items] : data.items))
-      setCursor(data.nextCursor ?? null)
-    } catch {
-      toast({ title: 'Failed to browse connection', variant: 'destructive' })
-    } finally {
-      setLoading(false)
-    }
-  }, [connection.id, currentFolderId])
+  const load = useCallback(
+    async (append: boolean, cur?: string | null) => {
+      setLoading(true)
+      try {
+        const data = await importApi.browse(connection.id, {
+          ...(currentFolderId ? { folder_id: currentFolderId } : {}),
+          ...(cur ? { cursor: cur } : {}),
+        })
+        setEntries((prev) => (append ? [...prev, ...data.items] : data.items))
+        setCursor(data.nextCursor ?? null)
+      } catch {
+        toast({ title: 'Failed to browse connection', variant: 'destructive' })
+      } finally {
+        setLoading(false)
+      }
+    },
+    [connection.id, currentFolderId]
+  )
 
   // (Re)load whenever the connection or current folder changes
   useEffect(() => {
@@ -300,7 +378,9 @@ function ConnectionBrowser({
       setSelected(new Set())
       onImported?.(res)
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Import failed'
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        'Import failed'
       toast({ title: msg, variant: 'destructive' })
     } finally {
       setImporting(false)
@@ -323,7 +403,10 @@ function ConnectionBrowser({
             <ChevronRight className="h-3 w-3 text-muted-foreground" />
             <button
               type="button"
-              className={cn('hover:underline', i === pathStack.length - 1 ? 'font-medium' : 'text-primary')}
+              className={cn(
+                'hover:underline',
+                i === pathStack.length - 1 ? 'font-medium' : 'text-primary'
+              )}
               onClick={() => setPathStack((prev) => prev.slice(0, i + 1))}
             >
               {p.name}
@@ -367,7 +450,9 @@ function ConnectionBrowser({
               <FileIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <span className="truncate flex-1">{e.name}</span>
               {e.size != null && (
-                <span className="text-xs text-muted-foreground flex-shrink-0">{formatBytes(e.size)}</span>
+                <span className="text-xs text-muted-foreground flex-shrink-0">
+                  {formatBytes(e.size)}
+                </span>
               )}
             </label>
           )
@@ -385,7 +470,9 @@ function ConnectionBrowser({
           {selected.size} file{selected.size !== 1 ? 's' : ''} selected
         </span>
         <Button size="sm" onClick={runImport} disabled={selected.size === 0 || importing}>
-          {importing ? 'Importing…' : `Import ${selected.size} file${selected.size !== 1 ? 's' : ''}`}
+          {importing
+            ? 'Importing…'
+            : `Import ${selected.size} file${selected.size !== 1 ? 's' : ''}`}
         </Button>
       </div>
 
@@ -393,10 +480,11 @@ function ConnectionBrowser({
       {result && (
         <div className="border rounded p-3 space-y-1 text-sm bg-muted/30" role="status">
           <p className="font-medium">
-            {result.imported.length} file{result.imported.length !== 1 ? 's' : ''} imported
-            {result.skipped.length > 0 && `, ${result.skipped.length} skipped`}
+            {(result.imported ?? []).length} file{(result.imported ?? []).length !== 1 ? 's' : ''}{' '}
+            imported
+            {(result.skipped ?? []).length > 0 && `, ${(result.skipped ?? []).length} skipped`}
           </p>
-          {result.skipped.map((s, i) => (
+          {(result.skipped ?? []).map((s, i) => (
             <p key={i} className="text-xs text-destructive">
               {s.file_id}: {s.reason}
             </p>
@@ -419,7 +507,11 @@ export function CloudImportDialog({ folderId, onClose, onImported }: CloudImport
   const [activeConnection, setActiveConnection] = useState<ImportConnection | null>(null)
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" role="dialog" aria-label="Import from cloud">
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      role="dialog"
+      aria-label="Import from cloud"
+    >
       <div className="bg-background rounded-lg shadow-xl p-6 w-[640px] max-w-[95vw] max-h-[85vh] overflow-y-auto space-y-4">
         <div className="flex justify-between items-center">
           <h3 className="font-semibold text-lg flex items-center gap-2">
@@ -441,7 +533,11 @@ export function CloudImportDialog({ folderId, onClose, onImported }: CloudImport
         </div>
 
         {activeConnection ? (
-          <ConnectionBrowser connection={activeConnection} folderId={folderId} onImported={onImported} />
+          <ConnectionBrowser
+            connection={activeConnection}
+            folderId={folderId}
+            onImported={onImported}
+          />
         ) : (
           <ConnectionsStep onOpen={setActiveConnection} />
         )}

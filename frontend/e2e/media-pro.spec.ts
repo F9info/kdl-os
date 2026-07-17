@@ -17,9 +17,9 @@
  * Test data uses unique RUN suffix and is cleaned up in afterAll.
  */
 import { test, expect, request, type APIRequestContext } from '@playwright/test'
+import { ADMIN } from './helpers/credentials'
 
 const API_URL = process.env.E2E_API_URL ?? 'http://localhost:4000/api'
-const ADMIN = { email: 'admin@kdl.com', password: 'Admin@123' }
 const RUN = `${Date.now().toString(36)}`
 const FOLDER_NAME = `E2E-Media-${RUN}`
 
@@ -49,14 +49,18 @@ test.afterAll(async () => {
 
   // Restore + purge any test media
   if (createdMediaId) {
-    await api.post(`${API_URL}/media/trash/restore`, { data: { media_ids: [createdMediaId] }, headers: h }).catch(() => {})
+    await api
+      .post(`${API_URL}/media/trash/restore`, { data: { media_ids: [createdMediaId] }, headers: h })
+      .catch(() => {})
     await api.delete(`${API_URL}/media/${createdMediaId}`, { headers: h }).catch(() => {})
   }
   await api.delete(`${API_URL}/media/trash/purge`, { headers: h }).catch(() => {})
 
   // Delete test folder
   if (createdFolderId) {
-    await api.delete(`${API_URL}/media/folders/${createdFolderId}?cascade=true`, { headers: h }).catch(() => {})
+    await api
+      .delete(`${API_URL}/media/folders/${createdFolderId}?cascade=true`, { headers: h })
+      .catch(() => {})
   }
 
   await api.dispose()
@@ -187,10 +191,12 @@ test.describe('Media Pro', () => {
     expect(deleteRes.status()).toBe(409)
 
     // Clean up usage
-    await api.post(`${API_URL}/media/usage/release`, {
-      data: { media_id: createdMediaId, entity: 'e2e.test', entity_id: `run-${RUN}` },
-      headers: h,
-    }).catch(() => {})
+    await api
+      .post(`${API_URL}/media/usage/release`, {
+        data: { media_id: createdMediaId, entity: 'e2e.test', entity_id: `run-${RUN}` },
+        headers: h,
+      })
+      .catch(() => {})
   })
 
   test('7. media page loads in browser', async ({ page }) => {
@@ -221,7 +227,7 @@ test.describe('Media Pro', () => {
     await expect(page.getByText('All files')).toBeVisible({ timeout: 10_000 })
 
     const uploadResponse = page.waitForResponse(
-      (res) => res.url().includes('/media/upload') && res.request().method() === 'POST',
+      (res) => res.url().includes('/media/upload') && res.request().method() === 'POST'
     )
     const fileName = `e2e-crop-${RUN}.png`
     await page.locator('input[type="file"]').first().setInputFiles({
@@ -231,6 +237,7 @@ test.describe('Media Pro', () => {
     })
     const uploadRes = await uploadResponse
     const uploadJson = await uploadRes.json()
+    // eslint-disable-next-line prefer-const
     uploadedMediaId = uploadJson?.data?.media?.[0]?.id ?? uploadJson?.data?.media?.id
 
     try {
@@ -240,7 +247,9 @@ test.describe('Media Pro', () => {
       const gridImg = page.locator(`img[alt="${fileName}"]`).first()
       await expect(gridImg).toBeVisible({ timeout: 10_000 })
       await expect(async () => {
-        const ok = await gridImg.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)
+        const ok = await gridImg.evaluate(
+          (img: HTMLImageElement) => img.complete && img.naturalWidth > 0
+        )
         expect(ok).toBe(true)
       }).toPass({ timeout: 10_000 })
 
@@ -266,16 +275,19 @@ test.describe('Media Pro', () => {
       await expect(page.getByText('crop 1×1')).toBeVisible()
 
       const editJobResponse = page.waitForResponse(
-        (res) => res.url().includes(`/media/${uploadedMediaId}/edit`) && res.request().method() === 'POST',
+        (res) =>
+          res.url().includes(`/media/${uploadedMediaId}/edit`) && res.request().method() === 'POST'
       )
       await page.getByRole('button', { name: /^Save \(1 op\)$/ }).click()
       const editJobRes = await editJobResponse
       expect(editJobRes.ok()).toBe(true)
     } finally {
       if (uploadedMediaId) {
-        await api.delete(`${API_URL}/media/${uploadedMediaId}`, {
-          headers: { Authorization: `Bearer ${adminToken}` },
-        }).catch(() => {})
+        await api
+          .delete(`${API_URL}/media/${uploadedMediaId}`, {
+            headers: { Authorization: `Bearer ${adminToken}` },
+          })
+          .catch(() => {})
       }
     }
   })

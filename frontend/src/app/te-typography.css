@@ -20,421 +20,1452 @@
  */
 
 :root {
-
-  --te-typo-h1-size: var(--typography_desktop_typography_scale_typography_scale_h1_title_size, 32px);
-  --te-typo-h1-family: var(--typography_desktop_typography_scale_typography_scale_h1_title_family, Poppins);
-  --te-typo-h1-weight: var(--typography_desktop_typography_scale_typography_scale_h1_title_weight, 700);
-  --te-typo-h1-line-height: var(--typography_desktop_typography_scale_typography_scale_h1_title_line_height, 1.5);
-  --te-typo-h1-letter-spacing: var(--typography_desktop_typography_scale_typography_scale_h1_title_letter_spacing, 0px);
+  --te-typo-h1-size: var(
+    --typography_desktop_typography_scale_typography_scale_h1_title_size,
+    32px
+  );
+  --te-typo-h1-family: var(
+    --typography_desktop_typography_scale_typography_scale_h1_title_family,
+    Poppins
+  );
+  --te-typo-h1-weight: var(
+    --typography_desktop_typography_scale_typography_scale_h1_title_weight,
+    700
+  );
+  --te-typo-h1-line-height: var(
+    --typography_desktop_typography_scale_typography_scale_h1_title_line_height,
+    1.5
+  );
+  --te-typo-h1-letter-spacing: var(
+    --typography_desktop_typography_scale_typography_scale_h1_title_letter_spacing,
+    0px
+  );
   --te-typo-h2-size: var(--typography_desktop_typography_scale_typography_scale_h2_size, 26px);
-  --te-typo-h2-family: var(--typography_desktop_typography_scale_typography_scale_h2_family, Poppins);
+  --te-typo-h2-family: var(
+    --typography_desktop_typography_scale_typography_scale_h2_family,
+    Poppins
+  );
   --te-typo-h2-weight: var(--typography_desktop_typography_scale_typography_scale_h2_weight, 700);
-  --te-typo-h2-line-height: var(--typography_desktop_typography_scale_typography_scale_h2_line_height, 1.5);
-  --te-typo-h2-letter-spacing: var(--typography_desktop_typography_scale_typography_scale_h2_letter_spacing, 0px);
+  --te-typo-h2-line-height: var(
+    --typography_desktop_typography_scale_typography_scale_h2_line_height,
+    1.5
+  );
+  --te-typo-h2-letter-spacing: var(
+    --typography_desktop_typography_scale_typography_scale_h2_letter_spacing,
+    0px
+  );
   --te-typo-h3-size: var(--typography_desktop_typography_scale_typography_scale_h3_size, 22px);
-  --te-typo-h3-family: var(--typography_desktop_typography_scale_typography_scale_h3_family, Poppins);
+  --te-typo-h3-family: var(
+    --typography_desktop_typography_scale_typography_scale_h3_family,
+    Poppins
+  );
   --te-typo-h3-weight: var(--typography_desktop_typography_scale_typography_scale_h3_weight, 600);
-  --te-typo-h3-line-height: var(--typography_desktop_typography_scale_typography_scale_h3_line_height, 1.5);
-  --te-typo-h3-letter-spacing: var(--typography_desktop_typography_scale_typography_scale_h3_letter_spacing, 0px);
+  --te-typo-h3-line-height: var(
+    --typography_desktop_typography_scale_typography_scale_h3_line_height,
+    1.5
+  );
+  --te-typo-h3-letter-spacing: var(
+    --typography_desktop_typography_scale_typography_scale_h3_letter_spacing,
+    0px
+  );
   --te-typo-h4-size: var(--typography_desktop_typography_scale_typography_scale_h4_size, 18px);
-  --te-typo-h4-family: var(--typography_desktop_typography_scale_typography_scale_h4_family, Poppins);
+  --te-typo-h4-family: var(
+    --typography_desktop_typography_scale_typography_scale_h4_family,
+    Poppins
+  );
   --te-typo-h4-weight: var(--typography_desktop_typography_scale_typography_scale_h4_weight, 600);
-  --te-typo-h4-line-height: var(--typography_desktop_typography_scale_typography_scale_h4_line_height, 1.5);
-  --te-typo-h4-letter-spacing: var(--typography_desktop_typography_scale_typography_scale_h4_letter_spacing, 0px);
+  --te-typo-h4-line-height: var(
+    --typography_desktop_typography_scale_typography_scale_h4_line_height,
+    1.5
+  );
+  --te-typo-h4-letter-spacing: var(
+    --typography_desktop_typography_scale_typography_scale_h4_letter_spacing,
+    0px
+  );
   --te-typo-h5-size: var(--typography_desktop_typography_scale_typography_scale_h5_size, 16px);
-  --te-typo-h5-family: var(--typography_desktop_typography_scale_typography_scale_h5_family, Poppins);
+  --te-typo-h5-family: var(
+    --typography_desktop_typography_scale_typography_scale_h5_family,
+    Poppins
+  );
   --te-typo-h5-weight: var(--typography_desktop_typography_scale_typography_scale_h5_weight, 500);
-  --te-typo-h5-line-height: var(--typography_desktop_typography_scale_typography_scale_h5_line_height, 1.5);
-  --te-typo-h5-letter-spacing: var(--typography_desktop_typography_scale_typography_scale_h5_letter_spacing, 0px);
+  --te-typo-h5-line-height: var(
+    --typography_desktop_typography_scale_typography_scale_h5_line_height,
+    1.5
+  );
+  --te-typo-h5-letter-spacing: var(
+    --typography_desktop_typography_scale_typography_scale_h5_letter_spacing,
+    0px
+  );
   --te-typo-h6-size: var(--typography_desktop_typography_scale_typography_scale_h6_size, 14px);
-  --te-typo-h6-family: var(--typography_desktop_typography_scale_typography_scale_h6_family, Poppins);
+  --te-typo-h6-family: var(
+    --typography_desktop_typography_scale_typography_scale_h6_family,
+    Poppins
+  );
   --te-typo-h6-weight: var(--typography_desktop_typography_scale_typography_scale_h6_weight, 500);
-  --te-typo-h6-line-height: var(--typography_desktop_typography_scale_typography_scale_h6_line_height, 1.5);
-  --te-typo-h6-letter-spacing: var(--typography_desktop_typography_scale_typography_scale_h6_letter_spacing, 0px);
-  --te-typo-paragraph-size: var(--typography_desktop_typography_scale_typography_scale_paragraph_size, 14px);
-  --te-typo-paragraph-family: var(--typography_desktop_typography_scale_typography_scale_paragraph_family, Inter);
-  --te-typo-paragraph-weight: var(--typography_desktop_typography_scale_typography_scale_paragraph_weight, 400);
-  --te-typo-paragraph-line-height: var(--typography_desktop_typography_scale_typography_scale_paragraph_line_height, 1.5);
-  --te-typo-paragraph-letter-spacing: var(--typography_desktop_typography_scale_typography_scale_paragraph_letter_spacing, 0px);
+  --te-typo-h6-line-height: var(
+    --typography_desktop_typography_scale_typography_scale_h6_line_height,
+    1.5
+  );
+  --te-typo-h6-letter-spacing: var(
+    --typography_desktop_typography_scale_typography_scale_h6_letter_spacing,
+    0px
+  );
+  --te-typo-paragraph-size: var(
+    --typography_desktop_typography_scale_typography_scale_paragraph_size,
+    14px
+  );
+  --te-typo-paragraph-family: var(
+    --typography_desktop_typography_scale_typography_scale_paragraph_family,
+    Inter
+  );
+  --te-typo-paragraph-weight: var(
+    --typography_desktop_typography_scale_typography_scale_paragraph_weight,
+    400
+  );
+  --te-typo-paragraph-line-height: var(
+    --typography_desktop_typography_scale_typography_scale_paragraph_line_height,
+    1.5
+  );
+  --te-typo-paragraph-letter-spacing: var(
+    --typography_desktop_typography_scale_typography_scale_paragraph_letter_spacing,
+    0px
+  );
   --te-typo-body-size: var(--typography_desktop_typography_scale_typography_scale_body_size, 14px);
-  --te-typo-body-family: var(--typography_desktop_typography_scale_typography_scale_body_family, Inter);
-  --te-typo-body-weight: var(--typography_desktop_typography_scale_typography_scale_body_weight, 400);
-  --te-typo-body-line-height: var(--typography_desktop_typography_scale_typography_scale_body_line_height, 1.5);
-  --te-typo-body-letter-spacing: var(--typography_desktop_typography_scale_typography_scale_body_letter_spacing, 0px);
-  --te-typo-list-size: var(--typography_desktop_typography_scale_typography_scale_list_li_size, 14px);
-  --te-typo-list-family: var(--typography_desktop_typography_scale_typography_scale_list_li_family, Inter);
-  --te-typo-list-weight: var(--typography_desktop_typography_scale_typography_scale_list_li_weight, 400);
-  --te-typo-list-line-height: var(--typography_desktop_typography_scale_typography_scale_list_li_line_height, 1.5);
-  --te-typo-list-letter-spacing: var(--typography_desktop_typography_scale_typography_scale_list_li_letter_spacing, 0px);
-  --te-typo-small-size: var(--typography_desktop_typography_scale_typography_scale_small_text_size, 12px);
-  --te-typo-small-family: var(--typography_desktop_typography_scale_typography_scale_small_text_family, Inter);
-  --te-typo-small-weight: var(--typography_desktop_typography_scale_typography_scale_small_text_weight, 400);
-  --te-typo-small-line-height: var(--typography_desktop_typography_scale_typography_scale_small_text_line_height, 1.5);
-  --te-typo-small-letter-spacing: var(--typography_desktop_typography_scale_typography_scale_small_text_letter_spacing, 0px);
-  --te-typo-nav-size: var(--typography_desktop_typography_scale_typography_scale_navigation_size, 14px);
-  --te-typo-nav-family: var(--typography_desktop_typography_scale_typography_scale_navigation_family, Inter);
-  --te-typo-nav-weight: var(--typography_desktop_typography_scale_typography_scale_navigation_weight, 400);
-  --te-typo-nav-line-height: var(--typography_desktop_typography_scale_typography_scale_navigation_line_height, 1.5);
-  --te-typo-nav-letter-spacing: var(--typography_desktop_typography_scale_typography_scale_navigation_letter_spacing, 0px);
+  --te-typo-body-family: var(
+    --typography_desktop_typography_scale_typography_scale_body_family,
+    Inter
+  );
+  --te-typo-body-weight: var(
+    --typography_desktop_typography_scale_typography_scale_body_weight,
+    400
+  );
+  --te-typo-body-line-height: var(
+    --typography_desktop_typography_scale_typography_scale_body_line_height,
+    1.5
+  );
+  --te-typo-body-letter-spacing: var(
+    --typography_desktop_typography_scale_typography_scale_body_letter_spacing,
+    0px
+  );
+  --te-typo-list-size: var(
+    --typography_desktop_typography_scale_typography_scale_list_li_size,
+    14px
+  );
+  --te-typo-list-family: var(
+    --typography_desktop_typography_scale_typography_scale_list_li_family,
+    Inter
+  );
+  --te-typo-list-weight: var(
+    --typography_desktop_typography_scale_typography_scale_list_li_weight,
+    400
+  );
+  --te-typo-list-line-height: var(
+    --typography_desktop_typography_scale_typography_scale_list_li_line_height,
+    1.5
+  );
+  --te-typo-list-letter-spacing: var(
+    --typography_desktop_typography_scale_typography_scale_list_li_letter_spacing,
+    0px
+  );
+  --te-typo-small-size: var(
+    --typography_desktop_typography_scale_typography_scale_small_text_size,
+    12px
+  );
+  --te-typo-small-family: var(
+    --typography_desktop_typography_scale_typography_scale_small_text_family,
+    Inter
+  );
+  --te-typo-small-weight: var(
+    --typography_desktop_typography_scale_typography_scale_small_text_weight,
+    400
+  );
+  --te-typo-small-line-height: var(
+    --typography_desktop_typography_scale_typography_scale_small_text_line_height,
+    1.5
+  );
+  --te-typo-small-letter-spacing: var(
+    --typography_desktop_typography_scale_typography_scale_small_text_letter_spacing,
+    0px
+  );
+  --te-typo-nav-size: var(
+    --typography_desktop_typography_scale_typography_scale_navigation_size,
+    14px
+  );
+  --te-typo-nav-family: var(
+    --typography_desktop_typography_scale_typography_scale_navigation_family,
+    Inter
+  );
+  --te-typo-nav-weight: var(
+    --typography_desktop_typography_scale_typography_scale_navigation_weight,
+    400
+  );
+  --te-typo-nav-line-height: var(
+    --typography_desktop_typography_scale_typography_scale_navigation_line_height,
+    1.5
+  );
+  --te-typo-nav-letter-spacing: var(
+    --typography_desktop_typography_scale_typography_scale_navigation_letter_spacing,
+    0px
+  );
 }
 
 @media (max-width: 1439px) {
   :root {
-    --te-typo-h1-size: var(--typography_laptop_h_typography_scale_typography_scale_h1_title_size, 30px);
-    --te-typo-h1-family: var(--typography_laptop_h_typography_scale_typography_scale_h1_title_family, Poppins);
-    --te-typo-h1-weight: var(--typography_laptop_h_typography_scale_typography_scale_h1_title_weight, 700);
-    --te-typo-h1-line-height: var(--typography_laptop_h_typography_scale_typography_scale_h1_title_line_height, 1.5);
-    --te-typo-h1-letter-spacing: var(--typography_laptop_h_typography_scale_typography_scale_h1_title_letter_spacing, 0px);
+    --te-typo-h1-size: var(
+      --typography_laptop_h_typography_scale_typography_scale_h1_title_size,
+      30px
+    );
+    --te-typo-h1-family: var(
+      --typography_laptop_h_typography_scale_typography_scale_h1_title_family,
+      Poppins
+    );
+    --te-typo-h1-weight: var(
+      --typography_laptop_h_typography_scale_typography_scale_h1_title_weight,
+      700
+    );
+    --te-typo-h1-line-height: var(
+      --typography_laptop_h_typography_scale_typography_scale_h1_title_line_height,
+      1.5
+    );
+    --te-typo-h1-letter-spacing: var(
+      --typography_laptop_h_typography_scale_typography_scale_h1_title_letter_spacing,
+      0px
+    );
     --te-typo-h2-size: var(--typography_laptop_h_typography_scale_typography_scale_h2_size, 24px);
-    --te-typo-h2-family: var(--typography_laptop_h_typography_scale_typography_scale_h2_family, Poppins);
-    --te-typo-h2-weight: var(--typography_laptop_h_typography_scale_typography_scale_h2_weight, 700);
-    --te-typo-h2-line-height: var(--typography_laptop_h_typography_scale_typography_scale_h2_line_height, 1.5);
-    --te-typo-h2-letter-spacing: var(--typography_laptop_h_typography_scale_typography_scale_h2_letter_spacing, 0px);
+    --te-typo-h2-family: var(
+      --typography_laptop_h_typography_scale_typography_scale_h2_family,
+      Poppins
+    );
+    --te-typo-h2-weight: var(
+      --typography_laptop_h_typography_scale_typography_scale_h2_weight,
+      700
+    );
+    --te-typo-h2-line-height: var(
+      --typography_laptop_h_typography_scale_typography_scale_h2_line_height,
+      1.5
+    );
+    --te-typo-h2-letter-spacing: var(
+      --typography_laptop_h_typography_scale_typography_scale_h2_letter_spacing,
+      0px
+    );
     --te-typo-h3-size: var(--typography_laptop_h_typography_scale_typography_scale_h3_size, 20px);
-    --te-typo-h3-family: var(--typography_laptop_h_typography_scale_typography_scale_h3_family, Poppins);
-    --te-typo-h3-weight: var(--typography_laptop_h_typography_scale_typography_scale_h3_weight, 600);
-    --te-typo-h3-line-height: var(--typography_laptop_h_typography_scale_typography_scale_h3_line_height, 1.5);
-    --te-typo-h3-letter-spacing: var(--typography_laptop_h_typography_scale_typography_scale_h3_letter_spacing, 0px);
+    --te-typo-h3-family: var(
+      --typography_laptop_h_typography_scale_typography_scale_h3_family,
+      Poppins
+    );
+    --te-typo-h3-weight: var(
+      --typography_laptop_h_typography_scale_typography_scale_h3_weight,
+      600
+    );
+    --te-typo-h3-line-height: var(
+      --typography_laptop_h_typography_scale_typography_scale_h3_line_height,
+      1.5
+    );
+    --te-typo-h3-letter-spacing: var(
+      --typography_laptop_h_typography_scale_typography_scale_h3_letter_spacing,
+      0px
+    );
     --te-typo-h4-size: var(--typography_laptop_h_typography_scale_typography_scale_h4_size, 17px);
-    --te-typo-h4-family: var(--typography_laptop_h_typography_scale_typography_scale_h4_family, Poppins);
-    --te-typo-h4-weight: var(--typography_laptop_h_typography_scale_typography_scale_h4_weight, 600);
-    --te-typo-h4-line-height: var(--typography_laptop_h_typography_scale_typography_scale_h4_line_height, 1.5);
-    --te-typo-h4-letter-spacing: var(--typography_laptop_h_typography_scale_typography_scale_h4_letter_spacing, 0px);
+    --te-typo-h4-family: var(
+      --typography_laptop_h_typography_scale_typography_scale_h4_family,
+      Poppins
+    );
+    --te-typo-h4-weight: var(
+      --typography_laptop_h_typography_scale_typography_scale_h4_weight,
+      600
+    );
+    --te-typo-h4-line-height: var(
+      --typography_laptop_h_typography_scale_typography_scale_h4_line_height,
+      1.5
+    );
+    --te-typo-h4-letter-spacing: var(
+      --typography_laptop_h_typography_scale_typography_scale_h4_letter_spacing,
+      0px
+    );
     --te-typo-h5-size: var(--typography_laptop_h_typography_scale_typography_scale_h5_size, 15px);
-    --te-typo-h5-family: var(--typography_laptop_h_typography_scale_typography_scale_h5_family, Poppins);
-    --te-typo-h5-weight: var(--typography_laptop_h_typography_scale_typography_scale_h5_weight, 500);
-    --te-typo-h5-line-height: var(--typography_laptop_h_typography_scale_typography_scale_h5_line_height, 1.5);
-    --te-typo-h5-letter-spacing: var(--typography_laptop_h_typography_scale_typography_scale_h5_letter_spacing, 0px);
+    --te-typo-h5-family: var(
+      --typography_laptop_h_typography_scale_typography_scale_h5_family,
+      Poppins
+    );
+    --te-typo-h5-weight: var(
+      --typography_laptop_h_typography_scale_typography_scale_h5_weight,
+      500
+    );
+    --te-typo-h5-line-height: var(
+      --typography_laptop_h_typography_scale_typography_scale_h5_line_height,
+      1.5
+    );
+    --te-typo-h5-letter-spacing: var(
+      --typography_laptop_h_typography_scale_typography_scale_h5_letter_spacing,
+      0px
+    );
     --te-typo-h6-size: var(--typography_laptop_h_typography_scale_typography_scale_h6_size, 13px);
-    --te-typo-h6-family: var(--typography_laptop_h_typography_scale_typography_scale_h6_family, Poppins);
-    --te-typo-h6-weight: var(--typography_laptop_h_typography_scale_typography_scale_h6_weight, 500);
-    --te-typo-h6-line-height: var(--typography_laptop_h_typography_scale_typography_scale_h6_line_height, 1.5);
-    --te-typo-h6-letter-spacing: var(--typography_laptop_h_typography_scale_typography_scale_h6_letter_spacing, 0px);
-    --te-typo-paragraph-size: var(--typography_laptop_h_typography_scale_typography_scale_paragraph_size, 14px);
-    --te-typo-paragraph-family: var(--typography_laptop_h_typography_scale_typography_scale_paragraph_family, Inter);
-    --te-typo-paragraph-weight: var(--typography_laptop_h_typography_scale_typography_scale_paragraph_weight, 400);
-    --te-typo-paragraph-line-height: var(--typography_laptop_h_typography_scale_typography_scale_paragraph_line_height, 1.5);
-    --te-typo-paragraph-letter-spacing: var(--typography_laptop_h_typography_scale_typography_scale_paragraph_letter_spacing, 0px);
-    --te-typo-body-size: var(--typography_laptop_h_typography_scale_typography_scale_body_size, 14px);
-    --te-typo-body-family: var(--typography_laptop_h_typography_scale_typography_scale_body_family, Inter);
-    --te-typo-body-weight: var(--typography_laptop_h_typography_scale_typography_scale_body_weight, 400);
-    --te-typo-body-line-height: var(--typography_laptop_h_typography_scale_typography_scale_body_line_height, 1.5);
-    --te-typo-body-letter-spacing: var(--typography_laptop_h_typography_scale_typography_scale_body_letter_spacing, 0px);
-    --te-typo-list-size: var(--typography_laptop_h_typography_scale_typography_scale_list_li_size, 14px);
-    --te-typo-list-family: var(--typography_laptop_h_typography_scale_typography_scale_list_li_family, Inter);
-    --te-typo-list-weight: var(--typography_laptop_h_typography_scale_typography_scale_list_li_weight, 400);
-    --te-typo-list-line-height: var(--typography_laptop_h_typography_scale_typography_scale_list_li_line_height, 1.5);
-    --te-typo-list-letter-spacing: var(--typography_laptop_h_typography_scale_typography_scale_list_li_letter_spacing, 0px);
-    --te-typo-small-size: var(--typography_laptop_h_typography_scale_typography_scale_small_text_size, 12px);
-    --te-typo-small-family: var(--typography_laptop_h_typography_scale_typography_scale_small_text_family, Inter);
-    --te-typo-small-weight: var(--typography_laptop_h_typography_scale_typography_scale_small_text_weight, 400);
-    --te-typo-small-line-height: var(--typography_laptop_h_typography_scale_typography_scale_small_text_line_height, 1.5);
-    --te-typo-small-letter-spacing: var(--typography_laptop_h_typography_scale_typography_scale_small_text_letter_spacing, 0px);
-    --te-typo-nav-size: var(--typography_laptop_h_typography_scale_typography_scale_navigation_size, 13px);
-    --te-typo-nav-family: var(--typography_laptop_h_typography_scale_typography_scale_navigation_family, Inter);
-    --te-typo-nav-weight: var(--typography_laptop_h_typography_scale_typography_scale_navigation_weight, 400);
-    --te-typo-nav-line-height: var(--typography_laptop_h_typography_scale_typography_scale_navigation_line_height, 1.5);
-    --te-typo-nav-letter-spacing: var(--typography_laptop_h_typography_scale_typography_scale_navigation_letter_spacing, 0px);
+    --te-typo-h6-family: var(
+      --typography_laptop_h_typography_scale_typography_scale_h6_family,
+      Poppins
+    );
+    --te-typo-h6-weight: var(
+      --typography_laptop_h_typography_scale_typography_scale_h6_weight,
+      500
+    );
+    --te-typo-h6-line-height: var(
+      --typography_laptop_h_typography_scale_typography_scale_h6_line_height,
+      1.5
+    );
+    --te-typo-h6-letter-spacing: var(
+      --typography_laptop_h_typography_scale_typography_scale_h6_letter_spacing,
+      0px
+    );
+    --te-typo-paragraph-size: var(
+      --typography_laptop_h_typography_scale_typography_scale_paragraph_size,
+      14px
+    );
+    --te-typo-paragraph-family: var(
+      --typography_laptop_h_typography_scale_typography_scale_paragraph_family,
+      Inter
+    );
+    --te-typo-paragraph-weight: var(
+      --typography_laptop_h_typography_scale_typography_scale_paragraph_weight,
+      400
+    );
+    --te-typo-paragraph-line-height: var(
+      --typography_laptop_h_typography_scale_typography_scale_paragraph_line_height,
+      1.5
+    );
+    --te-typo-paragraph-letter-spacing: var(
+      --typography_laptop_h_typography_scale_typography_scale_paragraph_letter_spacing,
+      0px
+    );
+    --te-typo-body-size: var(
+      --typography_laptop_h_typography_scale_typography_scale_body_size,
+      14px
+    );
+    --te-typo-body-family: var(
+      --typography_laptop_h_typography_scale_typography_scale_body_family,
+      Inter
+    );
+    --te-typo-body-weight: var(
+      --typography_laptop_h_typography_scale_typography_scale_body_weight,
+      400
+    );
+    --te-typo-body-line-height: var(
+      --typography_laptop_h_typography_scale_typography_scale_body_line_height,
+      1.5
+    );
+    --te-typo-body-letter-spacing: var(
+      --typography_laptop_h_typography_scale_typography_scale_body_letter_spacing,
+      0px
+    );
+    --te-typo-list-size: var(
+      --typography_laptop_h_typography_scale_typography_scale_list_li_size,
+      14px
+    );
+    --te-typo-list-family: var(
+      --typography_laptop_h_typography_scale_typography_scale_list_li_family,
+      Inter
+    );
+    --te-typo-list-weight: var(
+      --typography_laptop_h_typography_scale_typography_scale_list_li_weight,
+      400
+    );
+    --te-typo-list-line-height: var(
+      --typography_laptop_h_typography_scale_typography_scale_list_li_line_height,
+      1.5
+    );
+    --te-typo-list-letter-spacing: var(
+      --typography_laptop_h_typography_scale_typography_scale_list_li_letter_spacing,
+      0px
+    );
+    --te-typo-small-size: var(
+      --typography_laptop_h_typography_scale_typography_scale_small_text_size,
+      12px
+    );
+    --te-typo-small-family: var(
+      --typography_laptop_h_typography_scale_typography_scale_small_text_family,
+      Inter
+    );
+    --te-typo-small-weight: var(
+      --typography_laptop_h_typography_scale_typography_scale_small_text_weight,
+      400
+    );
+    --te-typo-small-line-height: var(
+      --typography_laptop_h_typography_scale_typography_scale_small_text_line_height,
+      1.5
+    );
+    --te-typo-small-letter-spacing: var(
+      --typography_laptop_h_typography_scale_typography_scale_small_text_letter_spacing,
+      0px
+    );
+    --te-typo-nav-size: var(
+      --typography_laptop_h_typography_scale_typography_scale_navigation_size,
+      13px
+    );
+    --te-typo-nav-family: var(
+      --typography_laptop_h_typography_scale_typography_scale_navigation_family,
+      Inter
+    );
+    --te-typo-nav-weight: var(
+      --typography_laptop_h_typography_scale_typography_scale_navigation_weight,
+      400
+    );
+    --te-typo-nav-line-height: var(
+      --typography_laptop_h_typography_scale_typography_scale_navigation_line_height,
+      1.5
+    );
+    --te-typo-nav-letter-spacing: var(
+      --typography_laptop_h_typography_scale_typography_scale_navigation_letter_spacing,
+      0px
+    );
   }
 }
 
 @media (max-width: 1439px) and (orientation: portrait) {
   :root {
-    --te-typo-h1-size: var(--typography_laptop_v_typography_scale_typography_scale_h1_title_size, 30px);
-    --te-typo-h1-family: var(--typography_laptop_v_typography_scale_typography_scale_h1_title_family, Poppins);
-    --te-typo-h1-weight: var(--typography_laptop_v_typography_scale_typography_scale_h1_title_weight, 700);
-    --te-typo-h1-line-height: var(--typography_laptop_v_typography_scale_typography_scale_h1_title_line_height, 1.5);
-    --te-typo-h1-letter-spacing: var(--typography_laptop_v_typography_scale_typography_scale_h1_title_letter_spacing, 0px);
+    --te-typo-h1-size: var(
+      --typography_laptop_v_typography_scale_typography_scale_h1_title_size,
+      30px
+    );
+    --te-typo-h1-family: var(
+      --typography_laptop_v_typography_scale_typography_scale_h1_title_family,
+      Poppins
+    );
+    --te-typo-h1-weight: var(
+      --typography_laptop_v_typography_scale_typography_scale_h1_title_weight,
+      700
+    );
+    --te-typo-h1-line-height: var(
+      --typography_laptop_v_typography_scale_typography_scale_h1_title_line_height,
+      1.5
+    );
+    --te-typo-h1-letter-spacing: var(
+      --typography_laptop_v_typography_scale_typography_scale_h1_title_letter_spacing,
+      0px
+    );
     --te-typo-h2-size: var(--typography_laptop_v_typography_scale_typography_scale_h2_size, 24px);
-    --te-typo-h2-family: var(--typography_laptop_v_typography_scale_typography_scale_h2_family, Poppins);
-    --te-typo-h2-weight: var(--typography_laptop_v_typography_scale_typography_scale_h2_weight, 700);
-    --te-typo-h2-line-height: var(--typography_laptop_v_typography_scale_typography_scale_h2_line_height, 1.5);
-    --te-typo-h2-letter-spacing: var(--typography_laptop_v_typography_scale_typography_scale_h2_letter_spacing, 0px);
+    --te-typo-h2-family: var(
+      --typography_laptop_v_typography_scale_typography_scale_h2_family,
+      Poppins
+    );
+    --te-typo-h2-weight: var(
+      --typography_laptop_v_typography_scale_typography_scale_h2_weight,
+      700
+    );
+    --te-typo-h2-line-height: var(
+      --typography_laptop_v_typography_scale_typography_scale_h2_line_height,
+      1.5
+    );
+    --te-typo-h2-letter-spacing: var(
+      --typography_laptop_v_typography_scale_typography_scale_h2_letter_spacing,
+      0px
+    );
     --te-typo-h3-size: var(--typography_laptop_v_typography_scale_typography_scale_h3_size, 20px);
-    --te-typo-h3-family: var(--typography_laptop_v_typography_scale_typography_scale_h3_family, Poppins);
-    --te-typo-h3-weight: var(--typography_laptop_v_typography_scale_typography_scale_h3_weight, 600);
-    --te-typo-h3-line-height: var(--typography_laptop_v_typography_scale_typography_scale_h3_line_height, 1.5);
-    --te-typo-h3-letter-spacing: var(--typography_laptop_v_typography_scale_typography_scale_h3_letter_spacing, 0px);
+    --te-typo-h3-family: var(
+      --typography_laptop_v_typography_scale_typography_scale_h3_family,
+      Poppins
+    );
+    --te-typo-h3-weight: var(
+      --typography_laptop_v_typography_scale_typography_scale_h3_weight,
+      600
+    );
+    --te-typo-h3-line-height: var(
+      --typography_laptop_v_typography_scale_typography_scale_h3_line_height,
+      1.5
+    );
+    --te-typo-h3-letter-spacing: var(
+      --typography_laptop_v_typography_scale_typography_scale_h3_letter_spacing,
+      0px
+    );
     --te-typo-h4-size: var(--typography_laptop_v_typography_scale_typography_scale_h4_size, 17px);
-    --te-typo-h4-family: var(--typography_laptop_v_typography_scale_typography_scale_h4_family, Poppins);
-    --te-typo-h4-weight: var(--typography_laptop_v_typography_scale_typography_scale_h4_weight, 600);
-    --te-typo-h4-line-height: var(--typography_laptop_v_typography_scale_typography_scale_h4_line_height, 1.5);
-    --te-typo-h4-letter-spacing: var(--typography_laptop_v_typography_scale_typography_scale_h4_letter_spacing, 0px);
+    --te-typo-h4-family: var(
+      --typography_laptop_v_typography_scale_typography_scale_h4_family,
+      Poppins
+    );
+    --te-typo-h4-weight: var(
+      --typography_laptop_v_typography_scale_typography_scale_h4_weight,
+      600
+    );
+    --te-typo-h4-line-height: var(
+      --typography_laptop_v_typography_scale_typography_scale_h4_line_height,
+      1.5
+    );
+    --te-typo-h4-letter-spacing: var(
+      --typography_laptop_v_typography_scale_typography_scale_h4_letter_spacing,
+      0px
+    );
     --te-typo-h5-size: var(--typography_laptop_v_typography_scale_typography_scale_h5_size, 15px);
-    --te-typo-h5-family: var(--typography_laptop_v_typography_scale_typography_scale_h5_family, Poppins);
-    --te-typo-h5-weight: var(--typography_laptop_v_typography_scale_typography_scale_h5_weight, 500);
-    --te-typo-h5-line-height: var(--typography_laptop_v_typography_scale_typography_scale_h5_line_height, 1.5);
-    --te-typo-h5-letter-spacing: var(--typography_laptop_v_typography_scale_typography_scale_h5_letter_spacing, 0px);
+    --te-typo-h5-family: var(
+      --typography_laptop_v_typography_scale_typography_scale_h5_family,
+      Poppins
+    );
+    --te-typo-h5-weight: var(
+      --typography_laptop_v_typography_scale_typography_scale_h5_weight,
+      500
+    );
+    --te-typo-h5-line-height: var(
+      --typography_laptop_v_typography_scale_typography_scale_h5_line_height,
+      1.5
+    );
+    --te-typo-h5-letter-spacing: var(
+      --typography_laptop_v_typography_scale_typography_scale_h5_letter_spacing,
+      0px
+    );
     --te-typo-h6-size: var(--typography_laptop_v_typography_scale_typography_scale_h6_size, 13px);
-    --te-typo-h6-family: var(--typography_laptop_v_typography_scale_typography_scale_h6_family, Poppins);
-    --te-typo-h6-weight: var(--typography_laptop_v_typography_scale_typography_scale_h6_weight, 500);
-    --te-typo-h6-line-height: var(--typography_laptop_v_typography_scale_typography_scale_h6_line_height, 1.5);
-    --te-typo-h6-letter-spacing: var(--typography_laptop_v_typography_scale_typography_scale_h6_letter_spacing, 0px);
-    --te-typo-paragraph-size: var(--typography_laptop_v_typography_scale_typography_scale_paragraph_size, 14px);
-    --te-typo-paragraph-family: var(--typography_laptop_v_typography_scale_typography_scale_paragraph_family, Inter);
-    --te-typo-paragraph-weight: var(--typography_laptop_v_typography_scale_typography_scale_paragraph_weight, 400);
-    --te-typo-paragraph-line-height: var(--typography_laptop_v_typography_scale_typography_scale_paragraph_line_height, 1.5);
-    --te-typo-paragraph-letter-spacing: var(--typography_laptop_v_typography_scale_typography_scale_paragraph_letter_spacing, 0px);
-    --te-typo-body-size: var(--typography_laptop_v_typography_scale_typography_scale_body_size, 14px);
-    --te-typo-body-family: var(--typography_laptop_v_typography_scale_typography_scale_body_family, Inter);
-    --te-typo-body-weight: var(--typography_laptop_v_typography_scale_typography_scale_body_weight, 400);
-    --te-typo-body-line-height: var(--typography_laptop_v_typography_scale_typography_scale_body_line_height, 1.5);
-    --te-typo-body-letter-spacing: var(--typography_laptop_v_typography_scale_typography_scale_body_letter_spacing, 0px);
-    --te-typo-list-size: var(--typography_laptop_v_typography_scale_typography_scale_list_li_size, 14px);
-    --te-typo-list-family: var(--typography_laptop_v_typography_scale_typography_scale_list_li_family, Inter);
-    --te-typo-list-weight: var(--typography_laptop_v_typography_scale_typography_scale_list_li_weight, 400);
-    --te-typo-list-line-height: var(--typography_laptop_v_typography_scale_typography_scale_list_li_line_height, 1.5);
-    --te-typo-list-letter-spacing: var(--typography_laptop_v_typography_scale_typography_scale_list_li_letter_spacing, 0px);
-    --te-typo-small-size: var(--typography_laptop_v_typography_scale_typography_scale_small_text_size, 12px);
-    --te-typo-small-family: var(--typography_laptop_v_typography_scale_typography_scale_small_text_family, Inter);
-    --te-typo-small-weight: var(--typography_laptop_v_typography_scale_typography_scale_small_text_weight, 400);
-    --te-typo-small-line-height: var(--typography_laptop_v_typography_scale_typography_scale_small_text_line_height, 1.5);
-    --te-typo-small-letter-spacing: var(--typography_laptop_v_typography_scale_typography_scale_small_text_letter_spacing, 0px);
-    --te-typo-nav-size: var(--typography_laptop_v_typography_scale_typography_scale_navigation_size, 13px);
-    --te-typo-nav-family: var(--typography_laptop_v_typography_scale_typography_scale_navigation_family, Inter);
-    --te-typo-nav-weight: var(--typography_laptop_v_typography_scale_typography_scale_navigation_weight, 400);
-    --te-typo-nav-line-height: var(--typography_laptop_v_typography_scale_typography_scale_navigation_line_height, 1.5);
-    --te-typo-nav-letter-spacing: var(--typography_laptop_v_typography_scale_typography_scale_navigation_letter_spacing, 0px);
+    --te-typo-h6-family: var(
+      --typography_laptop_v_typography_scale_typography_scale_h6_family,
+      Poppins
+    );
+    --te-typo-h6-weight: var(
+      --typography_laptop_v_typography_scale_typography_scale_h6_weight,
+      500
+    );
+    --te-typo-h6-line-height: var(
+      --typography_laptop_v_typography_scale_typography_scale_h6_line_height,
+      1.5
+    );
+    --te-typo-h6-letter-spacing: var(
+      --typography_laptop_v_typography_scale_typography_scale_h6_letter_spacing,
+      0px
+    );
+    --te-typo-paragraph-size: var(
+      --typography_laptop_v_typography_scale_typography_scale_paragraph_size,
+      14px
+    );
+    --te-typo-paragraph-family: var(
+      --typography_laptop_v_typography_scale_typography_scale_paragraph_family,
+      Inter
+    );
+    --te-typo-paragraph-weight: var(
+      --typography_laptop_v_typography_scale_typography_scale_paragraph_weight,
+      400
+    );
+    --te-typo-paragraph-line-height: var(
+      --typography_laptop_v_typography_scale_typography_scale_paragraph_line_height,
+      1.5
+    );
+    --te-typo-paragraph-letter-spacing: var(
+      --typography_laptop_v_typography_scale_typography_scale_paragraph_letter_spacing,
+      0px
+    );
+    --te-typo-body-size: var(
+      --typography_laptop_v_typography_scale_typography_scale_body_size,
+      14px
+    );
+    --te-typo-body-family: var(
+      --typography_laptop_v_typography_scale_typography_scale_body_family,
+      Inter
+    );
+    --te-typo-body-weight: var(
+      --typography_laptop_v_typography_scale_typography_scale_body_weight,
+      400
+    );
+    --te-typo-body-line-height: var(
+      --typography_laptop_v_typography_scale_typography_scale_body_line_height,
+      1.5
+    );
+    --te-typo-body-letter-spacing: var(
+      --typography_laptop_v_typography_scale_typography_scale_body_letter_spacing,
+      0px
+    );
+    --te-typo-list-size: var(
+      --typography_laptop_v_typography_scale_typography_scale_list_li_size,
+      14px
+    );
+    --te-typo-list-family: var(
+      --typography_laptop_v_typography_scale_typography_scale_list_li_family,
+      Inter
+    );
+    --te-typo-list-weight: var(
+      --typography_laptop_v_typography_scale_typography_scale_list_li_weight,
+      400
+    );
+    --te-typo-list-line-height: var(
+      --typography_laptop_v_typography_scale_typography_scale_list_li_line_height,
+      1.5
+    );
+    --te-typo-list-letter-spacing: var(
+      --typography_laptop_v_typography_scale_typography_scale_list_li_letter_spacing,
+      0px
+    );
+    --te-typo-small-size: var(
+      --typography_laptop_v_typography_scale_typography_scale_small_text_size,
+      12px
+    );
+    --te-typo-small-family: var(
+      --typography_laptop_v_typography_scale_typography_scale_small_text_family,
+      Inter
+    );
+    --te-typo-small-weight: var(
+      --typography_laptop_v_typography_scale_typography_scale_small_text_weight,
+      400
+    );
+    --te-typo-small-line-height: var(
+      --typography_laptop_v_typography_scale_typography_scale_small_text_line_height,
+      1.5
+    );
+    --te-typo-small-letter-spacing: var(
+      --typography_laptop_v_typography_scale_typography_scale_small_text_letter_spacing,
+      0px
+    );
+    --te-typo-nav-size: var(
+      --typography_laptop_v_typography_scale_typography_scale_navigation_size,
+      13px
+    );
+    --te-typo-nav-family: var(
+      --typography_laptop_v_typography_scale_typography_scale_navigation_family,
+      Inter
+    );
+    --te-typo-nav-weight: var(
+      --typography_laptop_v_typography_scale_typography_scale_navigation_weight,
+      400
+    );
+    --te-typo-nav-line-height: var(
+      --typography_laptop_v_typography_scale_typography_scale_navigation_line_height,
+      1.5
+    );
+    --te-typo-nav-letter-spacing: var(
+      --typography_laptop_v_typography_scale_typography_scale_navigation_letter_spacing,
+      0px
+    );
   }
 }
 
 @media (max-width: 1023px) {
   :root {
-    --te-typo-h1-size: var(--typography_tablet_h_typography_scale_typography_scale_h1_title_size, 28px);
-    --te-typo-h1-family: var(--typography_tablet_h_typography_scale_typography_scale_h1_title_family, Poppins);
-    --te-typo-h1-weight: var(--typography_tablet_h_typography_scale_typography_scale_h1_title_weight, 700);
-    --te-typo-h1-line-height: var(--typography_tablet_h_typography_scale_typography_scale_h1_title_line_height, 1.45);
-    --te-typo-h1-letter-spacing: var(--typography_tablet_h_typography_scale_typography_scale_h1_title_letter_spacing, 0px);
+    --te-typo-h1-size: var(
+      --typography_tablet_h_typography_scale_typography_scale_h1_title_size,
+      28px
+    );
+    --te-typo-h1-family: var(
+      --typography_tablet_h_typography_scale_typography_scale_h1_title_family,
+      Poppins
+    );
+    --te-typo-h1-weight: var(
+      --typography_tablet_h_typography_scale_typography_scale_h1_title_weight,
+      700
+    );
+    --te-typo-h1-line-height: var(
+      --typography_tablet_h_typography_scale_typography_scale_h1_title_line_height,
+      1.45
+    );
+    --te-typo-h1-letter-spacing: var(
+      --typography_tablet_h_typography_scale_typography_scale_h1_title_letter_spacing,
+      0px
+    );
     --te-typo-h2-size: var(--typography_tablet_h_typography_scale_typography_scale_h2_size, 23px);
-    --te-typo-h2-family: var(--typography_tablet_h_typography_scale_typography_scale_h2_family, Poppins);
-    --te-typo-h2-weight: var(--typography_tablet_h_typography_scale_typography_scale_h2_weight, 700);
-    --te-typo-h2-line-height: var(--typography_tablet_h_typography_scale_typography_scale_h2_line_height, 1.45);
-    --te-typo-h2-letter-spacing: var(--typography_tablet_h_typography_scale_typography_scale_h2_letter_spacing, 0px);
+    --te-typo-h2-family: var(
+      --typography_tablet_h_typography_scale_typography_scale_h2_family,
+      Poppins
+    );
+    --te-typo-h2-weight: var(
+      --typography_tablet_h_typography_scale_typography_scale_h2_weight,
+      700
+    );
+    --te-typo-h2-line-height: var(
+      --typography_tablet_h_typography_scale_typography_scale_h2_line_height,
+      1.45
+    );
+    --te-typo-h2-letter-spacing: var(
+      --typography_tablet_h_typography_scale_typography_scale_h2_letter_spacing,
+      0px
+    );
     --te-typo-h3-size: var(--typography_tablet_h_typography_scale_typography_scale_h3_size, 19px);
-    --te-typo-h3-family: var(--typography_tablet_h_typography_scale_typography_scale_h3_family, Poppins);
-    --te-typo-h3-weight: var(--typography_tablet_h_typography_scale_typography_scale_h3_weight, 600);
-    --te-typo-h3-line-height: var(--typography_tablet_h_typography_scale_typography_scale_h3_line_height, 1.45);
-    --te-typo-h3-letter-spacing: var(--typography_tablet_h_typography_scale_typography_scale_h3_letter_spacing, 0px);
+    --te-typo-h3-family: var(
+      --typography_tablet_h_typography_scale_typography_scale_h3_family,
+      Poppins
+    );
+    --te-typo-h3-weight: var(
+      --typography_tablet_h_typography_scale_typography_scale_h3_weight,
+      600
+    );
+    --te-typo-h3-line-height: var(
+      --typography_tablet_h_typography_scale_typography_scale_h3_line_height,
+      1.45
+    );
+    --te-typo-h3-letter-spacing: var(
+      --typography_tablet_h_typography_scale_typography_scale_h3_letter_spacing,
+      0px
+    );
     --te-typo-h4-size: var(--typography_tablet_h_typography_scale_typography_scale_h4_size, 16px);
-    --te-typo-h4-family: var(--typography_tablet_h_typography_scale_typography_scale_h4_family, Poppins);
-    --te-typo-h4-weight: var(--typography_tablet_h_typography_scale_typography_scale_h4_weight, 600);
-    --te-typo-h4-line-height: var(--typography_tablet_h_typography_scale_typography_scale_h4_line_height, 1.45);
-    --te-typo-h4-letter-spacing: var(--typography_tablet_h_typography_scale_typography_scale_h4_letter_spacing, 0px);
+    --te-typo-h4-family: var(
+      --typography_tablet_h_typography_scale_typography_scale_h4_family,
+      Poppins
+    );
+    --te-typo-h4-weight: var(
+      --typography_tablet_h_typography_scale_typography_scale_h4_weight,
+      600
+    );
+    --te-typo-h4-line-height: var(
+      --typography_tablet_h_typography_scale_typography_scale_h4_line_height,
+      1.45
+    );
+    --te-typo-h4-letter-spacing: var(
+      --typography_tablet_h_typography_scale_typography_scale_h4_letter_spacing,
+      0px
+    );
     --te-typo-h5-size: var(--typography_tablet_h_typography_scale_typography_scale_h5_size, 14px);
-    --te-typo-h5-family: var(--typography_tablet_h_typography_scale_typography_scale_h5_family, Poppins);
-    --te-typo-h5-weight: var(--typography_tablet_h_typography_scale_typography_scale_h5_weight, 500);
-    --te-typo-h5-line-height: var(--typography_tablet_h_typography_scale_typography_scale_h5_line_height, 1.45);
-    --te-typo-h5-letter-spacing: var(--typography_tablet_h_typography_scale_typography_scale_h5_letter_spacing, 0px);
+    --te-typo-h5-family: var(
+      --typography_tablet_h_typography_scale_typography_scale_h5_family,
+      Poppins
+    );
+    --te-typo-h5-weight: var(
+      --typography_tablet_h_typography_scale_typography_scale_h5_weight,
+      500
+    );
+    --te-typo-h5-line-height: var(
+      --typography_tablet_h_typography_scale_typography_scale_h5_line_height,
+      1.45
+    );
+    --te-typo-h5-letter-spacing: var(
+      --typography_tablet_h_typography_scale_typography_scale_h5_letter_spacing,
+      0px
+    );
     --te-typo-h6-size: var(--typography_tablet_h_typography_scale_typography_scale_h6_size, 13px);
-    --te-typo-h6-family: var(--typography_tablet_h_typography_scale_typography_scale_h6_family, Poppins);
-    --te-typo-h6-weight: var(--typography_tablet_h_typography_scale_typography_scale_h6_weight, 500);
-    --te-typo-h6-line-height: var(--typography_tablet_h_typography_scale_typography_scale_h6_line_height, 1.45);
-    --te-typo-h6-letter-spacing: var(--typography_tablet_h_typography_scale_typography_scale_h6_letter_spacing, 0px);
-    --te-typo-paragraph-size: var(--typography_tablet_h_typography_scale_typography_scale_paragraph_size, 13px);
-    --te-typo-paragraph-family: var(--typography_tablet_h_typography_scale_typography_scale_paragraph_family, Inter);
-    --te-typo-paragraph-weight: var(--typography_tablet_h_typography_scale_typography_scale_paragraph_weight, 400);
-    --te-typo-paragraph-line-height: var(--typography_tablet_h_typography_scale_typography_scale_paragraph_line_height, 1.45);
-    --te-typo-paragraph-letter-spacing: var(--typography_tablet_h_typography_scale_typography_scale_paragraph_letter_spacing, 0px);
-    --te-typo-body-size: var(--typography_tablet_h_typography_scale_typography_scale_body_size, 13px);
-    --te-typo-body-family: var(--typography_tablet_h_typography_scale_typography_scale_body_family, Inter);
-    --te-typo-body-weight: var(--typography_tablet_h_typography_scale_typography_scale_body_weight, 400);
-    --te-typo-body-line-height: var(--typography_tablet_h_typography_scale_typography_scale_body_line_height, 1.45);
-    --te-typo-body-letter-spacing: var(--typography_tablet_h_typography_scale_typography_scale_body_letter_spacing, 0px);
-    --te-typo-list-size: var(--typography_tablet_h_typography_scale_typography_scale_list_li_size, 13px);
-    --te-typo-list-family: var(--typography_tablet_h_typography_scale_typography_scale_list_li_family, Inter);
-    --te-typo-list-weight: var(--typography_tablet_h_typography_scale_typography_scale_list_li_weight, 400);
-    --te-typo-list-line-height: var(--typography_tablet_h_typography_scale_typography_scale_list_li_line_height, 1.45);
-    --te-typo-list-letter-spacing: var(--typography_tablet_h_typography_scale_typography_scale_list_li_letter_spacing, 0px);
-    --te-typo-small-size: var(--typography_tablet_h_typography_scale_typography_scale_small_text_size, 11px);
-    --te-typo-small-family: var(--typography_tablet_h_typography_scale_typography_scale_small_text_family, Inter);
-    --te-typo-small-weight: var(--typography_tablet_h_typography_scale_typography_scale_small_text_weight, 400);
-    --te-typo-small-line-height: var(--typography_tablet_h_typography_scale_typography_scale_small_text_line_height, 1.45);
-    --te-typo-small-letter-spacing: var(--typography_tablet_h_typography_scale_typography_scale_small_text_letter_spacing, 0px);
-    --te-typo-nav-size: var(--typography_tablet_h_typography_scale_typography_scale_navigation_size, 13px);
-    --te-typo-nav-family: var(--typography_tablet_h_typography_scale_typography_scale_navigation_family, Inter);
-    --te-typo-nav-weight: var(--typography_tablet_h_typography_scale_typography_scale_navigation_weight, 400);
-    --te-typo-nav-line-height: var(--typography_tablet_h_typography_scale_typography_scale_navigation_line_height, 1.45);
-    --te-typo-nav-letter-spacing: var(--typography_tablet_h_typography_scale_typography_scale_navigation_letter_spacing, 0px);
+    --te-typo-h6-family: var(
+      --typography_tablet_h_typography_scale_typography_scale_h6_family,
+      Poppins
+    );
+    --te-typo-h6-weight: var(
+      --typography_tablet_h_typography_scale_typography_scale_h6_weight,
+      500
+    );
+    --te-typo-h6-line-height: var(
+      --typography_tablet_h_typography_scale_typography_scale_h6_line_height,
+      1.45
+    );
+    --te-typo-h6-letter-spacing: var(
+      --typography_tablet_h_typography_scale_typography_scale_h6_letter_spacing,
+      0px
+    );
+    --te-typo-paragraph-size: var(
+      --typography_tablet_h_typography_scale_typography_scale_paragraph_size,
+      13px
+    );
+    --te-typo-paragraph-family: var(
+      --typography_tablet_h_typography_scale_typography_scale_paragraph_family,
+      Inter
+    );
+    --te-typo-paragraph-weight: var(
+      --typography_tablet_h_typography_scale_typography_scale_paragraph_weight,
+      400
+    );
+    --te-typo-paragraph-line-height: var(
+      --typography_tablet_h_typography_scale_typography_scale_paragraph_line_height,
+      1.45
+    );
+    --te-typo-paragraph-letter-spacing: var(
+      --typography_tablet_h_typography_scale_typography_scale_paragraph_letter_spacing,
+      0px
+    );
+    --te-typo-body-size: var(
+      --typography_tablet_h_typography_scale_typography_scale_body_size,
+      13px
+    );
+    --te-typo-body-family: var(
+      --typography_tablet_h_typography_scale_typography_scale_body_family,
+      Inter
+    );
+    --te-typo-body-weight: var(
+      --typography_tablet_h_typography_scale_typography_scale_body_weight,
+      400
+    );
+    --te-typo-body-line-height: var(
+      --typography_tablet_h_typography_scale_typography_scale_body_line_height,
+      1.45
+    );
+    --te-typo-body-letter-spacing: var(
+      --typography_tablet_h_typography_scale_typography_scale_body_letter_spacing,
+      0px
+    );
+    --te-typo-list-size: var(
+      --typography_tablet_h_typography_scale_typography_scale_list_li_size,
+      13px
+    );
+    --te-typo-list-family: var(
+      --typography_tablet_h_typography_scale_typography_scale_list_li_family,
+      Inter
+    );
+    --te-typo-list-weight: var(
+      --typography_tablet_h_typography_scale_typography_scale_list_li_weight,
+      400
+    );
+    --te-typo-list-line-height: var(
+      --typography_tablet_h_typography_scale_typography_scale_list_li_line_height,
+      1.45
+    );
+    --te-typo-list-letter-spacing: var(
+      --typography_tablet_h_typography_scale_typography_scale_list_li_letter_spacing,
+      0px
+    );
+    --te-typo-small-size: var(
+      --typography_tablet_h_typography_scale_typography_scale_small_text_size,
+      11px
+    );
+    --te-typo-small-family: var(
+      --typography_tablet_h_typography_scale_typography_scale_small_text_family,
+      Inter
+    );
+    --te-typo-small-weight: var(
+      --typography_tablet_h_typography_scale_typography_scale_small_text_weight,
+      400
+    );
+    --te-typo-small-line-height: var(
+      --typography_tablet_h_typography_scale_typography_scale_small_text_line_height,
+      1.45
+    );
+    --te-typo-small-letter-spacing: var(
+      --typography_tablet_h_typography_scale_typography_scale_small_text_letter_spacing,
+      0px
+    );
+    --te-typo-nav-size: var(
+      --typography_tablet_h_typography_scale_typography_scale_navigation_size,
+      13px
+    );
+    --te-typo-nav-family: var(
+      --typography_tablet_h_typography_scale_typography_scale_navigation_family,
+      Inter
+    );
+    --te-typo-nav-weight: var(
+      --typography_tablet_h_typography_scale_typography_scale_navigation_weight,
+      400
+    );
+    --te-typo-nav-line-height: var(
+      --typography_tablet_h_typography_scale_typography_scale_navigation_line_height,
+      1.45
+    );
+    --te-typo-nav-letter-spacing: var(
+      --typography_tablet_h_typography_scale_typography_scale_navigation_letter_spacing,
+      0px
+    );
   }
 }
 
 @media (max-width: 1023px) and (orientation: portrait) {
   :root {
-    --te-typo-h1-size: var(--typography_tablet_v_typography_scale_typography_scale_h1_title_size, 28px);
-    --te-typo-h1-family: var(--typography_tablet_v_typography_scale_typography_scale_h1_title_family, Poppins);
-    --te-typo-h1-weight: var(--typography_tablet_v_typography_scale_typography_scale_h1_title_weight, 700);
-    --te-typo-h1-line-height: var(--typography_tablet_v_typography_scale_typography_scale_h1_title_line_height, 1.45);
-    --te-typo-h1-letter-spacing: var(--typography_tablet_v_typography_scale_typography_scale_h1_title_letter_spacing, 0px);
+    --te-typo-h1-size: var(
+      --typography_tablet_v_typography_scale_typography_scale_h1_title_size,
+      28px
+    );
+    --te-typo-h1-family: var(
+      --typography_tablet_v_typography_scale_typography_scale_h1_title_family,
+      Poppins
+    );
+    --te-typo-h1-weight: var(
+      --typography_tablet_v_typography_scale_typography_scale_h1_title_weight,
+      700
+    );
+    --te-typo-h1-line-height: var(
+      --typography_tablet_v_typography_scale_typography_scale_h1_title_line_height,
+      1.45
+    );
+    --te-typo-h1-letter-spacing: var(
+      --typography_tablet_v_typography_scale_typography_scale_h1_title_letter_spacing,
+      0px
+    );
     --te-typo-h2-size: var(--typography_tablet_v_typography_scale_typography_scale_h2_size, 23px);
-    --te-typo-h2-family: var(--typography_tablet_v_typography_scale_typography_scale_h2_family, Poppins);
-    --te-typo-h2-weight: var(--typography_tablet_v_typography_scale_typography_scale_h2_weight, 700);
-    --te-typo-h2-line-height: var(--typography_tablet_v_typography_scale_typography_scale_h2_line_height, 1.45);
-    --te-typo-h2-letter-spacing: var(--typography_tablet_v_typography_scale_typography_scale_h2_letter_spacing, 0px);
+    --te-typo-h2-family: var(
+      --typography_tablet_v_typography_scale_typography_scale_h2_family,
+      Poppins
+    );
+    --te-typo-h2-weight: var(
+      --typography_tablet_v_typography_scale_typography_scale_h2_weight,
+      700
+    );
+    --te-typo-h2-line-height: var(
+      --typography_tablet_v_typography_scale_typography_scale_h2_line_height,
+      1.45
+    );
+    --te-typo-h2-letter-spacing: var(
+      --typography_tablet_v_typography_scale_typography_scale_h2_letter_spacing,
+      0px
+    );
     --te-typo-h3-size: var(--typography_tablet_v_typography_scale_typography_scale_h3_size, 19px);
-    --te-typo-h3-family: var(--typography_tablet_v_typography_scale_typography_scale_h3_family, Poppins);
-    --te-typo-h3-weight: var(--typography_tablet_v_typography_scale_typography_scale_h3_weight, 600);
-    --te-typo-h3-line-height: var(--typography_tablet_v_typography_scale_typography_scale_h3_line_height, 1.45);
-    --te-typo-h3-letter-spacing: var(--typography_tablet_v_typography_scale_typography_scale_h3_letter_spacing, 0px);
+    --te-typo-h3-family: var(
+      --typography_tablet_v_typography_scale_typography_scale_h3_family,
+      Poppins
+    );
+    --te-typo-h3-weight: var(
+      --typography_tablet_v_typography_scale_typography_scale_h3_weight,
+      600
+    );
+    --te-typo-h3-line-height: var(
+      --typography_tablet_v_typography_scale_typography_scale_h3_line_height,
+      1.45
+    );
+    --te-typo-h3-letter-spacing: var(
+      --typography_tablet_v_typography_scale_typography_scale_h3_letter_spacing,
+      0px
+    );
     --te-typo-h4-size: var(--typography_tablet_v_typography_scale_typography_scale_h4_size, 16px);
-    --te-typo-h4-family: var(--typography_tablet_v_typography_scale_typography_scale_h4_family, Poppins);
-    --te-typo-h4-weight: var(--typography_tablet_v_typography_scale_typography_scale_h4_weight, 600);
-    --te-typo-h4-line-height: var(--typography_tablet_v_typography_scale_typography_scale_h4_line_height, 1.45);
-    --te-typo-h4-letter-spacing: var(--typography_tablet_v_typography_scale_typography_scale_h4_letter_spacing, 0px);
+    --te-typo-h4-family: var(
+      --typography_tablet_v_typography_scale_typography_scale_h4_family,
+      Poppins
+    );
+    --te-typo-h4-weight: var(
+      --typography_tablet_v_typography_scale_typography_scale_h4_weight,
+      600
+    );
+    --te-typo-h4-line-height: var(
+      --typography_tablet_v_typography_scale_typography_scale_h4_line_height,
+      1.45
+    );
+    --te-typo-h4-letter-spacing: var(
+      --typography_tablet_v_typography_scale_typography_scale_h4_letter_spacing,
+      0px
+    );
     --te-typo-h5-size: var(--typography_tablet_v_typography_scale_typography_scale_h5_size, 14px);
-    --te-typo-h5-family: var(--typography_tablet_v_typography_scale_typography_scale_h5_family, Poppins);
-    --te-typo-h5-weight: var(--typography_tablet_v_typography_scale_typography_scale_h5_weight, 500);
-    --te-typo-h5-line-height: var(--typography_tablet_v_typography_scale_typography_scale_h5_line_height, 1.45);
-    --te-typo-h5-letter-spacing: var(--typography_tablet_v_typography_scale_typography_scale_h5_letter_spacing, 0px);
+    --te-typo-h5-family: var(
+      --typography_tablet_v_typography_scale_typography_scale_h5_family,
+      Poppins
+    );
+    --te-typo-h5-weight: var(
+      --typography_tablet_v_typography_scale_typography_scale_h5_weight,
+      500
+    );
+    --te-typo-h5-line-height: var(
+      --typography_tablet_v_typography_scale_typography_scale_h5_line_height,
+      1.45
+    );
+    --te-typo-h5-letter-spacing: var(
+      --typography_tablet_v_typography_scale_typography_scale_h5_letter_spacing,
+      0px
+    );
     --te-typo-h6-size: var(--typography_tablet_v_typography_scale_typography_scale_h6_size, 13px);
-    --te-typo-h6-family: var(--typography_tablet_v_typography_scale_typography_scale_h6_family, Poppins);
-    --te-typo-h6-weight: var(--typography_tablet_v_typography_scale_typography_scale_h6_weight, 500);
-    --te-typo-h6-line-height: var(--typography_tablet_v_typography_scale_typography_scale_h6_line_height, 1.45);
-    --te-typo-h6-letter-spacing: var(--typography_tablet_v_typography_scale_typography_scale_h6_letter_spacing, 0px);
-    --te-typo-paragraph-size: var(--typography_tablet_v_typography_scale_typography_scale_paragraph_size, 13px);
-    --te-typo-paragraph-family: var(--typography_tablet_v_typography_scale_typography_scale_paragraph_family, Inter);
-    --te-typo-paragraph-weight: var(--typography_tablet_v_typography_scale_typography_scale_paragraph_weight, 400);
-    --te-typo-paragraph-line-height: var(--typography_tablet_v_typography_scale_typography_scale_paragraph_line_height, 1.45);
-    --te-typo-paragraph-letter-spacing: var(--typography_tablet_v_typography_scale_typography_scale_paragraph_letter_spacing, 0px);
-    --te-typo-body-size: var(--typography_tablet_v_typography_scale_typography_scale_body_size, 13px);
-    --te-typo-body-family: var(--typography_tablet_v_typography_scale_typography_scale_body_family, Inter);
-    --te-typo-body-weight: var(--typography_tablet_v_typography_scale_typography_scale_body_weight, 400);
-    --te-typo-body-line-height: var(--typography_tablet_v_typography_scale_typography_scale_body_line_height, 1.45);
-    --te-typo-body-letter-spacing: var(--typography_tablet_v_typography_scale_typography_scale_body_letter_spacing, 0px);
-    --te-typo-list-size: var(--typography_tablet_v_typography_scale_typography_scale_list_li_size, 13px);
-    --te-typo-list-family: var(--typography_tablet_v_typography_scale_typography_scale_list_li_family, Inter);
-    --te-typo-list-weight: var(--typography_tablet_v_typography_scale_typography_scale_list_li_weight, 400);
-    --te-typo-list-line-height: var(--typography_tablet_v_typography_scale_typography_scale_list_li_line_height, 1.45);
-    --te-typo-list-letter-spacing: var(--typography_tablet_v_typography_scale_typography_scale_list_li_letter_spacing, 0px);
-    --te-typo-small-size: var(--typography_tablet_v_typography_scale_typography_scale_small_text_size, 11px);
-    --te-typo-small-family: var(--typography_tablet_v_typography_scale_typography_scale_small_text_family, Inter);
-    --te-typo-small-weight: var(--typography_tablet_v_typography_scale_typography_scale_small_text_weight, 400);
-    --te-typo-small-line-height: var(--typography_tablet_v_typography_scale_typography_scale_small_text_line_height, 1.45);
-    --te-typo-small-letter-spacing: var(--typography_tablet_v_typography_scale_typography_scale_small_text_letter_spacing, 0px);
-    --te-typo-nav-size: var(--typography_tablet_v_typography_scale_typography_scale_navigation_size, 13px);
-    --te-typo-nav-family: var(--typography_tablet_v_typography_scale_typography_scale_navigation_family, Inter);
-    --te-typo-nav-weight: var(--typography_tablet_v_typography_scale_typography_scale_navigation_weight, 400);
-    --te-typo-nav-line-height: var(--typography_tablet_v_typography_scale_typography_scale_navigation_line_height, 1.45);
-    --te-typo-nav-letter-spacing: var(--typography_tablet_v_typography_scale_typography_scale_navigation_letter_spacing, 0px);
+    --te-typo-h6-family: var(
+      --typography_tablet_v_typography_scale_typography_scale_h6_family,
+      Poppins
+    );
+    --te-typo-h6-weight: var(
+      --typography_tablet_v_typography_scale_typography_scale_h6_weight,
+      500
+    );
+    --te-typo-h6-line-height: var(
+      --typography_tablet_v_typography_scale_typography_scale_h6_line_height,
+      1.45
+    );
+    --te-typo-h6-letter-spacing: var(
+      --typography_tablet_v_typography_scale_typography_scale_h6_letter_spacing,
+      0px
+    );
+    --te-typo-paragraph-size: var(
+      --typography_tablet_v_typography_scale_typography_scale_paragraph_size,
+      13px
+    );
+    --te-typo-paragraph-family: var(
+      --typography_tablet_v_typography_scale_typography_scale_paragraph_family,
+      Inter
+    );
+    --te-typo-paragraph-weight: var(
+      --typography_tablet_v_typography_scale_typography_scale_paragraph_weight,
+      400
+    );
+    --te-typo-paragraph-line-height: var(
+      --typography_tablet_v_typography_scale_typography_scale_paragraph_line_height,
+      1.45
+    );
+    --te-typo-paragraph-letter-spacing: var(
+      --typography_tablet_v_typography_scale_typography_scale_paragraph_letter_spacing,
+      0px
+    );
+    --te-typo-body-size: var(
+      --typography_tablet_v_typography_scale_typography_scale_body_size,
+      13px
+    );
+    --te-typo-body-family: var(
+      --typography_tablet_v_typography_scale_typography_scale_body_family,
+      Inter
+    );
+    --te-typo-body-weight: var(
+      --typography_tablet_v_typography_scale_typography_scale_body_weight,
+      400
+    );
+    --te-typo-body-line-height: var(
+      --typography_tablet_v_typography_scale_typography_scale_body_line_height,
+      1.45
+    );
+    --te-typo-body-letter-spacing: var(
+      --typography_tablet_v_typography_scale_typography_scale_body_letter_spacing,
+      0px
+    );
+    --te-typo-list-size: var(
+      --typography_tablet_v_typography_scale_typography_scale_list_li_size,
+      13px
+    );
+    --te-typo-list-family: var(
+      --typography_tablet_v_typography_scale_typography_scale_list_li_family,
+      Inter
+    );
+    --te-typo-list-weight: var(
+      --typography_tablet_v_typography_scale_typography_scale_list_li_weight,
+      400
+    );
+    --te-typo-list-line-height: var(
+      --typography_tablet_v_typography_scale_typography_scale_list_li_line_height,
+      1.45
+    );
+    --te-typo-list-letter-spacing: var(
+      --typography_tablet_v_typography_scale_typography_scale_list_li_letter_spacing,
+      0px
+    );
+    --te-typo-small-size: var(
+      --typography_tablet_v_typography_scale_typography_scale_small_text_size,
+      11px
+    );
+    --te-typo-small-family: var(
+      --typography_tablet_v_typography_scale_typography_scale_small_text_family,
+      Inter
+    );
+    --te-typo-small-weight: var(
+      --typography_tablet_v_typography_scale_typography_scale_small_text_weight,
+      400
+    );
+    --te-typo-small-line-height: var(
+      --typography_tablet_v_typography_scale_typography_scale_small_text_line_height,
+      1.45
+    );
+    --te-typo-small-letter-spacing: var(
+      --typography_tablet_v_typography_scale_typography_scale_small_text_letter_spacing,
+      0px
+    );
+    --te-typo-nav-size: var(
+      --typography_tablet_v_typography_scale_typography_scale_navigation_size,
+      13px
+    );
+    --te-typo-nav-family: var(
+      --typography_tablet_v_typography_scale_typography_scale_navigation_family,
+      Inter
+    );
+    --te-typo-nav-weight: var(
+      --typography_tablet_v_typography_scale_typography_scale_navigation_weight,
+      400
+    );
+    --te-typo-nav-line-height: var(
+      --typography_tablet_v_typography_scale_typography_scale_navigation_line_height,
+      1.45
+    );
+    --te-typo-nav-letter-spacing: var(
+      --typography_tablet_v_typography_scale_typography_scale_navigation_letter_spacing,
+      0px
+    );
   }
 }
 
 @media (max-width: 767px) {
   :root {
-    --te-typo-h1-size: var(--typography_mobile_h_typography_scale_typography_scale_h1_title_size, 24px);
-    --te-typo-h1-family: var(--typography_mobile_h_typography_scale_typography_scale_h1_title_family, Poppins);
-    --te-typo-h1-weight: var(--typography_mobile_h_typography_scale_typography_scale_h1_title_weight, 700);
-    --te-typo-h1-line-height: var(--typography_mobile_h_typography_scale_typography_scale_h1_title_line_height, 1.4);
-    --te-typo-h1-letter-spacing: var(--typography_mobile_h_typography_scale_typography_scale_h1_title_letter_spacing, 0px);
+    --te-typo-h1-size: var(
+      --typography_mobile_h_typography_scale_typography_scale_h1_title_size,
+      24px
+    );
+    --te-typo-h1-family: var(
+      --typography_mobile_h_typography_scale_typography_scale_h1_title_family,
+      Poppins
+    );
+    --te-typo-h1-weight: var(
+      --typography_mobile_h_typography_scale_typography_scale_h1_title_weight,
+      700
+    );
+    --te-typo-h1-line-height: var(
+      --typography_mobile_h_typography_scale_typography_scale_h1_title_line_height,
+      1.4
+    );
+    --te-typo-h1-letter-spacing: var(
+      --typography_mobile_h_typography_scale_typography_scale_h1_title_letter_spacing,
+      0px
+    );
     --te-typo-h2-size: var(--typography_mobile_h_typography_scale_typography_scale_h2_size, 20px);
-    --te-typo-h2-family: var(--typography_mobile_h_typography_scale_typography_scale_h2_family, Poppins);
-    --te-typo-h2-weight: var(--typography_mobile_h_typography_scale_typography_scale_h2_weight, 700);
-    --te-typo-h2-line-height: var(--typography_mobile_h_typography_scale_typography_scale_h2_line_height, 1.4);
-    --te-typo-h2-letter-spacing: var(--typography_mobile_h_typography_scale_typography_scale_h2_letter_spacing, 0px);
+    --te-typo-h2-family: var(
+      --typography_mobile_h_typography_scale_typography_scale_h2_family,
+      Poppins
+    );
+    --te-typo-h2-weight: var(
+      --typography_mobile_h_typography_scale_typography_scale_h2_weight,
+      700
+    );
+    --te-typo-h2-line-height: var(
+      --typography_mobile_h_typography_scale_typography_scale_h2_line_height,
+      1.4
+    );
+    --te-typo-h2-letter-spacing: var(
+      --typography_mobile_h_typography_scale_typography_scale_h2_letter_spacing,
+      0px
+    );
     --te-typo-h3-size: var(--typography_mobile_h_typography_scale_typography_scale_h3_size, 18px);
-    --te-typo-h3-family: var(--typography_mobile_h_typography_scale_typography_scale_h3_family, Poppins);
-    --te-typo-h3-weight: var(--typography_mobile_h_typography_scale_typography_scale_h3_weight, 600);
-    --te-typo-h3-line-height: var(--typography_mobile_h_typography_scale_typography_scale_h3_line_height, 1.4);
-    --te-typo-h3-letter-spacing: var(--typography_mobile_h_typography_scale_typography_scale_h3_letter_spacing, 0px);
+    --te-typo-h3-family: var(
+      --typography_mobile_h_typography_scale_typography_scale_h3_family,
+      Poppins
+    );
+    --te-typo-h3-weight: var(
+      --typography_mobile_h_typography_scale_typography_scale_h3_weight,
+      600
+    );
+    --te-typo-h3-line-height: var(
+      --typography_mobile_h_typography_scale_typography_scale_h3_line_height,
+      1.4
+    );
+    --te-typo-h3-letter-spacing: var(
+      --typography_mobile_h_typography_scale_typography_scale_h3_letter_spacing,
+      0px
+    );
     --te-typo-h4-size: var(--typography_mobile_h_typography_scale_typography_scale_h4_size, 15px);
-    --te-typo-h4-family: var(--typography_mobile_h_typography_scale_typography_scale_h4_family, Poppins);
-    --te-typo-h4-weight: var(--typography_mobile_h_typography_scale_typography_scale_h4_weight, 600);
-    --te-typo-h4-line-height: var(--typography_mobile_h_typography_scale_typography_scale_h4_line_height, 1.4);
-    --te-typo-h4-letter-spacing: var(--typography_mobile_h_typography_scale_typography_scale_h4_letter_spacing, 0px);
+    --te-typo-h4-family: var(
+      --typography_mobile_h_typography_scale_typography_scale_h4_family,
+      Poppins
+    );
+    --te-typo-h4-weight: var(
+      --typography_mobile_h_typography_scale_typography_scale_h4_weight,
+      600
+    );
+    --te-typo-h4-line-height: var(
+      --typography_mobile_h_typography_scale_typography_scale_h4_line_height,
+      1.4
+    );
+    --te-typo-h4-letter-spacing: var(
+      --typography_mobile_h_typography_scale_typography_scale_h4_letter_spacing,
+      0px
+    );
     --te-typo-h5-size: var(--typography_mobile_h_typography_scale_typography_scale_h5_size, 13px);
-    --te-typo-h5-family: var(--typography_mobile_h_typography_scale_typography_scale_h5_family, Poppins);
-    --te-typo-h5-weight: var(--typography_mobile_h_typography_scale_typography_scale_h5_weight, 500);
-    --te-typo-h5-line-height: var(--typography_mobile_h_typography_scale_typography_scale_h5_line_height, 1.4);
-    --te-typo-h5-letter-spacing: var(--typography_mobile_h_typography_scale_typography_scale_h5_letter_spacing, 0px);
+    --te-typo-h5-family: var(
+      --typography_mobile_h_typography_scale_typography_scale_h5_family,
+      Poppins
+    );
+    --te-typo-h5-weight: var(
+      --typography_mobile_h_typography_scale_typography_scale_h5_weight,
+      500
+    );
+    --te-typo-h5-line-height: var(
+      --typography_mobile_h_typography_scale_typography_scale_h5_line_height,
+      1.4
+    );
+    --te-typo-h5-letter-spacing: var(
+      --typography_mobile_h_typography_scale_typography_scale_h5_letter_spacing,
+      0px
+    );
     --te-typo-h6-size: var(--typography_mobile_h_typography_scale_typography_scale_h6_size, 12px);
-    --te-typo-h6-family: var(--typography_mobile_h_typography_scale_typography_scale_h6_family, Poppins);
-    --te-typo-h6-weight: var(--typography_mobile_h_typography_scale_typography_scale_h6_weight, 500);
-    --te-typo-h6-line-height: var(--typography_mobile_h_typography_scale_typography_scale_h6_line_height, 1.4);
-    --te-typo-h6-letter-spacing: var(--typography_mobile_h_typography_scale_typography_scale_h6_letter_spacing, 0px);
-    --te-typo-paragraph-size: var(--typography_mobile_h_typography_scale_typography_scale_paragraph_size, 13px);
-    --te-typo-paragraph-family: var(--typography_mobile_h_typography_scale_typography_scale_paragraph_family, Inter);
-    --te-typo-paragraph-weight: var(--typography_mobile_h_typography_scale_typography_scale_paragraph_weight, 400);
-    --te-typo-paragraph-line-height: var(--typography_mobile_h_typography_scale_typography_scale_paragraph_line_height, 1.4);
-    --te-typo-paragraph-letter-spacing: var(--typography_mobile_h_typography_scale_typography_scale_paragraph_letter_spacing, 0px);
-    --te-typo-body-size: var(--typography_mobile_h_typography_scale_typography_scale_body_size, 13px);
-    --te-typo-body-family: var(--typography_mobile_h_typography_scale_typography_scale_body_family, Inter);
-    --te-typo-body-weight: var(--typography_mobile_h_typography_scale_typography_scale_body_weight, 400);
-    --te-typo-body-line-height: var(--typography_mobile_h_typography_scale_typography_scale_body_line_height, 1.4);
-    --te-typo-body-letter-spacing: var(--typography_mobile_h_typography_scale_typography_scale_body_letter_spacing, 0px);
-    --te-typo-list-size: var(--typography_mobile_h_typography_scale_typography_scale_list_li_size, 13px);
-    --te-typo-list-family: var(--typography_mobile_h_typography_scale_typography_scale_list_li_family, Inter);
-    --te-typo-list-weight: var(--typography_mobile_h_typography_scale_typography_scale_list_li_weight, 400);
-    --te-typo-list-line-height: var(--typography_mobile_h_typography_scale_typography_scale_list_li_line_height, 1.4);
-    --te-typo-list-letter-spacing: var(--typography_mobile_h_typography_scale_typography_scale_list_li_letter_spacing, 0px);
-    --te-typo-small-size: var(--typography_mobile_h_typography_scale_typography_scale_small_text_size, 11px);
-    --te-typo-small-family: var(--typography_mobile_h_typography_scale_typography_scale_small_text_family, Inter);
-    --te-typo-small-weight: var(--typography_mobile_h_typography_scale_typography_scale_small_text_weight, 400);
-    --te-typo-small-line-height: var(--typography_mobile_h_typography_scale_typography_scale_small_text_line_height, 1.4);
-    --te-typo-small-letter-spacing: var(--typography_mobile_h_typography_scale_typography_scale_small_text_letter_spacing, 0px);
-    --te-typo-nav-size: var(--typography_mobile_h_typography_scale_typography_scale_navigation_size, 13px);
-    --te-typo-nav-family: var(--typography_mobile_h_typography_scale_typography_scale_navigation_family, Inter);
-    --te-typo-nav-weight: var(--typography_mobile_h_typography_scale_typography_scale_navigation_weight, 400);
-    --te-typo-nav-line-height: var(--typography_mobile_h_typography_scale_typography_scale_navigation_line_height, 1.4);
-    --te-typo-nav-letter-spacing: var(--typography_mobile_h_typography_scale_typography_scale_navigation_letter_spacing, 0px);
+    --te-typo-h6-family: var(
+      --typography_mobile_h_typography_scale_typography_scale_h6_family,
+      Poppins
+    );
+    --te-typo-h6-weight: var(
+      --typography_mobile_h_typography_scale_typography_scale_h6_weight,
+      500
+    );
+    --te-typo-h6-line-height: var(
+      --typography_mobile_h_typography_scale_typography_scale_h6_line_height,
+      1.4
+    );
+    --te-typo-h6-letter-spacing: var(
+      --typography_mobile_h_typography_scale_typography_scale_h6_letter_spacing,
+      0px
+    );
+    --te-typo-paragraph-size: var(
+      --typography_mobile_h_typography_scale_typography_scale_paragraph_size,
+      13px
+    );
+    --te-typo-paragraph-family: var(
+      --typography_mobile_h_typography_scale_typography_scale_paragraph_family,
+      Inter
+    );
+    --te-typo-paragraph-weight: var(
+      --typography_mobile_h_typography_scale_typography_scale_paragraph_weight,
+      400
+    );
+    --te-typo-paragraph-line-height: var(
+      --typography_mobile_h_typography_scale_typography_scale_paragraph_line_height,
+      1.4
+    );
+    --te-typo-paragraph-letter-spacing: var(
+      --typography_mobile_h_typography_scale_typography_scale_paragraph_letter_spacing,
+      0px
+    );
+    --te-typo-body-size: var(
+      --typography_mobile_h_typography_scale_typography_scale_body_size,
+      13px
+    );
+    --te-typo-body-family: var(
+      --typography_mobile_h_typography_scale_typography_scale_body_family,
+      Inter
+    );
+    --te-typo-body-weight: var(
+      --typography_mobile_h_typography_scale_typography_scale_body_weight,
+      400
+    );
+    --te-typo-body-line-height: var(
+      --typography_mobile_h_typography_scale_typography_scale_body_line_height,
+      1.4
+    );
+    --te-typo-body-letter-spacing: var(
+      --typography_mobile_h_typography_scale_typography_scale_body_letter_spacing,
+      0px
+    );
+    --te-typo-list-size: var(
+      --typography_mobile_h_typography_scale_typography_scale_list_li_size,
+      13px
+    );
+    --te-typo-list-family: var(
+      --typography_mobile_h_typography_scale_typography_scale_list_li_family,
+      Inter
+    );
+    --te-typo-list-weight: var(
+      --typography_mobile_h_typography_scale_typography_scale_list_li_weight,
+      400
+    );
+    --te-typo-list-line-height: var(
+      --typography_mobile_h_typography_scale_typography_scale_list_li_line_height,
+      1.4
+    );
+    --te-typo-list-letter-spacing: var(
+      --typography_mobile_h_typography_scale_typography_scale_list_li_letter_spacing,
+      0px
+    );
+    --te-typo-small-size: var(
+      --typography_mobile_h_typography_scale_typography_scale_small_text_size,
+      11px
+    );
+    --te-typo-small-family: var(
+      --typography_mobile_h_typography_scale_typography_scale_small_text_family,
+      Inter
+    );
+    --te-typo-small-weight: var(
+      --typography_mobile_h_typography_scale_typography_scale_small_text_weight,
+      400
+    );
+    --te-typo-small-line-height: var(
+      --typography_mobile_h_typography_scale_typography_scale_small_text_line_height,
+      1.4
+    );
+    --te-typo-small-letter-spacing: var(
+      --typography_mobile_h_typography_scale_typography_scale_small_text_letter_spacing,
+      0px
+    );
+    --te-typo-nav-size: var(
+      --typography_mobile_h_typography_scale_typography_scale_navigation_size,
+      13px
+    );
+    --te-typo-nav-family: var(
+      --typography_mobile_h_typography_scale_typography_scale_navigation_family,
+      Inter
+    );
+    --te-typo-nav-weight: var(
+      --typography_mobile_h_typography_scale_typography_scale_navigation_weight,
+      400
+    );
+    --te-typo-nav-line-height: var(
+      --typography_mobile_h_typography_scale_typography_scale_navigation_line_height,
+      1.4
+    );
+    --te-typo-nav-letter-spacing: var(
+      --typography_mobile_h_typography_scale_typography_scale_navigation_letter_spacing,
+      0px
+    );
   }
 }
 
 @media (max-width: 767px) and (orientation: portrait) {
   :root {
-    --te-typo-h1-size: var(--typography_mobile_v_typography_scale_typography_scale_h1_title_size, 24px);
-    --te-typo-h1-family: var(--typography_mobile_v_typography_scale_typography_scale_h1_title_family, Poppins);
-    --te-typo-h1-weight: var(--typography_mobile_v_typography_scale_typography_scale_h1_title_weight, 700);
-    --te-typo-h1-line-height: var(--typography_mobile_v_typography_scale_typography_scale_h1_title_line_height, 1.4);
-    --te-typo-h1-letter-spacing: var(--typography_mobile_v_typography_scale_typography_scale_h1_title_letter_spacing, 0px);
+    --te-typo-h1-size: var(
+      --typography_mobile_v_typography_scale_typography_scale_h1_title_size,
+      24px
+    );
+    --te-typo-h1-family: var(
+      --typography_mobile_v_typography_scale_typography_scale_h1_title_family,
+      Poppins
+    );
+    --te-typo-h1-weight: var(
+      --typography_mobile_v_typography_scale_typography_scale_h1_title_weight,
+      700
+    );
+    --te-typo-h1-line-height: var(
+      --typography_mobile_v_typography_scale_typography_scale_h1_title_line_height,
+      1.4
+    );
+    --te-typo-h1-letter-spacing: var(
+      --typography_mobile_v_typography_scale_typography_scale_h1_title_letter_spacing,
+      0px
+    );
     --te-typo-h2-size: var(--typography_mobile_v_typography_scale_typography_scale_h2_size, 20px);
-    --te-typo-h2-family: var(--typography_mobile_v_typography_scale_typography_scale_h2_family, Poppins);
-    --te-typo-h2-weight: var(--typography_mobile_v_typography_scale_typography_scale_h2_weight, 700);
-    --te-typo-h2-line-height: var(--typography_mobile_v_typography_scale_typography_scale_h2_line_height, 1.4);
-    --te-typo-h2-letter-spacing: var(--typography_mobile_v_typography_scale_typography_scale_h2_letter_spacing, 0px);
+    --te-typo-h2-family: var(
+      --typography_mobile_v_typography_scale_typography_scale_h2_family,
+      Poppins
+    );
+    --te-typo-h2-weight: var(
+      --typography_mobile_v_typography_scale_typography_scale_h2_weight,
+      700
+    );
+    --te-typo-h2-line-height: var(
+      --typography_mobile_v_typography_scale_typography_scale_h2_line_height,
+      1.4
+    );
+    --te-typo-h2-letter-spacing: var(
+      --typography_mobile_v_typography_scale_typography_scale_h2_letter_spacing,
+      0px
+    );
     --te-typo-h3-size: var(--typography_mobile_v_typography_scale_typography_scale_h3_size, 18px);
-    --te-typo-h3-family: var(--typography_mobile_v_typography_scale_typography_scale_h3_family, Poppins);
-    --te-typo-h3-weight: var(--typography_mobile_v_typography_scale_typography_scale_h3_weight, 600);
-    --te-typo-h3-line-height: var(--typography_mobile_v_typography_scale_typography_scale_h3_line_height, 1.4);
-    --te-typo-h3-letter-spacing: var(--typography_mobile_v_typography_scale_typography_scale_h3_letter_spacing, 0px);
+    --te-typo-h3-family: var(
+      --typography_mobile_v_typography_scale_typography_scale_h3_family,
+      Poppins
+    );
+    --te-typo-h3-weight: var(
+      --typography_mobile_v_typography_scale_typography_scale_h3_weight,
+      600
+    );
+    --te-typo-h3-line-height: var(
+      --typography_mobile_v_typography_scale_typography_scale_h3_line_height,
+      1.4
+    );
+    --te-typo-h3-letter-spacing: var(
+      --typography_mobile_v_typography_scale_typography_scale_h3_letter_spacing,
+      0px
+    );
     --te-typo-h4-size: var(--typography_mobile_v_typography_scale_typography_scale_h4_size, 15px);
-    --te-typo-h4-family: var(--typography_mobile_v_typography_scale_typography_scale_h4_family, Poppins);
-    --te-typo-h4-weight: var(--typography_mobile_v_typography_scale_typography_scale_h4_weight, 600);
-    --te-typo-h4-line-height: var(--typography_mobile_v_typography_scale_typography_scale_h4_line_height, 1.4);
-    --te-typo-h4-letter-spacing: var(--typography_mobile_v_typography_scale_typography_scale_h4_letter_spacing, 0px);
+    --te-typo-h4-family: var(
+      --typography_mobile_v_typography_scale_typography_scale_h4_family,
+      Poppins
+    );
+    --te-typo-h4-weight: var(
+      --typography_mobile_v_typography_scale_typography_scale_h4_weight,
+      600
+    );
+    --te-typo-h4-line-height: var(
+      --typography_mobile_v_typography_scale_typography_scale_h4_line_height,
+      1.4
+    );
+    --te-typo-h4-letter-spacing: var(
+      --typography_mobile_v_typography_scale_typography_scale_h4_letter_spacing,
+      0px
+    );
     --te-typo-h5-size: var(--typography_mobile_v_typography_scale_typography_scale_h5_size, 13px);
-    --te-typo-h5-family: var(--typography_mobile_v_typography_scale_typography_scale_h5_family, Poppins);
-    --te-typo-h5-weight: var(--typography_mobile_v_typography_scale_typography_scale_h5_weight, 500);
-    --te-typo-h5-line-height: var(--typography_mobile_v_typography_scale_typography_scale_h5_line_height, 1.4);
-    --te-typo-h5-letter-spacing: var(--typography_mobile_v_typography_scale_typography_scale_h5_letter_spacing, 0px);
+    --te-typo-h5-family: var(
+      --typography_mobile_v_typography_scale_typography_scale_h5_family,
+      Poppins
+    );
+    --te-typo-h5-weight: var(
+      --typography_mobile_v_typography_scale_typography_scale_h5_weight,
+      500
+    );
+    --te-typo-h5-line-height: var(
+      --typography_mobile_v_typography_scale_typography_scale_h5_line_height,
+      1.4
+    );
+    --te-typo-h5-letter-spacing: var(
+      --typography_mobile_v_typography_scale_typography_scale_h5_letter_spacing,
+      0px
+    );
     --te-typo-h6-size: var(--typography_mobile_v_typography_scale_typography_scale_h6_size, 12px);
-    --te-typo-h6-family: var(--typography_mobile_v_typography_scale_typography_scale_h6_family, Poppins);
-    --te-typo-h6-weight: var(--typography_mobile_v_typography_scale_typography_scale_h6_weight, 500);
-    --te-typo-h6-line-height: var(--typography_mobile_v_typography_scale_typography_scale_h6_line_height, 1.4);
-    --te-typo-h6-letter-spacing: var(--typography_mobile_v_typography_scale_typography_scale_h6_letter_spacing, 0px);
-    --te-typo-paragraph-size: var(--typography_mobile_v_typography_scale_typography_scale_paragraph_size, 13px);
-    --te-typo-paragraph-family: var(--typography_mobile_v_typography_scale_typography_scale_paragraph_family, Inter);
-    --te-typo-paragraph-weight: var(--typography_mobile_v_typography_scale_typography_scale_paragraph_weight, 400);
-    --te-typo-paragraph-line-height: var(--typography_mobile_v_typography_scale_typography_scale_paragraph_line_height, 1.4);
-    --te-typo-paragraph-letter-spacing: var(--typography_mobile_v_typography_scale_typography_scale_paragraph_letter_spacing, 0px);
-    --te-typo-body-size: var(--typography_mobile_v_typography_scale_typography_scale_body_size, 13px);
-    --te-typo-body-family: var(--typography_mobile_v_typography_scale_typography_scale_body_family, Inter);
-    --te-typo-body-weight: var(--typography_mobile_v_typography_scale_typography_scale_body_weight, 400);
-    --te-typo-body-line-height: var(--typography_mobile_v_typography_scale_typography_scale_body_line_height, 1.4);
-    --te-typo-body-letter-spacing: var(--typography_mobile_v_typography_scale_typography_scale_body_letter_spacing, 0px);
-    --te-typo-list-size: var(--typography_mobile_v_typography_scale_typography_scale_list_li_size, 13px);
-    --te-typo-list-family: var(--typography_mobile_v_typography_scale_typography_scale_list_li_family, Inter);
-    --te-typo-list-weight: var(--typography_mobile_v_typography_scale_typography_scale_list_li_weight, 400);
-    --te-typo-list-line-height: var(--typography_mobile_v_typography_scale_typography_scale_list_li_line_height, 1.4);
-    --te-typo-list-letter-spacing: var(--typography_mobile_v_typography_scale_typography_scale_list_li_letter_spacing, 0px);
-    --te-typo-small-size: var(--typography_mobile_v_typography_scale_typography_scale_small_text_size, 11px);
-    --te-typo-small-family: var(--typography_mobile_v_typography_scale_typography_scale_small_text_family, Inter);
-    --te-typo-small-weight: var(--typography_mobile_v_typography_scale_typography_scale_small_text_weight, 400);
-    --te-typo-small-line-height: var(--typography_mobile_v_typography_scale_typography_scale_small_text_line_height, 1.4);
-    --te-typo-small-letter-spacing: var(--typography_mobile_v_typography_scale_typography_scale_small_text_letter_spacing, 0px);
-    --te-typo-nav-size: var(--typography_mobile_v_typography_scale_typography_scale_navigation_size, 13px);
-    --te-typo-nav-family: var(--typography_mobile_v_typography_scale_typography_scale_navigation_family, Inter);
-    --te-typo-nav-weight: var(--typography_mobile_v_typography_scale_typography_scale_navigation_weight, 400);
-    --te-typo-nav-line-height: var(--typography_mobile_v_typography_scale_typography_scale_navigation_line_height, 1.4);
-    --te-typo-nav-letter-spacing: var(--typography_mobile_v_typography_scale_typography_scale_navigation_letter_spacing, 0px);
+    --te-typo-h6-family: var(
+      --typography_mobile_v_typography_scale_typography_scale_h6_family,
+      Poppins
+    );
+    --te-typo-h6-weight: var(
+      --typography_mobile_v_typography_scale_typography_scale_h6_weight,
+      500
+    );
+    --te-typo-h6-line-height: var(
+      --typography_mobile_v_typography_scale_typography_scale_h6_line_height,
+      1.4
+    );
+    --te-typo-h6-letter-spacing: var(
+      --typography_mobile_v_typography_scale_typography_scale_h6_letter_spacing,
+      0px
+    );
+    --te-typo-paragraph-size: var(
+      --typography_mobile_v_typography_scale_typography_scale_paragraph_size,
+      13px
+    );
+    --te-typo-paragraph-family: var(
+      --typography_mobile_v_typography_scale_typography_scale_paragraph_family,
+      Inter
+    );
+    --te-typo-paragraph-weight: var(
+      --typography_mobile_v_typography_scale_typography_scale_paragraph_weight,
+      400
+    );
+    --te-typo-paragraph-line-height: var(
+      --typography_mobile_v_typography_scale_typography_scale_paragraph_line_height,
+      1.4
+    );
+    --te-typo-paragraph-letter-spacing: var(
+      --typography_mobile_v_typography_scale_typography_scale_paragraph_letter_spacing,
+      0px
+    );
+    --te-typo-body-size: var(
+      --typography_mobile_v_typography_scale_typography_scale_body_size,
+      13px
+    );
+    --te-typo-body-family: var(
+      --typography_mobile_v_typography_scale_typography_scale_body_family,
+      Inter
+    );
+    --te-typo-body-weight: var(
+      --typography_mobile_v_typography_scale_typography_scale_body_weight,
+      400
+    );
+    --te-typo-body-line-height: var(
+      --typography_mobile_v_typography_scale_typography_scale_body_line_height,
+      1.4
+    );
+    --te-typo-body-letter-spacing: var(
+      --typography_mobile_v_typography_scale_typography_scale_body_letter_spacing,
+      0px
+    );
+    --te-typo-list-size: var(
+      --typography_mobile_v_typography_scale_typography_scale_list_li_size,
+      13px
+    );
+    --te-typo-list-family: var(
+      --typography_mobile_v_typography_scale_typography_scale_list_li_family,
+      Inter
+    );
+    --te-typo-list-weight: var(
+      --typography_mobile_v_typography_scale_typography_scale_list_li_weight,
+      400
+    );
+    --te-typo-list-line-height: var(
+      --typography_mobile_v_typography_scale_typography_scale_list_li_line_height,
+      1.4
+    );
+    --te-typo-list-letter-spacing: var(
+      --typography_mobile_v_typography_scale_typography_scale_list_li_letter_spacing,
+      0px
+    );
+    --te-typo-small-size: var(
+      --typography_mobile_v_typography_scale_typography_scale_small_text_size,
+      11px
+    );
+    --te-typo-small-family: var(
+      --typography_mobile_v_typography_scale_typography_scale_small_text_family,
+      Inter
+    );
+    --te-typo-small-weight: var(
+      --typography_mobile_v_typography_scale_typography_scale_small_text_weight,
+      400
+    );
+    --te-typo-small-line-height: var(
+      --typography_mobile_v_typography_scale_typography_scale_small_text_line_height,
+      1.4
+    );
+    --te-typo-small-letter-spacing: var(
+      --typography_mobile_v_typography_scale_typography_scale_small_text_letter_spacing,
+      0px
+    );
+    --te-typo-nav-size: var(
+      --typography_mobile_v_typography_scale_typography_scale_navigation_size,
+      13px
+    );
+    --te-typo-nav-family: var(
+      --typography_mobile_v_typography_scale_typography_scale_navigation_family,
+      Inter
+    );
+    --te-typo-nav-weight: var(
+      --typography_mobile_v_typography_scale_typography_scale_navigation_weight,
+      400
+    );
+    --te-typo-nav-line-height: var(
+      --typography_mobile_v_typography_scale_typography_scale_navigation_line_height,
+      1.4
+    );
+    --te-typo-nav-letter-spacing: var(
+      --typography_mobile_v_typography_scale_typography_scale_navigation_letter_spacing,
+      0px
+    );
   }
 }
 

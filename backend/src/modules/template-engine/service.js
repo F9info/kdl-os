@@ -73,7 +73,56 @@ export function validateFieldValue(field, value, customFontNames = []) {
       } catch { return 'multiselect value must be valid JSON array'; }
       break;
     }
-    // text, textarea, password, file, fonts, imglist: accept any string
+    case 'text': {
+      if (typeof value !== 'string' || value.length > 500) return 'text value must be a string ≤ 500 characters';
+      break;
+    }
+    case 'textarea': {
+      if (typeof value !== 'string' || value.length > 10000) return 'textarea value must be a string ≤ 10,000 characters';
+      break;
+    }
+    case 'password': {
+      if (typeof value !== 'string' || value.length > 500) return 'password value must be a string ≤ 500 characters';
+      break;
+    }
+    case 'file': {
+      if (typeof value !== 'string' || value.length > 2000) return 'file value must be a string ≤ 2,000 characters';
+      break;
+    }
+    case 'fonts': {
+      try {
+        const arr = JSON.parse(value);
+        if (!Array.isArray(arr)) return 'fonts value must be a JSON array';
+        for (const fd of arr) {
+          if (!fd || typeof fd !== 'object') return 'each font entry must be an object';
+          if (fd.name !== undefined && (typeof fd.name !== 'string' || fd.name.length > 200))
+            return 'font name must be a string ≤ 200 characters';
+          if (fd.src !== undefined) {
+            if (typeof fd.src !== 'string' || fd.src.length > 2000) return 'font src must be a string ≤ 2,000 characters';
+            // Only allow https: or relative paths (no javascript:, data:, etc.)
+            if (/^[a-z][a-z0-9+.-]*:/i.test(fd.src) && !/^https:/i.test(fd.src))
+              return 'font src must use https:// or be a relative path';
+          }
+        }
+      } catch { return 'fonts value must be valid JSON'; }
+      break;
+    }
+    case 'imglist': {
+      try {
+        const arr = JSON.parse(value);
+        if (!Array.isArray(arr)) return 'imglist value must be a JSON array';
+        for (const item of arr) {
+          if (!item || typeof item !== 'object') return 'each imglist entry must be an object';
+          if (item.name !== undefined && (typeof item.name !== 'string' || item.name.length > 200))
+            return 'imglist name must be a string ≤ 200 characters';
+          if (item.w !== undefined && (typeof item.w !== 'number' || item.w < 0 || item.w > 10000))
+            return 'imglist w must be a number in [0, 10000]';
+          if (item.h !== undefined && (typeof item.h !== 'number' || item.h < 0 || item.h > 10000))
+            return 'imglist h must be a number in [0, 10000]';
+        }
+      } catch { return 'imglist value must be valid JSON'; }
+      break;
+    }
     default: break;
   }
   return null;
@@ -282,6 +331,28 @@ async function invalidateTokenCache(platform) {
   await Promise.allSettled(keys.map((k) => redis.del(k)));
 }
 
+// ── CSS-safe serialization helpers ───────────────────────────────────────────
+
+// Strip characters that can break out of a CSS custom-property value context.
+// Removes control chars, null bytes, and the CSS structural chars ; { }
+// that would let injected DB values escape the declaration or block.
+function sanitizeCssValue(v) {
+  return v
+    .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '') // control chars (keep \t \n \r as harmless)
+    .replace(/[;{}]/g, '')                               // CSS structural chars
+    .replace(/\/\*/g, '')                                // open block comment
+    .trim();
+}
+
+// Only https: and relative (no-scheme) font URLs are allowed.
+function isSafeFontUrl(src) {
+  if (!src) return false;
+  if (/^https:/i.test(src)) return true;
+  // Allow protocol-relative //example.com or relative paths, reject everything else with a scheme
+  if (/^[a-z][a-z0-9+.-]*:/i.test(src)) return false;
+  return true;
+}
+
 // ── Token compilation (GET /tokens) ──────────────────────────────────────────
 
 function toTokenName(parts) {
@@ -412,10 +483,14 @@ export async function compileTokens(platform, theme, device) {
         const fontDefs = JSON.parse(effectiveValue);
         if (Array.isArray(fontDefs)) {
           for (const fd of fontDefs) {
-            if (fd.type === 'google' && fd.src) {
-              fontFaces.push(`@import url('${fd.src}');`);
-            } else if (fd.src) {
-              fontFaces.push(`@font-face { font-family: '${fd.name}'; src: url('${fd.src}'); }`);
+            if (!fd.src || !isSafeFontUrl(fd.src)) continue; // M12: allowlist https: only
+            // Escape single-quote in URLs/names to prevent CSS string injection.
+            const safeSrc = fd.src.replace(/'/g, '%27');
+            if (fd.type === 'google') {
+              fontFaces.push(`@import url('${safeSrc}');`);
+            } else {
+              const safeName = (fd.name || '').replace(/'/g, '').replace(/[^a-zA-Z0-9 _-]/g, '');
+              fontFaces.push(`@font-face { font-family: '${safeName}'; src: url('${safeSrc}'); }`);
             }
           }
         }
@@ -470,7 +545,8 @@ export async function compileTokens(platform, theme, device) {
     // that theme's value → :root. Unfiltered: dark+untagged → :root, other
     // themes → their [data-theme] override block.
     const cssBucket = !theme && themeTag && themeTag !== 'dark' ? themeVars[themeTag] : rootVars;
-    cssBucket[`--${tokenName}`] = effectiveValue;
+    // M12: sanitize value before embedding into CSS to prevent injection.
+    cssBucket[`--${tokenName}`] = sanitizeCssValue(effectiveValue);
 
     // Device-neutral alias: unit-suffixed (from field options) so it is
     // directly usable in CSS without the calc(var(...) * 1px) dance that the

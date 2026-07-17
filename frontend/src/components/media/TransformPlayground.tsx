@@ -137,16 +137,17 @@ export function TransformPlayground({ mediaId, mediaType }: TransformPlaygroundP
         const len = res.headers.get('content-length')
         if (len) setFileSize(parseInt(len, 10))
       })
-      .catch(() => { /* aborted or failed — no-op */ })
+      .catch(() => {
+        /* aborted or failed — no-op */
+      })
       .finally(() => {
         if (!controller.signal.aborted) setSizeLoading(false)
       })
   }, [previewUrl])
 
   const copyUrl = async () => {
-    const full = typeof window !== 'undefined'
-      ? `${window.location.origin}${previewUrl}`
-      : previewUrl
+    const full =
+      typeof window !== 'undefined' ? `${window.location.origin}${previewUrl}` : previewUrl
     try {
       await navigator.clipboard.writeText(full)
       toast({ title: 'URL copied!' })
@@ -167,10 +168,37 @@ export function TransformPlayground({ mediaId, mediaType }: TransformPlaygroundP
     <div className="flex flex-col lg:flex-row gap-4">
       {/* Controls */}
       <div className="lg:w-64 flex-shrink-0 space-y-4">
-        <SliderRow label="Width" value={params.width} min={100} max={2000} step={10} onChange={(v) => set('width', v)} />
-        <SliderRow label="Height" value={params.height} min={100} max={2000} step={10} onChange={(v) => set('height', v)} />
-        <SliderRow label="Quality" value={params.quality} min={1} max={100} onChange={(v) => set('quality', v)} />
-        <SliderRow label="Blur" value={params.blur} min={0} max={20} step={0.5} onChange={(v) => set('blur', v)} />
+        <SliderRow
+          label="Width"
+          value={params.width}
+          min={100}
+          max={2000}
+          step={10}
+          onChange={(v) => set('width', v)}
+        />
+        <SliderRow
+          label="Height"
+          value={params.height}
+          min={100}
+          max={2000}
+          step={10}
+          onChange={(v) => set('height', v)}
+        />
+        <SliderRow
+          label="Quality"
+          value={params.quality}
+          min={1}
+          max={100}
+          onChange={(v) => set('quality', v)}
+        />
+        <SliderRow
+          label="Blur"
+          value={params.blur}
+          min={0}
+          max={20}
+          step={0.5}
+          onChange={(v) => set('blur', v)}
+        />
 
         <div className="space-y-1">
           <Label className="text-xs">Format</Label>
@@ -180,7 +208,9 @@ export function TransformPlayground({ mediaId, mediaType }: TransformPlaygroundP
             className="border rounded h-8 text-sm px-2 w-full bg-background"
           >
             {(['webp', 'avif', 'jpg', 'png'] as ImageFormat[]).map((f) => (
-              <option key={f} value={f}>{f}</option>
+              <option key={f} value={f}>
+                {f}
+              </option>
             ))}
           </select>
         </div>
@@ -193,7 +223,9 @@ export function TransformPlayground({ mediaId, mediaType }: TransformPlaygroundP
             className="border rounded h-8 text-sm px-2 w-full bg-background"
           >
             {(['cover', 'contain', 'fill', 'inside', 'outside'] as FitMode[]).map((f) => (
-              <option key={f} value={f}>{f}</option>
+              <option key={f} value={f}>
+                {f}
+              </option>
             ))}
           </select>
         </div>
@@ -206,7 +238,9 @@ export function TransformPlayground({ mediaId, mediaType }: TransformPlaygroundP
             onChange={(e) => set('grayscale', e.target.checked)}
             className="h-4 w-4 rounded accent-primary"
           />
-          <label htmlFor="grayscale-toggle" className="text-sm cursor-pointer">Grayscale</label>
+          <label htmlFor="grayscale-toggle" className="text-sm cursor-pointer">
+            Grayscale
+          </label>
         </div>
 
         <Button size="sm" variant="outline" className="w-full gap-1" onClick={copyUrl}>
@@ -219,11 +253,11 @@ export function TransformPlayground({ mediaId, mediaType }: TransformPlaygroundP
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">Preview</span>
-            {sizeLoading && (
-              <RefreshCw className="h-3 w-3 text-muted-foreground animate-spin" />
-            )}
+            {sizeLoading && <RefreshCw className="h-3 w-3 text-muted-foreground animate-spin" />}
             {!sizeLoading && fileSize != null && (
-              <Badge variant="outline" className="text-xs">{formatBytes(fileSize)}</Badge>
+              <Badge variant="outline" className="text-xs">
+                {formatBytes(fileSize)}
+              </Badge>
             )}
           </div>
           <span className="text-xs text-muted-foreground">

@@ -12,27 +12,31 @@ interface FormFieldProps {
 }
 
 interface AriaInvalidProps {
+  id?: string
   'aria-invalid'?: React.AriaAttributes['aria-invalid']
   'aria-describedby'?: string
 }
 
 export function FormField({ label, error, required, children, hint, className }: FormFieldProps) {
+  const fieldId = useId()
   const errorId = useId()
 
-  // When error is set, mark the single wrapped control invalid so Input/Textarea
-  // pick up their aria-[invalid=true] destructive styling. Explicit aria props on
-  // the child win over the injected ones.
-  const control =
-    error && isValidElement<AriaInvalidProps>(children)
-      ? cloneElement(children, {
+  // Inject id + error aria attrs into the wrapped control so <label htmlFor> works
+  // and Input/Textarea pick up their aria-[invalid=true] destructive styling.
+  // Explicit props on the child always win over injected ones.
+  const control = isValidElement<AriaInvalidProps>(children)
+    ? cloneElement(children, {
+        id: children.props.id ?? fieldId,
+        ...(error && {
           'aria-invalid': children.props['aria-invalid'] ?? true,
           'aria-describedby': children.props['aria-describedby'] ?? errorId,
-        })
-      : children
+        }),
+      })
+    : children
 
   return (
     <div className={cn('space-y-2', className)}>
-      <Label>
+      <Label htmlFor={fieldId}>
         {label}
         {required && <span className="text-destructive ml-1">*</span>}
       </Label>

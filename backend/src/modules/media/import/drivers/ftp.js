@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Writable } from 'node:stream';
 import { Client, FileType } from 'basic-ftp';
-import { assertNotSSRF } from '../../../../shared/utils/ssrf-guard.js';
+import { assertPublicHost } from '../../../../shared/utils/ssrf-guard.js';
 
 const credentialsSchema = z.object({
   host: z.string().min(1),
@@ -12,7 +12,7 @@ const credentialsSchema = z.object({
 });
 
 const withClient = async (credentials, fn) => {
-  await assertNotSSRF(credentials.host);
+  await assertPublicHost(credentials.host);
   const client = new Client();
   try {
     await client.access({

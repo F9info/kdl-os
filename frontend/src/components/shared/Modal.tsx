@@ -24,7 +24,15 @@ const sizeClasses = {
   lg: 'sm:max-w-2xl',
 }
 
-export function Modal({ open, onClose, title, description, children, footer, size = 'md' }: ModalProps) {
+export function Modal({
+  open,
+  onClose,
+  title,
+  description,
+  children,
+  footer,
+  size = 'md',
+}: ModalProps) {
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className={cn(sizeClasses[size], 'flex flex-col max-h-[90vh]')}>

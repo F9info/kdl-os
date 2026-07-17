@@ -98,9 +98,7 @@ export default function IntegrationLogsPage() {
       id: 'provider',
       header: 'Provider',
       cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">
-          {row.original.provider?.name ?? '—'}
-        </span>
+        <span className="text-sm text-muted-foreground">{row.original.provider?.name ?? '—'}</span>
       ),
     },
     {
@@ -112,9 +110,7 @@ export default function IntegrationLogsPage() {
       id: 'error',
       header: 'Error',
       cell: ({ row }) => (
-        <span className="text-sm text-red-600 dark:text-red-400">
-          {row.original.error ?? '—'}
-        </span>
+        <span className="text-sm text-red-600 dark:text-red-400">{row.original.error ?? '—'}</span>
       ),
     },
     {
@@ -198,9 +194,7 @@ export default function IntegrationLogsPage() {
             data={data?.logs ?? []}
             isLoading={isLoading}
             pagination={
-              data
-                ? { page, totalPages: data.pagination.pages, onPageChange: setPage }
-                : undefined
+              data ? { page, totalPages: data.pagination.pages, onPageChange: setPage } : undefined
             }
             emptyMessage="No integration logs yet."
           />

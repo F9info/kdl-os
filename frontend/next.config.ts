@@ -1,4 +1,10 @@
 import type { NextConfig } from 'next'
+import withBundleAnalyzer from '@next/bundle-analyzer'
+
+const withAnalyzer = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === '1',
+  openAnalyzer: false,
+})
 
 // Parse comma-separated image host entries from the env var.
 // Format: "protocol:hostname:port" where port is optional.
@@ -100,4 +106,4 @@ const config: NextConfig = {
   },
 }
 
-export default config
+export default withAnalyzer(config)

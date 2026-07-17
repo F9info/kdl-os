@@ -72,8 +72,20 @@ export default {
     const token = req.query?.['hub.verify_token'];
     const challenge = req.query?.['hub.challenge'];
     if (mode !== 'subscribe' || !challenge) return null;
-    if (!config?.verifyToken || token !== config.verifyToken) return null;
+    if (!config?.verifyToken) return null;
+    // Timing-safe compare prevents oracle attacks on the verify token.
+    const a = Buffer.from(token ?? '');
+    const b = Buffer.from(config.verifyToken);
+    if (a.length !== b.length) return null;
+    if (!timingSafeEqual(a, b)) return null;
     return challenge;
+  },
+
+  // Returns the phone_number_id from the webhook payload so the controller
+  // can narrow provider lookup to the matching provider config, reducing
+  // the attack surface of the signature-verification loop (L10).
+  getWebhookProviderKey(req) {
+    return req.body?.entry?.[0]?.changes?.[0]?.value?.metadata?.phone_number_id ?? null;
   },
 
   parseWebhook(req) {

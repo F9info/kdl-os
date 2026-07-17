@@ -4,7 +4,7 @@ import {
   ListObjectsV2Command,
   GetObjectCommand,
 } from '@aws-sdk/client-s3';
-import { assertNotSSRF } from '../../../../shared/utils/ssrf-guard.js';
+import { assertPublicHost, assertPublicEndpoint } from '../../../../shared/utils/ssrf-guard.js';
 
 const credentialsSchema = z.object({
   access_key_id: z.string().min(1),
@@ -17,7 +17,7 @@ const credentialsSchema = z.object({
 const makeClient = async (credentials) => {
   if (credentials.endpoint) {
     const { hostname } = new URL(credentials.endpoint);
-    await assertNotSSRF(hostname);
+    await assertPublicHost(hostname);
   }
   return new S3Client({
     region: credentials.region || 'us-east-1',
@@ -27,6 +27,13 @@ const makeClient = async (credentials) => {
     },
     ...(credentials.endpoint ? { endpoint: credentials.endpoint, forcePathStyle: true } : {}),
   });
+};
+
+const getValidatedClient = async (credentials) => {
+  if (credentials.endpoint) {
+    await assertPublicEndpoint(credentials.endpoint);
+  }
+  return makeClient(credentials);
 };
 
 const streamToBuffer = async (stream) => {
@@ -44,7 +51,7 @@ export default {
   isAppConfigured: () => true,
 
   async list({ credentials, folderId, cursor }) {
-    const client = makeClient(credentials);
+    const client = await getValidatedClient(credentials);
     const prefix = folderId || '';
     const res = await client.send(new ListObjectsV2Command({
       Bucket: credentials.bucket,
@@ -78,7 +85,7 @@ export default {
   },
 
   async download({ credentials, fileId }) {
-    const client = makeClient(credentials);
+    const client = await getValidatedClient(credentials);
     const res = await client.send(new GetObjectCommand({ Bucket: credentials.bucket, Key: fileId }));
     const buffer = await streamToBuffer(res.Body);
     return { buffer, filename: fileId.split('/').pop(), mimeType: res.ContentType ?? null };

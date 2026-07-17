@@ -12,9 +12,13 @@ vi.mock('../../src/config/database.js', () => ({
     user: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn().mockResolvedValue({}) },
     userRole: { findMany: vi.fn(() => Promise.resolve([])) },
     refreshToken: { findFirst: vi.fn(), create: vi.fn(), updateMany: vi.fn() },
-    passwordResetToken: { create: vi.fn(), findFirst: vi.fn(), update: vi.fn() },
+    passwordResetToken: { create: vi.fn(), findFirst: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
     $transaction: vi.fn((ops) => Promise.all(ops)),
   },
+}));
+
+vi.mock('../../src/config/redis.js', () => ({
+  redis: { get: vi.fn().mockResolvedValue(null), set: vi.fn(), del: vi.fn() },
 }));
 
 vi.mock('../../src/shared/queues/email.queue.js', () => ({

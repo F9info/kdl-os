@@ -55,7 +55,12 @@ function ResetPasswordForm() {
     password: string
   }
 
-  const { mutate: resetPassword, isPending, error, isSuccess } = useMutation({
+  const {
+    mutate: resetPassword,
+    isPending,
+    error,
+    isSuccess,
+  } = useMutation({
     mutationFn: (data: ResetPasswordPayload) =>
       api.post('/auth/reset-password', data).then((r) => r.data),
     onSuccess: () => {

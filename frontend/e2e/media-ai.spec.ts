@@ -25,9 +25,9 @@
  */
 import { test, expect, request, type APIRequestContext } from '@playwright/test'
 import { startAiStub, type AiStub } from './helpers/ai-stub-server'
+import { ADMIN } from './helpers/credentials'
 
 const API_URL = process.env.E2E_API_URL ?? 'http://localhost:14000/api'
-const ADMIN = { email: 'admin@kdl.com', password: 'Admin@123' }
 const RUN = Date.now().toString(36)
 
 // 1×1 red PNG
@@ -69,7 +69,7 @@ async function uploadMedia(buf: Buffer, filename: string, mimeType: string) {
 
 async function pollJob(
   jobId: string,
-  { timeoutMs = 30_000, intervalMs = 500 } = {},
+  { timeoutMs = 30_000, intervalMs = 500 } = {}
 ): Promise<{ state: string; result: unknown; failedReason?: string }> {
   const deadline = Date.now() + timeoutMs
   while (Date.now() < deadline) {
@@ -84,7 +84,10 @@ async function pollJob(
 
 // Retries an assertion until it stops throwing — for effects that land via an
 // async reindex/embed queue job with no job id returned to poll directly.
-async function retryUntil<T>(fn: () => Promise<T>, { timeoutMs = 15_000, intervalMs = 500 } = {}): Promise<T> {
+async function retryUntil<T>(
+  fn: () => Promise<T>,
+  { timeoutMs = 15_000, intervalMs = 500 } = {}
+): Promise<T> {
   const deadline = Date.now() + timeoutMs
   let lastErr: unknown
   while (Date.now() < deadline) {
@@ -98,7 +101,12 @@ async function retryUntil<T>(fn: () => Promise<T>, { timeoutMs = 15_000, interva
   throw lastErr
 }
 
-async function createAiProvider(feature: string, driver: string, credentials: Record<string, unknown>, config: Record<string, unknown> = {}) {
+async function createAiProvider(
+  feature: string,
+  driver: string,
+  credentials: Record<string, unknown>,
+  config: Record<string, unknown> = {}
+) {
   const res = await api.post(`${API_URL}/media/ai/providers`, {
     headers: headers(),
     data: { feature, driver, name: `e2e-${feature}-${RUN}`, credentials, config, is_active: true },
@@ -116,10 +124,25 @@ test.beforeAll(async () => {
   api = await request.newContext({ timeout: 20_000 })
   adminToken = await loginApi(ADMIN.email, ADMIN.password)
 
-  await createAiProvider('vision', 'openrouter-vision', { api_key: 'stub-key' }, { base_url: stub.baseUrl })
+  await createAiProvider(
+    'vision',
+    'openrouter-vision',
+    { api_key: 'stub-key' },
+    { base_url: stub.baseUrl }
+  )
   await createAiProvider('speech_to_text', 'whisper-local', { endpoint_url: stub.baseUrl })
-  await createAiProvider('image_ops', 'replicate', { api_token: 'stub-token' }, { base_url: stub.baseUrl, poll_interval_ms: 100 })
-  await createAiProvider('embeddings', 'openai-embeddings', { api_key: 'stub-key' }, { base_url: stub.baseUrl })
+  await createAiProvider(
+    'image_ops',
+    'replicate',
+    { api_token: 'stub-token' },
+    { base_url: stub.baseUrl, poll_interval_ms: 100 }
+  )
+  await createAiProvider(
+    'embeddings',
+    'openai-embeddings',
+    { api_key: 'stub-key' },
+    { base_url: stub.baseUrl }
+  )
 
   // A brand-new MeiliSearch instance has no filterable-attributes configured
   // until the index is created/settings applied at least once — normally a
@@ -159,12 +182,16 @@ test.describe('Phase D9 — AI layer E2E', () => {
     const { state, failedReason } = await pollJob(job_id)
     expect(state, failedReason).toBe('completed')
 
-    const suggestionsRes = await api.get(`${API_URL}/media/${imageId}/suggestions`, { headers: headers() })
+    const suggestionsRes = await api.get(`${API_URL}/media/${imageId}/suggestions`, {
+      headers: headers(),
+    })
     const suggestions = (await suggestionsRes.json()).data.items as { id: string; type: string }[]
     const tagsSuggestion = suggestions.find((s) => s.type === 'TAGS')
     expect(tagsSuggestion).toBeTruthy()
 
-    const acceptRes = await api.post(`${API_URL}/media/suggestions/${tagsSuggestion!.id}/accept`, { headers: headers() })
+    const acceptRes = await api.post(`${API_URL}/media/suggestions/${tagsSuggestion!.id}/accept`, {
+      headers: headers(),
+    })
     expect(acceptRes.status()).toBe(200)
 
     const mediaRes = await api.get(`${API_URL}/media/${imageId}`, { headers: headers() })
@@ -188,19 +215,26 @@ test.describe('Phase D9 — AI layer E2E', () => {
   test('3. transcribe audio → transcript stored, keyword search finds it', async () => {
     const media = await uploadMedia(TINY_WAV, `e2e-transcribe-${RUN}.wav`, 'audio/wav')
 
-    const transcribeRes = await api.post(`${API_URL}/media/${media.id}/transcribe`, { headers: headers() })
+    const transcribeRes = await api.post(`${API_URL}/media/${media.id}/transcribe`, {
+      headers: headers(),
+    })
     expect(transcribeRes.status()).toBe(202)
     const { job_id } = (await transcribeRes.json()).data
     const { state, failedReason } = await pollJob(job_id)
     expect(state, failedReason).toBe('completed')
 
-    const transcriptRes = await api.get(`${API_URL}/media/${media.id}/transcript`, { headers: headers() })
+    const transcriptRes = await api.get(`${API_URL}/media/${media.id}/transcript`, {
+      headers: headers(),
+    })
     expect(transcriptRes.status()).toBe(200)
     const transcript = (await transcriptRes.json()).data
     expect(transcript.text).toContain('e2e stub transcript sentence')
 
     await retryUntil(async () => {
-      const res = await api.get(`${API_URL}/media/search`, { headers: headers(), params: { q: 'stub transcript' } })
+      const res = await api.get(`${API_URL}/media/search`, {
+        headers: headers(),
+        params: { q: 'stub transcript' },
+      })
       expect(res.status()).toBe(200)
       const hits = (await res.json()).data.hits as { id: string }[]
       expect(hits.some((h) => h.id === media.id)).toBe(true)
@@ -258,12 +292,18 @@ test.describe('Phase D9 — AI layer E2E', () => {
     const fixtureFile = items.find((i) => !i.isFolder && i.id === imagePath)
     expect(fixtureFile).toBeTruthy()
 
-    const importRes = await api.post(`${API_URL}/media/import/connections/${connection.id}/import`, {
-      headers: headers(),
-      data: { file_ids: [imagePath] },
-    })
+    const importRes = await api.post(
+      `${API_URL}/media/import/connections/${connection.id}/import`,
+      {
+        headers: headers(),
+        data: { file_ids: [imagePath] },
+      }
+    )
     expect(importRes.status(), await importRes.text()).toBe(200)
-    const result = (await importRes.json()).data as { imported: { id: string }[]; skipped: unknown[] }
+    const result = (await importRes.json()).data as {
+      imported: { id: string }[]
+      skipped: unknown[]
+    }
     expect(result.skipped).toEqual([])
     expect(result.imported.length).toBe(1)
     uploadedIds.push(result.imported[0]!.id)

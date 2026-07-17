@@ -1,0 +1,143 @@
+import { Meta, ColorPalette, ColorItem } from '@storybook/blocks'
+
+<Meta title="Design Tokens" />
+
+# Design Tokens
+
+KDL Starter Kit design tokens. All color values are driven by CSS custom properties that can be
+overridden at runtime by the **Module 15 Template Engine** via `--branding_*` and `--buttons_*`
+variables (see `tailwind.config.ts` and [KDL-199](/KDL/issues/KDL-199)).
+
+> **Template Engine override behaviour:** `TemplateEngineThemeProvider` injects a `<style id="te-tokens">` block into the document. Dark-mode values land in `:root`; light-mode values land in `[data-theme="light"]`. Every slot in `tailwind.config.ts` has a `var(--branding_*, hsl(var(...)))` fallback so the shadcn palette remains visible before the provider's first fetch resolves or when a token is unset.
+
+---
+
+## Color Palette
+
+### Brand
+
+<ColorPalette>
+  <ColorItem
+    title="Primary"
+    subtitle="--branding_brand_colors_primary_color"
+    colors={{ Primary: 'hsl(221.2 83.2% 53.3%)' }}
+  />
+  <ColorItem
+    title="Secondary"
+    subtitle="--branding_brand_colors_secondary_color"
+    colors={{ Secondary: 'hsl(210 40% 96.1%)' }}
+  />
+  <ColorItem
+    title="Accent"
+    subtitle="--branding_brand_colors_accent_color"
+    colors={{ Accent: 'hsl(210 40% 96.1%)' }}
+  />
+</ColorPalette>
+
+### Surfaces
+
+<ColorPalette>
+  <ColorItem
+    title="Background"
+    subtitle="--branding_surfaces_background_color"
+    colors={{ Light: 'hsl(0 0% 100%)', Dark: 'hsl(222.2 84% 4.9%)' }}
+  />
+  <ColorItem
+    title="Surface / Muted"
+    subtitle="--branding_surfaces_surface_color"
+    colors={{ Light: 'hsl(210 40% 96.1%)', Dark: 'hsl(217.2 32.6% 17.5%)' }}
+  />
+  <ColorItem
+    title="Card"
+    subtitle="--branding_surfaces_card_color"
+    colors={{ Light: 'hsl(0 0% 100%)', Dark: 'hsl(222.2 84% 4.9%)' }}
+  />
+</ColorPalette>
+
+### Text & Interaction
+
+<ColorPalette>
+  <ColorItem
+    title="Text Primary (Foreground)"
+    subtitle="--branding_text_interaction_text_primary"
+    colors={{ Light: 'hsl(222.2 84% 4.9%)', Dark: 'hsl(210 40% 98%)' }}
+  />
+  <ColorItem
+    title="Text Secondary (Muted Foreground)"
+    subtitle="--branding_text_interaction_text_secondary"
+    colors={{ Light: 'hsl(215.4 16.3% 46.9%)', Dark: 'hsl(215 20.2% 65.1%)' }}
+  />
+  <ColorItem
+    title="Border"
+    subtitle="--branding_text_interaction_border_color"
+    colors={{ Light: 'hsl(214.3 31.8% 91.4%)', Dark: 'hsl(217.2 32.6% 17.5%)' }}
+  />
+  <ColorItem
+    title="Ring"
+    subtitle="--branding_brand_colors_primary_color (ring)"
+    colors={{ Default: 'hsl(221.2 83.2% 53.3%)' }}
+  />
+</ColorPalette>
+
+### State
+
+<ColorPalette>
+  <ColorItem
+    title="Destructive"
+    subtitle="hsl(var(--destructive)) — not overridden by TE"
+    colors={{ Light: 'hsl(0 84.2% 60.2%)', Dark: 'hsl(0 62.8% 30.6%)' }}
+  />
+</ColorPalette>
+
+---
+
+## Spacing
+
+Tailwind default spacing scale (4px base unit). Relevant custom container padding: `2rem` (32px).
+
+| Token                   | Value    |
+| ----------------------- | -------- |
+| `container.padding`     | `2rem`   |
+| `container.screens.2xl` | `1400px` |
+
+---
+
+## Border Radius
+
+Controlled by `--radius` (default `0.5rem`). Override via Template Engine Layout → Border Radius pane.
+
+| Token        | Value                       |
+| ------------ | --------------------------- |
+| `rounded-lg` | `var(--radius)`             |
+| `rounded-md` | `calc(var(--radius) - 2px)` |
+| `rounded-sm` | `calc(var(--radius) - 4px)` |
+
+---
+
+## Typography
+
+Inherits Next.js / browser defaults. Font family, size, and weight can be applied via Template Engine
+Typography pane tokens (`--branding_typography_*`) when the provider is active.
+
+| Scale       | rem      | px (16px base) |
+| ----------- | -------- | -------------- |
+| `text-xs`   | 0.75rem  | 12px           |
+| `text-sm`   | 0.875rem | 14px           |
+| `text-base` | 1rem     | 16px           |
+| `text-lg`   | 1.125rem | 18px           |
+| `text-xl`   | 1.25rem  | 20px           |
+| `text-2xl`  | 1.5rem   | 24px           |
+
+---
+
+## Light + Dark Mode
+
+The app ships two shadcn palettes embedded in `globals.css`:
+
+- **Light** (`:root`): white backgrounds, dark text.
+- **Dark** (`.dark`): navy backgrounds (`hsl(222.2 84% 4.9%)`), light text.
+
+The Template Engine overrides both palettes at runtime by injecting `--branding_*` vars into
+`:root` (dark) and `[data-theme="light"]` (light). Every Tailwind color slot in `tailwind.config.ts`
+has a `var(--branding_*, hsl(var(...)))` fallback to keep the static palette visible before the
+provider resolves.

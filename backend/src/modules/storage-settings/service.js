@@ -3,6 +3,7 @@ import { encrypt, decrypt } from '../../shared/utils/crypto.js';
 import { invalidateStorageCache } from '../../shared/services/storage/config.js';
 import { invalidateDriverCache, makeDriver } from '../../shared/services/storage/index.js';
 import { logger } from '../../shared/utils/logger.js';
+import { assertPublicEndpoint } from '../../shared/utils/ssrf-guard.js';
 
 const DB_KEYS = {
   provider: 'storage.provider',
@@ -80,6 +81,7 @@ export const getStorageSettings = async () => {
 };
 
 export const updateStorageSettings = async (data) => {
+  if (data.endpoint) await assertPublicEndpoint(data.endpoint);
   const plain = { provider: data.provider, endpoint: data.endpoint, region: data.region, bucket: data.bucket };
   for (const [field, key] of Object.entries(DB_KEYS)) {
     if (field in plain && plain[field] !== undefined) {
@@ -103,6 +105,7 @@ export const updateStorageSettings = async (data) => {
 };
 
 export const testStorageConnection = async (data = {}) => {
+  if (data.endpoint) await assertPublicEndpoint(data.endpoint);
   // Build effective config: merge saved settings with any overrides in data.
   const map = await loadRawRows();
 

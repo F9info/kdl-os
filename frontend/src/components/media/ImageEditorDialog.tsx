@@ -30,7 +30,12 @@ import type { ImageOp, WatermarkPosition } from '@/types/processing.types'
 // Draggable/resizable crop box over the real image, plus a live canvas
 // preview of the pixels that would actually be cropped.
 
-interface CropRect { x: number; y: number; w: number; h: number }
+interface CropRect {
+  x: number
+  y: number
+  w: number
+  h: number
+}
 
 const HANDLE_POS: Record<string, string> = {
   nw: '-left-1.5 -top-1.5 cursor-nwse-resize',
@@ -97,7 +102,11 @@ function CropTool({
     ctx.drawImage(imgRef.current, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height)
   }, [box, natural, display])
 
-  const onPointerDown = (e: React.PointerEvent, mode: 'new' | 'move' | 'resize', handle?: string) => {
+  const onPointerDown = (
+    e: React.PointerEvent,
+    mode: 'new' | 'move' | 'resize',
+    handle?: string
+  ) => {
     e.stopPropagation()
     const rect = containerRef.current!.getBoundingClientRect()
     const x = e.clientX - rect.left
@@ -117,7 +126,12 @@ function CropTool({
     const y = clamp(e.clientY - rect.top, 0, display.h)
     const { mode, handle, startX, startY, orig } = dragState.current
     if (mode === 'new') {
-      setBox({ x: Math.min(startX, x), y: Math.min(startY, y), w: Math.abs(x - startX), h: Math.abs(y - startY) })
+      setBox({
+        x: Math.min(startX, x),
+        y: Math.min(startY, y),
+        w: Math.abs(x - startX),
+        h: Math.abs(y - startY),
+      })
     } else if (mode === 'move') {
       const dx = x - startX
       const dy = y - startY
@@ -205,11 +219,17 @@ function CropTool({
             <canvas ref={canvasRef} className="border rounded bg-muted" />
           </div>
           <div className="text-xs text-muted-foreground">
-            {Math.round(box.w * (natural.w / display.w))} × {Math.round(box.h * (natural.h / display.h))}px
+            {Math.round(box.w * (natural.w / display.w))} ×{' '}
+            {Math.round(box.h * (natural.h / display.h))}px
           </div>
         </div>
       )}
-      <Button size="sm" variant="outline" onClick={handleAdd} disabled={!box || box.w < 4 || box.h < 4}>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={handleAdd}
+        disabled={!box || box.w < 4 || box.h < 4}
+      >
         Add crop
       </Button>
     </div>
@@ -356,9 +376,7 @@ export function ImageEditorDialog({ mediaId, mediaUrl, open, onClose, onSaved }:
             />
             {ops.length > 0 && (
               <div className="space-y-1">
-                <p className="text-xs text-muted-foreground font-medium">
-                  Queue ({ops.length})
-                </p>
+                <p className="text-xs text-muted-foreground font-medium">Queue ({ops.length})</p>
                 {ops.map((op, i) => (
                   <Badge
                     key={i}
@@ -366,7 +384,11 @@ export function ImageEditorDialog({ mediaId, mediaUrl, open, onClose, onSaved }:
                     className="text-xs flex items-center justify-between gap-1 w-full py-1"
                   >
                     <span className="truncate">{opLabel(op)}</span>
-                    <button type="button" onClick={() => removeOp(i)} className="flex-shrink-0 hover:text-destructive">
+                    <button
+                      type="button"
+                      onClick={() => removeOp(i)}
+                      className="flex-shrink-0 hover:text-destructive"
+                    >
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>
@@ -380,7 +402,9 @@ export function ImageEditorDialog({ mediaId, mediaUrl, open, onClose, onSaved }:
             {/* Transform */}
             <Section title="Transform">
               <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Resize</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Resize
+                </p>
                 <div className="flex items-center gap-2">
                   <Input
                     type="number"
@@ -404,7 +428,9 @@ export function ImageEditorDialog({ mediaId, mediaUrl, open, onClose, onSaved }:
                   </SelectTrigger>
                   <SelectContent>
                     {(['cover', 'contain', 'fill', 'inside', 'outside'] as ResizeFit[]).map((f) => (
-                      <SelectItem key={f} value={f}>{f}</SelectItem>
+                      <SelectItem key={f} value={f}>
+                        {f}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -423,7 +449,9 @@ export function ImageEditorDialog({ mediaId, mediaUrl, open, onClose, onSaved }:
               </div>
 
               <div className="space-y-2 pt-2 border-t">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Rotate</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Rotate
+                </p>
                 <Input
                   type="number"
                   placeholder="Angle (degrees)"
@@ -455,10 +483,20 @@ export function ImageEditorDialog({ mediaId, mediaUrl, open, onClose, onSaved }:
               </div>
 
               <div className="space-y-2 pt-2 border-t">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Crop</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Crop
+                </p>
                 <CropTool
                   mediaUrl={mediaUrl}
-                  onAdd={(crop) => addOp({ op: 'crop', left: crop.left, top: crop.top, width: crop.width, height: crop.height })}
+                  onAdd={(crop) =>
+                    addOp({
+                      op: 'crop',
+                      left: crop.left,
+                      top: crop.top,
+                      width: crop.width,
+                      height: crop.height,
+                    })
+                  }
                 />
               </div>
             </Section>
@@ -582,13 +620,18 @@ export function ImageEditorDialog({ mediaId, mediaUrl, open, onClose, onSaved }:
                 onChange={(e) => setWmText(e.target.value)}
                 className="h-8 text-sm"
               />
-              <Select value={wmPosition} onValueChange={(v) => setWmPosition(v as WatermarkPosition)}>
+              <Select
+                value={wmPosition}
+                onValueChange={(v) => setWmPosition(v as WatermarkPosition)}
+              >
                 <SelectTrigger className="h-8 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {WATERMARK_POSITIONS.map((p) => (
-                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -622,13 +665,18 @@ export function ImageEditorDialog({ mediaId, mediaUrl, open, onClose, onSaved }:
                   className="w-full"
                 />
               </div>
-              <Select value={compressFormat} onValueChange={(v) => setCompressFormat(v as CompressFormat)}>
+              <Select
+                value={compressFormat}
+                onValueChange={(v) => setCompressFormat(v as CompressFormat)}
+              >
                 <SelectTrigger className="h-8 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {(['jpeg', 'webp', 'avif', 'png'] as CompressFormat[]).map((f) => (
-                    <SelectItem key={f} value={f}>{f}</SelectItem>
+                    <SelectItem key={f} value={f}>
+                      {f}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
