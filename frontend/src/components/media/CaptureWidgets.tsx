@@ -38,7 +38,12 @@ interface RecorderConfig {
   hasVideo: boolean
 }
 
-function useCaptureRecorder({ acquireStream, mimeCandidates, filenamePrefix, hasVideo }: RecorderConfig) {
+function useCaptureRecorder({
+  acquireStream,
+  mimeCandidates,
+  filenamePrefix,
+  hasVideo,
+}: RecorderConfig) {
   const [state, setState] = useState<RecordState>('idle')
   const [error, setError] = useState<string | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -65,7 +70,9 @@ function useCaptureRecorder({ acquireStream, mimeCandidates, filenamePrefix, has
       // "recording" state forever (KDL-148). Guarded with `?.` so the fake
       // stream objects used in tests (which stub only `getTracks`/`stop`)
       // don't need to implement a full MediaStreamTrack.
-      stream.getTracks().forEach((t) => t.addEventListener?.('ended', () => recorderRef.current?.stop()))
+      stream
+        .getTracks()
+        .forEach((t) => t.addEventListener?.('ended', () => recorderRef.current?.stop()))
       if (hasVideo && videoRef.current) {
         videoRef.current.srcObject = stream
         void videoRef.current.play().catch(() => {})
@@ -151,28 +158,45 @@ function CaptureModal({
   return (
     <Modal open={open} onClose={handleClose} title={title} size="md">
       <div className="space-y-4 py-2">
-        {rec.error && <p className="text-sm text-destructive" role="alert">{rec.error}</p>}
+        {rec.error && (
+          <p className="text-sm text-destructive" role="alert">
+            {rec.error}
+          </p>
+        )}
 
         {hasVideo && (
           <video
             ref={rec.videoRef}
             muted
             playsInline
-            className={cn('w-full rounded-md bg-muted aspect-video', rec.state !== 'recording' && rec.state !== 'starting' && 'hidden')}
+            className={cn(
+              'w-full rounded-md bg-muted aspect-video',
+              rec.state !== 'recording' && rec.state !== 'starting' && 'hidden'
+            )}
           />
         )}
 
         {isAudioOnly && rec.state === 'recording' && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground" data-testid="recording-indicator">
+          <div
+            className="flex items-center gap-2 text-sm text-muted-foreground"
+            data-testid="recording-indicator"
+          >
             <Circle className="h-3 w-3 fill-red-500 text-red-500 animate-pulse" /> Recording audio…
           </div>
         )}
 
-        {rec.state === 'preview' && rec.previewUrl && (
-          isAudioOnly
-            ? <audio controls src={rec.previewUrl} className="w-full" data-testid="capture-preview" />
-            : <video controls src={rec.previewUrl} className="w-full rounded-md" data-testid="capture-preview" />
-        )}
+        {rec.state === 'preview' &&
+          rec.previewUrl &&
+          (isAudioOnly ? (
+            <audio controls src={rec.previewUrl} className="w-full" data-testid="capture-preview" />
+          ) : (
+            <video
+              controls
+              src={rec.previewUrl}
+              className="w-full rounded-md"
+              data-testid="capture-preview"
+            />
+          ))}
 
         <div className="flex gap-2 justify-end">
           {rec.state === 'idle' && (
@@ -181,9 +205,7 @@ function CaptureModal({
               Start
             </Button>
           )}
-          {(rec.state === 'starting') && (
-            <Button disabled>Starting…</Button>
-          )}
+          {rec.state === 'starting' && <Button disabled>Starting…</Button>}
           {rec.state === 'recording' && (
             <Button variant="destructive" onClick={rec.stop}>
               <Square className="h-4 w-4 mr-1" /> Stop
@@ -191,7 +213,9 @@ function CaptureModal({
           )}
           {rec.state === 'preview' && (
             <>
-              <Button variant="outline" onClick={rec.reset}>Retake</Button>
+              <Button variant="outline" onClick={rec.reset}>
+                Retake
+              </Button>
               <Button onClick={handleUse}>Use recording</Button>
             </>
           )}

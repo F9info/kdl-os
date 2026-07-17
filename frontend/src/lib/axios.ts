@@ -28,7 +28,10 @@ let failQueue: Array<{ resolve: (token: string) => void; reject: (err: unknown) 
 api.interceptors.response.use(
   (res) => res,
   async (error: unknown) => {
-    const axiosError = error as { config: AxiosRequestConfig & { _retry?: boolean }; response?: { status: number } }
+    const axiosError = error as {
+      config: AxiosRequestConfig & { _retry?: boolean }
+      response?: { status: number }
+    }
     const original = axiosError.config
 
     // A 401 from an auth endpoint means the credentials themselves failed

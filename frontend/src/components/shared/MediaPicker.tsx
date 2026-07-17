@@ -26,11 +26,18 @@ function fileIcon(mimeType: string) {
   if (mimeType.startsWith('image/')) return <FileImage className="h-5 w-5 text-blue-400" />
   if (mimeType.startsWith('video/')) return <Film className="h-5 w-5 text-purple-400" />
   if (mimeType.startsWith('audio/')) return <Music className="h-5 w-5 text-green-400" />
-  if (mimeType === 'application/pdf' || mimeType.includes('document')) return <FileText className="h-5 w-5 text-red-400" />
+  if (mimeType === 'application/pdf' || mimeType.includes('document'))
+    return <FileText className="h-5 w-5 text-red-400" />
   return <File className="h-5 w-5 text-muted-foreground" />
 }
 
-export function MediaPicker({ open, onClose, onSelect, multiple = false, typeFilter }: MediaPickerProps) {
+export function MediaPicker({
+  open,
+  onClose,
+  onSelect,
+  multiple = false,
+  typeFilter,
+}: MediaPickerProps) {
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -64,19 +71,22 @@ export function MediaPicker({ open, onClose, onSelect, multiple = false, typeFil
     onSettled: () => setUploading(false),
   })
 
-  const toggleSelect = useCallback((id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (!multiple) {
-        next.clear()
-        next.add(id)
+  const toggleSelect = useCallback(
+    (id: string) => {
+      setSelectedIds((prev) => {
+        const next = new Set(prev)
+        if (!multiple) {
+          next.clear()
+          next.add(id)
+          return next
+        }
+        if (next.has(id)) next.delete(id)
+        else next.add(id)
         return next
-      }
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }, [multiple])
+      })
+    },
+    [multiple]
+  )
 
   const handleConfirm = () => {
     const selected = (data?.media ?? []).filter((m) => selectedIds.has(m.id))
@@ -90,10 +100,13 @@ export function MediaPicker({ open, onClose, onSelect, multiple = false, typeFil
     onClose()
   }
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    if (e.dataTransfer.files.length) uploadMutation.mutate(e.dataTransfer.files)
-  }, [uploadMutation])
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault()
+      if (e.dataTransfer.files.length) uploadMutation.mutate(e.dataTransfer.files)
+    },
+    [uploadMutation]
+  )
 
   const media = data?.media ?? []
 
@@ -109,7 +122,9 @@ export function MediaPicker({ open, onClose, onSelect, multiple = false, typeFil
             {selectedIds.size > 0 ? `${selectedIds.size} selected` : 'No selection'}
           </span>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleClose}>Cancel</Button>
+            <Button variant="outline" onClick={handleClose}>
+              Cancel
+            </Button>
             <Button onClick={handleConfirm} disabled={selectedIds.size === 0}>
               Select{selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}
             </Button>
@@ -152,7 +167,9 @@ export function MediaPicker({ open, onClose, onSelect, multiple = false, typeFil
           onDragOver={(e) => e.preventDefault()}
         >
           {isLoading ? (
-            <div className="flex items-center justify-center h-[320px] text-muted-foreground text-sm">Loading…</div>
+            <div className="flex items-center justify-center h-[320px] text-muted-foreground text-sm">
+              Loading…
+            </div>
           ) : media.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-[320px] text-muted-foreground text-sm gap-2">
               <Upload className="h-8 w-8 opacity-40" />
@@ -185,7 +202,9 @@ export function MediaPicker({ open, onClose, onSelect, multiple = false, typeFil
                         {fileIcon(item.mime_type)}
                       </div>
                     )}
-                    <p className="text-xs mt-1 truncate text-muted-foreground">{item.original_name}</p>
+                    <p className="text-xs mt-1 truncate text-muted-foreground">
+                      {item.original_name}
+                    </p>
                     <p className="text-xs text-muted-foreground">{formatBytes(item.size)}</p>
                     {isSelected && (
                       <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full p-0.5">

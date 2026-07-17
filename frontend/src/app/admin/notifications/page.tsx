@@ -89,9 +89,7 @@ export default function NotificationsPage() {
                 )}
                 onClick={() => n.data?.url && handleClick(n)}
               >
-                {!n.read_at && (
-                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
-                )}
+                {!n.read_at && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />}
                 <div className="flex-1 min-w-0">
                   <p className={cn('text-sm', !n.read_at && 'font-medium')}>{n.title}</p>
                   <p className="text-sm text-muted-foreground mt-0.5">{n.body}</p>

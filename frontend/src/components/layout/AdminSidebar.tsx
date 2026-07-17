@@ -79,8 +79,18 @@ export const GROUPS: NavGroup[] = [
     icon: Image,
     children: [
       { label: 'Library', href: '/admin/media', icon: Image, permission: 'media:view' },
-      { label: 'AI Providers', href: '/admin/media/ai', icon: Sparkles, permission: 'media:ai-providers' },
-      { label: 'Cloud Imports', href: '/admin/media/import', icon: CloudUpload, permission: 'media:cloud-import' },
+      {
+        label: 'AI Providers',
+        href: '/admin/media/ai',
+        icon: Sparkles,
+        permission: 'media:ai-providers',
+      },
+      {
+        label: 'Cloud Imports',
+        href: '/admin/media/import',
+        icon: CloudUpload,
+        permission: 'media:cloud-import',
+      },
     ],
   },
   {
@@ -88,8 +98,18 @@ export const GROUPS: NavGroup[] = [
     icon: Shield,
     children: [
       { label: 'Roles', href: '/admin/roles', icon: Shield, permission: 'roles:view' },
-      { label: 'Permissions', href: '/admin/permissions', icon: KeyRound, permission: 'permissions:view' },
-      { label: 'Activity Log', href: '/admin/activity-log', icon: ClipboardList, permission: 'activity-log:view' },
+      {
+        label: 'Permissions',
+        href: '/admin/permissions',
+        icon: KeyRound,
+        permission: 'permissions:view',
+      },
+      {
+        label: 'Activity Log',
+        href: '/admin/activity-log',
+        icon: ClipboardList,
+        permission: 'activity-log:view',
+      },
     ],
   },
   {
@@ -97,9 +117,24 @@ export const GROUPS: NavGroup[] = [
     icon: UserCog,
     children: [
       { label: 'Types', href: '/admin/settings/types', icon: ListChecks, permission: 'types:view' },
-      { label: 'Categories', href: '/admin/settings/categories', icon: Briefcase, permission: 'categories:view' },
-      { label: 'Fields', href: '/admin/settings/fields', icon: SlidersHorizontal, permission: 'setting-fields:view' },
-      { label: 'Storage', href: '/admin/settings/storage', icon: HardDrive, permission: 'settings:view' },
+      {
+        label: 'Categories',
+        href: '/admin/settings/categories',
+        icon: Briefcase,
+        permission: 'categories:view',
+      },
+      {
+        label: 'Fields',
+        href: '/admin/settings/fields',
+        icon: SlidersHorizontal,
+        permission: 'setting-fields:view',
+      },
+      {
+        label: 'Storage',
+        href: '/admin/settings/storage',
+        icon: HardDrive,
+        permission: 'settings:view',
+      },
     ],
   },
 ]
@@ -112,7 +147,11 @@ export function AdminSidebar() {
   const pathname = usePathname()
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
 
-  const canViewSettings = can('types:view') || can('categories:view') || can('setting-fields:view') || can('settings:view')
+  const canViewSettings =
+    can('types:view') ||
+    can('categories:view') ||
+    can('setting-fields:view') ||
+    can('settings:view')
 
   // Active types become top-level menu items automatically — one per type,
   // each linking to its own settings page. New types appear as soon as created.
@@ -121,7 +160,9 @@ export function AdminSidebar() {
     enabled: isAdmin,
     queryFn: () =>
       api
-        .get('/types', { params: { limit: 100, is_active: 'true', sortBy: 'name', sortOrder: 'asc' } })
+        .get('/types', {
+          params: { limit: 100, is_active: 'true', sortBy: 'name', sortOrder: 'asc' },
+        })
         .then((r) => r.data.data as { types: Type[] }),
   })
   const typeLeaves: NavLeaf[] = (typesData?.types ?? []).map((t) => ({
@@ -154,9 +195,7 @@ export function AdminSidebar() {
 
   const visibleFlat = FLAT_ITEMS.filter((item) => !item.permission || can(item.permission))
 
-  const dynamicModuleItems = nonCoreNav.filter(
-    (item) => !item.permission || can(item.permission)
-  )
+  const dynamicModuleItems = nonCoreNav.filter((item) => !item.permission || can(item.permission))
   const visibleGroups = GROUPS.map((group) => ({
     ...group,
     children: group.children.filter((c) => !c.permission || can(c.permission)),

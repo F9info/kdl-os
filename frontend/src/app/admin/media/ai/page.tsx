@@ -71,7 +71,9 @@ export default function MediaAiSettingsPage() {
   const { data: status } = useQuery({
     queryKey: ['media-ai-status'],
     queryFn: () =>
-      api.get('/media/ai/status').then((r) => r.data.data.features as Record<AiFeature, AiFeatureStatus>),
+      api
+        .get('/media/ai/status')
+        .then((r) => r.data.data.features as Record<AiFeature, AiFeatureStatus>),
   })
 
   const { data: providers, isLoading } = useQuery({
@@ -105,7 +107,10 @@ export default function MediaAiSettingsPage() {
     onError: () => toast({ title: 'Failed to update auto-tag setting', variant: 'destructive' }),
   })
 
-  const [providerDialog, setProviderDialog] = useState<{ open: boolean; editing: AiProvider | null }>({
+  const [providerDialog, setProviderDialog] = useState<{
+    open: boolean
+    editing: AiProvider | null
+  }>({
     open: false,
     editing: null,
   })
@@ -335,7 +340,10 @@ export default function MediaAiSettingsPage() {
           size="lg"
           footer={
             <div className="flex gap-2 justify-end w-full">
-              <Button variant="outline" onClick={() => setProviderDialog({ open: false, editing: null })}>
+              <Button
+                variant="outline"
+                onClick={() => setProviderDialog({ open: false, editing: null })}
+              >
                 Cancel
               </Button>
               <Button onClick={handleSave} disabled={saveMutation.isPending}>
@@ -378,7 +386,9 @@ export default function MediaAiSettingsPage() {
                 {credFields.map((f) => (
                   <div key={f.key} className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">{fieldLabel(f.key)}</span>
-                    <span className="font-mono tracking-widest text-muted-foreground">••••••••</span>
+                    <span className="font-mono tracking-widest text-muted-foreground">
+                      ••••••••
+                    </span>
                   </div>
                 ))}
                 <Button

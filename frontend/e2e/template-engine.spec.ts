@@ -34,8 +34,7 @@ const authHeaders = () => ({ Authorization: `Bearer ${adminToken}` })
 async function getModuleStatus(): Promise<string | null> {
   const res = await api.get(`${API_URL}/modules`, { headers: authHeaders() })
   if (!res.ok()) return null
-  const modules: Array<{ slug: string; status: string }> =
-    (await res.json()).data?.modules ?? []
+  const modules: Array<{ slug: string; status: string }> = (await res.json()).data?.modules ?? []
   return modules.find((m) => m.slug === 'template-engine')?.status ?? null
 }
 
@@ -43,7 +42,9 @@ async function ensureEnabled() {
   const status = await getModuleStatus()
   if (status === 'ENABLED') return
   if (status === 'AVAILABLE' || status === null) {
-    const r = await api.post(`${API_URL}/modules/template-engine/install`, { headers: authHeaders() })
+    const r = await api.post(`${API_URL}/modules/template-engine/install`, {
+      headers: authHeaders(),
+    })
     expect(r.ok(), `install failed: ${await r.text()}`).toBeTruthy()
   }
   const r = await api.post(`${API_URL}/modules/template-engine/enable`, { headers: authHeaders() })
@@ -99,8 +100,12 @@ test.beforeAll(async () => {
   // Pick a real color field from the webapp schema: prefer an untagged group
   // (always visible regardless of theme/device toggles).
   const schemaData = await fetchSchema('webapp')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const panes: any[] = schemaData.schema ?? schemaData
-  expect(Array.isArray(panes), `schema payload not an array: ${JSON.stringify(schemaData).slice(0, 200)}`).toBeTruthy()
+  expect(
+    Array.isArray(panes),
+    `schema payload not an array: ${JSON.stringify(schemaData).slice(0, 200)}`
+  ).toBeTruthy()
   outer: for (const pane of panes) {
     for (const group of pane.groups ?? []) {
       if (group.tag) continue
@@ -137,7 +142,9 @@ test.afterAll(async () => {
   await api.dispose()
 })
 
-test('Gate 1 — admin UI edit → Save → /tokens reflects new value (css + json)', async ({ page }) => {
+test('Gate 1 — admin UI edit → Save → /tokens reflects new value (css + json)', async ({
+  page,
+}) => {
   await loginUi(page)
   await page.goto('/admin/template-engine')
 
@@ -148,12 +155,14 @@ test('Gate 1 — admin UI edit → Save → /tokens reflects new value (css + js
   // Pane sidebar must render from the REAL API payload.
   await expect(
     page.getByTestId(`pane-btn-${targetPaneId}`),
-    'pane sidebar did not render from the real /schema payload',
+    'pane sidebar did not render from the real /schema payload'
   ).toBeVisible({ timeout: 15_000 })
   await page.getByTestId(`pane-btn-${targetPaneId}`).click()
 
   const fieldRow = page.getByTestId(`field-row-${targetFieldId}`)
-  await expect(fieldRow, `field row ${targetFieldSlug} not rendered`).toBeVisible({ timeout: 10_000 })
+  await expect(fieldRow, `field row ${targetFieldSlug} not rendered`).toBeVisible({
+    timeout: 10_000,
+  })
 
   const colorInput = fieldRow.locator('input[type="color"]')
   await expect(colorInput).toBeVisible()
@@ -164,21 +173,27 @@ test('Gate 1 — admin UI edit → Save → /tokens reflects new value (css + js
   await expect(saveBtn, 'Save did not enable after edit (dirty tracking broken)').toBeEnabled()
 
   const [saveResponse] = await Promise.all([
-    page.waitForResponse((r) => r.url().includes('/template-engine/values') && r.request().method() === 'POST'),
+    page.waitForResponse(
+      (r) => r.url().includes('/template-engine/values') && r.request().method() === 'POST'
+    ),
     saveBtn.click(),
   ])
   expect(
     saveResponse.status(),
-    `POST /values returned ${saveResponse.status()}: ${await saveResponse.text()}`,
+    `POST /values returned ${saveResponse.status()}: ${await saveResponse.text()}`
   ).toBe(200)
 
   // Round-trip: public tokens endpoint must reflect the new value in css AND json.
   const tokens = await fetchTokens('webapp')
-  expect(tokens.css, `css missing ${expectedCssVar}: ${NEW_COLOR}`).toContain(`${expectedCssVar}: ${NEW_COLOR}`)
+  expect(tokens.css, `css missing ${expectedCssVar}: ${NEW_COLOR}`).toContain(
+    `${expectedCssVar}: ${NEW_COLOR}`
+  )
   expect(JSON.stringify(tokens.json)).toContain(NEW_COLOR)
 })
 
-test('Gate 2 — disable → routes 404 → re-enable → schema/tokens identical, cascade-clean', async ({ page }) => {
+test('Gate 2 — disable → routes 404 → re-enable → schema/tokens identical, cascade-clean', async ({
+  page,
+}) => {
   // Pre-disable snapshot across all 4 platforms + tokens.
   const platforms = ['webapp', 'tv', 'android', 'ios']
   const schemaBefore: Record<string, string> = {}
@@ -186,11 +201,15 @@ test('Gate 2 — disable → routes 404 → re-enable → schema/tokens identica
   const tokensBefore = JSON.stringify(await fetchTokens('webapp'))
 
   // Disable.
-  const dis = await api.post(`${API_URL}/modules/template-engine/disable`, { headers: authHeaders() })
+  const dis = await api.post(`${API_URL}/modules/template-engine/disable`, {
+    headers: authHeaders(),
+  })
   expect(dis.ok(), `disable failed: ${await dis.text()}`).toBeTruthy()
 
   // All module routes must 404 while disabled — including the public tokens route.
-  const schemaRes = await api.get(`${API_URL}/template-engine/schema?platform=webapp`, { headers: authHeaders() })
+  const schemaRes = await api.get(`${API_URL}/template-engine/schema?platform=webapp`, {
+    headers: authHeaders(),
+  })
   expect(schemaRes.status(), 'schema must 404 while disabled').toBe(404)
   const tokensRes = await fetchTokens('webapp', false)
   expect(tokensRes.status(), 'public tokens must 404 while disabled').toBe(404)
@@ -206,9 +225,13 @@ test('Gate 2 — disable → routes 404 → re-enable → schema/tokens identica
 
   // Round-trip clean: schema and tokens byte-identical — nothing orphaned, nothing lost.
   for (const p of platforms) {
-    expect(JSON.stringify(await fetchSchema(p)), `schema ${p} changed across disable/enable`).toBe(schemaBefore[p])
+    expect(JSON.stringify(await fetchSchema(p)), `schema ${p} changed across disable/enable`).toBe(
+      schemaBefore[p]
+    )
   }
-  expect(JSON.stringify(await fetchTokens('webapp')), 'tokens changed across disable/enable').toBe(tokensBefore)
+  expect(JSON.stringify(await fetchTokens('webapp')), 'tokens changed across disable/enable').toBe(
+    tokensBefore
+  )
 
   // UI back.
   await page.goto('/admin/template-engine')

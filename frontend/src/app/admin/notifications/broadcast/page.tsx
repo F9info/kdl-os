@@ -64,7 +64,9 @@ export default function BroadcastPage() {
   const { data: templates = [] } = useQuery({
     queryKey: ['notification-templates'],
     queryFn: () =>
-      api.get('/notifications/templates').then((r) => r.data.data.templates as NotificationTemplate[]),
+      api
+        .get('/notifications/templates')
+        .then((r) => r.data.data.templates as NotificationTemplate[]),
   })
 
   const { data: roles = [] } = useQuery({
@@ -73,8 +75,7 @@ export default function BroadcastPage() {
   })
 
   const broadcastMutation = useMutation({
-    mutationFn: (payload: Record<string, unknown>) =>
-      api.post('/notifications/broadcast', payload),
+    mutationFn: (payload: Record<string, unknown>) => api.post('/notifications/broadcast', payload),
     onSuccess: (resp) => {
       setResult(resp.data.data)
       setError(null)
@@ -136,8 +137,12 @@ export default function BroadcastPage() {
 
             {result && (
               <div className="rounded-md border bg-green-50 dark:bg-green-950 p-4 space-y-1 text-sm">
-                <div className="font-medium text-green-800 dark:text-green-300">Broadcast queued</div>
-                <div className="text-muted-foreground">Job ID: <span className="font-mono">{result.batch_id}</span></div>
+                <div className="font-medium text-green-800 dark:text-green-300">
+                  Broadcast queued
+                </div>
+                <div className="text-muted-foreground">
+                  Job ID: <span className="font-mono">{result.batch_id}</span>
+                </div>
                 {result.recipient_count !== undefined && (
                   <div className="text-muted-foreground">Recipients: {result.recipient_count}</div>
                 )}
@@ -152,7 +157,9 @@ export default function BroadcastPage() {
                   value={form.audience}
                   onValueChange={(v) => setForm((f) => ({ ...f, audience: v as AudienceType }))}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All users</SelectItem>
                     <SelectItem value="role">Users in role</SelectItem>
@@ -165,10 +172,14 @@ export default function BroadcastPage() {
                     value={form.role_slug}
                     onValueChange={(v) => setForm((f) => ({ ...f, role_slug: v }))}
                   >
-                    <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
                     <SelectContent>
                       {roles.map((r) => (
-                        <SelectItem key={r.slug} value={r.slug}>{r.name}</SelectItem>
+                        <SelectItem key={r.slug} value={r.slug}>
+                          {r.name}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -184,7 +195,9 @@ export default function BroadcastPage() {
                   value={form.message_type}
                   onValueChange={(v) => setForm((f) => ({ ...f, message_type: v as MessageType }))}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="template">Use template</SelectItem>
                     <SelectItem value="inline">Custom message</SelectItem>
@@ -197,10 +210,14 @@ export default function BroadcastPage() {
                     value={form.template_id}
                     onValueChange={(v) => setForm((f) => ({ ...f, template_id: v }))}
                   >
-                    <SelectTrigger><SelectValue placeholder="Select template" /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select template" />
+                    </SelectTrigger>
                     <SelectContent>
                       {templates.map((t) => (
-                        <SelectItem key={t.id} value={t.id}>{t.name} ({t.slug})</SelectItem>
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.name} ({t.slug})
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

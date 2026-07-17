@@ -42,10 +42,12 @@ export async function startAiStub(): Promise<AiStub> {
         seo_keywords: ['e2e', 'stub'],
       }
       res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({
-        model: 'stub-vision',
-        choices: [{ message: { content: JSON.stringify(analysis) } }],
-      }))
+      res.end(
+        JSON.stringify({
+          model: 'stub-vision',
+          choices: [{ message: { content: JSON.stringify(analysis) } }],
+        })
+      )
       return
     }
 
@@ -53,11 +55,13 @@ export async function startAiStub(): Promise<AiStub> {
     if (url === '/v1/audio/transcriptions' && req.method === 'POST') {
       await readBody(req)
       res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({
-        text: 'e2e stub transcript sentence',
-        segments: [{ id: 0, start: 0, end: 1.2, text: 'e2e stub transcript sentence' }],
-        language: 'en',
-      }))
+      res.end(
+        JSON.stringify({
+          text: 'e2e stub transcript sentence',
+          segments: [{ id: 0, start: 0, end: 1.2, text: 'e2e stub transcript sentence' }],
+          language: 'en',
+        })
+      )
       return
     }
 
@@ -65,11 +69,13 @@ export async function startAiStub(): Promise<AiStub> {
     // so the driver's polling loop never runs (status is checked once, right after create).
     if (/^\/models\/.+\/predictions$/.test(url) && req.method === 'POST') {
       res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({
-        id: 'e2e-stub-prediction',
-        status: 'succeeded',
-        output: [`http://host.docker.internal:${resolvedPort}/output.png`],
-      }))
+      res.end(
+        JSON.stringify({
+          id: 'e2e-stub-prediction',
+          status: 'succeeded',
+          output: [`http://host.docker.internal:${resolvedPort}/output.png`],
+        })
+      )
       return
     }
 
@@ -79,9 +85,11 @@ export async function startAiStub(): Promise<AiStub> {
       const body = JSON.parse((await readBody(req)).toString('utf8') || '{}')
       const inputs: string[] = Array.isArray(body.input) ? body.input : [body.input]
       res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({
-        data: inputs.map((_, index) => ({ index, embedding: [0.1, 0.2, 0.3] })),
-      }))
+      res.end(
+        JSON.stringify({
+          data: inputs.map((_, index) => ({ index, embedding: [0.1, 0.2, 0.3] })),
+        })
+      )
       return
     }
 

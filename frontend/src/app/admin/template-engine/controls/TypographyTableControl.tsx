@@ -59,7 +59,9 @@ export function TypographyTableControl({
   const updateRow = (i: number, patch: Partial<TypoRow>) =>
     commit(rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r)))
 
-  const familyChoices = Array.from(new Set([...choices, ...rows.map((r) => r.family)].filter(Boolean)))
+  const familyChoices = Array.from(
+    new Set([...choices, ...rows.map((r) => r.family)].filter(Boolean))
+  )
 
   return (
     <div className="w-full overflow-x-auto">
