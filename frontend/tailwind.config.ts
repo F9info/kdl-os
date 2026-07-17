@@ -76,40 +76,10 @@ const config: Config = {
           from: { height: 'var(--radix-accordion-content-height)' },
           to: { height: '0' },
         },
-        'sheet-overlay-in': {
-          from: { opacity: '0' },
-          to: { opacity: '1' },
-        },
-        'sheet-overlay-out': {
-          from: { opacity: '1' },
-          to: { opacity: '0' },
-        },
-        'sheet-slide-in-from-right': {
-          from: { transform: 'translateX(100%)' },
-          to: { transform: 'translateX(0)' },
-        },
-        'sheet-slide-out-to-right': {
-          from: { transform: 'translateX(0)' },
-          to: { transform: 'translateX(100%)' },
-        },
-        'sheet-slide-in-from-left': {
-          from: { transform: 'translateX(-100%)' },
-          to: { transform: 'translateX(0)' },
-        },
-        'sheet-slide-out-to-left': {
-          from: { transform: 'translateX(0)' },
-          to: { transform: 'translateX(-100%)' },
-        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
-        'sheet-overlay-in': 'sheet-overlay-in 0.2s ease-out',
-        'sheet-overlay-out': 'sheet-overlay-out 0.15s ease-out',
-        'sheet-slide-in-from-right': 'sheet-slide-in-from-right 0.2s ease-out',
-        'sheet-slide-out-to-right': 'sheet-slide-out-to-right 0.15s ease-out',
-        'sheet-slide-in-from-left': 'sheet-slide-in-from-left 0.2s ease-out',
-        'sheet-slide-out-to-left': 'sheet-slide-out-to-left 0.15s ease-out',
       },
     },
   },
