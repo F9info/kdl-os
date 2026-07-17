@@ -53,6 +53,11 @@ vi.mock('../user-management/shared/activity-logger.js', () => ({
   getClientIp: vi.fn(() => '127.0.0.1'),
 }));
 
+vi.mock('../../shared/utils/ssrf-guard.js', () => ({
+  assertPublicHost: vi.fn().mockResolvedValue(undefined),
+  assertPublicEndpoint: vi.fn().mockResolvedValue(undefined),
+}));
+
 // Import after all mocks
 const { prisma } = await import('../../config/database.js');
 const { getModuleStatus } = await import('../../middleware/module-gate.js');

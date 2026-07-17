@@ -4,6 +4,7 @@ import {
   ListObjectsV2Command,
   GetObjectCommand,
 } from '@aws-sdk/client-s3';
+import { assertPublicEndpoint } from '../../../../shared/utils/ssrf-guard.js';
 
 const credentialsSchema = z.object({
   access_key_id: z.string().min(1),
@@ -22,6 +23,13 @@ const makeClient = (credentials) => new S3Client({
   ...(credentials.endpoint ? { endpoint: credentials.endpoint, forcePathStyle: true } : {}),
 });
 
+const getValidatedClient = async (credentials) => {
+  if (credentials.endpoint) {
+    await assertPublicEndpoint(credentials.endpoint);
+  }
+  return makeClient(credentials);
+};
+
 const streamToBuffer = async (stream) => {
   const chunks = [];
   for await (const chunk of stream) chunks.push(chunk);
@@ -37,7 +45,7 @@ export default {
   isAppConfigured: () => true,
 
   async list({ credentials, folderId, cursor }) {
-    const client = makeClient(credentials);
+    const client = await getValidatedClient(credentials);
     const prefix = folderId || '';
     const res = await client.send(new ListObjectsV2Command({
       Bucket: credentials.bucket,
@@ -71,7 +79,7 @@ export default {
   },
 
   async download({ credentials, fileId }) {
-    const client = makeClient(credentials);
+    const client = await getValidatedClient(credentials);
     const res = await client.send(new GetObjectCommand({ Bucket: credentials.bucket, Key: fileId }));
     const buffer = await streamToBuffer(res.Body);
     return { buffer, filename: fileId.split('/').pop(), mimeType: res.ContentType ?? null };

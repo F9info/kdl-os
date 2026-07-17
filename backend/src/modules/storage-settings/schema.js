@@ -2,8 +2,9 @@ import { z } from 'zod';
 
 const PROVIDERS = ['local', 'minio', 's3', 'spaces', 'r2'];
 
-// RFC1918 / loopback / link-local patterns — block these to prevent SSRF.
-const PRIVATE_IP_RE = /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|169\.254\.|::1$|fc00:|fe80:)/i;
+// RFC1918 / loopback / link-local / ULA / multicast patterns (static pre-flight).
+// The service layer adds an async DNS-resolve check via assertPublicEndpoint.
+const PRIVATE_IP_RE = /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|169\.254\.|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.|::1$|fc[0-9a-f]{2}:|fd[0-9a-f]{2}:|fe[89ab][0-9a-f]:|ff[0-9a-f]{2}:)/i;
 
 const safeEndpoint = z
   .string()
@@ -18,6 +19,10 @@ const safeEndpoint = z
     if (PRIVATE_IP_RE.test(host)) return false;
     if (host === '0.0.0.0' || host === '::' || host === '[::]') return false;
     if (/^::ffff:/i.test(host)) return false;
+    // Reject integer-encoded (2130706433), hex-encoded (0x7f000001), octal-octet (0177.0.0.1) IPs
+    if (/^\d+$/.test(host)) return false;
+    if (/^0x[0-9a-f]+$/i.test(host)) return false;
+    if (/(?:^|\.)0\d/.test(host)) return false;
     return true;
   }, {
     message: process.env.NODE_ENV === 'production'

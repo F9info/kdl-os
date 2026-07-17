@@ -34,3 +34,15 @@ export const requirePermission = (moduleName, action, options = {}) => {
     }
   };
 };
+
+// Loads req.userPermissions without gating on a specific action.
+// Use when the route delegates authorization entirely to the service layer.
+export const loadPermissions = () => async (req, res, next) => {
+  try {
+    if (!req.user?.id) return errorResponse(res, 'Unauthorized', 401);
+    req.userPermissions = await resolvePermissions(req.user.id);
+    next();
+  } catch (err) {
+    next(err);
+  }
+};
