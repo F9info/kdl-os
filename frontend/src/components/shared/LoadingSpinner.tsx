@@ -3,6 +3,10 @@ import { cn } from '@/lib/utils'
 interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg'
   fullPage?: boolean
+  /** Set when an ancestor already owns the aria-live/status announcement
+   *  (e.g. LoadingState) so the spinner doesn't announce a second, redundant
+   *  "Loading" region. */
+  ariaHidden?: boolean
 }
 
 const sizeClasses = {
@@ -11,12 +15,17 @@ const sizeClasses = {
   lg: 'h-12 w-12 border-4',
 }
 
-export function LoadingSpinner({ size = 'md', fullPage = false }: LoadingSpinnerProps) {
+export function LoadingSpinner({
+  size = 'md',
+  fullPage = false,
+  ariaHidden = false,
+}: LoadingSpinnerProps) {
   const spinner = (
     <div
       className={cn('animate-spin rounded-full border-muted border-t-primary', sizeClasses[size])}
-      role="status"
-      aria-label="Loading"
+      role={ariaHidden ? undefined : 'status'}
+      aria-hidden={ariaHidden || undefined}
+      aria-label={ariaHidden ? undefined : 'Loading'}
     />
   )
 

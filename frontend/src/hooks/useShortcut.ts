@@ -20,7 +20,10 @@ function isEditableTarget(target: EventTarget | null): boolean {
 // Combo syntax: "mod+k" (mod = Cmd on Mac, Ctrl elsewhere), "shift+?", "escape".
 // Single key + modifier only — no chorded sequences (e.g. "g d").
 function matchesCombo(event: KeyboardEvent, combo: string): boolean {
-  const parts = combo.toLowerCase().split('+').map((p) => p.trim())
+  const parts = combo
+    .toLowerCase()
+    .split('+')
+    .map((p) => p.trim())
   const key = parts[parts.length - 1]
   const wantMod = parts.includes('mod')
   const wantShift = parts.includes('shift')
@@ -54,7 +57,8 @@ export function useShortcut(combo: string, handler: () => void, options: Shortcu
   useEffect(() => {
     if (!enabled) return
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!allowInInputs && isEditableTarget(event.target) && combo.toLowerCase() !== 'escape') return
+      if (!allowInInputs && isEditableTarget(event.target) && combo.toLowerCase() !== 'escape')
+        return
       if (matchesCombo(event, combo)) {
         event.preventDefault()
         handlerRef.current()
