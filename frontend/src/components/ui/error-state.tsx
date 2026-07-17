@@ -32,7 +32,10 @@ export function ErrorState({
     <div
       role="alert"
       aria-live="assertive"
-      className={cn('flex flex-col items-center justify-center gap-3 py-12 px-4 text-center', className)}
+      className={cn(
+        'flex flex-col items-center justify-center gap-3 py-12 px-4 text-center',
+        className
+      )}
     >
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
         <AlertCircle className="h-6 w-6" aria-hidden="true" />
