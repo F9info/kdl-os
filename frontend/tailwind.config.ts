@@ -35,7 +35,8 @@ const config: Config = {
         },
         secondary: {
           DEFAULT: 'var(--branding_brand_colors_secondary_color, hsl(var(--secondary)))',
-          foreground: 'var(--branding_text_interaction_text_primary, hsl(var(--secondary-foreground)))',
+          foreground:
+            'var(--branding_text_interaction_text_primary, hsl(var(--secondary-foreground)))',
         },
         destructive: {
           DEFAULT: 'hsl(var(--destructive))',
@@ -43,15 +44,18 @@ const config: Config = {
         },
         muted: {
           DEFAULT: 'var(--branding_surfaces_surface_color, hsl(var(--muted)))',
-          foreground: 'var(--branding_text_interaction_text_secondary, hsl(var(--muted-foreground)))',
+          foreground:
+            'var(--branding_text_interaction_text_secondary, hsl(var(--muted-foreground)))',
         },
         accent: {
           DEFAULT: 'var(--branding_brand_colors_accent_color, hsl(var(--accent)))',
-          foreground: 'var(--branding_text_interaction_text_primary, hsl(var(--accent-foreground)))',
+          foreground:
+            'var(--branding_text_interaction_text_primary, hsl(var(--accent-foreground)))',
         },
         popover: {
           DEFAULT: 'var(--branding_surfaces_surface_color, hsl(var(--popover)))',
-          foreground: 'var(--branding_text_interaction_text_primary, hsl(var(--popover-foreground)))',
+          foreground:
+            'var(--branding_text_interaction_text_primary, hsl(var(--popover-foreground)))',
         },
         card: {
           DEFAULT: 'var(--branding_surfaces_card_color, hsl(var(--card)))',

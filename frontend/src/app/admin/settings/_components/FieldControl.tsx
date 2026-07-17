@@ -90,9 +90,7 @@ export function FieldControl({ field, state, onChange }: FieldControlProps) {
         )
 
       case 'textarea':
-        return (
-          <RichTextEditor value={state.value} onChange={(html) => onChange({ value: html })} />
-        )
+        return <RichTextEditor value={state.value} onChange={(html) => onChange({ value: html })} />
 
       case 'select':
         return (
@@ -136,9 +134,7 @@ export function FieldControl({ field, state, onChange }: FieldControlProps) {
       case 'checkbox': {
         const selected = state.value ? state.value.split(',').map((s) => s.trim()) : []
         const toggle = (o: string) => {
-          const next = selected.includes(o)
-            ? selected.filter((s) => s !== o)
-            : [...selected, o]
+          const next = selected.includes(o) ? selected.filter((s) => s !== o) : [...selected, o]
           onChange({ value: next.join(',') })
         }
         return (
@@ -196,9 +192,7 @@ export function FieldControl({ field, state, onChange }: FieldControlProps) {
         return <GalleryControl field={field} state={state} onChange={onChange} />
 
       default:
-        return (
-          <Input value={state.value} onChange={(e) => onChange({ value: e.target.value })} />
-        )
+        return <Input value={state.value} onChange={(e) => onChange({ value: e.target.value })} />
     }
   }
 
@@ -256,7 +250,11 @@ function SingleFileControl({ field, state, onChange }: FieldControlProps) {
           disabled={uploading}
           onClick={() => inputRef.current?.click()}
         >
-          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+          {uploading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <ImagePlus className="h-4 w-4" />
+          )}
           {state.preview ? 'Replace' : 'Upload'}
         </Button>
         <input
@@ -331,7 +329,11 @@ function GalleryControl({ state, onChange }: FieldControlProps) {
         onClick={() => inputRef.current?.click()}
         className={cn(uploading && 'opacity-70')}
       >
-        {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+        {uploading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <ImagePlus className="h-4 w-4" />
+        )}
         Add images
       </Button>
       <input

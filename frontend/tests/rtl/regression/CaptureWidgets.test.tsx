@@ -3,13 +3,20 @@
 // mocked here so tests never touch a real camera/mic/screen.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '../../rtl/utils'
-import { WebcamCaptureButton, ScreenCaptureButton, VoiceRecorderButton } from '@/components/media/CaptureWidgets'
+import {
+  WebcamCaptureButton,
+  ScreenCaptureButton,
+  VoiceRecorderButton,
+} from '@/components/media/CaptureWidgets'
 
 class FakeMediaRecorder {
   static isTypeSupported = vi.fn(() => true)
   ondataavailable: ((e: { data: Blob }) => void) | null = null
   onstop: (() => void) | null = null
-  constructor(public stream: MediaStream, public opts?: MediaRecorderOptions) {
+  constructor(
+    public stream: MediaStream,
+    public opts?: MediaRecorderOptions
+  ) {
     instances.push(this)
   }
   start() {
@@ -102,7 +109,9 @@ describe('ScreenCaptureButton', () => {
     render(<ScreenCaptureButton onCapture={onCapture} />)
     fireEvent.click(screen.getByTitle('Record screen'))
     fireEvent.click(screen.getByRole('button', { name: /start/i }))
-    await waitFor(() => expect(getDisplayMediaMock).toHaveBeenCalledWith({ video: true, audio: true }))
+    await waitFor(() =>
+      expect(getDisplayMediaMock).toHaveBeenCalledWith({ video: true, audio: true })
+    )
     await waitFor(() => screen.getByRole('button', { name: /stop/i }))
     fireEvent.click(screen.getByRole('button', { name: /stop/i }))
     await waitFor(() => screen.getByRole('button', { name: /use recording/i }))

@@ -8,7 +8,11 @@ import { MonitorUp, Square } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import {
-  uploadCapture, extFromMime, mediaErrorMessage, formatDuration, stopStream,
+  uploadCapture,
+  extFromMime,
+  mediaErrorMessage,
+  formatDuration,
+  stopStream,
   type CaptureWidgetProps,
 } from './captureUtils'
 
@@ -23,17 +27,24 @@ export function ScreenCapture({ folderId, onUploaded }: CaptureWidgetProps) {
   const [uploading, setUploading] = useState(false)
 
   // Stop everything on unmount
-  useEffect(() => () => {
-    const rec = recorderRef.current
-    if (rec && rec.state !== 'inactive') {
-      rec.ondataavailable = null
-      rec.onstop = null
-      try { rec.stop() } catch { /* already stopped */ }
-    }
-    recorderRef.current = null
-    stopStream(streamRef.current)
-    streamRef.current = null
-  }, [])
+  useEffect(
+    () => () => {
+      const rec = recorderRef.current
+      if (rec && rec.state !== 'inactive') {
+        rec.ondataavailable = null
+        rec.onstop = null
+        try {
+          rec.stop()
+        } catch {
+          /* already stopped */
+        }
+      }
+      recorderRef.current = null
+      stopStream(streamRef.current)
+      streamRef.current = null
+    },
+    []
+  )
 
   useEffect(() => {
     if (!recording) return
@@ -70,7 +81,11 @@ export function ScreenCapture({ folderId, onUploaded }: CaptureWidgetProps) {
       streamRef.current = stream
       const video = videoRef.current
       if (video) {
-        try { video.srcObject = stream } catch { /* jsdom */ }
+        try {
+          video.srcObject = stream
+        } catch {
+          /* jsdom */
+        }
         video.play?.()?.catch?.(() => {})
       }
       // The browser's own "Stop sharing" bar ends the track without going
@@ -84,7 +99,11 @@ export function ScreenCapture({ folderId, onUploaded }: CaptureWidgetProps) {
       }
       rec.onstop = () => {
         const mime = rec.mimeType || 'video/webm'
-        const file = new File(chunksRef.current, `screen-${Date.now()}.${extFromMime(mime, 'webm')}`, { type: mime })
+        const file = new File(
+          chunksRef.current,
+          `screen-${Date.now()}.${extFromMime(mime, 'webm')}`,
+          { type: mime }
+        )
         chunksRef.current = []
         stopStream(streamRef.current)
         streamRef.current = null
@@ -103,14 +122,21 @@ export function ScreenCapture({ folderId, onUploaded }: CaptureWidgetProps) {
     setRecording(false)
     const rec = recorderRef.current
     recorderRef.current = null
-    try { rec?.stop() } catch { /* already stopped */ }
+    try {
+      rec?.stop()
+    } catch {
+      /* already stopped */
+    }
   }
 
   return (
     <div className="space-y-3">
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
       {recording && (
-        // eslint-disable-next-line jsx-a11y/media-has-caption
         <video
           ref={videoRef}
           autoPlay

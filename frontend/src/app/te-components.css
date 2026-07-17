@@ -74,7 +74,11 @@
   .te-btn-primary:hover {
     background-color: var(
       --buttons_primary_button_hover_color,
-      color-mix(in srgb, var(--branding_brand_colors_primary_color, hsl(var(--primary))) 90%, transparent)
+      color-mix(
+        in srgb,
+        var(--branding_brand_colors_primary_color, hsl(var(--primary))) 90%,
+        transparent
+      )
     );
   }
 
@@ -222,30 +226,43 @@
     --te-card-shadow: 0 2px 10px rgba(0, 0, 0, 0.15); /* Soft (seed) */
   }
   @container style(--cards_surface_shadow: None) {
-    body { --te-card-shadow: none; }
+    body {
+      --te-card-shadow: none;
+    }
   }
   @container style(--cards_surface_shadow: Soft) {
-    body { --te-card-shadow: 0 2px 10px rgba(0, 0, 0, 0.15); }
+    body {
+      --te-card-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+    }
   }
   @container style(--cards_surface_shadow: Medium) {
-    body { --te-card-shadow: 0 6px 22px rgba(0, 0, 0, 0.25); }
+    body {
+      --te-card-shadow: 0 6px 22px rgba(0, 0, 0, 0.25);
+    }
   }
   @container style(--cards_surface_shadow: Hard) {
-    body { --te-card-shadow: 0 12px 34px rgba(0, 0, 0, 0.4); }
+    body {
+      --te-card-shadow: 0 12px 34px rgba(0, 0, 0, 0.4);
+    }
   }
   @container style(--cards_surface_card_style: Flat) {
-    .te-card { box-shadow: none; }
+    .te-card {
+      box-shadow: none;
+    }
   }
 
   /* Tables: Border Style (None / Horizontal / Full grid). */
   @container style(--tables_rows_borders_border_style: None) {
-    body { --te-table-border-width: 0px; }
+    body {
+      --te-table-border-width: 0px;
+    }
   }
-
 
   /* Popup: Overlay Blur toggle. */
   @container style(--popup_overlay_overlay_blur: true) {
-    .te-popup-overlay { backdrop-filter: blur(4px); }
+    .te-popup-overlay {
+      backdrop-filter: blur(4px);
+    }
   }
 }
 
@@ -301,10 +318,14 @@
 }
 /* Alerts: Border Style (None / Full border / Left accent — seed). */
 @container style(--alerts_shape_border_style: None) {
-  .te-alert { border-width: 0; }
+  .te-alert {
+    border-width: 0;
+  }
 }
 @container style(--alerts_shape_border_style: Left accent) {
-  .te-alert { border-width: 0 0 0 3px; }
+  .te-alert {
+    border-width: 0 0 0 3px;
+  }
 }
 
 .te-popup {

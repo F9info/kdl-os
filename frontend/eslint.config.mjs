@@ -12,4 +12,10 @@ const compat = new FlatCompat({ baseDirectory: __dirname })
 export default [
   { ignores: ['.next/**', 'node_modules/**'] },
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
+  {
+    files: ['tests/**/*.{ts,tsx}', '**/*.test.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
 ]

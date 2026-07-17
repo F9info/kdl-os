@@ -39,17 +39,13 @@ export function BrandingFileControl({
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          'inline-flex items-center gap-2 rounded border border-border bg-muted px-2 py-1.5 text-sm transition-colors hover:border-primary',
+          'inline-flex items-center gap-2 rounded border border-border bg-muted px-2 py-1.5 text-sm transition-colors hover:border-primary'
         )}
         title="Choose file"
       >
         {hasValue && looksLikeImage(value) ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={value}
-            alt=""
-            className="h-6 w-6 shrink-0 rounded object-cover"
-          />
+          <img src={value} alt="" className="h-6 w-6 shrink-0 rounded object-cover" />
         ) : (
           <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-border/50 text-muted-foreground">
             <Upload className="h-3.5 w-3.5" />

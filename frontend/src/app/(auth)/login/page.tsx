@@ -42,7 +42,11 @@ export default function LoginPage() {
     formState: { errors },
   } = useForm<LoginFormData>({ resolver: zodResolver(loginSchema) })
 
-  const { mutate: login, isPending, error } = useMutation({
+  const {
+    mutate: login,
+    isPending,
+    error,
+  } = useMutation({
     mutationFn: (data: LoginFormData) =>
       api.post<ApiResponse<LoginResponseData>>('/auth/login', data).then((r) => r.data),
     onSuccess: (res) => {

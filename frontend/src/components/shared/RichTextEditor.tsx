@@ -16,7 +16,21 @@ interface RichTextEditorProps {
 }
 
 const PURIFY_CONFIG = {
-  ALLOWED_TAGS: ['b', 'strong', 'i', 'em', 'u', 's', 'strike', 'a', 'ul', 'ol', 'li', 'p', 'br'] as string[],
+  ALLOWED_TAGS: [
+    'b',
+    'strong',
+    'i',
+    'em',
+    'u',
+    's',
+    'strike',
+    'a',
+    'ul',
+    'ol',
+    'li',
+    'p',
+    'br',
+  ] as string[],
   ALLOWED_ATTR: ['href', 'rel', 'target'] as string[],
   FORCE_BODY: true,
 }
@@ -90,48 +104,69 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
         <ToolBtn
           label="Bold"
           active={editor?.isActive('bold')}
-          onMouseDown={(e) => { e.preventDefault(); editor?.chain().focus().toggleBold().run() }}
+          onMouseDown={(e) => {
+            e.preventDefault()
+            editor?.chain().focus().toggleBold().run()
+          }}
         >
           <Bold className="h-4 w-4" />
         </ToolBtn>
         <ToolBtn
           label="Italic"
           active={editor?.isActive('italic')}
-          onMouseDown={(e) => { e.preventDefault(); editor?.chain().focus().toggleItalic().run() }}
+          onMouseDown={(e) => {
+            e.preventDefault()
+            editor?.chain().focus().toggleItalic().run()
+          }}
         >
           <Italic className="h-4 w-4" />
         </ToolBtn>
         <ToolBtn
           label="Underline"
           active={editor?.isActive('underline')}
-          onMouseDown={(e) => { e.preventDefault(); editor?.chain().focus().toggleUnderline().run() }}
+          onMouseDown={(e) => {
+            e.preventDefault()
+            editor?.chain().focus().toggleUnderline().run()
+          }}
         >
           <Underline className="h-4 w-4" />
         </ToolBtn>
         <ToolBtn
           label="Bulleted list"
           active={editor?.isActive('bulletList')}
-          onMouseDown={(e) => { e.preventDefault(); editor?.chain().focus().toggleBulletList().run() }}
+          onMouseDown={(e) => {
+            e.preventDefault()
+            editor?.chain().focus().toggleBulletList().run()
+          }}
         >
           <List className="h-4 w-4" />
         </ToolBtn>
         <ToolBtn
           label="Numbered list"
           active={editor?.isActive('orderedList')}
-          onMouseDown={(e) => { e.preventDefault(); editor?.chain().focus().toggleOrderedList().run() }}
+          onMouseDown={(e) => {
+            e.preventDefault()
+            editor?.chain().focus().toggleOrderedList().run()
+          }}
         >
           <ListOrdered className="h-4 w-4" />
         </ToolBtn>
         <ToolBtn
           label="Insert link"
           active={editor?.isActive('link')}
-          onMouseDown={(e) => { e.preventDefault(); setLink() }}
+          onMouseDown={(e) => {
+            e.preventDefault()
+            setLink()
+          }}
         >
           <Link2 className="h-4 w-4" />
         </ToolBtn>
         <ToolBtn
           label="Clear formatting"
-          onMouseDown={(e) => { e.preventDefault(); clearFormatting() }}
+          onMouseDown={(e) => {
+            e.preventDefault()
+            clearFormatting()
+          }}
         >
           <Eraser className="h-4 w-4" />
         </ToolBtn>

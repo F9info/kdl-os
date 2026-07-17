@@ -39,7 +39,10 @@ export function MediaLightbox({ item, onClose }: MediaLightboxProps) {
       aria-label={`Preview ${name}`}
       onClick={onClose}
     >
-      <div className="flex items-center justify-between px-4 py-3 text-white flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="flex items-center justify-between px-4 py-3 text-white flex-shrink-0"
+        onClick={(e) => e.stopPropagation()}
+      >
         <span className="text-sm truncate">{name}</span>
         <div className="flex items-center gap-2">
           {item.url && can('media:download') && (
@@ -54,13 +57,21 @@ export function MediaLightbox({ item, onClose }: MediaLightboxProps) {
               <Download className="h-5 w-5" />
             </a>
           )}
-          <button type="button" onClick={onClose} className="p-1.5 rounded hover:bg-white/10" title="Close">
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded hover:bg-white/10"
+            title="Close"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center min-h-0 p-4" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="flex-1 flex items-center justify-center min-h-0 p-4"
+        onClick={(e) => e.stopPropagation()}
+      >
         {!item.url ? (
           <p className="text-white/70 text-sm">This file has no preview available yet.</p>
         ) : isImage ? (
@@ -76,7 +87,12 @@ export function MediaLightbox({ item, onClose }: MediaLightboxProps) {
         ) : (
           <div className="text-center space-y-3 text-white/80">
             <p className="text-sm">No inline preview for this file type ({mime || 'unknown'}).</p>
-            <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-primary underline text-sm">
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline text-sm"
+            >
               Open in a new tab
             </a>
           </div>
