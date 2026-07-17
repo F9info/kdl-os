@@ -267,29 +267,33 @@ Seed: 1 SUPER_ADMIN → `admin@kdl.com / Admin@123`. System roles: `super-admin`
 
 ---
 
-## Two-Brain System
+## Model Allocation (live — 2026-07-16)
 
-| Brain | When | Model |
-|-------|------|-------|
-| Claude (main) | CRITICAL / HIGH — architecture, security, decisions | claude-sonnet-4-6 via subscription |
-| OpenRouter (budget) | MEDIUM / LOW — CRUD, components, routine tasks | moonshot-ai/moonshot-v1-32k |
+All agents run on the **Claude Code adapter (Claude subscription)** via the Paperclip control plane, which is the single source of truth. The old OpenRouter/opencode "budget brain" is retired.
 
-OpenRouter API key is in `.env` as `OPENROUTER_API_KEY`.
-Daily OpenRouter budget: $2.00. If exhausted → write task to `MANUAL_TASKS.md` and continue.
+| Tier | Agents | Model |
+|------|--------|-------|
+| Orchestration | CEO | Default (resolves to Sonnet 5) · Thinking effort: Medium |
+| Implementation | Backend Coder, Frontend Coder | Claude Sonnet 4.6 |
+| Design / review / routine | Architects, Code Reviewer, Security, AI Services | Claude Fable 5 |
+| Ops / docs / QA | DevOps, Documentation, QA | Claude Sonnet 4.6 |
+| Cheap profile | (all) | Claude Fable 5 — used for routine summaries |
+
+> Historical note: earlier revisions of this repo and `agents/*.json` referenced an OpenRouter/moonshot "budget brain" and a $2/day cap. That path is retired — do not re-introduce OpenRouter budget logic. Per-agent $ budgets are moot while on the subscription adapter.
 
 ---
 
 ## Session Protocol (every agent, every session)
 
 1. Read `CLAUDE.md` (this file)
-2. Read `.agents/HANDOFF.md`
-3. Read `STATUS.md`
+2. Read `.agents/HANDOFF.md` — a **rolling window of only the most recent entries**; read `.agents/HANDOFF_ARCHIVE.md` ONLY if you need older context
+3. Read `STATUS.md` — rolling window of recent entries only; older history in `.agents/STATUS_ARCHIVE.md`
 4. Read `.agents/CONTEXT.md`
 5. Read `ai-services/src/memory/lessons.md` if it exists
 6. Do the work
 7. Run tests / linters — never self-assess, use exit codes
-8. Write `.agents/HANDOFF.md`
-9. Append to `STATUS.md`
+8. **Prepend** your new entry to the top of `.agents/HANDOFF.md`; keep the window to ~8 entries (move older ones into `.agents/HANDOFF_ARCHIVE.md`)
+9. **Prepend** to `STATUS.md`; keep the window trimmed (older entries → `.agents/STATUS_ARCHIVE.md`)
 
 ---
 
@@ -299,7 +303,7 @@ Daily OpenRouter budget: $2.00. If exhausted → write task to `MANUAL_TASKS.md`
 2. **Every loop has a `maxIterations` hard cap** — no infinite loops
 3. **On max iterations hit → write `BLOCKERS.md`** — never silently fail
 4. **Never skip a phase approval gate** — Prasanna must confirm before next phase
-5. **OpenRouter budget limit:** $2.00/day — log to `BUDGET.md`
+5. **(Retired)** OpenRouter budget rule no longer applies — all agents run on the Claude subscription adapter (see Model Allocation). `BUDGET.md` is deprecated.
 6. **Security hook always-on** for backend agents (Agents 2, 3, 7)
 
 ---

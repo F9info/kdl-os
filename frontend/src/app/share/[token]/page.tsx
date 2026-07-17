@@ -23,6 +23,7 @@ import { useParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { formatBytes } from '@/lib/utils'
+import { AppImage } from '@/components/shared/AppImage'
 
 interface SharedMediaItem {
   id: string
@@ -51,8 +52,7 @@ function MediaPreview({ item }: { item: SharedMediaItem }) {
   return (
     <div className="space-y-3">
       {isImage && item.url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={item.url} alt={item.original_name} className="w-full rounded border" />
+        <AppImage size="content" src={item.url} alt={item.original_name} className="max-w-full rounded border" />
       )}
       {isVideo && item.url && (
         // eslint-disable-next-line jsx-a11y/media-has-caption
@@ -153,7 +153,7 @@ export default function SharePage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
       <div className="w-full max-w-md bg-background border rounded-lg shadow-sm p-6 space-y-4">
-        <h1 className="text-lg font-semibold">Shared file</h1>
+        <h1>Shared file</h1>
 
         {status === 'loading' && (
           <p className="text-sm text-muted-foreground">Loading…</p>

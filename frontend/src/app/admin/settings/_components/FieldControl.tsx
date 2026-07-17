@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { ImagePlus, Loader2, X } from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
+import { AppImage } from '@/components/shared/AppImage'
 import { FormField } from '@/components/shared/FormField'
 import { RichTextEditor } from '@/components/shared/RichTextEditor'
 import { Input } from '@/components/ui/input'
@@ -230,11 +231,11 @@ function SingleFileControl({ field, state, onChange }: FieldControlProps) {
     <div className="space-y-3">
       {state.preview && (
         <div className="relative inline-block">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <AppImage
+            size="thumbnail"
             src={state.preview}
             alt={state.alt_text || 'preview'}
-            className="h-28 w-28 rounded-md border object-cover"
+            className="rounded-md border"
           />
           <button
             type="button"
@@ -308,8 +309,7 @@ function GalleryControl({ state, onChange }: FieldControlProps) {
         <div className="flex flex-wrap gap-3">
           {gallery.map((g, i) => (
             <div key={g.path} className="relative">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={g.url} alt="" className="h-24 w-24 rounded-md border object-cover" />
+              <AppImage size="thumbnail" src={g.url} alt="" className="rounded-md border" />
               <button
                 type="button"
                 onClick={() => remove(i)}

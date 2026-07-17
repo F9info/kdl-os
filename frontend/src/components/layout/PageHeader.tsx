@@ -11,7 +11,10 @@ export function PageHeader({ title, breadcrumbs, action }: PageHeaderProps) {
   return (
     <div className="flex items-center justify-between mb-6">
       <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+        {/* Size/family/weight come from the Template Engine's Typography
+            Scale H1 tokens via the bare h1 rule in te-typography.css —
+            no size or weight utilities here so the tokens stay in charge. */}
+        <h1>{title}</h1>
         {breadcrumbs && breadcrumbs.length > 0 && (
           <nav className="flex items-center gap-1 text-sm text-muted-foreground">
             {breadcrumbs.map((crumb, i) => (

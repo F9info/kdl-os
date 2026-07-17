@@ -112,7 +112,7 @@ export async function seedUserManagement(prisma) {
 
   // Existing seed user admin@kdl.com gets super-admin
   const adminUser = await prisma.user.findUnique({
-    where: { email: 'admin@kdl.com' },
+    where: { email: adminEmail },
   });
   if (adminUser) {
     await prisma.userRole.upsert({
@@ -130,6 +130,6 @@ export async function seedUserManagement(prisma) {
   console.log(
     `Seeded RBAC: ${MODULES.length + (mediaModule ? 1 : 0)} modules, ${permIdByKey.size} permissions, ` +
       `${ROLES.length} roles (admin role: ${adminPermissionIds.length} permissions)` +
-      (adminUser ? ', admin@kdl.com → super-admin' : ''),
+      (adminUser ? `, ${adminEmail} → super-admin` : ''),
   );
 }
