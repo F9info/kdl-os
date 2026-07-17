@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
@@ -28,6 +28,7 @@ import {
   HardDrive,
 } from 'lucide-react'
 import { useUiStore } from '@/stores/ui.store'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import { useAuth } from '@/hooks/useAuth'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useModules } from '@/hooks/useModules'
@@ -140,12 +141,28 @@ export const GROUPS: NavGroup[] = [
 ]
 
 export function AdminSidebar() {
-  const { sidebarOpen } = useUiStore()
+  const { sidebarOpen, setSidebarOpen, setIsMobile } = useUiStore()
+  const isMobile = useIsMobile()
   const { isAdmin } = useAuth()
   const { can } = usePermissions()
   const { nonCoreNav } = useModules()
   const pathname = usePathname()
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
+
+  // Sync viewport breakpoint into the store so other components can read it.
+  useEffect(() => {
+    setIsMobile(isMobile)
+    if (isMobile) setSidebarOpen(false)
+  }, [isMobile, setIsMobile, setSidebarOpen])
+
+  // Auto-close drawer on navigation (mobile only).
+  useEffect(() => {
+    if (isMobile) setSidebarOpen(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
+
+  // On mobile: always show labels inside the full-width drawer.
+  const showLabels = isMobile || sidebarOpen
 
   const canViewSettings =
     can('types:view') ||
@@ -202,86 +219,56 @@ export function AdminSidebar() {
   })).filter((group) => group.children.length > 0)
 
   return (
-    <aside
-      className={cn(
-        'flex flex-col border-r bg-card transition-all duration-200',
-        sidebarOpen ? '' : 'w-16'
+    <>
+      {/* Mobile backdrop — tapping outside closes the drawer */}
+      {isMobile && sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
       )}
-      // Expanded width driven by the Template Engine's Layout > Sidebar Width
-      // token — the device-neutral, unit-suffixed alias from te-layout.css,
-      // self-selecting per viewport via the @media blocks compileTokens emits
-      // (KDL-209 contract; the old device-prefixed raw var is legacy).
-      style={sidebarOpen ? { width: 'var(--te-layout-sidebar-width)' } : undefined}
-    >
-      {/* te-header keeps the logo row the same height as the TopBar when
-          Layout > Header Height changes. */}
-      <div className="te-header flex items-center border-b px-4">
-        {logoUrl ? (
-          // Expanded: logo_image class sizes the logo from the Template
-          // Engine's Images pane. Collapsed: the 64px rail is fixed chrome, so
-          // an inline style (beats the class) pins the logo to fit it.
-          <AppImage
-            size="logo"
-            src={logoUrl}
-            alt="Logo"
-            className="max-w-full"
-            style={sidebarOpen ? undefined : { width: '2rem', height: '2rem' }}
-          />
-        ) : sidebarOpen ? (
-          <span className="font-bold text-lg tracking-tight">KDL Admin</span>
-        ) : (
-          <span className="font-bold text-lg">K</span>
+      <aside
+        data-testid="admin-sidebar"
+        aria-hidden={isMobile && !sidebarOpen ? true : undefined}
+        className={cn(
+          'flex flex-col border-r bg-card',
+          isMobile
+            ? cn(
+                'fixed inset-y-0 left-0 z-50 shadow-lg',
+                'transition-transform duration-200 ease-in-out',
+                sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+              )
+            : cn('transition-all duration-200', sidebarOpen ? '' : 'w-16')
         )}
-      </div>
+        // Desktop: expanded width from TE sidebar-width token (KDL-209 contract).
+        // Mobile: same token drives drawer width; never uses icon-rail (w-16) on mobile.
+        style={isMobile || sidebarOpen ? { width: 'var(--te-layout-sidebar-width)' } : undefined}
+      >
+        {/* te-header keeps the logo row the same height as the TopBar when
+          Layout > Header Height changes. */}
+        <div className="te-header flex items-center border-b px-4">
+          {logoUrl ? (
+            // Expanded: logo_image class sizes the logo from the Template
+            // Engine's Images pane. Collapsed: the 64px rail is fixed chrome, so
+            // an inline style (beats the class) pins the logo to fit it.
+            <AppImage
+              size="logo"
+              src={logoUrl}
+              alt="Logo"
+              className="max-w-full"
+              style={showLabels ? undefined : { width: '2rem', height: '2rem' }}
+            />
+          ) : showLabels ? (
+            <span className="font-bold text-lg tracking-tight">KDL Admin</span>
+          ) : (
+            <span className="font-bold text-lg">K</span>
+          )}
+        </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto p-2" aria-label="Main navigation">
-        {visibleFlat.map((item) => {
-          const active = isLeafActive(item.href) || pathname.startsWith(item.href + '/')
-          const Icon = item.icon
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex items-center gap-3 rounded-md px-3 py-2 transition-colors',
-                active
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-              )}
-              title={!sidebarOpen ? item.label : undefined}
-            >
-              <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-              {sidebarOpen && <span>{item.label}</span>}
-            </Link>
-          )
-        })}
-
-        {/* Module-driven nav — non-core modules add items here when enabled */}
-        {dynamicModuleItems.map((item) => {
-          const active = isLeafActive(item.path) || pathname.startsWith(item.path + '/')
-          const Icon = (item.icon ? MODULE_ICON_MAP[item.icon] : null) ?? Package
-          return (
-            <Link
-              key={item.path}
-              href={item.path}
-              className={cn(
-                'flex items-center gap-3 rounded-md px-3 py-2 transition-colors',
-                active
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-              )}
-              title={!sidebarOpen ? item.label : undefined}
-            >
-              <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-              {sidebarOpen && <span>{item.label}</span>}
-            </Link>
-          )
-        })}
-
-        {/* Per-type settings screens — top-level items, right after the flat items */}
-        {canViewSettings &&
-          typeLeaves.map((item) => {
-            const active = isLeafActive(item.href)
+        <nav className="flex-1 space-y-1 overflow-y-auto p-2" aria-label="Main navigation">
+          {visibleFlat.map((item) => {
+            const active = isLeafActive(item.href) || pathname.startsWith(item.href + '/')
             const Icon = item.icon
             return (
               <Link
@@ -293,75 +280,121 @@ export function AdminSidebar() {
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                 )}
-                title={!sidebarOpen ? item.label : undefined}
+                title={!showLabels ? item.label : undefined}
               >
                 <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                {sidebarOpen && <span>{item.label}</span>}
+                {showLabels && <span>{item.label}</span>}
               </Link>
             )
           })}
 
-        {visibleGroups.map((group) => {
-          const open = isGroupOpen(group)
-          const hasActive = childrenHaveActive(group.children)
-          const GroupIcon = group.icon
-          return (
-            <div key={group.label} className="space-y-1">
-              <button
-                type="button"
-                onClick={() => toggleGroup(group.label)}
-                aria-expanded={open}
+          {/* Module-driven nav — non-core modules add items here when enabled */}
+          {dynamicModuleItems.map((item) => {
+            const active = isLeafActive(item.path) || pathname.startsWith(item.path + '/')
+            const Icon = (item.icon ? MODULE_ICON_MAP[item.icon] : null) ?? Package
+            return (
+              <Link
+                key={item.path}
+                href={item.path}
                 className={cn(
-                  'flex w-full items-center gap-3 rounded-md px-3 py-2 transition-colors',
-                  hasActive
-                    ? 'text-foreground font-medium'
+                  'flex items-center gap-3 rounded-md px-3 py-2 transition-colors',
+                  active
+                    ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                 )}
-                title={!sidebarOpen ? group.label : undefined}
+                title={!showLabels ? item.label : undefined}
               >
-                <GroupIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                {sidebarOpen && (
-                  <>
-                    <span className="flex-1 text-left">{group.label}</span>
-                    <ChevronDown
-                      className={cn(
-                        'h-4 w-4 shrink-0 transition-transform',
-                        open ? 'rotate-0' : '-rotate-90'
-                      )}
-                      aria-hidden="true"
-                    />
-                  </>
-                )}
-              </button>
+                <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                {showLabels && <span>{item.label}</span>}
+              </Link>
+            )
+          })}
 
-              {open && (
-                <div className={cn('space-y-1', sidebarOpen && 'ml-4 border-l pl-2')}>
-                  {group.children.map((child) => {
-                    const active = isLeafActive(child.href)
-                    const ChildIcon = child.icon
-                    return (
-                      <Link
-                        key={child.href}
-                        href={child.href}
+          {/* Per-type settings screens — top-level items, right after the flat items */}
+          {canViewSettings &&
+            typeLeaves.map((item) => {
+              const active = isLeafActive(item.href)
+              const Icon = item.icon
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    'flex items-center gap-3 rounded-md px-3 py-2 transition-colors',
+                    active
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  )}
+                  title={!showLabels ? item.label : undefined}
+                >
+                  <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  {showLabels && <span>{item.label}</span>}
+                </Link>
+              )
+            })}
+
+          {visibleGroups.map((group) => {
+            const open = isGroupOpen(group)
+            const hasActive = childrenHaveActive(group.children)
+            const GroupIcon = group.icon
+            return (
+              <div key={group.label} className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(group.label)}
+                  aria-expanded={open}
+                  className={cn(
+                    'flex w-full items-center gap-3 rounded-md px-3 py-2 transition-colors',
+                    hasActive
+                      ? 'text-foreground font-medium'
+                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  )}
+                  title={!showLabels ? group.label : undefined}
+                >
+                  <GroupIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  {showLabels && (
+                    <>
+                      <span className="flex-1 text-left">{group.label}</span>
+                      <ChevronDown
                         className={cn(
-                          'flex items-center gap-3 rounded-md px-3 py-2 transition-colors',
-                          active
-                            ? 'bg-primary text-primary-foreground'
-                            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                          'h-4 w-4 shrink-0 transition-transform',
+                          open ? 'rotate-0' : '-rotate-90'
                         )}
-                        title={!sidebarOpen ? child.label : undefined}
-                      >
-                        <ChildIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                        {sidebarOpen && <span>{child.label}</span>}
-                      </Link>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          )
-        })}
-      </nav>
-    </aside>
+                        aria-hidden="true"
+                      />
+                    </>
+                  )}
+                </button>
+
+                {open && (
+                  <div className={cn('space-y-1', showLabels && 'ml-4 border-l pl-2')}>
+                    {group.children.map((child) => {
+                      const active = isLeafActive(child.href)
+                      const ChildIcon = child.icon
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          className={cn(
+                            'flex items-center gap-3 rounded-md px-3 py-2 transition-colors',
+                            active
+                              ? 'bg-primary text-primary-foreground'
+                              : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                          )}
+                          title={!showLabels ? child.label : undefined}
+                        >
+                          <ChildIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                          {showLabels && <span>{child.label}</span>}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </nav>
+      </aside>
+    </>
   )
 }
