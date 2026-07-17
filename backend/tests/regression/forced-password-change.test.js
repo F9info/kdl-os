@@ -16,6 +16,10 @@ vi.mock('../../src/config/database.js', () => ({
   },
 }));
 
+vi.mock('../../src/config/redis.js', () => ({
+  redis: { get: vi.fn().mockResolvedValue(null), set: vi.fn(), del: vi.fn() },
+}));
+
 vi.mock('../../src/shared/queues/email.queue.js', () => ({
   emailQueue: { add: vi.fn().mockResolvedValue({}) },
 }));
