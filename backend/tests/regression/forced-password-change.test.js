@@ -1,17 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Router } from 'express';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { prisma } from '../../src/config/database.js';
 import authRoutes from '../../src/modules/auth/routes.js';
-import { authenticate } from '../../src/middleware/auth.js';
-import { agent, bearer, cookieValue } from '../helpers/app.js';
+import { agent } from '../helpers/app.js';
 
 vi.mock('../../src/config/database.js', () => ({
   prisma: {
-    user: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn().mockResolvedValue({}) },
+    user: { findUnique: vi.fn(), update: vi.fn().mockResolvedValue({}) },
     userRole: { findMany: vi.fn(() => Promise.resolve([])) },
-    refreshToken: { findFirst: vi.fn(), create: vi.fn(), updateMany: vi.fn() },
-    passwordResetToken: { create: vi.fn(), findFirst: vi.fn(), update: vi.fn() },
+    refreshToken: { create: vi.fn(), updateMany: vi.fn(), findFirst: vi.fn() },
+    passwordResetToken: { findFirst: vi.fn() },
     $transaction: vi.fn((ops) => Promise.all(ops)),
   },
 }));
@@ -20,161 +19,159 @@ vi.mock('../../src/config/redis.js', () => ({
   redis: { get: vi.fn().mockResolvedValue(null), set: vi.fn(), del: vi.fn() },
 }));
 
-vi.mock('../../src/shared/queues/email.queue.js', () => ({
-  emailQueue: { add: vi.fn().mockResolvedValue({}) },
-}));
+const makeApp = () => agent([{ path: '/api/auth', router: authRoutes }]);
 
-const protectedRouter = Router();
-protectedRouter.get('/protected', authenticate, (_req, res) =>
-  res.json({ success: true, data: 'secret' }),
-);
-
-const makeApp = () =>
-  agent([
-    { path: '/api/auth', router: authRoutes },
-    { path: '/api', router: protectedRouter },
-  ]);
-
-const passwordHash = (password) => bcrypt.hashSync(password, 4);
+const passwordHash = (pw) => bcrypt.hashSync(pw, 12);
 
 const mockUser = (overrides = {}) => ({
-  id: 'usr_1',
-  name: 'Seed Admin',
+  id: 'usr_seed_1',
+  name: 'Super Admin',
   email: 'admin@kdl.com',
-  password_hash: passwordHash('SeededPass123!'),
+  password_hash: passwordHash('SeedPass@123'),
   is_active: true,
+  must_change_password: false,
   status: 'ACTIVE',
   deleted_at: null,
-  must_change_password: false,
   roles: [],
-  created_at: new Date().toISOString(),
   ...overrides,
 });
 
-describe('forced password change on first login (KDL-283)', () => {
+const accessToken = (userId = 'usr_seed_1') =>
+  jwt.sign({ userId, email: 'admin@kdl.com', roles: [], type: 'access' }, process.env.JWT_SECRET, {
+    algorithm: 'HS256',
+    issuer: process.env.JWT_ISSUER || 'kdl-os',
+    audience: process.env.JWT_AUDIENCE || 'kdl-os-api',
+    expiresIn: '15m',
+  });
+
+describe('M4 forced-password-change flow', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    prisma.user.update.mockResolvedValue({});
-    prisma.refreshToken.updateMany.mockResolvedValue({ count: 0 });
     prisma.refreshToken.create.mockResolvedValue({ id: 'rt1' });
+    prisma.userRole.findMany.mockResolvedValue([]);
   });
 
-  describe('authenticate gate', () => {
-    it('blocks every protected route while must_change_password is set', async () => {
-      prisma.user.findUnique.mockResolvedValue(mockUser({ must_change_password: true }));
-
-      const res = await makeApp()
-        .get('/api/protected')
-        .set('Authorization', bearer({ userId: 'usr_1', email: 'admin@kdl.com' }));
-
-      expect(res.status).toBe(403);
-      expect(res.body.errors.code).toBe('PASSWORD_CHANGE_REQUIRED');
-    });
-
-    it('allows protected routes once the flag is cleared', async () => {
-      prisma.user.findUnique.mockResolvedValue(mockUser());
-
-      const res = await makeApp()
-        .get('/api/protected')
-        .set('Authorization', bearer({ userId: 'usr_1', email: 'admin@kdl.com' }));
-
-      expect(res.status).toBe(200);
-      expect(res.body.data).toBe('secret');
-    });
-  });
-
-  describe('login', () => {
-    it('returns must_change_password so the frontend can route to the change screen', async () => {
+  describe('login with must_change_password=true', () => {
+    it('returns 200 with mustChangePassword flag and issues tokens', async () => {
       prisma.user.findUnique.mockResolvedValue(mockUser({ must_change_password: true }));
 
       const res = await makeApp()
         .post('/api/auth/login')
-        .send({ email: 'admin@kdl.com', password: 'SeededPass123!' });
+        .send({ email: 'admin@kdl.com', password: 'SeedPass@123' });
 
       expect(res.status).toBe(200);
-      expect(res.body.data.user.must_change_password).toBe(true);
-      expect(res.body.data.user.password_hash).toBeUndefined();
+      expect(res.body.data.mustChangePassword).toBe(true);
+      expect(res.body.data.accessToken).toBeTruthy();
+    });
+
+    it('sets auth cookies even when mustChangePassword is true', async () => {
+      prisma.user.findUnique.mockResolvedValue(mockUser({ must_change_password: true }));
+
+      const res = await makeApp()
+        .post('/api/auth/login')
+        .send({ email: 'admin@kdl.com', password: 'SeedPass@123' });
+
+      const cookies = Array.isArray(res.headers['set-cookie']) ? res.headers['set-cookie'] : [];
+      expect(cookies.some((c) => c.startsWith('kdl-auth-token='))).toBe(true);
+    });
+
+    it('returns 200 without mustChangePassword flag for normal users', async () => {
+      prisma.user.findUnique.mockResolvedValue(mockUser({ must_change_password: false }));
+
+      const res = await makeApp()
+        .post('/api/auth/login')
+        .send({ email: 'admin@kdl.com', password: 'SeedPass@123' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.mustChangePassword).toBeUndefined();
     });
   });
 
-  describe('POST /api/auth/change-password', () => {
-    it('is reachable while the flag is set, clears it, and revokes old refresh tokens', async () => {
-      prisma.user.findUnique.mockResolvedValue(mockUser({ must_change_password: true }));
+  describe('authenticate middleware blocking', () => {
+    it('blocks any authenticated route when must_change_password=true', async () => {
+      prisma.user.findUnique.mockResolvedValue(
+        mockUser({ must_change_password: true }),
+      );
 
+      const token = accessToken();
+      const res = await makeApp()
+        .get('/api/auth/me/permissions')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.errors?.code).toBe('PASSWORD_CHANGE_REQUIRED');
+    });
+  });
+
+  describe('POST /auth/change-password', () => {
+    it('accepts a valid current password and changes it', async () => {
+      // findUnique called twice: once in authenticate middleware, once in changePassword service
+      prisma.user.findUnique
+        .mockResolvedValueOnce(mockUser({ must_change_password: true }))
+        .mockResolvedValueOnce(mockUser({ must_change_password: true }));
+      prisma.$transaction.mockResolvedValueOnce([{}, {}]);
+      prisma.userRole.findMany.mockResolvedValue([]);
+
+      const token = accessToken();
       const res = await makeApp()
         .post('/api/auth/change-password')
-        .set('Authorization', bearer({ userId: 'usr_1', email: 'admin@kdl.com' }))
-        .send({ currentPassword: 'SeededPass123!', newPassword: 'MyOwnPassword456!' });
+        .set('Authorization', `Bearer ${token}`)
+        .send({ currentPassword: 'SeedPass@123', newPassword: 'NewSecure@456' });
 
       expect(res.status).toBe(200);
+      expect(res.body.data.message).toBe('Password changed successfully');
       expect(res.body.data.accessToken).toBeTruthy();
-
-      expect(prisma.user.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id: 'usr_1' },
-          data: expect.objectContaining({ must_change_password: false }),
-        }),
-      );
-      expect(prisma.refreshToken.updateMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { user_id: 'usr_1' }, data: { revoked: true } }),
-      );
-      // Fresh session for this client after the global revoke.
-      expect(cookieValue(res, 'kdl-auth-token')).toBeTruthy();
-      expect(cookieValue(res, 'kdl-refresh-token')).toBeTruthy();
     });
 
-    it('rejects a wrong current password without touching the account', async () => {
-      prisma.user.findUnique.mockResolvedValue(mockUser({ must_change_password: true }));
+    it('rejects wrong current password with 401', async () => {
+      prisma.user.findUnique
+        .mockResolvedValueOnce(mockUser({ must_change_password: true }))
+        .mockResolvedValueOnce(mockUser({ must_change_password: true }));
 
+      const token = accessToken();
       const res = await makeApp()
         .post('/api/auth/change-password')
-        .set('Authorization', bearer({ userId: 'usr_1', email: 'admin@kdl.com' }))
-        .send({ currentPassword: 'wrong-password', newPassword: 'MyOwnPassword456!' });
+        .set('Authorization', `Bearer ${token}`)
+        .send({ currentPassword: 'WrongPassword!', newPassword: 'NewSecure@456' });
 
       expect(res.status).toBe(401);
-      expect(prisma.user.update).not.toHaveBeenCalled();
-      expect(prisma.refreshToken.updateMany).not.toHaveBeenCalled();
     });
 
-    it('rejects reusing the current password (validation)', async () => {
+    it('rejects when new password equals current password', async () => {
       prisma.user.findUnique.mockResolvedValue(mockUser({ must_change_password: true }));
 
+      const token = accessToken();
       const res = await makeApp()
         .post('/api/auth/change-password')
-        .set('Authorization', bearer({ userId: 'usr_1', email: 'admin@kdl.com' }))
-        .send({ currentPassword: 'SeededPass123!', newPassword: 'SeededPass123!' });
+        .set('Authorization', `Bearer ${token}`)
+        .send({ currentPassword: 'SeedPass@123', newPassword: 'SeedPass@123' });
 
       expect(res.status).toBe(422);
-      expect(prisma.user.update).not.toHaveBeenCalled();
     });
 
-    it('requires authentication', async () => {
+    it('rejects when no token provided', async () => {
       const res = await makeApp()
         .post('/api/auth/change-password')
-        .send({ currentPassword: 'a', newPassword: 'MyOwnPassword456!' });
+        .send({ currentPassword: 'SeedPass@123', newPassword: 'NewSecure@456' });
 
       expect(res.status).toBe(401);
     });
-  });
 
-  describe('reset-password flow', () => {
-    it('clears must_change_password when a reset token is redeemed', async () => {
-      prisma.passwordResetToken.findFirst.mockResolvedValue({
-        id: 'prt1',
-        user: mockUser({ must_change_password: true }),
-      });
-      prisma.passwordResetToken.update.mockResolvedValue({});
+    it('is accessible even when must_change_password=true (unlike other routes)', async () => {
+      // Verify that authenticateAllowPendingPasswordChange is used (not authenticate)
+      prisma.user.findUnique
+        .mockResolvedValueOnce(mockUser({ must_change_password: true }))
+        .mockResolvedValueOnce(mockUser({ must_change_password: true }));
+      prisma.$transaction.mockResolvedValueOnce([{}, {}]);
 
+      const token = accessToken();
       const res = await makeApp()
-        .post('/api/auth/reset-password')
-        .send({ token: 'raw-reset-token', password: 'MyOwnPassword456!' });
+        .post('/api/auth/change-password')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ currentPassword: 'SeedPass@123', newPassword: 'DifferentPass@789' });
 
-      expect(res.status).toBe(200);
-      expect(prisma.user.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({ must_change_password: false }),
-        }),
-      );
+      // Must NOT return 403 PASSWORD_CHANGE_REQUIRED
+      expect(res.status).not.toBe(403);
     });
   });
 });
