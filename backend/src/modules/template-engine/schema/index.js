@@ -51,9 +51,9 @@ const BASE_TABS=[
   // the old separate Font Size / Font Weight / Text Rules groups (KDL request:
   // "name, size, family, weight, rules in one table, e.g. h1, 32px, inter, 400").
   ['Typography Scale',[TT('Typography Scale',[
-{name:'H1 (Title)',size:32,family:'Sora',weight:'700',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
-    {name:'H2',size:26,family:'Sora',weight:'700',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
-    {name:'H3',size:22,family:'Sora',weight:'600',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'H1 (Title)',size:32,family:'Poppins, Sora',weight:'700',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'H2',size:26,family:'Poppins, Sora',weight:'700',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'H3',size:22,family:'Poppins, Sora',weight:'600',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
     {name:'H4',size:18,family:'Poppins',weight:'600',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
     {name:'H5',size:16,family:'Poppins',weight:'500',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
     {name:'H6',size:14,family:'Poppins',weight:'500',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
@@ -64,9 +64,9 @@ const BASE_TABS=[
     {name:'Navigation',size:14,family:'Inter',weight:'400',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
   ])],'desktop'],
   ['Typography Scale',[TT('Typography Scale',[
-{name:'H1 (Title)',size:30,family:'Sora',weight:'700',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
-    {name:'H2',size:24,family:'Sora',weight:'700',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
-    {name:'H3',size:20,family:'Sora',weight:'600',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'H1 (Title)',size:30,family:'Poppins, Sora',weight:'700',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'H2',size:24,family:'Poppins, Sora',weight:'700',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'H3',size:20,family:'Poppins, Sora',weight:'600',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
     {name:'H4',size:17,family:'Poppins',weight:'600',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
     {name:'H5',size:15,family:'Poppins',weight:'500',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
     {name:'H6',size:13,family:'Poppins',weight:'500',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
@@ -77,9 +77,9 @@ const BASE_TABS=[
     {name:'Navigation',size:13,family:'Inter',weight:'400',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
   ])],'laptop'],
   ['Typography Scale',[TT('Typography Scale',[
-{name:'H1 (Title)',size:28,family:'Sora',weight:'700',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
-    {name:'H2',size:23,family:'Sora',weight:'700',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
-    {name:'H3',size:19,family:'Sora',weight:'600',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
+    {name:'H1 (Title)',size:28,family:'Poppins, Sora',weight:'700',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
+    {name:'H2',size:23,family:'Poppins, Sora',weight:'700',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
+    {name:'H3',size:19,family:'Poppins, Sora',weight:'600',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
     {name:'H4',size:16,family:'Poppins',weight:'600',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
     {name:'H5',size:14,family:'Poppins',weight:'500',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
     {name:'H6',size:13,family:'Poppins',weight:'500',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
@@ -90,9 +90,9 @@ const BASE_TABS=[
     {name:'Navigation',size:13,family:'Inter',weight:'400',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
   ])],'ipad'],
   ['Typography Scale',[TT('Typography Scale',[
-{name:'H1 (Title)',size:24,family:'Sora',weight:'700',lineHeight:1.4,letterSpacing:0,sizeUnit:'px'},
-    {name:'H2',size:20,family:'Sora',weight:'700',lineHeight:1.4,letterSpacing:0,sizeUnit:'px'},
-    {name:'H3',size:18,family:'Sora',weight:'600',lineHeight:1.4,letterSpacing:0,sizeUnit:'px'},
+    {name:'H1 (Title)',size:24,family:'Poppins, Sora',weight:'700',lineHeight:1.4,letterSpacing:0,sizeUnit:'px'},
+    {name:'H2',size:20,family:'Poppins, Sora',weight:'700',lineHeight:1.4,letterSpacing:0,sizeUnit:'px'},
+    {name:'H3',size:18,family:'Poppins, Sora',weight:'600',lineHeight:1.4,letterSpacing:0,sizeUnit:'px'},
     {name:'H4',size:15,family:'Poppins',weight:'600',lineHeight:1.4,letterSpacing:0,sizeUnit:'px'},
     {name:'H5',size:13,family:'Poppins',weight:'500',lineHeight:1.4,letterSpacing:0,sizeUnit:'px'},
     {name:'H6',size:12,family:'Poppins',weight:'500',lineHeight:1.4,letterSpacing:0,sizeUnit:'px'},
