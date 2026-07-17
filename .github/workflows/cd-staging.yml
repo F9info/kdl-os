@@ -47,7 +47,7 @@ jobs:
           strip_components: 0
 
       - name: Deploy on VPS
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
         env:
           STAGING_ENV_CONTENTS: ${{ secrets.STAGING_ENV }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
