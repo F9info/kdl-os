@@ -37,7 +37,7 @@ jobs:
         run: echo "IMAGE_TAG=${{ github.sha }}" >> "$GITHUB_ENV"
 
       - name: Copy compose files to VPS
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@v1.0.0
         with:
           host: ${{ secrets.STAGING_HOST }}
           username: ${{ secrets.STAGING_USER }}
