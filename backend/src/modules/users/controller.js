@@ -9,9 +9,12 @@ function userIsSuperAdmin(user) {
   return false;
 }
 
-function actorIsSuperAdmin(req) {
-  if (Array.isArray(req.user?.roles) && req.user.roles.includes('super-admin')) return true;
-  return false;
+// KDL-307: super-admin-target guards use resolvePermissions (DB/cache-backed),
+// not the JWT roles claim — a demoted super admin must lose these privileges
+// immediately, not at token expiry. Redis-cached, so the extra lookup is cheap.
+async function actorIsSuperAdmin(req) {
+  const actor = await resolvePermissions(req.user?.id);
+  return actor.bypass === true;
 }
 
 // Privilege ceiling (KDL-273 H3): an actor may only assign roles whose combined
@@ -102,7 +105,7 @@ export const updateUser = async (req, res, next) => {
     const exists = await userService.getUserById(id);
     if (!exists) return errorResponse(res, 'User not found', 404);
 
-    if (!actorIsSuperAdmin(req) && userIsSuperAdmin(exists)) {
+    if (!(await actorIsSuperAdmin(req)) && userIsSuperAdmin(exists)) {
       return errorResponse(res, 'ADMIN cannot modify Super Admin users', 403);
     }
 
@@ -142,7 +145,7 @@ export const deleteUser = async (req, res, next) => {
     const exists = await userService.getUserById(id);
     if (!exists) return errorResponse(res, 'User not found', 404);
 
-    if (!actorIsSuperAdmin(req) && userIsSuperAdmin(exists)) {
+    if (!(await actorIsSuperAdmin(req)) && userIsSuperAdmin(exists)) {
       return errorResponse(res, 'Cannot delete Super Admin user', 403);
     }
 
@@ -163,7 +166,7 @@ export const resetPassword = async (req, res, next) => {
     const exists = await userService.getUserById(id);
     if (!exists) return errorResponse(res, 'User not found', 404);
 
-    if (!actorIsSuperAdmin(req) && userIsSuperAdmin(exists)) {
+    if (!(await actorIsSuperAdmin(req)) && userIsSuperAdmin(exists)) {
       return errorResponse(res, 'Only Super Admin can reset a Super Admin password', 403);
     }
 

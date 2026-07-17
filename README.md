@@ -65,7 +65,7 @@ cd backend && npx prisma migrate dev && node prisma/seed.js
 
 | Service | Username | Password |
 |---------|----------|----------|
-| Admin panel | admin@kdl.com | Admin@123 |
+| Admin panel | admin@kdl.com (or `SEED_ADMIN_EMAIL`) | `SEED_ADMIN_PASSWORD` if set, else random — printed once by the seed. Docker stack pins `kdl-dev-seed-password` |
 | PostgreSQL | postgres | postgres |
 | MinIO | minioadmin | minioadmin |
 

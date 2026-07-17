@@ -127,6 +127,13 @@ services:
       CLAMAV_HOST: ${CLAMAV_HOST:-}
       # Storage driver (A7): defaults to minio. Set STORAGE_DRIVER=s3|r2 in .env for cloud.
       STORAGE_DRIVER: ${STORAGE_DRIVER:-minio}
+      # Pin the seeded super-admin credentials in the local gate stack (KDL-307).
+      # Since KDL-273 H2 the seed generates a random password unless
+      # SEED_ADMIN_PASSWORD is set — pinning keeps E2E suites (which default to
+      # the same dev-only value in frontend/e2e/helpers/credentials.ts) able to
+      # log in after a fresh re-seed. Override via .env; local-dev only.
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@kdl.com}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-kdl-dev-seed-password}
     ports:
       - "4000:4000"
     depends_on:
