@@ -21,6 +21,10 @@ jobs:
         working-directory: backend
         run: npm ci
 
+      - name: Audit dependencies
+        working-directory: backend
+        run: npm audit --audit-level=high
+
       - name: Syntax check
         working-directory: backend
         run: node --check src/index.js
@@ -83,6 +87,10 @@ jobs:
       - name: Install dependencies
         working-directory: frontend
         run: pnpm install --frozen-lockfile
+
+      - name: Audit dependencies
+        working-directory: frontend
+        run: pnpm audit --audit-level=high
 
       - name: Format check
         working-directory: frontend
@@ -206,6 +214,10 @@ jobs:
       - name: Install dependencies
         working-directory: ai-services
         run: npm ci
+
+      - name: Audit dependencies
+        working-directory: ai-services
+        run: npm audit --audit-level=high
 
       - name: Syntax check
         working-directory: ai-services
