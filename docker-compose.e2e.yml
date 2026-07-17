@@ -70,6 +70,7 @@ services:
       APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY}
       CORS_ORIGIN: http://localhost:13001
       JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       APP_PUBLIC_URL: http://localhost:14000
       # Pin seeded super-admin creds so E2E suites (frontend/e2e/helpers/
       # credentials.ts) can log in after a fresh re-seed (KDL-307).
