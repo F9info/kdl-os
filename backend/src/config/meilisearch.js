@@ -1,4 +1,4 @@
-import { MeiliSearch } from 'meilisearch';
+import { Meilisearch } from 'meilisearch';
 
 // MEILISEARCH_API_KEY must be a SCOPED ADMIN key (documents + indexes + settings
 // actions on the app's indexes), never the instance master key. The master key
@@ -8,7 +8,7 @@ import { MeiliSearch } from 'meilisearch';
 //
 // Fallback host keeps module import safe when env is absent (tests, tooling);
 // the client is lazy and only connects on first request.
-const meili = new MeiliSearch({
+const meili = new Meilisearch({
   host: process.env.MEILISEARCH_HOST || 'http://localhost:7700',
   apiKey: process.env.MEILISEARCH_API_KEY,
 });
