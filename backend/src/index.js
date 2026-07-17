@@ -75,6 +75,13 @@ app.use('/api/activity-log', activityLogRoutes);
 app.use('/api/modules', moduleRoutes);
 app.use('/api/storage-settings', storageSettingsRoutes);
 
+// ─── Web Vitals telemetry stub (KDL-295) ──────────────────────────────────────
+// Accepts CWV payloads from the frontend's useReportWebVitals hook.
+// Real persistence/dashboarding is a follow-up observability task.
+app.post('/api/vitals', express.json({ limit: '4kb' }), (req, res) => {
+  res.status(204).end();
+});
+
 // ─── Local storage file server ────────────────────────────────────────────────
 // Serves files stored by the local FS driver.
 // Security: HMAC-signed time-limited tokens (same model as S3 presigned URLs)
