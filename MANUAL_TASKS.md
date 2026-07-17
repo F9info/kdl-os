@@ -46,7 +46,7 @@ Low-complexity config files that are safe to write by hand:
 ## Phase 2 Manual Tasks (Backend Foundation)
 
 - [ ] **`.env.example`** — copy from `KDL_DevEnvironment.md → Part K` and fill with placeholder values (not real secrets). Agent generates this but confirm all vars are present.
-- [ ] **`prisma/seed.js` test run** — after agent writes the seed file, run `pnpm prisma db seed` manually and confirm `admin@kdl.com / Admin@123` logs in.
+- [ ] **`prisma/seed.js` test run** — after agent writes the seed file, run `pnpm prisma db seed` manually and confirm the seeded admin logs in (`SEED_ADMIN_EMAIL`, default `admin@kdl.com`; password is `SEED_ADMIN_PASSWORD` if set, else printed once by the seed).
 
 ---
 
@@ -62,7 +62,7 @@ Low-complexity config files that are safe to write by hand:
   # Login
   curl -X POST http://localhost:4000/api/auth/login \
     -H "Content-Type: application/json" \
-    -d '{"email":"admin@kdl.com","password":"Admin@123"}'
+    -d '{"email":"admin@kdl.com","password":"<your SEED_ADMIN_PASSWORD>"}'
   ```
   If both return 200 → Phase 3 is approved. Confirm to agent.
 
@@ -72,7 +72,7 @@ Low-complexity config files that are safe to write by hand:
 
 - [ ] **Browser smoke test** — after agent completes Phase 4, open http://localhost:3000 and confirm:
   - Login page renders
-  - Login with `admin@kdl.com / Admin@123` works
+  - Login with the seeded admin credentials works (`SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`, see docs/ENV_REFERENCE.md)
   - Admin dashboard loads with sidebar
   - Users table shows at least 1 user
   If all pass → Phase 4 is approved. Confirm to agent.
