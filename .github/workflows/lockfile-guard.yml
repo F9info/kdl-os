@@ -1,0 +1,64 @@
+name: Lockfile Guard
+
+# Fails if a non-dependabot PR modifies a lockfile in the wrong workspace,
+# or if multiple workspaces' lockfiles are changed in a single feature PR.
+# Dependabot PRs are always exempt — they own the lockfile.
+
+on:
+  pull_request:
+    paths:
+      - '**/package-lock.json'
+      - '**/pnpm-lock.yaml'
+      - '**/yarn.lock'
+
+jobs:
+  lockfile-scope:
+    name: Lockfile ownership check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Check lockfile changes are scoped
+        env:
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          set -e
+
+          # Dependabot always owns its lockfiles — skip check
+          if [[ "$PR_AUTHOR" == "dependabot[bot]" ]]; then
+            echo "Dependabot PR — lockfile check skipped."
+            exit 0
+          fi
+
+          # Get changed lockfiles relative to the base branch
+          git fetch origin "$BASE_REF" --depth=1
+          CHANGED=$(git diff --name-only "origin/$BASE_REF"...HEAD -- \
+            '*/package-lock.json' \
+            '*/pnpm-lock.yaml' \
+            '*/yarn.lock')
+
+          if [[ -z "$CHANGED" ]]; then
+            echo "No lockfile changes — OK."
+            exit 0
+          fi
+
+          echo "Changed lockfiles:"
+          echo "$CHANGED"
+
+          # Count distinct workspace roots (frontend, backend, ai-services, root)
+          WORKSPACES=$(echo "$CHANGED" | sed 's|/[^/]*$||' | sort -u | wc -l)
+
+          if [[ "$WORKSPACES" -gt 1 ]]; then
+            echo ""
+            echo "ERROR: Lockfiles from $WORKSPACES workspaces modified in one PR."
+            echo "Split lockfile changes into per-workspace PRs, or let Dependabot handle them."
+            echo ""
+            echo "Rule: one PR touches at most one workspace lockfile."
+            echo "See docs/MERGE_DISCIPLINE.md for the lockfile ownership policy."
+            exit 1
+          fi
+
+          echo "Single-workspace lockfile change — OK."

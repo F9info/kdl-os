@@ -1,14 +1,15 @@
 version: 2
 updates:
-  # Frontend pnpm workspace — weekly, grouped minor/patch
+  # Frontend pnpm workspace — weekly grouped, auto-rebased
   - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-      timezone: "UTC"
-    open-pull-requests-limit: 5
+      timezone: "Asia/Kolkata"
+    open-pull-requests-limit: 3
+    rebase-strategy: "auto"
     groups:
       minor-and-patch:
         update-types:
@@ -20,19 +21,20 @@ updates:
     commit-message:
       prefix: "chore(deps)"
     ignore:
-      # Major bumps require manual review
+      # Major bumps require manual review — open a tracking issue instead
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
 
-  # Backend npm workspace
+  # Backend npm workspace — same cadence, auto-rebased
   - package-ecosystem: "npm"
     directory: "/backend"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-      timezone: "UTC"
-    open-pull-requests-limit: 5
+      timezone: "Asia/Kolkata"
+    open-pull-requests-limit: 3
+    rebase-strategy: "auto"
     groups:
       minor-and-patch:
         update-types:
@@ -47,14 +49,39 @@ updates:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
 
-  # GitHub Actions
+  # AI Services npm workspace
+  - package-ecosystem: "npm"
+    directory: "/ai-services"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Kolkata"
+    open-pull-requests-limit: 3
+    rebase-strategy: "auto"
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+    labels:
+      - "dependencies"
+      - "ai-services"
+    commit-message:
+      prefix: "chore(deps)"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions — bump weekly, auto-rebased
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-      timezone: "UTC"
+      timezone: "Asia/Kolkata"
+    rebase-strategy: "auto"
     labels:
       - "dependencies"
       - "ci"

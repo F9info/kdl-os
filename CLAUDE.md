@@ -299,6 +299,18 @@ All agents run on the **Claude Code adapter (Claude subscription)** via the Pape
 
 ---
 
+## Merge Discipline (non-negotiable — every agent that touches git)
+
+Full rules in [`docs/MERGE_DISCIPLINE.md`](docs/MERGE_DISCIPLINE.md). Summary:
+
+1. **Rebase before CI** — `git fetch && git rebase origin/master` before every push. Never write a `fix(ci):` commit; rebase instead.
+2. **One concern per PR** — feature, lockfile update, or CI change. Never mix.
+3. **One workspace lockfile per PR** — a PR may touch `frontend/pnpm-lock.yaml` OR `backend/package-lock.json` OR `ai-services/package-lock.json`, never more than one.
+4. **Dependabot owns lockfiles** — never manually modify a lockfile in a Dependabot PR. Merge them Mondays.
+5. **Pin policy** — pin only when there is a confirmed bug/CVE and no upstream fix. Document the reason and removal trigger in the PR. Never pin the same package twice across workspaces.
+
+---
+
 ## Non-Negotiable Rules
 
 1. **Maker ≠ Grader** — the agent that writes code never reviews it
