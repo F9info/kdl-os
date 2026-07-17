@@ -10,32 +10,33 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Button } from '@/components/ui/button'
-import { ErrorAlert } from './ErrorAlert'
+import { EmptyState } from '@/components/ui/empty-state'
+import { ErrorState } from '@/components/ui/error-state'
 import { Pagination } from './Pagination'
 
 interface DataTableProps<T> {
   columns: ColumnDef<T>[]
   data: T[]
   isLoading: boolean
+  /** List-fetch error — renders ErrorState in place of the rows/empty state. */
+  error?: unknown
+  onRetry?: () => void
   pagination?: {
     page: number
     totalPages: number
     onPageChange: (page: number) => void
   }
   emptyMessage?: string
-  error?: unknown
-  onRetry?: () => void
 }
 
 export function DataTable<T>({
   columns,
   data,
   isLoading,
-  pagination,
-  emptyMessage = 'No results found.',
   error,
   onRetry,
+  pagination,
+  emptyMessage = 'No results found.',
 }: DataTableProps<T>) {
   const table = useReactTable({
     data,
@@ -74,24 +75,14 @@ export function DataTable<T>({
               ))
             ) : error ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-32">
-                  <div className="flex flex-col items-center justify-center gap-3">
-                    <ErrorAlert error={error} className="max-w-md" />
-                    {onRetry && (
-                      <Button variant="outline" size="sm" onClick={onRetry}>
-                        Try again
-                      </Button>
-                    )}
-                  </div>
+                <TableCell colSpan={columns.length}>
+                  <ErrorState error={error} onRetry={onRetry} />
                 </TableCell>
               </TableRow>
             ) : table.getRowModel().rows.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-32 text-center text-muted-foreground"
-                >
-                  {emptyMessage}
+                <TableCell colSpan={columns.length}>
+                  <EmptyState title={emptyMessage} />
                 </TableCell>
               </TableRow>
             ) : (
