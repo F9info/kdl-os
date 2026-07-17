@@ -30,9 +30,27 @@ api.interceptors.response.use(
   async (error: unknown) => {
     const axiosError = error as {
       config: AxiosRequestConfig & { _retry?: boolean }
-      response?: { status: number }
+      response?: { status: number; data?: { errors?: { code?: string } } }
     }
     const original = axiosError.config
+
+    // Forced password change (KDL-324): the backend 403s every route with
+    // PASSWORD_CHANGE_REQUIRED until the flag is cleared. Covers stale sessions
+    // where the flag flipped server-side after login — mirror it locally so the
+    // layouts pin the user to /change-password.
+    if (
+      axiosError.response?.status === 403 &&
+      axiosError.response.data?.errors?.code === 'PASSWORD_CHANGE_REQUIRED'
+    ) {
+      const { user, setUser } = useAuthStore.getState()
+      if (user && !user.must_change_password) {
+        setUser({ ...user, must_change_password: true })
+      }
+      if (typeof window !== 'undefined' && window.location.pathname !== '/change-password') {
+        window.location.href = '/change-password'
+      }
+      return Promise.reject(error)
+    }
 
     // A 401 from an auth endpoint means the credentials themselves failed
     // (wrong password) or the session cannot be refreshed — not an expired

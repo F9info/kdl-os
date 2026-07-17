@@ -62,6 +62,10 @@ describe('M4 forced-password-change flow', () => {
       expect(res.status).toBe(200);
       expect(res.body.data.mustChangePassword).toBe(true);
       expect(res.body.data.accessToken).toBeTruthy();
+      // KDL-324: frontend reads user.must_change_password (login page, admin/auth
+      // layouts) — the flag must stay on the returned user object too.
+      expect(res.body.data.user.must_change_password).toBe(true);
+      expect(res.body.data.user.password_hash).toBeUndefined();
     });
 
     it('sets auth cookies even when mustChangePassword is true', async () => {
@@ -84,6 +88,7 @@ describe('M4 forced-password-change flow', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data.mustChangePassword).toBeUndefined();
+      expect(res.body.data.user.must_change_password).toBe(false);
     });
   });
 
