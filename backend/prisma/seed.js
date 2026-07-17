@@ -20,6 +20,9 @@ async function main() {
         email,
         password_hash,
         is_active: true,
+        // Seeded credentials are provisional — the app blocks all access
+        // until the admin sets their own password (KDL-283).
+        must_change_password: true,
       },
     });
     console.log('Seeded admin:', admin.email);
