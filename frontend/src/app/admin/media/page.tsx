@@ -15,10 +15,12 @@ import { PermissionGuard } from '@/components/shared/PermissionGuard'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { Modal } from '@/components/shared/Modal'
 import { AppImage } from '@/components/shared/AppImage'
-import { ErrorAlert } from '@/components/shared/ErrorAlert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { EmptyState } from '@/components/ui/empty-state'
+import { ErrorState } from '@/components/ui/error-state'
+import { LoadingState } from '@/components/ui/loading-state'
 import { formatDate, formatBytes } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import type { Media, MediaFolder, MediaType, MediaUsage, MediaSearchResult, MediaSearchDoc } from '@/types/media.types'
@@ -1638,21 +1640,19 @@ export default function MediaPage() {
             {/* Regular file grid (folders view or when no special view active) */}
             {(sidebarView === 'folders' || (sidebarView === 'collections' && !selectedCollection)) && (
               <>
-            {(mediaQuery.isLoading || trashQuery.isLoading) && (
-              <p className="text-sm text-muted-foreground">Loading…</p>
-            )}
-            {(mediaQuery.error || trashQuery.error) && (
-              <ErrorAlert error={mediaQuery.error ?? trashQuery.error} />
-            )}
-            {items.length === 0 &&
-              !mediaQuery.isLoading &&
-              !trashQuery.isLoading && (
-                <div className="text-center py-12 text-muted-foreground text-sm">
-                  {view === 'trash' ? 'Trash is empty.' : 'No files here. Upload some!'}
-                </div>
-              )}
-
-            {gridMode === 'grid' ? (
+            {(mediaQuery.error || trashQuery.error) ? (
+              <ErrorState
+                error={mediaQuery.error ?? trashQuery.error}
+                onRetry={() => (view === 'trash' ? trashQuery.refetch() : mediaQuery.refetch())}
+              />
+            ) : (mediaQuery.isLoading || trashQuery.isLoading) ? (
+              <LoadingState variant="skeleton" rows={6} />
+            ) : items.length === 0 ? (
+              <EmptyState
+                title={view === 'trash' ? 'Trash is empty' : 'No files here'}
+                description={view === 'trash' ? undefined : 'Upload a file or drag one onto this window.'}
+              />
+            ) : gridMode === 'grid' ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                 {items.map((item) => (
                   <MediaItemGrid

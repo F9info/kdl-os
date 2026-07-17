@@ -65,7 +65,7 @@ export default function UsersPage() {
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false)
   const debouncedSearch = useDebounce(search)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['users', page, debouncedSearch, statusFilter],
     queryFn: () =>
       api
@@ -384,6 +384,8 @@ export default function UsersPage() {
         columns={columns}
         data={data?.users ?? []}
         isLoading={isLoading}
+        error={error}
+        onRetry={() => refetch()}
         pagination={
           data
             ? {
