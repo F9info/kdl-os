@@ -14,12 +14,21 @@ import { logger } from './utils/logger.js';
 const app = express();
 const PORT = process.env.AI_PORT ?? 5000;
 
+const allowedOrigins = [
+  process.env.CORS_ORIGIN,
+  process.env.FRONTEND_URL,
+].filter(Boolean).flatMap((o) => o.split(',').map((s) => s.trim()));
+
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false });
 
+app.set('trust proxy', 1);
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: allowedOrigins.length ? allowedOrigins : false,
+  credentials: true,
+}));
 app.use(limiter);
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json());
 app.use(cookieParser());
 
 app.get('/health', (req, res) => {
@@ -28,7 +37,7 @@ app.get('/health', (req, res) => {
 
 app.post('/api/ai/chat', authenticate, chatController);
 app.post('/api/ai/embed', authenticate, embedController);
-app.post('/api/ai/transcribe', authenticate, transcribeController);
+app.post('/api/ai/transcribe', express.json({ limit: '10mb' }), authenticate, transcribeController);
 
 app.use((req, res) => errorResponse(res, 'Not found', 404));
 

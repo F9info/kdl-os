@@ -39,9 +39,14 @@ import { loadModules } from './shared/modules/module-loader.js';
 const app = express();
 const PORT = process.env.APP_PORT || 4000;
 
+if (!process.env.CORS_ORIGIN) {
+  throw new Error('CORS_ORIGIN env var is required — server will not start without an explicit allowlist');
+}
+const corsAllowlist = process.env.CORS_ORIGIN.split(',').map((o) => o.trim());
+
 app.set('trust proxy', 1);
 app.use(helmet());
-app.use(cors({ origin: process.env.CORS_ORIGIN, credentials: true }));
+app.use(cors({ origin: corsAllowlist, credentials: true }));
 app.use(express.json({
   verify(req, _res, buf) { req.rawBody = buf; },
 }));

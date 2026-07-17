@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { ragChain } from '../chains/rag-chain.js';
 import { scrubMessages } from '../governance/compliance.js';
 import { successResponse, errorResponse } from '../utils/response.js';
+import { logger } from '../utils/logger.js';
 import { appendFile } from 'fs/promises';
 import { fileURLToPath } from 'url';
 import { join } from 'path';
@@ -35,6 +36,7 @@ export async function chatController(req, res) {
 
     return successResponse(res, { response: response.content, sessionId });
   } catch (err) {
-    return errorResponse(res, err.message ?? 'Chat failed', 500);
+    logger.error('chat error', { message: err.message, stack: err.stack });
+    return errorResponse(res, 'Internal server error', 500);
   }
 }

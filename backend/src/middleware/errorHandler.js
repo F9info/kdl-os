@@ -14,7 +14,7 @@ export const errorHandler = (err, req, res, next) => {
   }
 
   const statusCode = err.statusCode || err.status || 500;
-  const message = process.env.NODE_ENV === 'production' && statusCode === 500
+  const message = process.env.NODE_ENV !== 'development' && statusCode === 500
     ? 'Internal server error'
     : err.message || 'Internal server error';
 

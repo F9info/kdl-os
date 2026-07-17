@@ -3,6 +3,13 @@ import { redis } from '../../config/redis.js';
 import { successResponse, errorResponse } from '../../shared/utils/response.js';
 import { writeActivityAsync, getClientIp } from '../user-management/shared/activity-logger.js';
 import { notify, renderTemplate, getNotificationTemplate } from './service.js';
+import {
+  createTemplateSchema,
+  updateTemplateSchema,
+  createCategorySchema,
+  updateCategorySchema,
+  broadcastSchema,
+} from './schema.js';
 
 const SSE_MAX_CONNECTIONS = 3;
 const SSE_HEARTBEAT_MS = 25_000;
@@ -189,6 +196,10 @@ export const listTemplates = async (req, res, next) => {
 
 export const createTemplate = async (req, res, next) => {
   try {
+    const parsed = createTemplateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return errorResponse(res, 'Validation error', 422, parsed.error.flatten().fieldErrors);
+    }
     const {
       slug,
       category_id,
@@ -200,7 +211,7 @@ export const createTemplate = async (req, res, next) => {
       sms_body,
       whatsapp_body,
       is_active,
-    } = req.body;
+    } = parsed.data;
 
     const template = await prisma.notificationTemplate.create({
       data: {
@@ -236,9 +247,13 @@ export const createTemplate = async (req, res, next) => {
 
 export const updateTemplate = async (req, res, next) => {
   try {
+    const parsed = updateTemplateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return errorResponse(res, 'Validation error', 422, parsed.error.flatten().fieldErrors);
+    }
     const template = await prisma.notificationTemplate.update({
       where: { id: req.params.id },
-      data: req.body,
+      data: parsed.data,
       include: { category: true },
     });
 
@@ -320,7 +335,11 @@ export const previewTemplate = async (req, res, next) => {
 
 export const broadcast = async (req, res, next) => {
   try {
-    const { to, template, inline, channels, data } = req.body;
+    const parsed = broadcastSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return errorResponse(res, 'Validation error', 422, parsed.error.flatten().fieldErrors);
+    }
+    const { to, template, inline, channels, data } = parsed.data;
 
     const targetCount = [to?.role_slug, to?.all].filter(Boolean).length;
     if (!to || targetCount !== 1) {
@@ -370,7 +389,11 @@ export const listCategories = async (req, res, next) => {
 
 export const createCategory = async (req, res, next) => {
   try {
-    const { slug, name, description } = req.body;
+    const parsed = createCategorySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return errorResponse(res, 'Validation error', 422, parsed.error.flatten().fieldErrors);
+    }
+    const { slug, name, description } = parsed.data;
     const category = await prisma.notificationCategory.create({
       data: { slug, name, description: description ?? null },
     });
@@ -393,6 +416,11 @@ export const createCategory = async (req, res, next) => {
 
 export const updateCategory = async (req, res, next) => {
   try {
+    const parsed = updateCategorySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return errorResponse(res, 'Validation error', 422, parsed.error.flatten().fieldErrors);
+    }
+
     const existing = await prisma.notificationCategory.findUnique({
       where: { id: req.params.id },
       select: { is_system: true },
@@ -402,12 +430,9 @@ export const updateCategory = async (req, res, next) => {
       return errorResponse(res, 'Category not found', 404);
     }
 
-    // Prevent changing is_system field via API
-    const { is_system: _ignore, ...safeData } = req.body;
-
     const category = await prisma.notificationCategory.update({
       where: { id: req.params.id },
-      data: safeData,
+      data: parsed.data,
     });
 
     writeActivityAsync({

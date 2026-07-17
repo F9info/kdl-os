@@ -116,9 +116,28 @@ export const testStorageConnection = async (data = {}) => {
     };
   } catch (err) {
     logger.warn(`storage: test connection failed for ${config.provider}: ${err.message}`);
-    throw Object.assign(
-      new Error(`Connection test failed: ${err.message}`),
-      { status: 422 }
-    );
+    throw Object.assign(new Error(classifyStorageError(err)), { status: 422 });
   }
 };
+
+function classifyStorageError(err) {
+  const code = err.Code ?? err.code ?? err.name ?? '';
+  const msg = (err.message ?? '').toLowerCase();
+
+  if (code === 'InvalidAccessKeyId' || code === 'AuthorizationHeaderMalformed' || msg.includes('access key') || msg.includes('access denied') || msg.includes('forbidden')) {
+    return 'auth_failed: invalid credentials or insufficient permissions';
+  }
+  if (code === 'NoSuchBucket' || msg.includes('no such bucket') || msg.includes('bucket not found')) {
+    return 'bucket_not_found: bucket does not exist or name is incorrect';
+  }
+  if (code === 'BucketAlreadyOwnedByYou' || code === 'BucketAlreadyExists') {
+    return 'bucket_exists: bucket already owned';
+  }
+  if (msg.includes('econnrefused') || msg.includes('enotfound') || msg.includes('timeout') || msg.includes('network')) {
+    return 'network_error: could not reach the storage endpoint';
+  }
+  if (code === 'InvalidBucketName' || msg.includes('invalid bucket')) {
+    return 'invalid_bucket_name: bucket name does not meet naming rules';
+  }
+  return 'connection_failed: storage provider returned an error';
+}
