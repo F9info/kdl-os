@@ -208,10 +208,17 @@ describe('B2 — validateFieldValue', () => {
     expect(service.validateFieldValue(f, 'not-json')).toMatch(/valid JSON array/);
   });
 
-  it('accepts any string for text/textarea/password/file/fonts/imglist', () => {
-    for (const type of ['text', 'textarea', 'password', 'file', 'fonts', 'imglist']) {
+  it('accepts any string for text/textarea/password/file', () => {
+    for (const type of ['text', 'textarea', 'password', 'file']) {
       expect(service.validateFieldValue({ input_type: type, options: null }, 'anything')).toBeNull();
     }
+  });
+
+  it('requires valid JSON for fonts and imglist (L6)', () => {
+    expect(service.validateFieldValue({ input_type: 'fonts', options: null }, 'not-json')).toMatch(/valid JSON/);
+    expect(service.validateFieldValue({ input_type: 'fonts', options: null }, '[]')).toBeNull();
+    expect(service.validateFieldValue({ input_type: 'imglist', options: null }, 'not-json')).toMatch(/valid JSON/);
+    expect(service.validateFieldValue({ input_type: 'imglist', options: null }, '[]')).toBeNull();
   });
 
   it('rejects empty string for number and slider', () => {
