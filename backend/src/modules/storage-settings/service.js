@@ -27,6 +27,26 @@ const safeDecrypt = (val) => {
   try { return decrypt(val); } catch { return null; }
 };
 
+// Map raw S3/MinIO SDK errors to a short client-safe taxonomy. Raw messages can
+// embed endpoints, request IDs, and header dumps — log them, never return them.
+// (KDL-270 L17)
+const STORAGE_ERROR_TAXONOMY = [
+  { match: /InvalidAccessKeyId|SignatureDoesNotMatch|CredentialsProviderError|InvalidClientTokenId|AccessKeyInvalid/i, message: 'Invalid credentials' },
+  { match: /AccessDenied|Forbidden|AllAccessDisabled/i, message: 'Access denied' },
+  { match: /NoSuchBucket|BucketNotFound/i, message: 'Bucket not found' },
+  { match: /PermanentRedirect|AuthorizationHeaderMalformed|IllegalLocationConstraint/i, message: 'Wrong region or endpoint' },
+  { match: /ENOTFOUND|EAI_AGAIN|getaddrinfo/i, message: 'Endpoint not reachable (DNS)' },
+  { match: /ECONNREFUSED|ECONNRESET|EHOSTUNREACH|ENETUNREACH/i, message: 'Endpoint not reachable (connection)' },
+  { match: /ETIMEDOUT|TimeoutError|RequestTimeout/i, message: 'Connection timed out' },
+  { match: /CERT|TLS|SSL|self.signed/i, message: 'TLS/SSL error' },
+];
+
+const classifyStorageError = (err) => {
+  const haystack = `${err?.name ?? ''} ${err?.code ?? ''} ${err?.Code ?? ''} ${err?.message ?? ''}`;
+  return STORAGE_ERROR_TAXONOMY.find((e) => e.match.test(haystack))?.message
+    ?? 'Storage provider error';
+};
+
 const upsertSetting = async (key, value) => {
   if (value === null || value === '' || value === undefined) {
     await prisma.appSetting.deleteMany({ where: { key } });
@@ -120,7 +140,7 @@ export const testStorageConnection = async (data = {}) => {
   } catch (err) {
     logger.warn(`storage: test connection failed for ${config.provider}: ${err.message}`);
     throw Object.assign(
-      new Error(`Connection test failed: ${err.message}`),
+      new Error(`Connection test failed: ${classifyStorageError(err)}`),
       { status: 422 }
     );
   }

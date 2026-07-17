@@ -25,6 +25,7 @@ model User {
   password_hash   String
   is_active       Boolean   @default(true)
   status          UserStatus @default(ACTIVE)
+  must_change_password Boolean @default(false)
   avatar_media_id String?
   last_login_at   DateTime?
   deleted_at      DateTime?

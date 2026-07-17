@@ -15,6 +15,7 @@ const baseUser = {
   name: 'Test User',
   email: 'test@kdl.com',
   is_active: true,
+  must_change_password: false,
   created_at: '2026-01-01T00:00:00.000Z',
   status: 'ACTIVE' as const,
   avatar_media_id: null,

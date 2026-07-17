@@ -25,9 +25,9 @@
  */
 import { test, expect, request, type APIRequestContext } from '@playwright/test'
 import { startAiStub, type AiStub } from './helpers/ai-stub-server'
+import { ADMIN } from './helpers/credentials'
 
 const API_URL = process.env.E2E_API_URL ?? 'http://localhost:14000/api'
-const ADMIN = { email: 'admin@kdl.com', password: 'Admin@123' }
 const RUN = Date.now().toString(36)
 
 // 1×1 red PNG
