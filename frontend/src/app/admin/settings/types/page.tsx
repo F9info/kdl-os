@@ -60,7 +60,9 @@ export default function TypesPage() {
             sortOrder,
           },
         })
-        .then((r) => r.data.data as { types: Type[]; pagination: { total: number; pages: number } }),
+        .then(
+          (r) => r.data.data as { types: Type[]; pagination: { total: number; pages: number } }
+        ),
   })
 
   const {
@@ -70,7 +72,10 @@ export default function TypesPage() {
     setValue,
     watch,
     formState: { errors },
-  } = useForm<TypeFormData>({ resolver: zodResolver(typeSchema), defaultValues: { is_active: true } })
+  } = useForm<TypeFormData>({
+    resolver: zodResolver(typeSchema),
+    defaultValues: { is_active: true },
+  })
 
   const createMutation = useMutation({
     mutationFn: (payload: TypeFormData) => api.post('/types', payload),
@@ -216,110 +221,110 @@ export default function TypesPage() {
 
   return (
     <PermissionGuard permission="types:view">
-    <div>
-      <PageHeader
-        title="Types"
-        breadcrumbs={[{ label: 'Application Settings' }, { label: 'Types' }]}
-        action={
-          <Button onClick={openCreate}>
-            <Plus className="h-4 w-4" />
-            New Type
-          </Button>
-        }
-      />
+      <div>
+        <PageHeader
+          title="Types"
+          breadcrumbs={[{ label: 'Application Settings' }, { label: 'Types' }]}
+          action={
+            <Button onClick={openCreate}>
+              <Plus className="h-4 w-4" />
+              New Type
+            </Button>
+          }
+        />
 
-      <div className="flex items-center gap-4 mb-6">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search types..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value)
+        <div className="flex items-center gap-4 mb-6">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search types..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setPage(1)
+              }}
+              className="pl-9"
+            />
+          </div>
+          <Select
+            value={statusFilter}
+            onValueChange={(v) => {
+              setStatusFilter(v as '' | 'true' | 'false')
               setPage(1)
             }}
-            className="pl-9"
-          />
+          >
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="All statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All statuses</SelectItem>
+              <SelectItem value="true">Active</SelectItem>
+              <SelectItem value="false">Inactive</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <Select
-          value={statusFilter}
-          onValueChange={(v) => {
-            setStatusFilter(v as '' | 'true' | 'false')
-            setPage(1)
-          }}
-        >
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="All statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">All statuses</SelectItem>
-            <SelectItem value="true">Active</SelectItem>
-            <SelectItem value="false">Inactive</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
 
-      <DataTable
-        columns={columns}
-        data={data?.types ?? []}
-        isLoading={isLoading}
-        emptyMessage="No types found."
-        pagination={
-          data
-            ? { page, totalPages: data.pagination.pages, onPageChange: setPage }
-            : undefined
-        }
-      />
+        <DataTable
+          columns={columns}
+          data={data?.types ?? []}
+          isLoading={isLoading}
+          emptyMessage="No types found."
+          pagination={
+            data ? { page, totalPages: data.pagination.pages, onPageChange: setPage } : undefined
+          }
+        />
 
-      <Modal
-        open={formOpen}
-        onClose={() => setFormOpen(false)}
-        title={editing ? 'Edit Type' : 'New Type'}
-        footer={
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setFormOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit(onSubmit)} disabled={isSaving}>
-              {editing ? 'Save changes' : 'Create'}
-            </Button>
-          </div>
-        }
-      >
-        <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FormField label="Type" error={errors.name?.message} required>
-              <Input placeholder="e.g. Lead Source" {...register('name')} />
-            </FormField>
-            <FormField label="Slug" hint="Auto-generated from the name.">
-              <Input
-                value={slugPreview}
-                readOnly
-                tabIndex={-1}
-                placeholder="auto-generated"
-                className="bg-muted text-muted-foreground"
-              />
-            </FormField>
-          </div>
-          <FormField label="Status">
-            <div className="flex items-center gap-2">
-              <Switch checked={isActive} onCheckedChange={(v) => setValue('is_active', v)} />
-              <span className="text-sm text-muted-foreground">{isActive ? 'Active' : 'Inactive'}</span>
+        <Modal
+          open={formOpen}
+          onClose={() => setFormOpen(false)}
+          title={editing ? 'Edit Type' : 'New Type'}
+          footer={
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setFormOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSubmit(onSubmit)} disabled={isSaving}>
+                {editing ? 'Save changes' : 'Create'}
+              </Button>
             </div>
-          </FormField>
-          {formError && <ErrorAlert error={formError} />}
-        </form>
-      </Modal>
+          }
+        >
+          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <FormField label="Type" error={errors.name?.message} required>
+                <Input placeholder="e.g. Lead Source" {...register('name')} />
+              </FormField>
+              <FormField label="Slug" hint="Auto-generated from the name.">
+                <Input
+                  value={slugPreview}
+                  readOnly
+                  tabIndex={-1}
+                  placeholder="auto-generated"
+                  className="bg-muted text-muted-foreground"
+                />
+              </FormField>
+            </div>
+            <FormField label="Status">
+              <div className="flex items-center gap-2">
+                <Switch checked={isActive} onCheckedChange={(v) => setValue('is_active', v)} />
+                <span className="text-sm text-muted-foreground">
+                  {isActive ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+            </FormField>
+            {formError && <ErrorAlert error={formError} />}
+          </form>
+        </Modal>
 
-      <ConfirmDialog
-        open={deleteId !== null}
-        onClose={() => setDeleteId(null)}
-        onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
-        title="Delete type?"
-        description="A type can only be deleted once it has no fields or linked categories. Remove or reassign them first."
-        isLoading={deleteMutation.isPending}
-      />
-    </div>
+        <ConfirmDialog
+          open={deleteId !== null}
+          onClose={() => setDeleteId(null)}
+          onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
+          title="Delete type?"
+          description="A type can only be deleted once it has no fields or linked categories. Remove or reassign them first."
+          isLoading={deleteMutation.isPending}
+        />
+      </div>
     </PermissionGuard>
   )
 }

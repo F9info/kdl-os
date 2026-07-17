@@ -3,8 +3,25 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Folder, FolderPlus, ChevronRight, Upload, Grid, List, Search, Trash2,
-  Move, RefreshCcw, AlertTriangle, X, Eye, Pencil, Info, Cloud, Camera, Maximize2, Share2
+  Folder,
+  FolderPlus,
+  ChevronRight,
+  Upload,
+  Grid,
+  List,
+  Search,
+  Trash2,
+  Move,
+  RefreshCcw,
+  AlertTriangle,
+  X,
+  Eye,
+  Pencil,
+  Info,
+  Cloud,
+  Camera,
+  Maximize2,
+  Share2,
 } from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
@@ -15,20 +32,44 @@ import { PermissionGuard } from '@/components/shared/PermissionGuard'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { Modal } from '@/components/shared/Modal'
 import { AppImage } from '@/components/shared/AppImage'
-import { ErrorAlert } from '@/components/shared/ErrorAlert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { EmptyState } from '@/components/ui/empty-state'
+import { ErrorState } from '@/components/ui/error-state'
+import { LoadingState } from '@/components/ui/loading-state'
 import { formatDate, formatBytes } from '@/lib/utils'
 import { cn } from '@/lib/utils'
-import type { Media, MediaFolder, MediaType, MediaUsage, MediaSearchResult, MediaSearchDoc } from '@/types/media.types'
+import type {
+  Media,
+  MediaFolder,
+  MediaType,
+  MediaUsage,
+  MediaSearchResult,
+  MediaSearchDoc,
+} from '@/types/media.types'
 import {
-  SearchFacets, MediaTagChips, CustomFieldEditor, SidebarNav, CollectionsPanel,
-  CollectionItemsView, FavoritesView, RecentsView, ChunkedUploadDialog,
-  FolderUploadButton, useClipboardPaste, FavoriteButton, TagManager, damApi,
+  SearchFacets,
+  MediaTagChips,
+  CustomFieldEditor,
+  SidebarNav,
+  CollectionsPanel,
+  CollectionItemsView,
+  FavoritesView,
+  RecentsView,
+  ChunkedUploadDialog,
+  FolderUploadButton,
+  useClipboardPaste,
+  FavoriteButton,
+  TagManager,
+  damApi,
   type SidebarView,
 } from '@/components/media/DamExtensions'
-import { WebcamCaptureButton, ScreenCaptureButton, VoiceRecorderButton } from '@/components/media/CaptureWidgets'
+import {
+  WebcamCaptureButton,
+  ScreenCaptureButton,
+  VoiceRecorderButton,
+} from '@/components/media/CaptureWidgets'
 import { CloudImportDialog } from '@/components/media/CloudImportDialog'
 import { CaptureDialog } from '@/components/media/capture/CaptureDialog'
 import { ImageEditorDialog } from '@/components/media/ImageEditorDialog'
@@ -40,7 +81,12 @@ import { MediaLightbox } from '@/components/media/MediaLightbox'
 // Formats outside this set (tiff, heic, …) would otherwise silently corrupt,
 // so the Edit button stays hidden for them.
 const EDITABLE_IMAGE_MIMES = new Set([
-  'image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif', 'image/svg+xml',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/avif',
+  'image/gif',
+  'image/svg+xml',
 ])
 
 // ── API helpers ──────────────────────────────────────────────────────────────
@@ -50,8 +96,10 @@ const mediaApi = {
   get: (id: string) => api.get(`/media/${id}`).then((r) => r.data.data.media as Media),
   folders: () => api.get('/media/folders').then((r) => r.data.data.folders as MediaFolder[]),
   trash: () => api.get('/media/trash').then((r) => r.data.data.media as Media[]),
-  usage: (id: string) => api.get(`/media/${id}/usage`).then((r) => r.data.data.usages as MediaUsage[]),
-  createFolder: (data: { name: string; parent_id?: string | null }) => api.post('/media/folders', data),
+  usage: (id: string) =>
+    api.get(`/media/${id}/usage`).then((r) => r.data.data.usages as MediaUsage[]),
+  createFolder: (data: { name: string; parent_id?: string | null }) =>
+    api.post('/media/folders', data),
   renameFolder: (id: string, data: { name?: string; parent_id?: string | null }) =>
     api.patch(`/media/folders/${id}`, data),
   deleteFolder: (id: string, cascade = false) =>
@@ -61,10 +109,14 @@ const mediaApi = {
     files.forEach((f) => fd.append('files', f))
     if (folderId) fd.append('folder_id', folderId)
     if (visibility) fd.append('visibility', visibility)
-    return api.post<{ data: { media: Media[] } }>('/media/upload', fd).then((r) => r.data.data.media)
+    return api
+      .post<{ data: { media: Media[] } }>('/media/upload', fd)
+      .then((r) => r.data.data.media)
   },
-  update: (id: string, data: Partial<Pick<Media, 'title' | 'alt_text' | 'caption' | 'original_name' | 'visibility'>>) =>
-    api.patch(`/media/${id}`, data),
+  update: (
+    id: string,
+    data: Partial<Pick<Media, 'title' | 'alt_text' | 'caption' | 'original_name' | 'visibility'>>
+  ) => api.patch(`/media/${id}`, data),
   delete: (id: string) => api.delete(`/media/${id}`),
   bulkDelete: (media_ids: string[]) => api.post('/media/bulk-delete', { media_ids }),
   move: (media_ids: string[], folder_id: string | null) =>
@@ -75,9 +127,12 @@ const mediaApi = {
   touch: (id: string) => api.post(`/media/${id}/touch`).catch(() => {}),
   // Phase D — AI (endpoints 501/hidden when the feature has no active provider)
   aiStatus: () =>
-    api.get('/media/ai/status').then(
-      (r) => r.data.data.features as Record<string, { configured: boolean; driver: string | null }>,
-    ),
+    api
+      .get('/media/ai/status')
+      .then(
+        (r) =>
+          r.data.data.features as Record<string, { configured: boolean; driver: string | null }>
+      ),
   analyze: (id: string) => api.post(`/media/${id}/analyze`),
   suggestions: (id: string) =>
     api.get(`/media/${id}/suggestions`).then((r) => r.data.data.items as MediaSuggestion[]),
@@ -86,7 +141,12 @@ const mediaApi = {
   transcribe: (id: string) => api.post(`/media/${id}/transcribe`),
   transcript: (id: string) =>
     api.get(`/media/${id}/transcript`).then(
-      (r) => r.data.data as { text: string | null; segments: TranscriptSegment[]; language: string | null },
+      (r) =>
+        r.data.data as {
+          text: string | null
+          segments: TranscriptSegment[]
+          language: string | null
+        }
     ),
   aiImageOp: (id: string, op: 'bg-removal' | 'upscale' | 'enhance', scale?: number) =>
     api.post(`/media/${id}/ai-image-op`, { op, ...(scale ? { scale } : {}) }),
@@ -141,7 +201,10 @@ function FolderNode({
         <button
           type="button"
           className="p-0 h-4 w-4 flex-shrink-0"
-          onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v) }}
+          onClick={(e) => {
+            e.stopPropagation()
+            setExpanded((v) => !v)
+          }}
         >
           {children.length > 0 ? (
             <ChevronRight className={cn('h-3 w-3 transition-transform', expanded && 'rotate-90')} />
@@ -157,7 +220,9 @@ function FolderNode({
           <Folder className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
           <span className="truncate">{folder.name}</span>
           {folder._count && (
-            <span className="text-xs text-muted-foreground ml-auto pr-1">{folder._count.media}</span>
+            <span className="text-xs text-muted-foreground ml-auto pr-1">
+              {folder._count.media}
+            </span>
           )}
         </button>
         <div className="hidden group-hover:flex items-center gap-0.5">
@@ -230,24 +295,37 @@ function MediaItemGrid({
         selected && 'border-primary ring-2 ring-primary/30'
       )}
       onClick={(e) => onToggle(item.id, e)}
-      onDoubleClick={(e) => { e.stopPropagation(); if (canPreview) onPreview(item) }}
+      onDoubleClick={(e) => {
+        e.stopPropagation()
+        if (canPreview) onPreview(item)
+      }}
     >
       <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden relative">
         {thumb ? (
-          <AppImage size="thumbnail" src={thumb} alt={item.original_name} className="max-h-full max-w-full" />
+          <AppImage
+            size="thumbnail"
+            src={thumb}
+            alt={item.original_name}
+            className="max-h-full max-w-full"
+          />
         ) : (
           <span className="text-2xl text-muted-foreground font-bold">{item.type[0]}</span>
         )}
         {processing && (
           <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
-            <span className="text-[10px] font-medium text-muted-foreground animate-pulse">Processing…</span>
+            <span className="text-[10px] font-medium text-muted-foreground animate-pulse">
+              Processing…
+            </span>
           </div>
         )}
         {item.has_active_share && (
           <button
             type="button"
             title="Shared — manage or revoke links"
-            onClick={(e) => { e.stopPropagation(); onManageShare(item) }}
+            onClick={(e) => {
+              e.stopPropagation()
+              onManageShare(item)
+            }}
             className="absolute bottom-1 left-1 flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-primary text-primary-foreground text-[10px] font-medium hover:opacity-90"
           >
             <Share2 className="h-2.5 w-2.5" /> Shared
@@ -264,7 +342,10 @@ function MediaItemGrid({
           checked={selected}
           readOnly
           className="h-4 w-4 rounded"
-          onClick={(e) => { e.stopPropagation(); onToggle(item.id, e as unknown as React.MouseEvent) }}
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggle(item.id, e as unknown as React.MouseEvent)
+          }}
         />
       </div>
       <div className="absolute top-1 right-1 flex gap-0.5">
@@ -275,7 +356,10 @@ function MediaItemGrid({
                 type="button"
                 title="Restore"
                 className="p-0.5 bg-background/80 rounded hover:bg-background"
-                onClick={(e) => { e.stopPropagation(); trashActions.onRestore(item.id) }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  trashActions.onRestore(item.id)
+                }}
               >
                 <RefreshCcw className="h-3 w-3" />
               </button>
@@ -285,7 +369,10 @@ function MediaItemGrid({
                 type="button"
                 title="Delete forever"
                 className="p-0.5 bg-background/80 rounded hover:bg-background hover:text-destructive"
-                onClick={(e) => { e.stopPropagation(); trashActions.onDeleteForever(item.id) }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  trashActions.onDeleteForever(item.id)
+                }}
               >
                 <Trash2 className="h-3 w-3" />
               </button>
@@ -298,7 +385,10 @@ function MediaItemGrid({
                 type="button"
                 title="Preview"
                 className="p-0.5 bg-background/80 rounded hover:bg-background"
-                onClick={(e) => { e.stopPropagation(); onPreview(item) }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onPreview(item)
+                }}
               >
                 <Maximize2 className="h-3 w-3" />
               </button>
@@ -307,7 +397,10 @@ function MediaItemGrid({
               type="button"
               title="Details"
               className="p-0.5 bg-background/80 rounded hover:bg-background"
-              onClick={(e) => { e.stopPropagation(); onDetail(item) }}
+              onClick={(e) => {
+                e.stopPropagation()
+                onDetail(item)
+              }}
             >
               <Eye className="h-3 w-3" />
             </button>
@@ -347,14 +440,20 @@ function MediaItemList({
         selected && 'bg-accent'
       )}
       onClick={(e) => onToggle(item.id, e)}
-      onDoubleClick={(e) => { e.stopPropagation(); if (canPreview) onPreview(item) }}
+      onDoubleClick={(e) => {
+        e.stopPropagation()
+        if (canPreview) onPreview(item)
+      }}
     >
       <input
         type="checkbox"
         checked={selected}
         readOnly
         className="h-4 w-4 rounded"
-        onClick={(e) => { e.stopPropagation(); onToggle(item.id, e as unknown as React.MouseEvent) }}
+        onClick={(e) => {
+          e.stopPropagation()
+          onToggle(item.id, e as unknown as React.MouseEvent)
+        }}
       />
       {/* List rows are dense chrome: the 32px box crops the token-sized
           thumbnail via overflow-hidden rather than letting it set row height. */}
@@ -373,7 +472,10 @@ function MediaItemList({
             <button
               type="button"
               title="Shared — manage or revoke links"
-              onClick={(e) => { e.stopPropagation(); onManageShare(item) }}
+              onClick={(e) => {
+                e.stopPropagation()
+                onManageShare(item)
+              }}
               className="flex-shrink-0 flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-primary text-primary-foreground text-[10px] font-medium hover:opacity-90"
             >
               <Share2 className="h-2.5 w-2.5" /> Shared
@@ -392,7 +494,10 @@ function MediaItemList({
             <button
               type="button"
               title="Restore"
-              onClick={(e) => { e.stopPropagation(); trashActions.onRestore(item.id) }}
+              onClick={(e) => {
+                e.stopPropagation()
+                trashActions.onRestore(item.id)
+              }}
               className="p-1 hover:text-foreground text-muted-foreground"
             >
               <RefreshCcw className="h-4 w-4" />
@@ -402,7 +507,10 @@ function MediaItemList({
             <button
               type="button"
               title="Delete forever"
-              onClick={(e) => { e.stopPropagation(); trashActions.onDeleteForever(item.id) }}
+              onClick={(e) => {
+                e.stopPropagation()
+                trashActions.onDeleteForever(item.id)
+              }}
               className="p-1 hover:text-destructive text-muted-foreground"
             >
               <Trash2 className="h-4 w-4" />
@@ -415,7 +523,10 @@ function MediaItemList({
             <button
               type="button"
               title="Preview"
-              onClick={(e) => { e.stopPropagation(); onPreview(item) }}
+              onClick={(e) => {
+                e.stopPropagation()
+                onPreview(item)
+              }}
               className="p-1 hover:text-foreground text-muted-foreground"
             >
               <Maximize2 className="h-4 w-4" />
@@ -424,7 +535,10 @@ function MediaItemList({
           <button
             type="button"
             title="Details"
-            onClick={(e) => { e.stopPropagation(); onDetail(item) }}
+            onClick={(e) => {
+              e.stopPropagation()
+              onDetail(item)
+            }}
             className="p-1 hover:text-foreground text-muted-foreground"
           >
             <Info className="h-4 w-4" />
@@ -437,7 +551,13 @@ function MediaItemList({
 
 // ── Upload zone ───────────────────────────────────────────────────────────────
 
-function UploadZone({ onFiles, disabled }: { onFiles: (files: File[]) => void; disabled?: boolean }) {
+function UploadZone({
+  onFiles,
+  disabled,
+}: {
+  onFiles: (files: File[]) => void
+  disabled?: boolean
+}) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [drag, setDrag] = useState(false)
 
@@ -448,7 +568,10 @@ function UploadZone({ onFiles, disabled }: { onFiles: (files: File[]) => void; d
         drag ? 'border-primary bg-primary/5' : 'border-muted-foreground/30 hover:border-primary/50',
         disabled && 'opacity-50 cursor-not-allowed'
       )}
-      onDragOver={(e) => { e.preventDefault(); setDrag(true) }}
+      onDragOver={(e) => {
+        e.preventDefault()
+        setDrag(true)
+      }}
       onDragLeave={() => setDrag(false)}
       onDrop={(e) => {
         e.preventDefault()
@@ -488,7 +611,11 @@ function AiSuggestionsPanel({ item }: { item: Media }) {
 
   const analyzeMutation = useMutation({
     mutationFn: () => mediaApi.analyze(item.id),
-    onSuccess: () => toast({ title: 'Analysis queued', description: 'Suggestions appear here when ready.' }),
+    onSuccess: () =>
+      toast({
+        title: 'Analysis queued',
+        description: 'Suggestions appear here when ready.',
+      }),
     onError: () => toast({ title: 'Analyze failed', variant: 'destructive' }),
   })
 
@@ -496,7 +623,9 @@ function AiSuggestionsPanel({ item }: { item: Media }) {
     mutationFn: ({ id, accept }: { id: string; accept: boolean }) =>
       accept ? mediaApi.acceptSuggestion(id) : mediaApi.rejectSuggestion(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['media-suggestions', item.id] })
+      queryClient.invalidateQueries({
+        queryKey: ['media-suggestions', item.id],
+      })
       queryClient.invalidateQueries({ queryKey: ['media'] })
     },
     onError: () => toast({ title: 'Action failed', variant: 'destructive' }),
@@ -505,7 +634,9 @@ function AiSuggestionsPanel({ item }: { item: Media }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">AI Suggestions</p>
+        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+          AI Suggestions
+        </p>
         <Button
           size="sm"
           variant="outline"
@@ -560,9 +691,18 @@ function TranscriptPanel({ item }: { item: Media }) {
   const transcribeMutation = useMutation({
     mutationFn: () => mediaApi.transcribe(item.id),
     onSuccess: () => {
-      toast({ title: 'Transcription queued', description: 'The transcript appears here when ready.' })
+      toast({
+        title: 'Transcription queued',
+        description: 'The transcript appears here when ready.',
+      })
       // Poll once after a while so a fast job shows up without a manual refresh
-      setTimeout(() => queryClient.invalidateQueries({ queryKey: ['media-transcript', item.id] }), 15_000)
+      setTimeout(
+        () =>
+          queryClient.invalidateQueries({
+            queryKey: ['media-transcript', item.id],
+          }),
+        15_000
+      )
     },
     onError: () => toast({ title: 'Transcribe failed', variant: 'destructive' }),
   })
@@ -572,7 +712,9 @@ function TranscriptPanel({ item }: { item: Media }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Captions</p>
+        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+          Captions
+        </p>
         <Button
           size="sm"
           variant="outline"
@@ -595,10 +737,16 @@ function TranscriptPanel({ item }: { item: Media }) {
             ))}
           </div>
           <div className="flex gap-3 text-xs">
-            <a className="text-primary hover:underline" href={`${apiBase}/media/${item.id}/transcript?format=srt`}>
+            <a
+              className="text-primary hover:underline"
+              href={`${apiBase}/media/${item.id}/transcript?format=srt`}
+            >
               Download SRT
             </a>
-            <a className="text-primary hover:underline" href={`${apiBase}/media/${item.id}/transcript?format=vtt`}>
+            <a
+              className="text-primary hover:underline"
+              href={`${apiBase}/media/${item.id}/transcript?format=vtt`}
+            >
               Download VTT
             </a>
           </div>
@@ -612,17 +760,29 @@ function AiImageOpsPanel({ item }: { item: Media }) {
   const queryClient = useQueryClient()
 
   const opMutation = useMutation({
-    mutationFn: (op: 'bg-removal' | 'upscale' | 'enhance') => mediaApi.aiImageOp(item.id, op, op === 'upscale' ? 2 : undefined),
+    mutationFn: (op: 'bg-removal' | 'upscale' | 'enhance') =>
+      mediaApi.aiImageOp(item.id, op, op === 'upscale' ? 2 : undefined),
     onSuccess: () => {
-      toast({ title: 'AI edit queued', description: 'A new version appears in Version History when ready.' })
-      setTimeout(() => queryClient.invalidateQueries({ queryKey: ['media-versions', item.id] }), 15_000)
+      toast({
+        title: 'AI edit queued',
+        description: 'A new version appears in Version History when ready.',
+      })
+      setTimeout(
+        () =>
+          queryClient.invalidateQueries({
+            queryKey: ['media-versions', item.id],
+          }),
+        15_000
+      )
     },
     onError: () => toast({ title: 'AI edit failed', variant: 'destructive' }),
   })
 
   return (
     <div className="space-y-2">
-      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">AI Image Edits</p>
+      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+        AI Image Edits
+      </p>
       <div className="flex flex-wrap gap-2">
         <Button
           size="sm"
@@ -704,7 +864,7 @@ function DetailDrawer({
     queryFn: () =>
       mediaApi
         .aiStatus()
-        .catch(() => ({} as Record<string, { configured: boolean; driver: string | null }>)),
+        .catch(() => ({}) as Record<string, { configured: boolean; driver: string | null }>),
     staleTime: 60_000,
   })
   const isImage = item.mime_type.startsWith('image/')
@@ -743,7 +903,9 @@ function DetailDrawer({
       onClose()
     },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Delete failed'
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        'Delete failed'
       toast({ title: msg, variant: 'destructive' })
     },
   })
@@ -758,9 +920,19 @@ function DetailDrawer({
       </div>
 
       {item.url && can('media:preview') && (
-        <button type="button" onClick={onPreview} className="w-full block" title="Open full preview">
+        <button
+          type="button"
+          onClick={onPreview}
+          className="w-full block"
+          title="Open full preview"
+        >
           {item.mime_type.startsWith('image/') ? (
-            <AppImage size="content" src={item.url} alt={item.original_name} className="max-w-full rounded border hover:opacity-90" />
+            <AppImage
+              size="content"
+              src={item.url}
+              alt={item.original_name}
+              className="max-w-full rounded border hover:opacity-90"
+            />
           ) : (
             <span className="flex items-center justify-center h-24 rounded border bg-muted text-xs text-muted-foreground hover:bg-accent">
               Open preview
@@ -780,7 +952,13 @@ function DetailDrawer({
         </p>
       )}
       {isImage && canEditImage && item.url && can('media:edit-image') && (
-        <Button size="sm" variant="outline" className="w-full" disabled={processing} onClick={() => setEditorOpen(true)}>
+        <Button
+          size="sm"
+          variant="outline"
+          className="w-full"
+          disabled={processing}
+          onClick={() => setEditorOpen(true)}
+        >
           {processing ? 'Processing…' : 'Edit image (crop, resize, rotate…)'}
         </Button>
       )}
@@ -798,7 +976,12 @@ function DetailDrawer({
           in the app, so there was no way to create or copy a share link. */}
       {can('media:share-link') && (
         <>
-          <Button size="sm" variant="outline" className="w-full gap-1.5" onClick={() => setShareOpen(true)}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full gap-1.5"
+            onClick={() => setShareOpen(true)}
+          >
             {item.has_active_share && (
               <Badge className="h-4 px-1 text-[10px] leading-none">Shared</Badge>
             )}
@@ -822,7 +1005,9 @@ function DetailDrawer({
             size="sm"
             variant="outline"
             className="h-7 px-2 text-xs"
-            onClick={() => visibilityMutation.mutate(item.visibility === 'SHARED' ? 'PRIVATE' : 'SHARED')}
+            onClick={() =>
+              visibilityMutation.mutate(item.visibility === 'SHARED' ? 'PRIVATE' : 'SHARED')
+            }
             disabled={visibilityMutation.isPending}
           >
             Make {item.visibility === 'SHARED' ? 'private' : 'shared'}
@@ -832,7 +1017,9 @@ function DetailDrawer({
 
       {can('media:metadata-edit') && (
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Metadata</p>
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+            Metadata
+          </p>
           <label className="block text-sm">
             Title
             <Input
@@ -869,18 +1056,33 @@ function DetailDrawer({
       )}
 
       <div className="space-y-1 text-xs text-muted-foreground">
-        <p>File: <span className="text-foreground">{item.original_name}</span></p>
-        <p>Size: <span className="text-foreground">{formatBytes(item.size)}</span></p>
-        <p>Type: <span className="text-foreground">{item.mime_type}</span></p>
+        <p>
+          File: <span className="text-foreground">{item.original_name}</span>
+        </p>
+        <p>
+          Size: <span className="text-foreground">{formatBytes(item.size)}</span>
+        </p>
+        <p>
+          Type: <span className="text-foreground">{item.mime_type}</span>
+        </p>
         {item.width && item.height && (
-          <p>Dimensions: <span className="text-foreground">{item.width}×{item.height}px</span></p>
+          <p>
+            Dimensions:{' '}
+            <span className="text-foreground">
+              {item.width}×{item.height}px
+            </span>
+          </p>
         )}
-        <p>Uploaded: <span className="text-foreground">{formatDate(item.created_at)}</span></p>
+        <p>
+          Uploaded: <span className="text-foreground">{formatDate(item.created_at)}</span>
+        </p>
       </div>
 
       {item.variants && Object.values(item.variants).some(Boolean) && (
         <div className="space-y-1">
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Variants</p>
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+            Variants
+          </p>
           {Object.entries(item.variants)
             .filter(([, v]) => v)
             .map(([k, v]) => (
@@ -938,7 +1140,9 @@ function DetailDrawer({
 
       {usages && usages.length > 0 && (
         <div className="space-y-1">
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Used by</p>
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+            Used by
+          </p>
           {usages.map((u) => (
             <Badge key={u.id} variant="secondary" className="text-xs mr-1">
               {u.entity}
@@ -1000,10 +1204,13 @@ export default function MediaPage() {
   const [processingEditIds, setProcessingEditIds] = useState<Set<string>>(new Set())
   const editPollIntervals = useRef<Set<ReturnType<typeof setInterval>>>(new Set())
   const deferredTimers = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
-  useEffect(() => () => {
-    editPollIntervals.current.forEach(clearInterval)
-    deferredTimers.current.forEach(clearTimeout)
-  }, [])
+  useEffect(
+    () => () => {
+      editPollIntervals.current.forEach(clearInterval)
+      deferredTimers.current.forEach(clearTimeout)
+    },
+    []
+  )
   const [lightboxItem, setLightboxItem] = useState<Media | null>(null)
   // KDL-172: clicking a file's "Shared" badge opens share management/revoke
   // directly, without needing to open the full File Details drawer first.
@@ -1013,14 +1220,22 @@ export default function MediaPage() {
   const [chunkedFiles, setChunkedFiles] = useState<File[]>([])
   const [chunkedOpen, setChunkedOpen] = useState(false)
   // A8: folder upload — uses existing backend /media/upload?relative_paths=...
-  const handleFolderUpload = useCallback((files: File[], relativePaths: string[]) => {
-    const fd = new FormData()
-    files.forEach((f) => fd.append('files', f))
-    relativePaths.forEach((p) => fd.append('relative_paths', p))
-    if (selectedFolder) fd.append('folder_id', selectedFolder)
-    api.post('/media/upload', fd).then(() => { invalidateAll(); toast({ title: 'Folder uploaded' }) })
-      .catch(() => toast({ title: 'Folder upload failed', variant: 'destructive' }))
-  }, [selectedFolder]) // eslint-disable-line react-hooks/exhaustive-deps
+  const handleFolderUpload = useCallback(
+    (files: File[], relativePaths: string[]) => {
+      const fd = new FormData()
+      files.forEach((f) => fd.append('files', f))
+      relativePaths.forEach((p) => fd.append('relative_paths', p))
+      if (selectedFolder) fd.append('folder_id', selectedFolder)
+      api
+        .post('/media/upload', fd)
+        .then(() => {
+          invalidateAll()
+          toast({ title: 'Folder uploaded' })
+        })
+        .catch(() => toast({ title: 'Folder upload failed', variant: 'destructive' }))
+    },
+    [selectedFolder]
+  )
 
   // D8: cloud import + capture dialogs
   const [cloudImportOpen, setCloudImportOpen] = useState(false)
@@ -1040,12 +1255,15 @@ export default function MediaPage() {
 
   // ── Queries ─────────────────────────────────────────────────────────────────
 
-  const foldersQuery = useQuery({ queryKey: ['media-folders'], queryFn: mediaApi.folders })
+  const foldersQuery = useQuery({
+    queryKey: ['media-folders'],
+    queryFn: mediaApi.folders,
+  })
   const folders = foldersQuery.data ?? []
   // KDL-172: uploads silently land in whatever folder happened to be
   // selected, with no indication of where — surface it next to Upload.
   const uploadDestinationName = selectedFolder
-    ? folders.find((f) => f.id === selectedFolder)?.name ?? 'Selected folder'
+    ? (folders.find((f) => f.id === selectedFolder)?.name ?? 'Selected folder')
     : 'Root (no folder)'
 
   // Phase D5: the search bar's semantic-mode toggle stays hidden until an
@@ -1054,13 +1272,16 @@ export default function MediaPage() {
   const { data: searchAiStatus } = useQuery({
     queryKey: ['media-ai-status'],
     queryFn: () =>
-      mediaApi.aiStatus().catch(() => ({} as Record<string, { configured: boolean; driver: string | null }>)),
+      mediaApi
+        .aiStatus()
+        .catch(() => ({}) as Record<string, { configured: boolean; driver: string | null }>),
     staleTime: 60_000,
   })
   const semanticSearchEnabled = Boolean(searchAiStatus?.embeddings?.configured)
 
   const mediaParams: Record<string, string> = { limit: '50', scope }
-  if (selectedFolder !== undefined) mediaParams.folder_id = selectedFolder === null ? 'null' : selectedFolder
+  if (selectedFolder !== undefined)
+    mediaParams.folder_id = selectedFolder === null ? 'null' : selectedFolder
   if (debouncedSearch) mediaParams.search = debouncedSearch
   if (typeFilter) mediaParams.type = typeFilter
 
@@ -1084,7 +1305,10 @@ export default function MediaPage() {
     const large = files.filter((f) => f.size > 50 * 1024 * 1024)
     const small = files.filter((f) => f.size <= 50 * 1024 * 1024)
     if (small.length) uploadMutation.mutate(small)
-    if (large.length) { setChunkedFiles(large); setChunkedOpen(true) }
+    if (large.length) {
+      setChunkedFiles(large)
+      setChunkedOpen(true)
+    }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // A8: clipboard paste — attach images/files pasted anywhere on the page
@@ -1096,44 +1320,70 @@ export default function MediaPage() {
   // the child, which would otherwise flicker the overlay off mid-drag.
   const [gridDragActive, setGridDragActive] = useState(false)
   const dragDepth = useRef(0)
-  const gridDragHandlers = can('media:upload') && view === 'files'
-    ? {
-        onDragEnter: (e: React.DragEvent) => {
-          e.preventDefault()
-          dragDepth.current += 1
-          setGridDragActive(true)
-        },
-        onDragOver: (e: React.DragEvent) => e.preventDefault(),
-        onDragLeave: (e: React.DragEvent) => {
-          e.preventDefault()
-          dragDepth.current = Math.max(0, dragDepth.current - 1)
-          if (dragDepth.current === 0) setGridDragActive(false)
-        },
-        onDrop: (e: React.DragEvent) => {
-          e.preventDefault()
-          dragDepth.current = 0
-          setGridDragActive(false)
-          if (e.dataTransfer.files.length) handleIncomingFiles(Array.from(e.dataTransfer.files))
-        },
-      }
-    : {}
+  const gridDragHandlers =
+    can('media:upload') && view === 'files'
+      ? {
+          onDragEnter: (e: React.DragEvent) => {
+            e.preventDefault()
+            dragDepth.current += 1
+            setGridDragActive(true)
+          },
+          onDragOver: (e: React.DragEvent) => e.preventDefault(),
+          onDragLeave: (e: React.DragEvent) => {
+            e.preventDefault()
+            dragDepth.current = Math.max(0, dragDepth.current - 1)
+            if (dragDepth.current === 0) setGridDragActive(false)
+          },
+          onDrop: (e: React.DragEvent) => {
+            e.preventDefault()
+            dragDepth.current = 0
+            setGridDragActive(false)
+            if (e.dataTransfer.files.length) handleIncomingFiles(Array.from(e.dataTransfer.files))
+          },
+        }
+      : {}
 
   // A8: open detail by id — search hits / collection docs lack url+variants, so
   // fetch the full row before showing the drawer
   const openDetailById = useCallback((mediaId: string) => {
-    mediaApi.get(mediaId).then(setDetailItem)
+    mediaApi
+      .get(mediaId)
+      .then(setDetailItem)
       .catch(() => toast({ title: 'Failed to load file', variant: 'destructive' }))
   }, [])
 
   // A8: items — search hits are flat Meili docs; map to Media-ish rows for the
   // grid (no url/variants → letter tile fallback, click fetches the full row)
   const docToMedia = (d: MediaSearchDoc): Media => ({
-    id: d.id, user_id: d.owner_id, folder_id: d.folder_id, filename: d.name,
-    original_name: d.name, mime_type: d.mime_type, size: d.size, bucket: '', path: '',
-    url: null, title: d.title, alt_text: d.alt, caption: d.caption, width: d.width,
-    height: d.height, duration: null, variants: null, type: d.type, visibility: d.visibility,
-    deleted_at: null, created_at: d.created_at, updated_at: d.created_at, checksum: null,
-    scan_result: null, scanned_at: null, exif: null, is_archived: d.is_archived, tags: d.tags, meta: d.meta,
+    id: d.id,
+    user_id: d.owner_id,
+    folder_id: d.folder_id,
+    filename: d.name,
+    original_name: d.name,
+    mime_type: d.mime_type,
+    size: d.size,
+    bucket: '',
+    path: '',
+    url: null,
+    title: d.title,
+    alt_text: d.alt,
+    caption: d.caption,
+    width: d.width,
+    height: d.height,
+    duration: null,
+    variants: null,
+    type: d.type,
+    visibility: d.visibility,
+    deleted_at: null,
+    created_at: d.created_at,
+    updated_at: d.created_at,
+    checksum: null,
+    scan_result: null,
+    scanned_at: null,
+    exif: null,
+    is_archived: d.is_archived,
+    tags: d.tags,
+    meta: d.meta,
   })
   const items: Media[] = searchResults
     ? searchResults.hits.map(docToMedia)
@@ -1142,22 +1392,31 @@ export default function MediaPage() {
       : (trashQuery.data ?? [])
 
   // When search is active the grid rows are doc stubs — fetch full row on click
-  const handleDetail = useCallback((m: Media) => {
-    mediaApi.touch(m.id)
-    if (searchResults) openDetailById(m.id)
-    else setDetailItem(m)
-  }, [searchResults, openDetailById])
+  const handleDetail = useCallback(
+    (m: Media) => {
+      mediaApi.touch(m.id)
+      if (searchResults) openDetailById(m.id)
+      else setDetailItem(m)
+    },
+    [searchResults, openDetailById]
+  )
 
   // Search hits lack `url`/`variants` — fetch the full row before opening the
   // lightbox so it always has a real file to render.
-  const handlePreview = useCallback((m: Media) => {
-    mediaApi.touch(m.id)
-    if (searchResults || !m.url) {
-      mediaApi.get(m.id).then(setLightboxItem).catch(() => toast({ title: 'Failed to load file', variant: 'destructive' }))
-    } else {
-      setLightboxItem(m)
-    }
-  }, [searchResults])
+  const handlePreview = useCallback(
+    (m: Media) => {
+      mediaApi.touch(m.id)
+      if (searchResults || !m.url) {
+        mediaApi
+          .get(m.id)
+          .then(setLightboxItem)
+          .catch(() => toast({ title: 'Failed to load file', variant: 'destructive' }))
+      } else {
+        setLightboxItem(m)
+      }
+    },
+    [searchResults]
+  )
 
   // ── Mutations ────────────────────────────────────────────────────────────────
 
@@ -1165,21 +1424,28 @@ export default function MediaPage() {
   // right when the job is *queued* just refetches the pre-edit row, which is
   // what made edits look like a silent no-op until a manual page refresh.
   // Poll the job and only refresh once it has actually finished.
-  const scheduleInvalidate = useCallback((ms: number, extraId?: string) => {
-    const id = setTimeout(() => {
-      deferredTimers.current.delete(id)
-      queryClient.invalidateQueries({ queryKey: ['media'] })
-      // If the drawer is open for this item, pull the latest row so late-landing
-      // variants show up without requiring a manual close-and-reopen.
-      if (extraId) {
-        setDetailItem((cur) => {
-          if (cur?.id === extraId) mediaApi.get(extraId).then(setDetailItem).catch(() => {})
-          return cur
-        })
-      }
-    }, ms)
-    deferredTimers.current.add(id)
-  }, [queryClient]) // eslint-disable-line react-hooks/exhaustive-deps
+  const scheduleInvalidate = useCallback(
+    (ms: number, extraId?: string) => {
+      const id = setTimeout(() => {
+        deferredTimers.current.delete(id)
+        queryClient.invalidateQueries({ queryKey: ['media'] })
+        // If the drawer is open for this item, pull the latest row so late-landing
+        // variants show up without requiring a manual close-and-reopen.
+        if (extraId) {
+          setDetailItem((cur) => {
+            if (cur?.id === extraId)
+              mediaApi
+                .get(extraId)
+                .then(setDetailItem)
+                .catch(() => {})
+            return cur
+          })
+        }
+      }, ms)
+      deferredTimers.current.add(id)
+    },
+    [queryClient]
+  )
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ['media'] })
@@ -1192,54 +1458,71 @@ export default function MediaPage() {
     scheduleInvalidate(8_000)
   }
 
-  const pollEditJob = useCallback((mediaId: string, jobId: string) => {
-    setProcessingEditIds((prev) => new Set(prev).add(mediaId))
-    const stop = () => {
-      clearInterval(interval)
-      editPollIntervals.current.delete(interval)
-      setProcessingEditIds((prev) => {
-        const next = new Set(prev)
-        next.delete(mediaId)
-        return next
-      })
-    }
-    const interval = setInterval(async () => {
-      try {
-        const res = await api.get<{ data: { state: string; failedReason: string | null } }>(`/media/jobs/${jobId}`)
-        const { state, failedReason } = res.data.data
-        if (state === 'completed') {
-          stop()
-          queryClient.invalidateQueries({ queryKey: ['media'] })
-          // Thumbnail generation is a separate async step after the edit job
-          // completes — schedule deferred refetches to pick up variants once
-          // the thumbnail worker has had time to run. Pass mediaId so the open
-          // drawer is refreshed even for the deferred ticks (Fix 4).
-          scheduleInvalidate(3_000, mediaId)
-          scheduleInvalidate(8_000, mediaId)
-          // Immediate refresh of the open File Details row — it's a state
-          // snapshot, not derived from the ['media'] query.
-          setDetailItem((cur) => {
-            if (cur?.id === mediaId) mediaApi.get(mediaId).then(setDetailItem).catch(() => {})
-            return cur
-          })
-          toast({ title: 'Edit applied' })
-        } else if (state === 'failed') {
-          stop()
-          toast({ title: 'Edit failed', description: failedReason ?? undefined, variant: 'destructive' })
-        }
-      } catch {
-        stop()
-        toast({ title: 'Failed to check edit status', variant: 'destructive' })
+  const pollEditJob = useCallback(
+    (mediaId: string, jobId: string) => {
+      setProcessingEditIds((prev) => new Set(prev).add(mediaId))
+      const stop = () => {
+        clearInterval(interval)
+        editPollIntervals.current.delete(interval)
+        setProcessingEditIds((prev) => {
+          const next = new Set(prev)
+          next.delete(mediaId)
+          return next
+        })
       }
-    }, 1500)
-    editPollIntervals.current.add(interval)
-  }, [queryClient, scheduleInvalidate]) // eslint-disable-line react-hooks/exhaustive-deps
+      const interval = setInterval(async () => {
+        try {
+          const res = await api.get<{
+            data: { state: string; failedReason: string | null }
+          }>(`/media/jobs/${jobId}`)
+          const { state, failedReason } = res.data.data
+          if (state === 'completed') {
+            stop()
+            queryClient.invalidateQueries({ queryKey: ['media'] })
+            // Thumbnail generation is a separate async step after the edit job
+            // completes — schedule deferred refetches to pick up variants once
+            // the thumbnail worker has had time to run. Pass mediaId so the open
+            // drawer is refreshed even for the deferred ticks (Fix 4).
+            scheduleInvalidate(3_000, mediaId)
+            scheduleInvalidate(8_000, mediaId)
+            // Immediate refresh of the open File Details row — it's a state
+            // snapshot, not derived from the ['media'] query.
+            setDetailItem((cur) => {
+              if (cur?.id === mediaId)
+                mediaApi
+                  .get(mediaId)
+                  .then(setDetailItem)
+                  .catch(() => {})
+              return cur
+            })
+            toast({ title: 'Edit applied' })
+          } else if (state === 'failed') {
+            stop()
+            toast({
+              title: 'Edit failed',
+              description: failedReason ?? undefined,
+              variant: 'destructive',
+            })
+          }
+        } catch {
+          stop()
+          toast({
+            title: 'Failed to check edit status',
+            variant: 'destructive',
+          })
+        }
+      }, 1500)
+      editPollIntervals.current.add(interval)
+    },
+    [queryClient, scheduleInvalidate]
+  )
 
   const uploadMutation = useMutation({
     // Uploading while the Shared tab is active lands the file shared —
     // otherwise there's no way to get a new upload into Shared without a
     // separate manual "Make shared" step afterward.
-    mutationFn: (files: File[]) => mediaApi.upload(files, selectedFolder ?? null, scope === 'shared' ? 'SHARED' : undefined),
+    mutationFn: (files: File[]) =>
+      mediaApi.upload(files, selectedFolder ?? null, scope === 'shared' ? 'SHARED' : undefined),
     onSuccess: (uploaded) => {
       invalidateAll()
       toast({ title: 'Upload complete' })
@@ -1249,10 +1532,18 @@ export default function MediaPage() {
       // an item that was just uploaded (KDL-232 Fix 1).
       const ids = (uploaded ?? []).map((m) => m.id)
       if (ids.length > 0) {
-        setUploadingMediaIds((prev) => { const next = new Set(prev); ids.forEach((id) => next.add(id)); return next })
+        setUploadingMediaIds((prev) => {
+          const next = new Set(prev)
+          ids.forEach((id) => next.add(id))
+          return next
+        })
         const clearId = setTimeout(() => {
           deferredTimers.current.delete(clearId)
-          setUploadingMediaIds((prev) => { const next = new Set(prev); ids.forEach((id) => next.delete(id)); return next })
+          setUploadingMediaIds((prev) => {
+            const next = new Set(prev)
+            ids.forEach((id) => next.delete(id))
+            return next
+          })
         }, 10_000)
         deferredTimers.current.add(clearId)
         // Third invalidation at ~10s closes the gap between the 8s last-refetch
@@ -1267,34 +1558,56 @@ export default function MediaPage() {
   })
 
   const createFolderMutation = useMutation({
-    mutationFn: () => mediaApi.createFolder({ name: newFolderName, parent_id: selectedFolder ?? null }),
-    onSuccess: () => { invalidateAll(); setCreateFolderOpen(false); setNewFolderName('') },
+    mutationFn: () =>
+      mediaApi.createFolder({
+        name: newFolderName,
+        parent_id: selectedFolder ?? null,
+      }),
+    onSuccess: () => {
+      invalidateAll()
+      setCreateFolderOpen(false)
+      setNewFolderName('')
+    },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error'
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error'
       toast({ title: msg, variant: 'destructive' })
     },
   })
 
   const renameFolderMutation = useMutation({
     mutationFn: () => mediaApi.renameFolder(renameFolderTarget!.id, { name: renameFolderName }),
-    onSuccess: () => { invalidateAll(); setRenameFolderTarget(null) },
+    onSuccess: () => {
+      invalidateAll()
+      setRenameFolderTarget(null)
+    },
     onError: () => toast({ title: 'Rename failed', variant: 'destructive' }),
   })
 
   const deleteFolderMutation = useMutation({
     mutationFn: (cascade: boolean) => mediaApi.deleteFolder(deleteFolderTarget!.id, cascade),
-    onSuccess: () => { invalidateAll(); setDeleteFolderTarget(null) },
+    onSuccess: () => {
+      invalidateAll()
+      setDeleteFolderTarget(null)
+    },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error'
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Error'
       toast({ title: msg, variant: 'destructive' })
     },
   })
 
   const bulkDeleteMutation = useMutation({
     mutationFn: () => mediaApi.bulkDelete(Array.from(selected)),
-    onSuccess: () => { invalidateAll(); setSelected(new Set()); setConfirmBulkDelete(false) },
+    onSuccess: () => {
+      invalidateAll()
+      setSelected(new Set())
+      setConfirmBulkDelete(false)
+    },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Some files are in use'
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        'Some files are in use'
       toast({ title: msg, variant: 'destructive' })
       setConfirmBulkDelete(false)
     },
@@ -1302,7 +1615,11 @@ export default function MediaPage() {
 
   const moveMutation = useMutation({
     mutationFn: () => mediaApi.move(Array.from(selected), moveTargetFolder),
-    onSuccess: () => { invalidateAll(); setSelected(new Set()); setMoveOpen(false) },
+    onSuccess: () => {
+      invalidateAll()
+      setSelected(new Set())
+      setMoveOpen(false)
+    },
     onError: () => toast({ title: 'Move failed', variant: 'destructive' }),
   })
 
@@ -1321,26 +1638,40 @@ export default function MediaPage() {
 
   const restoreMutation = useMutation({
     mutationFn: () => mediaApi.restoreTrash(Array.from(selected)),
-    onSuccess: () => { invalidateAll(); setSelected(new Set()) },
+    onSuccess: () => {
+      invalidateAll()
+      setSelected(new Set())
+    },
     onError: () => toast({ title: 'Restore failed', variant: 'destructive' }),
   })
 
   const restoreOneMutation = useMutation({
     mutationFn: (id: string) => mediaApi.restoreTrash([id]),
-    onSuccess: () => { invalidateAll(); toast({ title: 'File restored' }) },
+    onSuccess: () => {
+      invalidateAll()
+      toast({ title: 'File restored' })
+    },
     onError: () => toast({ title: 'Restore failed', variant: 'destructive' }),
   })
 
   const [deleteForeverTarget, setDeleteForeverTarget] = useState<string | null>(null)
   const deleteForeverMutation = useMutation({
     mutationFn: (id: string) => mediaApi.purgeSingle(id),
-    onSuccess: () => { invalidateAll(); setDeleteForeverTarget(null); toast({ title: 'File permanently deleted' }) },
+    onSuccess: () => {
+      invalidateAll()
+      setDeleteForeverTarget(null)
+      toast({ title: 'File permanently deleted' })
+    },
     onError: () => toast({ title: 'Delete failed', variant: 'destructive' }),
   })
 
   const purgeMutation = useMutation({
     mutationFn: mediaApi.purgeTrash,
-    onSuccess: () => { invalidateAll(); setConfirmPurge(false); toast({ title: 'Trash purged' }) },
+    onSuccess: () => {
+      invalidateAll()
+      setConfirmPurge(false)
+      toast({ title: 'Trash purged' })
+    },
     onError: () => toast({ title: 'Purge failed', variant: 'destructive' }),
   })
 
@@ -1378,7 +1709,10 @@ export default function MediaPage() {
         <aside className="w-56 flex-shrink-0 border-r flex flex-col bg-background">
           <SidebarNav
             current={sidebarView}
-            onChange={(v) => { setSidebarView(v); if (v !== 'collections') setSelectedCollection(null) }}
+            onChange={(v) => {
+              setSidebarView(v)
+              if (v !== 'collections') setSelectedCollection(null)
+            }}
             visible={[
               'folders',
               ...(can('media:collections') ? (['collections'] as const) : []),
@@ -1409,7 +1743,10 @@ export default function MediaPage() {
                     'flex items-center gap-2 rounded px-2 py-1 text-sm w-full hover:bg-accent',
                     selectedFolder === undefined && view === 'files' && 'bg-accent font-medium'
                   )}
-                  onClick={() => { setView('files'); setSelectedFolder(undefined) }}
+                  onClick={() => {
+                    setView('files')
+                    setSelectedFolder(undefined)
+                  }}
                 >
                   <Grid className="h-3.5 w-3.5" />
                   All files
@@ -1420,9 +1757,15 @@ export default function MediaPage() {
                     folder={f}
                     depth={0}
                     selectedId={selectedFolder}
-                    onSelect={(id) => { setSelectedFolder(id); setView('files') }}
+                    onSelect={(id) => {
+                      setSelectedFolder(id)
+                      setView('files')
+                    }}
                     folders={folders}
-                    onRename={(folder) => { setRenameFolderTarget(folder); setRenameFolderName(folder.name) }}
+                    onRename={(folder) => {
+                      setRenameFolderTarget(folder)
+                      setRenameFolderName(folder.name)
+                    }}
                     onDelete={setDeleteFolderTarget}
                   />
                 ))}
@@ -1435,12 +1778,17 @@ export default function MediaPage() {
                       'flex items-center gap-2 rounded px-2 py-1 text-sm w-full hover:bg-accent',
                       view === 'trash' && 'bg-accent font-medium'
                     )}
-                    onClick={() => { setView('trash'); setSelected(new Set()) }}
+                    onClick={() => {
+                      setView('trash')
+                      setSelected(new Set())
+                    }}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     Trash
                     {trashCount > 0 && (
-                      <Badge variant="secondary" className="ml-auto text-xs px-1">{trashCount}</Badge>
+                      <Badge variant="secondary" className="ml-auto text-xs px-1">
+                        {trashCount}
+                      </Badge>
                     )}
                   </button>
                 </div>
@@ -1451,7 +1799,10 @@ export default function MediaPage() {
           {sidebarView === 'collections' && (
             <CollectionsPanel
               selected={selectedCollection}
-              onSelect={(id) => { setSelectedCollection(id); setView('files') }}
+              onSelect={(id) => {
+                setSelectedCollection(id)
+                setView('files')
+              }}
             />
           )}
 
@@ -1471,13 +1822,14 @@ export default function MediaPage() {
               <>
                 {can('media:upload') && (
                   <>
-                    <UploadZone
-                      onFiles={handleIncomingFiles}
+                    <UploadZone onFiles={handleIncomingFiles} disabled={uploadMutation.isPending} />
+                    <FolderUploadButton
+                      onFiles={handleFolderUpload}
                       disabled={uploadMutation.isPending}
                     />
-                    <FolderUploadButton onFiles={handleFolderUpload} disabled={uploadMutation.isPending} />
                     <span className="text-xs text-muted-foreground whitespace-nowrap">
-                      Uploading to: <span className="font-medium text-foreground">{uploadDestinationName}</span>
+                      Uploading to:{' '}
+                      <span className="font-medium text-foreground">{uploadDestinationName}</span>
                     </span>
                   </>
                 )}
@@ -1512,9 +1864,18 @@ export default function MediaPage() {
                     >
                       <Camera className="h-4 w-4" /> Capture
                     </button>
-                    <WebcamCaptureButton onCapture={(file) => uploadMutation.mutate([file])} disabled={uploadMutation.isPending} />
-                    <ScreenCaptureButton onCapture={(file) => uploadMutation.mutate([file])} disabled={uploadMutation.isPending} />
-                    <VoiceRecorderButton onCapture={(file) => uploadMutation.mutate([file])} disabled={uploadMutation.isPending} />
+                    <WebcamCaptureButton
+                      onCapture={(file) => uploadMutation.mutate([file])}
+                      disabled={uploadMutation.isPending}
+                    />
+                    <ScreenCaptureButton
+                      onCapture={(file) => uploadMutation.mutate([file])}
+                      disabled={uploadMutation.isPending}
+                    />
+                    <VoiceRecorderButton
+                      onCapture={(file) => uploadMutation.mutate([file])}
+                      disabled={uploadMutation.isPending}
+                    />
                   </>
                 )}
                 <SearchFacets
@@ -1550,7 +1911,8 @@ export default function MediaPage() {
                   <>
                     {can('media:folders') && (
                       <Button size="sm" variant="outline" onClick={() => setMoveOpen(true)}>
-                        <Move className="h-3.5 w-3.5 mr-1" />Move
+                        <Move className="h-3.5 w-3.5 mr-1" />
+                        Move
                       </Button>
                     )}
                     {can('media:visibility-toggle') && (
@@ -1560,12 +1922,18 @@ export default function MediaPage() {
                         onClick={() => bulkShareMutation.mutate()}
                         disabled={bulkShareMutation.isPending}
                       >
-                        <Share2 className="h-3.5 w-3.5 mr-1" />Make shared
+                        <Share2 className="h-3.5 w-3.5 mr-1" />
+                        Make shared
                       </Button>
                     )}
                     {can('media:soft-delete') && (
-                      <Button size="sm" variant="destructive" onClick={() => setConfirmBulkDelete(true)}>
-                        <Trash2 className="h-3.5 w-3.5 mr-1" />Delete
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => setConfirmBulkDelete(true)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5 mr-1" />
+                        Delete
                       </Button>
                     )}
                   </>
@@ -1577,7 +1945,8 @@ export default function MediaPage() {
                       onClick={() => restoreMutation.mutate()}
                       disabled={restoreMutation.isPending}
                     >
-                      <RefreshCcw className="h-3.5 w-3.5 mr-1" />Restore
+                      <RefreshCcw className="h-3.5 w-3.5 mr-1" />
+                      Restore
                     </Button>
                   )
                 )}
@@ -1599,20 +1968,27 @@ export default function MediaPage() {
                   onClick={() => setConfirmPurge(true)}
                   disabled={trashCount === 0}
                 >
-                  <AlertTriangle className="h-3.5 w-3.5 mr-1" />Purge all
+                  <AlertTriangle className="h-3.5 w-3.5 mr-1" />
+                  Purge all
                 </Button>
               )}
               <button
                 type="button"
                 onClick={() => setGridMode('grid')}
-                className={cn('p-1.5 rounded', gridMode === 'grid' ? 'bg-accent' : 'hover:bg-accent')}
+                className={cn(
+                  'p-1.5 rounded',
+                  gridMode === 'grid' ? 'bg-accent' : 'hover:bg-accent'
+                )}
               >
                 <Grid className="h-4 w-4" />
               </button>
               <button
                 type="button"
                 onClick={() => setGridMode('list')}
-                className={cn('p-1.5 rounded', gridMode === 'list' ? 'bg-accent' : 'hover:bg-accent')}
+                className={cn(
+                  'p-1.5 rounded',
+                  gridMode === 'list' ? 'bg-accent' : 'hover:bg-accent'
+                )}
               >
                 <List className="h-4 w-4" />
               </button>
@@ -1636,55 +2012,74 @@ export default function MediaPage() {
             {sidebarView === 'recents' && <RecentsView onDetail={openDetailById} />}
 
             {/* Regular file grid (folders view or when no special view active) */}
-            {(sidebarView === 'folders' || (sidebarView === 'collections' && !selectedCollection)) && (
+            {(sidebarView === 'folders' ||
+              (sidebarView === 'collections' && !selectedCollection)) && (
               <>
-            {(mediaQuery.isLoading || trashQuery.isLoading) && (
-              <p className="text-sm text-muted-foreground">Loading…</p>
-            )}
-            {(mediaQuery.error || trashQuery.error) && (
-              <ErrorAlert error={mediaQuery.error ?? trashQuery.error} />
-            )}
-            {items.length === 0 &&
-              !mediaQuery.isLoading &&
-              !trashQuery.isLoading && (
-                <div className="text-center py-12 text-muted-foreground text-sm">
-                  {view === 'trash' ? 'Trash is empty.' : 'No files here. Upload some!'}
-                </div>
-              )}
-
-            {gridMode === 'grid' ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                {items.map((item) => (
-                  <MediaItemGrid
-                    key={item.id}
-                    item={item}
-                    selected={selected.has(item.id)}
-                    onToggle={handleToggle}
-                    onDetail={handleDetail}
-                    onPreview={handlePreview}
-                    processing={uploadingMediaIds.has(item.id) || processingEditIds.has(item.id)}
-                    onManageShare={setShareTarget}
-                    trashActions={view === 'trash' ? { onRestore: (id) => restoreOneMutation.mutate(id), onDeleteForever: setDeleteForeverTarget } : undefined}
+                {mediaQuery.error || trashQuery.error ? (
+                  <ErrorState
+                    error={mediaQuery.error ?? trashQuery.error}
+                    onRetry={() => (view === 'trash' ? trashQuery.refetch() : mediaQuery.refetch())}
                   />
-                ))}
-              </div>
-            ) : (
-              <div className="border rounded-md overflow-hidden">
-                {items.map((item) => (
-                  <MediaItemList
-                    key={item.id}
-                    item={item}
-                    selected={selected.has(item.id)}
-                    onToggle={handleToggle}
-                    onDetail={handleDetail}
-                    onPreview={handlePreview}
-                    processing={uploadingMediaIds.has(item.id) || processingEditIds.has(item.id)}
-                    onManageShare={setShareTarget}
-                    trashActions={view === 'trash' ? { onRestore: (id) => restoreOneMutation.mutate(id), onDeleteForever: setDeleteForeverTarget } : undefined}
+                ) : mediaQuery.isLoading || trashQuery.isLoading ? (
+                  <LoadingState variant="skeleton" rows={6} />
+                ) : items.length === 0 ? (
+                  <EmptyState
+                    title={view === 'trash' ? 'Trash is empty' : 'No files here'}
+                    description={
+                      view === 'trash' ? undefined : 'Upload a file or drag one onto this window.'
+                    }
                   />
-                ))}
-              </div>
-            )}
+                ) : gridMode === 'grid' ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                    {items.map((item) => (
+                      <MediaItemGrid
+                        key={item.id}
+                        item={item}
+                        selected={selected.has(item.id)}
+                        onToggle={handleToggle}
+                        onDetail={handleDetail}
+                        onPreview={handlePreview}
+                        processing={
+                          uploadingMediaIds.has(item.id) || processingEditIds.has(item.id)
+                        }
+                        onManageShare={setShareTarget}
+                        trashActions={
+                          view === 'trash'
+                            ? {
+                                onRestore: (id) => restoreOneMutation.mutate(id),
+                                onDeleteForever: setDeleteForeverTarget,
+                              }
+                            : undefined
+                        }
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="border rounded-md overflow-hidden">
+                    {items.map((item) => (
+                      <MediaItemList
+                        key={item.id}
+                        item={item}
+                        selected={selected.has(item.id)}
+                        onToggle={handleToggle}
+                        onDetail={handleDetail}
+                        onPreview={handlePreview}
+                        processing={
+                          uploadingMediaIds.has(item.id) || processingEditIds.has(item.id)
+                        }
+                        onManageShare={setShareTarget}
+                        trashActions={
+                          view === 'trash'
+                            ? {
+                                onRestore: (id) => restoreOneMutation.mutate(id),
+                                onDeleteForever: setDeleteForeverTarget,
+                              }
+                            : undefined
+                        }
+                      />
+                    ))}
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -1700,7 +2095,11 @@ export default function MediaPage() {
             }}
             onUpdated={(mediaId) => {
               setDetailItem((cur) => {
-                if (cur?.id === mediaId) mediaApi.get(mediaId).then(setDetailItem).catch(() => {})
+                if (cur?.id === mediaId)
+                  mediaApi
+                    .get(mediaId)
+                    .then(setDetailItem)
+                    .catch(() => {})
                 return cur
               })
             }}
@@ -1728,8 +2127,14 @@ export default function MediaPage() {
         <ChunkedUploadDialog
           files={chunkedFiles}
           folderId={selectedFolder ?? null}
-          onComplete={() => { invalidateAll(); toast({ title: 'Chunked upload complete' }) }}
-          onClose={() => { setChunkedOpen(false); setChunkedFiles([]) }}
+          onComplete={() => {
+            invalidateAll()
+            toast({ title: 'Chunked upload complete' })
+          }}
+          onClose={() => {
+            setChunkedOpen(false)
+            setChunkedFiles([])
+          }}
         />
       )}
 
@@ -1757,11 +2162,16 @@ export default function MediaPage() {
       {/* Create folder */}
       <Modal
         open={createFolderOpen}
-        onClose={() => { setCreateFolderOpen(false); setNewFolderName('') }}
+        onClose={() => {
+          setCreateFolderOpen(false)
+          setNewFolderName('')
+        }}
         title="New folder"
         footer={
           <>
-            <Button variant="outline" onClick={() => setCreateFolderOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setCreateFolderOpen(false)}>
+              Cancel
+            </Button>
             <Button
               onClick={() => createFolderMutation.mutate()}
               disabled={!newFolderName.trim() || createFolderMutation.isPending}
@@ -1775,7 +2185,9 @@ export default function MediaPage() {
           placeholder="Folder name"
           value={newFolderName}
           onChange={(e) => setNewFolderName(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && newFolderName.trim() && createFolderMutation.mutate()}
+          onKeyDown={(e) =>
+            e.key === 'Enter' && newFolderName.trim() && createFolderMutation.mutate()
+          }
           autoFocus
         />
       </Modal>
@@ -1787,7 +2199,9 @@ export default function MediaPage() {
         title="Rename folder"
         footer={
           <>
-            <Button variant="outline" onClick={() => setRenameFolderTarget(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setRenameFolderTarget(null)}>
+              Cancel
+            </Button>
             <Button
               onClick={() => renameFolderMutation.mutate()}
               disabled={!renameFolderName.trim() || renameFolderMutation.isPending}
@@ -1800,7 +2214,9 @@ export default function MediaPage() {
         <Input
           value={renameFolderName}
           onChange={(e) => setRenameFolderName(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && renameFolderName.trim() && renameFolderMutation.mutate()}
+          onKeyDown={(e) =>
+            e.key === 'Enter' && renameFolderName.trim() && renameFolderMutation.mutate()
+          }
           autoFocus
         />
       </Modal>
@@ -1822,7 +2238,9 @@ export default function MediaPage() {
         title="Move files"
         footer={
           <>
-            <Button variant="outline" onClick={() => setMoveOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setMoveOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={() => moveMutation.mutate()} disabled={moveMutation.isPending}>
               Move here
             </Button>

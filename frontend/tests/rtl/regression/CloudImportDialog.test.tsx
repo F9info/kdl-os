@@ -26,8 +26,11 @@ const PROVIDERS = [
 
 const CONNECTIONS = [
   {
-    id: 'c1', provider: 's3', label: 'My bucket',
-    created_at: '2026-07-01T00:00:00.000Z', updated_at: '2026-07-01T00:00:00.000Z',
+    id: 'c1',
+    provider: 's3',
+    label: 'My bucket',
+    created_at: '2026-07-01T00:00:00.000Z',
+    updated_at: '2026-07-01T00:00:00.000Z',
   },
 ]
 
@@ -35,7 +38,13 @@ const BROWSE_ROOT = {
   entries: [
     { id: 'folder-1', name: 'Photos', size: 0, mime: null, is_folder: true },
     { id: 'file-1', name: 'sky.jpg', size: 1024, mime: 'image/jpeg', is_folder: false },
-    { id: 'file-2', name: 'notes.exe', size: 2048, mime: 'application/octet-stream', is_folder: false },
+    {
+      id: 'file-2',
+      name: 'notes.exe',
+      size: 2048,
+      mime: 'application/octet-stream',
+      is_folder: false,
+    },
   ],
   cursor: null,
 }
@@ -50,7 +59,9 @@ function setupApi({ connections = CONNECTIONS } = {}) {
     if (url === '/media/import/providers')
       return Promise.resolve({ data: { data: { items: PROVIDERS } } }) as ReturnType<typeof api.get>
     if (url === '/media/import/connections')
-      return Promise.resolve({ data: { data: { items: connections } } }) as ReturnType<typeof api.get>
+      return Promise.resolve({ data: { data: { items: connections } } }) as ReturnType<
+        typeof api.get
+      >
     if (url === '/media/import/connections/c1/browse')
       return Promise.resolve({ data: { data: BROWSE_ROOT } }) as ReturnType<typeof api.get>
     return Promise.resolve({ data: { data: {} } }) as ReturnType<typeof api.get>
@@ -58,7 +69,11 @@ function setupApi({ connections = CONNECTIONS } = {}) {
   vi.mocked(api.post).mockImplementation((url: string) => {
     if (url === '/media/import/connections')
       return Promise.resolve({
-        data: { data: { item: { id: 'c2', provider: 's3', label: 'New bucket', created_at: '', updated_at: '' } } },
+        data: {
+          data: {
+            item: { id: 'c2', provider: 's3', label: 'New bucket', created_at: '', updated_at: '' },
+          },
+        },
       }) as ReturnType<typeof api.post>
     if (url === '/media/import/connections/c1/import')
       return Promise.resolve({ data: { data: IMPORT_RESULT } }) as ReturnType<typeof api.post>
@@ -75,7 +90,10 @@ async function openBrowser() {
 }
 
 describe('CloudImportDialog (Phase D8) — connections step', () => {
-  beforeEach(() => { vi.clearAllMocks(); setupApi() })
+  beforeEach(() => {
+    vi.clearAllMocks()
+    setupApi()
+  })
 
   it('renders providers and existing connections', async () => {
     render(<CloudImportDialog folderId={null} onClose={vi.fn()} onImported={vi.fn()} />)
@@ -94,7 +112,9 @@ describe('CloudImportDialog (Phase D8) — connections step', () => {
   })
 
   it('requests an oauth url with the callback redirect_uri and opens a popup', async () => {
-    vi.mocked(api.post).mockResolvedValue({ data: { data: { url: 'https://accounts.example/auth', state: 'st1' } } } as never)
+    vi.mocked(api.post).mockResolvedValue({
+      data: { data: { url: 'https://accounts.example/auth', state: 'st1' } },
+    } as never)
     const openSpy = vi.spyOn(window, 'open').mockReturnValue(null)
     render(<CloudImportDialog folderId={null} onClose={vi.fn()} onImported={vi.fn()} />)
     fireEvent.click(await screen.findByRole('button', { name: /Google Drive/ }))
@@ -102,7 +122,11 @@ describe('CloudImportDialog (Phase D8) — connections step', () => {
       expect(api.post).toHaveBeenCalledWith('/media/import/oauth/gdrive/url', {
         redirect_uri: window.location.origin + '/admin/media/import/callback',
       })
-      expect(openSpy).toHaveBeenCalledWith('https://accounts.example/auth', 'media-import-oauth', expect.any(String))
+      expect(openSpy).toHaveBeenCalledWith(
+        'https://accounts.example/auth',
+        'media-import-oauth',
+        expect.any(String)
+      )
     })
     openSpy.mockRestore()
   })
@@ -111,11 +135,17 @@ describe('CloudImportDialog (Phase D8) — connections step', () => {
     render(<CloudImportDialog folderId={null} onClose={vi.fn()} onImported={vi.fn()} />)
     fireEvent.click(await screen.findByRole('button', { name: /Amazon S3/ }))
 
-    fireEvent.change(screen.getByPlaceholderText('Connection label'), { target: { value: 'Prod bucket' } })
+    fireEvent.change(screen.getByPlaceholderText('Connection label'), {
+      target: { value: 'Prod bucket' },
+    })
     fireEvent.change(screen.getByPlaceholderText('Access key ID'), { target: { value: 'AKIA123' } })
-    fireEvent.change(screen.getByPlaceholderText('Secret access key'), { target: { value: 'secret!' } })
+    fireEvent.change(screen.getByPlaceholderText('Secret access key'), {
+      target: { value: 'secret!' },
+    })
     fireEvent.change(screen.getByPlaceholderText('Bucket'), { target: { value: 'assets' } })
-    fireEvent.change(screen.getByPlaceholderText('Region (optional)'), { target: { value: 'us-east-1' } })
+    fireEvent.change(screen.getByPlaceholderText('Region (optional)'), {
+      target: { value: 'us-east-1' },
+    })
     fireEvent.click(screen.getByRole('button', { name: 'Save connection' }))
 
     await waitFor(() => {
@@ -142,7 +172,10 @@ describe('CloudImportDialog (Phase D8) — connections step', () => {
 })
 
 describe('CloudImportDialog (Phase D8) — browser step', () => {
-  beforeEach(() => { vi.clearAllMocks(); setupApi() })
+  beforeEach(() => {
+    vi.clearAllMocks()
+    setupApi()
+  })
 
   it('browses a connection: renders folders and files with sizes', async () => {
     await openBrowser()
@@ -157,7 +190,9 @@ describe('CloudImportDialog (Phase D8) — browser step', () => {
     vi.mocked(api.get).mockClear()
     fireEvent.click(screen.getByText('Photos'))
     await waitFor(() => {
-      expect(api.get).toHaveBeenCalledWith('/media/import/connections/c1/browse', { params: { path: 'folder-1' } })
+      expect(api.get).toHaveBeenCalledWith('/media/import/connections/c1/browse', {
+        params: { path: 'folder-1' },
+      })
     })
     // breadcrumb: connection label + folder name
     expect(screen.getAllByText('Photos').length).toBeGreaterThan(0)
@@ -165,24 +200,47 @@ describe('CloudImportDialog (Phase D8) — browser step', () => {
   })
 
   it('shows Load more when cursor is non-null and passes it back', async () => {
-    vi.mocked(api.get).mockImplementation((url: string, config?: { params?: Record<string, string> }) => {
-      if (url === '/media/import/providers')
-        return Promise.resolve({ data: { data: { items: PROVIDERS } } }) as ReturnType<typeof api.get>
-      if (url === '/media/import/connections')
-        return Promise.resolve({ data: { data: { items: CONNECTIONS } } }) as ReturnType<typeof api.get>
-      if (url === '/media/import/connections/c1/browse') {
-        if (config?.params?.cursor === 'cur1')
+    vi.mocked(api.get).mockImplementation(
+      (url: string, config?: { params?: Record<string, string> }) => {
+        if (url === '/media/import/providers')
+          return Promise.resolve({ data: { data: { items: PROVIDERS } } }) as ReturnType<
+            typeof api.get
+          >
+        if (url === '/media/import/connections')
+          return Promise.resolve({ data: { data: { items: CONNECTIONS } } }) as ReturnType<
+            typeof api.get
+          >
+        if (url === '/media/import/connections/c1/browse') {
+          if (config?.params?.cursor === 'cur1')
+            return Promise.resolve({
+              data: {
+                data: {
+                  entries: [
+                    {
+                      id: 'file-9',
+                      name: 'more.png',
+                      size: 10,
+                      mime: 'image/png',
+                      is_folder: false,
+                    },
+                  ],
+                  cursor: null,
+                },
+              },
+            }) as ReturnType<typeof api.get>
           return Promise.resolve({
-            data: { data: { entries: [{ id: 'file-9', name: 'more.png', size: 10, mime: 'image/png', is_folder: false }], cursor: null } },
+            data: { data: { ...BROWSE_ROOT, cursor: 'cur1' } },
           }) as ReturnType<typeof api.get>
-        return Promise.resolve({ data: { data: { ...BROWSE_ROOT, cursor: 'cur1' } } }) as ReturnType<typeof api.get>
+        }
+        return Promise.resolve({ data: { data: {} } }) as ReturnType<typeof api.get>
       }
-      return Promise.resolve({ data: { data: {} } }) as ReturnType<typeof api.get>
-    })
+    )
     await openBrowser()
     fireEvent.click(screen.getByRole('button', { name: 'Load more' }))
     await waitFor(() => {
-      expect(api.get).toHaveBeenCalledWith('/media/import/connections/c1/browse', { params: { cursor: 'cur1' } })
+      expect(api.get).toHaveBeenCalledWith('/media/import/connections/c1/browse', {
+        params: { cursor: 'cur1' },
+      })
       expect(screen.getByText('more.png')).toBeInTheDocument()
     })
     // first page entries kept

@@ -32,7 +32,10 @@ export default function PageBuilderEditor() {
     return (
       <div className="p-8">
         <p className="text-slate-600">Page not found.</p>
-        <button onClick={() => router.push('/admin/page-builder')} className="mt-3 text-blue-600 underline">
+        <button
+          onClick={() => router.push('/admin/page-builder')}
+          className="mt-3 text-blue-600 underline"
+        >
           Back to pages
         </button>
       </div>

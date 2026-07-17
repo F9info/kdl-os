@@ -6,7 +6,17 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { X, Plus, Star, Clock, Layers, Upload, Folder as FolderIcon, Search, Sparkles } from 'lucide-react'
+import {
+  X,
+  Plus,
+  Star,
+  Clock,
+  Layers,
+  Upload,
+  Folder as FolderIcon,
+  Search,
+  Sparkles,
+} from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
@@ -15,7 +25,12 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { AppImage } from '@/components/shared/AppImage'
 import type {
-  Media, MediaTag, MediaMetaField, MediaCollection, MediaSearchResult, MediaSearchDoc,
+  Media,
+  MediaTag,
+  MediaMetaField,
+  MediaCollection,
+  MediaSearchResult,
+  MediaSearchDoc,
   ChunkedUploadStatus,
 } from '@/types/media.types'
 
@@ -25,7 +40,9 @@ const damApi = {
   // A3 faceted search — returns { hits, facets, pagination }
   // D5: mode=semantic routes through the ChromaDB embeddings ∩ Meili hybrid search
   search: (q: string, filters: Record<string, string>) =>
-    api.get('/media/search', { params: { q, ...filters } }).then((r) => r.data.data as MediaSearchResult),
+    api
+      .get('/media/search', { params: { q, ...filters } })
+      .then((r) => r.data.data as MediaSearchResult),
 
   // A2 tags — media rows carry tag NAMES; tag/untag are bulk by name
   listTags: () => api.get('/media/tags').then((r) => r.data.data.tags as MediaTag[]),
@@ -37,12 +54,14 @@ const damApi = {
     api.post('/media/untag', { media_ids: mediaIds, tags }),
 
   // A2 custom meta fields — media PATCH takes meta {slug: value|null}
-  listMetaFields: () => api.get('/media/meta-fields').then((r) => r.data.data.fields as MediaMetaField[]),
+  listMetaFields: () =>
+    api.get('/media/meta-fields').then((r) => r.data.data.fields as MediaMetaField[]),
   setMeta: (mediaId: string, meta: Record<string, string | null>) =>
     api.patch(`/media/${mediaId}`, { meta }),
 
   // A4 collections
-  listCollections: () => api.get('/media/collections').then((r) => r.data.data.collections as MediaCollection[]),
+  listCollections: () =>
+    api.get('/media/collections').then((r) => r.data.data.collections as MediaCollection[]),
   createCollection: (data: { name: string; is_smart?: boolean; rules?: Record<string, unknown> }) =>
     api.post('/media/collections', data),
   addToCollection: (collectionId: string, mediaIds: string[]) =>
@@ -51,9 +70,11 @@ const damApi = {
     api.delete(`/media/collections/${collectionId}/items`, { data: { media_ids: mediaIds } }),
   // static collections → hits are full Media rows; smart → Meili docs
   collectionItems: (id: string) =>
-    api.get(`/media/collections/${id}`).then(
-      (r) => r.data.data as { collection: MediaCollection; hits: (Media | MediaSearchDoc)[] }
-    ),
+    api
+      .get(`/media/collections/${id}`)
+      .then(
+        (r) => r.data.data as { collection: MediaCollection; hits: (Media | MediaSearchDoc)[] }
+      ),
 
   // A4 favorites
   listFavorites: () => api.get('/media/favorites').then((r) => r.data.data.media as Media[]),
@@ -64,8 +85,16 @@ const damApi = {
   listRecents: () => api.get('/media/recent').then((r) => r.data.data.media as Media[]),
 
   // A5 chunked upload
-  chunkInit: (data: { filename: string; size: number; mime_type: string; folder_id?: string | null; total_parts: number }) =>
-    api.post('/media/upload/chunked/init', data).then((r) => r.data.data as { upload_id: string; total_parts: number }),
+  chunkInit: (data: {
+    filename: string
+    size: number
+    mime_type: string
+    folder_id?: string | null
+    total_parts: number
+  }) =>
+    api
+      .post('/media/upload/chunked/init', data)
+      .then((r) => r.data.data as { upload_id: string; total_parts: number }),
   chunkPart: (uploadId: string, index: number, chunk: Blob) => {
     const fd = new FormData()
     fd.append('chunk', chunk)
@@ -77,7 +106,9 @@ const damApi = {
   chunkComplete: (uploadId: string) =>
     api.post(`/media/upload/chunked/${uploadId}/complete`).then((r) => r.data.data.media as Media),
   chunkStatus: (uploadId: string) =>
-    api.get(`/media/upload/chunked/${uploadId}/status`).then((r) => r.data.data as ChunkedUploadStatus),
+    api
+      .get(`/media/upload/chunked/${uploadId}/status`)
+      .then((r) => r.data.data as ChunkedUploadStatus),
 }
 
 export { damApi }
@@ -116,7 +147,10 @@ export function SearchFacets({ onResults, onClear, semanticEnabled }: SearchFace
   useEffect(() => {
     if (!active) return
     if (searchQuery.data) onResults(searchQuery.data)
-    if (!q && !tagFilter && !typeFilter) { onClear(); setActive(false) }
+    if (!q && !tagFilter && !typeFilter) {
+      onClear()
+      setActive(false)
+    }
   }, [searchQuery.data, q, tagFilter, typeFilter, active, onResults, onClear])
 
   // Typing in the box previously did nothing until Enter was pressed, unlike
@@ -129,12 +163,21 @@ export function SearchFacets({ onResults, onClear, semanticEnabled }: SearchFace
   }, [q])
 
   const handleSearch = () => {
-    if (!q && !tagFilter && !typeFilter) { onClear(); setActive(false); return }
+    if (!q && !tagFilter && !typeFilter) {
+      onClear()
+      setActive(false)
+      return
+    }
     setActive(true)
   }
 
   const handleClear = () => {
-    setQ(''); setTagFilter(''); setTypeFilter(''); setSemantic(false); setActive(false); onClear()
+    setQ('')
+    setTagFilter('')
+    setTypeFilter('')
+    setSemantic(false)
+    setActive(false)
+    onClear()
   }
 
   return (
@@ -152,12 +195,17 @@ export function SearchFacets({ onResults, onClear, semanticEnabled }: SearchFace
       {semanticEnabled && (
         <button
           type="button"
-          onClick={() => { setSemantic((s) => !s); setActive(true) }}
+          onClick={() => {
+            setSemantic((s) => !s)
+            setActive(true)
+          }}
           title="Natural-language (semantic) search"
           aria-pressed={semantic}
           className={cn(
             'flex items-center gap-1 h-9 px-2 rounded border text-sm',
-            semantic ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-accent'
+            semantic
+              ? 'bg-primary text-primary-foreground border-primary'
+              : 'bg-background hover:bg-accent'
           )}
         >
           <Sparkles className="h-4 w-4" />
@@ -166,30 +214,48 @@ export function SearchFacets({ onResults, onClear, semanticEnabled }: SearchFace
       )}
       <select
         value={typeFilter}
-        onChange={(e) => { setTypeFilter(e.target.value); setActive(true) }}
+        onChange={(e) => {
+          setTypeFilter(e.target.value)
+          setActive(true)
+        }}
         className="border rounded h-9 text-sm px-2 bg-background"
       >
         <option value="">All types</option>
-        {['IMAGE','VIDEO','AUDIO','DOCUMENT','OTHER'].map((t) => (
-          <option key={t} value={t}>{t}</option>
+        {['IMAGE', 'VIDEO', 'AUDIO', 'DOCUMENT', 'OTHER'].map((t) => (
+          <option key={t} value={t}>
+            {t}
+          </option>
         ))}
       </select>
       <select
         value={tagFilter}
-        onChange={(e) => { setTagFilter(e.target.value); setActive(true) }}
+        onChange={(e) => {
+          setTagFilter(e.target.value)
+          setActive(true)
+        }}
         className="border rounded h-9 text-sm px-2 bg-background"
       >
         <option value="">All tags</option>
-        {(tags ?? []).map((t) => <option key={t.id} value={t.name}>{t.name}</option>)}
+        {(tags ?? []).map((t) => (
+          <option key={t.id} value={t.name}>
+            {t.name}
+          </option>
+        ))}
       </select>
       {active && (
-        <button type="button" onClick={handleClear} className="p-1 rounded hover:bg-accent" title="Clear search">
+        <button
+          type="button"
+          onClick={handleClear}
+          className="p-1 rounded hover:bg-accent"
+          title="Clear search"
+        >
           <X className="h-4 w-4" />
         </button>
       )}
       {searchQuery.data && (
         <span className="text-xs text-muted-foreground">
-          {searchQuery.data.pagination.total} result{searchQuery.data.pagination.total !== 1 ? 's' : ''}
+          {searchQuery.data.pagination.total} result
+          {searchQuery.data.pagination.total !== 1 ? 's' : ''}
         </span>
       )}
     </div>
@@ -199,8 +265,14 @@ export function SearchFacets({ onResults, onClear, semanticEnabled }: SearchFace
 // ─── Tag chips on a media item ────────────────────────────────────────────────
 
 export function MediaTagChips({
-  mediaId, tags, onChange,
-}: { mediaId: string; tags: string[]; onChange: () => void }) {
+  mediaId,
+  tags,
+  onChange,
+}: {
+  mediaId: string
+  tags: string[]
+  onChange: () => void
+}) {
   const queryClient = useQueryClient()
   const { data: allTags } = useQuery({ queryKey: ['media-tags'], queryFn: damApi.listTags })
 
@@ -253,7 +325,10 @@ export function MediaTagChips({
                   key={t}
                   variant="outline"
                   className="cursor-pointer text-xs"
-                  onClick={() => { addMut.mutate(t); setAddOpen(false) }}
+                  onClick={() => {
+                    addMut.mutate(t)
+                    setAddOpen(false)
+                  }}
                 >
                   {t}
                 </Badge>
@@ -268,7 +343,9 @@ export function MediaTagChips({
               className="h-7 text-xs"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && newTag.trim()) {
-                  addMut.mutate(newTag.trim()); setNewTag(''); setAddOpen(false)
+                  addMut.mutate(newTag.trim())
+                  setNewTag('')
+                  setAddOpen(false)
                 }
               }}
             />
@@ -326,7 +403,11 @@ export function TagManager() {
           className="h-8 text-xs"
           onKeyDown={(e) => e.key === 'Enter' && name.trim() && createMut.mutate()}
         />
-        <Button size="sm" onClick={() => createMut.mutate()} disabled={!name.trim() || createMut.isPending}>
+        <Button
+          size="sm"
+          onClick={() => createMut.mutate()}
+          disabled={!name.trim() || createMut.isPending}
+        >
           <Plus className="h-3 w-3" />
         </Button>
       </div>
@@ -337,13 +418,24 @@ export function TagManager() {
 // ─── Custom-field editor (in detail drawer) ───────────────────────────────────
 
 export function CustomFieldEditor({
-  mediaId, meta, onChange,
-}: { mediaId: string; meta: Record<string, string>; onChange: () => void }) {
-  const { data: fields } = useQuery({ queryKey: ['media-meta-fields'], queryFn: damApi.listMetaFields })
+  mediaId,
+  meta,
+  onChange,
+}: {
+  mediaId: string
+  meta: Record<string, string>
+  onChange: () => void
+}) {
+  const { data: fields } = useQuery({
+    queryKey: ['media-meta-fields'],
+    queryFn: damApi.listMetaFields,
+  })
   const [draft, setDraft] = useState<Record<string, string>>({})
 
   // seed draft from existing values (keyed by slug, matching the API shape)
-  useEffect(() => { setDraft({ ...meta }) }, [meta])
+  useEffect(() => {
+    setDraft({ ...meta })
+  }, [meta])
 
   const saveMut = useMutation({
     mutationFn: () => {
@@ -355,7 +447,10 @@ export function CustomFieldEditor({
       })
       return damApi.setMeta(mediaId, payload)
     },
-    onSuccess: () => { toast({ title: 'Saved' }); onChange() },
+    onSuccess: () => {
+      toast({ title: 'Saved' })
+      onChange()
+    },
     onError: () => toast({ title: 'Save failed', variant: 'destructive' }),
   })
 
@@ -363,7 +458,9 @@ export function CustomFieldEditor({
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Custom fields</p>
+      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+        Custom fields
+      </p>
       {fields.map((f) => (
         <div key={f.id} className="space-y-0.5">
           <label className="text-xs text-muted-foreground">{f.label}</label>
@@ -374,20 +471,28 @@ export function CustomFieldEditor({
               className="border rounded h-8 text-xs px-2 w-full bg-background"
             >
               <option value="">—</option>
-              {(f.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
+              {(f.options ?? []).map((o) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
             </select>
           ) : (
             <Input
               value={draft[f.slug] ?? ''}
               onChange={(e) => setDraft((d) => ({ ...d, [f.slug]: e.target.value }))}
               placeholder={f.field_type === 'DATE' ? 'YYYY-MM-DD' : f.label}
-              type={f.field_type === 'NUMBER' ? 'number' : f.field_type === 'DATE' ? 'date' : 'text'}
+              type={
+                f.field_type === 'NUMBER' ? 'number' : f.field_type === 'DATE' ? 'date' : 'text'
+              }
               className="h-8 text-xs"
             />
           )}
         </div>
       ))}
-      <Button size="sm" onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>Save fields</Button>
+      <Button size="sm" onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
+        Save fields
+      </Button>
     </div>
   )
 }
@@ -421,7 +526,9 @@ export function SidebarNav({ current, onChange, visible }: SidebarNavProps) {
           onClick={() => onChange(t.id)}
           className={cn(
             'flex-1 flex flex-col items-center py-1.5 gap-0.5 text-[10px] transition-colors',
-            current === t.id ? 'bg-background text-foreground border-b-2 border-primary' : 'text-muted-foreground hover:text-foreground'
+            current === t.id
+              ? 'bg-background text-foreground border-b-2 border-primary'
+              : 'text-muted-foreground hover:text-foreground'
           )}
           title={t.label}
         >
@@ -454,7 +561,8 @@ export function CollectionsPanel({ onSelect, selected }: CollectionsPanelProps) 
     mutationFn: () => damApi.createCollection({ name }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['media-collections'] })
-      setName(''); setCreating(false)
+      setName('')
+      setCreating(false)
     },
     onError: () => toast({ title: 'Create failed', variant: 'destructive' }),
   })
@@ -473,7 +581,11 @@ export function CollectionsPanel({ onSelect, selected }: CollectionsPanelProps) 
         >
           <Layers className="h-3.5 w-3.5 flex-shrink-0" />
           <span className="truncate">{c.name}</span>
-          {c.is_smart && <Badge variant="outline" className="ml-auto text-[10px] px-1">Smart</Badge>}
+          {c.is_smart && (
+            <Badge variant="outline" className="ml-auto text-[10px] px-1">
+              Smart
+            </Badge>
+          )}
           {c._count && <span className="text-muted-foreground text-xs ml-1">{c._count.items}</span>}
         </button>
       ))}
@@ -487,10 +599,17 @@ export function CollectionsPanel({ onSelect, selected }: CollectionsPanelProps) 
             autoFocus
             onKeyDown={(e) => e.key === 'Enter' && name.trim() && createMut.mutate()}
           />
-          <Button size="sm" className="h-7 px-2" onClick={() => createMut.mutate()} disabled={!name.trim() || createMut.isPending}>
+          <Button
+            size="sm"
+            className="h-7 px-2"
+            onClick={() => createMut.mutate()}
+            disabled={!name.trim() || createMut.isPending}
+          >
             <Plus className="h-3 w-3" />
           </Button>
-          <button type="button" onClick={() => setCreating(false)}><X className="h-4 w-4" /></button>
+          <button type="button" onClick={() => setCreating(false)}>
+            <X className="h-4 w-4" />
+          </button>
         </div>
       ) : (
         <button
@@ -508,15 +627,20 @@ export function CollectionsPanel({ onSelect, selected }: CollectionsPanelProps) 
 // ─── Collection items view ────────────────────────────────────────────────────
 
 export function CollectionItemsView({
-  collectionId, onDetail,
-}: { collectionId: string; onDetail: (mediaId: string) => void }) {
+  collectionId,
+  onDetail,
+}: {
+  collectionId: string
+  onDetail: (mediaId: string) => void
+}) {
   const { data, isLoading } = useQuery({
     queryKey: ['media-collection-items', collectionId],
     queryFn: () => damApi.collectionItems(collectionId),
   })
 
   if (isLoading) return <p className="p-4 text-sm text-muted-foreground">Loading…</p>
-  if (!data?.hits?.length) return <p className="p-4 text-sm text-muted-foreground">No items in this collection.</p>
+  if (!data?.hits?.length)
+    return <p className="p-4 text-sm text-muted-foreground">No items in this collection.</p>
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 p-3">
@@ -538,7 +662,9 @@ export function FavoritesView({ onDetail }: { onDetail: (mediaId: string) => voi
   if (!items?.length) return <p className="p-4 text-sm text-muted-foreground">No favorites yet.</p>
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 p-3">
-      {items.map((item) => <MediaThumbnailCard key={item.id} item={item} onDetail={onDetail} />)}
+      {items.map((item) => (
+        <MediaThumbnailCard key={item.id} item={item} onDetail={onDetail} />
+      ))}
     </div>
   )
 }
@@ -554,7 +680,9 @@ export function RecentsView({ onDetail }: { onDetail: (mediaId: string) => void 
   if (!items?.length) return <p className="p-4 text-sm text-muted-foreground">No recent files.</p>
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 p-3">
-      {items.map((item) => <MediaThumbnailCard key={item.id} item={item} onDetail={onDetail} />)}
+      {items.map((item) => (
+        <MediaThumbnailCard key={item.id} item={item} onDetail={onDetail} />
+      ))}
     </div>
   )
 }
@@ -563,14 +691,18 @@ export function RecentsView({ onDetail }: { onDetail: (mediaId: string) => void 
 // Tolerates both full Media rows and flat Meili docs (no url/variants).
 
 function MediaThumbnailCard({
-  item, onDetail,
-}: { item: Media | MediaSearchDoc; onDetail: (mediaId: string) => void }) {
+  item,
+  onDetail,
+}: {
+  item: Media | MediaSearchDoc
+  onDetail: (mediaId: string) => void
+}) {
   const asMedia = item as Partial<Media>
   const name = asMedia.original_name ?? (item as MediaSearchDoc).name ?? 'file'
   const thumb =
     asMedia.variants?.thumb ??
     asMedia.variants?.small ??
-    (item.mime_type?.startsWith('image/') ? asMedia.url ?? null : null)
+    (item.mime_type?.startsWith('image/') ? (asMedia.url ?? null) : null)
   return (
     <button
       type="button"
@@ -610,31 +742,41 @@ interface ChunkedUploadDialogProps {
   onClose: () => void
 }
 
-export function ChunkedUploadDialog({ files, folderId, onComplete, onClose }: ChunkedUploadDialogProps) {
+export function ChunkedUploadDialog({
+  files,
+  folderId,
+  onComplete,
+  onClose,
+}: ChunkedUploadDialogProps) {
   const [states, setStates] = useState<ChunkUploadState[]>([])
   const [started, setStarted] = useState(false)
   const abortRef = useRef(false)
 
   const updateState = (idx: number, patch: Partial<ChunkUploadState>) =>
-    setStates((prev) => prev.map((s, i) => i === idx ? { ...s, ...patch } : s))
+    setStates((prev) => prev.map((s, i) => (i === idx ? { ...s, ...patch } : s)))
 
   const startUpload = useCallback(async () => {
     if (started) return
     setStarted(true)
     abortRef.current = false
 
-    setStates(files.map((f) => ({
-      file: f,
-      uploadId: '',
-      totalChunks: Math.ceil(f.size / CHUNK_SIZE),
-      sent: 0,
-      done: false,
-      error: null,
-    })))
+    setStates(
+      files.map((f) => ({
+        file: f,
+        uploadId: '',
+        totalChunks: Math.ceil(f.size / CHUNK_SIZE),
+        sent: 0,
+        done: false,
+        error: null,
+      }))
+    )
 
     let allSucceeded = true
     for (let i = 0; i < files.length; i++) {
-      if (abortRef.current) { allSucceeded = false; break }
+      if (abortRef.current) {
+        allSucceeded = false
+        break
+      }
       const f = files[i]!
       try {
         const totalParts = Math.max(1, Math.ceil(f.size / CHUNK_SIZE))
@@ -653,7 +795,9 @@ export function ChunkedUploadDialog({ files, folderId, onComplete, onClose }: Ch
           const status = await damApi.chunkStatus(upload_id)
           received = new Set(status.received_parts)
           updateState(i, { sent: received.size })
-        } catch { /* fresh session — nothing received yet */ }
+        } catch {
+          /* fresh session — nothing received yet */
+        }
 
         let sent = received.size
         for (let p = 0; p < totalParts; p++) {
@@ -674,7 +818,9 @@ export function ChunkedUploadDialog({ files, folderId, onComplete, onClose }: Ch
         }
       } catch (err: unknown) {
         allSucceeded = false
-        const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Upload failed'
+        const msg =
+          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+          'Upload failed'
         updateState(i, { error: msg })
       }
     }
@@ -683,7 +829,9 @@ export function ChunkedUploadDialog({ files, folderId, onComplete, onClose }: Ch
   }, [files, folderId, started, onComplete])
 
   // auto-start
-  useEffect(() => { startUpload() }, [startUpload])
+  useEffect(() => {
+    startUpload()
+  }, [startUpload])
 
   const allDone = states.length > 0 && states.every((s) => s.done || s.error)
 
@@ -692,10 +840,13 @@ export function ChunkedUploadDialog({ files, folderId, onComplete, onClose }: Ch
       <div className="bg-background rounded-lg shadow-xl p-6 w-[480px] max-h-[80vh] overflow-y-auto space-y-4">
         <div className="flex justify-between items-center">
           <h3 className="font-semibold text-lg flex items-center gap-2">
-            <Upload className="h-5 w-5" /> Uploading {files.length} file{files.length !== 1 ? 's' : ''}
+            <Upload className="h-5 w-5" /> Uploading {files.length} file
+            {files.length !== 1 ? 's' : ''}
           </h3>
           {allDone && (
-            <button type="button" onClick={onClose}><X className="h-4 w-4" /></button>
+            <button type="button" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </button>
           )}
         </div>
         <div className="space-y-3">
@@ -725,7 +876,14 @@ export function ChunkedUploadDialog({ files, folderId, onComplete, onClose }: Ch
         </div>
         {allDone && (
           <div className="flex justify-end gap-2">
-            <Button onClick={() => { onComplete(); onClose() }}>Done</Button>
+            <Button
+              onClick={() => {
+                onComplete()
+                onClose()
+              }}
+            >
+              Done
+            </Button>
           </div>
         )}
       </div>
@@ -745,7 +903,9 @@ export function FolderUploadButton({ onFiles, disabled }: FolderUploadButtonProp
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? [])
-    const paths = files.map((f) => (f as File & { webkitRelativePath?: string }).webkitRelativePath ?? f.name)
+    const paths = files.map(
+      (f) => (f as File & { webkitRelativePath?: string }).webkitRelativePath ?? f.name
+    )
     if (files.length) onFiles(files, paths)
     e.target.value = '' // reset so same folder can be re-selected
   }
@@ -800,9 +960,17 @@ export function useClipboardPaste(onFiles: (files: File[]) => void, enabled = tr
 
 // ─── Favorite toggle button ───────────────────────────────────────────────────
 
-export function FavoriteButton({ mediaId, isFav, onChange }: { mediaId: string; isFav: boolean; onChange: () => void }) {
+export function FavoriteButton({
+  mediaId,
+  isFav,
+  onChange,
+}: {
+  mediaId: string
+  isFav: boolean
+  onChange: () => void
+}) {
   const addMut = useMutation({
-    mutationFn: () => isFav ? damApi.removeFavorite(mediaId) : damApi.addFavorite(mediaId),
+    mutationFn: () => (isFav ? damApi.removeFavorite(mediaId) : damApi.addFavorite(mediaId)),
     onSuccess: onChange,
     onError: () => toast({ title: 'Failed', variant: 'destructive' }),
   })
