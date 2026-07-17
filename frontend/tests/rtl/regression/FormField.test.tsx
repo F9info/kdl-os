@@ -47,27 +47,24 @@ describe('FormField regression', () => {
     expect(screen.queryByText('Keep it short')).not.toBeInTheDocument()
   })
 
-  it('marks the wrapped control invalid and links it to the error text', () => {
+  it('injects aria-invalid on child when error is present', () => {
     render(
-      <FormField label="Name" error="Name is required">
-        <Input placeholder="Your name" />
+      <FormField label="Email" error="Invalid email">
+        <Input placeholder="email" />
       </FormField>
     )
 
-    const input = screen.getByPlaceholderText('Your name')
-    expect(input).toHaveAttribute('aria-invalid', 'true')
-    const errorText = screen.getByText('Name is required')
-    expect(input).toHaveAttribute('aria-describedby', errorText.getAttribute('id'))
+    expect(screen.getByPlaceholderText('email')).toHaveAttribute('aria-invalid', 'true')
   })
 
-  it('does not mark the control invalid without an error', () => {
+  it('omits aria-invalid when no error', () => {
     render(
-      <FormField label="Name">
-        <Input placeholder="Your name" />
+      <FormField label="Email">
+        <Input placeholder="email" />
       </FormField>
     )
 
-    expect(screen.getByPlaceholderText('Your name')).not.toHaveAttribute('aria-invalid')
+    expect(screen.getByPlaceholderText('email')).not.toHaveAttribute('aria-invalid')
   })
 
   it('respects an explicit aria-invalid on the child', () => {
@@ -78,5 +75,58 @@ describe('FormField regression', () => {
     )
 
     expect(screen.getByPlaceholderText('Your name')).toHaveAttribute('aria-invalid', 'false')
+  })
+
+  it('sets aria-describedby pointing at error node when error present', () => {
+    render(
+      <FormField label="Email" error="Invalid email">
+        <Input placeholder="email" />
+      </FormField>
+    )
+
+    const input = screen.getByPlaceholderText('email')
+    const ariaDescribedBy = input.getAttribute('aria-describedby')
+    expect(ariaDescribedBy).toBeTruthy()
+
+    const errorEl = screen.getByRole('alert')
+    expect(errorEl).toHaveTextContent('Invalid email')
+    expect(errorEl.id).toBe(ariaDescribedBy)
+  })
+
+  it('sets aria-describedby pointing at hint node when hint present and no error', () => {
+    render(
+      <FormField label="Name" hint="Keep it short">
+        <Input placeholder="name" />
+      </FormField>
+    )
+
+    const input = screen.getByPlaceholderText('name')
+    const ariaDescribedBy = input.getAttribute('aria-describedby')
+    expect(ariaDescribedBy).toBeTruthy()
+
+    const hintEl = screen.getByText('Keep it short')
+    expect(hintEl.id).toBe(ariaDescribedBy)
+  })
+
+  it('omits aria-describedby when no error and no hint', () => {
+    render(
+      <FormField label="Name">
+        <Input placeholder="name" />
+      </FormField>
+    )
+
+    expect(screen.getByPlaceholderText('name')).not.toHaveAttribute('aria-describedby')
+  })
+
+  it('associates label with input via htmlFor', () => {
+    render(
+      <FormField label="Username">
+        <Input placeholder="username" />
+      </FormField>
+    )
+
+    const input = screen.getByPlaceholderText('username')
+    const label = screen.getByText('Username')
+    expect(label.closest('label')).toHaveAttribute('for', input.id)
   })
 })
