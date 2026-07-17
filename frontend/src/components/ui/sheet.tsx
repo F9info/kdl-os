@@ -32,8 +32,7 @@ const sizeClasses: Record<SheetSize, string> = {
   lg: 'max-w-lg',
 }
 
-interface SheetContentProps
-  extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
+interface SheetContentProps extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
   side?: SheetSide
   size?: SheetSize
 }
