@@ -371,8 +371,8 @@ export function ImageEditorDialog({ mediaId, mediaUrl, open, onClose, onSaved }:
             <AppImage
               size="thumbnail"
               src={mediaUrl}
-              alt="Current image preview"
-              className="max-w-full rounded border max-h-40"
+              alt="Current preview"
+              className="w-full rounded border object-contain max-h-40"
             />
             {ops.length > 0 && (
               <div className="space-y-1">

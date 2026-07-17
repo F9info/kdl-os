@@ -30,7 +30,7 @@ interface RoleFormDialogProps {
   onSubmit: (data: RoleFormData) => void
   isPending: boolean
   error: unknown
-  role?: RbacRole | null
+  initialRole?: RbacRole | null
 }
 
 export function RoleFormDialog({
@@ -39,9 +39,9 @@ export function RoleFormDialog({
   onSubmit,
   isPending,
   error,
-  role,
+  initialRole,
 }: RoleFormDialogProps) {
-  const isEdit = !!role
+  const isEdit = !!initialRole
 
   const { data: matrix, isLoading: matrixLoading } = useQuery({
     queryKey: ['permissions-matrix'],
@@ -67,18 +67,18 @@ export function RoleFormDialog({
 
   useEffect(() => {
     if (open) {
-      if (role) {
-        const ids = role.permission_matrix ? Object.values(role.permission_matrix) : []
+      if (initialRole) {
+        const ids = initialRole.permission_matrix ? Object.values(initialRole.permission_matrix) : []
         reset({
-          name: role.name,
-          description: role.description ?? '',
+          name: initialRole.name,
+          description: initialRole.description ?? '',
           permission_ids: ids,
         })
       } else {
         reset({ name: '', description: '', permission_ids: [] })
       }
     }
-  }, [open, role, reset])
+  }, [open, initialRole, reset])
 
   return (
     <Modal
@@ -103,9 +103,9 @@ export function RoleFormDialog({
           <Input
             {...register('name')}
             placeholder="e.g. Content Editor"
-            disabled={isEdit && !!role?.is_system}
+            disabled={isEdit && !!initialRole?.is_system}
           />
-          {isEdit && role?.is_system && (
+          {isEdit && initialRole?.is_system && (
             <p className="text-xs text-muted-foreground">System role names cannot be changed.</p>
           )}
         </FormField>

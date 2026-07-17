@@ -230,6 +230,87 @@ jobs:
           name: storybook-static
           path: frontend/storybook-static
 
+  frontend-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint (jsx-a11y + next rules)
+        working-directory: frontend
+        run: pnpm lint
+
+  a11y-smoke:
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpass
+      POSTGRES_DB: testdb
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+      MINIO_BUCKET: kdl-media
+      MEILI_MASTER_KEY: masterkey-ci-123456789
+      APP_ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+      JWT_SECRET: ci-jwt-secret-must-be-at-least-32-characters-long
+      JWT_REFRESH_SECRET: ci-refresh-secret-must-be-at-least-32-characters
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Build Docker images
+        run: |
+          docker build -t repo-backend:latest ./backend
+          docker build -t repo-frontend:latest ./frontend
+
+      - name: Start e2e stack
+        run: |
+          docker compose -f docker-compose.e2e.yml up -d
+          timeout 120 bash -c 'until curl -sf http://localhost:13001 > /dev/null 2>&1; do sleep 3; done'
+
+      - name: Run a11y smoke tests
+        working-directory: frontend
+        env:
+          E2E_BASE_URL: http://localhost:13001
+        run: pnpm exec playwright test e2e/a11y.spec.ts --reporter=github
+
+      - name: Collect logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.e2e.yml logs --tail=100
+
+      - name: Tear down stack
+        if: always()
+        run: docker compose -f docker-compose.e2e.yml down -v
+
   ai-services-check:
     runs-on: ubuntu-latest
     steps:

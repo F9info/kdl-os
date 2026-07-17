@@ -178,7 +178,7 @@ export default function RolesPage() {
           onSubmit={(formData) => createMutation.mutate(formData)}
           isPending={createMutation.isPending}
           error={createMutation.error}
-          role={null}
+          initialRole={null}
         />
 
         <RoleFormDialog
@@ -187,7 +187,7 @@ export default function RolesPage() {
           onSubmit={(formData) => updateMutation.mutate({ id: editRole!.id, body: formData })}
           isPending={updateMutation.isPending}
           error={updateMutation.error}
-          role={editRoleDetail ?? editRole}
+          initialRole={editRoleDetail ?? editRole}
         />
 
         <ConfirmDialog

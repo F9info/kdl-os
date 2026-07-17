@@ -145,8 +145,9 @@ export default function ActivityLogPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <label className="text-sm text-muted-foreground">From</label>
+            <label htmlFor="activity-from-date" className="text-sm text-muted-foreground">From</label>
             <Input
+              id="activity-from-date"
               type="date"
               value={fromDate}
               onChange={(e) => {
@@ -158,8 +159,9 @@ export default function ActivityLogPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <label className="text-sm text-muted-foreground">To</label>
+            <label htmlFor="activity-to-date" className="text-sm text-muted-foreground">To</label>
             <Input
+              id="activity-to-date"
               type="date"
               value={toDate}
               onChange={(e) => {
