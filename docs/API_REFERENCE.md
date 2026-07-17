@@ -60,7 +60,7 @@ The refresh token is set as an httpOnly cookie (`kdl-refresh-token`).
 
 **Body:**
 ```json
-{ "email": "admin@kdl.com", "password": "Admin@123" }
+{ "email": "admin@kdl.com", "password": "<your SEED_ADMIN_PASSWORD>" }
 ```
 
 **Response 200:**

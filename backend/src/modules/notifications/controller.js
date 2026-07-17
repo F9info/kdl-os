@@ -143,10 +143,7 @@ export const getOwnPreferences = async (req, res, next) => {
 
 export const updateOwnPreferences = async (req, res, next) => {
   try {
-    const { preferences } = req.body;
-    if (!Array.isArray(preferences)) {
-      return errorResponse(res, 'preferences must be an array', 400);
-    }
+    const { preferences } = req.validated.body;
 
     for (const pref of preferences) {
       await prisma.notificationPreference.upsert({
@@ -200,7 +197,7 @@ export const createTemplate = async (req, res, next) => {
       sms_body,
       whatsapp_body,
       is_active,
-    } = req.body;
+    } = req.validated.body;
 
     const template = await prisma.notificationTemplate.create({
       data: {
@@ -236,9 +233,11 @@ export const createTemplate = async (req, res, next) => {
 
 export const updateTemplate = async (req, res, next) => {
   try {
+    // Whitelisted by updateTemplateSchema (strict) — never raw req.body,
+    // which would allow mass assignment of arbitrary columns (KDL-270 M14).
     const template = await prisma.notificationTemplate.update({
       where: { id: req.params.id },
-      data: req.body,
+      data: req.validated.body,
       include: { category: true },
     });
 
@@ -301,7 +300,7 @@ export const previewTemplate = async (req, res, next) => {
       return errorResponse(res, 'Template not found', 404);
     }
 
-    const data = req.body.data ?? {};
+    const data = req.validated.body.data ?? {};
     const preview = {
       in_app: template.in_app_body ? renderTemplate(template.in_app_body, data) : null,
       email_subject: template.email_subject ? renderTemplate(template.email_subject, data) : null,
@@ -320,7 +319,7 @@ export const previewTemplate = async (req, res, next) => {
 
 export const broadcast = async (req, res, next) => {
   try {
-    const { to, template, inline, channels, data } = req.body;
+    const { to, template, inline, channels, data } = req.validated.body;
 
     const targetCount = [to?.role_slug, to?.all].filter(Boolean).length;
     if (!to || targetCount !== 1) {
@@ -370,7 +369,7 @@ export const listCategories = async (req, res, next) => {
 
 export const createCategory = async (req, res, next) => {
   try {
-    const { slug, name, description } = req.body;
+    const { slug, name, description } = req.validated.body;
     const category = await prisma.notificationCategory.create({
       data: { slug, name, description: description ?? null },
     });
@@ -402,12 +401,11 @@ export const updateCategory = async (req, res, next) => {
       return errorResponse(res, 'Category not found', 404);
     }
 
-    // Prevent changing is_system field via API
-    const { is_system: _ignore, ...safeData } = req.body;
-
+    // updateCategorySchema whitelists slug/name/description only — is_system
+    // and any other column are rejected before reaching here (KDL-270 M14).
     const category = await prisma.notificationCategory.update({
       where: { id: req.params.id },
-      data: safeData,
+      data: req.validated.body,
     });
 
     writeActivityAsync({

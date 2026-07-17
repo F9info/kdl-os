@@ -84,8 +84,8 @@ Creates the default SUPER_ADMIN account:
 
 | Field | Value |
 |-------|-------|
-| Email | `admin@kdl.com` |
-| Password | `Admin@123` |
+| Email | `SEED_ADMIN_EMAIL` (default `admin@kdl.com`) |
+| Password | `SEED_ADMIN_PASSWORD` if set; otherwise a random password printed once by the seed. Required in production. Docker stack pins `kdl-dev-seed-password` |
 | Role | `SUPER_ADMIN` |
 
 The seed uses `upsert` — safe to re-run.
@@ -138,7 +138,7 @@ npm install
 npm run dev
 ```
 
-Opens on `http://localhost:3000`. Login with `admin@kdl.com / Admin@123`.
+Opens on `http://localhost:3000`. Login with the seeded admin credentials (see "Seed the database" above).
 
 The frontend proxies API calls through `lib/axios.ts` → `NEXT_PUBLIC_API_URL` (default `http://localhost:4000`).
 

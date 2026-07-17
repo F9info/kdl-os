@@ -2,6 +2,13 @@
      Prepend new entries at the top; move anything older than the window into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+## 2026-07-17 — KDL-275 security hardening PR #55 open (Security & Compliance Engineer)
+- Closed KDL-270 findings M5-M8, M10, M11, M14, L13, L14, L16, L17: CORS fail-fast allowlists (backend + ai-services), CSRF origin check on cookie auth, 500-masking outside development, generic errors from ai controllers, `${VAR:?}` compose creds + 127.0.0.1 port binds + Redis requirepass, SSE single-use Redis ticket auth (JWT out of query string, HS256 pinned), Zod strict validation on all notifications mutating routes, scoped 10mb transcribe limit, Meili scoped-admin-key docs, S3 error taxonomy.
+- Verified: backend targeted suites 29/29, ai-services 21/21, all compose files validate, fail-fast confirmed.
+- M9/L15 (`/share/:token`) intentionally untouched — deferred to PR #46.
+- Next: Code Reviewer gate on PR #55; DevOps must populate new required `.env` vars before pulling to staging.
+
+
 ## 2026-07-14 — KDL-192 owner_module ownership contract fixes sidebar pollution (CEO agent)
 - Post-KDL-174 QA found all 86 Template Engine Types flooding the "Application Settings" sidebar. Root cause: `AdminSidebar` promotes every active `Type` to a top-level nav item with no owner concept.
 - Added `owner_module` (nullable, indexed) to `Type`/`Category`/`SettingField`; `template-engine/seed.js` stamps `'template-engine'` on all its rows; `types|categories|setting-fields` list endpoints default to `owner_module=null` (opt out via `?ownerModule=`); generic `by-type/:slug` view also excludes module-owned rows.

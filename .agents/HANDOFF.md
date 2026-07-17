@@ -2,6 +2,30 @@
      Prepend new entries at the top; move anything older than the window into HANDOFF_ARCHIVE.md.
      Full history: .agents/HANDOFF_ARCHIVE.md (and git log). -->
 
+## 2026-07-17 — KDL-275 M4 config/CORS/error-leak/infra + notifications hardening (Security & Compliance Engineer)
+
+**Scope:** KDL-270 audit findings M5, M6, M7, M8, M10, M11, M14, L13, L14, L16, L17. Deliberately did NOT touch `/share/:token` media routes (M9/L15 deferred to PR #46). PR #55 → master.
+
+**Fixes:**
+1. **M6** `backend/src/index.js` — fail-fast at boot when `CORS_ORIGIN` unset; comma-separated explicit allowlist (no more origin reflection with `credentials:true`).
+2. **M7** `ai-services/src/index.js` + `middleware/auth.js` — bare `cors()` replaced with `CORS_ORIGIN`/`FRONTEND_URL` allowlist; cookie-authenticated calls now require an allowlisted `Origin` header (CSRF defense), Bearer-header calls exempt.
+3. **M8** `backend/src/middleware/errorHandler.js` — 500 details masked unless `NODE_ENV==='development'` (was `!=='production'`, so staging leaked).
+4. **M10** ai-services `chat|embed|transcribe` controllers — upstream `err.message` logged server-side, generic 500 returned.
+5. **M11** `docker-compose.infra.yml` — `${VAR:?}` fail-fast creds from `.env` (no baked-in postgres/minio/meili defaults), all ports bound `127.0.0.1:`.
+6. **M5** `notifications/routes.js` + `frontend/src/hooks/useNotificationStream.ts` — SSE auth via single-use 60s Redis ticket (`POST /notifications/stream/ticket`, `GETDEL` consume); JWT no longer in query string. HS256 pinned on the notif JWT verify (L1's notif site).
+7. **M14** `notifications/{schema,routes,controller}.js` — real Zod schemas (`.strict()`) + `validate()` on all mutating routes; controllers read `req.validated.body`; `is_system` not settable.
+8. **L13** ai-services `trust proxy 1`; 10mb JSON limit scoped to `/api/ai/transcribe` only (default 100kb elsewhere).
+9. **L14** `docker-compose.yml` + `docker-compose.staging.yml` — all host ports `127.0.0.1:`; Redis `--requirepass` + password-form `REDIS_URL`; staging overlay documented CI/E2E-only.
+10. **L16** `config/meilisearch.js` + `.env.example` — `MEILISEARCH_API_KEY` documented as scoped admin key with generation recipe; master key confined to Meili container.
+11. **L17** `storage-settings/service.js` — raw S3/MinIO SDK errors mapped to 8-entry client-safe taxonomy; raw message stays in server log.
+
+**Verified:** backend notifications schema/controller + new `tests/error-handler.test.js` masking matrix — 29/29; ai-services full suite incl. new transcribe generic-500 test — 21/21; all 3 compose files `docker compose config` clean with vars set and hard-fail without; `node --check` clean; `ioredis@5.11.1` has `getdel`.
+
+**Deploy note (DevOps):** `.env` now REQUIRES `POSTGRES_USER/PASSWORD/DB`, `REDIS_PASSWORD` (+password-form `REDIS_URL`), `MINIO_ROOT_USER/PASSWORD`, `MEILI_MASTER_KEY`, and backend refuses to boot without `CORS_ORIGIN` (ai-services without `CORS_ORIGIN`/`FRONTEND_URL`). Frontend SSE now needs the ticket endpoint — deploy backend before/with frontend.
+
+**Next:** PR #55 awaiting Code Reviewer (Maker ≠ Grader).
+
+
 ## 2026-07-14 — KDL-192 sidebar pollution fix: Type/Category/SettingField ownership contract (CEO agent, standing in as Backend Coder)
 
 **Bug:** post-KDL-174/175/176/177/178/191, the Template Engine's 86 seeded panes (Types) all auto-promoted to top-level `AdminSidebar` menu items (`typeLeaves` from unfiltered `GET /types?is_active=true`), flooding "Application Settings" with every `webapp.*|tv.*|android.*|ios.*` pane. Root cause: no way to mark a Type/Category/SettingField as module-private data vs a standalone Application-Settings entry.
