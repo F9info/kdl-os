@@ -33,61 +33,10 @@ A generic, production-ready SaaS boilerplate that is also AI-agent buildable fro
 
 ## Folder Structure
 
-```
-kdl-starter-kit/
-├── backend/
-│   ├── prisma/schema.prisma + seed.js
-│   └── src/
-│       ├── config/          database, redis, minio, meilisearch, chromadb
-│       ├── middleware/       auth, rbac, validate, upload, errorHandler
-│       ├── modules/
-│       │   ├── auth/         routes, controller, service, schema
-│       │   ├── users/        routes, controller, service, schema (RBAC-extended)
-│       │   ├── settings/     routes, controller, service
-│       │   ├── media/        routes, controller, service
-│       │   └── user-management/
-│       │       ├── roles/        routes, controller, service, schema
-│       │       ├── permissions/  routes, controller, service, schema
-│       │       ├── activity/     routes, controller, service, schema
-│       │       └── shared/       permission-resolver.js, activity-logger.js
-│       ├── shared/
-│       │   ├── services/     email, storage, search
-│       │   ├── queues/       email.queue.js
-│       │   ├── workers/      email.worker.js
-│       │   └── utils/        logger, response, pagination
-│       └── index.js
-├── frontend/
-│   └── src/
-│       ├── app/
-│       │   ├── (auth)/       login, register, forgot-password
-│       │   └── (admin)/      dashboard, users, settings
-│       ├── components/
-│       │   ├── layout/       AdminSidebar, TopBar, PageHeader
-│       │   └── shared/       DataTable, Modal, ConfirmDialog, Pagination
-│       ├── hooks/            useAuth, usePagination, useDebounce
-│       ├── lib/              axios, queryClient, utils
-│       ├── stores/           auth.store, ui.store
-│       └── types/            api.types, models.types
-├── ai-services/
-│   └── src/
-│       ├── orchestrator/     brain-router, budget-tracker, context-manager
-│       ├── agents/           base, research, content, task
-│       ├── tools/            rag, search, memory
-│       ├── knowledge/        ingest, retrieve
-│       ├── memory/           short-term (Redis), long-term (ChromaDB)
-│       ├── workflows/        base, deterministic, non-deterministic
-│       ├── governance/       audit-logger, compliance
-│       ├── brains/           claude.js, openrouter.js
-│       ├── chains/           rag-chain.js
-│       └── controllers/      chat, embed, transcribe
-├── infra/nginx/nginx.conf
-├── .agents/                  CONTEXT.md, HANDOFF.md, DECISIONS.md, PROGRESS.md, REVIEW.md
-├── tasks/                    backlog.md, current_task.md, completed/
-├── docs/                     API_REFERENCE.md, ENV_REFERENCE.md, SETUP.md
-├── docker-compose.yml
-├── docker-compose.infra.yml  (infrastructure only — already running)
-└── .env                      (all credentials filled in)
-```
+The full folder map lives in **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)** (moved out of this
+always-loaded file to cut per-heartbeat tokens — KDL-336). Read it when you need the layout.
+Top level: `backend/` (Express + Prisma), `frontend/` (Next.js), `ai-services/`, `infra/`,
+`.agents/`, `tasks/`, `docs/`.
 
 ---
 
@@ -149,123 +98,22 @@ writeActivity({
 
 ## How to add a module
 
-### Quick start — scaffold generator
+Full module authoring guide (scaffold generator, `module.json` format, anatomy, and the
+pre-review checklist) lives in **[`docs/MODULE_GUIDE.md`](docs/MODULE_GUIDE.md)** — moved out of
+this always-loaded file (KDL-336). Read it before scaffolding or reviewing a module.
 
-```bash
-cd backend
-npm run module:create -- --slug=blog --name="Blog"
-# OR: node scripts/create-module.js --slug=blog --name="Blog"
-```
-
-Creates `backend/src/modules/blog/` (module.json, routes.js, controller.js, service.js, schema.js, seed.js), `backend/prisma/schema/blog.prisma`, and `frontend/src/app/admin/blog/page.tsx`. Files that already exist are skipped (safe to re-run).
-
----
-
-### Module anatomy
-
-```
-backend/src/modules/<slug>/
-├── module.json      manifest (Zod-validated at startup)
-├── routes.js        Express router — auto-mounted by module-loader
-├── controller.js    thin handlers: parse, call service, respond
-├── service.js       business logic + Prisma + writeActivityAsync
-├── schema.js        Zod schemas for request bodies
-└── seed.js          idempotent seed data (optional)
-
-backend/prisma/schema/<slug>.prisma   Prisma models for this module only
-frontend/src/app/admin/<slug>/page.tsx  wrapped in <ModuleGuard slug="<slug>">
-```
-
----
-
-### module.json format
-
-```jsonc
-{
-  "slug": "blog",                  // lowercase alphanumeric + hyphens; must match folder name
-  "name": "Blog",                  // display name
-  "version": "1.0.0",             // semver
-  "description": "Blog posts",    // optional
-  "core": false,                   // true = always ENABLED, never uninstallable
-  "apiPrefix": "/api/blog",        // must start with /api/
-  "permissions": ["blog"],         // permission module names to auto-register on install
-  "nav": [                         // sidebar nav entries shown when module is ENABLED
-    {
-      "label": "Blog",
-      "path": "/blog",
-      "icon": "FileText",          // lucide-react icon name
-      "permission": "blog:view"    // optional — hide entry if user lacks this
-    }
-  ],
-  "dependsOn": [],                 // slugs that must be INSTALLED before this can install
-  "queues": [],                    // BullMQ queue names (informational — not enforced yet)
-  "env": []                        // required env var names — install fails if any are missing
-}
-```
-
----
-
-### New module checklist
-
-Before submitting for code review, verify every item:
-
-- [ ] `module.json` is Zod-valid; `slug` matches the folder name, `apiPrefix`, and prisma schema filename
-- [ ] All Prisma models live in `prisma/schema/<slug>.prisma` only — never mixed with other modules
-- [ ] `npx prisma migrate dev` applies cleanly; `npx prisma validate` exits 0
-- [ ] All routes are behind `moduleGate(slug)` + `authenticate` + `requirePermission`
-- [ ] Permissions are registered via the `permissions` array in manifest — never via manual seeder edits
-- [ ] Every mutation calls `writeActivityAsync` (PII-scrubbed — no passwords or tokens in `properties`)
-- [ ] Frontend pages are wrapped in `<ModuleGuard slug="<slug>">` and nav comes from the manifest only
-- [ ] Module works correctly when other non-core modules are disabled (no cross-module coupling)
-- [ ] Disable → re-enable round-trip leaves no orphaned DB state
+Quick start: `cd backend && npm run module:create -- --slug=blog --name="Blog"`.
 
 ---
 
 ## Database Schema
 
-### Base tables
-
-```
-users            id, name, email, password_hash, role(enum), is_active, status(UserStatus), avatar_media_id, last_login_at, deleted_at, created_at, updated_at
-refresh_tokens   id, user_id, token_hash, expires_at, revoked
-password_reset_tokens  id, user_id, token_hash, expires_at, used
-app_settings     id, key, value, type, description, is_public
-media            id, user_id, folder_id?, filename, original_name, mime_type, size, bucket, path, type(MediaType), title?, alt_text?, caption?, width?, height?, duration?, variants(Json?), deleted_at?
-media_folders    id, name, parent_id?(self-ref), created_by — @@unique([parent_id, name]); max depth 6
-media_usages     id, media_id, entity, entity_id — @@unique([media_id, entity, entity_id]); blocks delete when present
-types            id, name, slug, is_active
-categories       id, name, slug, type_id, is_active
-setting_fields   id, field_name, slug, input_type, value, alt_text, options, type_id, category_id, sort
-```
-
-### RBAC tables (User Management module)
-
-```
-roles (RbacRole)       id, name, slug, description, is_system, created_at, updated_at
-permission_modules     id, name, slug, label, is_system, sort_order, created_at
-permissions            id, module_id, action(view|add|edit|delete|publish), created_at
-role_permissions       [role_id, permission_id] — composite PK
-user_roles             [user_id, role_id] — composite PK
-user_permissions       [user_id, permission_id, mode(GRANT|DENY)] — composite PK
-activity_logs          id, actor_id, module, action, subject_type, subject_id, description, properties(JSON), ip_address, created_at
-```
-
-### Enums
-
-| Enum | Values |
-|------|--------|
-| `Role` (legacy, kept until Step 10) | `SUPER_ADMIN`, `ADMIN`, `USER` |
-| `UserStatus` | `ACTIVE`, `SUSPENDED`, `PENDING` |
-| `OverrideMode` | `GRANT`, `DENY` |
-
-### Key relations
-
-- `User` → many `UserRole` → `RbacRole` (multi-role assignment)
-- `User` → many `UserPermission` (per-permission GRANT/DENY overrides)
-- `RbacRole` → many `RolePermission` → `Permission` → `PermissionModule`
-- `User` → many `ActivityLog` (as actor)
-
-Seed: 1 SUPER_ADMIN → `SEED_ADMIN_EMAIL` (default `admin@kdl.com`) with `SEED_ADMIN_PASSWORD` if set, else a random password printed once (production refuses to seed without it). The local docker stack pins `kdl-dev-seed-password`. System roles: `super-admin`, `admin`, `user`. System modules: `users`, `roles`, `permissions`, `settings`, `media`, `activity-log`.
+Full table/enum/relation reference lives in
+**[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) → Database Schema** (moved out of this
+always-loaded file — KDL-336). Read it when working on models or migrations.
+Base tables: `users`, `refresh_tokens`, `media`, `app_settings`, `types`, `categories`, …
+RBAC tables: `roles`, `permissions`, `role_permissions`, `user_roles`, `user_permissions`,
+`activity_logs`.
 
 ---
 
