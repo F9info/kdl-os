@@ -1,0 +1,95 @@
+name: CD Staging
+
+# Deploys latest master images to the always-on staging VPS.
+# Required GitHub secrets (set in repo Settings → Secrets → Actions):
+#   STAGING_HOST       — IP or hostname of the staging VPS
+#   STAGING_USER       — SSH user (e.g. ubuntu, root)
+#   STAGING_SSH_KEY    — private key whose public half is in authorized_keys on VPS
+#   STAGING_ENV        — full contents of the staging .env file (sensitive vars only;
+#                        non-secret defaults live in docker-compose.staging-vps.yml)
+#   GHCR_TOKEN         — GitHub PAT with read:packages scope (or use GITHUB_TOKEN
+#                        if the repo and packages are in the same org)
+#
+# One-time VPS bootstrap (run once by a human — see MANUAL_TASKS.md):
+#   ssh $STAGING_USER@$STAGING_HOST 'bash -s' < infra/scripts/staging-bootstrap.sh
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  deploy-staging:
+    name: Deploy to staging
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_URL }}   # Set STAGING_URL in repo → Environments → staging
+    concurrency:
+      group: staging-deploy
+      cancel-in-progress: true
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Compute image tag
+        run: echo "IMAGE_TAG=${{ github.sha }}" >> "$GITHUB_ENV"
+
+      - name: Copy compose files to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          source: "docker-compose.yml,docker-compose.preview.yml,infra/nginx/nginx.conf"
+          target: "/opt/kdl-staging"
+          strip_components: 0
+
+      - name: Deploy on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          STAGING_ENV_CONTENTS: ${{ secrets.STAGING_ENV }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GHCR_ACTOR: ${{ github.actor }}
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          envs: IMAGE_TAG,STAGING_ENV_CONTENTS,GHCR_TOKEN,GHCR_ACTOR
+          script: |
+            set -euo pipefail
+            cd /opt/kdl-staging
+
+            # Write the staging .env from the secret (overwrite each deploy)
+            printf '%s' "$STAGING_ENV_CONTENTS" > .env
+
+            # Authenticate with GHCR so we can pull private images
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_ACTOR" --password-stdin
+
+            # Pull new images before taking the stack down (zero-downtime window)
+            IMAGE_TAG="$IMAGE_TAG" \
+              docker compose -f docker-compose.yml -f docker-compose.preview.yml pull
+
+            # Bring the full stack up (recreate changed containers only)
+            IMAGE_TAG="$IMAGE_TAG" \
+              docker compose -f docker-compose.yml -f docker-compose.preview.yml \
+              up -d --remove-orphans
+
+            # Run pending DB migrations (idempotent)
+            docker compose exec -T backend npx prisma migrate deploy || true
+
+            # Quick health check — nginx must return HTTP 200
+            sleep 10
+            curl -sf http://localhost/health || \
+              (echo "Health check failed"; docker compose logs --tail=50; exit 1)
+
+            echo "Staging deploy complete — IMAGE_TAG=$IMAGE_TAG"
+
+      - name: Post staging URL to job summary
+        run: |
+          echo "## Staging deployed" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **URL:** ${{ vars.STAGING_URL }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Image tag:** \`${{ env.IMAGE_TAG }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Commit:** ${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"

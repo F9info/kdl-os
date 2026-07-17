@@ -1,0 +1,33 @@
+# Always-on staging overlay — apply on top of docker-compose.yml:
+#   docker compose -f docker-compose.yml -f docker-compose.preview.yml up -d
+#
+# Differences from the base file:
+#   - Uses GHCR images (not local builds)
+#   - All service ports are internal-only; only nginx:80 is publicly exposed
+#   - NODE_ENV=staging for all app services
+#   - IMAGE_TAG defaults to "latest" (set to a SHA in CI for pinned deploys)
+services:
+  backend:
+    image: ghcr.io/kalamdreamlabs/kdl-starter-kit/backend:${IMAGE_TAG:-latest}
+    environment:
+      NODE_ENV: staging
+    ports: !reset []  # internal only
+
+  frontend:
+    image: ghcr.io/kalamdreamlabs/kdl-starter-kit/frontend:${IMAGE_TAG:-latest}
+    environment:
+      NODE_ENV: staging
+      NEXT_PUBLIC_API_URL: /api
+      BACKEND_INTERNAL_URL: http://backend:4000
+    ports: !reset []  # internal only
+
+  ai-services:
+    image: ghcr.io/kalamdreamlabs/kdl-starter-kit/ai-services:${IMAGE_TAG:-latest}
+    environment:
+      NODE_ENV: staging
+    ports: !reset []  # internal only
+
+  nginx:
+    # Expose publicly on port 80; add 443 here once TLS is wired (see MANUAL_TASKS.md)
+    ports:
+      - "80:80"

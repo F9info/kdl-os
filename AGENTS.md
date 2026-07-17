@@ -81,6 +81,26 @@ Act like a senior engineer who just joined an unfamiliar codebase — reverse-en
 
 ---
 
+## PR Convention — Screenshots Required (KDL-333)
+
+Every PR that touches any user-visible UI **must** include before/after screenshots
+or a staging preview link in the PR description. This applies to all agents.
+
+**Staging preview URL** (always-on, refreshed on every master push):  
+`https://staging.kdl.f9tech.com` (or the IP in `STAGING_URL` env var until DNS is set)
+
+**How to attach a screenshot in a PR:**
+1. Take screenshot of the relevant UI state (before the change) — save as `before.png`.
+2. Apply the change, take screenshot of the result — save as `after.png`.
+3. Drag both files into the GitHub PR description under the "Screenshots / preview" table.
+4. The table is pre-populated in `.github/PULL_REQUEST_TEMPLATE.md`.
+
+**Backend-only or infra-only PRs:** write `N/A — no UI change` in the screenshot table. Do not skip the table entirely.
+
+**Enforcement:** Code Reviewer (Agent 8) must reject any frontend PR that is missing screenshots before approving.
+
+---
+
 ## Handoff Protocol
 
 When any agent finishes a task it writes `.agents/HANDOFF.md`:

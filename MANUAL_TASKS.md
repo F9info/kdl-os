@@ -120,4 +120,47 @@ Low-complexity config files that are safe to write by hand:
 
 ---
 
+## Manual Task — KDL-333 — 2026-07-17
+**Queued by:** DevOps agent  
+**Reason:** Requires human cloud accounts, credentials, and VPS provisioning — agents cannot do these.  
+**Task:** Activate the always-on staging preview URL (KDL-333)
+
+### Step 1 — Provision a $6/month VPS (5 min)
+Any provider works (Hetzner CX11, DigitalOcean Droplet, Vultr, etc.). Ubuntu 22.04.  
+Note the public IP — call it `STAGING_HOST`.
+
+### Step 2 — Bootstrap Docker on the VPS (2 min)
+```bash
+ssh ubuntu@<STAGING_HOST> 'bash -s' < infra/scripts/staging-bootstrap.sh
+```
+
+### Step 3 — Add GitHub secrets (repo → Settings → Secrets → Actions)
+
+| Secret name | Value |
+|-------------|-------|
+| `STAGING_HOST` | VPS IP or hostname |
+| `STAGING_USER` | SSH user (`ubuntu` or `root`) |
+| `STAGING_SSH_KEY` | Private key (generate with `ssh-keygen -t ed25519`; add public key to VPS `~/.ssh/authorized_keys`) |
+| `STAGING_ENV` | Full contents of a staging `.env` file (copy from `.env.example`, fill real values — DB password, JWT secret, etc.) |
+| `GHCR_TOKEN` | GitHub PAT with `read:packages` scope (Settings → Developer settings → Personal access tokens) |
+
+### Step 4 — Add GitHub environment variable (repo → Settings → Environments → staging → Variables)
+
+| Variable name | Value |
+|---------------|-------|
+| `STAGING_URL` | `http://<STAGING_HOST>` (or your domain once DNS is pointed) |
+
+### Step 5 — Optional: point a domain
+Point `staging.kdl.f9tech.com` (or similar) A record to the VPS IP.  
+Update `STAGING_URL` env var to use the domain.  
+Update the staging URL in `.github/PULL_REQUEST_TEMPLATE.md` to match.
+
+### Step 6 — Trigger first deploy
+Push any commit to `master` — `cd-staging.yml` runs automatically.  
+Or: GitHub → Actions → "CD Staging" → "Run workflow".
+
+**Status:** [ ] Pending → [ ] Done (date)
+
+---
+
 *Kalam Dream Labs Pvt Ltd — MANUAL_TASKS.md v1.0*
