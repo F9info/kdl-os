@@ -21,7 +21,7 @@ jobs:
           - service: ai-services
             context: ./ai-services
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Compute lowercase image name
         run: echo "IMAGE_REPO=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
