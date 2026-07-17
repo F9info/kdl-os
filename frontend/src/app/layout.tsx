@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Sora } from 'next/font/google'
 import './globals.css'
 import './te-typography.css'
 import './te-layout.css'
@@ -7,7 +7,8 @@ import './te-components.css'
 import { Providers } from './providers'
 import { WebVitals } from '@/components/WebVitals'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
+const sora = Sora({ subsets: ['latin'], variable: '--font-sora' })
 
 export const metadata: Metadata = {
   title: 'KDL Admin',
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${sora.variable}`}>
       {/* Body font comes from the Template Engine's Typography > Body token.
           It must be an inline style: next/font's generated class on <body>
           outranks the element selector in te-typography.css. The --te-typo-*
