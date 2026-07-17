@@ -22,7 +22,7 @@ const C=(l,v,h)=>({l,t:'color',v,h}), N=(l,v,u,h)=>({l,t:'number',v,u,h}),
       // as SE fields. sizeUnit is one of TYPO_SIZE_UNITS (px/em/in).
       TT=(l,v,h)=>({l,t:'typo_table',v,o:FONTS,h});
 
-const FONTS=['Inter','Sora','Roboto','Poppins','Open Sans','Lato','Montserrat','Source Sans 3','SF Pro','System UI'];
+const FONTS=['Inter','Sora','Roboto','Poppins','Poppins, Sora','Open Sans','Lato','Montserrat','Source Sans 3','SF Pro','System UI'];
 const WEIGHTS=['100','300','400','500','600','700','800'];
 const TYPO_SIZE_UNITS=['px','em','in'];
 
@@ -37,8 +37,8 @@ const INPUT_STYLE_SECTIONS=(()=>{const out=[];
 const BASE_TABS=[
 {id:'branding',icon:'🎨',ic:'#e8554d',label:'Theme Color',desc:'Theme colors — dark and light',
  modes:[{id:'dark',label:'🌙 Dark Theme'},{id:'light',label:'☀️ Light Theme'}],sections:[
-  ['Brand Colors',[C('Primary Color','#7468F3'),C('Secondary Color','#0ea5e9'),C('Tertiary Color','#64d2ff'),C('Accent Color','#F7B23B'),C('Titles Text Color','#f2f2f5'),C('Body Text Color','#c7c7ce')],'dark'],
-  ['Brand Colors',[C('Primary Color','#2119B3'),C('Secondary Color','#0284c7'),C('Tertiary Color','#0891b2'),C('Accent Color','#F9941F'),C('Titles Text Color','#1d1d21'),C('Body Text Color','#3a3a40')],'light'],
+  ['Brand Colors',[C('Primary Color','#7468F3'),C('Highlight Color','#F7B23B'),C('Secondary Color','#0ea5e9'),C('Tertiary Color','#64d2ff'),C('Accent Color','#a855f7'),C('Titles Text Color','#f2f2f5'),C('Body Text Color','#c7c7ce')],'dark'],
+  ['Brand Colors',[C('Primary Color','#2119B3'),C('Highlight Color','#F9941F'),C('Secondary Color','#0284c7'),C('Tertiary Color','#0891b2'),C('Accent Color','#7c3aed'),C('Titles Text Color','#1d1d21'),C('Body Text Color','#3a3a40')],'light'],
   ['Surfaces',[C('Background Color','#1e1e20'),C('Surface Color','#2a2a2e'),C('Card Color','#323236'),C('Sidebar Color','#26262a'),C('Header Color','#2a2a2e'),C('Footer Color','#26262a')],'dark'],
   ['Text & Interaction',[C('Text Primary','#f2f2f5'),C('Text Secondary','#a5a5ad'),C('Text Tertiary','#6e6e76'),C('Link Color','#4f8ef7'),C('Hover Color','#5e9bff'),C('Border Color','#3d3d42'),C('Divider Color','#38383d')],'dark'],
   ['Surfaces',[C('Background Color','#f2f2f7'),C('Surface Color','#ffffff'),C('Card Color','#ffffff'),C('Sidebar Color','#eeeef1'),C('Header Color','#ffffff'),C('Footer Color','#f6f6f8')],'light'],
@@ -51,7 +51,7 @@ const BASE_TABS=[
   // the old separate Font Size / Font Weight / Text Rules groups (KDL request:
   // "name, size, family, weight, rules in one table, e.g. h1, 32px, inter, 400").
   ['Typography Scale',[TT('Typography Scale',[
-    {name:'H1 (Title)',size:32,family:'Sora',weight:'700',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+{name:'H1 (Title)',size:32,family:'Sora',weight:'700',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
     {name:'H2',size:26,family:'Sora',weight:'700',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
     {name:'H3',size:22,family:'Sora',weight:'600',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
     {name:'H4',size:18,family:'Poppins',weight:'600',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
@@ -64,7 +64,7 @@ const BASE_TABS=[
     {name:'Navigation',size:14,family:'Inter',weight:'400',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
   ])],'desktop'],
   ['Typography Scale',[TT('Typography Scale',[
-    {name:'H1 (Title)',size:30,family:'Sora',weight:'700',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+{name:'H1 (Title)',size:30,family:'Sora',weight:'700',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
     {name:'H2',size:24,family:'Sora',weight:'700',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
     {name:'H3',size:20,family:'Sora',weight:'600',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
     {name:'H4',size:17,family:'Poppins',weight:'600',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
@@ -77,7 +77,7 @@ const BASE_TABS=[
     {name:'Navigation',size:13,family:'Inter',weight:'400',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
   ])],'laptop'],
   ['Typography Scale',[TT('Typography Scale',[
-    {name:'H1 (Title)',size:28,family:'Sora',weight:'700',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
+{name:'H1 (Title)',size:28,family:'Sora',weight:'700',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
     {name:'H2',size:23,family:'Sora',weight:'700',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
     {name:'H3',size:19,family:'Sora',weight:'600',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
     {name:'H4',size:16,family:'Poppins',weight:'600',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
@@ -90,7 +90,7 @@ const BASE_TABS=[
     {name:'Navigation',size:13,family:'Inter',weight:'400',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
   ])],'ipad'],
   ['Typography Scale',[TT('Typography Scale',[
-    {name:'H1 (Title)',size:24,family:'Sora',weight:'700',lineHeight:1.4,letterSpacing:0,sizeUnit:'px'},
+{name:'H1 (Title)',size:24,family:'Sora',weight:'700',lineHeight:1.4,letterSpacing:0,sizeUnit:'px'},
     {name:'H2',size:20,family:'Sora',weight:'700',lineHeight:1.4,letterSpacing:0,sizeUnit:'px'},
     {name:'H3',size:18,family:'Sora',weight:'600',lineHeight:1.4,letterSpacing:0,sizeUnit:'px'},
     {name:'H4',size:15,family:'Poppins',weight:'600',lineHeight:1.4,letterSpacing:0,sizeUnit:'px'},

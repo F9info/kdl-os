@@ -66,10 +66,10 @@ describe('template-engine seed (A3 gate)', () => {
     const db = makeFakePrisma();
 
     const first = await seedTemplateEngine(db);
-    expect(first).toMatchObject({ types: 97, categories: 968, fields: 4084, created: 4084 });
+    expect(first).toMatchObject({ types: 97, categories: 968, fields: 4094, created: 4094 });
     expect(db.type.rows.size).toBe(97);
     expect(db.category.rows.size).toBe(968);
-    expect(db.settingField.rows.size).toBe(4084);
+    expect(db.settingField.rows.size).toBe(4094);
 
     const second = await seedTemplateEngine(db);
     expect(second.created).toBe(0);
@@ -77,7 +77,7 @@ describe('template-engine seed (A3 gate)', () => {
     // No row counts changed and every slug is still unique (Map keyed on slug).
     expect(db.type.rows.size).toBe(97);
     expect(db.category.rows.size).toBe(968);
-    expect(db.settingField.rows.size).toBe(4084);
+    expect(db.settingField.rows.size).toBe(4094);
   });
 
   it('spot-check: webapp primary button background color row with correct default', async () => {
