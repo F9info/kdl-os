@@ -11,6 +11,8 @@ vi.mock('../src/modules/users/service.js', () => ({
   updateUserOverrides: vi.fn(),
   roleIdsIncludeSuperAdmin: vi.fn(),
   getUserRoleSlugs: vi.fn(),
+  getPermissionKeysForRoles: vi.fn(),
+  getPermissionKeysByIds: vi.fn(),
 }));
 
 vi.mock('../src/modules/user-management/shared/activity-logger.js', () => ({
@@ -22,10 +24,11 @@ vi.mock('../src/modules/user-management/shared/activity-logger.js', () => ({
 vi.mock('../src/modules/user-management/shared/permission-resolver.js', () => ({
   __esModule: true,
   invalidatePermissionCache: vi.fn(),
+  resolvePermissions: vi.fn(),
 }));
 
 import * as userService from '../src/modules/users/service.js';
-import { invalidatePermissionCache } from '../src/modules/user-management/shared/permission-resolver.js';
+import { invalidatePermissionCache, resolvePermissions } from '../src/modules/user-management/shared/permission-resolver.js';
 import { writeActivityAsync, getClientIp } from '../src/modules/user-management/shared/activity-logger.js';
 import {
   listUsers,
@@ -63,6 +66,13 @@ function mockReq(overrides = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Default: a non-bypass admin actor whose ceiling covers the users module.
+  resolvePermissions.mockResolvedValue({
+    bypass: false,
+    permissions: ['users:view', 'users:add', 'users:edit', 'users:delete', 'permissions:edit', 'permissions:view'],
+  });
+  serviceMock.getPermissionKeysForRoles.mockResolvedValue([]);
+  serviceMock.getPermissionKeysByIds.mockResolvedValue(new Map());
 });
 
 describe('users controller regression', () => {
@@ -201,6 +211,7 @@ describe('users controller — Step 4 extensions', () => {
   it('updates user overrides and invalidates permission cache', async () => {
     serviceMock.getUserById.mockResolvedValue({ id: 'u2', roles: [] });
     serviceMock.updateUserOverrides.mockResolvedValue({ id: 'u2', roles: [] });
+    serviceMock.getPermissionKeysByIds.mockResolvedValue(new Map([['p1', 'users:view']]));
     const overrides = [{ permission_id: 'p1', mode: 'GRANT' }];
     const req = mockReq({ validated: { params: { id: 'u2' }, body: { overrides } } });
     const res = mockRes();

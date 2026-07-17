@@ -255,3 +255,25 @@ export async function getUserRoleSlugs(userId) {
   });
   return userRoles.map((ur) => ur.role.slug);
 }
+
+export async function getPermissionKeysForRoles(roleIds) {
+  if (!roleIds || roleIds.length === 0) return [];
+  const rolePerms = await prisma.rolePermission.findMany({
+    where: { role_id: { in: roleIds } },
+    select: {
+      permission: {
+        select: { action: true, module: { select: { name: true } } },
+      },
+    },
+  });
+  return [...new Set(rolePerms.map((rp) => `${rp.permission.module.name}:${rp.permission.action}`))];
+}
+
+export async function getPermissionKeysByIds(permissionIds) {
+  if (!permissionIds || permissionIds.length === 0) return new Map();
+  const perms = await prisma.permission.findMany({
+    where: { id: { in: permissionIds } },
+    select: { id: true, action: true, module: { select: { name: true } } },
+  });
+  return new Map(perms.map((p) => [p.id, `${p.module.name}:${p.action}`]));
+}
