@@ -120,7 +120,7 @@ These variables are specific to the `ai-services/` Express process (`ai-services
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `MEILISEARCH_HOST` | Yes | `http://localhost:7700` | MeiliSearch host URL. |
-| `MEILISEARCH_API_KEY` | Yes | `masterKey` | MeiliSearch master key. Use a strong random key in production. |
+| `MEILISEARCH_API_KEY` | Yes | _(none)_ | Scoped **admin** key for the backend (`config/meilisearch.js`): grant `documents.*`, `indexes.*`, `settings.*`, `search` on the app indexes via `POST /keys`. Never the master key — `MEILI_MASTER_KEY` stays in the Meilisearch container env only. |
 | `MEILI_SEARCH_API_KEY` | Yes | _(none)_ | Scoped search-only API key used by ai-services' `meilisearch` tool. Generate with `GET /keys` using the master key (or the MeiliSearch dashboard) and grant only the `search` action. Never use the master key here. |
 
 ---
