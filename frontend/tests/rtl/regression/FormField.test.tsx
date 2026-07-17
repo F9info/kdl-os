@@ -46,4 +46,80 @@ describe('FormField regression', () => {
     expect(screen.getByText('Name is required')).toBeInTheDocument()
     expect(screen.queryByText('Keep it short')).not.toBeInTheDocument()
   })
+
+  it('injects aria-invalid on child when error is present', () => {
+    render(
+      <FormField label="Email" error="Invalid email">
+        <Input placeholder="email" />
+      </FormField>
+    )
+
+    const input = screen.getByPlaceholderText('email')
+    expect(input).toHaveAttribute('aria-invalid', 'true')
+  })
+
+  it('omits aria-invalid when no error', () => {
+    render(
+      <FormField label="Email">
+        <Input placeholder="email" />
+      </FormField>
+    )
+
+    const input = screen.getByPlaceholderText('email')
+    expect(input).not.toHaveAttribute('aria-invalid')
+  })
+
+  it('sets aria-describedby pointing at error node when error present', () => {
+    render(
+      <FormField label="Email" error="Invalid email">
+        <Input placeholder="email" />
+      </FormField>
+    )
+
+    const input = screen.getByPlaceholderText('email')
+    const ariaDescribedBy = input.getAttribute('aria-describedby')
+    expect(ariaDescribedBy).toBeTruthy()
+
+    const errorEl = screen.getByRole('alert')
+    expect(errorEl).toHaveTextContent('Invalid email')
+    expect(errorEl.id).toBe(ariaDescribedBy)
+  })
+
+  it('sets aria-describedby pointing at hint node when hint present and no error', () => {
+    render(
+      <FormField label="Name" hint="Keep it short">
+        <Input placeholder="name" />
+      </FormField>
+    )
+
+    const input = screen.getByPlaceholderText('name')
+    const ariaDescribedBy = input.getAttribute('aria-describedby')
+    expect(ariaDescribedBy).toBeTruthy()
+
+    const hintEl = screen.getByText('Keep it short')
+    expect(hintEl.id).toBe(ariaDescribedBy)
+  })
+
+  it('omits aria-describedby when no error and no hint', () => {
+    render(
+      <FormField label="Name">
+        <Input placeholder="name" />
+      </FormField>
+    )
+
+    const input = screen.getByPlaceholderText('name')
+    expect(input).not.toHaveAttribute('aria-describedby')
+  })
+
+  it('associates label with input via htmlFor', () => {
+    render(
+      <FormField label="Username">
+        <Input placeholder="username" />
+      </FormField>
+    )
+
+    const input = screen.getByPlaceholderText('username')
+    const label = screen.getByText('Username')
+    expect(label.closest('label')).toHaveAttribute('for', input.id)
+  })
 })
