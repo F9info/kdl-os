@@ -14,7 +14,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -27,10 +27,13 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     env_file: .env
+    # Password required even on the internal network — any container (or anyone
+    # reaching a leaked port) could otherwise read sessions/queues (KDL-270 L14).
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD is required in .env}"]
     ports:
-      - "6380:6379"
+      - "127.0.0.1:6380:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -44,8 +47,8 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
-      - "9002:9000"
-      - "9003:9001"
+      - "127.0.0.1:9002:9000"
+      - "127.0.0.1:9003:9001"
     volumes:
       - miniodata:/data
 
@@ -56,7 +59,7 @@ services:
     environment:
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
     ports:
-      - "7700:7700"
+      - "127.0.0.1:7700:7700"
     volumes:
       - meilidata:/meili_data
 
@@ -65,7 +68,7 @@ services:
     restart: unless-stopped
     env_file: .env
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       - chromadata:/chroma/chroma
 
@@ -76,8 +79,8 @@ services:
     platform: linux/amd64
     restart: unless-stopped
     ports:
-      - "1025:1025"
-      - "8025:8025"
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
 
   # Virus scanning (KDL-119 A6): optional in dev — start with `--profile scan`.
   # Set CLAMAV_HOST=clamav in .env so the backend actually scans; unset = SKIPPED.
@@ -88,7 +91,7 @@ services:
     restart: unless-stopped
     profiles: ["scan"]
     ports:
-      - "3310:3310"
+      - "127.0.0.1:3310:3310"
     volumes:
       - clamdata:/var/lib/clamav
     healthcheck:
@@ -104,7 +107,7 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       # Route all direct-SMTP email (password reset fallback etc.) to mailhog —
       # the dockerized stack must never send to real addresses (CI rule, KDL-97).
       SMTP_HOST: mailhog
@@ -127,8 +130,15 @@ services:
       CLAMAV_HOST: ${CLAMAV_HOST:-}
       # Storage driver (A7): defaults to minio. Set STORAGE_DRIVER=s3|r2 in .env for cloud.
       STORAGE_DRIVER: ${STORAGE_DRIVER:-minio}
+      # Pin the seeded super-admin credentials in the local gate stack (KDL-307).
+      # Since KDL-273 H2 the seed generates a random password unless
+      # SEED_ADMIN_PASSWORD is set — pinning keeps E2E suites (which default to
+      # the same dev-only value in frontend/e2e/helpers/credentials.ts) able to
+      # log in after a fresh re-seed. Override via .env; local-dev only.
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@kdl.com}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-kdl-dev-seed-password}
     ports:
-      - "4000:4000"
+      - "127.0.0.1:4000:4000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -149,7 +159,7 @@ services:
       # Next.js rewrites() proxies /api to the backend over the internal network.
       BACKEND_INTERNAL_URL: http://backend:4000
     ports:
-      - "3001:3000"
+      - "127.0.0.1:3001:3000"
     depends_on:
       backend:
         condition: service_healthy
@@ -160,12 +170,12 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       # .env's localhost:8000 only resolves for host-run services, not from
       # inside the compose network — see backend's CHROMADB_URL for the same fix.
       CHROMA_URL: http://chromadb:8000
     ports:
-      - "5001:5000"
+      - "127.0.0.1:5001:5000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -182,7 +192,7 @@ services:
     image: nginx:alpine
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "127.0.0.1:80:80"
     volumes:
       - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:

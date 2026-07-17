@@ -8,6 +8,7 @@ import {
   logoutSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  changePasswordSchema,
 } from './schema.js';
 import {
   register,
@@ -16,9 +17,13 @@ import {
   logout,
   forgotPassword,
   resetPassword,
+  changePassword,
   getMyPermissions,
 } from './controller.js';
-import { authenticate } from '../../middleware/auth.js';
+import {
+  authenticate,
+  authenticateAllowPendingPasswordChange,
+} from '../../middleware/auth.js';
 
 const router = Router();
 
@@ -45,6 +50,13 @@ router.post('/refresh', validate(refreshSchema), refresh);
 router.post('/logout', validate(logoutSchema), logout);
 router.post('/forgot-password', authLimiter, validate(forgotPasswordSchema), forgotPassword);
 router.post('/reset-password', authLimiter, validate(resetPasswordSchema), resetPassword);
+router.post(
+  '/change-password',
+  authLimiter,
+  authenticateAllowPendingPasswordChange,
+  validate(changePasswordSchema),
+  changePassword,
+);
 router.get('/me/permissions', authenticate, getMyPermissions);
 
 export default router;

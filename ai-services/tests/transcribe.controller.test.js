@@ -119,4 +119,19 @@ describe('transcribe controller regression', () => {
     expect(res.statusCode).toBe(200);
     expect(res.jsonBody.data.transcript).toBe('scrubbed text');
   });
+
+  it('masks upstream provider errors — generic 500, no err.message leak (KDL-270 M10)', async () => {
+    budgetMockCheck.mockResolvedValue(true);
+    openrouterMock.mockRejectedValue(
+      new Error('401 invalid api key sk-or-v1-secret at https://openrouter.ai/api/v1')
+    );
+
+    const req = { body: { audio: audioBase64(), filename: 'audio.webm' } };
+    const res = mockRes();
+    await transcribeController(req, res);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.jsonBody.message).toBe('Transcription failed');
+    expect(JSON.stringify(res.jsonBody)).not.toMatch(/sk-or-v1|openrouter\.ai/);
+  });
 });

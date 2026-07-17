@@ -215,6 +215,32 @@ export const resetPassword = async (req, res, next) => {
   }
 };
 
+export const changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.validated.body;
+    const result = await authService.changePassword(req.user.id, currentPassword, newPassword);
+    if (!result.ok) {
+      if (result.reason === 'invalid_current_password') {
+        return errorResponse(res, 'Current password is incorrect', 401);
+      }
+      return errorResponse(res, 'Account is inactive', 403);
+    }
+
+    // changePassword revoked every refresh token for the user — issue a fresh
+    // pair so this session survives the rotation.
+    const roleSlugs = await authService.getUserRoleSlugs(req.user.id);
+    const accessToken = authService.signAccessToken(
+      buildAccessTokenPayload({ id: req.user.id, email: req.user.email }, roleSlugs),
+    );
+    const refreshToken = authService.signRefreshToken({ userId: req.user.id });
+    await authService.storeRefreshToken(req.user.id, refreshToken);
+    setAuthCookies(res, accessToken, refreshToken);
+    return successResponse(res, { message: 'Password changed successfully', accessToken });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const getMyPermissions = async (req, res, next) => {
   try {
     const result = await resolvePermissions(req.user.id);

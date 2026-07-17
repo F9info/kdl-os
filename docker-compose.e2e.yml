@@ -71,6 +71,10 @@ services:
       CORS_ORIGIN: http://localhost:13001
       JWT_SECRET: ${JWT_SECRET}
       APP_PUBLIC_URL: http://localhost:14000
+      # Pin seeded super-admin creds so E2E suites (frontend/e2e/helpers/
+      # credentials.ts) can log in after a fresh re-seed (KDL-307).
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@kdl.com}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-kdl-dev-seed-password}
     ports:
       - "14000:4000"
     depends_on:

@@ -1,10 +1,15 @@
+# CI/E2E-only overlay — apply on top of docker-compose.yml:
+#   docker compose -f docker-compose.yml -f docker-compose.staging.yml up
+# The direct service ports below exist solely so the E2E runner can bypass
+# nginx; they are loopback-bound and this overlay must never be used for a
+# real deployment (use docker-compose.prod.yml instead) — KDL-270 L14.
 services:
   backend:
     image: ghcr.io/kalamdreamlabs/kdl-starter-kit/backend:${IMAGE_TAG:-staging}
     environment:
       NODE_ENV: staging
     ports:
-      - "4000:4000" # Expose for E2E testing
+      - "127.0.0.1:4000:4000" # E2E runner only — loopback, never public
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:4000/health"]
       interval: 10s
@@ -19,7 +24,7 @@ services:
       NEXT_PUBLIC_API_URL: http://localhost:80/api # Use Nginx for API proxy
       BACKEND_INTERNAL_URL: http://backend:4000
     ports:
-      - "3000:3000" # Expose for E2E testing
+      - "127.0.0.1:3000:3000" # E2E runner only — loopback, never public
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000"]
       interval: 10s
@@ -32,7 +37,7 @@ services:
     environment:
       NODE_ENV: staging
     ports:
-      - "5000:5000" # Expose for E2E testing
+      - "127.0.0.1:5000:5000" # E2E runner only — loopback, never public
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:5000/health"]
       interval: 10s
@@ -42,4 +47,4 @@ services:
 
   nginx:
     ports:
-      - "80:80"
+      - "127.0.0.1:80:80"
