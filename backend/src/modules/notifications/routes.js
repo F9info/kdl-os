@@ -1,8 +1,7 @@
 import { Router } from 'express';
 import crypto from 'node:crypto';
-import jwt from 'jsonwebtoken';
 import { moduleGate } from '../../middleware/module-gate.js';
-import { authenticate } from '../../middleware/auth.js';
+import { authenticate, createAuthenticate } from '../../middleware/auth.js';
 import { requirePermission } from '../../middleware/permission.js';
 import { validate } from '../../middleware/validate.js';
 import { prisma } from '../../config/database.js';
@@ -39,29 +38,17 @@ async function issueSseTicket(req, res, next) {
   }
 }
 
-async function loadActiveUser(userId) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true, status: true, deleted_at: true },
-  });
-  if (!user || user.status === 'SUSPENDED' || user.deleted_at) return null;
-  return user;
-}
+// Bearer path shares the full authenticate pipeline — including the forced-
+// password-change gate (KDL-283) — so the stream is never reachable on seeded
+// credentials.
+const authenticateSSEBearer = createAuthenticate();
 
 async function authenticateSSE(req, res, next) {
+  if (req.headers.authorization?.startsWith('Bearer ')) {
+    return authenticateSSEBearer(req, res, next);
+  }
+
   try {
-    const headerToken = req.headers.authorization?.startsWith('Bearer ')
-      ? req.headers.authorization.slice(7)
-      : null;
-
-    if (headerToken) {
-      const payload = jwt.verify(headerToken, process.env.JWT_SECRET, { algorithms: ['HS256'] });
-      const user = await loadActiveUser(payload.userId);
-      if (!user) return errorResponse(res, 'Account is inactive', 403);
-      req.user = { ...payload, id: user.id, status: user.status };
-      return next();
-    }
-
     const ticket = typeof req.query.ticket === 'string' ? req.query.ticket : null;
     if (!ticket || !/^[a-f0-9]{64}$/.test(ticket)) {
       return errorResponse(res, 'No credentials provided', 401);
@@ -71,12 +58,26 @@ async function authenticateSSE(req, res, next) {
     const userId = await redis.getdel(`${SSE_TICKET_PREFIX}${ticket}`);
     if (!userId) return errorResponse(res, 'Invalid or expired ticket', 401);
 
-    const user = await loadActiveUser(userId);
-    if (!user) return errorResponse(res, 'Account is inactive', 403);
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, status: true, deleted_at: true, must_change_password: true },
+    });
+    if (!user || user.status === 'SUSPENDED' || user.deleted_at) {
+      return errorResponse(res, 'Account is inactive', 403);
+    }
+
+    // Ticket issuance is already gated by authenticate, but the flag can flip
+    // between issuance and use — enforce the KDL-283 gate here too.
+    if (user.must_change_password) {
+      return errorResponse(res, 'Password change required', 403, {
+        code: 'PASSWORD_CHANGE_REQUIRED',
+      });
+    }
+
     req.user = { userId: user.id, id: user.id, status: user.status };
     return next();
-  } catch {
-    return errorResponse(res, 'Invalid or expired token', 401);
+  } catch (err) {
+    return next(err);
   }
 }
 
