@@ -26,7 +26,7 @@
   );
   --te-typo-h1-family: var(
     --typography_desktop_typography_scale_typography_scale_h1_title_family,
-    Poppins
+    var(--font-sora, Sora)
   );
   --te-typo-h1-weight: var(
     --typography_desktop_typography_scale_typography_scale_h1_title_weight,
@@ -43,7 +43,7 @@
   --te-typo-h2-size: var(--typography_desktop_typography_scale_typography_scale_h2_size, 26px);
   --te-typo-h2-family: var(
     --typography_desktop_typography_scale_typography_scale_h2_family,
-    Poppins
+    var(--font-sora, Sora)
   );
   --te-typo-h2-weight: var(--typography_desktop_typography_scale_typography_scale_h2_weight, 700);
   --te-typo-h2-line-height: var(
@@ -57,7 +57,7 @@
   --te-typo-h3-size: var(--typography_desktop_typography_scale_typography_scale_h3_size, 22px);
   --te-typo-h3-family: var(
     --typography_desktop_typography_scale_typography_scale_h3_family,
-    Poppins
+    var(--font-sora, Sora)
   );
   --te-typo-h3-weight: var(--typography_desktop_typography_scale_typography_scale_h3_weight, 600);
   --te-typo-h3-line-height: var(
@@ -217,7 +217,7 @@
     );
     --te-typo-h1-family: var(
       --typography_laptop_h_typography_scale_typography_scale_h1_title_family,
-      Poppins
+      var(--font-sora, Sora)
     );
     --te-typo-h1-weight: var(
       --typography_laptop_h_typography_scale_typography_scale_h1_title_weight,
@@ -234,7 +234,7 @@
     --te-typo-h2-size: var(--typography_laptop_h_typography_scale_typography_scale_h2_size, 24px);
     --te-typo-h2-family: var(
       --typography_laptop_h_typography_scale_typography_scale_h2_family,
-      Poppins
+      var(--font-sora, Sora)
     );
     --te-typo-h2-weight: var(
       --typography_laptop_h_typography_scale_typography_scale_h2_weight,
@@ -251,7 +251,7 @@
     --te-typo-h3-size: var(--typography_laptop_h_typography_scale_typography_scale_h3_size, 20px);
     --te-typo-h3-family: var(
       --typography_laptop_h_typography_scale_typography_scale_h3_family,
-      Poppins
+      var(--font-sora, Sora)
     );
     --te-typo-h3-weight: var(
       --typography_laptop_h_typography_scale_typography_scale_h3_weight,
@@ -427,7 +427,7 @@
     );
     --te-typo-h1-family: var(
       --typography_laptop_v_typography_scale_typography_scale_h1_title_family,
-      Poppins
+      var(--font-sora, Sora)
     );
     --te-typo-h1-weight: var(
       --typography_laptop_v_typography_scale_typography_scale_h1_title_weight,
@@ -444,7 +444,7 @@
     --te-typo-h2-size: var(--typography_laptop_v_typography_scale_typography_scale_h2_size, 24px);
     --te-typo-h2-family: var(
       --typography_laptop_v_typography_scale_typography_scale_h2_family,
-      Poppins
+      var(--font-sora, Sora)
     );
     --te-typo-h2-weight: var(
       --typography_laptop_v_typography_scale_typography_scale_h2_weight,
@@ -461,7 +461,7 @@
     --te-typo-h3-size: var(--typography_laptop_v_typography_scale_typography_scale_h3_size, 20px);
     --te-typo-h3-family: var(
       --typography_laptop_v_typography_scale_typography_scale_h3_family,
-      Poppins
+      var(--font-sora, Sora)
     );
     --te-typo-h3-weight: var(
       --typography_laptop_v_typography_scale_typography_scale_h3_weight,
@@ -637,7 +637,7 @@
     );
     --te-typo-h1-family: var(
       --typography_tablet_h_typography_scale_typography_scale_h1_title_family,
-      Poppins
+      var(--font-sora, Sora)
     );
     --te-typo-h1-weight: var(
       --typography_tablet_h_typography_scale_typography_scale_h1_title_weight,
@@ -654,7 +654,7 @@
     --te-typo-h2-size: var(--typography_tablet_h_typography_scale_typography_scale_h2_size, 23px);
     --te-typo-h2-family: var(
       --typography_tablet_h_typography_scale_typography_scale_h2_family,
-      Poppins
+      var(--font-sora, Sora)
     );
     --te-typo-h2-weight: var(
       --typography_tablet_h_typography_scale_typography_scale_h2_weight,
@@ -671,7 +671,7 @@
     --te-typo-h3-size: var(--typography_tablet_h_typography_scale_typography_scale_h3_size, 19px);
     --te-typo-h3-family: var(
       --typography_tablet_h_typography_scale_typography_scale_h3_family,
-      Poppins
+      var(--font-sora, Sora)
     );
     --te-typo-h3-weight: var(
       --typography_tablet_h_typography_scale_typography_scale_h3_weight,
@@ -847,7 +847,7 @@
     );
     --te-typo-h1-family: var(
       --typography_tablet_v_typography_scale_typography_scale_h1_title_family,
-      Poppins
+      var(--font-sora, Sora)
     );
     --te-typo-h1-weight: var(
       --typography_tablet_v_typography_scale_typography_scale_h1_title_weight,
@@ -864,7 +864,7 @@
     --te-typo-h2-size: var(--typography_tablet_v_typography_scale_typography_scale_h2_size, 23px);
     --te-typo-h2-family: var(
       --typography_tablet_v_typography_scale_typography_scale_h2_family,
-      Poppins
+      var(--font-sora, Sora)
     );
     --te-typo-h2-weight: var(
       --typography_tablet_v_typography_scale_typography_scale_h2_weight,
@@ -881,7 +881,7 @@
     --te-typo-h3-size: var(--typography_tablet_v_typography_scale_typography_scale_h3_size, 19px);
     --te-typo-h3-family: var(
       --typography_tablet_v_typography_scale_typography_scale_h3_family,
-      Poppins
+      var(--font-sora, Sora)
     );
     --te-typo-h3-weight: var(
       --typography_tablet_v_typography_scale_typography_scale_h3_weight,
@@ -1057,7 +1057,7 @@
     );
     --te-typo-h1-family: var(
       --typography_mobile_h_typography_scale_typography_scale_h1_title_family,
-      Poppins
+      var(--font-sora, Sora)
     );
     --te-typo-h1-weight: var(
       --typography_mobile_h_typography_scale_typography_scale_h1_title_weight,
@@ -1074,7 +1074,7 @@
     --te-typo-h2-size: var(--typography_mobile_h_typography_scale_typography_scale_h2_size, 20px);
     --te-typo-h2-family: var(
       --typography_mobile_h_typography_scale_typography_scale_h2_family,
-      Poppins
+      var(--font-sora, Sora)
     );
     --te-typo-h2-weight: var(
       --typography_mobile_h_typography_scale_typography_scale_h2_weight,
@@ -1091,7 +1091,7 @@
     --te-typo-h3-size: var(--typography_mobile_h_typography_scale_typography_scale_h3_size, 18px);
     --te-typo-h3-family: var(
       --typography_mobile_h_typography_scale_typography_scale_h3_family,
-      Poppins
+      var(--font-sora, Sora)
     );
     --te-typo-h3-weight: var(
       --typography_mobile_h_typography_scale_typography_scale_h3_weight,
@@ -1267,7 +1267,7 @@
     );
     --te-typo-h1-family: var(
       --typography_mobile_v_typography_scale_typography_scale_h1_title_family,
-      Poppins
+      var(--font-sora, Sora)
     );
     --te-typo-h1-weight: var(
       --typography_mobile_v_typography_scale_typography_scale_h1_title_weight,
@@ -1284,7 +1284,7 @@
     --te-typo-h2-size: var(--typography_mobile_v_typography_scale_typography_scale_h2_size, 20px);
     --te-typo-h2-family: var(
       --typography_mobile_v_typography_scale_typography_scale_h2_family,
-      Poppins
+      var(--font-sora, Sora)
     );
     --te-typo-h2-weight: var(
       --typography_mobile_v_typography_scale_typography_scale_h2_weight,
@@ -1301,7 +1301,7 @@
     --te-typo-h3-size: var(--typography_mobile_v_typography_scale_typography_scale_h3_size, 18px);
     --te-typo-h3-family: var(
       --typography_mobile_v_typography_scale_typography_scale_h3_family,
-      Poppins
+      var(--font-sora, Sora)
     );
     --te-typo-h3-weight: var(
       --typography_mobile_v_typography_scale_typography_scale_h3_weight,
