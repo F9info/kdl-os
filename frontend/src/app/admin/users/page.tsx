@@ -72,7 +72,7 @@ export default function UsersPage() {
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false)
   const debouncedSearch = useDebounce(search)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['users', page, debouncedSearch, statusFilter],
     queryFn: () =>
       api
@@ -179,7 +179,9 @@ export default function UsersPage() {
     formState: { errors },
   } = useForm<UpdateUserFormData>({ resolver: zodResolver(updateUserSchema) })
 
-  const resetForm = useForm<ResetPasswordFormData>({ resolver: zodResolver(resetPasswordSchema) })
+  const resetForm = useForm<ResetPasswordFormData>({
+    resolver: zodResolver(resetPasswordSchema),
+  })
 
   const createForm = useForm<CreateUserFormData>({
     resolver: zodResolver(createUserSchema),
@@ -233,10 +235,16 @@ export default function UsersPage() {
     setValue('role_ids', next, { shouldValidate: true })
   }
 
-  function buildOverrideList(): { permission_id: string; mode: OverrideMode }[] {
+  function buildOverrideList(): {
+    permission_id: string
+    mode: OverrideMode
+  }[] {
     return Object.entries(overrides)
       .filter(([, mode]) => mode !== null)
-      .map(([permission_id, mode]) => ({ permission_id, mode: mode as OverrideMode }))
+      .map(([permission_id, mode]) => ({
+        permission_id,
+        mode: mode as OverrideMode,
+      }))
   }
 
   function getGrantIds(): string[] {
@@ -387,6 +395,8 @@ export default function UsersPage() {
           columns={columns}
           data={data?.users ?? []}
           isLoading={isLoading}
+          error={error}
+          onRetry={() => refetch()}
           pagination={
             data
               ? {
@@ -491,7 +501,9 @@ export default function UsersPage() {
               <Select
                 value={createStatus}
                 onValueChange={(v) =>
-                  createForm.setValue('status', v as UserStatus, { shouldValidate: true })
+                  createForm.setValue('status', v as UserStatus, {
+                    shouldValidate: true,
+                  })
                 }
               >
                 <SelectTrigger>
@@ -621,7 +633,9 @@ export default function UsersPage() {
                 <Select
                   value={statusValue}
                   onValueChange={(v) =>
-                    setValue('status', v as UserStatus, { shouldValidate: true })
+                    setValue('status', v as UserStatus, {
+                      shouldValidate: true,
+                    })
                   }
                 >
                   <SelectTrigger>
@@ -780,7 +794,10 @@ export default function UsersPage() {
               </Button>
               <Button
                 onClick={resetForm.handleSubmit(({ password }) =>
-                  resetPasswordMutation.mutate({ id: resetPasswordUser!.id, password })
+                  resetPasswordMutation.mutate({
+                    id: resetPasswordUser!.id,
+                    password,
+                  })
                 )}
                 disabled={resetPasswordMutation.isPending}
               >
