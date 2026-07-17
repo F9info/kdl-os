@@ -1,7 +1,7 @@
 import * as userService from './service.js';
 import { successResponse, errorResponse } from '../../shared/utils/response.js';
 import { writeActivityAsync, getClientIp } from '../user-management/shared/activity-logger.js';
-import { invalidatePermissionCache } from '../user-management/shared/permission-resolver.js';
+import { invalidatePermissionCache, resolvePermissions } from '../user-management/shared/permission-resolver.js';
 
 function userIsSuperAdmin(user) {
   if (!user) return false;
@@ -12,6 +12,29 @@ function userIsSuperAdmin(user) {
 function actorIsSuperAdmin(req) {
   if (Array.isArray(req.user?.roles) && req.user.roles.includes('super-admin')) return true;
   return false;
+}
+
+// Privilege ceiling (KDL-273 H3): an actor may only assign roles whose combined
+// permission set is a subset of the actor's own effective permissions. Based on
+// resolvePermissions (DB/cache-backed), not the JWT roles claim, so a stale or
+// forged-claim token cannot widen the ceiling.
+async function roleAssignmentDenial(req, roleIds) {
+  if (!roleIds?.length) return null;
+
+  const actor = await resolvePermissions(req.user?.id);
+  if (actor.bypass) return null;
+
+  if (await userService.roleIdsIncludeSuperAdmin(roleIds)) {
+    return 'Only Super Admin can assign the Super Admin role';
+  }
+
+  const roleKeys = await userService.getPermissionKeysForRoles(roleIds);
+  const actorSet = new Set(actor.permissions);
+  if (roleKeys.some((key) => !actorSet.has(key))) {
+    return 'Cannot assign roles with permissions you do not hold';
+  }
+
+  return null;
 }
 
 function log(req, action, subject, properties) {
@@ -59,12 +82,8 @@ export const createUser = async (req, res, next) => {
   try {
     const { role_ids } = req.validated.body;
 
-    if (!actorIsSuperAdmin(req) && role_ids?.length) {
-      const hasSuperAdmin = await userService.roleIdsIncludeSuperAdmin(role_ids);
-      if (hasSuperAdmin) {
-        return errorResponse(res, 'Only Super Admin can assign the Super Admin role', 403);
-      }
-    }
+    const denial = await roleAssignmentDenial(req, role_ids);
+    if (denial) return errorResponse(res, denial, 403);
 
     const user = await userService.createUser(req.validated.body);
     log(req, 'created', user, safeScrubBody(req.validated.body));
@@ -83,16 +102,20 @@ export const updateUser = async (req, res, next) => {
     const exists = await userService.getUserById(id);
     if (!exists) return errorResponse(res, 'User not found', 404);
 
-    if (!actorIsSuperAdmin(req)) {
-      if (userIsSuperAdmin(exists)) {
-        return errorResponse(res, 'ADMIN cannot modify Super Admin users', 403);
+    if (!actorIsSuperAdmin(req) && userIsSuperAdmin(exists)) {
+      return errorResponse(res, 'ADMIN cannot modify Super Admin users', 403);
+    }
+
+    if (req.validated.body.role_ids !== undefined) {
+      // KDL-273 H3: no self-role modification — a users:edit holder must not be
+      // able to widen (or accidentally destroy) their own role set. Super Admin
+      // is exempt via the bypass check inside resolvePermissions.
+      const actor = await resolvePermissions(req.user?.id);
+      if (!actor.bypass && id === req.user?.id) {
+        return errorResponse(res, 'You cannot modify your own roles', 403);
       }
-      if (req.validated.body.role_ids?.length) {
-        const hasSuperAdmin = await userService.roleIdsIncludeSuperAdmin(req.validated.body.role_ids);
-        if (hasSuperAdmin) {
-          return errorResponse(res, 'ADMIN cannot assign the Super Admin role', 403);
-        }
-      }
+      const denial = await roleAssignmentDenial(req, req.validated.body.role_ids);
+      if (denial) return errorResponse(res, denial, 403);
     }
 
     const user = await userService.updateUser(id, req.validated.body);
@@ -172,6 +195,24 @@ export const updateOverrides = async (req, res, next) => {
 
     const exists = await userService.getUserById(id);
     if (!exists) return errorResponse(res, 'User not found', 404);
+
+    // KDL-273 H4: a permissions:edit holder must not be able to escalate via
+    // overrides — no editing your own overrides, and GRANTs are capped at the
+    // actor's own effective permission set (DENYs only ever narrow access).
+    const actor = await resolvePermissions(req.user?.id);
+    if (!actor.bypass) {
+      if (id === req.user?.id) {
+        return errorResponse(res, 'You cannot modify your own permission overrides', 403);
+      }
+      const grantIds = overrides.filter((o) => o.mode === 'GRANT').map((o) => o.permission_id);
+      if (grantIds.length) {
+        const keysById = await userService.getPermissionKeysByIds(grantIds);
+        const actorSet = new Set(actor.permissions);
+        if (grantIds.some((pid) => !actorSet.has(keysById.get(pid)))) {
+          return errorResponse(res, 'Cannot grant permissions you do not hold', 403);
+        }
+      }
+    }
 
     const user = await userService.updateUserOverrides(id, overrides);
     await invalidatePermissionCache();

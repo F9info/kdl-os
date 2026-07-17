@@ -14,17 +14,15 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-const BUCKET = process.env.S3_BUCKET || process.env.MINIO_BUCKET;
-
-const resolveClientConfig = (opts = {}) => {
+const resolveClientConfig = (opts = {}, creds = {}) => {
   const base = {
-    region: process.env.AWS_REGION || process.env.MINIO_REGION || 'us-east-1',
+    region: creds.region || process.env.AWS_REGION || process.env.MINIO_REGION || 'us-east-1',
     credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID || process.env.MINIO_ACCESS_KEY,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || process.env.MINIO_SECRET_KEY,
+      accessKeyId: creds.accessKey || process.env.AWS_ACCESS_KEY_ID || process.env.MINIO_ACCESS_KEY,
+      secretAccessKey: creds.secretKey || process.env.AWS_SECRET_ACCESS_KEY || process.env.MINIO_SECRET_KEY,
     },
   };
-  const endpoint = opts.endpoint || process.env.S3_ENDPOINT;
+  const endpoint = opts.endpoint || creds.endpoint || process.env.S3_ENDPOINT;
   if (endpoint) {
     base.endpoint = endpoint;
     // Needed for custom endpoints (MinIO, R2, Wasabi): prevents virtual-hosted bucket path
@@ -33,8 +31,11 @@ const resolveClientConfig = (opts = {}) => {
   return base;
 };
 
-export const makeS3Driver = (opts = {}) => {
-  const client = new S3Client(resolveClientConfig(opts));
+// creds: optional runtime overrides for { region, bucket, accessKey, secretKey, endpoint }.
+// Falls back to env vars when not provided (backward-compatible).
+export const makeS3Driver = (opts = {}, creds = {}) => {
+  const client = new S3Client(resolveClientConfig(opts, creds));
+  const BUCKET = creds.bucket || process.env.S3_BUCKET || process.env.MINIO_BUCKET;
 
   return {
     async put(file, objectName) {

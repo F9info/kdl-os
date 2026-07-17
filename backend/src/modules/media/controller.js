@@ -121,6 +121,15 @@ export const uploadMedia = async (req, res, next) => {
     if (!files.length) return errorResponse(res, 'No file uploaded', 400);
     const folderId = req.body?.folder_id ?? null;
 
+    // Upload-as-shared: same per-feature permission as the PATCH visibility toggle.
+    let visibility;
+    if (req.body?.visibility === 'SHARED') {
+      if (!(await hasPermission(req.user.id, 'media', 'visibility-toggle'))) {
+        return errorResponse(res, 'Forbidden', 403);
+      }
+      visibility = 'SHARED';
+    }
+
     // Folder upload (webkitdirectory): relative_paths is a JSON array aligned
     // with the files array; each entry shapes nested folders under folder_id.
     let relPaths = req.body?.relative_paths ?? null;
@@ -133,7 +142,7 @@ export const uploadMedia = async (req, res, next) => {
     }
 
     const results = await Promise.all(
-      files.map((f) => mediaService.uploadMedia(f, req.user.id, folderId).then((m) => mediaService.resolveUrls(m))),
+      files.map((f) => mediaService.uploadMedia(f, req.user.id, folderId, { visibility }).then((m) => mediaService.resolveUrls(m))),
     );
     return successResponse(res, { media: results }, 201);
   } catch (err) {

@@ -6,6 +6,7 @@ import { Search, Upload, Check, X, File, FileImage, FileText, Film, Music } from
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
 import { Modal } from './Modal'
+import { AppImage } from './AppImage'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useDebounce } from '@/hooks/useDebounce'
@@ -173,11 +174,11 @@ export function MediaPicker({ open, onClose, onSelect, multiple = false, typeFil
                     )}
                   >
                     {item.mime_type.startsWith('image/') && thumb ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <AppImage
+                        size="thumbnail"
                         src={thumb}
                         alt={item.original_name}
-                        className="w-full aspect-square object-cover rounded"
+                        className="max-w-full rounded"
                       />
                     ) : (
                       <div className="w-full aspect-square flex items-center justify-center bg-muted rounded">

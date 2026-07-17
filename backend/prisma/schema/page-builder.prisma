@@ -1,0 +1,24 @@
+// Page Builder module schema.
+// Stores Puck page documents. The `data` column holds the Puck `Data` JSON
+// tree (root props + content + zones) — the single source rendered by both the
+// editor and the public /p/[slug] route.
+
+enum PageStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model BuilderPage {
+  id         String     @id @default(cuid())
+  slug       String     @unique
+  title      String
+  status     PageStatus @default(DRAFT)
+  data       Json
+  created_by String?
+  deleted_at DateTime?
+  created_at DateTime   @default(now())
+  updated_at DateTime   @updatedAt
+
+  @@index([status])
+  @@map("builder_pages")
+}

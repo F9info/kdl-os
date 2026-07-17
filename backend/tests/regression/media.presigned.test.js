@@ -13,6 +13,7 @@ vi.mock('../../src/config/database.js', () => ({
       delete: vi.fn(),
     },
     appSetting: { findUnique: vi.fn() },
+    mediaShare: { findMany: vi.fn().mockResolvedValue([]) },
   },
 }));
 

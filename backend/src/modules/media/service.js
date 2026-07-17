@@ -207,6 +207,7 @@ export const uploadMedia = async (file, userId, folderId, opts = {}) => {
       height,
       exif,
       checksum,
+      ...(opts.visibility === 'SHARED' ? { visibility: 'SHARED' } : {}),
     },
   });
 
@@ -268,7 +269,9 @@ export const listMedia = async (userId, query, { bypass = false } = {}) => {
     where.user_id = userId;
   } else if (scope === 'shared') {
     where.visibility = 'SHARED';
-    where.user_id = { not: userId };
+    // Super Admin's "Shared" tab means "every shared file"; everyone else
+    // means "shared with me" (their own uploads already live under "mine").
+    if (!bypass) where.user_id = { not: userId };
   } else if (!bypass) {
     andClauses.push({ OR: [{ user_id: userId }, { visibility: 'SHARED' }] });
   }

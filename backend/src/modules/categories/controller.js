@@ -42,12 +42,14 @@ export const createCategory = async (req, res, next) => {
 export const updateCategory = async (req, res, next) => {
   try {
     const { id } = req.validated.params;
-    const exists = await categoryService.getCategoryById(id);
+    // Resolve only standalone categories; module-owned ids are treated as not-found.
+    const exists = await categoryService.getWritableCategoryById(id);
     if (!exists) return errorResponse(res, 'Category not found', 404);
     if (!(await validateTypeId(req.validated.body.type_id))) {
       return errorResponse(res, 'Type not found', 422);
     }
     const category = await categoryService.updateCategory(id, req.validated.body);
+    if (!category) return errorResponse(res, 'Category not found', 404);
     return successResponse(res, { category });
   } catch (err) {
     next(err);
@@ -57,7 +59,8 @@ export const updateCategory = async (req, res, next) => {
 export const deleteCategory = async (req, res, next) => {
   try {
     const { id } = req.validated.params;
-    const exists = await categoryService.getCategoryById(id);
+    // Resolve only standalone categories; module-owned ids are treated as not-found.
+    const exists = await categoryService.getWritableCategoryById(id);
     if (!exists) return errorResponse(res, 'Category not found', 404);
     await categoryService.deleteCategory(id);
     return successResponse(res, { message: 'Category deleted' });

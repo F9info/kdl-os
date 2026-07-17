@@ -13,6 +13,7 @@ export const listFieldsSchema = z.object({
     input_type: inputTypeEnum.optional(),
     sortBy: z.enum(['field_name', 'created_at', 'sort']).optional(),
     sortOrder: z.enum(['asc', 'desc']).optional(),
+    ownerModule: z.string().min(1).optional(),
   }),
 });
 

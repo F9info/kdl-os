@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { AppImage } from '@/components/shared/AppImage'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -160,11 +161,11 @@ function ShareRow({
 
       {showQr && (
         <div className="pt-1">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <AppImage
+            size="thumbnail"
             src={`/api/media/shares/${share.token}/qr`}
             alt={`QR code for ${mediaName}`}
-            className="h-32 w-32 border rounded"
+            className="border rounded"
           />
         </div>
       )}

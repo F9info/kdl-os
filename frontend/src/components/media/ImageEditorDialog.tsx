@@ -22,6 +22,7 @@ import {
 import { toast } from '@/hooks/use-toast'
 import api from '@/lib/axios'
 import { cn } from '@/lib/utils'
+import { AppImage } from '@/components/shared/AppImage'
 import { ChevronDown, ChevronRight, X } from 'lucide-react'
 import type { ImageOp, WatermarkPosition } from '@/types/processing.types'
 
@@ -347,11 +348,11 @@ export function ImageEditorDialog({ mediaId, mediaUrl, open, onClose, onSaved }:
         <div className="flex gap-4 flex-1 min-h-0 overflow-hidden">
           {/* Preview + ops queue */}
           <div className="w-48 flex-shrink-0 flex flex-col gap-3 overflow-y-auto">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <AppImage
+              size="thumbnail"
               src={mediaUrl}
               alt="Current image preview"
-              className="w-full rounded border object-contain max-h-40"
+              className="max-w-full rounded border max-h-40"
             />
             {ops.length > 0 && (
               <div className="space-y-1">
