@@ -38,6 +38,39 @@ jobs:
 
   frontend-check:
     runs-on: ubuntu-latest
+    # Postgres + Redis back the real backend the smoke e2e logs into (KDL-303).
+    # MinIO / MeiliSearch / ChromaDB are NOT started — the backend logs and
+    # tolerates their absence, and the smoke spec never touches media/search/AI.
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: kdl_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kdl_ci
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: ci-jwt-secret-must-be-at-least-32-characters-long
+      JWT_REFRESH_SECRET: ci-refresh-secret-must-be-at-least-32-characters
+      # Dummy 32-byte hex — integrations crypto fails fast at startup without it.
+      APP_ENCRYPTION_KEY: deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef
     steps:
       - uses: actions/checkout@v4
 
@@ -81,11 +114,91 @@ jobs:
 
       - name: Build
         working-directory: frontend
+        env:
+          # rewrites() is evaluated at build time — /api must proxy to the
+          # locally started backend for the smoke e2e below. NEXT_PUBLIC_API_URL
+          # already comes from the committed frontend/.env.local (/api).
+          BACKEND_INTERNAL_URL: http://localhost:4000
         run: pnpm build
 
       - name: Run tests
         working-directory: frontend
         run: pnpm test
+
+      # ── Smoke E2E (Phase 0 C3 gate, KDL-303) ────────────────────────────────
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Migrate and seed database
+        working-directory: backend
+        env:
+          SEED_ADMIN_EMAIL: admin@kdl.com
+          # ≥12 chars (KDL-273 H2); matches the e2e default in
+          # frontend/e2e/helpers/credentials.ts and docker-compose.yml.
+          SEED_ADMIN_PASSWORD: kdl-dev-seed-password
+        run: |
+          npx prisma migrate deploy
+          npm run db:seed
+
+      - name: Start backend
+        working-directory: backend
+        env:
+          CORS_ORIGIN: http://localhost:3000
+          APP_PUBLIC_URL: http://localhost:4000
+          # MinIO/Meili/Chroma are not running in this job — dummy values keep
+          # the client constructors happy; connection failures are non-fatal.
+          MINIO_ENDPOINT: localhost
+          MINIO_PORT: "9000"
+          MINIO_ACCESS_KEY: ci-minio-access
+          MINIO_SECRET_KEY: ci-minio-secret
+          MINIO_BUCKET: kdl-media
+          MEILISEARCH_HOST: http://localhost:7700
+          MEILISEARCH_API_KEY: ci-meili-key
+          CHROMADB_URL: http://localhost:8000
+        run: |
+          nohup node src/index.js > /tmp/backend.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:4000/health > /dev/null && exit 0
+            sleep 2
+          done
+          echo "Backend failed to start"
+          cat /tmp/backend.log
+          exit 1
+
+      - name: Start frontend (standalone build)
+        working-directory: frontend
+        run: |
+          cp -r .next/static .next/standalone/.next/static
+          cp -r public .next/standalone/public
+          nohup node .next/standalone/server.js > /tmp/frontend.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf -o /dev/null http://localhost:3000/login && exit 0
+            sleep 2
+          done
+          echo "Frontend failed to start"
+          cat /tmp/frontend.log
+          exit 1
+
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Smoke E2E
+        working-directory: frontend
+        env:
+          E2E_BASE_URL: http://localhost:3000
+          E2E_ADMIN_EMAIL: admin@kdl.com
+          E2E_ADMIN_PASSWORD: kdl-dev-seed-password
+        run: pnpm e2e e2e/smoke.spec.ts
+
+      - name: Dump server logs on failure
+        if: failure()
+        run: |
+          echo "── backend.log ──"
+          cat /tmp/backend.log 2>/dev/null || true
+          echo "── frontend.log ──"
+          cat /tmp/frontend.log 2>/dev/null || true
 
   ai-services-check:
     runs-on: ubuntu-latest

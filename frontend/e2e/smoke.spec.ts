@@ -15,7 +15,17 @@ test.describe('Smoke Tests', () => {
     await page.getByPlaceholder('admin@kdl.com').fill(ADMIN.email)
     await page.getByPlaceholder('••••••••').fill(ADMIN.password)
     await page.getByRole('button', { name: 'Sign in' }).click()
-    await expect(page).toHaveURL(/\/admin\/dashboard/)
+
+    // The seeded admin has must_change_password=true — handle the forced change screen.
+    await page.waitForURL(/\/change-password|\/admin\/dashboard/, { timeout: 8000 })
+    if (page.url().includes('/change-password')) {
+      await page.getByLabel('Current password').fill(ADMIN.password)
+      await page.getByLabel('New password').fill(ADMIN.changedPassword)
+      await page.getByLabel('Confirm new password').fill(ADMIN.changedPassword)
+      await page.getByRole('button', { name: 'Change password' }).click()
+    }
+
+    await expect(page).toHaveURL(/\/admin\/dashboard/, { timeout: 10000 })
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
   })
 
