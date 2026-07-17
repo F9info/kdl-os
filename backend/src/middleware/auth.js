@@ -2,14 +2,18 @@ import jwt from 'jsonwebtoken';
 import { errorResponse } from '../shared/utils/response.js';
 import { prisma } from '../config/database.js';
 
-const createAuthenticate = ({ allowPendingPasswordChange = false } = {}) =>
-  async (req, res, next) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) {
+const bearerToken = (req) =>
+  req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : null;
+
+// Named function expression: route-introspection tests (and stack traces)
+// identify the middleware by fn.name === 'authenticate'.
+export const createAuthenticate = ({ allowPendingPasswordChange = false, getToken = bearerToken } = {}) =>
+  async function authenticate(req, res, next) {
+    const token = getToken(req);
+    if (!token) {
       return errorResponse(res, 'No token provided', 401);
     }
 
-    const token = authHeader.slice(7);
     try {
       const payload = jwt.verify(token, process.env.JWT_SECRET);
       const user = await prisma.user.findUnique({

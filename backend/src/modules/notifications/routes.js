@@ -1,35 +1,17 @@
 import { Router } from 'express';
-import jwt from 'jsonwebtoken';
 import { moduleGate } from '../../middleware/module-gate.js';
-import { authenticate } from '../../middleware/auth.js';
+import { authenticate, createAuthenticate } from '../../middleware/auth.js';
 import { requirePermission } from '../../middleware/permission.js';
-import { prisma } from '../../config/database.js';
-import { errorResponse } from '../../shared/utils/response.js';
 
 // SSE connections cannot set headers; accept token from query string as fallback.
-async function authenticateSSE(req, res, next) {
-  const headerToken = req.headers.authorization?.startsWith('Bearer ')
-    ? req.headers.authorization.slice(7)
-    : null;
-  const token = headerToken ?? req.query.token;
-
-  if (!token) return errorResponse(res, 'No token provided', 401);
-
-  try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await prisma.user.findUnique({
-      where: { id: payload.userId },
-      select: { id: true, status: true, deleted_at: true },
-    });
-    if (!user || user.status === 'SUSPENDED' || user.deleted_at) {
-      return errorResponse(res, 'Account is inactive', 403);
-    }
-    req.user = { ...payload, id: user.id, status: user.status };
-    next();
-  } catch {
-    return errorResponse(res, 'Invalid or expired token', 401);
-  }
-}
+// Shares the full authenticate pipeline — including the forced-password-change
+// gate (KDL-283) — so the stream is never reachable on seeded credentials.
+const authenticateSSE = createAuthenticate({
+  getToken: (req) =>
+    req.headers.authorization?.startsWith('Bearer ')
+      ? req.headers.authorization.slice(7)
+      : (req.query.token ?? null),
+});
 import {
   listOwnNotifications,
   getUnreadCount,
