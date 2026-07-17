@@ -30,3 +30,13 @@ export const Small: Story = { args: { size: 'sm', children: 'Small' } }
 export const Large: Story = { args: { size: 'lg', children: 'Large' } }
 
 export const Disabled: Story = { args: { disabled: true, children: 'Disabled' } }
+
+export const OutlineDark: Story = {
+  args: { variant: 'outline', children: 'Outline (dark)' },
+  parameters: { backgrounds: { default: 'dark' } },
+}
+
+export const SecondaryDark: Story = {
+  args: { variant: 'secondary', children: 'Secondary (dark)' },
+  parameters: { backgrounds: { default: 'dark' } },
+}

@@ -113,6 +113,28 @@
     background-color: var(--buttons_outline_button_hover_color, hsl(var(--accent)));
   }
 
+  /* ── Dark-mode overrides: bypass TE light-only button vars (KDL-344) ──
+   * TE button vars are set at light-theme values and not re-derived under
+   * .dark, so they pin outline/secondary chrome to light colors on a dark
+   * background (WCAG AA fail). These rules use higher specificity to force
+   * the semantic-token fallbacks, restoring correct contrast. */
+  .dark .te-btn-outline {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    border-color: hsl(var(--input));
+  }
+  .dark .te-btn-outline:hover {
+    background-color: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+  }
+  .dark .te-btn-secondary {
+    background-color: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+  }
+  .dark .te-btn-secondary:hover {
+    background-color: color-mix(in srgb, hsl(var(--secondary)) 80%, transparent);
+  }
+
   /* ── Cards ───────────────────────────────────────────────────────────── */
   .te-card {
     background-color: var(

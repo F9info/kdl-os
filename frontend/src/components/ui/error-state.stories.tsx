@@ -12,6 +12,9 @@ const meta: Meta<typeof ErrorState> = {
   title: 'UI/State/ErrorState',
   component: ErrorState,
   tags: ['autodocs'],
+  parameters: {
+    layout: 'centered',
+  },
 }
 
 export default meta
@@ -49,6 +52,14 @@ export const CustomCopy: Story = {
     description: 'The storage service is temporarily unavailable. Retry in a moment.',
     onRetry: () => {},
     retryLabel: 'Retry',
+  },
+}
+
+/** No retry affordance — read-only non-actionable errors. */
+export const NoRetry: Story = {
+  args: {
+    title: 'Not found',
+    description: 'The resource you are looking for does not exist.',
   },
 }
 
