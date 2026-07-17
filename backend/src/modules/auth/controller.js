@@ -111,13 +111,21 @@ export const login = async (req, res, next) => {
 
     const roleSlugs = user.roles?.map((ur) => ur.role?.slug).filter(Boolean) || [];
     const roleObjects = user.roles?.map((ur) => ur.role).filter(Boolean) || [];
-    const { password_hash: _ignored, roles: _rolesIgnored, ...safeUser } = user;
+    const { password_hash: _ph, roles: _r, must_change_password, ...safeUser } = user;
     safeUser.roles = roleObjects;
 
     const accessToken = authService.signAccessToken(buildAccessTokenPayload(user, roleSlugs));
     const refreshToken = authService.signRefreshToken({ userId: user.id });
     await authService.storeRefreshToken(user.id, refreshToken);
     setAuthCookies(res, accessToken, refreshToken);
+
+    // M4: Credentials valid but user must rotate their password before accessing the app.
+    // Tokens are issued so the client can call POST /auth/change-password;
+    // the authenticate middleware blocks all other routes until the flag is cleared.
+    if (must_change_password) {
+      return successResponse(res, { user: safeUser, accessToken, mustChangePassword: true });
+    }
+
     prisma.user.update({ where: { id: user.id }, data: { last_login_at: new Date() } }).catch(() => {});
     return successResponse(res, { user: safeUser, accessToken });
   } catch (err) {
