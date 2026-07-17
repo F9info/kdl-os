@@ -38,6 +38,14 @@ class MockEventSource {
 }
 
 function mockGetBase(overrides?: (url: string) => unknown) {
+  vi.mocked(api.post).mockImplementation((url: string) => {
+    if (url === '/notifications/stream/ticket') {
+      return Promise.resolve({ data: { data: { ticket: 'test-ticket' } } }) as ReturnType<
+        typeof api.post
+      >
+    }
+    return Promise.resolve({ data: { data: {} } }) as ReturnType<typeof api.post>
+  })
   vi.mocked(api.get).mockImplementation((url: string) => {
     if (overrides) {
       const result = overrides(url)
@@ -114,9 +122,14 @@ describe('NotificationBell', () => {
     })
     expect(screen.queryByTestId('notification-bell-badge')).not.toBeInTheDocument()
 
-    // Simulate SSE notification event
+    // Stream opens only after the ticket exchange resolves (KDL-270 M5)
+    await waitFor(() => {
+      expect(esInstances[0]).toBeDefined()
+    })
     const es = esInstances[0]
-    expect(es).toBeDefined()
+    // Ticket rides in the query string; the JWT must not (KDL-270 M5)
+    expect(es!.url).toContain('ticket=test-ticket')
+    expect(es!.url).not.toContain('test-token')
 
     await act(async () => {
       es!.dispatchEvent('notification', {

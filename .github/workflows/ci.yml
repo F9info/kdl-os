@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
   backend-check:
@@ -50,6 +50,14 @@ jobs:
       - name: Install dependencies
         working-directory: frontend
         run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        working-directory: frontend
+        run: pnpm lint
+
+      - name: Typecheck
+        working-directory: frontend
+        run: pnpm type-check
 
       - name: Audit dependencies (warn — all severities)
         working-directory: frontend

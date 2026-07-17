@@ -28,7 +28,9 @@ export type Props = {
   Button: { label: string; href: string; variant: 'primary' | 'secondary' }
   Image: { src: string; alt: string; rounded: boolean }
   Spacer: { size: 'sm' | 'md' | 'lg' | 'xl' }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Columns: { gap: 'sm' | 'md' | 'lg'; left: any; right: any }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Section: { background: 'none' | 'muted' | 'accent'; padding: 'sm' | 'md' | 'lg'; content: any }
 }
 

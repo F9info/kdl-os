@@ -4,6 +4,7 @@ import { scrubInput } from '../governance/compliance.js';
 import { auditLogger } from '../governance/audit-logger.js';
 import { checkBudget, recordSpend } from '../orchestrator/budget-tracker.js';
 import { successResponse, errorResponse } from '../utils/response.js';
+import { logger } from '../utils/logger.js';
 
 // Whisper-supported container formats
 const FILENAME_RE = /^[\w][\w.\-]*\.(flac|m4a|mp3|mp4|mpeg|mpga|oga|ogg|wav|webm)$/i;
@@ -58,6 +59,8 @@ export async function transcribeController(req, res) {
       duration: result.duration,
     });
   } catch (err) {
-    return errorResponse(res, err.message ?? 'Transcription failed', 500);
+    // Upstream provider errors can leak internals — log server-side only.
+    logger.error('transcription failed', { message: err.message, stack: err.stack });
+    return errorResponse(res, 'Transcription failed', 500);
   }
 }

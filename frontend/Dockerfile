@@ -1,7 +1,7 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 RUN npm install -g pnpm@11.1.2
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --no-frozen-lockfile --config.dangerously-allow-all-builds=true
 
 FROM node:22-alpine AS builder
