@@ -47,6 +47,9 @@ services:
 
   backend:
     image: repo-backend:latest
+    # Run seed after prisma db push so the admin user exists for e2e login flows.
+    # Seed is idempotent — skips creation if admin already present.
+    command: sh -c "node_modules/.bin/prisma db push && node prisma/seed.js && node src/index.js"
     environment:
       # Bumps the express-rate-limit ceiling from 100/15min to 1000/15min — this
       # isolated stack is hammered repeatedly during E2E debugging.
@@ -70,6 +73,7 @@ services:
       APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY}
       CORS_ORIGIN: http://localhost:13001
       JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       APP_PUBLIC_URL: http://localhost:14000
       # Pin seeded super-admin creds so E2E suites (frontend/e2e/helpers/
       # credentials.ts) can log in after a fresh re-seed (KDL-307).

@@ -37,8 +37,11 @@ export function MediaLightbox({ item, onClose }: MediaLightboxProps) {
       className="fixed inset-0 bg-black/90 z-50 flex flex-col"
       role="dialog"
       aria-label={`Preview ${name}`}
+      aria-modal="true"
       onClick={onClose}
+      onKeyDown={(e) => e.key === 'Escape' && onClose()}
     >
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- stopPropagation wrapper, not interactive */}
       <div
         className="flex items-center justify-between px-4 py-3 text-white flex-shrink-0"
         onClick={(e) => e.stopPropagation()}
@@ -68,6 +71,7 @@ export function MediaLightbox({ item, onClose }: MediaLightboxProps) {
         </div>
       </div>
 
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- stopPropagation wrapper, not interactive */}
       <div
         className="flex-1 flex items-center justify-center min-h-0 p-4"
         onClick={(e) => e.stopPropagation()}
@@ -77,10 +81,12 @@ export function MediaLightbox({ item, onClose }: MediaLightboxProps) {
         ) : isImage ? (
           <AppImage size="gallery" src={item.url} alt={name} className="max-h-full max-w-full" />
         ) : isVideo ? (
+          // eslint-disable-next-line jsx-a11y/media-has-caption -- user-uploaded content; captions not available
           <video src={item.url} controls autoPlay className="max-h-full max-w-full">
             Your browser cannot play this video.
           </video>
         ) : isAudio ? (
+          // eslint-disable-next-line jsx-a11y/media-has-caption -- user-uploaded content; captions not available
           <audio src={item.url} controls className="w-full max-w-xl" />
         ) : isPdf ? (
           <iframe src={item.url} title={name} className="w-full h-full bg-white rounded" />
