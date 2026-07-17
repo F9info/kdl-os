@@ -20,13 +20,14 @@ const makeClient = async (credentials) => {
     await assertNotSSRF(hostname);
   }
   return new S3Client({
-  region: credentials.region || 'us-east-1',
-  credentials: {
-    accessKeyId: credentials.access_key_id,
-    secretAccessKey: credentials.secret_access_key,
-  },
-  ...(credentials.endpoint ? { endpoint: credentials.endpoint, forcePathStyle: true } : {}),
-});
+    region: credentials.region || 'us-east-1',
+    credentials: {
+      accessKeyId: credentials.access_key_id,
+      secretAccessKey: credentials.secret_access_key,
+    },
+    ...(credentials.endpoint ? { endpoint: credentials.endpoint, forcePathStyle: true } : {}),
+  });
+};
 
 const streamToBuffer = async (stream) => {
   const chunks = [];

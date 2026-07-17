@@ -418,9 +418,6 @@ export const runImageEdit = async ({ mediaId, ops, note, createdBy }) => {
 
   const { MIME_TO_TYPE } = await import('./service.js');
 
-  const newMimeType = EXT_TO_MIME[ext] ?? media.mime_type;
-  const { MIME_TO_TYPE } = await import('./service.js');
-
   await prisma.media.update({
     where: { id: mediaId },
     data: {
