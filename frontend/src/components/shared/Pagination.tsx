@@ -31,7 +31,7 @@ export function Pagination({ page, totalPages, onPageChange, disabled }: Paginat
   const pages = getPageNumbers(page, totalPages)
 
   return (
-    <div className="flex items-center gap-1">
+    <nav aria-label="Pagination" className="flex items-center gap-1">
       <Button
         variant="outline"
         size="icon"
@@ -72,6 +72,6 @@ export function Pagination({ page, totalPages, onPageChange, disabled }: Paginat
       >
         <ChevronRight className="h-4 w-4" />
       </Button>
-    </div>
+    </nav>
   )
 }

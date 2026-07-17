@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
@@ -29,6 +29,7 @@ import {
 } from 'lucide-react'
 import { useUiStore } from '@/stores/ui.store'
 import { useAuth } from '@/hooks/useAuth'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useModules } from '@/hooks/useModules'
 import api from '@/lib/axios'
@@ -140,12 +141,28 @@ export const GROUPS: NavGroup[] = [
 ]
 
 export function AdminSidebar() {
-  const { sidebarOpen } = useUiStore()
+  const { sidebarOpen, setSidebarOpen } = useUiStore()
+  const isMobile = useIsMobile()
   const { isAdmin } = useAuth()
   const { can } = usePermissions()
   const { nonCoreNav } = useModules()
   const pathname = usePathname()
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
+
+  // Close drawer when viewport crosses into mobile (e.g. browser resize)
+  useEffect(() => {
+    if (isMobile) setSidebarOpen(false)
+  }, [isMobile, setSidebarOpen])
+
+  // Auto-close mobile drawer on route change
+  useEffect(() => {
+    if (isMobile) setSidebarOpen(false)
+    // intentionally omit sidebarOpen — we only want to fire on pathname/mobile changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, isMobile, setSidebarOpen])
+
+  // On mobile the drawer renders full-width always; on desktop labels follow sidebarOpen
+  const showLabels = isMobile || sidebarOpen
 
   const canViewSettings =
     can('types:view') ||
@@ -202,17 +219,41 @@ export function AdminSidebar() {
   })).filter((group) => group.children.length > 0)
 
   return (
-    <aside
-      className={cn(
-        'flex flex-col border-r bg-card transition-all duration-200',
-        sidebarOpen ? '' : 'w-16'
+    <>
+      {/* Mobile backdrop — closes the drawer on tap outside */}
+      {isMobile && sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
       )}
-      // Expanded width driven by the Template Engine's Layout > Sidebar Width
-      // token — the device-neutral, unit-suffixed alias from te-layout.css,
-      // self-selecting per viewport via the @media blocks compileTokens emits
-      // (KDL-209 contract; the old device-prefixed raw var is legacy).
-      style={sidebarOpen ? { width: 'var(--te-layout-sidebar-width)' } : undefined}
-    >
+      <aside
+        data-testid="admin-sidebar"
+        aria-hidden={isMobile && !sidebarOpen ? true : undefined}
+        className={cn(
+          'flex flex-col border-r bg-card',
+          isMobile
+            ? cn(
+                'fixed inset-y-0 left-0 z-50 shadow-lg',
+                'transition-transform duration-200 ease-in-out',
+                sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+              )
+            : cn(
+                'transition-all duration-200',
+                sidebarOpen ? '' : 'w-16'
+              )
+        )}
+        // Desktop: width from TE sidebar-width token (KDL-209).
+        // Mobile: same token sets the drawer width (full-content, never icon-rail).
+        style={
+          isMobile
+            ? { width: 'var(--te-layout-sidebar-width)' }
+            : sidebarOpen
+              ? { width: 'var(--te-layout-sidebar-width)' }
+              : undefined
+        }
+      >
       {/* te-header keeps the logo row the same height as the TopBar when
           Layout > Header Height changes. */}
       <div className="te-header flex items-center border-b px-4">
@@ -225,9 +266,9 @@ export function AdminSidebar() {
             src={logoUrl}
             alt="Logo"
             className="max-w-full"
-            style={sidebarOpen ? undefined : { width: '2rem', height: '2rem' }}
+            style={showLabels ? undefined : { width: '2rem', height: '2rem' }}
           />
-        ) : sidebarOpen ? (
+        ) : showLabels ? (
           <span className="font-bold text-lg tracking-tight">KDL Admin</span>
         ) : (
           <span className="font-bold text-lg">K</span>
@@ -248,10 +289,10 @@ export function AdminSidebar() {
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
               )}
-              title={!sidebarOpen ? item.label : undefined}
+              title={!showLabels ? item.label : undefined}
             >
               <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-              {sidebarOpen && <span>{item.label}</span>}
+              {showLabels && <span>{item.label}</span>}
             </Link>
           )
         })}
@@ -270,10 +311,10 @@ export function AdminSidebar() {
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
               )}
-              title={!sidebarOpen ? item.label : undefined}
+              title={!showLabels ? item.label : undefined}
             >
               <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-              {sidebarOpen && <span>{item.label}</span>}
+              {showLabels && <span>{item.label}</span>}
             </Link>
           )
         })}
@@ -293,10 +334,10 @@ export function AdminSidebar() {
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                 )}
-                title={!sidebarOpen ? item.label : undefined}
+                title={!showLabels ? item.label : undefined}
               >
                 <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                {sidebarOpen && <span>{item.label}</span>}
+                {showLabels && <span>{item.label}</span>}
               </Link>
             )
           })}
@@ -317,10 +358,10 @@ export function AdminSidebar() {
                     ? 'text-foreground font-medium'
                     : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                 )}
-                title={!sidebarOpen ? group.label : undefined}
+                title={!showLabels ? group.label : undefined}
               >
                 <GroupIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                {sidebarOpen && (
+                {showLabels && (
                   <>
                     <span className="flex-1 text-left">{group.label}</span>
                     <ChevronDown
@@ -335,7 +376,7 @@ export function AdminSidebar() {
               </button>
 
               {open && (
-                <div className={cn('space-y-1', sidebarOpen && 'ml-4 border-l pl-2')}>
+                <div className={cn('space-y-1', showLabels && 'ml-4 border-l pl-2')}>
                   {group.children.map((child) => {
                     const active = isLeafActive(child.href)
                     const ChildIcon = child.icon
@@ -349,10 +390,10 @@ export function AdminSidebar() {
                             ? 'bg-primary text-primary-foreground'
                             : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                         )}
-                        title={!sidebarOpen ? child.label : undefined}
+                        title={!showLabels ? child.label : undefined}
                       >
                         <ChildIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                        {sidebarOpen && <span>{child.label}</span>}
+                        {showLabels && <span>{child.label}</span>}
                       </Link>
                     )
                   })}
@@ -363,5 +404,6 @@ export function AdminSidebar() {
         })}
       </nav>
     </aside>
+    </>
   )
 }

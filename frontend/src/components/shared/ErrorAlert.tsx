@@ -2,6 +2,8 @@ import { AlertCircle } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { cn, getErrorMessage } from '@/lib/utils'
 
+export { getErrorMessage }
+
 interface ErrorAlertProps {
   error: unknown
   className?: string
