@@ -38,3 +38,14 @@ export function formatBytes(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i] ?? 'B'}`
 }
+
+/**
+ * Shared across ErrorAlert (inline/form errors) and ErrorState (block-level
+ * errors) so both surfaces extract API error messages the same way.
+ */
+export function getErrorMessage(error: unknown): string {
+  if (typeof error === 'string') return error
+  if (!error) return 'An unexpected error occurred'
+  const e = error as { response?: { data?: { message?: string } }; message?: string }
+  return e.response?.data?.message ?? e.message ?? 'An unexpected error occurred'
+}

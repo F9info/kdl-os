@@ -32,10 +32,12 @@ import { PermissionGuard } from '@/components/shared/PermissionGuard'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { Modal } from '@/components/shared/Modal'
 import { AppImage } from '@/components/shared/AppImage'
-import { ErrorAlert } from '@/components/shared/ErrorAlert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { EmptyState } from '@/components/ui/empty-state'
+import { ErrorState } from '@/components/ui/error-state'
+import { LoadingState } from '@/components/ui/loading-state'
 import { formatDate, formatBytes } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import type {
@@ -610,7 +612,10 @@ function AiSuggestionsPanel({ item }: { item: Media }) {
   const analyzeMutation = useMutation({
     mutationFn: () => mediaApi.analyze(item.id),
     onSuccess: () =>
-      toast({ title: 'Analysis queued', description: 'Suggestions appear here when ready.' }),
+      toast({
+        title: 'Analysis queued',
+        description: 'Suggestions appear here when ready.',
+      }),
     onError: () => toast({ title: 'Analyze failed', variant: 'destructive' }),
   })
 
@@ -618,7 +623,9 @@ function AiSuggestionsPanel({ item }: { item: Media }) {
     mutationFn: ({ id, accept }: { id: string; accept: boolean }) =>
       accept ? mediaApi.acceptSuggestion(id) : mediaApi.rejectSuggestion(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['media-suggestions', item.id] })
+      queryClient.invalidateQueries({
+        queryKey: ['media-suggestions', item.id],
+      })
       queryClient.invalidateQueries({ queryKey: ['media'] })
     },
     onError: () => toast({ title: 'Action failed', variant: 'destructive' }),
@@ -690,7 +697,10 @@ function TranscriptPanel({ item }: { item: Media }) {
       })
       // Poll once after a while so a fast job shows up without a manual refresh
       setTimeout(
-        () => queryClient.invalidateQueries({ queryKey: ['media-transcript', item.id] }),
+        () =>
+          queryClient.invalidateQueries({
+            queryKey: ['media-transcript', item.id],
+          }),
         15_000
       )
     },
@@ -758,7 +768,10 @@ function AiImageOpsPanel({ item }: { item: Media }) {
         description: 'A new version appears in Version History when ready.',
       })
       setTimeout(
-        () => queryClient.invalidateQueries({ queryKey: ['media-versions', item.id] }),
+        () =>
+          queryClient.invalidateQueries({
+            queryKey: ['media-versions', item.id],
+          }),
         15_000
       )
     },
@@ -1242,7 +1255,10 @@ export default function MediaPage() {
 
   // ── Queries ─────────────────────────────────────────────────────────────────
 
-  const foldersQuery = useQuery({ queryKey: ['media-folders'], queryFn: mediaApi.folders })
+  const foldersQuery = useQuery({
+    queryKey: ['media-folders'],
+    queryFn: mediaApi.folders,
+  })
   const folders = foldersQuery.data ?? []
   // KDL-172: uploads silently land in whatever folder happened to be
   // selected, with no indication of where — surface it next to Upload.
@@ -1456,9 +1472,9 @@ export default function MediaPage() {
       }
       const interval = setInterval(async () => {
         try {
-          const res = await api.get<{ data: { state: string; failedReason: string | null } }>(
-            `/media/jobs/${jobId}`
-          )
+          const res = await api.get<{
+            data: { state: string; failedReason: string | null }
+          }>(`/media/jobs/${jobId}`)
           const { state, failedReason } = res.data.data
           if (state === 'completed') {
             stop()
@@ -1490,7 +1506,10 @@ export default function MediaPage() {
           }
         } catch {
           stop()
-          toast({ title: 'Failed to check edit status', variant: 'destructive' })
+          toast({
+            title: 'Failed to check edit status',
+            variant: 'destructive',
+          })
         }
       }, 1500)
       editPollIntervals.current.add(interval)
@@ -1540,7 +1559,10 @@ export default function MediaPage() {
 
   const createFolderMutation = useMutation({
     mutationFn: () =>
-      mediaApi.createFolder({ name: newFolderName, parent_id: selectedFolder ?? null }),
+      mediaApi.createFolder({
+        name: newFolderName,
+        parent_id: selectedFolder ?? null,
+      }),
     onSuccess: () => {
       invalidateAll()
       setCreateFolderOpen(false)
@@ -1993,19 +2015,21 @@ export default function MediaPage() {
             {(sidebarView === 'folders' ||
               (sidebarView === 'collections' && !selectedCollection)) && (
               <>
-                {(mediaQuery.isLoading || trashQuery.isLoading) && (
-                  <p className="text-sm text-muted-foreground">Loading…</p>
-                )}
-                {(mediaQuery.error || trashQuery.error) && (
-                  <ErrorAlert error={mediaQuery.error ?? trashQuery.error} />
-                )}
-                {items.length === 0 && !mediaQuery.isLoading && !trashQuery.isLoading && (
-                  <div className="text-center py-12 text-muted-foreground text-sm">
-                    {view === 'trash' ? 'Trash is empty.' : 'No files here. Upload some!'}
-                  </div>
-                )}
-
-                {gridMode === 'grid' ? (
+                {mediaQuery.error || trashQuery.error ? (
+                  <ErrorState
+                    error={mediaQuery.error ?? trashQuery.error}
+                    onRetry={() => (view === 'trash' ? trashQuery.refetch() : mediaQuery.refetch())}
+                  />
+                ) : mediaQuery.isLoading || trashQuery.isLoading ? (
+                  <LoadingState variant="skeleton" rows={6} />
+                ) : items.length === 0 ? (
+                  <EmptyState
+                    title={view === 'trash' ? 'Trash is empty' : 'No files here'}
+                    description={
+                      view === 'trash' ? undefined : 'Upload a file or drag one onto this window.'
+                    }
+                  />
+                ) : gridMode === 'grid' ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                     {items.map((item) => (
                       <MediaItemGrid
