@@ -24,6 +24,8 @@ cp .env.example .env
 | `JWT_EXPIRES_IN` | Yes | `15m` | Access token TTL. Short-lived by design. |
 | `JWT_REFRESH_EXPIRES_IN` | Yes | `7d` | Refresh token TTL. Stored hashed in `refresh_tokens` table. |
 | `CORS_ORIGIN` | Yes | `http://localhost:3000` | Allowed CORS origin. Must match `FRONTEND_URL` in prod. |
+| `SEED_ADMIN_EMAIL` | No | `admin@kdl.com` | Email of the initial admin user created by `prisma db seed`. |
+| `SEED_ADMIN_PASSWORD` | Prod: Yes | _(none)_ | Initial admin password (min 12 chars) for `prisma db seed`. **Required when `NODE_ENV=production`** — seeding aborts without it. In dev, a random password is generated and printed once. Change it after first login. |
 
 ---
 

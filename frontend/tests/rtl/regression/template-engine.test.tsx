@@ -150,6 +150,16 @@ async function importPage() {
   return mod.default
 }
 
+// Step 1 of the page's two-step flow is a platform-picker landing screen —
+// every test needs to click through it before the editor (platform bar,
+// panes, etc.) exists in the DOM.
+async function enterWebapp() {
+  await waitFor(() => screen.getByTestId('landing-card-webapp'))
+  fireEvent.click(screen.getByTestId('landing-card-webapp'))
+  await waitFor(() => screen.getByTestId('landing-subcard-webapp-frontend'))
+  fireEvent.click(screen.getByTestId('landing-subcard-webapp-frontend'))
+}
+
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('Template Engine page (KDL-177 C1 gates)', () => {
@@ -173,11 +183,7 @@ describe('Template Engine page (KDL-177 C1 gates)', () => {
   it('renders the page and shows panes after schema loads', async () => {
     const Page = await importPage()
     wrapWithQueryClient(<Page />)
-
-    // Platform bar
-    expect(screen.getByTestId('platform-bar')).toBeTruthy()
-    expect(screen.getByTestId('platform-btn-webapp')).toBeTruthy()
-    expect(screen.getByTestId('platform-btn-tv')).toBeTruthy()
+    await enterWebapp()
 
     // Sidebar panes load after schema
     await waitFor(() => {
@@ -185,15 +191,21 @@ describe('Template Engine page (KDL-177 C1 gates)', () => {
     })
   })
 
-  it('switches platform — fires new query with new platform param', async () => {
+  // Platform selection is a two-level landing screen (platform → sub-section)
+  // — picking a sub-card fires the query for that platform and persists it,
+  // no in-editor switcher anymore.
+  it('picking a landing sub-card fires the query for that platform param', async () => {
     const Page = await importPage()
     wrapWithQueryClient(<Page />)
-    await waitFor(() => screen.getByTestId('pane-btn-pane-branding'))
-
     apiGet.mockResolvedValueOnce({ data: tvSchema })
 
+    await waitFor(() => screen.getByTestId('landing-card-tv'))
     await act(async () => {
-      fireEvent.click(screen.getByTestId('platform-btn-tv'))
+      fireEvent.click(screen.getByTestId('landing-card-tv'))
+    })
+    await waitFor(() => screen.getByTestId('landing-subcard-tv-app'))
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('landing-subcard-tv-app'))
     })
 
     await waitFor(() => {
@@ -209,6 +221,7 @@ describe('Template Engine page (KDL-177 C1 gates)', () => {
   it('dirty flag appears after editing a field; Save posts values to API', async () => {
     const Page = await importPage()
     wrapWithQueryClient(<Page />)
+    await enterWebapp()
     await waitFor(() => screen.getByTestId('pane-btn-pane-branding'))
 
     // Click first pane
@@ -255,64 +268,10 @@ describe('Template Engine page (KDL-177 C1 gates)', () => {
     })
   })
 
-  // KDL-190 C-1 regression: dirty state must NOT bleed across platforms.
-  // Pane ids repeat across platforms (pane-branding exists on webapp AND tv);
-  // editing a webapp pane must not mark the same-id pane dirty on another
-  // platform (which previously enabled Save and posted mismatched field_ids → 422).
-  it('does not bleed dirty state across platforms (C-1 regression)', async () => {
-    const Page = await importPage()
-    wrapWithQueryClient(<Page />)
-    await waitFor(() => screen.getByTestId('pane-btn-pane-branding'))
-
-    // Select + edit the webapp branding pane
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('pane-btn-pane-branding'))
-    })
-    await waitFor(() => screen.getByTestId('field-row-field-branding-bg'))
-    const colorInput = screen
-      .getByTestId('field-row-field-branding-bg')
-      .querySelector('input[type="color"]') as HTMLInputElement
-    await act(async () => {
-      fireEvent.change(colorInput, { target: { value: '#ff0000' } })
-    })
-    await waitFor(() => {
-      expect((screen.getByTestId('btn-save') as HTMLButtonElement).disabled).toBe(false)
-    })
-
-    // Switch to TV (same pane id, untouched) — must be clean
-    apiGet.mockResolvedValueOnce({ data: tvSchema })
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('platform-btn-tv'))
-    })
-    await waitFor(() => {
-      const tvCall = apiGet.mock.calls.find((c) => String(c[0]).includes('platform=tv'))
-      expect(tvCall).toBeTruthy()
-    })
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('pane-btn-pane-branding'))
-    })
-    await waitFor(() => screen.getByTestId('field-row-field-branding-bg'))
-
-    // The TV pane with the same id must NOT be dirty → Save disabled, no bleed
-    expect((screen.getByTestId('btn-save') as HTMLButtonElement).disabled).toBe(true)
-    expect(screen.getByText('All changes saved')).toBeTruthy()
-
-    // Switching back to webapp preserves that platform's unsaved edit
-    apiGet.mockResolvedValueOnce({ data: webappSchema })
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('platform-btn-webapp'))
-    })
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('pane-btn-pane-branding'))
-    })
-    await waitFor(() => {
-      expect((screen.getByTestId('btn-save') as HTMLButtonElement).disabled).toBe(false)
-    })
-  })
-
   it('Reset posts to /template-engine/reset with correct pane id', async () => {
     const Page = await importPage()
     wrapWithQueryClient(<Page />)
+    await enterWebapp()
     await waitFor(() => screen.getByTestId('pane-btn-pane-branding'))
 
     await act(async () => {
@@ -343,6 +302,7 @@ describe('Template Engine page (KDL-177 C1 gates)', () => {
   it('parses stringified select options — renders real choices + current value (F1)', async () => {
     const Page = await importPage()
     wrapWithQueryClient(<Page />)
+    await enterWebapp()
     await waitFor(() => screen.getByTestId('pane-btn-pane-branding'))
     await act(async () => {
       fireEvent.click(screen.getByTestId('pane-btn-pane-branding'))
@@ -361,6 +321,7 @@ describe('Template Engine page (KDL-177 C1 gates)', () => {
   it('parses stringified slider options — real min/max, not fake 0–100 (F1)', async () => {
     const Page = await importPage()
     wrapWithQueryClient(<Page />)
+    await enterWebapp()
     await waitFor(() => screen.getByTestId('pane-btn-pane-branding'))
     await act(async () => {
       fireEvent.click(screen.getByTestId('pane-btn-pane-branding'))
@@ -381,6 +342,7 @@ describe('Template Engine page (KDL-177 C1 gates)', () => {
   it('number field posts the bare number, no unit suffix (F2)', async () => {
     const Page = await importPage()
     wrapWithQueryClient(<Page />)
+    await enterWebapp()
     await waitFor(() => screen.getByTestId('pane-btn-pane-branding'))
     await act(async () => {
       fireEvent.click(screen.getByTestId('pane-btn-pane-branding'))
@@ -425,6 +387,7 @@ describe('Template Engine page (KDL-177 C1 gates)', () => {
     const { toast } = await import('@/hooks/use-toast')
     const Page = await importPage()
     wrapWithQueryClient(<Page />)
+    await enterWebapp()
     await waitFor(() => screen.getByTestId('pane-btn-pane-branding'))
     await act(async () => {
       fireEvent.click(screen.getByTestId('pane-btn-pane-branding'))
@@ -472,6 +435,7 @@ describe('Template Engine page (KDL-177 C1 gates)', () => {
     apiGet.mockRejectedValue(new Error('network down'))
     const Page = await importPage()
     wrapWithQueryClient(<Page />)
+    await enterWebapp()
 
     await waitFor(() => {
       expect(screen.getByText('Failed to load schema.')).toBeTruthy()

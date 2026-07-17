@@ -1,3 +1,9 @@
+# Pin ONE Compose project name for every clone (local + Paperclip) so there is a
+# single shared stack / DB. A committed `name:` beats the directory-default and
+# stops the kdl-starter-kit vs kdl-dev-local drift. (A shell COMPOSE_PROJECT_NAME
+# or a -p flag still overrides this — keep both unset.)
+name: kdl-starter-kit
+
 services:
   postgres:
     image: postgres:15

@@ -2,14 +2,20 @@ import * as React from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
+// Shape (radius/padding/border style) and per-severity colors come from the
+// Alerts pane tokens via te-alert* (te-components.css, KDL-213). The static
+// rounded-lg/border/p-4 and severity color utilities were removed so the
+// token values win; the te-* fallbacks mirror the old static design.
 const alertVariants = cva(
-  'relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground',
+  'te-alert relative w-full [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4',
   {
     variants: {
       variant: {
-        default: 'bg-background text-foreground',
-        destructive:
-          'border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive',
+        default: 'bg-background text-foreground [&>svg]:text-foreground',
+        destructive: 'te-alert-error',
+        success: 'te-alert-success',
+        warning: 'te-alert-warning',
+        info: 'te-alert-info',
       },
     },
     defaultVariants: { variant: 'default' },

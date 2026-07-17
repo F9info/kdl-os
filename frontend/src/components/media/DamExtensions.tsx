@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { AppImage } from '@/components/shared/AppImage'
 import type {
   Media, MediaTag, MediaMetaField, MediaCollection, MediaSearchResult, MediaSearchDoc,
   ChunkedUploadStatus,
@@ -578,8 +579,7 @@ function MediaThumbnailCard({
       title={name}
     >
       {thumb ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={thumb} alt={name} className="w-full h-full object-cover" />
+        <AppImage size="thumbnail" src={thumb} alt={name} className="max-w-full max-h-full" />
       ) : (
         <span className="text-xs text-muted-foreground">{item.type?.[0] ?? '?'}</span>
       )}

@@ -28,8 +28,10 @@ export function TopBar() {
   const { toggleSidebar } = useUiStore()
   const { user, logout, isLoggingOut } = useAuth()
 
+  // Height follows Template Engine Layout > Header Height via te-header
+  // (te-layout.css); h-16 was the old static value.
   return (
-    <header className="sticky top-0 z-30 h-16 border-b bg-background/95 backdrop-blur flex items-center justify-between px-4">
+    <header className="te-header sticky top-0 z-30 border-b bg-background/95 backdrop-blur flex items-center justify-between px-4">
       <Button variant="ghost" size="icon" onClick={toggleSidebar} aria-label="Toggle sidebar">
         <Menu className="h-5 w-5" />
       </Button>

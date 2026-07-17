@@ -14,6 +14,7 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { PermissionGuard } from '@/components/shared/PermissionGuard'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { Modal } from '@/components/shared/Modal'
+import { AppImage } from '@/components/shared/AppImage'
 import { ErrorAlert } from '@/components/shared/ErrorAlert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -60,7 +61,7 @@ const mediaApi = {
     files.forEach((f) => fd.append('files', f))
     if (folderId) fd.append('folder_id', folderId)
     if (visibility) fd.append('visibility', visibility)
-    return api.post('/media/upload', fd)
+    return api.post<{ data: { media: Media[] } }>('/media/upload', fd).then((r) => r.data.data.media)
   },
   update: (id: string, data: Partial<Pick<Media, 'title' | 'alt_text' | 'caption' | 'original_name' | 'visibility'>>) =>
     api.patch(`/media/${id}`, data),
@@ -233,8 +234,7 @@ function MediaItemGrid({
     >
       <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden relative">
         {thumb ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={thumb} alt={item.original_name} className="h-full w-full object-cover" />
+          <AppImage size="thumbnail" src={thumb} alt={item.original_name} className="max-h-full max-w-full" />
         ) : (
           <span className="text-2xl text-muted-foreground font-bold">{item.type[0]}</span>
         )}
@@ -356,10 +356,11 @@ function MediaItemList({
         className="h-4 w-4 rounded"
         onClick={(e) => { e.stopPropagation(); onToggle(item.id, e as unknown as React.MouseEvent) }}
       />
+      {/* List rows are dense chrome: the 32px box crops the token-sized
+          thumbnail via overflow-hidden rather than letting it set row height. */}
       <div className="h-8 w-8 flex-shrink-0 rounded overflow-hidden bg-muted flex items-center justify-center relative">
         {thumb ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={thumb} alt={item.original_name} className="h-full w-full object-cover" />
+          <AppImage size="thumbnail" src={thumb} alt={item.original_name} />
         ) : (
           <span className="text-xs text-muted-foreground">{item.type[0]}</span>
         )}
@@ -759,8 +760,7 @@ function DetailDrawer({
       {item.url && can('media:preview') && (
         <button type="button" onClick={onPreview} className="w-full block" title="Open full preview">
           {item.mime_type.startsWith('image/') ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={item.url} alt={item.original_name} className="w-full rounded border hover:opacity-90" />
+            <AppImage size="content" src={item.url} alt={item.original_name} className="max-w-full rounded border hover:opacity-90" />
           ) : (
             <span className="flex items-center justify-center h-24 rounded border bg-muted text-xs text-muted-foreground hover:bg-accent">
               Open preview
@@ -994,12 +994,16 @@ export default function MediaPage() {
   const [searchResults, setSearchResults] = useState<MediaSearchResult | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [detailItem, setDetailItem] = useState<Media | null>(null)
-  // KDL-172: media ids with an image-edit job in flight — drives the
-  // "processing…" indicator on the grid tile / File Details panel so the UI
-  // doesn't look frozen while the async job runs.
-  const [processingMediaIds, setProcessingMediaIds] = useState<Set<string>>(new Set())
+  // KDL-172: separate sets for upload thumbnail wait vs active edit jobs so the
+  // drawer doesn't show "Processing edit…" during the post-upload thumbnail window.
+  const [uploadingMediaIds, setUploadingMediaIds] = useState<Set<string>>(new Set())
+  const [processingEditIds, setProcessingEditIds] = useState<Set<string>>(new Set())
   const editPollIntervals = useRef<Set<ReturnType<typeof setInterval>>>(new Set())
-  useEffect(() => () => { editPollIntervals.current.forEach(clearInterval) }, [])
+  const deferredTimers = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
+  useEffect(() => () => {
+    editPollIntervals.current.forEach(clearInterval)
+    deferredTimers.current.forEach(clearTimeout)
+  }, [])
   const [lightboxItem, setLightboxItem] = useState<Media | null>(null)
   // KDL-172: clicking a file's "Shared" badge opens share management/revoke
   // directly, without needing to open the full File Details drawer first.
@@ -1157,6 +1161,26 @@ export default function MediaPage() {
 
   // ── Mutations ────────────────────────────────────────────────────────────────
 
+  // KDL-172: image edits run as an async job — invalidating the media query
+  // right when the job is *queued* just refetches the pre-edit row, which is
+  // what made edits look like a silent no-op until a manual page refresh.
+  // Poll the job and only refresh once it has actually finished.
+  const scheduleInvalidate = useCallback((ms: number, extraId?: string) => {
+    const id = setTimeout(() => {
+      deferredTimers.current.delete(id)
+      queryClient.invalidateQueries({ queryKey: ['media'] })
+      // If the drawer is open for this item, pull the latest row so late-landing
+      // variants show up without requiring a manual close-and-reopen.
+      if (extraId) {
+        setDetailItem((cur) => {
+          if (cur?.id === extraId) mediaApi.get(extraId).then(setDetailItem).catch(() => {})
+          return cur
+        })
+      }
+    }, ms)
+    deferredTimers.current.add(id)
+  }, [queryClient]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ['media'] })
     queryClient.invalidateQueries({ queryKey: ['media-folders'] })
@@ -1164,20 +1188,16 @@ export default function MediaPage() {
     // Thumbnail/preview variants are generated by an async worker after the
     // upload response returns — re-fetch once they've had time to land so
     // previews don't stay blank until the next unrelated refetch.
-    setTimeout(() => queryClient.invalidateQueries({ queryKey: ['media'] }), 3_000)
-    setTimeout(() => queryClient.invalidateQueries({ queryKey: ['media'] }), 8_000)
+    scheduleInvalidate(3_000)
+    scheduleInvalidate(8_000)
   }
 
-  // KDL-172: image edits run as an async job — invalidating the media query
-  // right when the job is *queued* just refetches the pre-edit row, which is
-  // what made edits look like a silent no-op until a manual page refresh.
-  // Poll the job and only refresh once it has actually finished.
   const pollEditJob = useCallback((mediaId: string, jobId: string) => {
-    setProcessingMediaIds((prev) => new Set(prev).add(mediaId))
+    setProcessingEditIds((prev) => new Set(prev).add(mediaId))
     const stop = () => {
       clearInterval(interval)
       editPollIntervals.current.delete(interval)
-      setProcessingMediaIds((prev) => {
+      setProcessingEditIds((prev) => {
         const next = new Set(prev)
         next.delete(mediaId)
         return next
@@ -1190,8 +1210,14 @@ export default function MediaPage() {
         if (state === 'completed') {
           stop()
           queryClient.invalidateQueries({ queryKey: ['media'] })
-          // Refresh the open File Details row too — it's a state snapshot,
-          // not derived from the ['media'] query, so it needs its own refetch.
+          // Thumbnail generation is a separate async step after the edit job
+          // completes — schedule deferred refetches to pick up variants once
+          // the thumbnail worker has had time to run. Pass mediaId so the open
+          // drawer is refreshed even for the deferred ticks (Fix 4).
+          scheduleInvalidate(3_000, mediaId)
+          scheduleInvalidate(8_000, mediaId)
+          // Immediate refresh of the open File Details row — it's a state
+          // snapshot, not derived from the ['media'] query.
           setDetailItem((cur) => {
             if (cur?.id === mediaId) mediaApi.get(mediaId).then(setDetailItem).catch(() => {})
             return cur
@@ -1207,14 +1233,36 @@ export default function MediaPage() {
       }
     }, 1500)
     editPollIntervals.current.add(interval)
-  }, [queryClient]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [queryClient, scheduleInvalidate]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const uploadMutation = useMutation({
     // Uploading while the Shared tab is active lands the file shared —
     // otherwise there's no way to get a new upload into Shared without a
     // separate manual "Make shared" step afterward.
     mutationFn: (files: File[]) => mediaApi.upload(files, selectedFolder ?? null, scope === 'shared' ? 'SHARED' : undefined),
-    onSuccess: () => { invalidateAll(); toast({ title: 'Upload complete' }) },
+    onSuccess: (uploaded) => {
+      invalidateAll()
+      toast({ title: 'Upload complete' })
+      // Track IDs in uploadingMediaIds so the grid card shows "Processing…"
+      // while the async thumbnail worker generates variants. Uses a separate set
+      // from processingEditIds so the drawer never shows "Processing edit…" for
+      // an item that was just uploaded (KDL-232 Fix 1).
+      const ids = (uploaded ?? []).map((m) => m.id)
+      if (ids.length > 0) {
+        setUploadingMediaIds((prev) => { const next = new Set(prev); ids.forEach((id) => next.add(id)); return next })
+        const clearId = setTimeout(() => {
+          deferredTimers.current.delete(clearId)
+          setUploadingMediaIds((prev) => { const next = new Set(prev); ids.forEach((id) => next.delete(id)); return next })
+        }, 10_000)
+        deferredTimers.current.add(clearId)
+        // Third invalidation at ~10s closes the gap between the 8s last-refetch
+        // and the 10s overlay — slow workers whose thumbnail lands in that window
+        // get a final pickup (KDL-232 Fix 2).
+        scheduleInvalidate(3_000)
+        scheduleInvalidate(8_000)
+        scheduleInvalidate(10_000)
+      }
+    },
     onError: () => toast({ title: 'Upload failed', variant: 'destructive' }),
   })
 
@@ -1614,7 +1662,7 @@ export default function MediaPage() {
                     onToggle={handleToggle}
                     onDetail={handleDetail}
                     onPreview={handlePreview}
-                    processing={processingMediaIds.has(item.id)}
+                    processing={uploadingMediaIds.has(item.id) || processingEditIds.has(item.id)}
                     onManageShare={setShareTarget}
                     trashActions={view === 'trash' ? { onRestore: (id) => restoreOneMutation.mutate(id), onDeleteForever: setDeleteForeverTarget } : undefined}
                   />
@@ -1630,7 +1678,7 @@ export default function MediaPage() {
                     onToggle={handleToggle}
                     onDetail={handleDetail}
                     onPreview={handlePreview}
-                    processing={processingMediaIds.has(item.id)}
+                    processing={uploadingMediaIds.has(item.id) || processingEditIds.has(item.id)}
                     onManageShare={setShareTarget}
                     trashActions={view === 'trash' ? { onRestore: (id) => restoreOneMutation.mutate(id), onDeleteForever: setDeleteForeverTarget } : undefined}
                   />
@@ -1657,7 +1705,7 @@ export default function MediaPage() {
               })
             }}
             onPreview={() => setLightboxItem(detailItem)}
-            processing={processingMediaIds.has(detailItem.id)}
+            processing={processingEditIds.has(detailItem.id)}
             onEditJobStarted={pollEditJob}
           />
         )}

@@ -12,7 +12,23 @@ function parseOptions(field) {
   try { return JSON.parse(field.options); } catch { return null; }
 }
 
-export function validateFieldValue(field, value) {
+// Font Family selects (Heading/Body/Navigation/Button Font) are seeded from a
+// static choice list but must also accept names from the sibling "Custom Fonts"
+// repeater field saved in the same request — mirrors the frontend's merge in
+// template-engine/page.tsx (isFontFamilySelect / customFontNames).
+const isFontFamilySelect = (field) => field.input_type === 'select' && /font/i.test(field.field_name ?? '');
+
+function parseCustomFontNames(value) {
+  try {
+    const rows = JSON.parse(value || '[]');
+    if (!Array.isArray(rows)) return [];
+    return rows.map((r) => (typeof r?.name === 'string' ? r.name.trim() : '')).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+export function validateFieldValue(field, value, customFontNames = []) {
   const opts = parseOptions(field);
   switch (field.input_type) {
     case 'color': {
@@ -34,7 +50,8 @@ export function validateFieldValue(field, value) {
       break;
     }
     case 'select': {
-      if (!opts?.choices?.includes(value)) return `value must be one of: ${opts?.choices?.join(', ')}`;
+      const choices = isFontFamilySelect(field) ? [...(opts?.choices ?? []), ...customFontNames] : opts?.choices;
+      if (!choices?.includes(value)) return `value must be one of: ${choices?.join(', ')}`;
       break;
     }
     case 'radio': {
@@ -237,10 +254,18 @@ export async function upsertValues(platform, typeId, values, actorId) {
   // Load all fields for the pane
   const fields = await prisma.settingField.findMany({
     where: { type_id: typeId },
-    select: { id: true, slug: true, input_type: true, options: true },
+    select: { id: true, slug: true, field_name: true, input_type: true, options: true },
   });
   const byId = new Map(fields.map((f) => [f.id, f]));
   const bySlug = new Map(fields.map((f) => [f.slug, f]));
+
+  // The whole pane's fields (including "Custom Fonts") save in one request —
+  // pull any custom font names out of this same batch so Font Family selects
+  // can validate against them (see isFontFamilySelect).
+  const customFontNames = values.flatMap((entry) => {
+    const field = entry.field_id ? byId.get(entry.field_id) : bySlug.get(entry.slug);
+    return field?.input_type === 'fonts' ? parseCustomFontNames(entry.value) : [];
+  });
 
   const errors = [];
   const upserts = [];
@@ -251,7 +276,7 @@ export async function upsertValues(platform, typeId, values, actorId) {
       errors.push(`Unknown field: ${entry.field_id ?? entry.slug}`);
       continue;
     }
-    const valError = validateFieldValue(field, entry.value);
+    const valError = validateFieldValue(field, entry.value, customFontNames);
     if (valError) {
       errors.push(`${field.slug}: ${valError}`);
       continue;
@@ -334,6 +359,34 @@ function toTokenName(parts) {
   return parts.map((s) => s.replace(/[^a-z0-9]/gi, '_').toLowerCase()).join('_');
 }
 
+// ── Device → viewport mapping (KDL-209) ──────────────────────────────────────
+// Base authoring tags map to the breakpoint bands implied by the schema's
+// device tabs. Platform device ids resolve their band via their `from` tag,
+// plus an orientation clause when the id carries an _h/_v suffix. TV
+// resolutions key off physical panel width instead.
+const BASE_TAG_MEDIA = {
+  desktop: '(min-width: 1280px)',
+  laptop: '(min-width: 1024px) and (max-width: 1279px)',
+  ipad: '(min-width: 768px) and (max-width: 1023px)',
+  mobile: '(max-width: 767px)',
+};
+const TV_DEVICE_MEDIA = {
+  tv_720p: '(max-width: 1919px)',
+  tv_1080p: '(min-width: 1920px) and (max-width: 3839px)',
+  tv_4k: '(min-width: 3840px) and (max-width: 7679px)',
+  tv_8k: '(min-width: 7680px)',
+};
+
+export function deviceMediaQuery(plat, deviceId) {
+  if (TV_DEVICE_MEDIA[deviceId]) return TV_DEVICE_MEDIA[deviceId];
+  const def = plat?.devices?.find((d) => d.id === deviceId);
+  const base = BASE_TAG_MEDIA[def?.from ?? deviceId];
+  if (!base) return null;
+  if (deviceId.endsWith('_h')) return `${base} and (orientation: landscape)`;
+  if (deviceId.endsWith('_v')) return `${base} and (orientation: portrait)`;
+  return base;
+}
+
 export async function compileTokens(platform, theme, device) {
   const cacheKey = tokenKey(platform, theme, device);
 
@@ -353,7 +406,7 @@ export async function compileTokens(platform, theme, device) {
     where: { type_id: { in: typeIds } },
     select: {
       id: true, slug: true, field_name: true, input_type: true,
-      value: true, type_id: true, category_id: true,
+      value: true, options: true, type_id: true, category_id: true,
       setting_values: { select: { value: true }, take: 1 },
     },
     orderBy: { sort: 'asc' },
@@ -378,6 +431,14 @@ export async function compileTokens(platform, theme, device) {
   const imgClasses = {};
   const jsonTree = {};
 
+  // Device-scoped output (KDL-209): device-tagged fields ALSO emit a
+  // device-NEUTRAL alias var (device segment stripped, units applied) so the
+  // frontend codes against one stable name and the @media query picks the
+  // value per viewport. Raw device-prefixed vars stay in :root unchanged —
+  // existing consumers use them with calc(var(...) * 1px).
+  const deviceVars = {}; // deviceId → { '--neutral_name': value }
+  const deviceImgClasses = {}; // deviceId → { cls: rules }
+
   for (const f of fields) {
     const effectiveValue = f.setting_values?.[0]?.value ?? f.value;
     if (effectiveValue == null) continue;
@@ -390,6 +451,7 @@ export async function compileTokens(platform, theme, device) {
     const slugParts = f.slug.split('.');
     const tagSegment = slugParts[2];
     const themeTag = THEMES.has(tagSegment) ? tagSegment : null;
+    const deviceTag = deviceIds.has(tagSegment) ? tagSegment : null;
 
     // Filter by theme if requested.
     if (theme && themeTag && themeTag !== theme) continue;
@@ -397,14 +459,23 @@ export async function compileTokens(platform, theme, device) {
     // Filter by device if requested. Only drop a field when its tag is a REAL
     // device id that differs from the requested device. Untagged fields
     // (3rd segment = section slug) are always kept.
-    if (device) {
-      if (deviceIds.has(tagSegment) && tagSegment !== device) continue;
-    }
+    if (device && deviceTag && deviceTag !== device) continue;
 
     const neutralParts = themeTag
       ? [slugParts[1], ...slugParts.slice(3)] // pane + section + field (theme stripped)
       : slugParts.slice(1); // pane [+ device] + section + field
     const tokenName = toTokenName(neutralParts);
+
+    // Device-neutral alias name (pane + section + field, device stripped) and
+    // the bucket it lands in: a ?device= request already narrowed the payload
+    // to one device → alias goes straight to :root; otherwise it goes into
+    // that device's @media block.
+    const deviceAliasName = deviceTag
+      ? toTokenName([slugParts[1], ...slugParts.slice(3)])
+      : null;
+    const deviceBucket = deviceTag
+      ? (device ? rootVars : (deviceVars[deviceTag] ??= {}))
+      : null;
 
     // Handle special field types
     if (f.input_type === 'fonts') {
@@ -431,9 +502,39 @@ export async function compileTokens(platform, theme, device) {
       try {
         const items = JSON.parse(effectiveValue);
         if (Array.isArray(items)) {
+          // Device-tagged image lists share class names across devices; the
+          // flat map made the last-processed device win everywhere. Scope
+          // them per device instead (KDL-209).
+          const clsBucket = deviceTag && !device
+            ? (deviceImgClasses[deviceTag] ??= {})
+            : imgClasses;
+          const dim = (v) => (v === 'auto' ? 'auto' : `${v}px`);
           for (const item of items) {
             const cls = slugify(item.name || tokenName);
-            imgClasses[cls] = `width: ${item.w}px; height: ${item.h}px; object-fit: ${item.fit || 'cover'};`;
+            clsBucket[cls] = `width: ${dim(item.w)}; height: ${dim(item.h)}; object-fit: ${item.fit || 'cover'};`;
+          }
+        }
+      } catch { /* skip malformed */ }
+      continue;
+    }
+
+    if (f.input_type === 'typo_table') {
+      try {
+        const rows = JSON.parse(effectiveValue);
+        if (Array.isArray(rows)) {
+          const bucket = !theme && themeTag && themeTag !== 'dark' ? themeVars[themeTag] : rootVars;
+          const emitRow = (b, prefix, row, rowKey) => {
+            b[`--${prefix}_${rowKey}_size`] = `${row.size}${row.sizeUnit || 'px'}`;
+            b[`--${prefix}_${rowKey}_family`] = row.family;
+            b[`--${prefix}_${rowKey}_weight`] = row.weight;
+            b[`--${prefix}_${rowKey}_line_height`] = row.lineHeight;
+            b[`--${prefix}_${rowKey}_letter_spacing`] = `${row.letterSpacing}px`;
+          };
+          for (const row of rows) {
+            const rowKey = slugify(row.name || '');
+            if (!rowKey) continue;
+            emitRow(bucket, tokenName, row, rowKey);
+            if (deviceBucket) emitRow(deviceBucket, deviceAliasName, row, rowKey);
           }
         }
       } catch { /* skip malformed */ }
@@ -446,6 +547,19 @@ export async function compileTokens(platform, theme, device) {
     const cssBucket = !theme && themeTag && themeTag !== 'dark' ? themeVars[themeTag] : rootVars;
     // M12: sanitize value before embedding into CSS to prevent injection.
     cssBucket[`--${tokenName}`] = sanitizeCssValue(effectiveValue);
+
+    // Device-neutral alias: unit-suffixed (from field options) so it is
+    // directly usable in CSS without the calc(var(...) * 1px) dance that the
+    // unitless raw vars require.
+    if (deviceBucket) {
+      let aliasValue = effectiveValue;
+      if ((f.input_type === 'number' || f.input_type === 'slider')
+          && effectiveValue !== '' && !Number.isNaN(Number(effectiveValue))) {
+        const unit = parseOptions(f)?.unit;
+        if (unit) aliasValue = `${effectiveValue}${unit}`;
+      }
+      deviceBucket[`--${deviceAliasName}`] = aliasValue;
+    }
 
     // JSON tree: pane → group → field, mirroring :root (untagged + requested
     // theme, defaulting to dark). Group keeps the device tag — devices are
@@ -467,6 +581,22 @@ export async function compileTokens(platform, theme, device) {
     .map(([cls, rules]) => `.${cls} { ${rules} }`)
     .join('\n');
 
+  // One @media block per device (schema device order) holding that device's
+  // neutral alias vars and image classes — mirrors the [data-theme] pattern.
+  const deviceOrder = plat ? plat.devices.map((d) => d.id) : Object.keys(deviceVars);
+  const deviceCss = deviceOrder.flatMap((d) => {
+    const vars = deviceVars[d] && Object.keys(deviceVars[d]).length
+      ? `:root {\n${varBlock(deviceVars[d])}\n}`
+      : '';
+    const imgs = deviceImgClasses[d]
+      ? Object.entries(deviceImgClasses[d]).map(([cls, rules]) => `.${cls} { ${rules} }`).join('\n')
+      : '';
+    const body = [vars, imgs].filter(Boolean).join('\n');
+    if (!body) return [];
+    const mq = deviceMediaQuery(plat, d);
+    return [mq ? `@media ${mq} {\n${body}\n}` : body];
+  });
+
   const css = [
     ...fontFaces,
     rootCss ? `:root {\n${rootCss}\n}` : '',
@@ -475,9 +605,11 @@ export async function compileTokens(platform, theme, device) {
       return block ? `[data-theme="${t}"] {\n${block}\n}` : '';
     }),
     imgCss,
+    ...deviceCss,
   ].filter(Boolean).join('\n\n');
 
-  const result = { css, json: jsonTree };
+  const activeTheme = await getActiveTheme(platform);
+  const result = { css, json: jsonTree, activeTheme };
 
   try {
     await redis.set(cacheKey, JSON.stringify(result), 'EX', TOKEN_TTL);
@@ -492,4 +624,34 @@ export async function isTokensPublic() {
   const setting = await prisma.appSetting.findUnique({ where: { key: 'template_engine.tokens_public' } });
   // Default true if not set
   return setting ? setting.value !== 'false' : true;
+}
+
+// ── Active/Default theme per platform (dark|light|system) ────────────────────
+// Stored the same way as the tokens_public flag above: an AppSetting row, not a
+// new Prisma column — the module already uses AppSetting as its own tiny KV
+// store for cross-cutting flags, so a per-platform "current theme" fits the
+// same shape instead of adding a migration.
+
+export const ACTIVE_THEMES = ['dark', 'light', 'system'];
+const activeThemeKey = (platform) => `template_engine.active_theme.${platform}`;
+
+export async function getActiveTheme(platform) {
+  const setting = await prisma.appSetting.findUnique({ where: { key: activeThemeKey(platform) } });
+  return setting && ACTIVE_THEMES.includes(setting.value) ? setting.value : 'system';
+}
+
+export async function setActiveTheme(platform, theme) {
+  if (!ACTIVE_THEMES.includes(theme)) {
+    return { errors: [`theme must be one of: ${ACTIVE_THEMES.join(', ')}`] };
+  }
+  await prisma.appSetting.upsert({
+    where: { key: activeThemeKey(platform) },
+    create: { key: activeThemeKey(platform), value: theme, type: 'string', is_public: true },
+    update: { value: theme },
+  });
+  // The tokens payload embeds activeTheme (see compileTokens) so the public
+  // runtime consumer can pick it up in the same request — stale cache would
+  // serve the old choice until TTL expiry otherwise.
+  await invalidateTokenCache(platform);
+  return { activeTheme: theme };
 }

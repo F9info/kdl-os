@@ -1,7 +1,9 @@
 import { z } from 'zod';
 import { PLATFORMS as PLATFORM_DEFS } from './schema/index.js';
 
-const PLATFORM_IDS = ['webapp', 'tv', 'android', 'ios'];
+// Derived from the real PLATFORMS list, not hand-duplicated — a platform id
+// added there (e.g. webapp_admin) is instantly valid here too.
+const PLATFORM_IDS = PLATFORM_DEFS.map((p) => p.id);
 const platformEnum = z.enum(PLATFORM_IDS);
 
 const ALL_DEVICE_IDS = [...new Set(PLATFORM_DEFS.flatMap((p) => p.devices.map((d) => d.id)))];
@@ -38,6 +40,13 @@ export const postResetBodySchema = z.object({
   body: z.object({
     platform: platformEnum,
     type_id: z.string().min(1),
+  }),
+});
+
+export const postActiveThemeBodySchema = z.object({
+  body: z.object({
+    platform: platformEnum,
+    theme: z.enum(['dark', 'light', 'system']),
   }),
 });
 

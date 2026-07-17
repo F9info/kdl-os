@@ -15,10 +15,16 @@ const C=(l,v,h)=>({l,t:'color',v,h}), N=(l,v,u,h)=>({l,t:'number',v,u,h}),
       SE=(l,v,o,h)=>({l,t:'select',v,o,h}), TG=(l,v,h)=>({l,t:'toggle',v,h}),
       TX=(l,v,h)=>({l,t:'text',v,h}), PW=(l,v,h)=>({l,t:'password',v,h}),
       RA=(l,v,o,h)=>({l,t:'radio',v,o,h}), MS=(l,v,o,h)=>({l,t:'multiselect',v,o,h}),
-      FI=(l,v,h)=>({l,t:'file',v,h}), TA=(l,v,h)=>({l,t:'textarea',v,h});
+      FI=(l,v,h)=>({l,t:'file',v,h}), TA=(l,v,h)=>({l,t:'textarea',v,h}),
+      // Typography Scale table: one row per text style {name,size,sizeUnit,
+      // family,weight,lineHeight,letterSpacing}. `o` carries the Family
+      // column's base choice list (FONTS) through seed's buildOptions, same
+      // as SE fields. sizeUnit is one of TYPO_SIZE_UNITS (px/em/in).
+      TT=(l,v,h)=>({l,t:'typo_table',v,o:FONTS,h});
 
 const FONTS=['Inter','Roboto','Poppins','Open Sans','Lato','Montserrat','Source Sans 3','SF Pro','System UI'];
 const WEIGHTS=['100','300','400','500','600','700','800'];
+const TYPO_SIZE_UNITS=['px','em','in'];
 
 // Per-input-style settings (Forms) — each style is independently editable
 const INPUT_STYLE_SECTIONS=(()=>{const out=[];
@@ -41,19 +47,61 @@ const BASE_TABS=[
 {id:'typography',icon:'🔤',ic:'#5e5ce6',label:'Typography',desc:'Fonts, weights and per-device font sizes',
  devices:[{id:'desktop',label:'🖥️ Desktop'},{id:'laptop',label:'💻 Laptop'},{id:'ipad',label:'📱 iPad'},{id:'mobile',label:'📲 Mobile'}],sections:[
   ['Custom Fonts',[{l:'Custom Fonts',t:'fonts',v:[{type:'google',name:'Inter',src:'https://fonts.googleapis.com/css2?family=Inter:wght@300..800'}],h:'Add rows — Google Font URL or upload a font file'}]],
-  ['Font Family',[SE('Heading Font','Poppins',FONTS),SE('Body Font','Inter',FONTS),SE('Navigation Font','Inter',FONTS)]],
-  ['Font Size',[N('H1 (Title)',32,'px'),N('H2',26,'px'),N('H3',22,'px'),N('H4',18,'px'),N('H5',16,'px'),N('H6',14,'px'),N('Paragraph (Body)',14,'px'),N('Small Text',12,'px')],'desktop'],
-  ['Font Size',[N('H1 (Title)',30,'px'),N('H2',24,'px'),N('H3',20,'px'),N('H4',17,'px'),N('H5',15,'px'),N('H6',13,'px'),N('Paragraph (Body)',14,'px'),N('Small Text',12,'px')],'laptop'],
-  ['Font Size',[N('H1 (Title)',28,'px'),N('H2',23,'px'),N('H3',19,'px'),N('H4',16,'px'),N('H5',14,'px'),N('H6',13,'px'),N('Paragraph (Body)',13,'px'),N('Small Text',11,'px')],'ipad'],
-  ['Font Size',[N('H1 (Title)',24,'px'),N('H2',20,'px'),N('H3',18,'px'),N('H4',15,'px'),N('H5',13,'px'),N('H6',12,'px'),N('Paragraph (Body)',13,'px'),N('Small Text',11,'px')],'mobile'],
-  ['Font Weight',[SE('Light','300',WEIGHTS),SE('Regular','400',WEIGHTS),SE('Medium','500',WEIGHTS),SE('Semi Bold','600',WEIGHTS),SE('Bold','700',WEIGHTS)],'desktop'],
-  ['Font Weight',[SE('Light','300',WEIGHTS),SE('Regular','400',WEIGHTS),SE('Medium','500',WEIGHTS),SE('Semi Bold','600',WEIGHTS),SE('Bold','700',WEIGHTS)],'laptop'],
-  ['Font Weight',[SE('Light','300',WEIGHTS),SE('Regular','400',WEIGHTS),SE('Medium','500',WEIGHTS),SE('Semi Bold','600',WEIGHTS),SE('Bold','700',WEIGHTS)],'ipad'],
-  ['Font Weight',[SE('Light','300',WEIGHTS),SE('Regular','400',WEIGHTS),SE('Medium','500',WEIGHTS),SE('Semi Bold','600',WEIGHTS),SE('Bold','700',WEIGHTS)],'mobile'],
-  ['Text Rules',[SL('Line Height',1.5,1,2.4,'',0.05),SL('Letter Spacing',0,-2,4,'px',0.1),SE('Text Transform','None',['None','Capitalize','Uppercase','Lowercase'])],'desktop'],
-  ['Text Rules',[SL('Line Height',1.5,1,2.4,'',0.05),SL('Letter Spacing',0,-2,4,'px',0.1),SE('Text Transform','None',['None','Capitalize','Uppercase','Lowercase'])],'laptop'],
-  ['Text Rules',[SL('Line Height',1.45,1,2.4,'',0.05),SL('Letter Spacing',0,-2,4,'px',0.1),SE('Text Transform','None',['None','Capitalize','Uppercase','Lowercase'])],'ipad'],
-  ['Text Rules',[SL('Line Height',1.4,1,2.4,'',0.05),SL('Letter Spacing',0,-2,4,'px',0.1),SE('Text Transform','None',['None','Capitalize','Uppercase','Lowercase'])],'mobile'],
+  // Typography Scale: one table per device, one row per text style — replaces
+  // the old separate Font Size / Font Weight / Text Rules groups (KDL request:
+  // "name, size, family, weight, rules in one table, e.g. h1, 32px, inter, 400").
+  ['Typography Scale',[TT('Typography Scale',[
+    {name:'H1 (Title)',size:32,family:'Poppins',weight:'700',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'H2',size:26,family:'Poppins',weight:'700',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'H3',size:22,family:'Poppins',weight:'600',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'H4',size:18,family:'Poppins',weight:'600',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'H5',size:16,family:'Poppins',weight:'500',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'H6',size:14,family:'Poppins',weight:'500',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'Paragraph',size:14,family:'Inter',weight:'400',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'Body',size:14,family:'Inter',weight:'400',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'List (li)',size:14,family:'Inter',weight:'400',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'Small Text',size:12,family:'Inter',weight:'400',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'Navigation',size:14,family:'Inter',weight:'400',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+  ])],'desktop'],
+  ['Typography Scale',[TT('Typography Scale',[
+    {name:'H1 (Title)',size:30,family:'Poppins',weight:'700',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'H2',size:24,family:'Poppins',weight:'700',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'H3',size:20,family:'Poppins',weight:'600',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'H4',size:17,family:'Poppins',weight:'600',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'H5',size:15,family:'Poppins',weight:'500',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'H6',size:13,family:'Poppins',weight:'500',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'Paragraph',size:14,family:'Inter',weight:'400',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'Body',size:14,family:'Inter',weight:'400',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'List (li)',size:14,family:'Inter',weight:'400',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'Small Text',size:12,family:'Inter',weight:'400',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+    {name:'Navigation',size:13,family:'Inter',weight:'400',lineHeight:1.5,letterSpacing:0,sizeUnit:'px'},
+  ])],'laptop'],
+  ['Typography Scale',[TT('Typography Scale',[
+    {name:'H1 (Title)',size:28,family:'Poppins',weight:'700',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
+    {name:'H2',size:23,family:'Poppins',weight:'700',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
+    {name:'H3',size:19,family:'Poppins',weight:'600',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
+    {name:'H4',size:16,family:'Poppins',weight:'600',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
+    {name:'H5',size:14,family:'Poppins',weight:'500',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
+    {name:'H6',size:13,family:'Poppins',weight:'500',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
+    {name:'Paragraph',size:13,family:'Inter',weight:'400',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
+    {name:'Body',size:13,family:'Inter',weight:'400',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
+    {name:'List (li)',size:13,family:'Inter',weight:'400',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
+    {name:'Small Text',size:11,family:'Inter',weight:'400',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
+    {name:'Navigation',size:13,family:'Inter',weight:'400',lineHeight:1.45,letterSpacing:0,sizeUnit:'px'},
+  ])],'ipad'],
+  ['Typography Scale',[TT('Typography Scale',[
+    {name:'H1 (Title)',size:24,family:'Poppins',weight:'700',lineHeight:1.4,letterSpacing:0,sizeUnit:'px'},
+    {name:'H2',size:20,family:'Poppins',weight:'700',lineHeight:1.4,letterSpacing:0,sizeUnit:'px'},
+    {name:'H3',size:18,family:'Poppins',weight:'600',lineHeight:1.4,letterSpacing:0,sizeUnit:'px'},
+    {name:'H4',size:15,family:'Poppins',weight:'600',lineHeight:1.4,letterSpacing:0,sizeUnit:'px'},
+    {name:'H5',size:13,family:'Poppins',weight:'500',lineHeight:1.4,letterSpacing:0,sizeUnit:'px'},
+    {name:'H6',size:12,family:'Poppins',weight:'500',lineHeight:1.4,letterSpacing:0,sizeUnit:'px'},
+    {name:'Paragraph',size:13,family:'Inter',weight:'400',lineHeight:1.4,letterSpacing:0,sizeUnit:'px'},
+    {name:'Body',size:13,family:'Inter',weight:'400',lineHeight:1.4,letterSpacing:0,sizeUnit:'px'},
+    {name:'List (li)',size:13,family:'Inter',weight:'400',lineHeight:1.4,letterSpacing:0,sizeUnit:'px'},
+    {name:'Small Text',size:11,family:'Inter',weight:'400',lineHeight:1.4,letterSpacing:0,sizeUnit:'px'},
+    {name:'Navigation',size:13,family:'Inter',weight:'400',lineHeight:1.4,letterSpacing:0,sizeUnit:'px'},
+  ])],'mobile'],
 ]},
 {id:'layout',icon:'📐',ic:'#30b0c7',label:'Layout',desc:'Structure, container, grid and spacing — per device',
  devices:[{id:'desktop',label:'🖥️ Desktop'},{id:'laptop',label:'💻 Laptop'},{id:'ipad',label:'📱 iPad'},{id:'mobile',label:'📲 Mobile'}],sections:[
@@ -72,7 +120,10 @@ const BASE_TABS=[
 ]},
 {id:'navigation',icon:'🧭',ic:'#32d74b',label:'Navigation',desc:'Sidebar, menus and navigation aids',
  modes:[{id:'dark',label:'🌙 Dark Theme'},{id:'light',label:'☀️ Light Theme'}],sections:[
-  ['Sidebar & Menu',[SE('Sidebar Style','Dark',['Dark','Light','Glass','Compact']),SE('Icon Style','Line',['Line','Filled','Duotone']),N('Menu Icon Size',18,'px'),N('Menu Font Size',13,'px')]],
+  // Menu Font Size removed — was a second, out-of-sync source of truth for the
+  // same concept as Typography Scale's per-device "Navigation" row. That row
+  // is now canonical; see AdminSidebar.tsx / ComponentPreviews.tsx.
+  ['Sidebar & Menu',[SE('Sidebar Style','Dark',['Dark','Light','Glass','Compact']),SE('Icon Style','Line',['Line','Filled','Duotone']),N('Menu Icon Size',18,'px')]],
   ['Menu Colors',[C('Menu Text Color','#a5a5ad'),C('Menu Hover Color','#323236'),C('Active Menu Color','#4f8ef7'),C('Active Background','#1f3a63')],'dark'],
   ['Menu Colors',[C('Menu Text Color','#66707f'),C('Menu Hover Color','#eceef3'),C('Active Menu Color','#0a66f0'),C('Active Background','#e8f0fe')],'light'],
   ['Behavior',[TG('Expand / Collapse',true),TG('Sticky Sidebar',true),TG('Breadcrumbs',true),TG('Top Navigation',false),TG('Bottom Navigation',false)]],
@@ -200,7 +251,15 @@ const clone=o=>JSON.parse(JSON.stringify(o));
    BASE_TABS) and re-mapped per platform via `from`; `scale` multiplies px
    values so TV resolutions start with correctly enlarged defaults. */
 const PLATFORMS=[
-  {id:'webapp',label:'🌐 Web App',devices:[
+  {id:'webapp',label:'🌐 Webapp Frontend',devices:[
+    {id:'desktop',label:'🖥️ Desktop',from:'desktop'},
+    {id:'laptop_h',label:'💻 Laptop ↔',from:'laptop'},{id:'laptop_v',label:'💻 Laptop ↕',from:'laptop'},
+    {id:'tablet_h',label:'📱 Tablet ↔',from:'ipad'},{id:'tablet_v',label:'📱 Tablet ↕',from:'ipad'},
+    {id:'mobile_h',label:'📲 Mobile ↔',from:'mobile'},{id:'mobile_v',label:'📲 Mobile ↕',from:'mobile'}]},
+  // Admin panel gets the same 11-pane BASE_TABS shape as the frontend site
+  // (no PANE_OVERRIDES/EXTRA_TABS entry needed — mirrors how 'webapp' itself
+  // has none and falls straight through to BASE_TABS verbatim).
+  {id:'webapp_admin',label:'🛠️ Webapp Admin',devices:[
     {id:'desktop',label:'🖥️ Desktop',from:'desktop'},
     {id:'laptop_h',label:'💻 Laptop ↔',from:'laptop'},{id:'laptop_v',label:'💻 Laptop ↕',from:'laptop'},
     {id:'tablet_h',label:'📱 Tablet ↔',from:'ipad'},{id:'tablet_v',label:'📱 Tablet ↕',from:'ipad'},
@@ -851,7 +910,7 @@ PLATFORMS.forEach(p=>{
 
 export {
   C, N, SL, SE, TG, TX, PW, RA, MS, FI, TA,
-  FONTS, WEIGHTS,
+  FONTS, WEIGHTS, TYPO_SIZE_UNITS,
   BASE_TABS, PLATFORMS, PANE_OVERRIDES, EXTRA_TABS,
   BASE_DEVICE_TAGS,
   slug, clone, scalePx, scaleField, perDeviceAll,

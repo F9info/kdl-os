@@ -25,6 +25,7 @@ import {
   Lock,
   Sparkles,
   CloudUpload,
+  HardDrive,
 } from 'lucide-react'
 import { useUiStore } from '@/stores/ui.store'
 import { useAuth } from '@/hooks/useAuth'
@@ -32,6 +33,7 @@ import { usePermissions } from '@/hooks/usePermissions'
 import { useModules } from '@/hooks/useModules'
 import api from '@/lib/axios'
 import { cn } from '@/lib/utils'
+import { AppImage } from '@/components/shared/AppImage'
 import type { Type, SettingField } from '@/types/models.types'
 
 const MODULE_ICON_MAP: Record<string, React.ElementType> = {
@@ -95,6 +97,7 @@ const GROUPS: NavGroup[] = [
       { label: 'Types', href: '/admin/settings/types', icon: ListChecks, permission: 'types:view' },
       { label: 'Categories', href: '/admin/settings/categories', icon: Briefcase, permission: 'categories:view' },
       { label: 'Fields', href: '/admin/settings/fields', icon: SlidersHorizontal, permission: 'setting-fields:view' },
+      { label: 'Storage', href: '/admin/settings/storage', icon: HardDrive, permission: 'settings:view' },
     ],
   },
 ]
@@ -107,7 +110,7 @@ export function AdminSidebar() {
   const pathname = usePathname()
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
 
-  const canViewSettings = can('types:view') || can('categories:view') || can('setting-fields:view')
+  const canViewSettings = can('types:view') || can('categories:view') || can('setting-fields:view') || can('settings:view')
 
   // Active types become top-level menu items automatically — one per type,
   // each linking to its own settings page. New types appear as soon as created.
@@ -161,16 +164,27 @@ export function AdminSidebar() {
     <aside
       className={cn(
         'flex flex-col border-r bg-card transition-all duration-200',
-        sidebarOpen ? 'w-64' : 'w-16'
+        sidebarOpen ? '' : 'w-16'
       )}
+      // Expanded width driven by the Template Engine's Layout > Sidebar Width
+      // token — the device-neutral, unit-suffixed alias from te-layout.css,
+      // self-selecting per viewport via the @media blocks compileTokens emits
+      // (KDL-209 contract; the old device-prefixed raw var is legacy).
+      style={sidebarOpen ? { width: 'var(--te-layout-sidebar-width)' } : undefined}
     >
-      <div className="flex h-16 items-center border-b px-4">
+      {/* te-header keeps the logo row the same height as the TopBar when
+          Layout > Header Height changes. */}
+      <div className="te-header flex items-center border-b px-4">
         {logoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          // Expanded: logo_image class sizes the logo from the Template
+          // Engine's Images pane. Collapsed: the 64px rail is fixed chrome, so
+          // an inline style (beats the class) pins the logo to fit it.
+          <AppImage
+            size="logo"
             src={logoUrl}
             alt="Logo"
-            className={cn('object-contain', sidebarOpen ? 'h-10 max-w-[180px]' : 'h-8 w-8')}
+            className="max-w-full"
+            style={sidebarOpen ? undefined : { width: '2rem', height: '2rem' }}
           />
         ) : sidebarOpen ? (
           <span className="font-bold text-lg tracking-tight">KDL Admin</span>
@@ -188,7 +202,7 @@ export function AdminSidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                'flex items-center gap-3 rounded-md px-3 py-2 transition-colors',
                 active
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
@@ -210,7 +224,7 @@ export function AdminSidebar() {
               key={item.path}
               href={item.path}
               className={cn(
-                'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                'flex items-center gap-3 rounded-md px-3 py-2 transition-colors',
                 active
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
@@ -233,7 +247,7 @@ export function AdminSidebar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                  'flex items-center gap-3 rounded-md px-3 py-2 transition-colors',
                   active
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
@@ -257,7 +271,7 @@ export function AdminSidebar() {
                 onClick={() => toggleGroup(group.label)}
                 aria-expanded={open}
                 className={cn(
-                  'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                  'flex w-full items-center gap-3 rounded-md px-3 py-2 transition-colors',
                   hasActive
                     ? 'text-foreground font-medium'
                     : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
@@ -289,7 +303,7 @@ export function AdminSidebar() {
                         key={child.href}
                         href={child.href}
                         className={cn(
-                          'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                          'flex items-center gap-3 rounded-md px-3 py-2 transition-colors',
                           active
                             ? 'bg-primary text-primary-foreground'
                             : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'

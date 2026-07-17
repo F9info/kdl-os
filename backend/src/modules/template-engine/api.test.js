@@ -424,6 +424,9 @@ describe('B3 — compileTokens', () => {
     const type = { id: 'type-1', slug: 'webapp.buttons', name: 'Buttons' };
     prisma.type = { findMany: vi.fn().mockResolvedValue([type]) };
     prisma.settingField = { findMany: vi.fn().mockResolvedValue(fields) };
+    // compileTokens now embeds the saved Active Theme (KDL-198) — no row set
+    // means getActiveTheme falls back to 'system'.
+    prisma.appSetting = { findUnique: vi.fn().mockResolvedValue(null) };
   }
 
   it('returns a { css, json } object', async () => {
@@ -879,5 +882,80 @@ describe('B8 — getValues platform ownership guard', () => {
 
     const result = await service.getValues('webapp', 'type-1');
     expect(result['webapp.branding.colors.primary']).toBe('#ff0000');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// B9 — Active/Default Theme per platform (KDL-198)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('B9 — getActiveTheme / setActiveTheme', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    redis.del.mockResolvedValue(1);
+    const { prisma } = await import('../../config/database.js');
+    prisma.appSetting = { findUnique: vi.fn(), upsert: vi.fn() };
+  });
+
+  it('defaults to system when no row is saved', async () => {
+    const { prisma } = await import('../../config/database.js');
+    prisma.appSetting.findUnique.mockResolvedValue(null);
+    expect(await service.getActiveTheme('webapp')).toBe('system');
+  });
+
+  it('defaults to system when the saved value is not a recognized theme', async () => {
+    const { prisma } = await import('../../config/database.js');
+    prisma.appSetting.findUnique.mockResolvedValue({ value: 'blue' });
+    expect(await service.getActiveTheme('webapp')).toBe('system');
+  });
+
+  it('returns the saved theme, keyed per platform', async () => {
+    const { prisma } = await import('../../config/database.js');
+    prisma.appSetting.findUnique.mockResolvedValue({ value: 'light' });
+    expect(await service.getActiveTheme('webapp')).toBe('light');
+    expect(prisma.appSetting.findUnique).toHaveBeenCalledWith({
+      where: { key: 'template_engine.active_theme.webapp' },
+    });
+  });
+
+  it('upserts the theme and invalidates the token cache', async () => {
+    const { prisma } = await import('../../config/database.js');
+    prisma.appSetting.upsert.mockResolvedValue({});
+    const result = await service.setActiveTheme('webapp', 'dark');
+    expect(result).toEqual({ activeTheme: 'dark' });
+    expect(prisma.appSetting.upsert).toHaveBeenCalledWith({
+      where: { key: 'template_engine.active_theme.webapp' },
+      create: { key: 'template_engine.active_theme.webapp', value: 'dark', type: 'string', is_public: true },
+      update: { value: 'dark' },
+    });
+    expect(redis.del).toHaveBeenCalled();
+  });
+
+  it('rejects a theme outside dark/light/system', async () => {
+    const { prisma } = await import('../../config/database.js');
+    const result = await service.setActiveTheme('webapp', 'blue');
+    expect(result.errors).toBeDefined();
+    expect(result.errors[0]).toMatch(/theme must be one of/);
+    expect(prisma.appSetting.upsert).not.toHaveBeenCalled();
+  });
+});
+
+describe('B9 — postActiveThemeBodySchema', () => {
+  it('accepts a valid platform+theme pair', async () => {
+    const { postActiveThemeBodySchema } = await import('./schema.js');
+    const ok = postActiveThemeBodySchema.safeParse({ body: { platform: 'webapp', theme: 'light' } });
+    expect(ok.success).toBe(true);
+  });
+
+  it('rejects an unknown platform', async () => {
+    const { postActiveThemeBodySchema } = await import('./schema.js');
+    const bad = postActiveThemeBodySchema.safeParse({ body: { platform: 'desktop', theme: 'light' } });
+    expect(bad.success).toBe(false);
+  });
+
+  it('rejects an unknown theme value', async () => {
+    const { postActiveThemeBodySchema } = await import('./schema.js');
+    const bad = postActiveThemeBodySchema.safeParse({ body: { platform: 'webapp', theme: 'blue' } });
+    expect(bad.success).toBe(false);
   });
 });

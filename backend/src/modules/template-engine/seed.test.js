@@ -45,6 +45,17 @@ const makeFakePrisma = () => {
         Object.assign(cur, data);
         return cur;
       },
+      deleteMany: async ({ where }) => {
+        const keep = new Set(where?.slug?.notIn ?? []);
+        let count = 0;
+        for (const [slug] of rows) {
+          if (!keep.has(slug)) {
+            rows.delete(slug);
+            count += 1;
+          }
+        }
+        return { count };
+      },
     };
   };
   return { type: table(), category: table(), settingField: table() };
@@ -55,18 +66,18 @@ describe('template-engine seed (A3 gate)', () => {
     const db = makeFakePrisma();
 
     const first = await seedTemplateEngine(db);
-    expect(first).toMatchObject({ types: 86, categories: 902, fields: 3910, created: 3910 });
-    expect(db.type.rows.size).toBe(86);
-    expect(db.category.rows.size).toBe(902);
-    expect(db.settingField.rows.size).toBe(3910);
+    expect(first).toMatchObject({ types: 97, categories: 968, fields: 4084, created: 4084 });
+    expect(db.type.rows.size).toBe(97);
+    expect(db.category.rows.size).toBe(968);
+    expect(db.settingField.rows.size).toBe(4084);
 
     const second = await seedTemplateEngine(db);
     expect(second.created).toBe(0);
     expect(second.updated).toBe(0);
     // No row counts changed and every slug is still unique (Map keyed on slug).
-    expect(db.type.rows.size).toBe(86);
-    expect(db.category.rows.size).toBe(902);
-    expect(db.settingField.rows.size).toBe(3910);
+    expect(db.type.rows.size).toBe(97);
+    expect(db.category.rows.size).toBe(968);
+    expect(db.settingField.rows.size).toBe(4084);
   });
 
   it('spot-check: webapp primary button background color row with correct default', async () => {

@@ -1,12 +1,21 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Sun, Moon, Save, RotateCcw } from 'lucide-react'
+import { Search, Save, RotateCcw } from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { ModuleGuard } from '@/components/shared/ModuleGuard'
+import { refreshTemplateEngineTokens } from '@/components/providers/TemplateEngineThemeProvider'
+import { DeviceShell } from './previews/DeviceShell'
+import { DefaultShellPreview } from './previews/ThemeDevicePreviews'
+import { DEVICE_PANE_PREVIEWS } from './previews/registry'
+import { COMPONENT_PANE_PREVIEWS } from './previews/componentRegistry'
+import { BrandingFileControl } from './controls/BrandingFileControl'
+import { FontsEditorControl, parseRows as parseFontRows } from './controls/FontsEditorControl'
+import { ImageClassesEditorControl } from './controls/ImageClassesEditorControl'
+import { TypographyTableControl } from './controls/TypographyTableControl'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // API types — shape returned by GET /template-engine/schema?platform=
@@ -61,10 +70,12 @@ type TEFieldRaw = Omit<TEField, 'options' | 'value' | 'default_value'> & {
 type TEGroupRaw = Omit<TEGroup, 'fields'> & { fields: TEFieldRaw[] }
 type TEPaneRaw = Omit<TEPane, 'groups'> & { groups: TEGroupRaw[] }
 
-// GET /template-engine/schema?platform= → { success, data: { platform, schema } }
+type TEActiveTheme = 'dark' | 'light' | 'system'
+
+// GET /template-engine/schema?platform= → { success, data: { platform, schema, activeTheme } }
 interface TESchemaEnvelope {
   success: boolean
-  data: { platform: string; schema: TEPaneRaw[] }
+  data: { platform: string; schema: TEPaneRaw[]; activeTheme: TEActiveTheme }
 }
 
 // The API sends `options` as a JSON string; controls read it as an object.
@@ -150,16 +161,37 @@ const NAV_GROUPS: Record<string, [string, string[]][]> = {
   ],
 }
 
-const PLATFORMS = [
-  { id: 'webapp', label: '🌐 Web App' },
-  { id: 'tv', label: '📺 TV' },
-  { id: 'android', label: '🤖 Android Native' },
-  { id: 'ios', label: '🍎 iOS Native' },
+// Landing screen shown before the editor — step 1 (top-level platform) and
+// step 2 (sub-section within it) of the three-step flow.
+const LANDING_PLATFORMS = [
+  { id: 'webapp', icon: '🌐', label: 'Webapp' },
+  { id: 'tv', icon: '📺', label: 'TV' },
+  { id: 'android', icon: '🤖', label: 'Android Native' },
+  { id: 'ios', icon: '🍎', label: 'iOS Native' },
 ]
+
+// Sub-cards per top-level platform. `platformId` is the real backend platform
+// this sub-section edits — a UI grouping only for now, no new data per sub
+// (e.g. Webapp's Frontend and Landing Page both edit the 'webapp' platform
+// until a dedicated Landing Page platform is actually requested). TV/Android/
+// iOS have one sub each today since there's no real split yet — more to come
+// per user direction, one at a time.
+const LANDING_SUBTABS: Record<string, { key: string; platformId: string; icon: string; label: string }[]> = {
+  webapp: [
+    { key: 'webapp-frontend', platformId: 'webapp', icon: '🖥️', label: 'Frontend' },
+    { key: 'webapp-admin', platformId: 'webapp_admin', icon: '🛠️', label: 'Admin' },
+    { key: 'webapp-landing', platformId: 'webapp', icon: '📄', label: 'Landing Page' },
+  ],
+  tv: [{ key: 'tv-app', platformId: 'tv', icon: '📺', label: 'TV App' }],
+  android: [{ key: 'android-app', platformId: 'android', icon: '🤖', label: 'Android App' }],
+  ios: [{ key: 'ios-app', platformId: 'ios', icon: '🍎', label: 'iOS App' }],
+}
 
 const LS_PLATFORM = 'te_platform'
 const LS_PANE = 'te_pane'
-const LS_THEME = 'te_theme'
+const LS_TOP_PLATFORM = 'te_top_platform'
+const LS_SUB_LABEL = 'te_sub_label'
+const LS_ENTERED = 'te_entered'
 
 function lsGet(key: string, fallback: string) {
   if (typeof window === 'undefined') return fallback
@@ -188,7 +220,26 @@ function mutationErrorMessage(err: unknown, fallback: string): string {
 // Field controls
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Mirrors the backend's hex acceptance (service.js validateFieldValue): 3/4,
+// 6 or 8 hex digits. rgb()/rgba() values are left untouched (edited via the
+// swatch, which only emits hex) — the text field only ever needs to validate
+// what a human can type.
+const HEX_COLOR_RE = /^#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/
+
 function ColorControl({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [text, setText] = useState(value)
+  useEffect(() => setText(value), [value])
+
+  const commit = (raw: string) => {
+    const trimmed = raw.trim()
+    const withHash = trimmed && !trimmed.startsWith('#') ? `#${trimmed}` : trimmed
+    if (HEX_COLOR_RE.test(withHash)) {
+      onChange(withHash)
+    } else {
+      setText(value) // invalid — revert to last committed value
+    }
+  }
+
   return (
     <span className="inline-flex items-center gap-2">
       <input
@@ -197,7 +248,18 @@ function ColorControl({ value, onChange }: { value: string; onChange: (v: string
         className="h-8 w-8 cursor-pointer rounded border border-border bg-transparent p-0.5"
         onChange={(e) => onChange(e.target.value)}
       />
-      <span className="min-w-[90px] rounded border border-border bg-muted px-2 py-1 font-mono text-xs">{value}</span>
+      <input
+        type="text"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={(e) => commit(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.currentTarget.blur()
+        }}
+        spellCheck={false}
+        className="min-w-[90px] rounded border border-border bg-muted px-2 py-1 font-mono text-xs"
+        data-testid="color-hex-input"
+      />
     </span>
   )
 }
@@ -404,25 +466,48 @@ function MultiSelectControl({
   )
 }
 
+// Select fields that let the user pick a font family (Heading/Body/Navigation/Button
+// Font) all share the backend's static FONTS list baked into `options.choices` at
+// seed time — they never see fonts added later via the sibling "Custom Fonts"
+// repeater. Every such field is named "*Font*" and is the only select convention
+// that is (Font Weight/Size fields use different field names) — see FieldControl.
+const isFontFamilySelect = (field: TEField) => field.input_type === 'select' && /font/i.test(field.field_name)
+
 function FieldControl({
   field,
   value,
   onChange,
+  customFontNames,
 }: {
   field: TEField
   value: string
   onChange: (v: string) => void
+  customFontNames: string[]
 }) {
   const t = field.input_type
   if (t === 'color') return <ColorControl value={value} onChange={onChange} />
   if (t === 'number') return <NumberControl value={value} onChange={onChange} options={field.options} />
   if (t === 'slider') return <SliderControl value={value} onChange={onChange} options={field.options} />
-  if (t === 'select') return <SelectControl value={value} onChange={onChange} options={field.options} />
+  if (t === 'select') {
+    const choices = field.options?.choices ?? []
+    const options =
+      isFontFamilySelect(field) && customFontNames.length
+        ? { ...field.options, choices: [...choices, ...customFontNames.filter((n) => !choices.includes(n))] }
+        : field.options
+    return <SelectControl value={value} onChange={onChange} options={options} />
+  }
   if (t === 'toggle') return <ToggleControl value={value} onChange={onChange} />
   if (t === 'radio') return <RadioControl value={value} onChange={onChange} options={field.options} />
   if (t === 'textarea') return <TextareaControl value={value} onChange={onChange} />
   if (t === 'multiselect') return <MultiSelectControl value={value} onChange={onChange} options={field.options} />
-  // text, password, fonts, imglist, file → text input as baseline
+  if (t === 'file') return <BrandingFileControl value={value} onChange={onChange} />
+  if (t === 'fonts') return <FontsEditorControl value={value} onChange={onChange} />
+  if (t === 'imglist') return <ImageClassesEditorControl value={value} onChange={onChange} />
+  if (t === 'typo_table') {
+    const choices = [...(field.options?.choices ?? []), ...customFontNames]
+    return <TypographyTableControl value={value} onChange={onChange} choices={choices} />
+  }
+  // text, password → text input as baseline
   return <TextControl value={value} onChange={onChange} />
 }
 
@@ -430,58 +515,20 @@ function FieldControl({
 // Device frame previews
 // ─────────────────────────────────────────────────────────────────────────────
 
-function PreviewFrame({ platform }: { platform: string }) {
-  if (platform === 'tv') {
-    return (
-      <div className="flex flex-col items-center gap-0">
-        <div className="w-[280px] rounded-[8px] border-[7px] border-[#0b0b0c] bg-black shadow-[0_14px_40px_rgba(0,0,0,.5)]">
-          <div className="min-h-[158px] bg-[#0d0d0f]" />
-        </div>
-        <div
-          className="h-3.5 w-16 bg-[#0b0b0c]"
-          style={{ clipPath: 'polygon(22% 0, 78% 0, 100% 100%, 0 100%)' }}
-        />
-        <div className="h-1 w-32 rounded-sm bg-[#141416]" />
-      </div>
-    )
-  }
-  if (platform === 'android') {
-    return (
-      <div className="flex flex-col">
-        <div className="w-[240px] overflow-hidden rounded-[28px] border-[8px] border-[#0b0b0c] shadow-[0_16px_44px_rgba(0,0,0,.5)]">
-          <div className="min-h-[420px] bg-card" />
-          <div className="flex justify-around bg-[#0b0b0c] px-10 py-2 text-xs text-[#9a9aa2]">
-            <span>◁</span>
-            <span>○</span>
-            <span>▢</span>
-          </div>
-        </div>
-      </div>
-    )
-  }
-  if (platform === 'ios') {
-    return (
-      <div className="w-[240px] overflow-hidden rounded-[28px] border-[8px] border-[#0b0b0c] shadow-[0_16px_44px_rgba(0,0,0,.5)]">
-        <div className="flex justify-center bg-black py-1.5">
-          <span className="h-3 w-20 rounded-full border border-[#232325] bg-[#0b0b0c]" />
-        </div>
-        <div className="min-h-[420px] bg-card" />
-      </div>
-    )
-  }
-  // webapp → browser frame
+function PreviewFrame({
+  platform,
+  pane,
+  values,
+}: {
+  platform: string
+  pane: TEPane | undefined
+  values: Record<string, string>
+}) {
+  const renderer = pane ? { ...DEVICE_PANE_PREVIEWS, ...COMPONENT_PANE_PREVIEWS }[pane.id] : undefined
   return (
-    <div className="w-[280px] overflow-hidden rounded-[8px] border border-border shadow-lg">
-      <div className="flex items-center gap-1.5 border-b border-border bg-muted px-2 py-1.5">
-        <span className="h-2 w-2 rounded-full bg-[#ff5f57]" />
-        <span className="h-2 w-2 rounded-full bg-[#febc2e]" />
-        <span className="h-2 w-2 rounded-full bg-[#28c840]" />
-        <span className="ml-1.5 flex-1 rounded bg-background px-2 py-0.5 text-[10px] text-muted-foreground">
-          app.kdl.dev
-        </span>
-      </div>
-      <div className="min-h-[220px] bg-card" />
-    </div>
+    <DeviceShell platform={platform}>
+      {renderer && pane ? renderer({ pane, values }) : <DefaultShellPreview platform={platform} />}
+    </DeviceShell>
   )
 }
 
@@ -501,11 +548,15 @@ function TemplateEngineInner() {
   const qc = useQueryClient()
 
   // ── UI prefs (localStorage only) ──────────────────────────────────────────
+  // Three-step flow, persisted like everything else here — a refresh must land
+  // back where you were, not reset to step 1: 1) pick a top-level platform
+  // card, 2) pick a sub-section card within it, 3) the existing full editor
+  // for whichever platform that sub-section edits.
+  const [topPlatform, setTopPlatformState] = useState<string | null>(() => lsGet(LS_TOP_PLATFORM, '') || null)
+  const [subLabel, setSubLabelState] = useState<string | null>(() => lsGet(LS_SUB_LABEL, '') || null)
+  const [entered, setEnteredState] = useState(() => lsGet(LS_ENTERED, '') === 'true')
   const [platform, setPlatformState] = useState(() => lsGet(LS_PLATFORM, 'webapp'))
   const [activePane, setActivePaneState] = useState(() => lsGet(LS_PANE, ''))
-  const [theme, setThemeState] = useState<'dark' | 'light'>(() =>
-    lsGet(LS_THEME, 'dark') === 'light' ? 'light' : 'dark',
-  )
   const [search, setSearch] = useState('')
   // Per-pane active mode/device selectors (sub-tabs within a pane)
   const [paneMode, setPaneMode] = useState<Record<string, string>>({})
@@ -513,6 +564,18 @@ function TemplateEngineInner() {
   // Which sections are open (default: all open)
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({})
 
+  const setTopPlatform = (p: string | null) => {
+    setTopPlatformState(p)
+    lsSet(LS_TOP_PLATFORM, p ?? '')
+  }
+  const setSubLabel = (s: string | null) => {
+    setSubLabelState(s)
+    lsSet(LS_SUB_LABEL, s ?? '')
+  }
+  const setEntered = (v: boolean) => {
+    setEnteredState(v)
+    lsSet(LS_ENTERED, String(v))
+  }
   const setPlatform = (p: string) => {
     setPlatformState(p)
     lsSet(LS_PLATFORM, p)
@@ -521,22 +584,43 @@ function TemplateEngineInner() {
     setActivePaneState(p)
     lsSet(LS_PANE, p)
   }
-  const setTheme = (t: 'dark' | 'light') => {
-    setThemeState(t)
-    lsSet(LS_THEME, t)
-  }
 
   // ── API: load schema ──────────────────────────────────────────────────────
-  const { data, isLoading, isError } = useQuery<TEPane[]>({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['template-engine-schema', platform],
     queryFn: () =>
-      api
-        .get<TESchemaEnvelope>(`/template-engine/schema?platform=${platform}`)
-        .then((r) => normalizeSchema(r.data.data.schema)),
+      api.get<TESchemaEnvelope>(`/template-engine/schema?platform=${platform}`).then((r) => ({
+        panes: normalizeSchema(r.data.data.schema),
+        activeTheme: r.data.data.activeTheme,
+      })),
     staleTime: 30_000,
   })
 
-  const panes: TEPane[] = data ?? []
+  const panes: TEPane[] = data?.panes ?? []
+
+  // ── Active/Default Theme (per platform: dark | light | system) ───────────
+  // Distinct from `paneMode` above: paneMode only picks which theme's *field
+  // values* are being edited in the current pane. This is the platform-wide
+  // "the running app should render in ___" setting the runtime
+  // TemplateEngineThemeProvider reads via GET /tokens.
+  const [activeThemeSaved, setActiveThemeSaved] = useState<Record<string, TEActiveTheme>>({})
+  const [activeThemeLocal, setActiveThemeLocal] = useState<Record<string, TEActiveTheme>>({})
+
+  useEffect(() => {
+    if (!data) return
+    setActiveThemeSaved((prev) => (prev[platform] ? prev : { ...prev, [platform]: data.activeTheme }))
+    setActiveThemeLocal((prev) => (prev[platform] ? prev : { ...prev, [platform]: data.activeTheme }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, platform])
+
+  const isThemeDirty = useCallback(
+    (plat: string) => {
+      const saved = activeThemeSaved[plat]
+      const local = activeThemeLocal[plat]
+      return saved != null && local != null && saved !== local
+    },
+    [activeThemeSaved, activeThemeLocal],
+  )
 
   // ── Local editable values (never localStorage) ────────────────────────────
   // Keyed by pane.id → { field.id: value }
@@ -576,11 +660,23 @@ function TemplateEngineInner() {
       })
       return next
     })
-    // Initialize mode/device defaults for panes
+    // Initialize mode/device defaults for panes. Default to the saved Active
+    // Theme (KDL-198 Problem 2) rather than always the first mode — otherwise
+    // a Dark-first `modes` array makes the editor reset to Dark on every
+    // reload regardless of which theme is actually active.
+    const resolvedSystemMode =
+      typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: light)').matches
+        ? 'light'
+        : 'dark'
+    const savedActiveTheme = data?.activeTheme ?? 'system'
+    const preferredMode = savedActiveTheme === 'system' ? resolvedSystemMode : savedActiveTheme
     setPaneMode((prev) => {
       const next = { ...prev }
       panes.forEach((pane) => {
-        if (!next[pane.id] && pane.modes?.length) next[pane.id] = pane.modes![0]!.id
+        if (!next[pane.id] && pane.modes?.length) {
+          const hasPreferred = pane.modes!.some((m) => m.id === preferredMode)
+          next[pane.id] = hasPreferred ? preferredMode : pane.modes![0]!.id
+        }
       })
       return next
     })
@@ -612,16 +708,21 @@ function TemplateEngineInner() {
     [localValues, savedValues, platform],
   )
 
-  const isPlatformDirty = useCallback(() => {
-    return panes.some((p) => isDirtyPane(p.id))
-  }, [panes, isDirtyPane])
+  // Read inside mutation callbacks via ref, not the closed-over `localValues`
+  // — useMutation's onSuccess otherwise risks acting on the render's snapshot
+  // from when the mutation was *defined*, not the latest edits made while the
+  // request was in flight (the "Save needs two clicks" report on this pane).
+  const localValuesRef = useRef(localValues)
+  useEffect(() => {
+    localValuesRef.current = localValues
+  }, [localValues])
 
   // ── Mutations ────────────────────────────────────────────────────────────
   const saveMutation = useMutation({
     mutationFn: async ({ paneId, platform: plat }: { paneId: string; platform: string }) => {
       const pane = panes.find((p) => p.id === paneId)
       if (!pane) throw new Error('Pane not found')
-      const local = localValues[vkeyOf(plat, paneId)] ?? {}
+      const local = localValuesRef.current[vkeyOf(plat, paneId)] ?? {}
       const values = pane.groups.flatMap((g) =>
         g.fields.map((f) => ({ field_id: f.id, value: local[f.id] ?? f.value })),
       )
@@ -633,7 +734,7 @@ function TemplateEngineInner() {
     },
     onSuccess: (_, { paneId, platform: plat }) => {
       const k = vkeyOf(plat, paneId)
-      setSavedValues((prev) => ({ ...prev, [k]: { ...(localValues[k] ?? {}) } }))
+      setSavedValues((prev) => ({ ...prev, [k]: { ...(localValuesRef.current[k] ?? {}) } }))
       void qc.invalidateQueries({ queryKey: ['template-engine-schema', plat] })
       toast({ title: 'Saved', description: 'Settings saved successfully.' })
     },
@@ -641,6 +742,22 @@ function TemplateEngineInner() {
       toast({
         title: 'Save failed',
         description: mutationErrorMessage(err, 'Could not save settings.'),
+        variant: 'destructive',
+      })
+    },
+  })
+
+  const activeThemeMutation = useMutation({
+    mutationFn: async ({ platform: plat, theme }: { platform: string; theme: TEActiveTheme }) =>
+      api.post('/template-engine/active-theme', { platform: plat, theme }),
+    onSuccess: (_, { platform: plat, theme }) => {
+      setActiveThemeSaved((prev) => ({ ...prev, [plat]: theme }))
+      toast({ title: 'Saved', description: 'Active theme updated.' })
+    },
+    onError: (err) => {
+      toast({
+        title: 'Save failed',
+        description: mutationErrorMessage(err, 'Could not save the active theme.'),
         variant: 'destructive',
       })
     },
@@ -694,6 +811,32 @@ function TemplateEngineInner() {
   const activePaneData = panes.find((p) => p.id === activePane)
   const activePaneValues = localValues[vkey(activePane)] ?? {}
   const activePaneIsDirty = isDirtyPane(activePane)
+  const activeThemeIsDirty = isThemeDirty(platform)
+
+  // Names from the pane's "Custom Fonts" repeater (if any), live-edited value
+  // included — these get appended to every Font Family select's choices below.
+  const customFontNames = useMemo(() => {
+    const fontsField = activePaneData?.groups.flatMap((g) => g.fields).find((f) => f.input_type === 'fonts')
+    if (!fontsField) return []
+    const raw = activePaneValues[fontsField.id] ?? fontsField.value
+    return parseFontRows(raw)
+      .map((r) => r.name.trim())
+      .filter(Boolean)
+  }, [activePaneData, activePaneValues])
+
+  const handleSave = async () => {
+    try {
+      if (activePaneIsDirty) await saveMutation.mutateAsync({ paneId: activePane, platform })
+      if (activeThemeIsDirty) {
+        await activeThemeMutation.mutateAsync({ platform, theme: activeThemeLocal[platform]! })
+      }
+      // Let the runtime provider re-fetch compiled tokens so the admin sees
+      // the change immediately instead of needing a hard reload.
+      refreshTemplateEngineTokens()
+    } catch {
+      // Individual mutations already surface their own error toast.
+    }
+  }
 
   // Visible groups (filtered by active mode/device)
   const visibleGroups = useMemo(() => {
@@ -752,8 +895,78 @@ function TemplateEngineInner() {
   // Render
   // ─────────────────────────────────────────────────────────────────────────
 
-  const isSaving = saveMutation.isPending
+  const isSaving = saveMutation.isPending || activeThemeMutation.isPending
   const isResetting = resetMutation.isPending
+
+  if (!topPlatform) {
+    return (
+      <div
+        className="-m-6 flex flex-col items-center justify-center gap-10 bg-muted/30"
+        data-testid="template-engine-landing"
+        style={{ height: 'calc(100dvh - 4rem)' }}
+      >
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Template Engine</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Choose a platform to configure</p>
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-4">
+          {LANDING_PLATFORMS.map((p) => (
+            <button
+              key={p.id}
+              data-testid={`landing-card-${p.id}`}
+              onClick={() => setTopPlatform(p.id)}
+              className="flex w-40 flex-col items-center gap-2 rounded-xl border border-border bg-card p-6 text-center transition-colors hover:border-primary hover:bg-secondary"
+            >
+              <span className="text-4xl">{p.icon}</span>
+              <span className="text-sm font-semibold">{p.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (!entered) {
+    const subtabs = LANDING_SUBTABS[topPlatform] ?? []
+    return (
+      <div
+        className="-m-6 flex flex-col items-center justify-center gap-10 bg-muted/30"
+        data-testid="template-engine-sublanding"
+        style={{ height: 'calc(100dvh - 4rem)' }}
+      >
+        <div className="text-center">
+          <button
+            data-testid="landing-back"
+            onClick={() => setTopPlatform(null)}
+            className="mb-3 text-sm text-muted-foreground hover:text-foreground"
+          >
+            ← Back
+          </button>
+          <h1 className="text-2xl font-bold">
+            {LANDING_PLATFORMS.find((p) => p.id === topPlatform)?.label}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">Choose a section to configure</p>
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-4">
+          {subtabs.map((s) => (
+            <button
+              key={s.key}
+              data-testid={`landing-subcard-${s.key}`}
+              onClick={() => {
+                setPlatform(s.platformId)
+                setSubLabel(s.label)
+                setEntered(true)
+              }}
+              className="flex w-40 flex-col items-center gap-2 rounded-xl border border-border bg-card p-6 text-center transition-colors hover:border-primary hover:bg-secondary"
+            >
+              <span className="text-4xl">{s.icon}</span>
+              <span className="text-sm font-semibold">{s.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div
@@ -769,46 +982,69 @@ function TemplateEngineInner() {
         <span className="flex-1 text-center text-sm font-semibold text-muted-foreground">
           Application Settings — Template Engine
         </span>
-        <button
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="rounded border border-border px-3 py-1 text-xs text-muted-foreground hover:text-foreground"
-          aria-label="Toggle preview theme"
-        >
-          {theme === 'dark' ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
-        </button>
       </div>
 
-      {/* ── Platform bar ─────────────────────────────────────────────────── */}
+      {/* ── Breadcrumb — back out of the 3-step platform/section flow ───────── */}
       <div
-        className="flex flex-shrink-0 flex-wrap items-center justify-center gap-1 border-b bg-sidebar px-4 py-2"
-        data-testid="platform-bar"
+        className="flex flex-shrink-0 items-center gap-1.5 border-b bg-sidebar px-4 py-2 text-sm"
+        data-testid="breadcrumb"
       >
-        {PLATFORMS.map((p) => {
-          const dirty = p.id === platform && isPlatformDirty()
-          return (
-            <button
-              key={p.id}
-              data-testid={`platform-btn-${p.id}`}
-              onClick={() => setPlatform(p.id)}
-              className={cn(
-                'inline-flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-sm font-semibold transition-colors',
-                p.id === platform
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
-              )}
-            >
-              {p.label}
-              {dirty && (
-                <span
-                  className={cn(
-                    'h-1.5 w-1.5 rounded-full',
-                    p.id === platform ? 'bg-white' : 'bg-amber-400',
-                  )}
-                />
-              )}
-            </button>
-          )
-        })}
+        <button
+          data-testid="breadcrumb-root"
+          onClick={() => {
+            setTopPlatform(null)
+            setEntered(false)
+          }}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          Template Engine
+        </button>
+        <span className="text-muted-foreground">/</span>
+        <button
+          data-testid="breadcrumb-platform"
+          onClick={() => setEntered(false)}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          {LANDING_PLATFORMS.find((p) => p.id === topPlatform)?.label ?? topPlatform}
+        </button>
+        {subLabel && (
+          <>
+            <span className="text-muted-foreground">/</span>
+            <span className="font-medium text-foreground">{subLabel}</span>
+          </>
+        )}
+      </div>
+
+      {/* ── Active theme bar ─────────────────────────────────────────────── */}
+      {/* Platform-wide "the running app should render in ___" — distinct from
+          the per-pane Dark/Light mode tabs below, which only pick which
+          theme's field values are being edited. Read by the runtime
+          TemplateEngineThemeProvider via GET /tokens. */}
+      <div
+        className="flex flex-shrink-0 items-center justify-center gap-2 border-b bg-sidebar px-4 py-1.5"
+        data-testid="active-theme-bar"
+      >
+        <span className="text-xs text-muted-foreground">Active Theme</span>
+        <div className="flex gap-1">
+          {(['dark', 'light', 'system'] as const).map((t) => {
+            const current = activeThemeLocal[platform] ?? activeThemeSaved[platform] ?? 'system'
+            return (
+              <button
+                key={t}
+                data-testid={`active-theme-btn-${t}`}
+                onClick={() => setActiveThemeLocal((prev) => ({ ...prev, [platform]: t }))}
+                className={cn(
+                  'rounded px-2.5 py-1 text-xs font-medium capitalize transition-colors',
+                  current === t
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-secondary',
+                )}
+              >
+                {t}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* ── Body ─────────────────────────────────────────────────────────── */}
@@ -914,7 +1150,10 @@ function TemplateEngineInner() {
                   )}
                   {activePaneData.modes && activePaneData.modes.length > 0 && (
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">Theme</span>
+                      {/* Distinct from the "Active Theme" bar above (KDL-199 Problem
+                          2): this only picks which theme's *field values* are being
+                          edited here, not the app's live theme. */}
+                      <span className="text-xs text-muted-foreground">Editing values for</span>
                       <div className="flex gap-1">
                         {activePaneData.modes.map((m) => (
                           <button
@@ -977,32 +1216,41 @@ function TemplateEngineInner() {
                   </button>
                   {isSectionOpen(sectionKey) && (
                     <div className="overflow-hidden rounded-lg border bg-card">
-                      {group.fields.map((field, fi) => (
-                        <div
-                          key={field.id}
-                          className={cn(
-                            'grid grid-cols-[minmax(200px,340px)_1fr] items-center gap-3 px-5 py-3',
-                            fi < group.fields.length - 1 ? 'border-b' : '',
-                          )}
-                          data-testid={`field-row-${field.id}`}
-                        >
-                          <div>
-                            <div className="text-sm font-medium">{field.field_name}</div>
-                            {field.alt_text && (
-                              <div className="mt-0.5 font-mono text-[11px] text-muted-foreground">
-                                {field.alt_text}
+                      {group.fields.map((field, fi) => {
+                        // The Typography Scale table is self-labeling (column
+                        // headers + row names) — the generic field_name/alt_text
+                        // label column would just repeat the group name above it.
+                        const isTable = field.input_type === 'typo_table'
+                        return (
+                          <div
+                            key={field.id}
+                            className={cn(
+                              isTable ? 'p-3' : 'grid grid-cols-[minmax(200px,340px)_1fr] items-center gap-3 px-5 py-3',
+                              fi < group.fields.length - 1 ? 'border-b' : '',
+                            )}
+                            data-testid={`field-row-${field.id}`}
+                          >
+                            {!isTable && (
+                              <div>
+                                <div className="text-sm font-medium">{field.field_name}</div>
+                                {field.alt_text && (
+                                  <div className="mt-0.5 font-mono text-[11px] text-muted-foreground">
+                                    {field.alt_text}
+                                  </div>
+                                )}
                               </div>
                             )}
+                            <div className={isTable ? '' : 'flex flex-wrap items-center justify-end gap-2'}>
+                              <FieldControl
+                                field={field}
+                                value={activePaneValues[field.id] ?? field.value}
+                                onChange={(v) => handleFieldChange(activePane, field.id, v)}
+                                customFontNames={customFontNames}
+                              />
+                            </div>
                           </div>
-                          <div className="flex flex-wrap items-center justify-end gap-2">
-                            <FieldControl
-                              field={field}
-                              value={activePaneValues[field.id] ?? field.value}
-                              onChange={(v) => handleFieldChange(activePane, field.id, v)}
-                            />
-                          </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   )}
                 </div>
@@ -1016,7 +1264,7 @@ function TemplateEngineInner() {
             data-testid="footer"
           >
             <span className="text-xs text-muted-foreground">
-              {activePaneIsDirty ? 'Unsaved changes' : 'All changes saved'}
+              {activePaneIsDirty || activeThemeIsDirty ? 'Unsaved changes' : 'All changes saved'}
             </span>
             <div className="flex gap-2">
               <button
@@ -1030,8 +1278,8 @@ function TemplateEngineInner() {
               </button>
               <button
                 data-testid="btn-save"
-                onClick={() => saveMutation.mutate({ paneId: activePane, platform })}
-                disabled={isSaving || !activePane || !activePaneIsDirty}
+                onClick={handleSave}
+                disabled={isSaving || !activePane || (!activePaneIsDirty && !activeThemeIsDirty)}
                 className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
               >
                 <Save className="h-3.5 w-3.5" />
@@ -1046,7 +1294,7 @@ function TemplateEngineInner() {
           <div className="self-start text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
             Live Preview
           </div>
-          <PreviewFrame platform={platform} />
+          <PreviewFrame platform={platform} pane={activePaneData} values={activePaneValues} />
           <div className="text-center text-[11px] text-muted-foreground">
             {activePaneData?.label ?? 'Select a pane'} — updates live as you edit
           </div>

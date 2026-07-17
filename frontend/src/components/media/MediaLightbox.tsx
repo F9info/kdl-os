@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { X, Download } from 'lucide-react'
 import type { Media } from '@/types/media.types'
 import { usePermissions } from '@/hooks/usePermissions'
+import { AppImage } from '@/components/shared/AppImage'
 
 interface MediaLightboxProps {
   item: Media | null
@@ -63,8 +64,7 @@ export function MediaLightbox({ item, onClose }: MediaLightboxProps) {
         {!item.url ? (
           <p className="text-white/70 text-sm">This file has no preview available yet.</p>
         ) : isImage ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.url} alt={name} className="max-h-full max-w-full object-contain" />
+          <AppImage size="gallery" src={item.url} alt={name} className="max-h-full max-w-full" />
         ) : isVideo ? (
           <video src={item.url} controls autoPlay className="max-h-full max-w-full">
             Your browser cannot play this video.
