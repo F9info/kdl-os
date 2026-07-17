@@ -24,16 +24,15 @@ export function FormField({ label, error, required, children, hint, className }:
   // Inject id + error aria attrs into the wrapped control so <label htmlFor> works
   // and Input/Textarea pick up their aria-[invalid=true] destructive styling.
   // Explicit props on the child always win over injected ones.
-  const control =
-    isValidElement<AriaInvalidProps>(children)
-      ? cloneElement(children, {
-          id: children.props.id ?? fieldId,
-          ...(error && {
-            'aria-invalid': children.props['aria-invalid'] ?? true,
-            'aria-describedby': children.props['aria-describedby'] ?? errorId,
-          }),
-        })
-      : children
+  const control = isValidElement<AriaInvalidProps>(children)
+    ? cloneElement(children, {
+        id: children.props.id ?? fieldId,
+        ...(error && {
+          'aria-invalid': children.props['aria-invalid'] ?? true,
+          'aria-describedby': children.props['aria-describedby'] ?? errorId,
+        }),
+      })
+    : children
 
   return (
     <div className={cn('space-y-2', className)}>
