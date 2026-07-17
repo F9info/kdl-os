@@ -60,6 +60,6 @@ retrofit for the reference `mediaQuery`/`trashQuery` composition).
     />
   ) : (
     <ItemGrid items={items} />
-  );
+  )
 }
 ```

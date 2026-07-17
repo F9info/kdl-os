@@ -1,11 +1,6 @@
-"use client";
+'use client'
 
-import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-  type ColumnDef,
-} from "@tanstack/react-table";
+import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from '@tanstack/react-table'
 import {
   Table,
   TableBody,
@@ -13,25 +8,25 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/ui/empty-state";
-import { ErrorState } from "@/components/ui/error-state";
-import { Pagination } from "./Pagination";
+} from '@/components/ui/table'
+import { Skeleton } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/ui/empty-state'
+import { ErrorState } from '@/components/ui/error-state'
+import { Pagination } from './Pagination'
 
 interface DataTableProps<T> {
-  columns: ColumnDef<T>[];
-  data: T[];
-  isLoading: boolean;
+  columns: ColumnDef<T>[]
+  data: T[]
+  isLoading: boolean
   /** List-fetch error — renders ErrorState in place of the rows/empty state. */
-  error?: unknown;
-  onRetry?: () => void;
+  error?: unknown
+  onRetry?: () => void
   pagination?: {
-    page: number;
-    totalPages: number;
-    onPageChange: (page: number) => void;
-  };
-  emptyMessage?: string;
+    page: number
+    totalPages: number
+    onPageChange: (page: number) => void
+  }
+  emptyMessage?: string
 }
 
 export function DataTable<T>({
@@ -41,14 +36,14 @@ export function DataTable<T>({
   error,
   onRetry,
   pagination,
-  emptyMessage = "No results found.",
+  emptyMessage = 'No results found.',
 }: DataTableProps<T>) {
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
-  });
+  })
 
   return (
     <div className="space-y-4">
@@ -61,10 +56,7 @@ export function DataTable<T>({
                   <TableHead key={header.id}>
                     {header.isPlaceholder
                       ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
+                      : flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 ))}
               </TableRow>
@@ -98,10 +90,7 @@ export function DataTable<T>({
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -122,5 +111,5 @@ export function DataTable<T>({
         </div>
       )}
     </div>
-  );
+  )
 }

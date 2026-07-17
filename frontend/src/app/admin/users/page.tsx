@@ -1,39 +1,39 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Pencil, Trash2, Search, KeyRound, Plus } from "lucide-react";
-import type { ColumnDef } from "@tanstack/react-table";
-import api from "@/lib/axios";
-import { toast } from "@/hooks/use-toast";
-import { usePagination } from "@/hooks/usePagination";
-import { useDebounce } from "@/hooks/useDebounce";
-import { useAuth } from "@/hooks/useAuth";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { PermissionGuard } from "@/components/shared/PermissionGuard";
-import { DataTable } from "@/components/shared/DataTable";
-import { StatusBadge } from "@/components/shared/StatusBadge";
-import { Modal } from "@/components/shared/Modal";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { ErrorAlert } from "@/components/shared/ErrorAlert";
-import { FormField } from "@/components/shared/FormField";
-import { PermissionMatrix } from "@/components/shared/PermissionMatrix";
-import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
-import { MediaPicker } from "@/components/shared/MediaPicker";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
+import { useState, useEffect } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Pencil, Trash2, Search, KeyRound, Plus } from 'lucide-react'
+import type { ColumnDef } from '@tanstack/react-table'
+import api from '@/lib/axios'
+import { toast } from '@/hooks/use-toast'
+import { usePagination } from '@/hooks/usePagination'
+import { useDebounce } from '@/hooks/useDebounce'
+import { useAuth } from '@/hooks/useAuth'
+import { PageHeader } from '@/components/layout/PageHeader'
+import { PermissionGuard } from '@/components/shared/PermissionGuard'
+import { DataTable } from '@/components/shared/DataTable'
+import { StatusBadge } from '@/components/shared/StatusBadge'
+import { Modal } from '@/components/shared/Modal'
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
+import { ErrorAlert } from '@/components/shared/ErrorAlert'
+import { FormField } from '@/components/shared/FormField'
+import { PermissionMatrix } from '@/components/shared/PermissionMatrix'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { MediaPicker } from '@/components/shared/MediaPicker'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { formatDate } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/select'
+import { formatDate } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import type {
   User,
   UserStatus,
@@ -41,7 +41,7 @@ import type {
   PermissionModuleMatrix,
   OverrideMode,
   UserPermissionOverride,
-} from "@/types/models.types";
+} from '@/types/models.types'
 import {
   createUserSchema,
   type CreateUserFormData,
@@ -49,34 +49,34 @@ import {
   type UpdateUserFormData,
   resetPasswordSchema,
   type ResetPasswordFormData,
-} from "./_schemas";
+} from './_schemas'
 
-type EditTab = "details" | "overrides";
+type EditTab = 'details' | 'overrides'
 
 interface OverrideState {
-  [permissionId: string]: OverrideMode | null;
+  [permissionId: string]: OverrideMode | null
 }
 
 export default function UsersPage() {
-  const { isSuperAdmin } = useAuth();
-  const queryClient = useQueryClient();
-  const { page, setPage } = usePagination();
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<UserStatus | "">("");
-  const [createOpen, setCreateOpen] = useState(false);
-  const [editUser, setEditUser] = useState<User | null>(null);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null);
-  const [editTab, setEditTab] = useState<EditTab>("details");
-  const [overrides, setOverrides] = useState<OverrideState>({});
-  const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
-  const debouncedSearch = useDebounce(search);
+  const { isSuperAdmin } = useAuth()
+  const queryClient = useQueryClient()
+  const { page, setPage } = usePagination()
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<UserStatus | ''>('')
+  const [createOpen, setCreateOpen] = useState(false)
+  const [editUser, setEditUser] = useState<User | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null)
+  const [editTab, setEditTab] = useState<EditTab>('details')
+  const [overrides, setOverrides] = useState<OverrideState>({})
+  const [avatarPickerOpen, setAvatarPickerOpen] = useState(false)
+  const debouncedSearch = useDebounce(search)
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["users", page, debouncedSearch, statusFilter],
+    queryKey: ['users', page, debouncedSearch, statusFilter],
     queryFn: () =>
       api
-        .get("/users", {
+        .get('/users', {
           params: {
             page,
             limit: 10,
@@ -87,93 +87,88 @@ export default function UsersPage() {
         .then(
           (r) =>
             r.data.data as {
-              users: User[];
-              pagination: { total: number; pages: number };
-            },
+              users: User[]
+              pagination: { total: number; pages: number }
+            }
         ),
-  });
+  })
 
   const { data: roles } = useQuery({
-    queryKey: ["roles-all"],
+    queryKey: ['roles-all'],
     queryFn: () =>
-      api
-        .get("/roles", { params: { limit: 100 } })
-        .then((r) => r.data.data.roles as RbacRole[]),
-  });
+      api.get('/roles', { params: { limit: 100 } }).then((r) => r.data.data.roles as RbacRole[]),
+  })
 
   const { data: matrix } = useQuery({
-    queryKey: ["permissions-matrix"],
+    queryKey: ['permissions-matrix'],
     queryFn: () =>
-      api
-        .get("/permissions/matrix")
-        .then((r) => r.data.data.matrix as PermissionModuleMatrix[]),
-    enabled: editTab === "overrides" && !!editUser,
-  });
+      api.get('/permissions/matrix').then((r) => r.data.data.matrix as PermissionModuleMatrix[]),
+    enabled: editTab === 'overrides' && !!editUser,
+  })
 
   const { data: existingOverrides } = useQuery({
-    queryKey: ["user-overrides", editUser?.id],
+    queryKey: ['user-overrides', editUser?.id],
     queryFn: () =>
       api
         .get(`/users/${editUser!.id}/overrides`)
         .then((r) => r.data.data.overrides as UserPermissionOverride[]),
-    enabled: editTab === "overrides" && !!editUser,
-  });
+    enabled: editTab === 'overrides' && !!editUser,
+  })
 
   const createMutation = useMutation({
-    mutationFn: (data: Omit<CreateUserFormData, "confirm_password">) =>
-      api.post("/users", data),
+    mutationFn: (data: Omit<CreateUserFormData, 'confirm_password'>) => api.post('/users', data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast({ title: "User created" });
-      setCreateOpen(false);
-      createForm.reset();
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      toast({ title: 'User created' })
+      setCreateOpen(false)
+      createForm.reset()
     },
-  });
+  })
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateUserFormData }) =>
       api.patch(`/users/${id}`, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast({ title: "User updated" });
-      setEditUser(null);
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      toast({ title: 'User updated' })
+      setEditUser(null)
     },
-  });
+  })
 
   const overridesMutation = useMutation({
     mutationFn: ({
       id,
       overrideList,
     }: {
-      id: string;
-      overrideList: { permission_id: string; mode: OverrideMode }[];
+      id: string
+      overrideList: { permission_id: string; mode: OverrideMode }[]
     }) => api.put(`/users/${id}/overrides`, { overrides: overrideList }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-      queryClient.invalidateQueries({ queryKey: ["user-overrides"] });
-      toast({ title: "Permission overrides saved" });
-      setEditUser(null);
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      queryClient.invalidateQueries({ queryKey: ['user-overrides'] })
+      toast({ title: 'Permission overrides saved' })
+      setEditUser(null)
     },
-  });
+  })
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/users/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast({ title: "User deleted" });
-      setDeleteId(null);
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      toast({ title: 'User deleted' })
+      setDeleteId(null)
     },
-  });
+  })
 
   const resetPasswordMutation = useMutation({
     mutationFn: ({ id, password }: { id: string; password: string }) =>
       api.post(`/users/${id}/reset-password`, { password }),
     onSuccess: () => {
-      toast({ title: "Password reset successfully" });
-      setResetPasswordUser(null);
-      resetForm.reset();
+      toast({ title: 'Password reset successfully' })
+      setResetPasswordUser(null)
+      resetForm.reset()
     },
-  });
+  })
 
   const {
     register,
@@ -182,118 +177,112 @@ export default function UsersPage() {
     setValue,
     watch,
     formState: { errors },
-  } = useForm<UpdateUserFormData>({ resolver: zodResolver(updateUserSchema) });
+  } = useForm<UpdateUserFormData>({ resolver: zodResolver(updateUserSchema) })
 
   const resetForm = useForm<ResetPasswordFormData>({
     resolver: zodResolver(resetPasswordSchema),
-  });
+  })
 
   const createForm = useForm<CreateUserFormData>({
     resolver: zodResolver(createUserSchema),
-    defaultValues: { status: "ACTIVE", is_active: true, role_ids: [] },
-  });
+    defaultValues: { status: 'ACTIVE', is_active: true, role_ids: [] },
+  })
 
-  const createSelectedRoleIds = createForm.watch("role_ids") ?? [];
-  const createIsActive = createForm.watch("is_active");
-  const createStatus = createForm.watch("status");
+  const createSelectedRoleIds = createForm.watch('role_ids') ?? []
+  const createIsActive = createForm.watch('is_active')
+  const createStatus = createForm.watch('status')
 
-  const selectedRoleIds = watch("role_ids") ?? [];
-  const isActiveValue = watch("is_active");
-  const statusValue = watch("status");
+  const selectedRoleIds = watch('role_ids') ?? []
+  const isActiveValue = watch('is_active')
+  const statusValue = watch('status')
 
   function openEdit(user: User) {
-    setEditUser(user);
-    setEditTab("details");
-    setOverrides({});
+    setEditUser(user)
+    setEditTab('details')
+    setOverrides({})
     reset({
       name: user.name,
       email: user.email,
       role_ids: user.roles?.map((r) => r.id) ?? [],
-      status: user.status ?? "ACTIVE",
+      status: user.status ?? 'ACTIVE',
       is_active: user.is_active,
-    });
+    })
   }
 
   useEffect(() => {
-    if (existingOverrides && editTab === "overrides") {
-      const seed: OverrideState = {};
+    if (existingOverrides && editTab === 'overrides') {
+      const seed: OverrideState = {}
       existingOverrides.forEach((o) => {
-        seed[o.permission_id] = o.mode;
-      });
-      setOverrides(seed);
+        seed[o.permission_id] = o.mode
+      })
+      setOverrides(seed)
     }
-  }, [existingOverrides, editTab]);
+  }, [existingOverrides, editTab])
 
   function toggleCreateRoleId(roleId: string) {
-    const current = createSelectedRoleIds;
+    const current = createSelectedRoleIds
     const next = current.includes(roleId)
       ? current.filter((id) => id !== roleId)
-      : [...current, roleId];
-    createForm.setValue("role_ids", next, { shouldValidate: true });
+      : [...current, roleId]
+    createForm.setValue('role_ids', next, { shouldValidate: true })
   }
 
   function toggleRoleId(roleId: string) {
-    const current = selectedRoleIds;
+    const current = selectedRoleIds
     const next = current.includes(roleId)
       ? current.filter((id) => id !== roleId)
-      : [...current, roleId];
-    setValue("role_ids", next, { shouldValidate: true });
+      : [...current, roleId]
+    setValue('role_ids', next, { shouldValidate: true })
   }
 
   function buildOverrideList(): {
-    permission_id: string;
-    mode: OverrideMode;
+    permission_id: string
+    mode: OverrideMode
   }[] {
     return Object.entries(overrides)
       .filter(([, mode]) => mode !== null)
       .map(([permission_id, mode]) => ({
         permission_id,
         mode: mode as OverrideMode,
-      }));
+      }))
   }
 
   function getGrantIds(): string[] {
     return Object.entries(overrides)
-      .filter(([, m]) => m === "GRANT")
-      .map(([id]) => id);
+      .filter(([, m]) => m === 'GRANT')
+      .map(([id]) => id)
   }
 
   function getDenyIds(): string[] {
     return Object.entries(overrides)
-      .filter(([, m]) => m === "DENY")
-      .map(([id]) => id);
+      .filter(([, m]) => m === 'DENY')
+      .map(([id]) => id)
   }
 
-  function userStatusVariant(
-    status: UserStatus,
-  ): "active" | "suspended" | "pending" {
-    if (status === "ACTIVE") return "active";
-    if (status === "SUSPENDED") return "suspended";
-    return "pending";
+  function userStatusVariant(status: UserStatus): 'active' | 'suspended' | 'pending' {
+    if (status === 'ACTIVE') return 'active'
+    if (status === 'SUSPENDED') return 'suspended'
+    return 'pending'
   }
 
   const columns: ColumnDef<User>[] = [
     {
-      accessorKey: "name",
-      header: "Name",
+      accessorKey: 'name',
+      header: 'Name',
       cell: ({ row }) => (
         <div>
           <div className="font-medium">{row.original.name}</div>
-          <div className="text-xs text-muted-foreground">
-            {row.original.email}
-          </div>
+          <div className="text-xs text-muted-foreground">{row.original.email}</div>
         </div>
       ),
     },
     {
-      id: "roles",
-      header: "Roles",
+      id: 'roles',
+      header: 'Roles',
       cell: ({ row }) => {
-        const userRoles = row.original.roles ?? [];
+        const userRoles = row.original.roles ?? []
         if (!userRoles.length) {
-          return (
-            <span className="text-muted-foreground text-xs">No roles</span>
-          );
+          return <span className="text-muted-foreground text-xs">No roles</span>
         }
         return (
           <div className="flex flex-wrap gap-1">
@@ -306,32 +295,30 @@ export default function UsersPage() {
               </span>
             ))}
           </div>
-        );
+        )
       },
     },
     {
-      accessorKey: "status",
-      header: "Status",
+      accessorKey: 'status',
+      header: 'Status',
       cell: ({ row }) => {
-        const status = row.original.status ?? "ACTIVE";
-        return <StatusBadge variant={userStatusVariant(status)} />;
+        const status = row.original.status ?? 'ACTIVE'
+        return <StatusBadge variant={userStatusVariant(status)} />
       },
     },
     {
-      accessorKey: "is_active",
-      header: "Active",
-      cell: ({ row }) => (
-        <StatusBadge variant={row.original.is_active ? "active" : "inactive"} />
-      ),
+      accessorKey: 'is_active',
+      header: 'Active',
+      cell: ({ row }) => <StatusBadge variant={row.original.is_active ? 'active' : 'inactive'} />,
     },
     {
-      accessorKey: "created_at",
-      header: "Joined",
+      accessorKey: 'created_at',
+      header: 'Joined',
       cell: ({ row }) => formatDate(row.original.created_at),
     },
     {
-      id: "actions",
-      header: "Actions",
+      id: 'actions',
+      header: 'Actions',
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
           <Button
@@ -364,9 +351,9 @@ export default function UsersPage() {
         </div>
       ),
     },
-  ];
+  ]
 
-  const flatMatrix = matrix ?? [];
+  const flatMatrix = matrix ?? []
 
   return (
     <PermissionGuard permission="users:view">
@@ -391,10 +378,7 @@ export default function UsersPage() {
               className="pl-9"
             />
           </div>
-          <Select
-            value={statusFilter}
-            onValueChange={(v) => setStatusFilter(v as UserStatus | "")}
-          >
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as UserStatus | '')}>
             <SelectTrigger className="w-40">
               <SelectValue placeholder="All statuses" />
             </SelectTrigger>
@@ -428,8 +412,8 @@ export default function UsersPage() {
         <Modal
           open={createOpen}
           onClose={() => {
-            setCreateOpen(false);
-            createForm.reset();
+            setCreateOpen(false)
+            createForm.reset()
           }}
           title="Add User"
           size="lg"
@@ -438,16 +422,15 @@ export default function UsersPage() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  setCreateOpen(false);
-                  createForm.reset();
+                  setCreateOpen(false)
+                  createForm.reset()
                 }}
               >
                 Cancel
               </Button>
               <Button
-                onClick={createForm.handleSubmit(
-                  ({ confirm_password: _cp, ...data }) =>
-                    createMutation.mutate(data),
+                onClick={createForm.handleSubmit(({ confirm_password: _cp, ...data }) =>
+                  createMutation.mutate(data)
                 )}
                 disabled={createMutation.isPending}
               >
@@ -458,19 +441,11 @@ export default function UsersPage() {
           }
         >
           <form className="space-y-4">
-            <FormField
-              label="Name"
-              error={createForm.formState.errors.name?.message}
-              required
-            >
-              <Input {...createForm.register("name")} />
+            <FormField label="Name" error={createForm.formState.errors.name?.message} required>
+              <Input {...createForm.register('name')} />
             </FormField>
-            <FormField
-              label="Email"
-              error={createForm.formState.errors.email?.message}
-              required
-            >
-              <Input type="email" {...createForm.register("email")} />
+            <FormField label="Email" error={createForm.formState.errors.email?.message} required>
+              <Input type="email" {...createForm.register('email')} />
             </FormField>
             <FormField
               label="Password"
@@ -479,7 +454,7 @@ export default function UsersPage() {
             >
               <Input
                 type="password"
-                {...createForm.register("password")}
+                {...createForm.register('password')}
                 autoComplete="new-password"
               />
             </FormField>
@@ -490,20 +465,16 @@ export default function UsersPage() {
             >
               <Input
                 type="password"
-                {...createForm.register("confirm_password")}
+                {...createForm.register('confirm_password')}
                 autoComplete="new-password"
               />
             </FormField>
 
-            <FormField
-              label="Roles"
-              error={createForm.formState.errors.role_ids?.message}
-              required
-            >
+            <FormField label="Roles" error={createForm.formState.errors.role_ids?.message} required>
               <div className="border rounded-md p-3 space-y-2 max-h-48 overflow-y-auto">
                 {(roles ?? []).map((role) => {
-                  if (!isSuperAdmin && role.slug === "super-admin") return null;
-                  const checked = createSelectedRoleIds.includes(role.id);
+                  if (!isSuperAdmin && role.slug === 'super-admin') return null
+                  const checked = createSelectedRoleIds.includes(role.id)
                   return (
                     <label
                       key={role.id}
@@ -517,18 +488,12 @@ export default function UsersPage() {
                       />
                       <span className="text-sm font-medium">{role.name}</span>
                       {role.is_system && (
-                        <span className="text-xs text-muted-foreground">
-                          (system)
-                        </span>
+                        <span className="text-xs text-muted-foreground">(system)</span>
                       )}
                     </label>
-                  );
+                  )
                 })}
-                {!roles?.length && (
-                  <p className="text-sm text-muted-foreground">
-                    Loading roles…
-                  </p>
-                )}
+                {!roles?.length && <p className="text-sm text-muted-foreground">Loading roles…</p>}
               </div>
             </FormField>
 
@@ -536,7 +501,7 @@ export default function UsersPage() {
               <Select
                 value={createStatus}
                 onValueChange={(v) =>
-                  createForm.setValue("status", v as UserStatus, {
+                  createForm.setValue('status', v as UserStatus, {
                     shouldValidate: true,
                   })
                 }
@@ -556,17 +521,15 @@ export default function UsersPage() {
               <div className="flex items-center gap-2">
                 <Switch
                   checked={createIsActive}
-                  onCheckedChange={(v) => createForm.setValue("is_active", v)}
+                  onCheckedChange={(v) => createForm.setValue('is_active', v)}
                 />
                 <span className="text-sm text-muted-foreground">
-                  {createIsActive ? "Active" : "Inactive"}
+                  {createIsActive ? 'Active' : 'Inactive'}
                 </span>
               </div>
             </FormField>
 
-            {createMutation.error && (
-              <ErrorAlert error={createMutation.error} />
-            )}
+            {createMutation.error && <ErrorAlert error={createMutation.error} />}
           </form>
         </Modal>
 
@@ -574,17 +537,17 @@ export default function UsersPage() {
         <Modal
           open={editUser !== null}
           onClose={() => setEditUser(null)}
-          title={`Edit User — ${editUser?.name ?? ""}`}
+          title={`Edit User — ${editUser?.name ?? ''}`}
           size="lg"
           footer={
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setEditUser(null)}>
                 Cancel
               </Button>
-              {editTab === "details" && (
+              {editTab === 'details' && (
                 <Button
                   onClick={handleSubmit((formData) =>
-                    updateMutation.mutate({ id: editUser!.id, data: formData }),
+                    updateMutation.mutate({ id: editUser!.id, data: formData })
                   )}
                   disabled={updateMutation.isPending}
                 >
@@ -592,7 +555,7 @@ export default function UsersPage() {
                   Save changes
                 </Button>
               )}
-              {editTab === "overrides" && (
+              {editTab === 'overrides' && (
                 <Button
                   onClick={() =>
                     overridesMutation.mutate({
@@ -611,42 +574,37 @@ export default function UsersPage() {
         >
           {/* Tab bar */}
           <div className="flex gap-1 border-b mb-4">
-            {(["details", "overrides"] as const).map((tab) => (
+            {(['details', 'overrides'] as const).map((tab) => (
               <button
                 key={tab}
                 type="button"
                 onClick={() => setEditTab(tab)}
                 className={cn(
-                  "px-4 py-2 text-sm font-medium capitalize border-b-2 -mb-px transition-colors",
+                  'px-4 py-2 text-sm font-medium capitalize border-b-2 -mb-px transition-colors',
                   editTab === tab
-                    ? "border-primary text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground",
+                    ? 'border-primary text-foreground'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
                 )}
               >
-                {tab === "details" ? "Details" : "Permission Overrides"}
+                {tab === 'details' ? 'Details' : 'Permission Overrides'}
               </button>
             ))}
           </div>
 
-          {editTab === "details" && (
+          {editTab === 'details' && (
             <form className="space-y-4">
               <FormField label="Name" error={errors.name?.message} required>
-                <Input {...register("name")} />
+                <Input {...register('name')} />
               </FormField>
               <FormField label="Email" error={errors.email?.message} required>
-                <Input type="email" {...register("email")} />
+                <Input type="email" {...register('email')} />
               </FormField>
 
-              <FormField
-                label="Roles"
-                error={errors.role_ids?.message}
-                required
-              >
+              <FormField label="Roles" error={errors.role_ids?.message} required>
                 <div className="border rounded-md p-3 space-y-2 max-h-48 overflow-y-auto">
                   {(roles ?? []).map((role) => {
-                    if (!isSuperAdmin && role.slug === "super-admin")
-                      return null;
-                    const checked = selectedRoleIds.includes(role.id);
+                    if (!isSuperAdmin && role.slug === 'super-admin') return null
+                    const checked = selectedRoleIds.includes(role.id)
                     return (
                       <label
                         key={role.id}
@@ -660,17 +618,13 @@ export default function UsersPage() {
                         />
                         <span className="text-sm font-medium">{role.name}</span>
                         {role.is_system && (
-                          <span className="text-xs text-muted-foreground">
-                            (system)
-                          </span>
+                          <span className="text-xs text-muted-foreground">(system)</span>
                         )}
                       </label>
-                    );
+                    )
                   })}
                   {!roles?.length && (
-                    <p className="text-sm text-muted-foreground">
-                      Loading roles…
-                    </p>
+                    <p className="text-sm text-muted-foreground">Loading roles…</p>
                   )}
                 </div>
               </FormField>
@@ -679,7 +633,7 @@ export default function UsersPage() {
                 <Select
                   value={statusValue}
                   onValueChange={(v) =>
-                    setValue("status", v as UserStatus, {
+                    setValue('status', v as UserStatus, {
                       shouldValidate: true,
                     })
                   }
@@ -699,10 +653,10 @@ export default function UsersPage() {
                 <div className="flex items-center gap-2">
                   <Switch
                     checked={isActiveValue}
-                    onCheckedChange={(v) => setValue("is_active", v)}
+                    onCheckedChange={(v) => setValue('is_active', v)}
                   />
                   <span className="text-sm text-muted-foreground">
-                    {isActiveValue ? "Active" : "Inactive"}
+                    {isActiveValue ? 'Active' : 'Inactive'}
                   </span>
                 </div>
               </FormField>
@@ -714,9 +668,7 @@ export default function UsersPage() {
                       Media ID: {editUser.avatar_media_id}
                     </span>
                   ) : (
-                    <span className="text-xs text-muted-foreground">
-                      No avatar set
-                    </span>
+                    <span className="text-xs text-muted-foreground">No avatar set</span>
                   )}
                   <Button
                     type="button"
@@ -731,7 +683,7 @@ export default function UsersPage() {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => setValue("avatar_media_id", null)}
+                      onClick={() => setValue('avatar_media_id', null)}
                     >
                       Remove
                     </Button>
@@ -739,9 +691,7 @@ export default function UsersPage() {
                 </div>
               </FormField>
 
-              {updateMutation.error && (
-                <ErrorAlert error={updateMutation.error} />
-              )}
+              {updateMutation.error && <ErrorAlert error={updateMutation.error} />}
             </form>
           )}
 
@@ -749,18 +699,17 @@ export default function UsersPage() {
             open={avatarPickerOpen}
             onClose={() => setAvatarPickerOpen(false)}
             onSelect={(media) => {
-              if (media[0]) setValue("avatar_media_id", media[0].id);
+              if (media[0]) setValue('avatar_media_id', media[0].id)
             }}
             typeFilter="IMAGE"
           />
 
-          {editTab === "overrides" && (
+          {editTab === 'overrides' && (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Per-user overrides supplement role permissions.{" "}
-                <strong>GRANT</strong> adds a permission regardless of roles.{" "}
-                <strong>DENY</strong> removes a permission even if granted by a
-                role. Saving replaces all existing overrides.
+                Per-user overrides supplement role permissions. <strong>GRANT</strong> adds a
+                permission regardless of roles. <strong>DENY</strong> removes a permission even if
+                granted by a role. Saving replaces all existing overrides.
               </p>
 
               {!flatMatrix.length ? (
@@ -776,19 +725,19 @@ export default function UsersPage() {
                       value={getGrantIds()}
                       onChange={(ids) => {
                         setOverrides((prev) => {
-                          const next: OverrideState = { ...prev };
+                          const next: OverrideState = { ...prev }
                           // Clear GRANT for all matrix permissions first
                           flatMatrix.forEach((m) =>
                             Object.values(m.actions).forEach((id) => {
-                              if (id && next[id] === "GRANT") next[id] = null;
-                            }),
-                          );
+                              if (id && next[id] === 'GRANT') next[id] = null
+                            })
+                          )
                           // Set new GRANTs (but don't override DENYs)
                           ids.forEach((id) => {
-                            if (next[id] !== "DENY") next[id] = "GRANT";
-                          });
-                          return next;
-                        });
+                            if (next[id] !== 'DENY') next[id] = 'GRANT'
+                          })
+                          return next
+                        })
                       }}
                     />
                   </div>
@@ -802,26 +751,24 @@ export default function UsersPage() {
                       value={getDenyIds()}
                       onChange={(ids) => {
                         setOverrides((prev) => {
-                          const next: OverrideState = { ...prev };
+                          const next: OverrideState = { ...prev }
                           flatMatrix.forEach((m) =>
                             Object.values(m.actions).forEach((id) => {
-                              if (id && next[id] === "DENY") next[id] = null;
-                            }),
-                          );
+                              if (id && next[id] === 'DENY') next[id] = null
+                            })
+                          )
                           ids.forEach((id) => {
-                            if (next[id] !== "GRANT") next[id] = "DENY";
-                          });
-                          return next;
-                        });
+                            if (next[id] !== 'GRANT') next[id] = 'DENY'
+                          })
+                          return next
+                        })
                       }}
                     />
                   </div>
                 </div>
               )}
 
-              {overridesMutation.error && (
-                <ErrorAlert error={overridesMutation.error} />
-              )}
+              {overridesMutation.error && <ErrorAlert error={overridesMutation.error} />}
             </div>
           )}
         </Modal>
@@ -830,17 +777,17 @@ export default function UsersPage() {
         <Modal
           open={resetPasswordUser !== null}
           onClose={() => {
-            setResetPasswordUser(null);
-            resetForm.reset();
+            setResetPasswordUser(null)
+            resetForm.reset()
           }}
-          title={`Reset Password — ${resetPasswordUser?.name ?? ""}`}
+          title={`Reset Password — ${resetPasswordUser?.name ?? ''}`}
           footer={
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 onClick={() => {
-                  setResetPasswordUser(null);
-                  resetForm.reset();
+                  setResetPasswordUser(null)
+                  resetForm.reset()
                 }}
               >
                 Cancel
@@ -850,13 +797,11 @@ export default function UsersPage() {
                   resetPasswordMutation.mutate({
                     id: resetPasswordUser!.id,
                     password,
-                  }),
+                  })
                 )}
                 disabled={resetPasswordMutation.isPending}
               >
-                {resetPasswordMutation.isPending && (
-                  <LoadingSpinner size="sm" />
-                )}
+                {resetPasswordMutation.isPending && <LoadingSpinner size="sm" />}
                 Reset password
               </Button>
             </div>
@@ -870,7 +815,7 @@ export default function UsersPage() {
             >
               <Input
                 type="password"
-                {...resetForm.register("password")}
+                {...resetForm.register('password')}
                 autoComplete="new-password"
               />
             </FormField>
@@ -881,13 +826,11 @@ export default function UsersPage() {
             >
               <Input
                 type="password"
-                {...resetForm.register("confirm_password")}
+                {...resetForm.register('confirm_password')}
                 autoComplete="new-password"
               />
             </FormField>
-            {resetPasswordMutation.error && (
-              <ErrorAlert error={resetPasswordMutation.error} />
-            )}
+            {resetPasswordMutation.error && <ErrorAlert error={resetPasswordMutation.error} />}
           </form>
         </Modal>
 
@@ -901,5 +844,5 @@ export default function UsersPage() {
         />
       </div>
     </PermissionGuard>
-  );
+  )
 }
