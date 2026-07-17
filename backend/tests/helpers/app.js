@@ -2,6 +2,9 @@ import express from 'express';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
 
+const JWT_ISSUER = process.env.JWT_ISSUER || 'kdl-os';
+const JWT_AUDIENCE = process.env.JWT_AUDIENCE || 'kdl-os-api';
+
 /**
  * Build a minimal Express app with the requested route module.
  * Useful for route-level tests with mocked services.
@@ -20,7 +23,13 @@ export function buildApp(routes) {
 
 export const agent = (routes) => request(buildApp(routes));
 
-export const bearer = (payload) => `Bearer ${jwt.sign(payload, process.env.JWT_SECRET)}`;
+// Include required KDL-272 claims: type, iss, aud so authenticate middleware accepts test tokens.
+export const bearer = (payload) =>
+  `Bearer ${jwt.sign(
+    { type: 'access', iss: JWT_ISSUER, aud: JWT_AUDIENCE, ...payload },
+    process.env.JWT_SECRET,
+    { algorithm: 'HS256' },
+  )}`;
 
 export const cookieValue = (response, name) => {
   const cookies = Array.isArray(response.headers['set-cookie']) ? response.headers['set-cookie'] : [];

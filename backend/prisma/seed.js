@@ -1,24 +1,36 @@
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../src/config/database.js';
+import { resolveSeedAdminCredentials } from './seed-credentials.js';
 import { seedUserManagement } from './seeders/user-management.seed.js';
 import { seedCoreModules } from './seeders/modules.seed.js';
 
 async function main() {
-  const password_hash = await bcrypt.hash('Admin@123', 12);
+  const { email, password, generated } = resolveSeedAdminCredentials();
 
-  const admin = await prisma.user.upsert({
-    where: { email: 'admin@kdl.com' },
-    update: {},
-    create: {
-      name: 'Super Admin',
-      email: 'admin@kdl.com',
-      password_hash,
-      is_active: true,
-    },
-  });
+  const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
 
-  console.log('Seeded admin:', admin.email);
+  if (existing) {
+    console.log('Admin user already exists, credentials left untouched:', email);
+  } else {
+    const password_hash = await bcrypt.hash(password, 12);
+    const admin = await prisma.user.create({
+      data: {
+        name: 'Super Admin',
+        email,
+        password_hash,
+        is_active: true,
+        // Seeded credentials are provisional — the app blocks all access
+        // until the admin sets their own password (KDL-283).
+        must_change_password: true,
+      },
+    });
+    console.log('Seeded admin:', admin.email);
+    if (generated) {
+      console.log('Generated one-time admin password (shown only once):', password);
+      console.log('Store it now and change it immediately after first login.');
+    }
+  }
 
   // Core modules (incl. media's manifest-driven permissions) must be
   // registered before seedUserManagement so its Admin-role grant can see them.

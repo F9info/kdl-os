@@ -4,10 +4,10 @@
  * Each criterion is tested independently.
  */
 import { test, expect, request, type APIRequestContext } from '@playwright/test'
+import { ADMIN } from './helpers/credentials'
 
 const API_URL = process.env.E2E_API_URL ?? 'http://localhost:3101/api'
 const BASE = process.env.E2E_BASE_URL ?? 'http://localhost:3101'
-const ADMIN = { email: 'admin@kdl.com', password: 'Admin@123' }
 
 let api: APIRequestContext
 let adminToken: string

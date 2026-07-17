@@ -41,7 +41,19 @@ const PORT = process.env.APP_PORT || 4000;
 
 app.set('trust proxy', 1);
 app.use(helmet());
-app.use(cors({ origin: process.env.CORS_ORIGIN, credentials: true }));
+
+// CORS: explicit origin allowlist (comma-separated). Fail fast when unset —
+// an undefined origin would make cors() reflect the request origin, which
+// combined with credentials:true allows any site to make authenticated calls.
+const corsOrigins = (process.env.CORS_ORIGIN ?? '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+if (corsOrigins.length === 0) {
+  logger.error('CORS_ORIGIN is required (comma-separated allowlist of origins). Refusing to start.');
+  process.exit(1);
+}
+app.use(cors({ origin: corsOrigins, credentials: true }));
 app.use(express.json({
   verify(req, _res, buf) { req.rawBody = buf; },
 }));

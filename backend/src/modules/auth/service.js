@@ -2,35 +2,54 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { prisma } from '../../config/database.js';
+import { redis } from '../../config/redis.js';
 import { emailQueue } from '../../shared/queues/email.queue.js';
+import {
+  JWT_SECRET,
+  JWT_REFRESH_SECRET,
+  JWT_ISSUER,
+  JWT_AUDIENCE,
+  ACCESS_TOKEN_EXPIRY,
+  REFRESH_TOKEN_EXPIRY,
+  REFRESH_TOKEN_EXPIRY_MS,
+} from '../../config/jwt.js';
 
 const SALT_ROUNDS = 12;
-const ACCESS_TOKEN_EXPIRY = '15m';
-const REFRESH_TOKEN_EXPIRY = '7d';
-const REFRESH_TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
 const PASSWORD_RESET_TOKEN_EXPIRY_MS = 60 * 60 * 1000;
 
-const refreshSecret = () => process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+const JWT_SIGN_OPTS_COMMON = { algorithm: 'HS256', issuer: JWT_ISSUER, audience: JWT_AUDIENCE };
+const JWT_VERIFY_REFRESH_OPTS = {
+  algorithms: ['HS256'],
+  issuer: JWT_ISSUER,
+  audience: JWT_AUDIENCE,
+};
+
+// L3: Pre-computed for constant-time compare when user is not found (timing-attack protection).
+// Computed once at startup so the cost factor matches real logins.
+export const DUMMY_HASH = bcrypt.hashSync('__kdl_timing_dummy__', SALT_ROUNDS);
 
 export const hashPassword = (password) => bcrypt.hash(password, SALT_ROUNDS);
 export const comparePassword = (password, hash) => bcrypt.compare(password, hash);
 
 const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
+// H1 + L2 + L1 + I1: type claim distinguishes access vs refresh; iss/aud added; algorithm pinned
 export const signAccessToken = (payload) =>
-  jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY });
+  jwt.sign({ ...payload, type: 'access' }, JWT_SECRET, {
+    ...JWT_SIGN_OPTS_COMMON,
+    expiresIn: ACCESS_TOKEN_EXPIRY,
+  });
 
 export const signRefreshToken = (payload) =>
-  // Include a unique jti so two refresh tokens for the same user are never
-  // byte-identical (JWT iat has only second precision). Without it, login +
-  // an immediate refresh in the same second produce the same token_hash and
-  // the unique-constrained insert in storeRefreshToken fails.
-  jwt.sign({ ...payload, jti: crypto.randomUUID() }, refreshSecret(), {
+  // jti prevents identical tokens when login + refresh happen in the same second (iat precision)
+  jwt.sign({ ...payload, type: 'refresh', jti: crypto.randomUUID() }, JWT_REFRESH_SECRET, {
+    ...JWT_SIGN_OPTS_COMMON,
     expiresIn: REFRESH_TOKEN_EXPIRY,
   });
 
+// L1 + L2: algorithm pinned; iss/aud verified; H1: type:refresh enforced in controller
 export const verifyRefreshToken = (token) =>
-  jwt.verify(token, refreshSecret());
+  jwt.verify(token, JWT_REFRESH_SECRET, JWT_VERIFY_REFRESH_OPTS);
 
 export const findUserByEmail = (email) =>
   prisma.user.findUnique({ where: { email } });
@@ -78,16 +97,30 @@ export const createUser = async ({ name, email, password }) => {
   });
 };
 
-export const storeRefreshToken = (userId, token) => {
+// M3: familyId threads the same family through token rotation; new login/register gets a fresh UUID.
+export const storeRefreshToken = (userId, token, familyId) => {
   const token_hash = hashToken(token);
   const expires_at = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS);
-  return prisma.refreshToken.create({ data: { user_id: userId, token_hash, expires_at } });
+  const family_id = familyId ?? crypto.randomUUID();
+  return prisma.refreshToken.create({ data: { user_id: userId, token_hash, expires_at, family_id } });
 };
 
+// Used for the initial valid-token lookup path (only non-revoked, non-expired)
 export const findValidRefreshToken = (token) => {
   const token_hash = hashToken(token);
   return prisma.refreshToken.findFirst({
     where: { token_hash, revoked: false, expires_at: { gt: new Date() } },
+    include: {
+      user: { select: { id: true, email: true, is_active: true, status: true, deleted_at: true } },
+    },
+  });
+};
+
+// M3: Fetch any token by hash including revoked ones, so reuse can be detected.
+export const findAnyRefreshTokenByHash = (token) => {
+  const token_hash = hashToken(token);
+  return prisma.refreshToken.findFirst({
+    where: { token_hash },
     include: {
       user: { select: { id: true, email: true, is_active: true, status: true, deleted_at: true } },
     },
@@ -102,9 +135,67 @@ export const revokeRefreshToken = (token) => {
 export const revokeAllRefreshTokensForUser = (userId) =>
   prisma.refreshToken.updateMany({ where: { user_id: userId }, data: { revoked: true } });
 
+// M3: Revoke all tokens in the same family (stolen-token containment).
+export const revokeFamilyById = (familyId) =>
+  prisma.refreshToken.updateMany({ where: { family_id: familyId }, data: { revoked: true } });
+
+// M1: Progressive per-account lockout keys (stored in Redis)
+const LOCKOUT_KEY = (email) => `auth:lockout:${email.toLowerCase()}`;
+const LOCKOUT_WINDOW_SECS = 30 * 60; // max TTL 30 min
+
+const LOCKOUT_THRESHOLDS = [
+  { attempts: 20, durationMs: 30 * 60 * 1000 },
+  { attempts: 10, durationMs: 5 * 60 * 1000 },
+  { attempts: 5, durationMs: 60 * 1000 },
+];
+
+export const checkAccountLockout = async (email) => {
+  try {
+    const raw = await redis.get(LOCKOUT_KEY(email));
+    if (!raw) return null;
+    const { lockedUntil } = JSON.parse(raw);
+    return lockedUntil && Date.now() < lockedUntil ? lockedUntil : null;
+  } catch {
+    return null; // Redis unavailable — fail open (rate limiter still protects)
+  }
+};
+
+export const recordFailedLoginAttempt = async (email) => {
+  try {
+    const key = LOCKOUT_KEY(email);
+    const raw = await redis.get(key);
+    const { attempts = 0 } = raw ? JSON.parse(raw) : {};
+    const newAttempts = attempts + 1;
+
+    let lockedUntil = null;
+    let ttlSecs = LOCKOUT_WINDOW_SECS;
+    for (const threshold of LOCKOUT_THRESHOLDS) {
+      if (newAttempts >= threshold.attempts) {
+        lockedUntil = Date.now() + threshold.durationMs;
+        ttlSecs = Math.ceil(threshold.durationMs / 1000);
+        break;
+      }
+    }
+
+    await redis.set(key, JSON.stringify({ attempts: newAttempts, lockedUntil }), 'EX', ttlSecs);
+    return lockedUntil;
+  } catch {
+    return null;
+  }
+};
+
+export const clearLoginLockout = async (email) => {
+  try {
+    await redis.del(LOCKOUT_KEY(email));
+  } catch {
+    // ignore
+  }
+};
+
+// L5: Invalidate all prior unused reset tokens before issuing a new one.
+// M4/security: Always return the same shape regardless of whether the email exists.
 export const createPasswordResetToken = async (email) => {
   const user = await findUserByEmail(email);
-  // Always return the same shape so the endpoint doesn't leak whether the email exists.
   if (!user || !user.is_active || user.status === 'SUSPENDED' || user.deleted_at) {
     return { user: null, token: null };
   }
@@ -113,9 +204,16 @@ export const createPasswordResetToken = async (email) => {
   const token_hash = hashToken(rawToken);
   const expires_at = new Date(Date.now() + PASSWORD_RESET_TOKEN_EXPIRY_MS);
 
-  await prisma.passwordResetToken.create({
-    data: { user_id: user.id, token_hash, expires_at },
-  });
+  await prisma.$transaction([
+    // L5: invalidate any prior unused reset tokens
+    prisma.passwordResetToken.updateMany({
+      where: { user_id: user.id, used: false },
+      data: { used: true },
+    }),
+    prisma.passwordResetToken.create({
+      data: { user_id: user.id, token_hash, expires_at },
+    }),
+  ]);
 
   const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}`;
   await emailQueue.add('password-reset', {
@@ -144,6 +242,8 @@ export const findValidPasswordResetToken = (token) => {
   });
 };
 
+// M2: Revoke all refresh tokens inside the password-reset transaction so all
+// existing sessions are invalidated immediately after a password change.
 export const resetPassword = async (token, password) => {
   const record = await findValidPasswordResetToken(token);
   if (!record || !record.user.is_active || record.user.status === 'SUSPENDED' || record.user.deleted_at) return null;
@@ -153,13 +253,45 @@ export const resetPassword = async (token, password) => {
   await prisma.$transaction([
     prisma.user.update({
       where: { id: record.user.id },
-      data: { password_hash },
+      // A reset password is user-chosen, so any pending forced change is satisfied.
+      data: { password_hash, must_change_password: false },
     }),
     prisma.passwordResetToken.update({
       where: { id: record.id },
       data: { used: true },
     }),
+    // M2: revoke all refresh tokens so all sessions are invalidated atomically
+    prisma.refreshToken.updateMany({
+      where: { user_id: record.user.id },
+      data: { revoked: true },
+    }),
   ]);
 
   return record.user;
+};
+
+export const changePassword = async (userId, currentPassword, newPassword) => {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || !user.is_active || user.status === 'SUSPENDED' || user.deleted_at) {
+    return { ok: false, reason: 'inactive' };
+  }
+
+  const valid = await comparePassword(currentPassword, user.password_hash);
+  if (!valid) return { ok: false, reason: 'invalid_current_password' };
+
+  const password_hash = await hashPassword(newPassword);
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: userId },
+      data: { password_hash, must_change_password: false },
+    }),
+    // Old sessions may predate the rotation (e.g. leaked seeded credentials) —
+    // revoke them all; the caller issues a fresh token pair for this session.
+    prisma.refreshToken.updateMany({
+      where: { user_id: userId },
+      data: { revoked: true },
+    }),
+  ]);
+
+  return { ok: true };
 };

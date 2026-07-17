@@ -83,12 +83,31 @@ export const register = async (req, res, next) => {
 export const login = async (req, res, next) => {
   try {
     const { email, password } = req.validated.body;
+
+    // M1: Check per-account progressive lockout before any DB query
+    const lockedUntil = await authService.checkAccountLockout(email);
+    if (lockedUntil) {
+      const retryAfter = Math.ceil((lockedUntil - Date.now()) / 1000);
+      return errorResponse(res, `Account temporarily locked. Retry after ${retryAfter}s.`, 429);
+    }
+
     const user = await authService.findUserWithRolesByEmail(email);
+
+    // L3: Always run bcrypt even when user not found to prevent timing attacks.
     if (!user || !user.is_active || user.status === 'SUSPENDED' || user.deleted_at) {
+      await authService.comparePassword(password, authService.DUMMY_HASH);
+      await authService.recordFailedLoginAttempt(email);
       return errorResponse(res, 'Invalid credentials', 401);
     }
+
     const valid = await authService.comparePassword(password, user.password_hash);
-    if (!valid) return errorResponse(res, 'Invalid credentials', 401);
+    if (!valid) {
+      await authService.recordFailedLoginAttempt(email);
+      return errorResponse(res, 'Invalid credentials', 401);
+    }
+
+    // Successful login — clear lockout counter
+    await authService.clearLoginLockout(email);
 
     const roleSlugs = user.roles?.map((ur) => ur.role?.slug).filter(Boolean) || [];
     const roleObjects = user.roles?.map((ur) => ur.role).filter(Boolean) || [];
@@ -111,34 +130,52 @@ export const refresh = async (req, res, next) => {
     const candidates = getRefreshTokens(req);
     if (!candidates.length) return errorResponse(res, 'Refresh token required', 401);
 
-    // A browser may send several refresh cookies (e.g. a stale legacy one and the
-    // current one). Use the first that both verifies and has a live DB record.
-    let record = null;
-    let usedToken = null;
+    // A browser may send several refresh cookies (e.g. a stale legacy one and the current one).
     for (const token of candidates) {
+      // Step 1: verify JWT signature + claims (iss/aud/exp/type pinned in verifyRefreshToken)
       try {
-        authService.verifyRefreshToken(token);
+        const payload = authService.verifyRefreshToken(token);
+        // H1: reject access tokens presented as refresh tokens
+        if (payload.type !== 'refresh') continue;
       } catch {
         continue;
       }
-      const found = await authService.findValidRefreshToken(token);
-      if (found && found.user.is_active && found.user.status !== 'SUSPENDED' && !found.user.deleted_at) {
-        record = found;
-        usedToken = token;
-        break;
-      }
-    }
-    if (!record) return errorResponse(res, 'Invalid or expired refresh token', 401);
 
-    const roleSlugs = await authService.getUserRoleSlugs(record.user.id);
-    const accessToken = authService.signAccessToken(
-      buildAccessTokenPayload(record.user, roleSlugs),
-    );
-    await authService.revokeRefreshToken(usedToken);
-    const newRefreshToken = authService.signRefreshToken({ userId: record.user.id });
-    await authService.storeRefreshToken(record.user.id, newRefreshToken);
-    setAuthCookies(res, accessToken, newRefreshToken);
-    return successResponse(res, { accessToken });
+      // Step 2: M3 — look up the DB record including revoked tokens
+      const dbRecord = await authService.findAnyRefreshTokenByHash(token);
+
+      if (!dbRecord) {
+        // Genuinely unknown token (expired + cleaned up, or never issued) — skip
+        continue;
+      }
+
+      if (dbRecord.revoked) {
+        // M3: Token reuse detected — revoke the whole family to contain the breach
+        if (dbRecord.family_id) {
+          await authService.revokeFamilyById(dbRecord.family_id);
+        } else {
+          // Fallback for pre-migration tokens without a family_id
+          await authService.revokeAllRefreshTokensForUser(dbRecord.user_id);
+        }
+        return errorResponse(res, 'Refresh token reuse detected — all sessions revoked', 401);
+      }
+
+      if (dbRecord.expires_at < new Date()) continue;
+
+      const { user } = dbRecord;
+      if (!user.is_active || user.status === 'SUSPENDED' || user.deleted_at) continue;
+
+      // Valid token — rotate it, threading the same family_id through
+      const roleSlugs = await authService.getUserRoleSlugs(user.id);
+      const accessToken = authService.signAccessToken(buildAccessTokenPayload(user, roleSlugs));
+      await authService.revokeRefreshToken(token);
+      const newRefreshToken = authService.signRefreshToken({ userId: user.id });
+      await authService.storeRefreshToken(user.id, newRefreshToken, dbRecord.family_id);
+      setAuthCookies(res, accessToken, newRefreshToken);
+      return successResponse(res, { accessToken });
+    }
+
+    return errorResponse(res, 'Invalid or expired refresh token', 401);
   } catch (err) {
     next(err);
   }
@@ -173,6 +210,32 @@ export const resetPassword = async (req, res, next) => {
     const user = await authService.resetPassword(token, password);
     if (!user) return errorResponse(res, 'Invalid or expired reset token', 400);
     return successResponse(res, { message: 'Password reset successfully' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.validated.body;
+    const result = await authService.changePassword(req.user.id, currentPassword, newPassword);
+    if (!result.ok) {
+      if (result.reason === 'invalid_current_password') {
+        return errorResponse(res, 'Current password is incorrect', 401);
+      }
+      return errorResponse(res, 'Account is inactive', 403);
+    }
+
+    // changePassword revoked every refresh token for the user — issue a fresh
+    // pair so this session survives the rotation.
+    const roleSlugs = await authService.getUserRoleSlugs(req.user.id);
+    const accessToken = authService.signAccessToken(
+      buildAccessTokenPayload({ id: req.user.id, email: req.user.email }, roleSlugs),
+    );
+    const refreshToken = authService.signRefreshToken({ userId: req.user.id });
+    await authService.storeRefreshToken(req.user.id, refreshToken);
+    setAuthCookies(res, accessToken, refreshToken);
+    return successResponse(res, { message: 'Password changed successfully', accessToken });
   } catch (err) {
     next(err);
   }

@@ -37,6 +37,7 @@ export interface User {
   email: string
   is_active: boolean
   status: UserStatus
+  must_change_password: boolean
   avatar_media_id: string | null
   last_login_at: string | null
   deleted_at: string | null

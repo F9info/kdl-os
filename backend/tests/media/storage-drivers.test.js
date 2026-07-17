@@ -195,3 +195,111 @@ describe('r2 driver (s3 + custom endpoint)', () => {
     expect(s3SendMock).toHaveBeenCalledWith(expect.objectContaining({ _type: 'PutObject' }));
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Local FS driver contract tests
+// ─────────────────────────────────────────────────────────────────────────────
+const { fsMock, fspMock } = vi.hoisted(() => {
+  process.env.APP_ENCRYPTION_KEY = process.env.APP_ENCRYPTION_KEY || 'test-signing-key-32chars-long!!';
+  process.env.LOCAL_STORAGE_PATH = '/tmp/kdl-test-uploads';
+  process.env.BACKEND_URL = 'http://localhost:4000';
+  return {
+    fsMock: { createReadStream: vi.fn(), existsSync: vi.fn(() => true), statSync: vi.fn(() => ({ isFile: () => true })) },
+    fspMock: { mkdir: vi.fn(), writeFile: vi.fn(), unlink: vi.fn(), copyFile: vi.fn() },
+  };
+});
+
+vi.mock('node:fs', () => ({ default: fsMock }));
+vi.mock('node:fs/promises', () => ({ default: fspMock }));
+
+import { makeLocalDriver, verifyLocalPresignToken } from '../../src/shared/services/storage/drivers/local.driver.js';
+
+describe('local driver contract', () => {
+  let driver;
+  beforeEach(() => {
+    vi.clearAllMocks();
+    fspMock.mkdir.mockResolvedValue(undefined);
+    fspMock.writeFile.mockResolvedValue(undefined);
+    fspMock.unlink.mockResolvedValue(undefined);
+    fspMock.copyFile.mockResolvedValue(undefined);
+    fsMock.createReadStream.mockReturnValue({ pipe: vi.fn() });
+    driver = makeLocalDriver();
+  });
+
+  it('put: creates dir and writes file', async () => {
+    await driver.put(FILE, KEY);
+    expect(fspMock.mkdir).toHaveBeenCalledWith(
+      expect.stringContaining('user1'),
+      { recursive: true },
+    );
+    expect(fspMock.writeFile).toHaveBeenCalledWith(
+      expect.stringContaining('abc.jpg'),
+      FILE.buffer,
+    );
+  });
+
+  it('get: returns read stream', async () => {
+    const stream = { pipe: vi.fn() };
+    fsMock.createReadStream.mockReturnValue(stream);
+    const result = await driver.get(KEY);
+    expect(fsMock.createReadStream).toHaveBeenCalledWith(expect.stringContaining('abc.jpg'));
+    expect(result).toBe(stream);
+  });
+
+  it('delete: calls unlink', async () => {
+    await driver.delete(KEY);
+    expect(fspMock.unlink).toHaveBeenCalledWith(expect.stringContaining('abc.jpg'));
+  });
+
+  it('delete: tolerates ENOENT', async () => {
+    fspMock.unlink.mockRejectedValueOnce(Object.assign(new Error('not found'), { code: 'ENOENT' }));
+    await expect(driver.delete(KEY)).resolves.toBeUndefined();
+  });
+
+  it('deleteMany: deletes each object', async () => {
+    await driver.deleteMany(['a.jpg', 'b.jpg']);
+    expect(fspMock.unlink).toHaveBeenCalledTimes(2);
+  });
+
+  it('deleteMany: no-op for empty list', async () => {
+    await driver.deleteMany([]);
+    expect(fspMock.unlink).not.toHaveBeenCalled();
+  });
+
+  it('presign: returns signed URL with token + exp params', async () => {
+    const url = await driver.presign(KEY, 3600);
+    expect(url).toMatch(/^http:\/\/localhost:4000\/api\/storage\/local\//);
+    expect(url).toContain('token=');
+    expect(url).toContain('exp=');
+  });
+
+  it('verifyLocalPresignToken: valid token passes', async () => {
+    const url = await driver.presign(KEY, 3600);
+    const { searchParams } = new URL(url);
+    expect(verifyLocalPresignToken(KEY, searchParams.get('token'), searchParams.get('exp'))).toBe(true);
+  });
+
+  it('verifyLocalPresignToken: tampered token fails', async () => {
+    expect(verifyLocalPresignToken(KEY, 'bad-token', String(Date.now() + 3600_000))).toBe(false);
+  });
+
+  it('verifyLocalPresignToken: expired token fails', async () => {
+    const url = await driver.presign(KEY, -1);
+    const { searchParams } = new URL(url);
+    expect(verifyLocalPresignToken(KEY, searchParams.get('token'), searchParams.get('exp'))).toBe(false);
+  });
+
+  it('copy: creates dest dir and copies file', async () => {
+    await driver.copy(KEY, 'user2/copy.jpg');
+    expect(fspMock.mkdir).toHaveBeenCalledWith(expect.stringContaining('user2'), { recursive: true });
+    expect(fspMock.copyFile).toHaveBeenCalledWith(
+      expect.stringContaining('abc.jpg'),
+      expect.stringContaining('copy.jpg'),
+    );
+  });
+
+  it('ensureBucket: creates storage dir', async () => {
+    await driver.ensureBucket();
+    expect(fspMock.mkdir).toHaveBeenCalledWith('/tmp/kdl-test-uploads', { recursive: true });
+  });
+});

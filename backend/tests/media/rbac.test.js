@@ -14,7 +14,7 @@ vi.mock('../../src/modules/user-management/shared/activity-logger.js', () => ({
 }));
 
 import { resolvePermissions } from '../../src/modules/user-management/shared/permission-resolver.js';
-import { requirePermission } from '../../src/middleware/permission.js';
+import { requirePermission, loadPermissions } from '../../src/middleware/permission.js';
 import { manifestSchema } from '../../src/shared/modules/manifest-schema.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -42,7 +42,8 @@ describe('media module.json — granular per-feature permissions (KDL-MEDIA-12)'
   const mediaEntry = manifest.permissions.find((p) => (typeof p === 'string' ? p : p.name) === 'media');
 
   const REQUIRED_FEATURES = [
-    'upload', 'download', 'preview', 'edit-image', 'share-link',
+    'approve', 'share',
+    'upload', 'download', 'preview', 'edit-image',
     'folders', 'collections', 'tags', 'favorites',
     'metadata-edit', 'custom-fields', 'visibility-toggle',
     'soft-delete', 'trash-view', 'restore', 'purge',
@@ -76,12 +77,13 @@ describe('requirePermission — media per-feature route guards', () => {
     }
   });
 
-  it('a view+upload-only role is 403d on every other feature (edit-image, folders, share-link, ...)', async () => {
+  it('a view+upload-only role is 403d on every other feature (edit-image, folders, share, approve, ...)', async () => {
     resolvePermissions.mockResolvedValue(VIEW_UPLOAD_ONLY);
     const gatedActions = [
+      'approve', 'share',
       'edit-image', 'folders', 'collections', 'tags', 'favorites',
       'metadata-edit', 'custom-fields', 'visibility-toggle', 'soft-delete',
-      'trash-view', 'restore', 'purge', 'cloud-import', 'ai-providers', 'share-link', 'preview',
+      'trash-view', 'restore', 'purge', 'cloud-import', 'ai-providers', 'preview',
     ];
     for (const action of gatedActions) {
       const res = mockRes();
@@ -105,9 +107,45 @@ describe('requirePermission — media per-feature route guards', () => {
 
     const stillBlockedRes = mockRes();
     const stillBlockedNext = vi.fn();
-    await requirePermission('media', 'share-link')(mockReq(), stillBlockedRes, stillBlockedNext);
+    await requirePermission('media', 'share')(mockReq(), stillBlockedRes, stillBlockedNext);
     expect(stillBlockedRes.statusCode).toBe(403);
     expect(stillBlockedNext).not.toHaveBeenCalled();
+  });
+
+  it('granting media:share unblocks share routes but not approve', async () => {
+    resolvePermissions.mockResolvedValue({
+      bypass: false,
+      permissions: ['media:view', 'media:share'],
+    });
+
+    const shareRes = mockRes();
+    const shareNext = vi.fn();
+    await requirePermission('media', 'share')(mockReq(), shareRes, shareNext);
+    expect(shareNext).toHaveBeenCalled();
+
+    const approveRes = mockRes();
+    const approveNext = vi.fn();
+    await requirePermission('media', 'approve')(mockReq(), approveRes, approveNext);
+    expect(approveRes.statusCode).toBe(403);
+    expect(approveNext).not.toHaveBeenCalled();
+  });
+
+  it('granting media:approve unblocks workflow transition but not share routes', async () => {
+    resolvePermissions.mockResolvedValue({
+      bypass: false,
+      permissions: ['media:view', 'media:approve'],
+    });
+
+    const approveRes = mockRes();
+    const approveNext = vi.fn();
+    await requirePermission('media', 'approve')(mockReq(), approveRes, approveNext);
+    expect(approveNext).toHaveBeenCalled();
+
+    const shareRes = mockRes();
+    const shareNext = vi.fn();
+    await requirePermission('media', 'share')(mockReq(), shareRes, shareNext);
+    expect(shareRes.statusCode).toBe(403);
+    expect(shareNext).not.toHaveBeenCalled();
   });
 
   it('Super Admin bypass reaches every media feature', async () => {
@@ -118,5 +156,51 @@ describe('requirePermission — media per-feature route guards', () => {
       await requirePermission('media', action)(mockReq(), res, next);
       expect(next).toHaveBeenCalled();
     }
+  });
+});
+
+// KDL-242: loadPermissions — populates req.userPermissions without gating so
+// transitionWorkflow() in the service can be the single per-transition authority.
+describe('loadPermissions — workflow route permission loader (KDL-242)', () => {
+  it('sets req.userPermissions and calls next for a user with media:edit only', async () => {
+    const perms = { bypass: false, permissions: ['media:edit'] };
+    resolvePermissions.mockResolvedValue(perms);
+    const req = mockReq();
+    const res = mockRes();
+    const next = vi.fn();
+    await loadPermissions()(req, res, next);
+    expect(next).toHaveBeenCalled();
+    expect(req.userPermissions).toEqual(perms);
+    expect(res.statusCode).toBe(200);
+  });
+
+  it('sets req.userPermissions and calls next for a user with no media permissions', async () => {
+    const perms = { bypass: false, permissions: [] };
+    resolvePermissions.mockResolvedValue(perms);
+    const req = mockReq();
+    const res = mockRes();
+    const next = vi.fn();
+    await loadPermissions()(req, res, next);
+    expect(next).toHaveBeenCalled();
+    expect(req.userPermissions).toEqual(perms);
+  });
+
+  it('returns 401 when req.user is absent', async () => {
+    const req = mockReq({ user: undefined });
+    const res = mockRes();
+    const next = vi.fn();
+    await loadPermissions()(req, res, next);
+    expect(res.statusCode).toBe(401);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('sets req.userPermissions and calls next for a superAdmin bypass', async () => {
+    resolvePermissions.mockResolvedValue({ bypass: true, permissions: [] });
+    const req = mockReq();
+    const res = mockRes();
+    const next = vi.fn();
+    await loadPermissions()(req, res, next);
+    expect(next).toHaveBeenCalled();
+    expect(req.userPermissions.bypass).toBe(true);
   });
 });

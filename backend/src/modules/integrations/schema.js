@@ -25,3 +25,15 @@ export const testSendSchema = z.object({
   subject: z.string().optional(),
   body: z.string().min(1),
 });
+
+export const getLogsQuerySchema = z.object({
+  query: z.object({
+    channel: z.enum(['EMAIL', 'SMS', 'WHATSAPP']).optional(),
+    status: z.enum(['QUEUED', 'SENT', 'DELIVERED', 'READ', 'FAILED']).optional(),
+    source: z.string().max(100).optional(),
+    from: z.string().datetime({ offset: true }).optional(),
+    to: z.string().datetime({ offset: true }).optional(),
+    page: z.coerce.number().int().min(1).optional(),
+    limit: z.coerce.number().int().min(1).max(200).optional(),
+  }),
+});

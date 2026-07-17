@@ -21,6 +21,7 @@ vi.mock('../src/config/database.js', () => ({
       create: vi.fn(),
       findFirst: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
     },
     $transaction: vi.fn(async (ops) => {
       for (const op of ops) await op;
@@ -30,6 +31,10 @@ vi.mock('../src/config/database.js', () => ({
 
 vi.mock('../src/shared/queues/email.queue.js', () => ({
   emailQueue: { add: vi.fn() },
+}));
+
+vi.mock('../src/config/redis.js', () => ({
+  redis: { get: vi.fn().mockResolvedValue(null), set: vi.fn(), del: vi.fn() },
 }));
 
 import { prisma } from '../src/config/database.js';

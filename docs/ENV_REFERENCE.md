@@ -24,6 +24,8 @@ cp .env.example .env
 | `JWT_EXPIRES_IN` | Yes | `15m` | Access token TTL. Short-lived by design. |
 | `JWT_REFRESH_EXPIRES_IN` | Yes | `7d` | Refresh token TTL. Stored hashed in `refresh_tokens` table. |
 | `CORS_ORIGIN` | Yes | `http://localhost:3000` | Allowed CORS origin. Must match `FRONTEND_URL` in prod. |
+| `SEED_ADMIN_EMAIL` | No | `admin@kdl.com` | Email of the initial admin user created by `prisma db seed`. |
+| `SEED_ADMIN_PASSWORD` | Prod: Yes | _(none)_ | Initial admin password (min 12 chars) for `prisma db seed`. **Required when `NODE_ENV=production`** — seeding aborts without it. In dev, a random password is generated and printed once. Change it after first login. |
 
 ---
 
@@ -120,7 +122,7 @@ These variables are specific to the `ai-services/` Express process (`ai-services
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `MEILISEARCH_HOST` | Yes | `http://localhost:7700` | MeiliSearch host URL. |
-| `MEILISEARCH_API_KEY` | Yes | `masterKey` | MeiliSearch master key. Use a strong random key in production. |
+| `MEILISEARCH_API_KEY` | Yes | _(none)_ | Scoped **admin** key for the backend (`config/meilisearch.js`): grant `documents.*`, `indexes.*`, `settings.*`, `search` on the app indexes via `POST /keys`. Never the master key — `MEILI_MASTER_KEY` stays in the Meilisearch container env only. |
 | `MEILI_SEARCH_API_KEY` | Yes | _(none)_ | Scoped search-only API key used by ai-services' `meilisearch` tool. Generate with `GET /keys` using the master key (or the MeiliSearch dashboard) and grant only the `search` action. Never use the master key here. |
 
 ---

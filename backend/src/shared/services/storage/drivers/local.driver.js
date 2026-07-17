@@ -15,9 +15,10 @@ const resolveFilePath = (objectName) =>
   path.join(getStorageDir(), objectName);
 
 // HMAC key for signing/verifying presign URLs (same parity as S3 presign security model).
+// Use a dedicated LOCAL_PRESIGN_SECRET to isolate presign keys from other secrets.
 const getSigningKey = () => {
-  const k = process.env.APP_ENCRYPTION_KEY || process.env.JWT_SECRET;
-  if (!k) throw new Error('APP_ENCRYPTION_KEY or JWT_SECRET is required for local storage presign');
+  const k = process.env.LOCAL_PRESIGN_SECRET || process.env.APP_ENCRYPTION_KEY;
+  if (!k) throw new Error('LOCAL_PRESIGN_SECRET or APP_ENCRYPTION_KEY is required for local storage presign');
   return k;
 };
 
