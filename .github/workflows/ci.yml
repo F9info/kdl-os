@@ -127,7 +127,7 @@ jobs:
           SEED_ADMIN_PASSWORD: kdl-dev-seed-password
         run: |
           npx prisma migrate deploy
-          npm run seed
+          npm run db:seed
 
       - name: Start backend
         working-directory: backend
