@@ -1,9 +1,9 @@
 // KDL Phase D8 — RTL gate: CloudImportDialog (cloud imports).
 // Mocks mirror the backend contract (see backend/src/modules/media/import/controller.js):
-//   GET  /media/import/providers               → { items: [{ provider, auth, configured }] }
+//   GET  /media/import/providers               → { items: [{ provider, oauth, configured }] }
 //   GET  /media/import/connections             → { items: [{ id, provider, label, created_at, updated_at }] }
 //   POST /media/import/connections             → { item: connection } (s3/ftp credentials)
-//   GET  /media/import/connections/:id/browse  → { entries, cursor }
+//   GET  /media/import/connections/:id/files   → { items, nextCursor }
 //   POST /media/import/connections/:id/import  → { imported, skipped }
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor, fireEvent } from '../utils'
@@ -17,11 +17,11 @@ vi.mock('@/hooks/use-toast', () => ({ toast: vi.fn(), useToast: () => ({ toasts:
 import api from '@/lib/axios'
 
 const PROVIDERS = [
-  { provider: 'gdrive', auth: 'oauth', configured: true },
-  { provider: 'dropbox', auth: 'oauth', configured: false },
-  { provider: 'onedrive', auth: 'oauth', configured: false },
-  { provider: 's3', auth: 'credentials', configured: true },
-  { provider: 'ftp', auth: 'credentials', configured: true },
+  { provider: 'google-drive', oauth: true, configured: true },
+  { provider: 'dropbox', oauth: true, configured: false },
+  { provider: 'onedrive', oauth: true, configured: false },
+  { provider: 's3', oauth: false, configured: true },
+  { provider: 'ftp', oauth: false, configured: true },
 ]
 
 const CONNECTIONS = [
@@ -35,23 +35,23 @@ const CONNECTIONS = [
 ]
 
 const BROWSE_ROOT = {
-  entries: [
-    { id: 'folder-1', name: 'Photos', size: 0, mime: null, is_folder: true },
-    { id: 'file-1', name: 'sky.jpg', size: 1024, mime: 'image/jpeg', is_folder: false },
+  items: [
+    { id: 'folder-1', name: 'Photos', size: 0, mimeType: null, isFolder: true },
+    { id: 'file-1', name: 'sky.jpg', size: 1024, mimeType: 'image/jpeg', isFolder: false },
     {
       id: 'file-2',
       name: 'notes.exe',
       size: 2048,
-      mime: 'application/octet-stream',
-      is_folder: false,
+      mimeType: 'application/octet-stream',
+      isFolder: false,
     },
   ],
-  cursor: null,
+  nextCursor: null,
 }
 
 const IMPORT_RESULT = {
   imported: [{ id: 'm1', name: 'sky.jpg' }],
-  skipped: [{ file: 'notes.exe', reason: 'File type not allowed' }],
+  skipped: [{ file_id: 'notes.exe', reason: 'File type not allowed' }],
 }
 
 function setupApi({ connections = CONNECTIONS } = {}) {
@@ -62,7 +62,7 @@ function setupApi({ connections = CONNECTIONS } = {}) {
       return Promise.resolve({ data: { data: { items: connections } } }) as ReturnType<
         typeof api.get
       >
-    if (url === '/media/import/connections/c1/browse')
+    if (url === '/media/import/connections/c1/files')
       return Promise.resolve({ data: { data: BROWSE_ROOT } }) as ReturnType<typeof api.get>
     return Promise.resolve({ data: { data: {} } }) as ReturnType<typeof api.get>
   })
@@ -84,7 +84,7 @@ function setupApi({ connections = CONNECTIONS } = {}) {
 
 async function openBrowser() {
   render(<CloudImportDialog folderId={null} onClose={vi.fn()} onImported={vi.fn()} />)
-  const browseBtn = await screen.findByRole('button', { name: 'Browse' })
+  const browseBtn = await screen.findByRole('button', { name: /Browse/ })
   fireEvent.click(browseBtn)
   await waitFor(() => expect(screen.getByText('sky.jpg')).toBeInTheDocument())
 }
@@ -99,8 +99,8 @@ describe('CloudImportDialog (Phase D8) — connections step', () => {
     render(<CloudImportDialog folderId={null} onClose={vi.fn()} onImported={vi.fn()} />)
     expect(await screen.findByText('My bucket')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Google Drive/ })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Amazon S3/ })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /FTP/ })).toBeInTheDocument()
+    // manual providers share one combined button
+    expect(screen.getByTitle('Connect S3 or FTP')).toBeInTheDocument()
   })
 
   it('disables unconfigured oauth providers with a hint', async () => {
@@ -111,17 +111,27 @@ describe('CloudImportDialog (Phase D8) — connections step', () => {
     expect(screen.getAllByText('Not configured').length).toBe(2) // dropbox + onedrive
   })
 
-  it('requests an oauth url with the callback redirect_uri and opens a popup', async () => {
-    vi.mocked(api.post).mockResolvedValue({
-      data: { data: { url: 'https://accounts.example/auth', state: 'st1' } },
-    } as never)
-    const openSpy = vi.spyOn(window, 'open').mockReturnValue(null)
+  it('requests an oauth url and opens a popup', async () => {
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (url === '/media/import/providers')
+        return Promise.resolve({ data: { data: { items: PROVIDERS } } }) as ReturnType<
+          typeof api.get
+        >
+      if (url === '/media/import/connections')
+        return Promise.resolve({ data: { data: { items: CONNECTIONS } } }) as ReturnType<
+          typeof api.get
+        >
+      if (url === '/media/import/oauth/google-drive/start')
+        return Promise.resolve({
+          data: { data: { url: 'https://accounts.example/auth' } },
+        }) as ReturnType<typeof api.get>
+      return Promise.resolve({ data: { data: {} } }) as ReturnType<typeof api.get>
+    })
+    const openSpy = vi.spyOn(window, 'open').mockReturnValue({} as Window)
     render(<CloudImportDialog folderId={null} onClose={vi.fn()} onImported={vi.fn()} />)
     fireEvent.click(await screen.findByRole('button', { name: /Google Drive/ }))
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith('/media/import/oauth/gdrive/url', {
-        redirect_uri: window.location.origin + '/admin/media/import/callback',
-      })
+      expect(api.get).toHaveBeenCalledWith('/media/import/oauth/google-drive/start')
       expect(openSpy).toHaveBeenCalledWith(
         'https://accounts.example/auth',
         'media-import-oauth',
@@ -133,17 +143,18 @@ describe('CloudImportDialog (Phase D8) — connections step', () => {
 
   it('submits s3 credential form with typed values', async () => {
     render(<CloudImportDialog folderId={null} onClose={vi.fn()} onImported={vi.fn()} />)
-    fireEvent.click(await screen.findByRole('button', { name: /Amazon S3/ }))
+    // open the combined manual-connection form (S3 is the default provider)
+    fireEvent.click(await screen.findByTitle('Connect S3 or FTP'))
 
     fireEvent.change(screen.getByPlaceholderText('Connection label'), {
       target: { value: 'Prod bucket' },
     })
-    fireEvent.change(screen.getByPlaceholderText('Access key ID'), { target: { value: 'AKIA123' } })
-    fireEvent.change(screen.getByPlaceholderText('Secret access key'), {
+    fireEvent.change(screen.getByPlaceholderText('Access Key ID'), { target: { value: 'AKIA123' } })
+    fireEvent.change(screen.getByPlaceholderText('Secret Access Key'), {
       target: { value: 'secret!' },
     })
     fireEvent.change(screen.getByPlaceholderText('Bucket'), { target: { value: 'assets' } })
-    fireEvent.change(screen.getByPlaceholderText('Region (optional)'), {
+    fireEvent.change(screen.getByPlaceholderText('Region (default us-east-1) (optional)'), {
       target: { value: 'us-east-1' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Save connection' }))
@@ -179,19 +190,19 @@ describe('CloudImportDialog (Phase D8) — browser step', () => {
 
   it('browses a connection: renders folders and files with sizes', async () => {
     await openBrowser()
-    expect(api.get).toHaveBeenCalledWith('/media/import/connections/c1/browse', { params: {} })
+    expect(api.get).toHaveBeenCalledWith('/media/import/connections/c1/files', { params: {} })
     expect(screen.getByText('Photos')).toBeInTheDocument()
     expect(screen.getByText('notes.exe')).toBeInTheDocument()
     expect(screen.getByLabelText('Select sky.jpg')).toBeInTheDocument()
   })
 
-  it('descends into a folder with path param and updates the breadcrumb', async () => {
+  it('descends into a folder with folder_id param and updates the breadcrumb', async () => {
     await openBrowser()
     vi.mocked(api.get).mockClear()
     fireEvent.click(screen.getByText('Photos'))
     await waitFor(() => {
-      expect(api.get).toHaveBeenCalledWith('/media/import/connections/c1/browse', {
-        params: { path: 'folder-1' },
+      expect(api.get).toHaveBeenCalledWith('/media/import/connections/c1/files', {
+        params: { folder_id: 'folder-1' },
       })
     })
     // breadcrumb: connection label + folder name
@@ -199,7 +210,7 @@ describe('CloudImportDialog (Phase D8) — browser step', () => {
     expect(screen.getByText('My bucket')).toBeInTheDocument()
   })
 
-  it('shows Load more when cursor is non-null and passes it back', async () => {
+  it('shows Load more when nextCursor is non-null and passes it back', async () => {
     vi.mocked(api.get).mockImplementation(
       (url: string, config?: { params?: Record<string, string> }) => {
         if (url === '/media/import/providers')
@@ -210,26 +221,26 @@ describe('CloudImportDialog (Phase D8) — browser step', () => {
           return Promise.resolve({ data: { data: { items: CONNECTIONS } } }) as ReturnType<
             typeof api.get
           >
-        if (url === '/media/import/connections/c1/browse') {
+        if (url === '/media/import/connections/c1/files') {
           if (config?.params?.cursor === 'cur1')
             return Promise.resolve({
               data: {
                 data: {
-                  entries: [
+                  items: [
                     {
                       id: 'file-9',
                       name: 'more.png',
                       size: 10,
-                      mime: 'image/png',
-                      is_folder: false,
+                      mimeType: 'image/png',
+                      isFolder: false,
                     },
                   ],
-                  cursor: null,
+                  nextCursor: null,
                 },
               },
             }) as ReturnType<typeof api.get>
           return Promise.resolve({
-            data: { data: { ...BROWSE_ROOT, cursor: 'cur1' } },
+            data: { data: { ...BROWSE_ROOT, nextCursor: 'cur1' } },
           }) as ReturnType<typeof api.get>
         }
         return Promise.resolve({ data: { data: {} } }) as ReturnType<typeof api.get>
@@ -238,12 +249,12 @@ describe('CloudImportDialog (Phase D8) — browser step', () => {
     await openBrowser()
     fireEvent.click(screen.getByRole('button', { name: 'Load more' }))
     await waitFor(() => {
-      expect(api.get).toHaveBeenCalledWith('/media/import/connections/c1/browse', {
+      expect(api.get).toHaveBeenCalledWith('/media/import/connections/c1/files', {
         params: { cursor: 'cur1' },
       })
       expect(screen.getByText('more.png')).toBeInTheDocument()
     })
-    // first page entries kept
+    // first page items kept
     expect(screen.getByText('sky.jpg')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Load more' })).not.toBeInTheDocument()
   })
@@ -260,7 +271,7 @@ describe('CloudImportDialog (Phase D8) — browser step', () => {
 
     await waitFor(() => {
       expect(api.post).toHaveBeenCalledWith('/media/import/connections/c1/import', {
-        files: ['file-1', 'file-2'],
+        file_ids: ['file-1', 'file-2'],
         folder_id: 'folder-lib',
       })
       expect(screen.getByText(/1 file imported, 1 skipped/)).toBeInTheDocument()
