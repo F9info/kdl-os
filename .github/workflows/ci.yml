@@ -200,6 +200,36 @@ jobs:
           echo "── frontend.log ──"
           cat /tmp/frontend.log 2>/dev/null || true
 
+  storybook-build:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Storybook
+        working-directory: frontend
+        run: pnpm build-storybook
+
+      - name: Upload storybook artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: storybook-static
+          path: frontend/storybook-static
+
   ai-services-check:
     runs-on: ubuntu-latest
     steps:

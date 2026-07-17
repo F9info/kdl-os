@@ -13,6 +13,8 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "e2e": "playwright test",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
     "prepare": "cd .. && husky"
   },
   "dependencies": {
@@ -52,6 +54,7 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
+      "core-js-pure",
       "esbuild",
       "sharp",
       "unrs-resolver"
@@ -74,6 +77,10 @@
     "@eslint/eslintrc": "^3.3.6",
     "@next/bundle-analyzer": "^16.2.10",
     "@playwright/test": "^1.44.0",
+    "@storybook/addon-a11y": "^8.6.18",
+    "@storybook/addon-essentials": "^8.6.14",
+    "@storybook/blocks": "^8.6.14",
+    "@storybook/nextjs": "^8.6.18",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
@@ -90,6 +97,7 @@
     "lint-staged": "^17.0.8",
     "postcss": "^8.5.19",
     "prettier": "^3.9.5",
+    "storybook": "^8.6.18",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.6.0",
     "vitest": "^3.2.6"
