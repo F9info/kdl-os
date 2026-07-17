@@ -11,12 +11,12 @@ token-driven (no hardcoded colors — `bg-muted`, `text-muted-foreground`,
   eventual content's shape is unknown (a drawer, a panel, a page you can't
   usefully skeleton). Default choice for "isLoading" on first mount.
 - **`LoadingState` variant="skeleton"`** — you already know the shape of what's
-  coming (a table, a card grid, a list of rows) and can approximate it with
-  placeholder blocks. Prefer this over a spinner once you know the layout —
-  it reduces perceived latency and avoids a layout jump when data lands.
-  Table-shaped content (e.g. `DataTable`) still composes its own per-cell
-  `<Skeleton>` rows rather than this component, since the row/column shape is
-  table-specific — but it's the same underlying `Skeleton` primitive.
+coming (a table, a card grid, a list of rows) and can approximate it with
+placeholder blocks. Prefer this over a spinner once you know the layout —
+it reduces perceived latency and avoids a layout jump when data lands.
+Table-shaped content (e.g. `DataTable`) still composes its own per-cell
+`<Skeleton>`rows rather than this component, since the row/column shape is
+table-specific — but it's the same underlying`Skeleton` primitive.
 - **`ErrorState`** — a query or mutation that a user is blocked by failed
   (list fetch, detail fetch). Pass `error` (axios error, `Error`, or string)
   and it extracts a message the same way `ErrorAlert` does; pass `onRetry` to
@@ -47,17 +47,19 @@ retrofit for the reference `mediaQuery`/`trashQuery` composition).
 ## Example
 
 ```tsx
-{error ? (
-  <ErrorState error={error} onRetry={() => refetch()} />
-) : isLoading ? (
-  <LoadingState variant="skeleton" rows={5} />
-) : items.length === 0 ? (
-  <EmptyState
-    title="No files here"
-    description="Upload a file or drag one onto this window."
-    action={<Button onClick={openUploadDialog}>Upload</Button>}
-  />
-) : (
-  <ItemGrid items={items} />
-)}
+{
+  error ? (
+    <ErrorState error={error} onRetry={() => refetch()} />
+  ) : isLoading ? (
+    <LoadingState variant="skeleton" rows={5} />
+  ) : items.length === 0 ? (
+    <EmptyState
+      title="No files here"
+      description="Upload a file or drag one onto this window."
+      action={<Button onClick={openUploadDialog}>Upload</Button>}
+    />
+  ) : (
+    <ItemGrid items={items} />
+  );
+}
 ```
