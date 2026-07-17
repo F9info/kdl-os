@@ -35,7 +35,7 @@ describe('template-engine schema build (A2 gate)', () => {
     // buildSeedRows throws on duplicate field slug; reaching here means 0 dupes.
     expect(types.size).toBe(97);
     expect(categories.size).toBe(968);
-    expect(fields.size).toBe(4084);
+    expect(fields.size).toBe(4094);
   });
 
   it('TV px defaults are scaled per resolution (4K = 3x 720p)', () => {
