@@ -52,26 +52,28 @@ const MODULE_ICON_MAP: Record<string, React.ElementType> = {
 // Slug of the setting field that holds the app logo (set under any Type).
 const LOGO_SLUG = 'logo'
 
-interface NavLeaf {
+export interface NavLeaf {
   label: string
   href: string
   icon: React.ElementType
   permission?: string
 }
 
-interface NavGroup {
+export interface NavGroup {
   label: string
   icon: React.ElementType
   children: NavLeaf[]
 }
 
-const FLAT_ITEMS: NavLeaf[] = [
+// Exported so CommandPalette (KDL-292) reuses this as its single source of
+// truth for "Navigate" results instead of duplicating the nav tree.
+export const FLAT_ITEMS: NavLeaf[] = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
   { label: 'Users', href: '/admin/users', icon: Users, permission: 'users:view' },
   { label: 'Modules', href: '/admin/modules', icon: Package, permission: 'modules:view' },
 ]
 
-const GROUPS: NavGroup[] = [
+export const GROUPS: NavGroup[] = [
   {
     label: 'Media',
     icon: Image,
