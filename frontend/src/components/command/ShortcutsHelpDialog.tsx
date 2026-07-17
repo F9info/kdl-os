@@ -1,6 +1,12 @@
 'use client'
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
 import { useShortcutsStore } from '@/stores/shortcuts.store'
 
 // Renders "mod+k" -> "⌘K" / "Ctrl K" depending on platform, "shift+?" -> "Shift ?".
