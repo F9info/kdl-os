@@ -25,8 +25,9 @@ test.describe('A11y smoke — WCAG 2.2 AA', () => {
   // Handle must_change_password on the seeded admin once per suite.
   // Tests that need auth use changedPassword directly so each test is
   // independent of ordering and there are no double-click races.
-  test.beforeAll(async ({ browser }) => {
-    const context = await browser.newContext()
+  test.beforeAll(async ({ browser }, testInfo) => {
+    // Inherit baseURL from playwright config (not set on manually created contexts)
+    const context = await browser.newContext({ baseURL: testInfo.project.use.baseURL })
     const page = await context.newPage()
     try {
       await page.goto('/login')
