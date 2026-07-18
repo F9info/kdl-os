@@ -2,6 +2,62 @@
      Prepend new entries at the top; move anything older than the window into HANDOFF_ARCHIVE.md.
      Full history: .agents/HANDOFF_ARCHIVE.md (and git log). -->
 
+## 2026-07-18 — KDL-414 NEXT_PUBLIC_IMAGE_HOSTS must be Docker build arg (Frontend Coder)
+
+**Scope:** Rework PR #118 (branch `fix/kdl-412-admin-images`) — KDL-413 code review blocker.
+
+**Problem:** `NEXT_PUBLIC_IMAGE_HOSTS` was set only in docker-compose `environment:` (runtime), which is invisible during `pnpm build`. Because the frontend uses `output: 'standalone'`, CSP headers and `images.remotePatterns` are resolved at build time and baked into `routes-manifest.json`. The standalone `server.js` never re-reads `next.config.ts`, so only the `localhost:9000` fallback was ever baked in regardless of the compose runtime env.
+
+**Empirical proof (from KDL-413):** gate container ran with `NEXT_PUBLIC_IMAGE_HOSTS` in `process.env` yet served `img-src ... http://localhost:9000`.
+
+**Fixes:**
+- `frontend/Dockerfile` builder stage: added `ARG NEXT_PUBLIC_IMAGE_HOSTS=http:localhost:9000` + `ENV NEXT_PUBLIC_IMAGE_HOSTS=$NEXT_PUBLIC_IMAGE_HOSTS` before `RUN pnpm build` (same pattern as `NEXT_PUBLIC_API_URL`).
+- `docker-compose.yml` frontend service: changed `build: ./frontend` → `build: {context, args: {NEXT_PUBLIC_IMAGE_HOSTS: http:localhost:9002}}`. Kept runtime `environment:` entry with a comment marking it inert (visibility only).
+- **Corrected false claim** in KDL-412 HANDOFF entry below: "restart picks it up without rebuild" was wrong — a `docker compose build frontend` is always required when changing `NEXT_PUBLIC_IMAGE_HOSTS`.
+
+**Deploy note:** Any environment changing this value needs `docker compose build frontend` — a container restart alone has no effect.
+
+**Verified:** `pnpm type-check → 0 errors`. Dockerfile + compose syntax clean.
+
+**Next:** PR #118 updated; request Code Reviewer re-gate (KDL-413 → in_review).
+
+## 2026-07-18 — KDL-412 Fix broken admin images/icons + broken links (Frontend Coder)
+
+**Scope:** Broken logo preview (Theme Settings), broken media library thumbnails, and reported "broken links" (KDL-408). Branch `fix/kdl-412-admin-images`.
+
+**Root cause:** Docker compose maps MinIO's host port as `9002:9000`, and the backend sets `MINIO_PUBLIC_PORT=9002` so presigned URLs use `http://localhost:9002/…`. The frontend's CSP `img-src` defaulted to `http://localhost:9000` (hardcoded fallback in `next.config.ts` when `NEXT_PUBLIC_IMAGE_HOSTS` is unset). Every presigned URL the browser tried to load was blocked by CSP → broken-image glyph.
+
+**Fix:**
+- `docker-compose.yml`: added `NEXT_PUBLIC_IMAGE_HOSTS: http:localhost:9002` to the `frontend` service environment. `next.config.ts` reads this at server startup to build both the `img-src` CSP directive and `images.remotePatterns`.
+- `.env.example`: documented the var for non-Docker users (no default needed — bare pnpm dev keeps MinIO on the same `localhost:9000` that the code already falls back to).
+- `.agents/WORKSPACE_MAP.md`: corrected MinIO port from `9000` (container) to `9002` (host).
+
+**"Links also broke" finding:** No routing/href regressions exist. All sidebar hrefs resolve to existing Next.js page routes. The reporter's "links" referred to the broken presigned media URLs, not navigation hrefs (confirmed by prior KDL-410 investigation: "No actual link routing bugs found").
+
+**Verified:** `pnpm type-check → 0 errors`.
+
+**⚠️ Correction (KDL-414):** The original claim that "restart picks up the env var without rebuild" was false. `NEXT_PUBLIC_IMAGE_HOSTS` is baked at `pnpm build` time into the standalone bundle; a container restart has no effect. A `docker compose build frontend` is always required when changing this value. The Dockerfile and compose file were reworked in KDL-414 to pass the value as a proper build arg.
+
+**Next:** PR against master; request Code Reviewer gate.
+
+## 2026-07-18 — KDL-410 Frontend design/link regressions from PR #75 dep bump (Frontend Coder)
+
+**Scope:** Fix broken dark-mode toggle and icon typo introduced by PR #75 dep bump (next-themes 0.3→0.4, lucide-react 0.460→0.577). Commit `aeffa8b`, branch `fix/kdl-406-admin-css`.
+
+**Root causes found:**
+1. **Dark-mode toggle broken**: `CommandPalette` read `theme`/`setTheme` from `useUiStore` (Zustand, persists to `localStorage['kdl-ui']`), which never synced with next-themes' `ThemeProvider` (reads/writes `localStorage['theme']`). Clicking "Toggle theme" updated Zustand state but applied no class change to `<html>`. Fix: import `useTheme` from `next-themes` directly; remove redundant `theme`/`setTheme` from `ui.store.ts`.
+2. **SendHorizonal typo**: `integrations/page.tsx` imported misspelled `SendHorizonal` instead of `SendHorizontal`. Currently aliased in lucide-react 0.577, but a deprecated no-op in future versions.
+
+**Verified:**
+- `pnpm type-check` → 0 errors
+- `pnpm build` → green
+- Light-mode screenshot: login page renders correctly
+- Dark-mode screenshot (localStorage theme=dark): full dark theme applied correctly
+
+**Auth pages and admin links**: all use standard Next.js `<Link href="...">` patterns with suppressHydrationWarning on html. No actual link routing bugs found beyond the theme toggle UX disconnect.
+
+**Next:** PR with these 3-file change set. KDL-410 → done.
+
 ## 2026-07-17 — KDL-275 M4 config/CORS/error-leak/infra + notifications hardening (Security & Compliance Engineer)
 
 **Scope:** KDL-270 audit findings M5, M6, M7, M8, M10, M11, M14, L13, L14, L16, L17. Deliberately did NOT touch `/share/:token` media routes (M9/L15 deferred to PR #46). PR #55 → master.
