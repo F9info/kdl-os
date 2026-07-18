@@ -1,0 +1,129 @@
+name: Staging Smoke Deploy
+
+# Ephemeral in-CI smoke test — build from source, boot the app, verify it serves.
+#
+# Purpose: kill the false-green in CD Staging.
+# cd-staging.yml is "green" even when STAGING_HOST is unset because the deploy
+# job is guarded by an `if: secrets.STAGING_HOST` check and simply skips.
+# This workflow contains NO such guard: it always runs, always builds from source,
+# always boots a real Postgres + Redis + backend stack inside the runner, and
+# fails hard if the app does not serve HTTP 2xx within the timeout.
+#
+# "merged to master = verified deployable artifact" is only true once this
+# job passes. (KDL-404 / parent: KDL-373)
+#
+# No secrets required — all env vars are ephemeral CI-only values.
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  ephemeral-smoke:
+    name: Ephemeral staging smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── Write an ephemeral .env ────────────────────────────────────────────
+      # docker compose reads .env automatically; this supplies all variables the
+      # compose file references so no service fails a ${VAR:?} mandatory check.
+      # Values are non-sensitive CI-only dummy data — nothing touches production.
+      - name: Write ephemeral CI .env
+        run: |
+          cat > .env << 'ENVEOF'
+          POSTGRES_USER=smoke
+          POSTGRES_PASSWORD=smoke-ci-postgres-pass
+          POSTGRES_DB=kdl_smoke
+          REDIS_PASSWORD=smoke-ci-redis-pass
+          JWT_SECRET=ci-smoke-jwt-secret-must-be-at-least-32-characters-long
+          JWT_REFRESH_SECRET=ci-smoke-refresh-secret-different-and-also-32chars
+          APP_ENCRYPTION_KEY=deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef
+          CORS_ORIGIN=http://localhost:3000
+          NODE_ENV=production
+          STORAGE_DRIVER=local
+          MEILI_MASTER_KEY=smoke-meili-not-used
+          MINIO_ROOT_USER=smoke-minio-not-used
+          MINIO_ROOT_PASSWORD=smoke-minio-pass-not-used
+          ENVEOF
+          # Strip any leading whitespace left by YAML block scalar processing
+          sed -i 's/^[[:space:]]*//' .env
+
+      # ── Build backend image from source ───────────────────────────────────
+      # This step fails if the Dockerfile or any source file is broken.
+      # Deliberately broken code → build failure → job fails (not skipped).
+      - name: Build backend image from source
+        run: docker compose build backend
+
+      # ── Boot the ephemeral stack ───────────────────────────────────────────
+      # Only the services needed for a backend smoke test:
+      #   - postgres: required by the app (DATABASE_URL)
+      #   - redis:    required by BullMQ workers (REDIS_URL)
+      #   - backend:  the artifact under test; runs `prisma db push` before starting
+      # minio / meilisearch / chromadb are skipped — the backend tolerates their
+      # absence and the smoke routes never touch media/search/AI.
+      - name: Boot postgres + redis + backend
+        run: docker compose up -d postgres redis backend
+
+      # ── Wait for the health endpoint ───────────────────────────────────────
+      # The backend runs `prisma db push` before node starts (see Dockerfile CMD),
+      # so this poll also waits for schema migration to complete.
+      # timeout exits non-zero (124) if the app never becomes healthy — job fails.
+      - name: Wait for backend /health (90 s timeout)
+        run: |
+          printf 'Waiting for backend'
+          timeout 90 sh -c '
+            until curl -sf http://localhost:4000/health >/dev/null 2>&1; do
+              printf .
+              sleep 3
+            done
+          '
+          echo ' ready'
+
+      # ── Smoke checks ──────────────────────────────────────────────────────
+      - name: Smoke — GET /health returns 200 with status ok
+        run: |
+          response=$(curl -sf http://localhost:4000/health)
+          echo "Response: $response"
+          echo "$response" | grep -q '"status":"ok"'
+
+      - name: Smoke — POST /api/auth/login returns non-5xx
+        run: |
+          status=$(curl -s -o /dev/null -w '%{http_code}' \
+            -X POST http://localhost:4000/api/auth/login \
+            -H 'Content-Type: application/json' \
+            -d '{"email":"smoke@ci.test","password":"wrongpassword"}')
+          echo "Auth endpoint HTTP $status"
+          [ "$status" -lt 500 ] || {
+            echo "FAIL: backend returned 5xx — app is not functional"
+            exit 1
+          }
+
+      # ── Summary ───────────────────────────────────────────────────────────
+      - name: Write job summary
+        run: |
+          echo "## Staging smoke passed" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Built from source and booted inside the CI runner:" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Check | Result |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Build backend image from source | ✅ |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Prisma schema applied (\`db push\`) | ✅ |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| \`GET /health\` → 200 | ✅ |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| \`POST /api/auth/login\` → non-5xx | ✅ |" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Commit: \`${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
+
+      # ── Diagnostics on failure ─────────────────────────────────────────────
+      - name: Dump container logs on failure
+        if: failure()
+        run: docker compose logs --tail=200
+
+      # ── Tear down (always) ────────────────────────────────────────────────
+      - name: Tear down
+        if: always()
+        run: docker compose down -v --remove-orphans
