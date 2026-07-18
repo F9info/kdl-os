@@ -4,12 +4,13 @@ name: CD Staging
 # Required GitHub secrets — set in repo Settings → Environments → staging → Secrets
 # (NOT in repo-level Secrets → Actions; the preflight job reads them via environment scope):
 #   STAGING_HOST       — IP or hostname of the staging VPS
-#   STAGING_USER       — SSH user (e.g. ubuntu, root)
-#   STAGING_SSH_KEY    — private key whose public half is in authorized_keys on VPS
-#   STAGING_ENV        — full contents of the staging .env file (sensitive vars only;
-#                        non-secret defaults live in docker-compose.staging-vps.yml)
-#   GHCR_TOKEN         — GitHub PAT with read:packages scope (or use GITHUB_TOKEN
-#                        if the repo and packages are in the same org)
+#   STAGING_USER       — SSH user (e.g. ubuntu, root)  [already set]
+#   STAGING_SSH_KEY    — private key whose public half is in authorized_keys on VPS  [already set]
+#   STAGING_ENV        — full staging .env contents; generate with:
+#                        bash infra/gen-staging-env.sh > /tmp/staging.env
+#                        gh secret set STAGING_ENV --env staging < /tmp/staging.env
+#   GHCR_TOKEN         — (optional) PAT with read:packages; falls back to built-in
+#                        GITHUB_TOKEN when not set (same-org packages only)
 #
 # Required variable — set in repo Settings → Environments → staging → Variables:
 #   STAGING_URL        — public URL of the staging site (used for the deployment link)
@@ -52,6 +53,9 @@ jobs:
     needs: [preflight]
     if: needs.preflight.outputs.enabled == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read   # allows GITHUB_TOKEN to pull from ghcr.io/f9info/*
     environment:
       name: staging
       url: ${{ vars.STAGING_URL }}   # Set STAGING_URL in repo → Environments → staging
@@ -79,13 +83,16 @@ jobs:
         uses: appleboy/ssh-action@v1.2.5
         env:
           STAGING_ENV_CONTENTS: ${{ secrets.STAGING_ENV }}
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          # Prefer GHCR_TOKEN PAT when set; fall back to built-in GITHUB_TOKEN
+          # (GITHUB_TOKEN has read:packages for same-org ghcr.io images)
+          GHCR_TOKEN_PAT: ${{ secrets.GHCR_TOKEN }}
+          GITHUB_TOKEN_FOR_GHCR: ${{ secrets.GITHUB_TOKEN }}
           GHCR_ACTOR: ${{ github.actor }}
         with:
           host: ${{ secrets.STAGING_HOST }}
           username: ${{ secrets.STAGING_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
-          envs: IMAGE_TAG,STAGING_ENV_CONTENTS,GHCR_TOKEN,GHCR_ACTOR
+          envs: IMAGE_TAG,STAGING_ENV_CONTENTS,GHCR_TOKEN_PAT,GITHUB_TOKEN_FOR_GHCR,GHCR_ACTOR
           script: |
             set -euo pipefail
             cd /opt/kdl-staging
@@ -93,8 +100,10 @@ jobs:
             # Write the staging .env from the secret (overwrite each deploy)
             printf '%s' "$STAGING_ENV_CONTENTS" > .env
 
-            # Authenticate with GHCR so we can pull private images
-            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_ACTOR" --password-stdin
+            # Authenticate with GHCR — prefer explicit PAT (GHCR_TOKEN), fall back to
+            # built-in GITHUB_TOKEN which has read:packages for same-org images.
+            _ghcr_token="${GHCR_TOKEN_PAT:-$GITHUB_TOKEN_FOR_GHCR}"
+            echo "$_ghcr_token" | docker login ghcr.io -u "$GHCR_ACTOR" --password-stdin
 
             # Pull new images before taking the stack down (zero-downtime window)
             IMAGE_TAG="$IMAGE_TAG" \

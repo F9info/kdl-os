@@ -120,47 +120,63 @@ Low-complexity config files that are safe to write by hand:
 
 ---
 
-## Manual Task — KDL-333 — 2026-07-17
+## Manual Task — KDL-333 / KDL-403 — 2026-07-17 (updated 2026-07-18)
 **Queued by:** DevOps agent  
 **Reason:** Requires human cloud accounts, credentials, and VPS provisioning — agents cannot do these.  
-**Task:** Activate the always-on staging preview URL (KDL-333)
+**Task:** Activate the always-on staging preview URL
+
+> **KDL-403 update:** `STAGING_USER`, `STAGING_SSH_KEY` already set. `STAGING_ENV` is
+> now auto-generated (no manual authoring). `GHCR_TOKEN` is no longer required — the
+> workflow uses the built-in `GITHUB_TOKEN`. **Only one secret remains for a human to set:
+> `STAGING_HOST`** (plus the `STAGING_URL` environment variable).
 
 ### Step 1 — Provision a $6/month VPS (5 min)
 Any provider works (Hetzner CX11, DigitalOcean Droplet, Vultr, etc.). Ubuntu 22.04.  
-Note the public IP — call it `STAGING_HOST`.
+Note the public IP — call it `<STAGING_HOST>`.
 
 ### Step 2 — Bootstrap Docker on the VPS (2 min)
 ```bash
 ssh ubuntu@<STAGING_HOST> 'bash -s' < infra/scripts/staging-bootstrap.sh
 ```
 
-### Step 3 — Add GitHub secrets (repo → Settings → Environments → staging → Secrets)
+### Step 3 — Generate STAGING_ENV and set it as a GitHub secret (2 min)
+```bash
+# Generate a complete, ready-to-use staging .env with random secrets
+STAGING_HOST=<STAGING_HOST> bash infra/gen-staging-env.sh > /tmp/staging.env
 
-> **Important:** Set these in the `staging` **environment** (Settings → Environments → staging → Secrets),
-> NOT in repo-level Secrets → Actions. The `preflight` and `deploy-staging` jobs both declare
-> `environment: staging`, so they can only read environment-scoped secrets. Repo-level secrets work
-> too, but the environment is the canonical location and is what `preflight` checks.
+# Upload it as a GitHub environment secret
+gh secret set STAGING_ENV --env staging < /tmp/staging.env
+
+# Discard the local copy
+rm /tmp/staging.env
+```
+No editing required — DB credentials, JWT secrets, and all service URLs are auto-filled.  
+AI keys default to the built-in `local` fallback (KDL-262); external API keys (Stripe, SMTP, Sentry) are optional.
+
+### Step 4 — Set the one remaining secret (1 min)
+
+> **Important:** Set in the `staging` **environment** (Settings → Environments → staging → Secrets),
+> NOT in repo-level Secrets → Actions.
 
 | Secret name | Value |
 |-------------|-------|
-| `STAGING_HOST` | VPS IP or hostname |
-| `STAGING_USER` | SSH user (`ubuntu` or `root`) |
-| `STAGING_SSH_KEY` | Private key (generate with `ssh-keygen -t ed25519`; add public key to VPS `~/.ssh/authorized_keys`) |
-| `STAGING_ENV` | Full contents of a staging `.env` file (copy from `.env.example`, fill real values — DB password, JWT secret, etc.) |
-| `GHCR_TOKEN` | GitHub PAT with `read:packages` scope (Settings → Developer settings → Personal access tokens) |
+| `STAGING_HOST` | VPS IP or hostname — **the only remaining human-supplied secret** |
 
-### Step 4 — Add GitHub environment variable (repo → Settings → Environments → staging → Variables)
+Already set (no action needed): `STAGING_USER`, `STAGING_SSH_KEY`, `STAGING_ENV` (from Step 3).  
+No longer needed: `GHCR_TOKEN` — removed in KDL-403.
+
+### Step 5 — Add GitHub environment variable (repo → Settings → Environments → staging → Variables)
 
 | Variable name | Value |
 |---------------|-------|
 | `STAGING_URL` | `http://<STAGING_HOST>` (or your domain once DNS is pointed) |
 
-### Step 5 — Optional: point a domain
+### Step 6 — Optional: point a domain
 Point `staging.kdl.f9tech.com` (or similar) A record to the VPS IP.  
 Update `STAGING_URL` env var to use the domain.  
 Update the staging URL in `.github/PULL_REQUEST_TEMPLATE.md` to match.
 
-### Step 6 — Trigger first deploy
+### Step 7 — Trigger first deploy
 Push any commit to `master` — `cd-staging.yml` runs automatically.  
 Or: GitHub → Actions → "CD Staging" → "Run workflow".
 
