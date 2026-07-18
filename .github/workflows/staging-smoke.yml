@@ -16,7 +16,7 @@ name: Staging Smoke Deploy
 
 on:
   push:
-    branches: [master, feat/kdl-404-staging-smoke]
+    branches: [master, feat/kdl-404-staging-smoke, test/kdl-404-break-smoke]
   workflow_dispatch:
 
 jobs:

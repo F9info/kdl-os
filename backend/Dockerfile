@@ -74,4 +74,5 @@ COPY --chown=nodeuser:nodejs package.json ./
 COPY --chown=nodeuser:nodejs prisma.config.ts ./
 USER nodeuser
 EXPOSE 4000
-CMD ["sh", "-c", "node_modules/.bin/prisma db push && node src/index.js"]
+# INTENTIONAL BREAK for KDL-404 smoke-fail proof — backend always exits 1
+CMD ["sh", "-c", "echo 'DELIBERATE BREAK: proving smoke job fails' && exit 1"]
