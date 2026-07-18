@@ -31,10 +31,10 @@ export default function PageBuilderEditor() {
   if (notFound) {
     return (
       <div className="p-8">
-        <p className="text-slate-600">Page not found.</p>
+        <p className="text-muted-foreground">Page not found.</p>
         <button
           onClick={() => router.push('/admin/page-builder')}
-          className="mt-3 text-blue-600 underline"
+          className="mt-3 text-primary underline"
         >
           Back to pages
         </button>
@@ -42,11 +42,11 @@ export default function PageBuilderEditor() {
     )
   }
 
-  if (!page) return <div className="p-8 text-slate-500">Loading editor…</div>
+  if (!page) return <div className="p-8 text-muted-foreground">Loading editor…</div>
 
   return (
     <ModuleGuard slug="page-builder">
-      <div className="h-[calc(100vh-0px)]">
+      <div className="h-[calc(100vh-var(--te-layout-header-height))]">
         <Puck
           config={config}
           data={page.data}
@@ -69,7 +69,7 @@ export default function PageBuilderEditor() {
                   href={`/p/${page.slug}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
+                  className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm text-foreground hover:bg-muted"
                 >
                   <ExternalLink size={15} /> View
                 </a>
@@ -80,7 +80,7 @@ export default function PageBuilderEditor() {
         />
         <button
           onClick={() => router.push('/admin/page-builder')}
-          className="fixed bottom-4 left-4 z-50 inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-4 py-2 text-sm text-white shadow-lg hover:bg-slate-700"
+          className="fixed bottom-4 left-4 z-50 inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-sm text-background shadow-lg hover:bg-foreground/80"
         >
           <ArrowLeft size={15} /> Pages
         </button>

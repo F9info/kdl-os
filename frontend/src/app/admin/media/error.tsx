@@ -19,7 +19,7 @@ export default function MediaError({
   }, [error])
 
   return (
-    <div className="flex h-[calc(100vh-64px)] flex-col items-center justify-center gap-3 text-center px-4">
+    <div className="flex h-[calc(100vh-var(--te-layout-header-height))] flex-col items-center justify-center gap-3 text-center px-4">
       <AlertTriangle className="h-10 w-10 text-destructive" />
       <p className="font-medium">Something went wrong in the Media Library.</p>
       <p className="text-sm text-muted-foreground max-w-md">

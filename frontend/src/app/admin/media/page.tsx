@@ -911,7 +911,13 @@ function DetailDrawer({
   })
 
   return (
-    <div className="fixed right-0 top-0 h-full w-80 bg-background border-l shadow-xl z-30 overflow-y-auto p-4 space-y-4">
+    <div
+      className="fixed right-0 w-80 bg-background border-l shadow-xl z-30 overflow-y-auto p-4 space-y-4"
+      style={{
+        top: 'var(--te-layout-header-height)',
+        height: 'calc(100% - var(--te-layout-header-height))',
+      }}
+    >
       <div className="flex justify-between items-center">
         <h3 className="font-semibold">File Details</h3>
         <button type="button" onClick={onClose}>
@@ -1704,7 +1710,7 @@ export default function MediaPage() {
 
   return (
     <PermissionGuard permission="media:view">
-      <div className="flex h-[calc(100vh-64px)] overflow-hidden">
+      <div className="flex h-[calc(100vh-var(--te-layout-header-height))] overflow-hidden">
         {/* Sidebar */}
         <aside className="w-56 flex-shrink-0 border-r flex flex-col bg-background">
           <SidebarNav
@@ -1816,6 +1822,9 @@ export default function MediaPage() {
 
         {/* Main content */}
         <div className="flex-1 flex flex-col min-w-0">
+          <div className="px-3 pt-3 shrink-0">
+            <PageHeader title="Media Library" />
+          </div>
           {/* Toolbar */}
           <div className="p-3 border-b flex items-center gap-2 flex-wrap bg-background">
             {view === 'files' && (
@@ -2155,9 +2164,6 @@ export default function MediaPage() {
           onUploaded={invalidateAll}
         />
       )}
-
-      {/* PageHeader outside the flex (scroll context) */}
-      <PageHeader title="Media Library" />
 
       {/* Create folder */}
       <Modal

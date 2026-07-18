@@ -235,7 +235,7 @@ export default function ModulesPage() {
 
   return (
     <PermissionGuard permission="modules:view">
-      <div className="p-6">
+      <div>
         <PageHeader
           title="Modules"
           action={
@@ -283,7 +283,7 @@ export default function ModulesPage() {
         {isLoading && (
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="rounded-lg border bg-white p-5">
+              <div key={i} className="rounded-lg border bg-card p-5">
                 <div className="flex items-center gap-3">
                   <Skeleton className="h-10 w-10 rounded-md" />
                   <Skeleton className="h-4 w-2/3" />
@@ -298,8 +298,8 @@ export default function ModulesPage() {
 
         {!isLoading && filteredModules.length === 0 && (
           <div className="mt-16 flex flex-col items-center gap-2 text-center text-muted-foreground">
-            <Package className="h-8 w-8 text-gray-300" />
-            <p className="font-medium text-gray-700">No modules match</p>
+            <Package className="h-8 w-8 text-muted-foreground/40" />
+            <p className="font-medium text-foreground">No modules match</p>
             <p className="text-sm">Try a different search term or clear the status filter.</p>
           </div>
         )}
@@ -309,28 +309,28 @@ export default function ModulesPage() {
             {filteredModules.map((mod) => (
               <div
                 key={mod.slug}
-                className="flex h-full flex-col gap-3 rounded-lg border bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+                className="flex h-full flex-col gap-3 rounded-lg border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-3">
                     <ModuleIcon icon={mod.icon} />
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="truncate font-medium text-gray-900">{mod.name}</span>
+                        <span className="truncate font-medium text-foreground">{mod.name}</span>
                         {mod.core && (
                           <Lock
-                            className="h-3.5 w-3.5 shrink-0 text-gray-400"
+                            className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
                             aria-label="Core module — cannot be disabled"
                           />
                         )}
                       </div>
-                      <p className="text-xs text-gray-400">v{mod.version}</p>
+                      <p className="text-xs text-muted-foreground">v{mod.version}</p>
                     </div>
                   </div>
                   <StatusBadgeModule status={mod.status} />
                 </div>
 
-                <p className="line-clamp-2 flex-1 text-sm text-gray-500">
+                <p className="line-clamp-2 flex-1 text-sm text-muted-foreground">
                   {mod.description ?? '—'}
                 </p>
 
