@@ -1,3 +1,14 @@
+## 2026-07-18 — KDL-385 a11y skip-to-main-content (Frontend Coder)
+
+**Done:** Added skip navigation link (WCAG 2.4.1 Level A) — PR #106 open for review.
+
+- `frontend/src/app/admin/layout.tsx`: skip link is first focusable element, `sr-only` + visible on focus
+- `frontend/src/components/layout/AdminShell.tsx`: `id="main-content"` on `<main>`
+- Branch: `feat/kdl-385-skip-to-main`, base: master
+- Note: cherry-picked from `2c9757b` which was mistakenly bundled in `feat/kdl-386-aria-modal`; that branch still contains the skip-link changes — will be a no-op diff when KDL-386 eventually merges after KDL-385 merges first.
+
+---
+
 <!-- ROLLING WINDOW: keep only the most recent ~8 entries here to minimise per-run context.
      Prepend new entries at the top; move anything older than the window into HANDOFF_ARCHIVE.md.
      Full history: .agents/HANDOFF_ARCHIVE.md (and git log). -->
