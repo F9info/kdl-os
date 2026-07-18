@@ -1,7 +1,8 @@
 name: CD Staging
 
 # Deploys latest master images to the always-on staging VPS.
-# Required GitHub secrets (set in repo Settings → Secrets → Actions):
+# Required GitHub secrets — set in repo Settings → Environments → staging → Secrets
+# (NOT in repo-level Secrets → Actions; the preflight job reads them via environment scope):
 #   STAGING_HOST       — IP or hostname of the staging VPS
 #   STAGING_USER       — SSH user (e.g. ubuntu, root)
 #   STAGING_SSH_KEY    — private key whose public half is in authorized_keys on VPS
@@ -9,6 +10,9 @@ name: CD Staging
 #                        non-secret defaults live in docker-compose.staging-vps.yml)
 #   GHCR_TOKEN         — GitHub PAT with read:packages scope (or use GITHUB_TOKEN
 #                        if the repo and packages are in the same org)
+#
+# Required variable — set in repo Settings → Environments → staging → Variables:
+#   STAGING_URL        — public URL of the staging site (used for the deployment link)
 #
 # One-time VPS bootstrap (run once by a human — see MANUAL_TASKS.md):
 #   ssh $STAGING_USER@$STAGING_HOST 'bash -s' < infra/scripts/staging-bootstrap.sh
@@ -23,6 +27,8 @@ jobs:
   preflight:
     name: Check staging secrets
     runs-on: ubuntu-latest
+    environment:
+      name: staging
     outputs:
       enabled: ${{ steps.check.outputs.enabled }}
     steps:

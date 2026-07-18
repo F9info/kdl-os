@@ -134,7 +134,12 @@ Note the public IP — call it `STAGING_HOST`.
 ssh ubuntu@<STAGING_HOST> 'bash -s' < infra/scripts/staging-bootstrap.sh
 ```
 
-### Step 3 — Add GitHub secrets (repo → Settings → Secrets → Actions)
+### Step 3 — Add GitHub secrets (repo → Settings → Environments → staging → Secrets)
+
+> **Important:** Set these in the `staging` **environment** (Settings → Environments → staging → Secrets),
+> NOT in repo-level Secrets → Actions. The `preflight` and `deploy-staging` jobs both declare
+> `environment: staging`, so they can only read environment-scoped secrets. Repo-level secrets work
+> too, but the environment is the canonical location and is what `preflight` checks.
 
 | Secret name | Value |
 |-------------|-------|
