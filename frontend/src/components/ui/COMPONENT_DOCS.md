@@ -23,21 +23,21 @@ Semantic tokens resolve as `hsl(var(--token))` with a Template-Engine branding o
 top (`var(--branding_*, hsl(var(--token)))`). You reference them through **Tailwind color classes**,
 not the raw vars:
 
-| Purpose | Tailwind class | Backing var |
-|---|---|---|
-| Page background / surface | `bg-background` | `--background` |
-| Primary text | `text-foreground` | `--foreground` |
-| Brand action (fill) | `bg-primary` / `text-primary-foreground` | `--primary` |
-| Secondary action | `bg-secondary` / `text-secondary-foreground` | `--secondary` |
-| Muted surface / de-emphasized text | `bg-muted` / `text-muted-foreground` | `--muted` |
-| Hover / active accent | `bg-accent` / `text-accent-foreground` | `--accent` |
-| Danger / error | `bg-destructive` / `text-destructive-foreground` | `--destructive` |
-| Card surface | `bg-card` / `text-card-foreground` | `--card` |
-| Popover/overlay surface | `bg-popover` / `text-popover-foreground` | `--popover` |
-| Field border | `border-input` | `--input` |
-| Divider / generic border | `border-border` (`bg-border`) | `--border` |
-| Focus ring | `ring-ring` | `--ring` |
-| Corner radius | `rounded-lg/md/sm` | `--radius` (md = −2px, sm = −4px) |
+| Purpose                            | Tailwind class                                   | Backing var                       |
+| ---------------------------------- | ------------------------------------------------ | --------------------------------- |
+| Page background / surface          | `bg-background`                                  | `--background`                    |
+| Primary text                       | `text-foreground`                                | `--foreground`                    |
+| Brand action (fill)                | `bg-primary` / `text-primary-foreground`         | `--primary`                       |
+| Secondary action                   | `bg-secondary` / `text-secondary-foreground`     | `--secondary`                     |
+| Muted surface / de-emphasized text | `bg-muted` / `text-muted-foreground`             | `--muted`                         |
+| Hover / active accent              | `bg-accent` / `text-accent-foreground`           | `--accent`                        |
+| Danger / error                     | `bg-destructive` / `text-destructive-foreground` | `--destructive`                   |
+| Card surface                       | `bg-card` / `text-card-foreground`               | `--card`                          |
+| Popover/overlay surface            | `bg-popover` / `text-popover-foreground`         | `--popover`                       |
+| Field border                       | `border-input`                                   | `--input`                         |
+| Divider / generic border           | `border-border` (`bg-border`)                    | `--border`                        |
+| Focus ring                         | `ring-ring`                                      | `--ring`                          |
+| Corner radius                      | `rounded-lg/md/sm`                               | `--radius` (md = −2px, sm = −4px) |
 
 **Template-Engine `te-*` classes.** Several primitives (`Button`, `Input`, `Card`, `Table`, `Alert`,
 `Dialog`) carry `te-*` classes (e.g. `te-btn`, `te-input`, `te-card`, `te-popup`). These pull
@@ -71,12 +71,12 @@ import { Button, buttonVariants } from '@/components/ui/button'
 
 **Props**
 
-| Prop | Type | Default | Notes |
-|---|---|---|---|
-| `variant` | `default \| destructive \| outline \| secondary \| ghost \| link` | `default` | |
-| `size` | `default \| sm \| lg \| icon` | `default` | `icon` = 40×40 square |
-| `asChild` | `boolean` | `false` | Render as child (Radix `Slot`) — e.g. wrap a `<Link>` |
-| …rest | `React.ButtonHTMLAttributes` | | `disabled`, `onClick`, `type`, etc. |
+| Prop      | Type                                                              | Default   | Notes                                                 |
+| --------- | ----------------------------------------------------------------- | --------- | ----------------------------------------------------- |
+| `variant` | `default \| destructive \| outline \| secondary \| ghost \| link` | `default` |                                                       |
+| `size`    | `default \| sm \| lg \| icon`                                     | `default` | `icon` = 40×40 square                                 |
+| `asChild` | `boolean`                                                         | `false`   | Render as child (Radix `Slot`) — e.g. wrap a `<Link>` |
+| …rest     | `React.ButtonHTMLAttributes`                                      |           | `disabled`, `onClick`, `type`, etc.                   |
 
 **States**
 
@@ -87,11 +87,13 @@ import { Button, buttonVariants } from '@/components/ui/button'
 - **loading:** Button has no built-in spinner — compose one and disable while pending (snippet below).
 
 **Do**
+
 - Use one **primary** (`default`) button per view/section — the single most important action.
 - Use `destructive` only for irreversible/data-losing actions; pair with a confirm `Dialog`.
 - Use `asChild` to make a link look like a button — keeps semantics correct (`<a>` navigates).
 
 **Don't**
+
 - Don't stack multiple `default` buttons side by side — demote the rest to `secondary`/`outline`/`ghost`.
 - Don't put `onClick`-navigation on a `<Button>` when a link is meant; use `asChild` + `<Link>`.
 - Don't hand-set height/padding to “match” a button — that's what `size` + `te-btn` own.
@@ -105,20 +107,20 @@ import { Button, buttonVariants } from '@/components/ui/button'
 // Standard + loading pattern (Button has no loading prop — compose it)
 import { Loader2 } from 'lucide-react'
 
-<Button onClick={save} disabled={isSaving}>
+;<Button onClick={save} disabled={isSaving}>
   {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
   {isSaving ? 'Saving…' : 'Save changes'}
 </Button>
 
 // Link that looks like a button
 import Link from 'next/link'
-<Button asChild variant="outline">
+;<Button asChild variant="outline">
   <Link href="/settings">Settings</Link>
 </Button>
 
 // Icon-only button — always give it an accessible name
 import { Trash2 } from 'lucide-react'
-<Button size="icon" variant="ghost" aria-label="Delete">
+;<Button size="icon" variant="ghost" aria-label="Delete">
   <Trash2 className="h-4 w-4" />
 </Button>
 ```
@@ -128,7 +130,7 @@ import { Trash2 } from 'lucide-react'
 ## 2. Input
 
 ```tsx
-import { Input } from '@/components/ui/input'   // type InputProps
+import { Input } from '@/components/ui/input' // type InputProps
 ```
 
 Plain `<input>` forwarding all native attrs (`type`, `placeholder`, `value`, `onChange`, `disabled`,
@@ -142,11 +144,13 @@ Plain `<input>` forwarding all native attrs (`type`, `placeholder`, `value`, `on
   You rarely set this by hand — wrap in `FormField` (§15) and it injects `aria-invalid` from `error`.
 
 **Do**
+
 - Always pair with a `<Label htmlFor>` or wrap in `FormField` — never a placeholder-only field.
 - Set the right `type` (`email`, `tel`, `number`, `password`) so mobile keyboards/validation adapt.
 - Signal invalidity via `aria-invalid` (or `FormField error`), not by manually recoloring the border.
 
 **Don't**
+
 - Don't use placeholder text as the label (fails recognition-over-recall + a11y).
 - Don't hardcode a red border for errors — the `aria-[invalid=true]` path already does it via tokens.
 
@@ -166,7 +170,7 @@ Plain `<input>` forwarding all native attrs (`type`, `placeholder`, `value`, `on
 ## 3. Textarea
 
 ```tsx
-import { Textarea } from '@/components/ui/textarea'   // type TextareaProps
+import { Textarea } from '@/components/ui/textarea' // type TextareaProps
 ```
 
 `min-h-[80px]`, `border-input`, `bg-background`, resizable by default. Same `aria-invalid` error path
@@ -192,8 +196,14 @@ as `Input`. Forwards all native `<textarea>` attrs.
 
 ```tsx
 import {
-  Select, SelectTrigger, SelectValue, SelectContent,
-  SelectItem, SelectGroup, SelectLabel, SelectSeparator,
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+  SelectGroup,
+  SelectLabel,
+  SelectSeparator,
 } from '@/components/ui/select'
 ```
 
@@ -204,11 +214,13 @@ shows a `Check` indicator.
 → `bg-accent`; disabled item → `opacity-50 pointer-events-none`; checked item shows `Check`.
 
 **Do**
+
 - Use for **4–15** mutually-exclusive options. Under ~4, prefer radios/segmented; over ~15 use `Command` (§14) with search.
 - Always render a `SelectValue placeholder="…"` so the empty state reads clearly.
 - Group long lists with `SelectGroup` + `SelectLabel`.
 
 **Don't**
+
 - Don't use a Select for a yes/no toggle — use `Switch` (§12).
 - Don't nest interactive controls inside `SelectItem`.
 
@@ -239,7 +251,12 @@ shows a `Check` indicator.
 
 ```tsx
 import {
-  Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
 } from '@/components/ui/card'
 ```
 
@@ -265,7 +282,9 @@ rhythm. Right-align footer actions.
     <CardDescription>Billed annually</CardDescription>
   </CardHeader>
   <CardContent>
-    <p className="text-3xl font-bold">$29<span className="text-sm text-muted-foreground">/mo</span></p>
+    <p className="text-3xl font-bold">
+      $29<span className="text-sm text-muted-foreground">/mo</span>
+    </p>
   </CardContent>
   <CardFooter className="justify-end">
     <Button>Upgrade</Button>
@@ -279,8 +298,14 @@ rhythm. Right-align footer actions.
 
 ```tsx
 import {
-  Dialog, DialogTrigger, DialogContent, DialogHeader,
-  DialogFooter, DialogTitle, DialogDescription, DialogClose,
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
 } from '@/components/ui/dialog'
 ```
 
@@ -290,11 +315,13 @@ Radix Dialog. `DialogContent` (`te-popup`) is centered, `max-w-lg` by default, w
 **States:** open/closed animated; close button hover `opacity-100`, focus ring. Overlay fades.
 
 **Do**
+
 - Always include a `DialogTitle` (Radix requires an accessible name; use `sr-only` if visually hidden — see `CommandDialog`).
 - Add `DialogDescription` for context. Put actions in `DialogFooter`, primary action rightmost.
 - Override width via `className="max-w-md"` etc. — that's the intended app-level API.
 
 **Don't**
+
 - Don't nest a Dialog inside a Dialog. Don't use for non-blocking notices — that's `Toast` (§9).
 - Don't remove the close affordance or block `Esc` for dismissible dialogs (forgiveness heuristic).
 
@@ -304,15 +331,21 @@ Radix Dialog. `DialogContent` (`te-popup`) is centered, `max-w-lg` by default, w
 
 ```tsx
 <Dialog open={open} onOpenChange={setOpen}>
-  <DialogTrigger asChild><Button variant="destructive">Delete</Button></DialogTrigger>
+  <DialogTrigger asChild>
+    <Button variant="destructive">Delete</Button>
+  </DialogTrigger>
   <DialogContent className="max-w-md">
     <DialogHeader>
       <DialogTitle>Delete project?</DialogTitle>
       <DialogDescription>This permanently removes the project and its data.</DialogDescription>
     </DialogHeader>
     <DialogFooter>
-      <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-      <Button variant="destructive" onClick={confirmDelete}>Delete</Button>
+      <DialogClose asChild>
+        <Button variant="outline">Cancel</Button>
+      </DialogClose>
+      <Button variant="destructive" onClick={confirmDelete}>
+        Delete
+      </Button>
     </DialogFooter>
   </DialogContent>
 </Dialog>
@@ -332,15 +365,15 @@ borders come from the Tables pane via `te-table-*`. Row hover → `bg-muted/50`;
 
 TanStack-Table wrapper that folds in loading, error, empty, and pagination so screens don't re-implement them.
 
-| Prop | Type | Notes |
-|---|---|---|
-| `columns` | `ColumnDef<T>[]` | TanStack column defs |
-| `data` | `T[]` | current page rows |
-| `isLoading` | `boolean` | renders `Skeleton` rows |
-| `error` | `unknown` | renders `ErrorState` in place of rows |
-| `onRetry` | `() => void` | retry handler for the error state |
-| `pagination` | `{ page; totalPages; onPageChange }` | manual pagination (server-driven) |
-| `emptyMessage` | `string` | text for the `EmptyState` (default `"No results found."`) |
+| Prop           | Type                                 | Notes                                                     |
+| -------------- | ------------------------------------ | --------------------------------------------------------- |
+| `columns`      | `ColumnDef<T>[]`                     | TanStack column defs                                      |
+| `data`         | `T[]`                                | current page rows                                         |
+| `isLoading`    | `boolean`                            | renders `Skeleton` rows                                   |
+| `error`        | `unknown`                            | renders `ErrorState` in place of rows                     |
+| `onRetry`      | `() => void`                         | retry handler for the error state                         |
+| `pagination`   | `{ page; totalPages; onPageChange }` | manual pagination (server-driven)                         |
+| `emptyMessage` | `string`                             | text for the `EmptyState` (default `"No results found."`) |
 
 **Do:** use `DataTable` for any fetched list — it already wires the state kit precedence (error →
 loading → empty → rows). Use the raw `Table` parts only for static/layout tables.
@@ -388,9 +421,7 @@ Don't invent per-status colors outside the four variants — extend the design s
 **Motion:** `transition-colors` on hover.
 
 ```tsx
-<Badge variant={user.active ? 'default' : 'secondary'}>
-  {user.active ? 'Active' : 'Inactive'}
-</Badge>
+<Badge variant={user.active ? 'default' : 'secondary'}>{user.active ? 'Active' : 'Inactive'}</Badge>
 ```
 
 ---
@@ -398,19 +429,19 @@ Don't invent per-status colors outside the four variants — extend the design s
 ## 9. Toast
 
 ```tsx
-import { useToast } from '@/hooks/use-toast'   // toast() also exported
+import { useToast } from '@/hooks/use-toast' // toast() also exported
 // Mount <Toaster /> once at the app root:
 import { Toaster } from '@/components/ui/toaster'
 ```
 
 Radix Toast + a global store. Call `toast({...})`; it returns `{ id, dismiss, update }`.
 
-| Field | Type | Notes |
-|---|---|---|
-| `title` | `ReactNode` | short headline |
-| `description` | `ReactNode` | body |
-| `variant` | `default \| destructive` | destructive = error styling |
-| `action` | `ToastActionElement` | a `<ToastAction>` (undo/retry) |
+| Field         | Type                     | Notes                          |
+| ------------- | ------------------------ | ------------------------------ |
+| `title`       | `ReactNode`              | short headline                 |
+| `description` | `ReactNode`              | body                           |
+| `variant`     | `default \| destructive` | destructive = error styling    |
+| `action`      | `ToastActionElement`     | a `<ToastAction>` (undo/retry) |
 
 > **Note:** the store keeps `TOAST_LIMIT = 1` (one visible at a time) and a long
 > `TOAST_REMOVE_DELAY` — dismiss manually or via `action`. Don't rely on auto-timeout for critical info.
@@ -432,7 +463,11 @@ toast({
   variant: 'destructive',
   title: 'Upload failed',
   description: 'Network error.',
-  action: <ToastAction altText="Retry" onClick={retry}>Retry</ToastAction>,
+  action: (
+    <ToastAction altText="Retry" onClick={retry}>
+      Retry
+    </ToastAction>
+  ),
 })
 ```
 
@@ -541,7 +576,9 @@ as the sole affordance.
 <TooltipProvider>
   <Tooltip>
     <TooltipTrigger asChild>
-      <Button size="icon" variant="ghost" aria-label="Filters"><Filter className="h-4 w-4" /></Button>
+      <Button size="icon" variant="ghost" aria-label="Filters">
+        <Filter className="h-4 w-4" />
+      </Button>
     </TooltipTrigger>
     <TooltipContent>Filters</TooltipContent>
   </Tooltip>
@@ -602,16 +639,17 @@ is disabled. Always set `htmlFor`.
 
 **FormField** — `@/components/shared/FormField` — the standard field wrapper. It generates ids, renders
 the `<Label>`, a required `*`, an optional `hint`, and the `error`, and **injects `id` + `aria-invalid`
-+ `aria-describedby` into the child control** so `Input`/`Textarea`/`Select` light up their destructive
-styling automatically.
 
-| Prop | Type | Notes |
-|---|---|---|
-| `label` | `string` | required |
-| `error` | `string` | shows message + flips child to invalid |
-| `required` | `boolean` | renders `*` |
-| `hint` | `string` | helper text (hidden when `error` present) |
-| `children` | control | `Input`, `Textarea`, `Select` trigger, etc. |
+- `aria-describedby` into the child control** so `Input`/`Textarea`/`Select` light up their destructive
+  styling automatically.
+
+| Prop       | Type      | Notes                                       |
+| ---------- | --------- | ------------------------------------------- |
+| `label`    | `string`  | required                                    |
+| `error`    | `string`  | shows message + flips child to invalid      |
+| `required` | `boolean` | renders `*`                                 |
+| `hint`     | `string`  | helper text (hidden when `error` present)   |
+| `children` | control   | `Input`, `Textarea`, `Select` trigger, etc. |
 
 **Do:** wrap every form control in `FormField` — it's the single source of a11y wiring and error display.
 **Don't:** hand-roll `<Label>` + error `<p>` per field, or set `aria-invalid` manually when `FormField`
@@ -644,16 +682,21 @@ it. Pass `error`/`onRetry` to `ErrorState` rather than a bare string.
 **Don't:** use these for inline field validation (that's `FormField`) or transient errors (toast).
 
 ```tsx
-{error ? (
-  <ErrorState error={error} onRetry={refetch} />
-) : isLoading ? (
-  <LoadingState variant="skeleton" rows={5} />
-) : items.length === 0 ? (
-  <EmptyState title="No files here" description="Upload one to get started."
-    action={<Button onClick={openUpload}>Upload</Button>} />
-) : (
-  <ItemGrid items={items} />
-)}
+{
+  error ? (
+    <ErrorState error={error} onRetry={refetch} />
+  ) : isLoading ? (
+    <LoadingState variant="skeleton" rows={5} />
+  ) : items.length === 0 ? (
+    <EmptyState
+      title="No files here"
+      description="Upload one to get started."
+      action={<Button onClick={openUpload}>Upload</Button>}
+    />
+  ) : (
+    <ItemGrid items={items} />
+  )
+}
 ```
 
 ---
@@ -710,6 +753,5 @@ Before shipping a screen, confirm:
 
 ---
 
-*Maintained by the UI/UX/DX Design Engineer. Keep code-accurate with `components/ui/*` — update in the
-same PR as any component change. Unblocks E2 rollout.*
-
+_Maintained by the UI/UX/DX Design Engineer. Keep code-accurate with `components/ui/*` — update in the
+same PR as any component change. Unblocks E2 rollout._
