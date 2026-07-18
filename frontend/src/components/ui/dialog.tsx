@@ -34,6 +34,7 @@ const DialogContent = React.forwardRef<
     <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
+      aria-modal="true"
       className={cn(
         // Surface chrome (background/text/border/radius/padding/shadow) comes
         // from the Popup pane tokens via te-popup (te-components.css,
