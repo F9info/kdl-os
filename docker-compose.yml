@@ -158,6 +158,12 @@ services:
     environment:
       # Next.js rewrites() proxies /api to the backend over the internal network.
       BACKEND_INTERNAL_URL: http://backend:4000
+      # MinIO host port is 9002 (see minio service ports: 9002:9000). The backend
+      # mints presigned URLs against localhost:9002 (MINIO_PUBLIC_PORT above), so
+      # the CSP img-src and Next.js remotePatterns must allow that same host:port.
+      # Without this, the browser blocks every presigned URL → broken thumbnails
+      # and logo previews (KDL-412). Format: "protocol:hostname:port[,...]".
+      NEXT_PUBLIC_IMAGE_HOSTS: http:localhost:9002
     ports:
       - "127.0.0.1:3001:3000"
     depends_on:
