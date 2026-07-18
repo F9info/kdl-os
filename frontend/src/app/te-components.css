@@ -39,15 +39,23 @@
   .te-btn {
     font-family: var(--buttons_button_defaults_button_font, inherit);
     font-weight: var(--buttons_button_defaults_font_weight, 500);
+    /* Use B1 motion tokens so prefers-reduced-motion collapses them to 0ms. */
     transition: var(
       --buttons_button_defaults_transition,
-      color 0.15s ease,
-      background-color 0.15s ease,
-      border-color 0.15s ease,
-      box-shadow 0.15s ease
+      color var(--duration-base, 0.15s) var(--ease-standard, ease),
+      background-color var(--duration-base, 0.15s) var(--ease-standard, ease),
+      border-color var(--duration-base, 0.15s) var(--ease-standard, ease),
+      box-shadow var(--duration-base, 0.15s) var(--ease-standard, ease),
+      transform var(--duration-fast, 0.1s) var(--ease-standard, ease)
     );
     /* Neutral alias from the per-device @media blocks (unit-suffixed). */
     border-radius: var(--buttons_button_sizes_border_radius, calc(var(--radius) - 2px));
+  }
+  /* B2 active/press state — subtle scale-down gives tactile feedback.
+     Disabled pointer-events: none on the base class prevents this from
+     firing when the button is disabled. */
+  .te-btn:active:not([aria-disabled='true']) {
+    transform: scale(0.97);
   }
   /* Sizing applies to the default cva size only — sm/lg/icon keep their
      proportional Tailwind sizes (radius/font/colors still token-driven). */
@@ -235,9 +243,20 @@
     border-radius: calc(var(--forms_full_border_settings_radius, 6) * 1px);
     background-color: var(--forms_full_border_colors_background_color, hsl(var(--background)));
     color: var(--forms_full_border_colors_text_color, inherit);
+    /* B2 hover: use B1 motion token so prefers-reduced-motion collapses to 0ms. */
+    transition:
+      border-color var(--duration-base, 0.15s) var(--ease-standard, ease),
+      box-shadow var(--duration-base, 0.15s) var(--ease-standard, ease);
   }
   .te-input::placeholder {
     color: var(--forms_full_border_colors_placeholder_color, hsl(var(--muted-foreground)));
+  }
+  /* B2 hover state — brightens the border toward the focus ring color. */
+  .te-input:hover:not(:focus-visible):not([disabled]):not([aria-disabled='true']) {
+    border-color: var(
+      --forms_full_border_colors_hover_color,
+      var(--branding_brand_colors_primary_color, hsl(var(--ring) / 0.5))
+    );
   }
 
   /* ── Data-value enum mappings (@container style queries) ─────────────── */

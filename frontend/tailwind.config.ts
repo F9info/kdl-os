@@ -42,6 +42,7 @@ const config: Config = {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
         },
+        'status-danger-fg': 'hsl(var(--status-danger-fg))',
         muted: {
           DEFAULT: 'var(--branding_surfaces_surface_color, hsl(var(--muted)))',
           foreground:
@@ -66,6 +67,27 @@ const config: Config = {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+      },
+      // B1 Elevation — consumes the CSS custom properties defined in globals.css
+      boxShadow: {
+        xs: 'var(--shadow-xs)',
+        sm: 'var(--shadow-sm)',
+        md: 'var(--shadow-md)',
+        lg: 'var(--shadow-lg)',
+        xl: 'var(--shadow-xl)',
+      },
+      // B1 Motion — consume the CSS custom properties (collapse to 0ms under
+      // prefers-reduced-motion via the :root override in globals.css)
+      transitionDuration: {
+        fast: 'var(--duration-fast)',
+        base: 'var(--duration-base)',
+        slow: 'var(--duration-slow)',
+        slower: 'var(--duration-slower)',
+      },
+      transitionTimingFunction: {
+        standard: 'var(--ease-standard)',
+        decelerate: 'var(--ease-decelerate)',
+        accelerate: 'var(--ease-accelerate)',
       },
       keyframes: {
         'accordion-down': {
@@ -102,14 +124,22 @@ const config: Config = {
         },
       },
       animation: {
-        'accordion-down': 'accordion-down 0.2s ease-out',
-        'accordion-up': 'accordion-up 0.2s ease-out',
-        'sheet-overlay-in': 'sheet-overlay-in 0.2s ease-out',
-        'sheet-overlay-out': 'sheet-overlay-out 0.15s ease-out',
-        'sheet-slide-in-from-right': 'sheet-slide-in-from-right 0.2s ease-out',
-        'sheet-slide-out-to-right': 'sheet-slide-out-to-right 0.15s ease-out',
-        'sheet-slide-in-from-left': 'sheet-slide-in-from-left 0.2s ease-out',
-        'sheet-slide-out-to-left': 'sheet-slide-out-to-left 0.15s ease-out',
+        // Use B1 motion tokens; globals.css collapses them to 0ms under prefers-reduced-motion
+        'accordion-down':
+          'accordion-down var(--duration-slow, 0.2s) var(--ease-decelerate, ease-out)',
+        'accordion-up': 'accordion-up var(--duration-slow, 0.2s) var(--ease-accelerate, ease-out)',
+        'sheet-overlay-in':
+          'sheet-overlay-in var(--duration-slow, 0.2s) var(--ease-decelerate, ease-out)',
+        'sheet-overlay-out':
+          'sheet-overlay-out var(--duration-base, 0.15s) var(--ease-accelerate, ease-out)',
+        'sheet-slide-in-from-right':
+          'sheet-slide-in-from-right var(--duration-slow, 0.2s) var(--ease-decelerate, ease-out)',
+        'sheet-slide-out-to-right':
+          'sheet-slide-out-to-right var(--duration-base, 0.15s) var(--ease-accelerate, ease-out)',
+        'sheet-slide-in-from-left':
+          'sheet-slide-in-from-left var(--duration-slow, 0.2s) var(--ease-decelerate, ease-out)',
+        'sheet-slide-out-to-left':
+          'sheet-slide-out-to-left var(--duration-base, 0.15s) var(--ease-accelerate, ease-out)',
       },
     },
   },

@@ -21,7 +21,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/40">
-      <div className="w-full max-w-md rounded-xl border bg-card p-8 shadow-sm">
+      {/* shadow-md uses the B1 elevation token from globals.css */}
+      <div className="w-full max-w-md rounded-xl border bg-card p-8 shadow-md">
         <div className="mb-6 text-center">
           <h1 className="text-2xl font-bold tracking-tight">KDL Admin</h1>
         </div>
