@@ -6,47 +6,52 @@ interface StatusBadgeProps {
   label?: string
 }
 
+// B1 token-aware badge colors.
+// - active/suspended/inactive/system map to semantic design-system tokens so
+//   they follow the brand primary/destructive/muted palette.
+// - Role variants (user/admin/super_admin/pending) keep Tailwind palette
+//   classes — no semantic token maps to them yet.
 const variantConfig: Record<
   StatusBadgeProps['variant'],
   { classes: string; defaultLabel: string }
 > = {
   active: {
-    classes: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+    classes: 'bg-primary/10 text-primary',
     defaultLabel: 'Active',
   },
   inactive: {
-    classes: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
+    classes: 'bg-muted text-muted-foreground',
     defaultLabel: 'Inactive',
   },
   suspended: {
-    classes: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+    classes: 'bg-destructive/10 text-destructive',
     defaultLabel: 'Suspended',
   },
   pending: {
-    classes: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+    classes: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
     defaultLabel: 'Pending',
   },
   user: {
-    classes: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+    classes: 'bg-secondary text-secondary-foreground',
     defaultLabel: 'User',
   },
   admin: {
-    classes: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
+    classes: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
     defaultLabel: 'Admin',
   },
   super_admin: {
-    classes: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
+    classes: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
     defaultLabel: 'Super Admin',
   },
   system: {
-    classes: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300',
+    classes: 'bg-muted text-muted-foreground',
     defaultLabel: 'System',
   },
 }
 
 export function StatusBadge({ variant, label }: StatusBadgeProps) {
   const config = variantConfig[variant] ?? {
-    classes: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
+    classes: 'bg-muted text-muted-foreground',
     defaultLabel: variant,
   }
   return (
