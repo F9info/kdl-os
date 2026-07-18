@@ -42,6 +42,7 @@ const config: Config = {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
         },
+        'status-danger-fg': 'hsl(var(--status-danger-fg))',
         muted: {
           DEFAULT: 'var(--branding_surfaces_surface_color, hsl(var(--muted)))',
           foreground:

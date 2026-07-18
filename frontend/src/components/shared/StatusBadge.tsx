@@ -24,7 +24,7 @@ const variantConfig: Record<
     defaultLabel: 'Inactive',
   },
   suspended: {
-    classes: 'bg-destructive/10 text-destructive',
+    classes: 'bg-destructive/10 text-status-danger-fg',
     defaultLabel: 'Suspended',
   },
   pending: {
