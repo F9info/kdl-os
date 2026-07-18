@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 
-// Tailwind `lg` breakpoint — sidebar collapses to drawer below this.
-const MOBILE_BREAKPOINT = 1024
+// Tailwind `md` breakpoint (768 px). Below this: sidebar off-canvas drawer.
+// At 768px+: sidebar is always visible inline (WCAG 1.4.10 KDL-388).
+const MOBILE_BREAKPOINT = 768
 
 export function useIsMobile(): boolean {
   const [isMobile, setIsMobile] = useState(false)
