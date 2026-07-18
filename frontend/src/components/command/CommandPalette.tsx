@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTheme } from 'next-themes'
 import { Keyboard, LogOut, Moon, PanelLeft, Sun } from 'lucide-react'
 import {
   CommandDialog,
@@ -27,7 +28,8 @@ export function CommandPalette({ open, onOpenChange, onOpenShortcuts }: CommandP
   const router = useRouter()
   const { can } = usePermissions()
   const { logout } = useAuth()
-  const { toggleSidebar, theme, setTheme } = useUiStore()
+  const { toggleSidebar } = useUiStore()
+  const { resolvedTheme, setTheme } = useTheme()
 
   // Same nav tree the sidebar renders (KDL-292) — filtered by the same
   // permission gate so the palette never surfaces a link the user can't use.
@@ -72,9 +74,11 @@ export function CommandPalette({ open, onOpenChange, onOpenShortcuts }: CommandP
           </CommandItem>
           <CommandItem
             value="Toggle theme"
-            onSelect={() => runAndClose(() => setTheme(theme === 'dark' ? 'light' : 'dark'))}
+            onSelect={() =>
+              runAndClose(() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark'))
+            }
           >
-            {theme === 'dark' ? (
+            {resolvedTheme === 'dark' ? (
               <Sun className="mr-2 h-4 w-4" aria-hidden="true" />
             ) : (
               <Moon className="mr-2 h-4 w-4" aria-hidden="true" />
