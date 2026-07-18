@@ -15,6 +15,7 @@ interface AriaInvalidProps {
   id?: string
   'aria-invalid'?: React.AriaAttributes['aria-invalid']
   'aria-describedby'?: string
+  required?: boolean
 }
 
 export function FormField({ label, error, required, children, hint, className }: FormFieldProps) {
@@ -39,6 +40,9 @@ export function FormField({ label, error, required, children, hint, className }:
     ? cloneElement(children, {
         id: children.props.id ?? fieldId,
         'aria-describedby': ariaDescribedBy,
+        ...(required && {
+          required: children.props.required ?? true,
+        }),
         ...(error && {
           'aria-invalid': children.props['aria-invalid'] ?? true,
         }),
