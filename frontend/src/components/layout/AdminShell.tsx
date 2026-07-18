@@ -15,7 +15,7 @@ export function AdminShell({ children }: AdminShellProps) {
       <AdminSidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar />
-        <main className="te-page flex-1 overflow-y-auto">
+        <main id="main-content" className="te-page flex-1 overflow-y-auto">
           <div className="te-container">{children}</div>
         </main>
         <footer className="te-footer flex shrink-0 items-center justify-center border-t text-xs text-muted-foreground">
