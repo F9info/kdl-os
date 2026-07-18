@@ -913,7 +913,10 @@ function DetailDrawer({
   return (
     <div
       className="fixed right-0 w-80 bg-background border-l shadow-xl z-30 overflow-y-auto p-4 space-y-4"
-      style={{ top: 'var(--te-layout-header-height)', height: 'calc(100% - var(--te-layout-header-height))' }}
+      style={{
+        top: 'var(--te-layout-header-height)',
+        height: 'calc(100% - var(--te-layout-header-height))',
+      }}
     >
       <div className="flex justify-between items-center">
         <h3 className="font-semibold">File Details</h3>
