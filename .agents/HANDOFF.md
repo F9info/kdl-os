@@ -2,6 +2,25 @@
      Prepend new entries at the top; move anything older than the window into HANDOFF_ARCHIVE.md.
      Full history: .agents/HANDOFF_ARCHIVE.md (and git log). -->
 
+## 2026-07-18 — KDL-414 NEXT_PUBLIC_IMAGE_HOSTS must be Docker build arg (Frontend Coder)
+
+**Scope:** Rework PR #118 (branch `fix/kdl-412-admin-images`) — KDL-413 code review blocker.
+
+**Problem:** `NEXT_PUBLIC_IMAGE_HOSTS` was set only in docker-compose `environment:` (runtime), which is invisible during `pnpm build`. Because the frontend uses `output: 'standalone'`, CSP headers and `images.remotePatterns` are resolved at build time and baked into `routes-manifest.json`. The standalone `server.js` never re-reads `next.config.ts`, so only the `localhost:9000` fallback was ever baked in regardless of the compose runtime env.
+
+**Empirical proof (from KDL-413):** gate container ran with `NEXT_PUBLIC_IMAGE_HOSTS` in `process.env` yet served `img-src ... http://localhost:9000`.
+
+**Fixes:**
+- `frontend/Dockerfile` builder stage: added `ARG NEXT_PUBLIC_IMAGE_HOSTS=http:localhost:9000` + `ENV NEXT_PUBLIC_IMAGE_HOSTS=$NEXT_PUBLIC_IMAGE_HOSTS` before `RUN pnpm build` (same pattern as `NEXT_PUBLIC_API_URL`).
+- `docker-compose.yml` frontend service: changed `build: ./frontend` → `build: {context, args: {NEXT_PUBLIC_IMAGE_HOSTS: http:localhost:9002}}`. Kept runtime `environment:` entry with a comment marking it inert (visibility only).
+- **Corrected false claim** in KDL-412 HANDOFF entry below: "restart picks it up without rebuild" was wrong — a `docker compose build frontend` is always required when changing `NEXT_PUBLIC_IMAGE_HOSTS`.
+
+**Deploy note:** Any environment changing this value needs `docker compose build frontend` — a container restart alone has no effect.
+
+**Verified:** `pnpm type-check → 0 errors`. Dockerfile + compose syntax clean.
+
+**Next:** PR #118 updated; request Code Reviewer re-gate (KDL-413 → in_review).
+
 ## 2026-07-18 — KDL-412 Fix broken admin images/icons + broken links (Frontend Coder)
 
 **Scope:** Broken logo preview (Theme Settings), broken media library thumbnails, and reported "broken links" (KDL-408). Branch `fix/kdl-412-admin-images`.
@@ -15,7 +34,9 @@
 
 **"Links also broke" finding:** No routing/href regressions exist. All sidebar hrefs resolve to existing Next.js page routes. The reporter's "links" referred to the broken presigned media URLs, not navigation hrefs (confirmed by prior KDL-410 investigation: "No actual link routing bugs found").
 
-**Verified:** `pnpm type-check → 0 errors`. Docker stack restart with `NEXT_PUBLIC_IMAGE_HOSTS=http:localhost:9002` causes the CSP `img-src` to include `http://localhost:9002`, unblocking presigned thumbnails and logo previews.
+**Verified:** `pnpm type-check → 0 errors`.
+
+**⚠️ Correction (KDL-414):** The original claim that "restart picks up the env var without rebuild" was false. `NEXT_PUBLIC_IMAGE_HOSTS` is baked at `pnpm build` time into the standalone bundle; a container restart has no effect. A `docker compose build frontend` is always required when changing this value. The Dockerfile and compose file were reworked in KDL-414 to pass the value as a proper build arg.
 
 **Next:** PR against master; request Code Reviewer gate.
 

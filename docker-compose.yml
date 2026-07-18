@@ -152,17 +152,23 @@ services:
       start_period: 40s
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        # NEXT_PUBLIC_IMAGE_HOSTS is baked into the Next.js standalone bundle at
+        # build time (next.config.ts reads it for CSP img-src + remotePatterns).
+        # Changing this value requires a rebuild: `docker compose build frontend`.
+        # MinIO host port is 9002 (minio service maps 9002:9000); the backend mints
+        # presigned URLs against localhost:9002, so the CSP must allow that host:port.
+        NEXT_PUBLIC_IMAGE_HOSTS: http:localhost:9002
     restart: unless-stopped
     env_file: .env
     environment:
       # Next.js rewrites() proxies /api to the backend over the internal network.
       BACKEND_INTERNAL_URL: http://backend:4000
-      # MinIO host port is 9002 (see minio service ports: 9002:9000). The backend
-      # mints presigned URLs against localhost:9002 (MINIO_PUBLIC_PORT above), so
-      # the CSP img-src and Next.js remotePatterns must allow that same host:port.
-      # Without this, the browser blocks every presigned URL → broken thumbnails
-      # and logo previews (KDL-412). Format: "protocol:hostname:port[,...]".
+      # NOTE: NEXT_PUBLIC_IMAGE_HOSTS is a build-time arg (see build.args above).
+      # The runtime entry below is inert for standalone Next.js — it is kept only
+      # for visibility/debugging so `docker compose config` shows the baked value.
       NEXT_PUBLIC_IMAGE_HOSTS: http:localhost:9002
     ports:
       - "127.0.0.1:3001:3000"
