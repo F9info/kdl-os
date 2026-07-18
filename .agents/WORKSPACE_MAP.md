@@ -35,7 +35,7 @@ Pattern: `routes → controller → service → Prisma`. Prisma client singleton
 |---------|------|-------|
 | PostgreSQL | 5433 | `DATABASE_URL`; container-internal `postgres:5432` |
 | Redis | 6380 | `REDIS_URL`; container-internal `redis:6379` |
-| MinIO | 9000 | object storage; access via `storage.service.js` only |
+| MinIO | 9002 | object storage (host port; container-internal 9000); presigned URLs use `localhost:9002`; access via `storage.service.js` only |
 | MeiliSearch | 7700 | search |
 | ChromaDB | 8000 | vector store (ai-services) |
 | ai-services | 5000 | `/api/ai/chat`, `/embed`, `/transcribe` (501) |
