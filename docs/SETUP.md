@@ -325,6 +325,57 @@ https://app.yourdomain.com/api/integrations/webhooks/gupshup
 
 ---
 
+## Admin Login Recovery
+
+If the seeded admin password was not captured (the seed script prints it only once), or the admin account is locked out, use the reset script to set a new password without touching the UI.
+
+### The random-seed-password trap
+
+When `SEED_ADMIN_PASSWORD` is not set, `node prisma/seed.js` generates a random password and prints it **once**. If you miss it (closed the terminal, log was not captured, container restarted), the admin account is permanently inaccessible through normal login — there is no "forgot password" path for the super-admin out of the box.
+
+### Reset the admin password
+
+```bash
+# With pnpm (monorepo root)
+pnpm --filter backend db:reset-admin --email admin@kdl.com --password YourNew12CharMin
+
+# With npm inside backend/
+npm run db:reset-admin -- --email admin@kdl.com --password YourNew12CharMin
+
+# Let the script generate a random password (printed once):
+pnpm --filter backend db:reset-admin
+
+# Via environment variables:
+NEW_ADMIN_PASSWORD=YourNew12CharMin pnpm --filter backend db:reset-admin
+```
+
+Password rules: minimum 12 characters (matches the seed constraint).
+
+After the script completes, `POST /api/auth/login` with the new password returns 200.
+
+### Docker one-liner
+
+If the backend is running inside Docker:
+
+```bash
+docker compose exec backend node scripts/reset-admin-password.js \
+  --email admin@kdl.com \
+  --password YourNew12CharMin
+```
+
+### Production use
+
+The script refuses to run in production without `--force` as a deliberate safeguard:
+
+```bash
+NODE_ENV=production node scripts/reset-admin-password.js \
+  --email admin@kdl.com \
+  --password YourNew12CharMin \
+  --force
+```
+
+---
+
 ## Common Issues
 
 **`prisma generate` not found**
