@@ -13,6 +13,7 @@ import 'dotenv/config';
 import crypto from 'node:crypto';
 import { parseArgs } from 'node:util';
 import { prisma } from '../src/config/database.js';
+import { redis } from '../src/config/redis.js';
 import { hashPassword, clearLoginLockout } from '../src/modules/auth/service.js';
 
 const MIN_PASSWORD_LENGTH = 12;
@@ -87,4 +88,7 @@ main()
     console.error('Reset failed:', e.message);
     process.exit(1);
   })
-  .finally(() => prisma.$disconnect());
+  .finally(async () => {
+    await prisma.$disconnect();
+    await redis.quit();
+  });
