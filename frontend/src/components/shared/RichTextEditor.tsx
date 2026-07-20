@@ -66,7 +66,7 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
         'aria-multiline': 'true',
         ...(placeholder ? { 'data-placeholder': placeholder } : {}),
         class: cn(
-          'min-h-[140px] px-3 py-2 text-sm focus:outline-none',
+          'min-h-[140px] px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm',
           'prose prose-sm max-w-none [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5',
           placeholder
             ? 'empty:before:text-muted-foreground empty:before:content-[attr(data-placeholder)]'

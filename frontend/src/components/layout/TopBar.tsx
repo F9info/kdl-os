@@ -40,7 +40,11 @@ export function TopBar() {
         <NotificationBell />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+            <Button
+              variant="ghost"
+              className="relative h-9 w-9 rounded-full"
+              aria-label={`Account menu: ${user?.name ?? 'User'}`}
+            >
               <Avatar className="h-9 w-9">
                 <AvatarFallback>{user?.name ? getInitials(user.name) : '?'}</AvatarFallback>
               </Avatar>

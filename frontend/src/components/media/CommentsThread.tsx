@@ -210,7 +210,7 @@ export function CommentsThread({ mediaId, currentUserId }: CommentsThreadProps) 
           onKeyDown={handleKeyDown}
           placeholder="Write a comment… (⌘+Enter to post)"
           rows={3}
-          className="w-full px-3 py-2 text-sm resize-none focus:outline-none bg-background"
+          className="w-full px-3 py-2 text-sm resize-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring bg-background"
         />
         <div className="flex justify-end px-2 py-1.5 border-t bg-muted/20">
           <Button
