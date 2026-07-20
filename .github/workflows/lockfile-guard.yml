@@ -11,6 +11,10 @@ on:
       - '**/pnpm-lock.yaml'
       - '**/yarn.lock'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lockfile-scope:
     name: Lockfile ownership check

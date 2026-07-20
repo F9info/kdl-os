@@ -17,7 +17,14 @@ name: Staging Smoke Deploy
 on:
   push:
     branches: [master]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   ephemeral-smoke:
@@ -105,18 +112,20 @@ jobs:
       # ── Summary ───────────────────────────────────────────────────────────
       - name: Write job summary
         run: |
-          echo "## Staging smoke passed" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Built from source and booted inside the CI runner:" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Check | Result |" >> "$GITHUB_STEP_SUMMARY"
-          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Build backend image from source | ✅ |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Prisma schema applied (\`db push\`) | ✅ |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| \`GET /health\` → 200 | ✅ |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| \`POST /api/auth/login\` → non-5xx | ✅ |" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Commit: \`${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "## Staging smoke passed"
+            echo ""
+            echo "Built from source and booted inside the CI runner:"
+            echo ""
+            echo "| Check | Result |"
+            echo "|---|---|"
+            echo "| Build backend image from source | ✅ |"
+            echo "| Prisma schema applied (\`db push\`) | ✅ |"
+            echo "| \`GET /health\` → 200 | ✅ |"
+            echo "| \`POST /api/auth/login\` → non-5xx | ✅ |"
+            echo ""
+            echo "Commit: \`${{ github.sha }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       # ── Diagnostics on failure ─────────────────────────────────────────────
       - name: Dump container logs on failure
