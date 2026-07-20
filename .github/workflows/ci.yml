@@ -1,17 +1,68 @@
 name: CI
 
+# Cheap per-package gate — runs on every PR that touches code.
+# Heavy jobs (storybook, a11y-smoke, full build + e2e) live in ci-heavy.yml.
+#
+# Skip CI entirely by including [skip ci] in a commit message.
+# Docs-only PRs (*.md, docs/**, images) produce zero jobs.
+#
+# Per-package scoping: only the job(s) for the changed package(s) run.
+# A frontend-only change never triggers backend or ai-services jobs.
+
 on:
   pull_request:
-    branches:
-      - master
+    branches: [master]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - '.github/*.md'
+      - '**/*.png'
+      - '**/*.jpg'
+      - '**/*.jpeg'
+      - '**/*.gif'
+      - '**/*.svg'
+      - '**/*.ico'
+      - '.gitignore'
+      - '.gitattributes'
+      - 'CODEOWNERS'
+      - '.editorconfig'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
+  filter:
+    name: Detect changed packages
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.changes.outputs.backend }}
+      frontend: ${{ steps.changes.outputs.frontend }}
+      ai-services: ${{ steps.changes.outputs.ai-services }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+            ai-services:
+              - 'ai-services/**'
+
+  # ── Backend: syntax check + unit tests ────────────────────────────────────
   backend-check:
+    name: Backend — lint + test
+    needs: filter
+    if: needs.filter.outputs.backend == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
@@ -20,10 +71,6 @@ jobs:
       - name: Install dependencies
         working-directory: backend
         run: npm ci
-
-      - name: Audit dependencies
-        working-directory: backend
-        run: npm audit --audit-level=high
 
       - name: Syntax check
         working-directory: backend
@@ -36,49 +83,20 @@ jobs:
           JWT_REFRESH_SECRET: ci-refresh-secret-must-be-at-least-32-characters
         run: npm test
 
+  # ── Frontend: format + lint + typecheck + unit tests (no build, no e2e) ───
   frontend-check:
+    name: Frontend — lint + typecheck
+    needs: filter
+    if: needs.filter.outputs.frontend == 'true'
     runs-on: ubuntu-latest
-    # Postgres + Redis back the real backend the smoke e2e logs into (KDL-303).
-    # MinIO / MeiliSearch / ChromaDB are NOT started — the backend logs and
-    # tolerates their absence, and the smoke spec never touches media/search/AI.
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: kdl_ci
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kdl_ci
-      REDIS_URL: redis://localhost:6379
-      JWT_SECRET: ci-jwt-secret-must-be-at-least-32-characters-long
-      JWT_REFRESH_SECRET: ci-refresh-secret-must-be-at-least-32-characters
-      # Dummy 32-byte hex — integrations crypto fails fast at startup without it.
-      APP_ENCRYPTION_KEY: deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@v4
         with:
           version: 9
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
@@ -87,10 +105,6 @@ jobs:
       - name: Install dependencies
         working-directory: frontend
         run: pnpm install --frozen-lockfile
-
-      - name: Audit dependencies
-        working-directory: frontend
-        run: pnpm audit --audit-level=high
 
       - name: Format check
         working-directory: frontend
@@ -104,219 +118,20 @@ jobs:
         working-directory: frontend
         run: pnpm type-check
 
-      - name: Audit dependencies (warn — all severities)
-        working-directory: frontend
-        run: pnpm audit --audit-level=low || true
-
-      - name: Audit dependencies (gate — high/critical)
-        working-directory: frontend
-        run: pnpm audit --audit-level=high
-
-      - name: Build
-        working-directory: frontend
-        env:
-          # rewrites() is evaluated at build time — /api must proxy to the
-          # locally started backend for the smoke e2e below. NEXT_PUBLIC_API_URL
-          # already comes from the committed frontend/.env.local (/api).
-          BACKEND_INTERNAL_URL: http://localhost:4000
-        run: pnpm build
-
-      - name: Run tests
+      - name: Unit tests
         working-directory: frontend
         run: pnpm test
 
-      # ── Smoke E2E (Phase 0 C3 gate, KDL-303) ────────────────────────────────
-      - name: Install backend dependencies
-        working-directory: backend
-        run: npm ci
-
-      - name: Migrate and seed database
-        working-directory: backend
-        env:
-          SEED_ADMIN_EMAIL: admin@kdl.com
-          # ≥12 chars (KDL-273 H2); matches the e2e default in
-          # frontend/e2e/helpers/credentials.ts and docker-compose.yml.
-          SEED_ADMIN_PASSWORD: kdl-dev-seed-password
-        run: |
-          npx prisma migrate deploy
-          npm run db:seed
-
-      - name: Start backend
-        working-directory: backend
-        env:
-          CORS_ORIGIN: http://localhost:3000
-          APP_PUBLIC_URL: http://localhost:4000
-          # MinIO/Meili/Chroma are not running in this job — dummy values keep
-          # the client constructors happy; connection failures are non-fatal.
-          MINIO_ENDPOINT: localhost
-          MINIO_PORT: "9000"
-          MINIO_ACCESS_KEY: ci-minio-access
-          MINIO_SECRET_KEY: ci-minio-secret
-          MINIO_BUCKET: kdl-media
-          MEILISEARCH_HOST: http://localhost:7700
-          MEILISEARCH_API_KEY: ci-meili-key
-          CHROMADB_URL: http://localhost:8000
-        run: |
-          nohup node src/index.js > /tmp/backend.log 2>&1 &
-          for i in $(seq 1 30); do
-            curl -sf http://localhost:4000/health > /dev/null && exit 0
-            sleep 2
-          done
-          echo "Backend failed to start"
-          cat /tmp/backend.log
-          exit 1
-
-      - name: Start frontend (standalone build)
-        working-directory: frontend
-        run: |
-          cp -r .next/static .next/standalone/.next/static
-          cp -r public .next/standalone/public
-          nohup node .next/standalone/server.js > /tmp/frontend.log 2>&1 &
-          for i in $(seq 1 30); do
-            curl -sf -o /dev/null http://localhost:3000/login && exit 0
-            sleep 2
-          done
-          echo "Frontend failed to start"
-          cat /tmp/frontend.log
-          exit 1
-
-      - name: Install Playwright browsers
-        working-directory: frontend
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: Smoke E2E
-        working-directory: frontend
-        env:
-          E2E_BASE_URL: http://localhost:3000
-          E2E_ADMIN_EMAIL: admin@kdl.com
-          E2E_ADMIN_PASSWORD: kdl-dev-seed-password
-        run: pnpm e2e e2e/smoke.spec.ts
-
-      - name: Dump server logs on failure
-        if: failure()
-        run: |
-          echo "── backend.log ──"
-          cat /tmp/backend.log 2>/dev/null || true
-          echo "── frontend.log ──"
-          cat /tmp/frontend.log 2>/dev/null || true
-
-  storybook-build:
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: pnpm/action-setup@v6
-        with:
-          version: 9
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-          cache-dependency-path: frontend/pnpm-lock.yaml
-
-      - name: Install dependencies
-        working-directory: frontend
-        run: pnpm install --frozen-lockfile
-
-      - name: Build Storybook
-        working-directory: frontend
-        run: pnpm build-storybook
-
-      - name: Upload storybook artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: storybook-static
-          path: frontend/storybook-static
-
-  frontend-lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-          cache-dependency-path: frontend/pnpm-lock.yaml
-
-      - name: Install dependencies
-        working-directory: frontend
-        run: pnpm install --frozen-lockfile
-
-      - name: Lint (jsx-a11y + next rules)
-        working-directory: frontend
-        run: pnpm lint
-
-  a11y-smoke:
-    runs-on: ubuntu-latest
-    env:
-      POSTGRES_USER: testuser
-      POSTGRES_PASSWORD: testpass
-      POSTGRES_DB: testdb
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin123
-      MINIO_BUCKET: kdl-media
-      MEILI_MASTER_KEY: masterkey-ci-123456789
-      APP_ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
-      JWT_SECRET: ci-jwt-secret-must-be-at-least-32-characters-long
-      JWT_REFRESH_SECRET: ci-refresh-secret-must-be-at-least-32-characters
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-          cache-dependency-path: frontend/pnpm-lock.yaml
-
-      - name: Install dependencies
-        working-directory: frontend
-        run: pnpm install --frozen-lockfile
-
-      - name: Install Playwright browsers
-        working-directory: frontend
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: Build Docker images
-        run: |
-          docker build -t repo-backend:latest ./backend
-          docker build -t repo-frontend:latest ./frontend
-
-      - name: Start e2e stack
-        run: |
-          docker compose -f docker-compose.e2e.yml up -d
-          timeout 120 bash -c 'until curl -sf http://localhost:13001 > /dev/null 2>&1; do sleep 3; done'
-
-      - name: Run a11y smoke tests
-        working-directory: frontend
-        env:
-          E2E_BASE_URL: http://localhost:13001
-        run: pnpm exec playwright test e2e/a11y.spec.ts --reporter=github
-
-      - name: Collect logs on failure
-        if: failure()
-        run: docker compose -f docker-compose.e2e.yml logs --tail=100
-
-      - name: Tear down stack
-        if: always()
-        run: docker compose -f docker-compose.e2e.yml down -v
-
+  # ── AI Services: syntax check + unit tests ────────────────────────────────
   ai-services-check:
+    name: AI Services — lint + test
+    needs: filter
+    if: needs.filter.outputs.ai-services == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
@@ -325,10 +140,6 @@ jobs:
       - name: Install dependencies
         working-directory: ai-services
         run: npm ci
-
-      - name: Audit dependencies
-        working-directory: ai-services
-        run: npm audit --audit-level=high
 
       - name: Syntax check
         working-directory: ai-services

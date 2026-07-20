@@ -24,6 +24,10 @@ on:
       - master
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   preflight:
     name: Check staging secrets
@@ -42,10 +46,12 @@ jobs:
             echo "enabled=true" >> "$GITHUB_OUTPUT"
           else
             echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "## Staging deploy skipped" >> "$GITHUB_STEP_SUMMARY"
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "Staging secrets (\`STAGING_HOST\` / \`STAGING_SSH_KEY\`) are not yet provisioned." >> "$GITHUB_STEP_SUMMARY"
-            echo "See **MANUAL_TASKS.md → staging runbook** or the parent task KDL-373 for provisioning steps." >> "$GITHUB_STEP_SUMMARY"
+            {
+              echo "## Staging deploy skipped"
+              echo ""
+              echo "Staging secrets (\`STAGING_HOST\` / \`STAGING_SSH_KEY\`) are not yet provisioned."
+              echo "See **MANUAL_TASKS.md → staging runbook** or the parent task KDL-373 for provisioning steps."
+            } >> "$GITHUB_STEP_SUMMARY"
           fi
 
   deploy-staging:
@@ -126,8 +132,10 @@ jobs:
 
       - name: Post staging URL to job summary
         run: |
-          echo "## Staging deployed" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **URL:** ${{ vars.STAGING_URL }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Image tag:** \`${{ env.IMAGE_TAG }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Commit:** ${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "## Staging deployed"
+            echo ""
+            echo "- **URL:** ${{ vars.STAGING_URL }}"
+            echo "- **Image tag:** \`${{ env.IMAGE_TAG }}\`"
+            echo "- **Commit:** ${{ github.sha }}"
+          } >> "$GITHUB_STEP_SUMMARY"
