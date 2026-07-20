@@ -1,0 +1,129 @@
+name: Billing Alert
+
+# Runs daily and on demand. Creates a GitHub issue when Actions minutes exceed
+# 80% of the included limit or when paid overage begins. Requires the
+# BILLING_CHECK_PAT secret (PAT with manage_billing:github scope set on the
+# F9info org by an admin). See docs/BILLING_OUTAGE_RUNBOOK.md.
+
+on:
+  schedule:
+    - cron: '0 8 * * *'   # 08:00 UTC daily
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: Check Actions spending
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - name: Fetch billing data
+        id: billing
+        env:
+          BILLING_PAT: ${{ secrets.BILLING_CHECK_PAT }}
+        run: |
+          if [[ -z "$BILLING_PAT" ]]; then
+            echo "::error::BILLING_CHECK_PAT secret is not configured."
+            echo "::error::Create a PAT with manage_billing:github scope and add it as an org secret."
+            echo "::error::See docs/BILLING_OUTAGE_RUNBOOK.md for setup instructions."
+            exit 1
+          fi
+
+          RESPONSE=$(curl -sf \
+            -H "Authorization: Bearer $BILLING_PAT" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/orgs/F9info/settings/billing/actions") || {
+            echo "::error::Billing API request failed. Check PAT validity and org admin access."
+            exit 1
+          }
+
+          USED=$(echo "$RESPONSE"    | jq -r '.total_minutes_used')
+          PAID=$(echo "$RESPONSE"    | jq -r '.total_paid_minutes_used')
+          INCLUDED=$(echo "$RESPONSE" | jq -r '.included_minutes')
+
+          echo "used=$USED"         >> "$GITHUB_OUTPUT"
+          echo "paid=$PAID"         >> "$GITHUB_OUTPUT"
+          echo "included=$INCLUDED" >> "$GITHUB_OUTPUT"
+
+          echo "Minutes used: ${USED} / included: ${INCLUDED} | paid overage: ${PAID}"
+
+      - name: Ensure billing-alert label exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create "billing-alert" \
+            --color "e11d48" \
+            --description "GitHub Actions billing threshold alert" \
+            --repo "$GITHUB_REPOSITORY" 2>/dev/null || true
+
+      - name: Alert on threshold breach or overage
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          USED:     ${{ steps.billing.outputs.used }}
+          INCLUDED: ${{ steps.billing.outputs.included }}
+          PAID:     ${{ steps.billing.outputs.paid }}
+        run: |
+          ALERT=false
+          REASONS=()
+
+          if [[ "$INCLUDED" -gt 0 ]]; then
+            PCT=$(( USED * 100 / INCLUDED ))
+            if [[ "$PCT" -ge 80 ]]; then
+              ALERT=true
+              REASONS+=("Usage at ${PCT}% of included ${INCLUDED} minutes (${USED} used)")
+            fi
+          fi
+
+          if [[ "$PAID" -gt 0 ]]; then
+            ALERT=true
+            REASONS+=("Paid overage active: ${PAID} minutes billed beyond free tier")
+          fi
+
+          if [[ "$ALERT" == "false" ]]; then
+            echo "Billing OK: ${USED}/${INCLUDED} minutes used, ${PAID} paid overage."
+            exit 0
+          fi
+
+          REASON_TEXT=$(IFS='; '; echo "${REASONS[*]}")
+          echo "::warning::${REASON_TEXT}"
+
+          # Deduplicate: only open one alert issue at a time
+          EXISTING=$(gh issue list \
+            --repo "$GITHUB_REPOSITORY" \
+            --label "billing-alert" \
+            --state open \
+            --json number \
+            --jq 'length')
+
+          if [[ "$EXISTING" -gt 0 ]]; then
+            echo "Open billing-alert issue already exists — skipping duplicate."
+            exit 0
+          fi
+
+          gh issue create \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "⚠️ Actions spending alert: ${REASON_TEXT}" \
+            --label "billing-alert" \
+            --body "## GitHub Actions Spending Alert
+
+**Triggered**: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+**Minutes used**: ${USED}
+**Included (free) minutes**: ${INCLUDED}
+**Paid overage minutes**: ${PAID}
+
+---
+
+### Immediate actions
+
+- [ ] **Resolve billing** — top up or raise spending limit:
+  https://github.com/organizations/F9info/settings/billing
+- [ ] **Verify CI is still running** — check a recent workflow run
+- [ ] If CI is blocked: follow the [local verification runbook](../blob/master/docs/CI_LOCAL_VERIFICATION.md)
+- [ ] Close this issue once billing is healthy
+
+### Why this matters
+
+A spending-limit lapse kills **all** CI org-wide instantly (every job dies in ~3 s).
+See [docs/BILLING_OUTAGE_RUNBOOK.md](../blob/master/docs/BILLING_OUTAGE_RUNBOOK.md) for the full incident response.
+"
