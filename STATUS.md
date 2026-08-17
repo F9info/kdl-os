@@ -2,6 +2,10 @@
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+## 2026-08-17 — KDL-460: 3 unpatchable dev-only Dependabot alerts waived + dismissed, 0 open alerts (Security)
+
+Alerts #85/#84 (image-size HIGH x2) and #47 (elliptic LOW) — all transitive dev-only via `@storybook/nextjs`, all `first_patched_version: null` — dismissed as `tolerable_risk` per KDL-460 triage. WAIVERS registry (justification + review-by 2026-11-17) landed in `docs/DEPENDENCY_TRIAGE.md` via PR #155. **Open Dependabot alerts: 0.** Weekly audit KDL-433 watches for upstream fixes.
+
 ## 2026-08-17 — KDL-446 PRODUCT_MODES_ARCH Phase 0: browser/runtime gate PASS + PR #154 MERGED to master (CEO)
 
 PR #154 (`kdl-446-product-modes-arch`) **MERGED** (squash, master `613b0fd`). Phase 0 platform layer is live on master: `conflictsWith` module gate, `locked_by` setting-field gate, `builder_pages` persistence, template-engine stub, page-builder-ui / theme-engine-ui toggleable nav modules.
