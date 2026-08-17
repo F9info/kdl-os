@@ -2,7 +2,7 @@
  * KDL-195 — owner_module ownership contract (Types)
  *
  * The generic admin API manages only standalone rows (owner_module = null).
- * Template-engine-owned rows must be invisible to unfiltered lists and immune
+ * Theme-engine-owned rows must be invisible to unfiltered lists and immune
  * to generic writes even when their id is known.
  */
 
@@ -38,9 +38,9 @@ describe('listTypes — owner_module filter', () => {
   });
 
   it('scopes to the requested module when ?ownerModule is given', async () => {
-    await service.listTypes({ ownerModule: 'template-engine' });
+    await service.listTypes({ ownerModule: 'theme-engine' });
     const where = prisma.type.findMany.mock.calls[0][0].where;
-    expect(where.owner_module).toBe('template-engine');
+    expect(where.owner_module).toBe('theme-engine');
   });
 });
 

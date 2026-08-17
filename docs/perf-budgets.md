@@ -35,7 +35,7 @@ All sizes are **gzip-compressed**. Next.js reports raw sizes; divide by ~3 for a
 | `/admin/dashboard` | TBD | — |
 | `/admin/users` | TBD | — |
 | `/admin/media` | TBD | — |
-| `/admin/template-engine` | TBD | — |
+| `/admin/theme-engine` | TBD | — |
 | Shared by `admin` layout | TBD | — |
 
 ---

@@ -5,7 +5,7 @@ import { uniqueSlug } from '../../shared/utils/slug.js';
 const SORTABLE = ['name', 'created_at', 'is_active'];
 
 // The generic admin API manages only standalone rows (owner_module = null).
-// Rows stamped with an owner_module belong to that module (e.g. template-engine)
+// Rows stamped with an owner_module belong to that module (e.g. theme-engine)
 // and must never be read-for-write, mutated, or deleted through this API even
 // when their id is known.
 const WRITABLE = { owner_module: null };

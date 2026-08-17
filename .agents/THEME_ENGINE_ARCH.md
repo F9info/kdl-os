@@ -1,11 +1,11 @@
-# Template Engine — KDL Starter Kit
+# Theme Engine — KDL Starter Kit
 # Module 15 Design Document (Design-System / Multi-Platform Theming Engine)
 
 **Author:** Claude (Cowork) — for approval by Prasanna (web@f9tech.com)
 **Date:** 2026-07-13
-**Status:** v1.2 — built by Paperclip (v1); IN FIX. v1 browser QA (2026-07-14) found TWO blockers: (1) the sidebar lists all ~86 panes instead of one "Template Engine" item — see §Navigation & Type visibility (CRITICAL); (2) saved settings do not theme the app — the `/tokens` producer exists but nothing consumes it — see §Runtime theming (CRITICAL). Save/persist itself works. Assign both fixes as one Paperclip task pointing at this file.
+**Status:** v1.2 — built by Paperclip (v1); IN FIX. v1 browser QA (2026-07-14) found TWO blockers: (1) the sidebar lists all ~86 panes instead of one "Theme Engine" item — see §Navigation & Type visibility (CRITICAL); (2) saved settings do not theme the app — the `/tokens` producer exists but nothing consumes it — see §Runtime theming (CRITICAL). Save/persist itself works. Assign both fixes as one Paperclip task pointing at this file.
 **Mode:** 24/7 unattended — Auto-Approval Protocol applies (`.agents/USER_MANAGEMENT_ARCH.md`).
-**Source of truth:** the uploaded prototype `template-engine.html` (2746 lines). Its embedded schema (`BASE_TABS`, `PANE_OVERRIDES`, `EXTRA_TABS`, `PLATFORMS`) IS the field catalogue — port it verbatim; do not re-invent field lists.
+**Source of truth:** the uploaded prototype `theme-engine.html` (2746 lines). Its embedded schema (`BASE_TABS`, `PANE_OVERRIDES`, `EXTRA_TABS`, `PLATFORMS`) IS the field catalogue — port it verbatim; do not re-invent field lists.
 **Goal:** one admin screen defines the entire visual system — colors, typography, layout, and every component — for **4 platforms × their devices × dark/light themes**, persisted through the **existing Application Settings tables** (`types` / `categories` / `setting_fields`) plus one thin value table, and consumed by web + native clients as resolved design tokens.
 
 ---
@@ -35,9 +35,9 @@ The prototype confirms the intended persistence in its own comments:
 
 ## Navigation & Type visibility (CRITICAL — QA fix 2026-07-14)
 
-**Observed defect (built v1):** after seeding, the global admin left menu listed **every pane of every platform** (~86 items — `webapp.branding`, `webapp.buttons`, `tv.playback`, … each as its own menu entry). Expected: exactly **one** menu item — **Template Engine** — and the platform/pane navigation lives *inside* that page.
+**Observed defect (built v1):** after seeding, the global admin left menu listed **every pane of every platform** (~86 items — `webapp.branding`, `webapp.buttons`, `tv.playback`, … each as its own menu entry). Expected: exactly **one** menu item — **Theme Engine** — and the platform/pane navigation lives *inside* that page.
 
-**Root cause (not the module's fault — a collision with existing behaviour):** `frontend/src/components/layout/AdminSidebar.tsx` auto-promotes **every active `Type`** to a top-level menu item linking to the generic `/admin/settings/view/{slug}` screen (`typeLeaves`, built from `GET /types?is_active=true`). That behaviour is correct for hand-created Application-Settings Types, but the Template Engine uses Types as a **private data store**, not as standalone settings screens — so its ~86 Types flooded the sidebar. The Template Engine page (`admin/template-engine/page.tsx`) is otherwise correct: it already renders its own platform switcher + per-platform pane sidebar + previews.
+**Root cause (not the module's fault — a collision with existing behaviour):** `frontend/src/components/layout/AdminSidebar.tsx` auto-promotes **every active `Type`** to a top-level menu item linking to the generic `/admin/settings/view/{slug}` screen (`typeLeaves`, built from `GET /types?is_active=true`). That behaviour is correct for hand-created Application-Settings Types, but the Theme Engine uses Types as a **private data store**, not as standalone settings screens — so its ~86 Types flooded the sidebar. The Theme Engine page (`admin/theme-engine/page.tsx`) is otherwise correct: it already renders its own platform switcher + per-platform pane sidebar + previews.
 
 **The contract (general fix — future-proofs modules 9–14 that reuse these tables):** a `Type` that is owned by a module is a private store and must **never** appear as a generic settings screen or sidebar item. Implement via one additive column:
 
@@ -50,13 +50,13 @@ model Type {
 ```
 
 Required changes:
-1. **Migration:** add `Type.owner_module` (nullable, indexed). Also add it to `Category` and `SettingField` (same meaning) so the generic Types/Categories/Fields admin lists can filter consistently. **MUST also backfill existing rows** — the column is nullable so rows seeded before it existed keep `owner_module = NULL` and still show in the sidebar; a data migration must `UPDATE … SET owner_module='template-engine' WHERE owner_module IS NULL AND slug LIKE 'webapp.%'/'tv.%'/'android.%'/'ios.%'`. (PR #31 missed this; added by migration `20260714120000_backfill_owner_module_template_engine`.)
-2. **Seed:** set `owner_module = 'template-engine'` on every Type/Category/SettingField the engine creates.
+1. **Migration:** add `Type.owner_module` (nullable, indexed). Also add it to `Category` and `SettingField` (same meaning) so the generic Types/Categories/Fields admin lists can filter consistently. **MUST also backfill existing rows** — the column is nullable so rows seeded before it existed keep `owner_module = NULL` and still show in the sidebar; a data migration must `UPDATE … SET owner_module='theme-engine' WHERE owner_module IS NULL AND slug LIKE 'webapp.%'/'tv.%'/'android.%'/'ios.%'`. (PR #31 missed this; added by migration `20260714120000_backfill_owner_module_theme_engine`.)
+2. **Seed:** set `owner_module = 'theme-engine'` on every Type/Category/SettingField the engine creates.
 3. **`types` list endpoint** (`backend/src/modules/types/service.js`): default to standalone only — `where.owner_module = null` unless an explicit `ownerModule` query param is passed. Do the same in `categories` and `setting-fields` list services.
 4. **`AdminSidebar.tsx`:** the `sidebar-types` query is already unfiltered → it now only receives standalone Types (from the endpoint change). No per-slug hacks. Verify the only Template-Engine entry is the manifest nav item.
 5. **Generic settings pages** (`/admin/settings/types|categories|fields`, `/admin/settings/view/[slug]`): exclude module-owned rows (same endpoint default), so an admin can't accidentally edit engine internals through the generic UI.
 
-**Platform switcher labels** (match the prototype's `PLATFORMS`): show **Web App · TV · Android Native · iOS Native** (v1 shows "Android"/"iOS" — relabel to "Android Native"/"iOS Native"). This is the in-page switcher at the top of the Template Engine page; it is the ONLY place platforms are chosen.
+**Platform switcher labels** (match the prototype's `PLATFORMS`): show **Web App · TV · Android Native · iOS Native** (v1 shows "Android"/"iOS" — relabel to "Android Native"/"iOS Native"). This is the in-page switcher at the top of the Theme Engine page; it is the ONLY place platforms are chosen.
 
 **Gate:** with the module enabled and seeded, the admin sidebar shows exactly one Template-Engine item; opening it shows the 4 platform options; switching platform swaps the pane sidebar; no `/admin/settings/view/{webapp.*|tv.*|android.*|ios.*}` entries appear anywhere in the global menu.
 
@@ -73,7 +73,7 @@ Required changes:
 1. **Leave `setting_fields` columns untouched.** Encode the platform / device / theme dimensions in the globally-unique `slug` (slug is `@unique`).
 2. **Add ONE new thin table `SettingValue`** to hold the saved value per field (defaults live on `SettingField.value` from the seed; `SettingValue` holds edited overrides).
 3. **Types are per-platform** (panes differ by platform), Categories per-platform-pane-group, SettingFields per concrete field instance.
-4. **Types/Categories/Fields are module-owned** — tag every seeded row with `owner_module = 'template-engine'` so they are hidden from the generic Application-Settings sidebar and screens (see §Navigation & Type visibility). This is mandatory, not optional: without it the ~86 panes flood the global menu.
+4. **Types/Categories/Fields are module-owned** — tag every seeded row with `owner_module = 'theme-engine'` so they are hidden from the generic Application-Settings sidebar and screens (see §Navigation & Type visibility). This is mandatory, not optional: without it the ~86 panes flood the global menu.
 
 ### Slug convention (deterministic, re-derivable)
 
@@ -156,7 +156,7 @@ Approx. field volume in the prototype: color ×542, number ×416, toggle ×234, 
 
 ## Seed generator (schema-driven — approved)
 
-Create `backend/src/modules/template-engine/seed.js` that **imports the prototype's schema definition** (port `BASE_TABS`, `PANE_OVERRIDES`, `EXTRA_TABS`, `PLATFORMS`, the `C/N/SL/…` constructors, `slug`, `scaleField`, `perDeviceAll` build logic into a small ESM module, e.g. `template-engine/schema/index.js`). Then walk it once:
+Create `backend/src/modules/theme-engine/seed.js` that **imports the prototype's schema definition** (port `BASE_TABS`, `PANE_OVERRIDES`, `EXTRA_TABS`, `PLATFORMS`, the `C/N/SL/…` constructors, `slug`, `scaleField`, `perDeviceAll` build logic into a small ESM module, e.g. `theme-engine/schema/index.js`). Then walk it once:
 
 ```
 for each platform P in PLATFORMS:
@@ -178,9 +178,9 @@ Rules: **idempotent** — upsert on `slug`; safe to re-run; never duplicate. App
 
 ---
 
-## API (new module `template-engine`)
+## API (new module `theme-engine`)
 
-Base prefix `/api/template-engine`. All routes: `moduleGate('template-engine')` → `authenticate` → `requirePermission('template-engine', <action>)`. Zod-validate every body/query. Every mutation `writeActivityAsync` (PII-safe).
+Base prefix `/api/theme-engine`. All routes: `moduleGate('theme-engine')` → `authenticate` → `requirePermission('theme-engine', <action>)`. Zod-validate every body/query. Every mutation `writeActivityAsync` (PII-safe).
 
 | Method & path | Permission | Purpose |
 |---|---|---|
@@ -190,7 +190,7 @@ Base prefix `/api/template-engine`. All routes: `moduleGate('template-engine')` 
 | `POST /reset` | `edit` | Body `{ platform, type_id }` → delete `setting_values` rows for that pane (restore seed defaults). |
 | `GET /tokens?platform=&theme=&device=` | `view` (public-readable variant, see below) | Resolved design tokens — see next section. |
 
-Register the permission module via the manifest `permissions:["template-engine"]` (actions `view`,`edit` auto-registered — never hand-edit seeders). `GET /tokens` also needs an **unauthenticated public read** path so client apps can boot their theme before login; expose it through `optionalAuthenticate` and mark the compiled token output as public (like `app_settings.is_public`), OR mirror it into a public `app_settings` key on save. Prefer `optionalAuthenticate` + a `template_engine.tokens_public` app_setting flag (default true).
+Register the permission module via the manifest `permissions:["theme-engine"]` (actions `view`,`edit` auto-registered — never hand-edit seeders). `GET /tokens` also needs an **unauthenticated public read** path so client apps can boot their theme before login; expose it through `optionalAuthenticate` and mark the compiled token output as public (like `app_settings.is_public`), OR mirror it into a public `app_settings` key on save. Prefer `optionalAuthenticate` + a `theme_engine.tokens_public` app_setting flag (default true).
 
 ---
 
@@ -207,11 +207,11 @@ Resolution rules: value = `setting_values.value` if present else `SettingField.v
 
 ## Runtime theming — the app MUST consume its own tokens (CRITICAL — QA 2026-07-14)
 
-**Observed defect (built v1):** saving works and persists (verified: `GET /schema` returns saved values after reload), but **nothing changes in the running app**. Changing the Web App → Theme Color → Primary Color to red and saving left the whole admin UI blue after reload. Root cause: the **producer is built** (`GET /api/template-engine/tokens` → `compileTokens`, CSS+JSON, Redis-cached) but there is **no consumer** — the frontend's only theming is `next-themes` (dark/light class). No code fetches `/template-engine/tokens` or applies the compiled CSS variables. The whole point of the module ("these settings theme the entire application") is therefore not met.
+**Observed defect (built v1):** saving works and persists (verified: `GET /schema` returns saved values after reload), but **nothing changes in the running app**. Changing the Web App → Theme Color → Primary Color to red and saving left the whole admin UI blue after reload. Root cause: the **producer is built** (`GET /api/theme-engine/tokens` → `compileTokens`, CSS+JSON, Redis-cached) but there is **no consumer** — the frontend's only theming is `next-themes` (dark/light class). No code fetches `/theme-engine/tokens` or applies the compiled CSS variables. The whole point of the module ("these settings theme the entire application") is therefore not met.
 
 **Required — build the consumer (this is the missing half of the module):**
 1. **Token CSS variables are the single source of truth for app chrome.** `compileTokens` already emits `--{token}` custom properties (dark set in `:root`, light in `[data-theme="light"]`). The app's colors/spacing/typography must resolve to these `var(--…)` (map the existing Tailwind/theme tokens onto them, or inject an override stylesheet).
-2. **A runtime `TemplateEngineThemeProvider`** (wrap the admin app, alongside `next-themes`): on load, `GET /api/template-engine/tokens?platform=webapp` (public via `optionalAuthenticate` — no auth needed to boot the theme) and inject the returned CSS into a `<style id="te-tokens">` in `<head>` (or set each var on `document.documentElement`). Re-fetch/re-inject when the dark/light toggle changes. Cache-bust after a save (invalidate + refetch) so an admin sees their change without a hard reload.
+2. **A runtime `TemplateEngineThemeProvider`** (wrap the admin app, alongside `next-themes`): on load, `GET /api/theme-engine/tokens?platform=webapp` (public via `optionalAuthenticate` — no auth needed to boot the theme) and inject the returned CSS into a `<style id="te-tokens">` in `<head>` (or set each var on `document.documentElement`). Re-fetch/re-inject when the dark/light toggle changes. Cache-bust after a save (invalidate + refetch) so an admin sees their change without a hard reload.
 3. **Platform mapping:** the web admin/app consumes `platform=webapp`; native clients (TV/Android/iOS) consume their own platform's tokens via the same endpoint (JSON form). The web app must NOT read tv/android/ios tokens.
 4. **Save → reflect loop:** after `POST /values`, the token cache for that platform is invalidated (already specified); the provider should refetch so the change is visible immediately (at minimum on next load).
 
@@ -225,7 +225,7 @@ Resolution rules: value = `setting_values.value` if present else `SettingField.v
 
 ## Frontend
 
-Port `template-engine.html` into `frontend/src/app/admin/template-engine/page.tsx`, wrapped in `<ModuleGuard slug="template-engine">`; nav entry comes from the manifest only. Keep the prototype's UX verbatim — platform bar, macOS-style grouped sidebar, per-pane live device previews (phone/TV/browser frames), dark/light toggle, per-pane dirty tracking, footer Save/Reset. Rewire:
+Port `theme-engine.html` into `frontend/src/app/admin/theme-engine/page.tsx`, wrapped in `<ModuleGuard slug="theme-engine">`; nav entry comes from the manifest only. Keep the prototype's UX verbatim — platform bar, macOS-style grouped sidebar, per-pane live device previews (phone/TV/browser frames), dark/light toggle, per-pane dirty tracking, footer Save/Reset. Rewire:
 - Replace the in-memory `state`/`saved` with `useQuery(GET /schema?platform=)` for load and `useMutation(POST /values)` for Save (per active platform + pane, exactly matching the prototype's per-pane save). Reset → `POST /reset`.
 - Preserve `localStorage` only for UI prefs (active platform/pane/theme) — never as the store of record.
 - All API calls through `lib/axios.ts`; auth state from `auth.store`.
@@ -238,21 +238,21 @@ Port `template-engine.html` into `frontend/src/app/admin/template-engine/page.ts
 | # | Task | Gate |
 |---|---|---|
 | A1 | Add `SettingValue` model + `SettingField.setting_values` back-relation **and `owner_module String?` on `Type`/`Category`/`SettingField`** (indexed) to `core.prisma`; migrate | `npx prisma validate` exit 0; `npx prisma migrate dev` clean |
-| A1b | **Nav fix:** seed sets `owner_module='template-engine'` on all rows; `types`/`categories`/`setting-fields` list endpoints default to `owner_module=null`; AdminSidebar + generic settings screens exclude module-owned rows; relabel platform switcher to Web App / TV / Android Native / iOS Native | E2E: sidebar shows exactly ONE "Template Engine" item; 4 platform options inside; no `settings/view/{platform}.*` entries |
-| A2 | Port prototype schema (`BASE_TABS`/`PANE_OVERRIDES`/`EXTRA_TABS`/`PLATFORMS` + `C/N/…`, `slug`, `scaleField`, build loop) into `modules/template-engine/schema/` as ESM | `vitest`: schema builds all 4 platforms; pane counts = webapp 11 / tv 37 / android 20 / ios 18 |
+| A1b | **Nav fix:** seed sets `owner_module='theme-engine'` on all rows; `types`/`categories`/`setting-fields` list endpoints default to `owner_module=null`; AdminSidebar + generic settings screens exclude module-owned rows; relabel platform switcher to Web App / TV / Android Native / iOS Native | E2E: sidebar shows exactly ONE "Theme Engine" item; 4 platform options inside; no `settings/view/{platform}.*` entries |
+| A2 | Port prototype schema (`BASE_TABS`/`PANE_OVERRIDES`/`EXTRA_TABS`/`PLATFORMS` + `C/N/…`, `slug`, `scaleField`, build loop) into `modules/theme-engine/schema/` as ESM | `vitest`: schema builds all 4 platforms; pane counts = webapp 11 / tv 37 / android 20 / ios 18 |
 | A3 | `seed.js` generates Types/Categories/SettingFields (idempotent upsert on slug, TV scaling, input_type map) | `vitest`: re-run yields 0 duplicates; spot-check `webapp.buttons.dark.primary_button.background_color` (`#4f8ef7`; light theme `#0a66f0`) exists with correct default — Primary Button is theme-tagged dark/light, not device-tagged |
 
 ### PHASE B — values API + tokens
 | # | Task | Gate |
 |---|---|---|
-| B1 | `module.json` (`slug:"template-engine"`, `apiPrefix:"/api/template-engine"`, `permissions:["template-engine"]`, nav entry `Template Engine`/`Palette` icon), routes/controller/service/schema; `GET /schema`, `GET /values` | `vitest`: schema tree shape; routes behind gate+authenticate+requirePermission |
+| B1 | `module.json` (`slug:"theme-engine"`, `apiPrefix:"/api/theme-engine"`, `permissions:["theme-engine"]`, nav entry `Theme Engine`/`Palette` icon), routes/controller/service/schema; `GET /schema`, `GET /values` | `vitest`: schema tree shape; routes behind gate+authenticate+requirePermission |
 | B2 | `POST /values` (per-field validation vs input_type/options, activity log) + `POST /reset` | `vitest`: valid upsert; invalid color/enum rejected 422; reset restores default |
 | B3 | `GET /tokens` — CSS + JSON compile, Redis cache + invalidation, public flag via `optionalAuthenticate` | `vitest`: token for changed field reflects saved value; light+dark blocks present; `curl` returns CSS |
 
 ### PHASE C — frontend + E2E
 | # | Task | Gate |
 |---|---|---|
-| C1 | Port UI to `admin/template-engine/page.tsx` under `<ModuleGuard>`; wire load/save/reset to API; keep previews | `tsc` strict; RTL: platform switch, dirty→save, reset |
+| C1 | Port UI to `admin/theme-engine/page.tsx` under `<ModuleGuard>`; wire load/save/reset to API; keep previews | `tsc` strict; RTL: platform switch, dirty→save, reset |
 | C2 | Review → E2E (edit a Web App button color → Save → `GET /tokens` shows it; disable→re-enable module leaves no orphaned Types/values) → docs | PASS + Playwright exit 0; disable/enable round-trip clean |
 | C3 | **Runtime theming consumer** (§Runtime theming): `TemplateEngineThemeProvider` fetches `/tokens?platform=webapp`, injects `--` vars, refetches on theme toggle + after save; app chrome resolves to those vars; fix hex-field keyboard input + double-save | E2E: change Web App primary colour → Save → reload → app chrome shows new colour; revert restores it |
 
@@ -267,4 +267,4 @@ Port `template-engine.html` into `frontend/src/app/admin/template-engine/page.ts
 - **Public tokens leak:** only the compiled visual tokens may be public — never expose raw `setting_fields`/admin endpoints unauthenticated.
 - **Uninstall cleanliness:** uninstalling the module must cascade-remove its Types/Categories/SettingFields (and thus `setting_values`), leaving no orphans (manifest checklist item).
 - **Do not fork the schema:** UI and seed MUST import the same schema module. Two copies WILL drift.
-- **Sidebar pollution (regression to guard):** any Type without `owner_module` set is auto-listed in the global admin sidebar. The seed MUST set `owner_module='template-engine'` on all rows, and the `types`/`categories`/`setting-fields` list endpoints MUST default to `owner_module=null`. Re-verify after any seed change — this is the v1 defect.
+- **Sidebar pollution (regression to guard):** any Type without `owner_module` set is auto-listed in the global admin sidebar. The seed MUST set `owner_module='theme-engine'` on all rows, and the `types`/`categories`/`setting-fields` list endpoints MUST default to `owner_module=null`. Re-verify after any seed change — this is the v1 defect.

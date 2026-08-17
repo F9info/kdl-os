@@ -3,7 +3,7 @@ import { redis } from '../../config/redis.js';
 import { PLAT_TABS, PLATFORMS, slug as slugify } from './schema/index.js';
 
 const TOKEN_TTL = 600; // seconds
-const tokenKey = (platform, theme, device) => `te:tokens:${platform}:${theme ?? 'all'}:${device ?? 'all'}`;
+const tokenKey = (platform, theme, device) => `th:tokens:${platform}:${theme ?? 'all'}:${device ?? 'all'}`;
 
 // ── Value validation ──────────────────────────────────────────────────────────
 
@@ -15,7 +15,7 @@ function parseOptions(field) {
 // Font Family selects (Heading/Body/Navigation/Button Font) are seeded from a
 // static choice list but must also accept names from the sibling "Custom Fonts"
 // repeater field saved in the same request — mirrors the frontend's merge in
-// template-engine/page.tsx (isFontFamilySelect / customFontNames).
+// theme-engine/page.tsx (isFontFamilySelect / customFontNames).
 const isFontFamilySelect = (field) => field.input_type === 'select' && /font/i.test(field.field_name ?? '');
 
 function parseCustomFontNames(value) {
@@ -621,7 +621,7 @@ export async function compileTokens(platform, theme, device) {
 // ── Public flag check ─────────────────────────────────────────────────────────
 
 export async function isTokensPublic() {
-  const setting = await prisma.appSetting.findUnique({ where: { key: 'template_engine.tokens_public' } });
+  const setting = await prisma.appSetting.findUnique({ where: { key: 'theme_engine.tokens_public' } });
   // Default true if not set
   return setting ? setting.value !== 'false' : true;
 }
@@ -633,7 +633,7 @@ export async function isTokensPublic() {
 // same shape instead of adding a migration.
 
 export const ACTIVE_THEMES = ['dark', 'light', 'system'];
-const activeThemeKey = (platform) => `template_engine.active_theme.${platform}`;
+const activeThemeKey = (platform) => `theme_engine.active_theme.${platform}`;
 
 export async function getActiveTheme(platform) {
   const setting = await prisma.appSetting.findUnique({ where: { key: activeThemeKey(platform) } });

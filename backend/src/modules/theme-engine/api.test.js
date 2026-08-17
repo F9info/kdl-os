@@ -314,16 +314,16 @@ describe('B2 — upsertValues rejects invalid fields and unknown field ids', () 
 
     const delKeys = redis.del.mock.calls.map((c) => c[0]);
     // Real tv device ids must be invalidated
-    expect(delKeys).toContain('te:tokens:tv:dark:tv_4k');
-    expect(delKeys).toContain('te:tokens:tv:dark:tv_1080p');
-    expect(delKeys).toContain('te:tokens:tv:dark:tv_720p');
-    expect(delKeys).toContain('te:tokens:tv:dark:tv_8k');
-    expect(delKeys).toContain('te:tokens:tv:dark:all');
+    expect(delKeys).toContain('th:tokens:tv:dark:tv_4k');
+    expect(delKeys).toContain('th:tokens:tv:dark:tv_1080p');
+    expect(delKeys).toContain('th:tokens:tv:dark:tv_720p');
+    expect(delKeys).toContain('th:tokens:tv:dark:tv_8k');
+    expect(delKeys).toContain('th:tokens:tv:dark:all');
     // Authoring base tags must NOT appear as cache keys
-    expect(delKeys).not.toContain('te:tokens:tv:dark:desktop');
-    expect(delKeys).not.toContain('te:tokens:tv:dark:laptop');
-    expect(delKeys).not.toContain('te:tokens:tv:dark:ipad');
-    expect(delKeys).not.toContain('te:tokens:tv:dark:mobile');
+    expect(delKeys).not.toContain('th:tokens:tv:dark:desktop');
+    expect(delKeys).not.toContain('th:tokens:tv:dark:laptop');
+    expect(delKeys).not.toContain('th:tokens:tv:dark:ipad');
+    expect(delKeys).not.toContain('th:tokens:tv:dark:mobile');
   });
 
   it('rejects enum field with invalid choice', async () => {
@@ -572,7 +572,7 @@ describe('B3 — compileTokens', () => {
     await service.compileTokens('webapp', 'dark');
     // cache key includes device (no device arg → 'all')
     expect(redis.set).toHaveBeenCalledWith(
-      expect.stringMatching(/^te:tokens:webapp:dark:all$/),
+      expect.stringMatching(/^th:tokens:webapp:dark:all$/),
       expect.any(String),
       'EX',
       600
@@ -589,15 +589,15 @@ describe('B3 — compileTokens', () => {
     ]);
     await service.compileTokens('tv', 'dark', 'tv_4k');
     expect(redis.set).toHaveBeenCalledWith(
-      'te:tokens:tv:dark:tv_4k',
+      'th:tokens:tv:dark:tv_4k',
       expect.any(String),
       'EX',
       600
     );
     // desktop and all keys must NOT have been written
     const setCalls = redis.set.mock.calls.map((c) => c[0]);
-    expect(setCalls).not.toContain('te:tokens:tv:dark:desktop');
-    expect(setCalls).not.toContain('te:tokens:tv:dark:all');
+    expect(setCalls).not.toContain('th:tokens:tv:dark:desktop');
+    expect(setCalls).not.toContain('th:tokens:tv:dark:all');
   });
 
   it('handles fonts fields: emits @import for google fonts, skips from CSS vars', async () => {
@@ -795,7 +795,7 @@ describe('B3 — controller.getTokens CSS content-type', () => {
     expect(res.json).toHaveBeenCalled();
   });
 
-  it('blocks authenticated users without template-engine:view when flag is false (B4)', async () => {
+  it('blocks authenticated users without theme-engine:view when flag is false (B4)', async () => {
     const { getTokens } = await import('./controller.js');
     vi.spyOn(service, 'isTokensPublic').mockResolvedValue(false);
     resolvePermissions.mockResolvedValue({ bypass: false, permissions: ['other:view'] });
@@ -817,11 +817,11 @@ describe('B3 — controller.getTokens CSS content-type', () => {
     expect(res.status).toHaveBeenCalledWith(403);
   });
 
-  it('allows authenticated users with template-engine:view when flag is false (B4)', async () => {
+  it('allows authenticated users with theme-engine:view when flag is false (B4)', async () => {
     const { getTokens } = await import('./controller.js');
     vi.spyOn(service, 'isTokensPublic').mockResolvedValue(false);
     vi.spyOn(service, 'compileTokens').mockResolvedValue({ css: ':root{}', json: {} });
-    resolvePermissions.mockResolvedValue({ bypass: false, permissions: ['template-engine:view'] });
+    resolvePermissions.mockResolvedValue({ bypass: false, permissions: ['theme-engine:view'] });
 
     const req = {
       user: { id: 'u1' },
@@ -921,7 +921,7 @@ describe('B9 — getActiveTheme / setActiveTheme', () => {
     prisma.appSetting.findUnique.mockResolvedValue({ value: 'light' });
     expect(await service.getActiveTheme('webapp')).toBe('light');
     expect(prisma.appSetting.findUnique).toHaveBeenCalledWith({
-      where: { key: 'template_engine.active_theme.webapp' },
+      where: { key: 'theme_engine.active_theme.webapp' },
     });
   });
 
@@ -931,8 +931,8 @@ describe('B9 — getActiveTheme / setActiveTheme', () => {
     const result = await service.setActiveTheme('webapp', 'dark');
     expect(result).toEqual({ activeTheme: 'dark' });
     expect(prisma.appSetting.upsert).toHaveBeenCalledWith({
-      where: { key: 'template_engine.active_theme.webapp' },
-      create: { key: 'template_engine.active_theme.webapp', value: 'dark', type: 'string', is_public: true },
+      where: { key: 'theme_engine.active_theme.webapp' },
+      create: { key: 'theme_engine.active_theme.webapp', value: 'dark', type: 'string', is_public: true },
       update: { value: 'dark' },
     });
     expect(redis.del).toHaveBeenCalled();
