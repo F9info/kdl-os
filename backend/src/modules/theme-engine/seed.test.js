@@ -66,10 +66,10 @@ describe('theme-engine seed (A3 gate)', () => {
     const db = makeFakePrisma();
 
     const first = await seedThemeEngine(db);
-    expect(first).toMatchObject({ types: 97, categories: 968, fields: 4084, created: 4084 });
+    expect(first).toMatchObject({ types: 97, categories: 968, fields: 4094, created: 4094 });
     expect(db.type.rows.size).toBe(97);
     expect(db.category.rows.size).toBe(968);
-    expect(db.settingField.rows.size).toBe(4084);
+    expect(db.settingField.rows.size).toBe(4094);
 
     const second = await seedThemeEngine(db);
     expect(second.created).toBe(0);
