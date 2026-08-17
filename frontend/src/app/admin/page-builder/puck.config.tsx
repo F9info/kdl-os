@@ -1,6 +1,7 @@
 import type { Config, Data } from '@puckeditor/core'
 import type { ReactNode } from 'react'
 import { composePacks } from './packs/compose'
+import { construction } from './packs/construction'
 import { general } from './packs/general'
 
 /**
@@ -22,7 +23,7 @@ const root: Config['root'] = {
   ),
 }
 
-export const config = composePacks(root, [general])
+export const config = composePacks(root, [general, construction])
 
 export const emptyData: Data = {
   root: { props: { title: 'Untitled page' } },
