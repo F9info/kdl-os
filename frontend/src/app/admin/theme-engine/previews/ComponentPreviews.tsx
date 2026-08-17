@@ -4,7 +4,7 @@
 // One preview component per pane (buttons/forms/tables/cards/popup/alerts/
 // navigation/layout/images). Each renders the pane's CURRENT field values, so
 // editing a colour/size in the pane is reflected live. Ported 1:1 from the
-// prototype `template-engine.html` render functions (web-app variant):
+// prototype `theme-engine.html` render functions (web-app variant):
 //   • buttons ...... updateButtonPreview ~1725   (.btn-preview  CSS ~311)
 //   • images ....... updateImagePreview  ~1780   (.img-preview  CSS ~317)
 //   • cards ........ updateCardPreview    ~1801  (.card-preview CSS ~328)

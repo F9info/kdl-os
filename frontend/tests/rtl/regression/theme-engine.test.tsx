@@ -45,7 +45,7 @@ Object.defineProperty(window, 'localStorage', { value: localStorageMock, writabl
 
 // ── Fixture ───────────────────────────────────────────────────────────────────
 // Mirrors the REAL backend contract (verified live against GET
-// /template-engine/schema): the envelope is { success, data: { platform, schema } },
+// /theme-engine/schema): the envelope is { success, data: { platform, schema } },
 // a pane carries both a semantic `id` and a Type cuid `type_id`, groups expose
 // `name`/`slug` (no `tag` — theme/device scope is the slug's final segment), and
 // fields expose `field_name`/`default_value` (no `label`). The previous fixture
@@ -155,7 +155,7 @@ function wrapWithQueryClient(ui: React.ReactElement) {
 }
 
 async function importPage() {
-  const mod = await import('@/app/admin/template-engine/page')
+  const mod = await import('@/app/admin/theme-engine/page')
   return mod.default
 }
 
@@ -171,7 +171,7 @@ async function enterWebapp() {
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-describe('Template Engine page (KDL-177 C1 gates)', () => {
+describe('Theme Engine page (KDL-177 C1 gates)', () => {
   let apiGet: ReturnType<typeof vi.fn>
   let apiPost: ReturnType<typeof vi.fn>
 
@@ -224,7 +224,7 @@ describe('Template Engine page (KDL-177 C1 gates)', () => {
     })
 
     // localStorage updated
-    expect(localStorageMock.getItem('te_platform')).toBe('tv')
+    expect(localStorageMock.getItem('th_platform')).toBe('tv')
   })
 
   it('dirty flag appears after editing a field; Save posts values to API', async () => {
@@ -267,7 +267,7 @@ describe('Template Engine page (KDL-177 C1 gates)', () => {
 
     await waitFor(() => {
       expect(apiPost).toHaveBeenCalledWith(
-        '/template-engine/values',
+        '/theme-engine/values',
         expect.objectContaining({
           platform: 'webapp',
           type_id: 'type-branding',
@@ -279,7 +279,7 @@ describe('Template Engine page (KDL-177 C1 gates)', () => {
     })
   })
 
-  it('Reset posts to /template-engine/reset with correct pane id', async () => {
+  it('Reset posts to /theme-engine/reset with correct pane id', async () => {
     const Page = await importPage()
     wrapWithQueryClient(<Page />)
     await enterWebapp()
@@ -298,7 +298,7 @@ describe('Template Engine page (KDL-177 C1 gates)', () => {
 
     await waitFor(() => {
       expect(apiPost).toHaveBeenCalledWith(
-        '/template-engine/reset',
+        '/theme-engine/reset',
         expect.objectContaining({
           platform: 'webapp',
           type_id: 'type-branding',
@@ -375,7 +375,7 @@ describe('Template Engine page (KDL-177 C1 gates)', () => {
 
     await waitFor(() => {
       expect(apiPost).toHaveBeenCalledWith(
-        '/template-engine/values',
+        '/theme-engine/values',
         expect.objectContaining({
           values: expect.arrayContaining([
             expect.objectContaining({ field_id: 'field-branding-weight', value: '600' }),
@@ -384,7 +384,7 @@ describe('Template Engine page (KDL-177 C1 gates)', () => {
       )
     })
     // the posted weight value carries no unit
-    const call = apiPost.mock.calls.find((c) => c[0] === '/template-engine/values')
+    const call = apiPost.mock.calls.find((c) => c[0] === '/theme-engine/values')
     const weight = call?.[1]?.values?.find(
       (v: { field_id: string }) => v.field_id === 'field-branding-weight'
     )

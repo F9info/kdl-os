@@ -3,19 +3,19 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 // Shape (radius/padding/border style) and per-severity colors come from the
-// Alerts pane tokens via te-alert* (te-components.css, KDL-213). The static
+// Alerts pane tokens via th-alert* (te-components.css, KDL-213). The static
 // rounded-lg/border/p-4 and severity color utilities were removed so the
 // token values win; the te-* fallbacks mirror the old static design.
 const alertVariants = cva(
-  'te-alert relative w-full [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4',
+  'th-alert relative w-full [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4',
   {
     variants: {
       variant: {
         default: 'bg-background text-foreground [&>svg]:text-foreground',
-        destructive: 'te-alert-error',
-        success: 'te-alert-success',
-        warning: 'te-alert-warning',
-        info: 'te-alert-info',
+        destructive: 'th-alert-error',
+        success: 'th-alert-success',
+        warning: 'th-alert-warning',
+        info: 'th-alert-info',
       },
     },
     defaultVariants: { variant: 'default' },
