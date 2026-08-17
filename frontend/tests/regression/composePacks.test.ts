@@ -90,9 +90,7 @@ describe('composePacks', () => {
       label: 'Pack B',
       components: { Shared: makeComponent() },
     }
-    expect(() => composePacks(root, [packA, packB])).toThrow(
-      /Component key collision.*"Shared"/,
-    )
+    expect(() => composePacks(root, [packA, packB])).toThrow(/Component key collision.*"Shared"/)
   })
 
   it('preserves the given root on the returned config', () => {

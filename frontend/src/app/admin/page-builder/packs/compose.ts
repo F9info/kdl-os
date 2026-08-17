@@ -10,7 +10,7 @@ export function composePacks(root: Config['root'], packs: ComponentPack[]): Conf
       if (Object.prototype.hasOwnProperty.call(components, key)) {
         throw new Error(
           `[composePacks] Component key collision: "${key}" is already registered. ` +
-            `Use a namespaced key (e.g. "${pack.key}:${key}") to keep packs isolated.`,
+            `Use a namespaced key (e.g. "${pack.key}:${key}") to keep packs isolated.`
         )
       }
       components[key] = pack.components[key]!

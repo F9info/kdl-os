@@ -131,7 +131,11 @@ const typedComponents: Config<GeneralProps>['components'] = {
     render: ({ text, align, muted }) => (
       <p
         className={`px-6 max-w-3xl leading-relaxed ${
-          align === 'center' ? 'mx-auto text-center' : align === 'right' ? 'ml-auto text-right' : 'text-left'
+          align === 'center'
+            ? 'mx-auto text-center'
+            : align === 'right'
+              ? 'ml-auto text-right'
+              : 'text-left'
         } ${muted ? 'text-slate-500' : 'text-slate-800'}`}
       >
         {text}
@@ -184,7 +188,11 @@ const typedComponents: Config<GeneralProps>['components'] = {
     render: ({ src, alt, rounded }) => (
       <div className="px-6">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={alt} className={`w-full h-auto object-cover ${rounded ? 'rounded-xl' : ''}`} />
+        <img
+          src={src}
+          alt={alt}
+          className={`w-full h-auto object-cover ${rounded ? 'rounded-xl' : ''}`}
+        />
       </div>
     ),
   },
