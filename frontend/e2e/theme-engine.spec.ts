@@ -1,16 +1,16 @@
 /**
- * KDL-178 C2 E2E gate — Template Engine module (independent grader spec).
+ * KDL-178 C2 E2E gate — Theme Engine module (independent grader spec).
  *
  * Gate 1: edit a Web App color in the admin UI → Save → GET /tokens?platform=webapp
  *         reflects the new value in BOTH css and json.
- * Gate 2: disable the template-engine module → routes 404 → re-enable →
+ * Gate 2: disable the theme-engine module → routes 404 → re-enable →
  *         schema + tokens byte-identical to the pre-disable snapshot
  *         (cascade-clean round-trip; row-orphan SQL check runs outside this spec).
  *
  * Prerequisites: full stack running (frontend :3001, backend :4000), images
- * built from the gate branch, template-engine seeded + module ENABLED.
+ * built from the gate branch, theme-engine seeded + module ENABLED.
  * Run:
- *   cd frontend && E2E_BASE_URL=http://localhost:3001 pnpm e2e e2e/template-engine.spec.ts
+ *   cd frontend && E2E_BASE_URL=http://localhost:3001 pnpm e2e e2e/theme-engine.spec.ts
  */
 import { test, expect, request, type APIRequestContext } from '@playwright/test'
 import { ADMIN } from './helpers/credentials'
@@ -35,24 +35,24 @@ async function getModuleStatus(): Promise<string | null> {
   const res = await api.get(`${API_URL}/modules`, { headers: authHeaders() })
   if (!res.ok()) return null
   const modules: Array<{ slug: string; status: string }> = (await res.json()).data?.modules ?? []
-  return modules.find((m) => m.slug === 'template-engine')?.status ?? null
+  return modules.find((m) => m.slug === 'theme-engine')?.status ?? null
 }
 
 async function ensureEnabled() {
   const status = await getModuleStatus()
   if (status === 'ENABLED') return
   if (status === 'AVAILABLE' || status === null) {
-    const r = await api.post(`${API_URL}/modules/template-engine/install`, {
+    const r = await api.post(`${API_URL}/modules/theme-engine/install`, {
       headers: authHeaders(),
     })
     expect(r.ok(), `install failed: ${await r.text()}`).toBeTruthy()
   }
-  const r = await api.post(`${API_URL}/modules/template-engine/enable`, { headers: authHeaders() })
+  const r = await api.post(`${API_URL}/modules/theme-engine/enable`, { headers: authHeaders() })
   expect(r.ok(), `enable failed: ${await r.text()}`).toBeTruthy()
 }
 
 async function fetchSchema(platform: string) {
-  const res = await api.get(`${API_URL}/template-engine/schema?platform=${platform}`, {
+  const res = await api.get(`${API_URL}/theme-engine/schema?platform=${platform}`, {
     headers: authHeaders(),
   })
   expect(res.ok(), `schema ${platform} failed: ${res.status()}`).toBeTruthy()
@@ -60,7 +60,7 @@ async function fetchSchema(platform: string) {
 }
 
 async function fetchTokens(platform: string, expectOk = true) {
-  const res = await api.get(`${API_URL}/template-engine/tokens?platform=${platform}`)
+  const res = await api.get(`${API_URL}/theme-engine/tokens?platform=${platform}`)
   if (!expectOk) return res
   expect(res.ok(), `tokens ${platform} failed: ${res.status()}`).toBeTruthy()
   return (await res.json()).data
@@ -129,7 +129,7 @@ test.beforeAll(async () => {
 test.afterAll(async () => {
   // Restore the edited field to its original value via the API (real Type cuid).
   if (targetTypeCuid && targetFieldId && targetOriginalValue) {
-    await api.post(`${API_URL}/template-engine/values`, {
+    await api.post(`${API_URL}/theme-engine/values`, {
       headers: authHeaders(),
       data: {
         platform: 'webapp',
@@ -146,7 +146,7 @@ test('Gate 1 — admin UI edit → Save → /tokens reflects new value (css + js
   page,
 }) => {
   await loginUi(page)
-  await page.goto('/admin/template-engine')
+  await page.goto('/admin/theme-engine')
 
   // Step 1: platform-picker landing screen — pick Webapp to enter the editor.
   await page.getByTestId('landing-card-webapp').click()
@@ -174,7 +174,7 @@ test('Gate 1 — admin UI edit → Save → /tokens reflects new value (css + js
 
   const [saveResponse] = await Promise.all([
     page.waitForResponse(
-      (r) => r.url().includes('/template-engine/values') && r.request().method() === 'POST'
+      (r) => r.url().includes('/theme-engine/values') && r.request().method() === 'POST'
     ),
     saveBtn.click(),
   ])
@@ -201,13 +201,13 @@ test('Gate 2 — disable → routes 404 → re-enable → schema/tokens identica
   const tokensBefore = JSON.stringify(await fetchTokens('webapp'))
 
   // Disable.
-  const dis = await api.post(`${API_URL}/modules/template-engine/disable`, {
+  const dis = await api.post(`${API_URL}/modules/theme-engine/disable`, {
     headers: authHeaders(),
   })
   expect(dis.ok(), `disable failed: ${await dis.text()}`).toBeTruthy()
 
   // All module routes must 404 while disabled — including the public tokens route.
-  const schemaRes = await api.get(`${API_URL}/template-engine/schema?platform=webapp`, {
+  const schemaRes = await api.get(`${API_URL}/theme-engine/schema?platform=webapp`, {
     headers: authHeaders(),
   })
   expect(schemaRes.status(), 'schema must 404 while disabled').toBe(404)
@@ -216,11 +216,11 @@ test('Gate 2 — disable → routes 404 → re-enable → schema/tokens identica
 
   // UI: module page must not render the landing screen while disabled.
   await loginUi(page)
-  await page.goto('/admin/template-engine')
-  await expect(page.getByTestId('template-engine-landing')).not.toBeVisible({ timeout: 10_000 })
+  await page.goto('/admin/theme-engine')
+  await expect(page.getByTestId('theme-engine-landing')).not.toBeVisible({ timeout: 10_000 })
 
   // Re-enable.
-  const en = await api.post(`${API_URL}/modules/template-engine/enable`, { headers: authHeaders() })
+  const en = await api.post(`${API_URL}/modules/theme-engine/enable`, { headers: authHeaders() })
   expect(en.ok(), `enable failed: ${await en.text()}`).toBeTruthy()
 
   // Round-trip clean: schema and tokens byte-identical — nothing orphaned, nothing lost.
@@ -234,8 +234,8 @@ test('Gate 2 — disable → routes 404 → re-enable → schema/tokens identica
   )
 
   // UI back.
-  await page.goto('/admin/template-engine')
+  await page.goto('/admin/theme-engine')
   await page.getByTestId('landing-card-webapp').click()
   await page.getByTestId('landing-subcard-webapp-frontend').click()
-  await expect(page.getByTestId('template-engine-page')).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByTestId('theme-engine-page')).toBeVisible({ timeout: 15_000 })
 })

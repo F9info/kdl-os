@@ -19,7 +19,7 @@ if the token you need doesn't exist, escalate to the design-system owner (see §
 
 ### Token model (read once)
 
-Semantic tokens resolve as `hsl(var(--token))` with a Template-Engine branding override layered on
+Semantic tokens resolve as `hsl(var(--token))` with a Theme-Engine branding override layered on
 top (`var(--branding_*, hsl(var(--token)))`). You reference them through **Tailwind color classes**,
 not the raw vars:
 
@@ -39,11 +39,11 @@ not the raw vars:
 | Focus ring                         | `ring-ring`                                      | `--ring`                          |
 | Corner radius                      | `rounded-lg/md/sm`                               | `--radius` (md = −2px, sm = −4px) |
 
-**Template-Engine `te-*` classes.** Several primitives (`Button`, `Input`, `Card`, `Table`, `Alert`,
-`Dialog`) carry `te-*` classes (e.g. `te-btn`, `te-input`, `te-card`, `te-popup`). These pull
-height/padding/radius/border/severity color from the Template Engine panes (`te-components.css`,
+**Theme-Engine `th-*` classes.** Several primitives (`Button`, `Input`, `Card`, `Table`, `Alert`,
+`Dialog`) carry `th-*` classes (e.g. `te-btn`, `th-input`, `te-card`, `te-popup`). These pull
+height/padding/radius/border/severity color from the Theme Engine panes (`th-components.css`,
 KDL-213) so a client can re-skin the kit without touching component code. **Do not strip or override
-`te-*` classes** — they are the branding contract. Layer app-specific overrides via `className`
+`th-*` classes** — they are the branding contract. Layer app-specific overrides via `className`
 (width, margins, grid placement) only.
 
 ### Motion rules (global)
@@ -81,7 +81,7 @@ import { Button, buttonVariants } from '@/components/ui/button'
 **States**
 
 - **hover:** `destructive` → `bg-destructive/90`; `ghost` → `bg-accent`; `link` → underline. Filled
-  variant hover chrome comes from `te-btn*`.
+  variant hover chrome comes from `th-btn*`.
 - **focus-visible:** `ring-2 ring-ring ring-offset-2` (keyboard only — not on mouse click).
 - **disabled:** `opacity-50 pointer-events-none`.
 - **loading:** Button has no built-in spinner — compose one and disable while pending (snippet below).
@@ -99,7 +99,7 @@ import { Button, buttonVariants } from '@/components/ui/button'
 - Don't hand-set height/padding to “match” a button — that's what `size` + `te-btn` own.
 
 **Tokens:** `bg-primary`/`text-primary-foreground` (default), `bg-destructive`/… (destructive),
-`bg-secondary` (secondary), `bg-accent` (ghost hover). Size/radius/font from `te-btn*`.
+`bg-secondary` (secondary), `bg-accent` (ghost hover). Size/radius/font from `th-btn*`.
 
 **Motion:** `transition-colors` on hover (~150ms). Focus ring appears instantly.
 
@@ -134,7 +134,7 @@ import { Input } from '@/components/ui/input' // type InputProps
 ```
 
 Plain `<input>` forwarding all native attrs (`type`, `placeholder`, `value`, `onChange`, `disabled`,
-`readOnly`, etc.). Height/padding/border/radius/placeholder color come from `te-input` (Forms pane).
+`readOnly`, etc.). Height/padding/border/radius/placeholder color come from `th-input` (Forms pane).
 
 **States**
 
@@ -155,7 +155,7 @@ Plain `<input>` forwarding all native attrs (`type`, `placeholder`, `value`, `on
 - Don't hardcode a red border for errors — the `aria-[invalid=true]` path already does it via tokens.
 
 **Tokens:** `border-input`, `bg-background`, `text-muted-foreground` (placeholder), `ring-ring`,
-`border-destructive` (invalid) — all via `te-input` + the aria-invalid utilities.
+`border-destructive` (invalid) — all via `th-input` + the aria-invalid utilities.
 
 **Motion:** none beyond the focus ring (instant).
 
@@ -261,7 +261,7 @@ import {
 ```
 
 `te-card` owns background/border/radius/padding/shadow (Cards pane, KDL-209/213). `CardHeader`/
-`CardContent`/`CardFooter` provide `te-card-*` internal spacing. `CardTitle` is `text-2xl font-semibold`.
+`CardContent`/`CardFooter` provide `th-card-*` internal spacing. `CardTitle` is `text-2xl font-semibold`.
 
 **States:** static surface (no interactive states of its own). For clickable cards, wrap the whole card
 in a link/button and add `hover:` chrome via `className` — don't fake it on `Card`.
@@ -310,7 +310,7 @@ import {
 ```
 
 Radix Dialog. `DialogContent` (`te-popup`) is centered, `max-w-lg` by default, with a built-in close `X`
-(top-right) and an overlay (`te-popup-overlay`). Focus is trapped; `Esc` and overlay-click close.
+(top-right) and an overlay (`th-popup-overlay`). Focus is trapped; `Esc` and overlay-click close.
 
 **States:** open/closed animated; close button hover `opacity-100`, focus ring. Overlay fades.
 
@@ -325,7 +325,7 @@ Radix Dialog. `DialogContent` (`te-popup`) is centered, `max-w-lg` by default, w
 - Don't nest a Dialog inside a Dialog. Don't use for non-blocking notices — that's `Toast` (§9).
 - Don't remove the close affordance or block `Esc` for dismissible dialogs (forgiveness heuristic).
 
-**Tokens:** `te-popup` (surface), `te-popup-overlay` (scrim), `bg-accent` (close active).
+**Tokens:** `te-popup` (surface), `th-popup-overlay` (scrim), `bg-accent` (close active).
 
 **Motion:** `duration-200`, `zoom-in-95` + `slide-in-from-top-[48%]` on open; overlay `fade-in`.
 
@@ -726,7 +726,7 @@ The B2 spec references some primitives that **do not exist in the current librar
 one-offs — flag to the design-system owner / Frontend Architect and track as E2 work:
 
 - **`Tabs`** — no `tabs.tsx` primitive exists. If a tabbed surface is needed, add a Radix-Tabs-based
-  primitive with `te-*` tokens first; don't hand-roll per screen.
+  primitive with `th-*` tokens first; don't hand-roll per screen.
 - **Checkbox / Radio (standalone)** — RBAC/checkbox behavior currently lives inside `DropdownMenu`
   (`DropdownMenuCheckboxItem`) and Command; there's no form `Checkbox`/`RadioGroup` primitive. Add before
   building multi-select forms.
@@ -742,7 +742,7 @@ quiet inline component.
 
 Before shipping a screen, confirm:
 
-- [ ] Every color/radius/spacing comes from a token/`te-*` class — zero hardcoded hex.
+- [ ] Every color/radius/spacing comes from a token/`th-*` class — zero hardcoded hex.
 - [ ] Every interactive control has visible `focus-visible` + an accessible name (label/`aria-label`).
 - [ ] Fetched lists use `DataTable` **or** the state-kit precedence (error → loading → empty → content).
 - [ ] Every form control is wrapped in `FormField`; errors flow through `error`, not manual borders.

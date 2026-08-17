@@ -7,7 +7,7 @@ import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { ModuleGuard } from '@/components/shared/ModuleGuard'
-import { refreshTemplateEngineTokens } from '@/components/providers/TemplateEngineThemeProvider'
+import { refreshThemeEngineTokens } from '@/components/providers/ThemeEngineProvider'
 import { DeviceShell } from './previews/DeviceShell'
 import { DefaultShellPreview } from './previews/ThemeDevicePreviews'
 import { DEVICE_PANE_PREVIEWS } from './previews/registry'
@@ -18,7 +18,7 @@ import { ImageClassesEditorControl } from './controls/ImageClassesEditorControl'
 import { TypographyTableControl } from './controls/TypographyTableControl'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// API types — shape returned by GET /template-engine/schema?platform=
+// API types — shape returned by GET /theme-engine/schema?platform=
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface TEFieldOptions {
@@ -72,7 +72,7 @@ type TEPaneRaw = Omit<TEPane, 'groups'> & { groups: TEGroupRaw[] }
 
 type TEActiveTheme = 'dark' | 'light' | 'system'
 
-// GET /template-engine/schema?platform= → { success, data: { platform, schema, activeTheme } }
+// GET /theme-engine/schema?platform= → { success, data: { platform, schema, activeTheme } }
 interface TESchemaEnvelope {
   success: boolean
   data: { platform: string; schema: TEPaneRaw[]; activeTheme: TEActiveTheme }
@@ -196,7 +196,7 @@ const LANDING_SUBTABS: Record<
   ios: [{ key: 'ios-app', platformId: 'ios', icon: '🍎', label: 'iOS App' }],
 }
 
-const LS_PLATFORM = 'te_platform'
+const LS_PLATFORM = 'th_platform'
 const LS_PANE = 'te_pane'
 const LS_TOP_PLATFORM = 'te_top_platform'
 const LS_SUB_LABEL = 'te_sub_label'
@@ -554,15 +554,15 @@ function PreviewFrame({
 // Main page component
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function TemplateEnginePage() {
+export default function ThemeEnginePage() {
   return (
-    <ModuleGuard slug="template-engine">
-      <TemplateEngineInner />
+    <ModuleGuard slug="theme-engine">
+      <ThemeEngineInner />
     </ModuleGuard>
   )
 }
 
-function TemplateEngineInner() {
+function ThemeEngineInner() {
   const qc = useQueryClient()
 
   // ── UI prefs (localStorage only) ──────────────────────────────────────────
@@ -609,9 +609,9 @@ function TemplateEngineInner() {
 
   // ── API: load schema ──────────────────────────────────────────────────────
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['template-engine-schema', platform],
+    queryKey: ['theme-engine-schema', platform],
     queryFn: () =>
-      api.get<TESchemaEnvelope>(`/template-engine/schema?platform=${platform}`).then((r) => ({
+      api.get<TESchemaEnvelope>(`/theme-engine/schema?platform=${platform}`).then((r) => ({
         panes: normalizeSchema(r.data.data.schema),
         activeTheme: r.data.data.activeTheme,
       })),
@@ -624,7 +624,7 @@ function TemplateEngineInner() {
   // Distinct from `paneMode` above: paneMode only picks which theme's *field
   // values* are being edited in the current pane. This is the platform-wide
   // "the running app should render in ___" setting the runtime
-  // TemplateEngineThemeProvider reads via GET /tokens.
+  // ThemeEngineProvider reads via GET /tokens.
   const [activeThemeSaved, setActiveThemeSaved] = useState<Record<string, TEActiveTheme>>({})
   const [activeThemeLocal, setActiveThemeLocal] = useState<Record<string, TEActiveTheme>>({})
 
@@ -751,7 +751,7 @@ function TemplateEngineInner() {
       const values = pane.groups.flatMap((g) =>
         g.fields.map((f) => ({ field_id: f.id, value: local[f.id] ?? f.value }))
       )
-      return api.post('/template-engine/values', {
+      return api.post('/theme-engine/values', {
         platform: plat,
         type_id: pane.type_id,
         values,
@@ -760,7 +760,7 @@ function TemplateEngineInner() {
     onSuccess: (_, { paneId, platform: plat }) => {
       const k = vkeyOf(plat, paneId)
       setSavedValues((prev) => ({ ...prev, [k]: { ...(localValuesRef.current[k] ?? {}) } }))
-      void qc.invalidateQueries({ queryKey: ['template-engine-schema', plat] })
+      void qc.invalidateQueries({ queryKey: ['theme-engine-schema', plat] })
       toast({ title: 'Saved', description: 'Settings saved successfully.' })
     },
     onError: (err) => {
@@ -774,7 +774,7 @@ function TemplateEngineInner() {
 
   const activeThemeMutation = useMutation({
     mutationFn: async ({ platform: plat, theme }: { platform: string; theme: TEActiveTheme }) =>
-      api.post('/template-engine/active-theme', { platform: plat, theme }),
+      api.post('/theme-engine/active-theme', { platform: plat, theme }),
     onSuccess: (_, { platform: plat, theme }) => {
       setActiveThemeSaved((prev) => ({ ...prev, [plat]: theme }))
       toast({ title: 'Saved', description: 'Active theme updated.' })
@@ -795,12 +795,12 @@ function TemplateEngineInner() {
       // Reset keys off the Type cuid; without it the backend Zod schema 400s on a
       // missing type_id. Fail early with a clear message instead.
       if (!pane.type_id) throw new Error('This section has no Type and cannot be reset.')
-      return api.post('/template-engine/reset', { platform: plat, type_id: pane.type_id })
+      return api.post('/theme-engine/reset', { platform: plat, type_id: pane.type_id })
     },
     onSuccess: (_, { paneId, platform: plat }) => {
       const k = vkeyOf(plat, paneId)
       // After reset, invalidate to reload defaults
-      void qc.invalidateQueries({ queryKey: ['template-engine-schema', plat] }).then(() => {
+      void qc.invalidateQueries({ queryKey: ['theme-engine-schema', plat] }).then(() => {
         // Clear local and saved so the effect re-initializes from fresh API data
         setLocalValues((prev) => {
           const next = { ...prev }
@@ -859,7 +859,7 @@ function TemplateEngineInner() {
       }
       // Let the runtime provider re-fetch compiled tokens so the admin sees
       // the change immediately instead of needing a hard reload.
-      refreshTemplateEngineTokens()
+      refreshThemeEngineTokens()
     } catch {
       // Individual mutations already surface their own error toast.
     }
@@ -929,11 +929,11 @@ function TemplateEngineInner() {
     return (
       <div
         className="-m-6 flex flex-col items-center justify-center gap-10 bg-muted/30"
-        data-testid="template-engine-landing"
+        data-testid="theme-engine-landing"
         style={{ height: 'calc(100dvh - 4rem)' }}
       >
         <div className="text-center">
-          <h1 className="text-2xl font-bold">Template Engine</h1>
+          <h1 className="text-2xl font-bold">Theme Engine</h1>
           <p className="mt-1 text-sm text-muted-foreground">Choose a platform to configure</p>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-4">
@@ -958,7 +958,7 @@ function TemplateEngineInner() {
     return (
       <div
         className="-m-6 flex flex-col items-center justify-center gap-10 bg-muted/30"
-        data-testid="template-engine-sublanding"
+        data-testid="theme-engine-sublanding"
         style={{ height: 'calc(100dvh - 4rem)' }}
       >
         <div className="text-center">
@@ -998,7 +998,7 @@ function TemplateEngineInner() {
   return (
     <div
       className="-m-6 flex flex-col overflow-hidden bg-muted/30"
-      data-testid="template-engine-page"
+      data-testid="theme-engine-page"
       style={{ height: 'calc(100dvh - 4rem)' }}
     >
       {/* ── Title bar ────────────────────────────────────────────────────── */}
@@ -1007,7 +1007,7 @@ function TemplateEngineInner() {
         <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
         <span className="h-3 w-3 rounded-full bg-[#28c840]" />
         <span className="flex-1 text-center text-sm font-semibold text-muted-foreground">
-          Application Settings — Template Engine
+          Application Settings — Theme Engine
         </span>
       </div>
 
@@ -1024,7 +1024,7 @@ function TemplateEngineInner() {
           }}
           className="text-muted-foreground hover:text-foreground"
         >
-          Template Engine
+          Theme Engine
         </button>
         <span className="text-muted-foreground">/</span>
         <button
@@ -1046,7 +1046,7 @@ function TemplateEngineInner() {
       {/* Platform-wide "the running app should render in ___" — distinct from
           the per-pane Dark/Light mode tabs below, which only pick which
           theme's field values are being edited. Read by the runtime
-          TemplateEngineThemeProvider via GET /tokens. */}
+          ThemeEngineProvider via GET /tokens. */}
       <div
         className="flex flex-shrink-0 items-center justify-center gap-2 border-b bg-sidebar px-4 py-1.5"
         data-testid="active-theme-bar"

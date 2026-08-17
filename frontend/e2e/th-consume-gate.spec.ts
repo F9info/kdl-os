@@ -1,6 +1,6 @@
 /**
  * KDL-214 — TE-CONSUME E2E Gate
- * Verifies that Template Engine settings drive the running app end-to-end.
+ * Verifies that Theme Engine settings drive the running app end-to-end.
  * Each criterion is tested independently.
  */
 import { test, expect, request, type APIRequestContext } from '@playwright/test'
@@ -32,7 +32,7 @@ async function loginUI(page: import('@playwright/test').Page) {
 }
 
 async function getTokensCSS(): Promise<string> {
-  const res = await api.get(`${API_URL}/template-engine/tokens?platform=webapp`)
+  const res = await api.get(`${API_URL}/theme-engine/tokens?platform=webapp`)
   expect(res.ok(), 'tokens endpoint failed').toBeTruthy()
   return (await res.json()).data.css as string
 }
@@ -48,7 +48,7 @@ async function getCSSVarFromPage(
 }
 
 async function getTeTokensContent(page: import('@playwright/test').Page): Promise<string> {
-  return page.evaluate(() => document.getElementById('te-tokens')?.textContent ?? '')
+  return page.evaluate(() => document.getElementById('th-tokens')?.textContent ?? '')
 }
 
 test.describe.configure({ mode: 'serial' })
@@ -77,8 +77,8 @@ test('(a) thumbnail-image: API emits 90px, app renders 90px', async ({ page }) =
   await page.goto(`${BASE}/admin`, { waitUntil: 'networkidle' })
 
   const teContent = await getTeTokensContent(page)
-  expect(teContent, '(a) te-tokens style tag must exist').not.toBe('')
-  expect(teContent, '(a) te-tokens must contain .thumbnail_image { width: 90px }').toContain(
+  expect(teContent, '(a) th-tokens style tag must exist').not.toBe('')
+  expect(teContent, '(a) th-tokens must contain .thumbnail_image { width: 90px }').toContain(
     '.thumbnail_image { width: 90px'
   )
 
@@ -106,7 +106,7 @@ test('(a) thumbnail-image: API emits 90px, app renders 90px', async ({ page }) =
 // =====================================================================
 // (b) H1 size change => H1s resize; Heading Font => headings change font
 // =====================================================================
-test('(b) typography: te-tokens emits h1 vars; h1 uses te-typo-h1-size', async ({ page }) => {
+test('(b) typography: th-tokens emits h1 vars; h1 uses th-typo-h1-size', async ({ page }) => {
   const css = await getTokensCSS()
   // Check h1 size var is emitted
   expect(
@@ -118,17 +118,17 @@ test('(b) typography: te-tokens emits h1 vars; h1 uses te-typo-h1-size', async (
   await page.goto(`${BASE}/admin`, { waitUntil: 'networkidle' })
 
   const teContent = await getTeTokensContent(page)
-  expect(teContent, '(b) te-tokens must contain typography vars').toContain('typography')
+  expect(teContent, '(b) th-tokens must contain typography vars').toContain('typography')
 
   // Check semantic alias is set
-  const teTypoH1Size = await getCSSVarFromPage(page, '--te-typo-h1-size')
-  expect(teTypoH1Size, '(b) --te-typo-h1-size must be set (not empty)').not.toBe('')
-  console.log(`(b) --te-typo-h1-size = ${teTypoH1Size}`)
+  const teTypoH1Size = await getCSSVarFromPage(page, '--th-typo-h1-size')
+  expect(teTypoH1Size, '(b) --th-typo-h1-size must be set (not empty)').not.toBe('')
+  console.log(`(b) --th-typo-h1-size = ${teTypoH1Size}`)
 
   // Check heading font
-  const teTypoH1Family = await getCSSVarFromPage(page, '--te-typo-h1-family')
-  expect(teTypoH1Family, '(b) --te-typo-h1-family must be set').not.toBe('')
-  console.log(`(b) --te-typo-h1-family = ${teTypoH1Family}`)
+  const teTypoH1Family = await getCSSVarFromPage(page, '--th-typo-h1-family')
+  expect(teTypoH1Family, '(b) --th-typo-h1-family must be set').not.toBe('')
+  console.log(`(b) --th-typo-h1-family = ${teTypoH1Family}`)
 
   // Find an h1 element and verify its computed font-size matches the TE var
   const h1s = page.locator('h1')
@@ -139,8 +139,8 @@ test('(b) typography: te-tokens emits h1 vars; h1 uses te-typo-h1-size', async (
     const h1FontSize = await h1s.first().evaluate((el) => getComputedStyle(el).fontSize)
     const h1FontFamily = await h1s.first().evaluate((el) => getComputedStyle(el).fontFamily)
     console.log(`(b) h1 computed fontSize=${h1FontSize}, fontFamily=${h1FontFamily}`)
-    // The h1 font-size should match --te-typo-h1-size (which comes from TE API)
-    expect(teTypoH1Size, '(b) --te-typo-h1-size must match computed h1 fontSize').toBe(h1FontSize)
+    // The h1 font-size should match --th-typo-h1-size (which comes from TE API)
+    expect(teTypoH1Size, '(b) --th-typo-h1-size must match computed h1 fontSize').toBe(h1FontSize)
   }
 
   await page.screenshot({ path: '/tmp/te_screenshots/b_typography.png' })
@@ -164,13 +164,13 @@ test('(c) primary color: branding var present, primary buttons use it', async ({
 
   // Check --primary (shadcn/Tailwind) is wired to branding
   // The app uses bg-primary on buttons — check a primary button's bg
-  const _primaryBtn = page.locator('button.te-btn-primary, button[class*="te-btn-primary"]').first()
+  const _primaryBtn = page.locator('button.th-btn-primary, button[class*="th-btn-primary"]').first()
   const btnCount = await page.locator('button').count()
   console.log(`(c) Total buttons: ${btnCount}`)
 
   // At minimum verify the var is in the page
   const teContent = await getTeTokensContent(page)
-  expect(teContent, '(c) te-tokens must contain branding primary color').toContain('primary_color')
+  expect(teContent, '(c) th-tokens must contain branding primary color').toContain('primary_color')
 
   await page.screenshot({ path: '/tmp/te_screenshots/c_primary_color.png' })
 })
@@ -178,7 +178,7 @@ test('(c) primary color: branding var present, primary buttons use it', async ({
 // =====================================================================
 // (d) Sidebar Width => admin sidebar width changes; Container Width => content width
 // =====================================================================
-test('(d) layout: sidebar uses --te-layout-sidebar-width from TE tokens', async ({ page }) => {
+test('(d) layout: sidebar uses --th-layout-sidebar-width from TE tokens', async ({ page }) => {
   const css = await getTokensCSS()
   expect(css, '(d) API CSS must emit --layout_structure_sidebar_width').toContain(
     '--layout_structure_sidebar_width'
@@ -187,12 +187,12 @@ test('(d) layout: sidebar uses --te-layout-sidebar-width from TE tokens', async 
   await loginUI(page)
   await page.goto(`${BASE}/admin`, { waitUntil: 'networkidle' })
 
-  // --te-layout-sidebar-width must be set to token value
-  const sidebarWidthVar = await getCSSVarFromPage(page, '--te-layout-sidebar-width')
-  expect(sidebarWidthVar, '(d) --te-layout-sidebar-width must be set').not.toBe('')
-  console.log(`(d) --te-layout-sidebar-width = ${sidebarWidthVar}`)
+  // --th-layout-sidebar-width must be set to token value
+  const sidebarWidthVar = await getCSSVarFromPage(page, '--th-layout-sidebar-width')
+  expect(sidebarWidthVar, '(d) --th-layout-sidebar-width must be set').not.toBe('')
+  console.log(`(d) --th-layout-sidebar-width = ${sidebarWidthVar}`)
 
-  // Find sidebar element — AdminSidebar uses style={{ width: 'var(--te-layout-sidebar-width)' }}
+  // Find sidebar element — AdminSidebar uses style={{ width: 'var(--th-layout-sidebar-width)' }}
   const sidebar = page.locator('aside, [data-testid="admin-sidebar"], nav').first()
   const sidebarWidth = await sidebar.evaluate((el) => {
     const style = (el as HTMLElement).style.width
@@ -226,10 +226,10 @@ test('(e) button radius: --buttons_button_sizes_border_radius drives buttons', a
   console.log(`(e) --buttons_button_sizes_border_radius = ${radiusVar}`)
   expect(radiusVar, '(e) button radius var must be set').not.toBe('')
 
-  // Find a te-btn button and check its border-radius
-  const btn = page.locator('button.te-btn, button[class*="te-btn"]').first()
-  const btnCount = await page.locator('button.te-btn, button[class*="te-btn"]').count()
-  console.log(`(e) Found ${btnCount} te-btn buttons`)
+  // Find a th-btn button and check its border-radius
+  const btn = page.locator('button.th-btn, button[class*="th-btn"]').first()
+  const btnCount = await page.locator('button.th-btn, button[class*="th-btn"]').count()
+  console.log(`(e) Found ${btnCount} th-btn buttons`)
 
   if (btnCount > 0) {
     const btnRadius = await btn.evaluate((el) => getComputedStyle(el).borderRadius)
@@ -278,9 +278,9 @@ test('(f) components: card/table/alert vars emitted and wired', async ({ page })
   console.log(`(f) --alerts_shape_border_radius = ${alertRadiusVar}`)
 
   // Find a card element and check its styles
-  const _card = page.locator('[class*="te-card"], .te-card, [data-testid*="card"]').first()
-  const cardCount = await page.locator('[class*="te-card"]').count()
-  console.log(`(f) Found ${cardCount} te-card elements`)
+  const _card = page.locator('[class*="th-card"], .th-card, [data-testid*="card"]').first()
+  const cardCount = await page.locator('[class*="th-card"]').count()
+  console.log(`(f) Found ${cardCount} th-card elements`)
 
   await page.screenshot({ path: '/tmp/te_screenshots/f_components.png', fullPage: true })
 })

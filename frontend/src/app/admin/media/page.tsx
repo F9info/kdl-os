@@ -914,8 +914,8 @@ function DetailDrawer({
     <div
       className="fixed right-0 w-80 bg-background border-l shadow-xl z-30 overflow-y-auto p-4 space-y-4"
       style={{
-        top: 'var(--te-layout-header-height)',
-        height: 'calc(100% - var(--te-layout-header-height))',
+        top: 'var(--th-layout-header-height)',
+        height: 'calc(100% - var(--th-layout-header-height))',
       }}
     >
       <div className="flex justify-between items-center">
@@ -1710,7 +1710,7 @@ export default function MediaPage() {
 
   return (
     <PermissionGuard permission="media:view">
-      <div className="flex h-[calc(100vh-var(--te-layout-header-height))] overflow-hidden">
+      <div className="flex h-[calc(100vh-var(--th-layout-header-height))] overflow-hidden">
         {/* Sidebar */}
         <aside className="w-56 flex-shrink-0 border-r flex flex-col bg-background">
           <SidebarNav

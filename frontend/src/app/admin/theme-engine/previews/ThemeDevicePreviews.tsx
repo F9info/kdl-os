@@ -2,7 +2,7 @@
 // ThemeDevicePreviews — the default native app-shell + the Theme Color palette
 // and Typography specimen previews (KDL-202, sub-task 1/3).
 //
-// Ported from the prototype (template-engine.html):
+// Ported from the prototype (theme-engine.html):
 //   • native mini-app shells .......... `.mini-app`/`.mini-native`/`.mini-appbar`
 //                                        CSS lines 331–358, render ~1863–1910
 //   • palette swatch cards ............ `.palette .sw` CSS lines 213–224,

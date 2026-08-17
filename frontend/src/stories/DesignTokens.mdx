@@ -5,10 +5,10 @@ import { Meta, ColorPalette, ColorItem } from '@storybook/blocks'
 # Design Tokens
 
 KDL Starter Kit design tokens. All color values are driven by CSS custom properties that can be
-overridden at runtime by the **Module 15 Template Engine** via `--branding_*` and `--buttons_*`
+overridden at runtime by the **Module 15 Theme Engine** via `--branding_*` and `--buttons_*`
 variables (see `tailwind.config.ts` and [KDL-199](/KDL/issues/KDL-199)).
 
-> **Template Engine override behaviour:** `TemplateEngineThemeProvider` injects a `<style id="te-tokens">` block into the document. Dark-mode values land in `:root`; light-mode values land in `[data-theme="light"]`. Every slot in `tailwind.config.ts` has a `var(--branding_*, hsl(var(...)))` fallback so the shadcn palette remains visible before the provider's first fetch resolves or when a token is unset.
+> **Theme Engine override behaviour:** `ThemeEngineProvider` injects a `<style id="th-tokens">` block into the document. Dark-mode values land in `:root`; light-mode values land in `[data-theme="light"]`. Every slot in `tailwind.config.ts` has a `var(--branding_*, hsl(var(...)))` fallback so the shadcn palette remains visible before the provider's first fetch resolves or when a token is unset.
 
 ---
 
@@ -104,7 +104,7 @@ Tailwind default spacing scale (4px base unit). Relevant custom container paddin
 
 ## Border Radius
 
-Controlled by `--radius` (default `0.5rem`). Override via Template Engine Layout → Border Radius pane.
+Controlled by `--radius` (default `0.5rem`). Override via Theme Engine Layout → Border Radius pane.
 
 | Token        | Value                       |
 | ------------ | --------------------------- |
@@ -116,7 +116,7 @@ Controlled by `--radius` (default `0.5rem`). Override via Template Engine Layout
 
 ## Typography
 
-Inherits Next.js / browser defaults. Font family, size, and weight can be applied via Template Engine
+Inherits Next.js / browser defaults. Font family, size, and weight can be applied via Theme Engine
 Typography pane tokens (`--branding_typography_*`) when the provider is active.
 
 | Scale       | rem      | px (16px base) |
@@ -137,7 +137,7 @@ The app ships two shadcn palettes embedded in `globals.css`:
 - **Light** (`:root`): white backgrounds, dark text.
 - **Dark** (`.dark`): navy backgrounds (`hsl(222.2 84% 4.9%)`), light text.
 
-The Template Engine overrides both palettes at runtime by injecting `--branding_*` vars into
+The Theme Engine overrides both palettes at runtime by injecting `--branding_*` vars into
 `:root` (dark) and `[data-theme="light"]` (light). Every Tailwind color slot in `tailwind.config.ts`
 has a `var(--branding_*, hsl(var(...)))` fallback to keep the static palette visible before the
 provider resolves.

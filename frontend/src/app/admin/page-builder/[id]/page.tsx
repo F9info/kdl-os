@@ -46,7 +46,7 @@ export default function PageBuilderEditor() {
 
   return (
     <ModuleGuard slug="page-builder">
-      <div className="h-[calc(100vh-var(--te-layout-header-height))]">
+      <div className="h-[calc(100vh-var(--th-layout-header-height))]">
         <Puck
           config={config}
           data={page.data}
