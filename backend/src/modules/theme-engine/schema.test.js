@@ -5,7 +5,7 @@ vi.mock('../../config/database.js', () => ({ prisma: {} }));
 import { PLATFORMS, PLAT_TABS, BASE_TABS, slug } from './schema/index.js';
 import { buildSeedRows } from './seed.js';
 
-describe('template-engine schema build (A2 gate)', () => {
+describe('theme-engine schema build (A2 gate)', () => {
   it('builds all 5 platforms', () => {
     expect(PLATFORMS.map((p) => p.id)).toEqual(['webapp', 'webapp_admin', 'tv', 'android', 'ios']);
     for (const p of PLATFORMS) {

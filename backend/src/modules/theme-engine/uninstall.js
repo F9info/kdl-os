@@ -10,12 +10,21 @@ import { PLATFORMS } from './schema/index.js';
  * Category.type_id is onDelete:SetNull — categories must be deleted
  * explicitly or they orphan.
  */
-export default async function uninstallTemplateEngine(prismaClient = prisma) {
+export default async function uninstallThemeEngine(prismaClient = prisma) {
   const byPrefix = { OR: PLATFORMS.map((p) => ({ slug: { startsWith: `${p.id}.` } })) };
 
   const categories = await prismaClient.category.deleteMany({ where: byPrefix });
   const types = await prismaClient.type.deleteMany({ where: byPrefix });
-  await prismaClient.appSetting.deleteMany({ where: { key: 'template_engine.tokens_public' } });
+  await prismaClient.appSetting.deleteMany({
+    where: {
+      key: {
+        in: [
+          'theme_engine.tokens_public',
+          ...PLATFORMS.map((p) => `theme_engine.active_theme.${p.id}`),
+        ],
+      },
+    },
+  });
 
   return { types: types.count, categories: categories.count };
 }

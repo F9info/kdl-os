@@ -1,10 +1,10 @@
 /**
- * Template Engine schema — VERBATIM port of the approved prototype
- * `template-engine.html` (script lines 466–1307): BASE_TABS, PANE_OVERRIDES,
+ * Theme Engine schema — VERBATIM port of the approved prototype
+ * The prototype HTML (script lines 466–1307): BASE_TABS, PANE_OVERRIDES,
  * EXTRA_TABS, PLATFORMS, field constructors, slug(), scaleField() and the
  * PLAT_TABS build loop. Do NOT hand-edit field lists here — this file is the
  * single source of truth shared by the seed generator and (later) the UI.
- * See .agents/TEMPLATE_ENGINE_ARCH.md §Seed generator.
+ * See .agents/THEME_ENGINE_ARCH.md §Seed generator.
  */
 /* =====================================================================
    SETTINGS SCHEMA — pane = Type, group = Category, field = SettingField

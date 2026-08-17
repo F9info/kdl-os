@@ -15,7 +15,7 @@ const FIELD_INCLUDE = {
 const SETTING_FILE_PREFIX = 'settings';
 
 // The generic admin API manages only standalone rows (owner_module = null).
-// Module-owned rows (e.g. template-engine) must never be mutated or deleted here,
+// Module-owned rows (e.g. theme-engine) must never be mutated or deleted here,
 // and generic writes may only reference standalone types/categories.
 const WRITABLE = { owner_module: null };
 

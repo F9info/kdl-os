@@ -3,7 +3,7 @@
 Last updated: 2026-07-16
 
 ## Current state
-- **All 6 build phases + the 15 modules are complete** (Auth, Users, Settings, Media DAM, User-Management/RBAC, Template Engine, etc.). The project is now in **evolve-to-production** mode, not initial build.
+- **All 6 build phases + the 15 modules are complete** (Auth, Users, Settings, Media DAM, User-Management/RBAC, Theme Engine, etc.). The project is now in **evolve-to-production** mode, not initial build.
 - **Operating model: the CEO runs autonomously.** The user's only steering lever is the company **Goal + milestones**. The CEO plans, assigns, executes, reviews, advances phases, and merges without human-approval gates (see CEO HEARTBEAT.md "Full autonomy" + "Strict goal-adherence").
 - **Tech stack is LOCKED** (see CLAUDE.md "Tech Stack" + "Model Allocation"). Do not change it; a genuine gap is *proposed* to the board for approval, never added unilaterally.
 - **Runtime config:** Claude Code adapter on the Claude subscription. CEO heartbeat every 30 min, thinking Medium, web/Chrome enabled. Coders on Sonnet 4.6; architects/reviewer/security/AI-services on Fable 5.

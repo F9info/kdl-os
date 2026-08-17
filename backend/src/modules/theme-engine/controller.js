@@ -22,7 +22,7 @@ export const postActiveTheme = async (req, res, next) => {
     if (result.errors) return errorResponse(res, 'Validation failed', 422, { fieldErrors: {}, formErrors: result.errors });
     writeActivityAsync({
       actor: req.user?.id,
-      module: 'template-engine',
+      module: 'theme-engine',
       action: 'active_theme_saved',
       description: `Set active theme=${theme} for platform=${platform}`,
       properties: { platform, theme },
@@ -52,9 +52,9 @@ export const postValues = async (req, res, next) => {
     if (result.errors) return errorResponse(res, 'Validation failed', 422, { fieldErrors: {}, formErrors: result.errors });
     writeActivityAsync({
       actor: req.user?.id,
-      module: 'template-engine',
+      module: 'theme-engine',
       action: 'values_saved',
-      description: `Saved ${result.saved} template engine values for platform=${platform} type=${type_id}`,
+      description: `Saved ${result.saved} theme engine values for platform=${platform} type=${type_id}`,
       properties: { platform, type_id, count: result.saved },
       ip_address: getClientIp(req),
     });
@@ -71,9 +71,9 @@ export const postReset = async (req, res, next) => {
     if (result.errors) return errorResponse(res, 'Validation failed', 422, { fieldErrors: {}, formErrors: result.errors });
     writeActivityAsync({
       actor: req.user?.id,
-      module: 'template-engine',
+      module: 'theme-engine',
       action: 'values_reset',
-      description: `Reset template engine values for platform=${platform} type=${type_id}`,
+      description: `Reset theme engine values for platform=${platform} type=${type_id}`,
       properties: { platform, type_id },
       ip_address: getClientIp(req),
     });
@@ -88,12 +88,12 @@ export const getTokens = async (req, res, next) => {
     const { platform, theme, device } = req.validated.query;
 
     // Public access check: when tokens_public is off, the flag gates EVERYONE —
-    // anonymous callers get 401 and authenticated callers need template-engine:view.
+    // anonymous callers get 401 and authenticated callers need theme-engine:view.
     const isPublic = await service.isTokensPublic();
     if (!isPublic) {
       if (!req.user) return errorResponse(res, 'Unauthorized', 401);
       const perms = await resolvePermissions(req.user.id);
-      if (!perms.bypass && !perms.permissions.includes('template-engine:view')) {
+      if (!perms.bypass && !perms.permissions.includes('theme-engine:view')) {
         return errorResponse(res, 'Forbidden', 403);
       }
     }
