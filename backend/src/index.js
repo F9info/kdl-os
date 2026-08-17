@@ -33,6 +33,8 @@ import permissionRoutes from './modules/user-management/permissions/routes.js';
 import activityLogRoutes from './modules/user-management/activity/routes.js';
 import moduleRoutes from './modules/modules/routes.js';
 import storageSettingsRoutes from './modules/storage-settings/routes.js';
+import themeEngineRoutes from './modules/theme-engine/routes.js';
+import pageBuilderRoutes from './modules/page-builder/routes.js';
 import { verifyLocalPresignToken } from './shared/services/storage/drivers/local.driver.js';
 import { loadModules } from './shared/modules/module-loader.js';
 
@@ -118,6 +120,9 @@ app.use('/api/storage/local', (req, res) => {
   }
   res.sendFile(resolved);
 });
+
+app.use('/api/theme-engine', themeEngineRoutes);
+app.use('/api/page-builder', pageBuilderRoutes);
 
 // Mount plugin modules (those with module.json + routes.js) behind moduleGate
 await loadModules(app);

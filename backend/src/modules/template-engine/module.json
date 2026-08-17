@@ -1,0 +1,14 @@
+{
+  "slug": "template-engine",
+  "name": "Template Engine (stub)",
+  "version": "0.0.1",
+  "description": "Phase 0 stub — proves conflictsWith and locked_by mechanics",
+  "core": false,
+  "apiPrefix": "/api/template-engine",
+  "permissions": [],
+  "nav": [],
+  "dependsOn": ["theme-engine", "page-builder"],
+  "conflictsWith": ["theme-engine-ui", "page-builder-ui"],
+  "queues": [],
+  "env": []
+}

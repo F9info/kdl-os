@@ -2,14 +2,13 @@
   "slug": "theme-engine",
   "name": "Theme Engine",
   "version": "1.0.0",
-  "description": "Multi-platform design-system / theming engine",
-  "core": false,
+  "description": "Design-system token compiler — always-on engine layer",
+  "core": true,
   "apiPrefix": "/api/theme-engine",
   "permissions": ["theme-engine"],
-  "nav": [
-    { "label": "Theme Engine", "path": "/admin/theme-engine", "icon": "Palette", "permission": "theme-engine:view" }
-  ],
+  "nav": [],
   "dependsOn": [],
+  "conflictsWith": [],
   "queues": [],
   "env": []
 }

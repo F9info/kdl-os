@@ -25,6 +25,7 @@ export const manifestSchema = z.object({
   permissions: z.array(permissionEntrySchema).default([]),
   nav: z.array(navItemSchema).default([]),
   dependsOn: z.array(z.string()).default([]),
+  conflictsWith: z.array(z.string()).default([]),
   queues: z.array(z.string()).default([]),
   env: z.array(z.string()).default([]),
 });
