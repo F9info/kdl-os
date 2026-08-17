@@ -1,3 +1,16 @@
+## 2026-08-17 — KDL-460: waived + dismissed 3 unpatchable dev-only Dependabot alerts (Security & Compliance Engineer)
+
+**Branch:** `security/kdl-460-waivers` — PR #155
+
+**Done:**
+1. **Verified dev-only exposure** — `image-size@1.2.1` has exactly one dependent in `frontend/pnpm-lock.yaml`: `@storybook/nextjs@8.6.18` (devDependency; Storybook not shipped). `elliptic@6.6.1` reachable only via `browserify-sign`/`create-ecdh` ← `crypto-browserify` ← `node-polyfill-webpack-plugin` ← same Storybook chain. GitHub marks all 3 alerts `scope: development`, `first_patched_version: null`.
+2. **Dismissed alerts #85, #84 (image-size HIGH), #47 (elliptic LOW)** via `gh api` as `tolerable_risk` referencing KDL-460 — **open Dependabot alerts now 0**.
+3. **WAIVERS registry** added to `docs/DEPENDENCY_TRIAGE.md` (justification + tracking issue + review-by 2026-11-17 each); `dependency-audit.yml` waiver comments now point at the registry, elliptic GHSA added to the set for tracking.
+
+**Next:** Code Reviewer to review/merge PR #155. Weekly audit (KDL-433) re-checks `first_patched_version` — fast-follow bump issue the moment upstream ships a fix.
+
+---
+
 ## 2026-08-17 — KDL-448 Phase 0 FRONTEND: nav icons + locked_by badge + Puck persistence + template-engine stub (Frontend Coder)
 
 **Branch:** `kdl-446-product-modes-arch` — commit `8978fd3`
