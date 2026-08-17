@@ -1,3 +1,20 @@
+## 2026-08-17 — KDL-448 Phase 0 FRONTEND: nav icons + locked_by badge + Puck persistence + template-engine stub (Frontend Coder)
+
+**Branch:** `kdl-446-product-modes-arch` — commit `8978fd3`
+
+**Done:** All 4 frontend deliverables:
+1. **Nav icons** — Added `Palette`, `LayoutTemplate`, `Sparkles` to `MODULE_ICON_MAP` in AdminSidebar so theme-engine-ui, page-builder-ui, template-engine nav entries render correct icons (not Package fallback)
+2. **locked_by read-only badge** — Theme Engine page imports `useModules`, checks `isEnabled('template-engine')`, shows amber "Managed by Template Engine" banner and wraps editor in `pointer-events-none`. Backend 409 is the authoritative gate.
+3. **Puck persistence** — `store.ts` fully rewritten to call backend API (`GET/POST/PUT/DELETE /api/page-builder`). Listing page uses `useQuery/useMutation`. Editor uses `useQuery` + `useMutation` for save/publish. Public `/p/[slug]` uses backend public route. Pages survive container restart.
+4. **Template-engine stub admin** — `/admin/template-engine/page.tsx` with ModuleGuard, mode status display, Phase 0 notice. Backend manifest updated with nav entry `{label: "Template Engine", path: "/admin/template-engine", icon: "Sparkles"}`.
+5. **Type-check fix** — Installed missing `@axe-core/playwright` dev dep that prevented `pnpm type-check` exit 0.
+
+**Gates:** `pnpm type-check` exit 0 ✅ | `pnpm build` exit 0 ✅ | RTL suite 147/147 exit 0 ✅
+
+**Next:** CEO to run browser gate (localhost:3101, admin@kdl.com/Admin@123) and open single KDL-446 PR.
+
+---
+
 ## 2026-08-17 — KDL-447 Phase 0 BACKEND: conflictsWith + engine/UI split + locked_by + Puck persistence (Backend Coder)
 
 **Branch:** `kdl-446-product-modes-arch` — commit `6f9e3e7`
