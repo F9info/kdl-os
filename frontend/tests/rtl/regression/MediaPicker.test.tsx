@@ -124,7 +124,7 @@ describe('MediaPicker', () => {
     render(<MediaPicker open={true} onClose={vi.fn()} onSelect={vi.fn()} typeFilter="IMAGE" />)
     await waitFor(() => {
       const call = vi.mocked(api.get).mock.calls.find(([url]) => url === '/media')
-      expect(call?.[1]?.params?.type).toBe('IMAGE')
+      expect((call?.[1]?.params as Record<string, string>)?.type).toBe('IMAGE')
     })
   })
 })

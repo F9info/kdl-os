@@ -6,6 +6,7 @@
 //   GET  /media/import/connections/:id/files   → { items, nextCursor }
 //   POST /media/import/connections/:id/import  → { imported, skipped }
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import type { AxiosRequestConfig } from 'axios'
 import { render, screen, waitFor, fireEvent } from '../utils'
 import { CloudImportDialog } from '@/components/media/CloudImportDialog'
 
@@ -211,41 +212,39 @@ describe('CloudImportDialog (Phase D8) — browser step', () => {
   })
 
   it('shows Load more when nextCursor is non-null and passes it back', async () => {
-    vi.mocked(api.get).mockImplementation(
-      (url: string, config?: { params?: Record<string, string> }) => {
-        if (url === '/media/import/providers')
-          return Promise.resolve({ data: { data: { items: PROVIDERS } } }) as ReturnType<
-            typeof api.get
-          >
-        if (url === '/media/import/connections')
-          return Promise.resolve({ data: { data: { items: CONNECTIONS } } }) as ReturnType<
-            typeof api.get
-          >
-        if (url === '/media/import/connections/c1/files') {
-          if (config?.params?.cursor === 'cur1')
-            return Promise.resolve({
-              data: {
-                data: {
-                  items: [
-                    {
-                      id: 'file-9',
-                      name: 'more.png',
-                      size: 10,
-                      mimeType: 'image/png',
-                      isFolder: false,
-                    },
-                  ],
-                  nextCursor: null,
-                },
-              },
-            }) as ReturnType<typeof api.get>
+    vi.mocked(api.get).mockImplementation((url: string, config?: AxiosRequestConfig) => {
+      if (url === '/media/import/providers')
+        return Promise.resolve({ data: { data: { items: PROVIDERS } } }) as ReturnType<
+          typeof api.get
+        >
+      if (url === '/media/import/connections')
+        return Promise.resolve({ data: { data: { items: CONNECTIONS } } }) as ReturnType<
+          typeof api.get
+        >
+      if (url === '/media/import/connections/c1/files') {
+        if (config?.params?.cursor === 'cur1')
           return Promise.resolve({
-            data: { data: { ...BROWSE_ROOT, nextCursor: 'cur1' } },
+            data: {
+              data: {
+                items: [
+                  {
+                    id: 'file-9',
+                    name: 'more.png',
+                    size: 10,
+                    mimeType: 'image/png',
+                    isFolder: false,
+                  },
+                ],
+                nextCursor: null,
+              },
+            },
           }) as ReturnType<typeof api.get>
-        }
-        return Promise.resolve({ data: { data: {} } }) as ReturnType<typeof api.get>
+        return Promise.resolve({
+          data: { data: { ...BROWSE_ROOT, nextCursor: 'cur1' } },
+        }) as ReturnType<typeof api.get>
       }
-    )
+      return Promise.resolve({ data: { data: {} } }) as ReturnType<typeof api.get>
+    })
     await openBrowser()
     fireEvent.click(screen.getByRole('button', { name: 'Load more' }))
     await waitFor(() => {
