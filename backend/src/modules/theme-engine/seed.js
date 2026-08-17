@@ -2,7 +2,7 @@ import { prisma } from '../../config/database.js';
 import { PLATFORMS, PLAT_TABS, slug } from './schema/index.js';
 
 /**
- * Schema-driven seed for the Template Engine (Module 15, Phase A).
+ * Schema-driven seed for the Theme Engine (Module 15, Phase A).
  *
  * Walks the built PLAT_TABS tree (TV px scaling is already applied by the
  * schema build loop, so defaults are written pre-scaled) and upserts:
@@ -13,12 +13,12 @@ import { PLATFORMS, PLAT_TABS, slug } from './schema/index.js';
  * Idempotent: upsert-on-slug, safe to re-run, never duplicates. A slug
  * collision inside the schema is a build bug — fail loud, don't overwrite.
  *
- * Every Type/Category/SettingField row is stamped owner_module='template-engine'
+ * Every Type/Category/SettingField row is stamped owner_module='theme-engine'
  * so the generic Application-Settings UI (sidebar, /admin/settings/*) hides
  * this module's private data store — see core.prisma ownership contract.
  */
 
-const OWNER_MODULE = 'template-engine';
+const OWNER_MODULE = 'theme-engine';
 
 const stringifyValue = (v) => {
   if (v == null) return '';
@@ -46,21 +46,21 @@ export function buildSeedRows() {
     for (const t of PLAT_TABS[p.id]) {
       const typeSlug = `${p.id}.${t.id}`;
       if (types.has(typeSlug)) {
-        throw new Error(`template-engine seed: duplicate type slug "${typeSlug}" — schema build bug, refusing to overwrite`);
+        throw new Error(`theme-engine seed: duplicate type slug "${typeSlug}" — schema build bug, refusing to overwrite`);
       }
       types.set(typeSlug, { slug: typeSlug, name: t.label, is_active: true });
 
       for (const [sec, secFields, tag] of t.sections) {
         const catSlug = `${typeSlug}.${slug(sec)}${tag ? `.${tag}` : ''}`;
         if (categories.has(catSlug)) {
-          throw new Error(`template-engine seed: duplicate category slug "${catSlug}" — schema build bug, refusing to overwrite`);
+          throw new Error(`theme-engine seed: duplicate category slug "${catSlug}" — schema build bug, refusing to overwrite`);
         }
         categories.set(catSlug, { slug: catSlug, name: sec, typeSlug, is_active: true });
 
         secFields.forEach((f, i) => {
           const fieldSlug = `${typeSlug}.${tag ? `${tag}.` : ''}${slug(sec)}.${slug(f.l)}`;
           if (fields.has(fieldSlug)) {
-            throw new Error(`template-engine seed: duplicate field slug "${fieldSlug}" — schema build bug, refusing to overwrite`);
+            throw new Error(`theme-engine seed: duplicate field slug "${fieldSlug}" — schema build bug, refusing to overwrite`);
           }
           fields.set(fieldSlug, {
             slug: fieldSlug,
@@ -80,7 +80,7 @@ export function buildSeedRows() {
   return { types, categories, fields };
 }
 
-export async function seedTemplateEngine(prismaClient = prisma) {
+export async function seedThemeEngine(prismaClient = prisma) {
   // ARCH §Known Risks: seed must be atomic. Wrap in an interactive transaction
   // when given a base client; a client without $transaction is already a tx
   // (or a test double) — write through it directly. ~990 sequential upserts
@@ -91,7 +91,7 @@ export async function seedTemplateEngine(prismaClient = prisma) {
   return seedInto(prismaClient);
 }
 
-export default seedTemplateEngine;
+export default seedThemeEngine;
 
 async function seedInto(prismaClient) {
   const { types, categories, fields } = buildSeedRows();
@@ -184,7 +184,7 @@ async function seedInto(prismaClient) {
     where: { owner_module: OWNER_MODULE, slug: { notIn: [...categories.keys()] } },
   });
 
-  const summary = `template-engine seed: ${types.size} types, ${categories.size} categories, ${fields.size} fields (${creates.length} created, ${updated} updated, ${deletedFields.count} fields pruned, ${deletedCategories.count} categories pruned)`;
+  const summary = `theme-engine seed: ${types.size} types, ${categories.size} categories, ${fields.size} fields (${creates.length} created, ${updated} updated, ${deletedFields.count} fields pruned, ${deletedCategories.count} categories pruned)`;
   console.log(summary);
   return {
     types: types.size,

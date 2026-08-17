@@ -1,10 +1,10 @@
 import { cn } from '@/lib/utils'
 
 // KDL-210 — every content image goes through AppImage so it always carries the
-// Template Engine's Images-pane class. compileTokens slugifies the item name
+// Theme Engine's Images-pane class. compileTokens slugifies the item name
 // ("thumbnail-image" → .thumbnail_image), so the class here uses underscores
 // even though the admin UI shows the hyphenated name. The classes are emitted
-// inside per-device @media blocks in <style id="te-tokens"> (appended to
+// inside per-device @media blocks in <style id="th-tokens"> (appended to
 // <head> at runtime, i.e. after the Tailwind stylesheet), so their
 // width/height/object-fit win specificity ties against utility classes —
 // callers should not pass w-*/h-*/object-* utilities; max-w-*/max-h-* ceilings

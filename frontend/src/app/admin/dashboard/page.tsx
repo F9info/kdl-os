@@ -111,9 +111,9 @@ export default function DashboardPage() {
     <div>
       <PageHeader title="Dashboard" />
 
-      {/* Gap between stat cards follows Template Engine Layout > Card Spacing
-          via te-card-grid (te-layout.css); gap-4 was the old static value. */}
-      <div className="te-card-grid grid md:grid-cols-2 lg:grid-cols-4">
+      {/* Gap between stat cards follows Theme Engine Layout > Card Spacing
+          via th-card-grid (te-layout.css); gap-4 was the old static value. */}
+      <div className="th-card-grid grid md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="Total Users"
           value={usersData?.pagination.total ?? 0}

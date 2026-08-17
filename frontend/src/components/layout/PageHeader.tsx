@@ -11,8 +11,8 @@ export function PageHeader({ title, breadcrumbs, action }: PageHeaderProps) {
   return (
     <div className="flex items-center justify-between mb-6">
       <div className="space-y-1">
-        {/* Size/family/weight come from the Template Engine's Typography
-            Scale H1 tokens via the bare h1 rule in te-typography.css —
+        {/* Size/family/weight come from the Theme Engine's Typography
+            Scale H1 tokens via the bare h1 rule in th-typography.css —
             no size or weight utilities here so the tokens stay in charge. */}
         <h1>{title}</h1>
         {breadcrumbs && breadcrumbs.length > 0 && (

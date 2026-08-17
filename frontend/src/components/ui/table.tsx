@@ -15,9 +15,9 @@ const TableHeader = React.forwardRef<
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
   // Header background + row borders come from the Tables pane tokens via
-  // te-table-* (te-components.css, KDL-213); the static border-b utilities
+  // th-table-* (te-components.css, KDL-213); the static border-b utilities
   // were removed so the token border style (None/Horizontal/Full grid) wins.
-  <thead ref={ref} className={cn('te-table-header', className)} {...props} />
+  <thead ref={ref} className={cn('th-table-header', className)} {...props} />
 ))
 TableHeader.displayName = 'TableHeader'
 
@@ -46,7 +46,7 @@ const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTML
     <tr
       ref={ref}
       className={cn(
-        'te-table-row transition-colors motion-reduce:transition-none hover:bg-muted/50 data-[state=selected]:bg-muted',
+        'th-table-row transition-colors motion-reduce:transition-none hover:bg-muted/50 data-[state=selected]:bg-muted',
         className
       )}
       {...props}
@@ -62,7 +62,7 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      'te-table-head h-12 px-4 text-left align-middle font-medium [&:has([role=checkbox])]:pr-0',
+      'th-table-head h-12 px-4 text-left align-middle font-medium [&:has([role=checkbox])]:pr-0',
       className
     )}
     {...props}
@@ -76,7 +76,7 @@ const TableCell = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <td
     ref={ref}
-    className={cn('te-table-cell p-4 align-middle [&:has([role=checkbox])]:pr-0', className)}
+    className={cn('th-table-cell p-4 align-middle [&:has([role=checkbox])]:pr-0', className)}
     {...props}
   />
 ))

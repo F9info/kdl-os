@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // DeviceShell — outer device chrome per platform (KDL-202, sub-task 1/3).
 //
-// Ports the prototype's `deviceFrame()` (template-engine.html lines 1663–1671)
+// Ports the prototype's `deviceFrame()` (theme-engine.html lines 1663–1671)
 // and its `.dev-phone`/`.dev-tv`/`.dev-browser` chrome (lines 130–153). The
 // outer sizes/classes are kept 1:1 with page.tsx's existing `PreviewFrame`
 // (lines 465–518) — this replaces the empty inner `<div>` with real `children`

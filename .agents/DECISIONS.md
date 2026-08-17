@@ -81,7 +81,7 @@
 
 ## TE-001 — /tokens CSS+JSON follow the spec contract; unfiltered output defaults to dark (2026-07-13)
 
-**Decision:** KDL-191 B3/B12 fixed to spec (TEMPLATE_ENGINE_ARCH.md §Token resolution): CSS custom-property names are theme-NEUTRAL (`--buttons_primary_button_background_color`, never `--buttons_dark_…`); dark + untagged fields compile into `:root` and light/focus into `[data-theme="light"]` / `[data-theme="focus"]` override blocks. JSON is nested `{ pane: { group: { field: value } } }`; device tags stay in the group key (devices are distinct tokens, themes are variants of one token).
+**Decision:** KDL-191 B3/B12 fixed to spec (THEME_ENGINE_ARCH.md §Token resolution): CSS custom-property names are theme-NEUTRAL (`--buttons_primary_button_background_color`, never `--buttons_dark_…`); dark + untagged fields compile into `:root` and light/focus into `[data-theme="light"]` / `[data-theme="focus"]` override blocks. JSON is nested `{ pane: { group: { field: value } } }`; device tags stay in the group key (devices are distinct tokens, themes are variants of one token).
 
 **Clarification the spec left open:** an unfiltered request (`no ?theme=`) can't hold two themes under one theme-neutral JSON key, so JSON mirrors `:root` — untagged + dark (the prototype's default theme). Clients wanting another theme's JSON pass `?theme=light|focus`; the CSS always carries all themes via the data-theme blocks.
 
@@ -91,6 +91,14 @@
 
 ## TE-002 — module install/uninstall hooks own module data in shared tables (2026-07-13)
 
-**Decision:** KDL-191 B1/B2: `installModule` resolves a module's `seed.js` by `default` export (fallback: a `seed*`-named export) and runs it on the open transaction client with a 180s timeout; `uninstallModule` runs an optional `uninstall.js` default export inside the uninstall transaction. `template-engine/uninstall.js` deletes its Types + Categories by platform slug prefix (Category.type_id is onDelete:SetNull, so category deletion must be explicit; SettingField/SettingValue cascade from Type) and drops the `template_engine.tokens_public` app setting.
+**Decision:** KDL-191 B1/B2: `installModule` resolves a module's `seed.js` by `default` export (fallback: a `seed*`-named export) and runs it on the open transaction client with a 180s timeout; `uninstallModule` runs an optional `uninstall.js` default export inside the uninstall transaction. `theme-engine/uninstall.js` deletes its Types + Categories by platform slug prefix (Category.type_id is onDelete:SetNull, so category deletion must be explicit; SettingField/SettingValue cascade from Type) and drops the `theme_engine.tokens_public` app setting.
 
 **Gate evidence:** `backend/scripts/kdl191-gate.mjs` on a fresh DB — install seeds 86/902/3910 via the hook alone, enable→disable→uninstall leaves 0/0/0/0 and no module/permission rows, reinstall seeds cleanly again; exit 0.
+
+## D3 — `template-engine` slug RESERVED (2026-08-17)
+
+**Decision:** The slug `template-engine` is permanently reserved. No new module may claim it. The module has been renamed to `theme-engine` (KDL-437/KDL-438). If a future page/content template module is ever built, it MUST use a different slug (e.g. `content-templates`, `page-templates`).
+
+**Reason:** The Prisma migration and all historical activity_log rows carry the old slug. Reusing `template-engine` for a different module would create ambiguous audit history and risk accidental DB matches on old data.
+
+**Log:** Recorded as required by KDL-438 issue scope.

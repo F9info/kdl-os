@@ -6,11 +6,11 @@ const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElemen
     <div
       ref={ref}
       // Card chrome (background/border/radius/padding/shadow) follows the
-      // Cards pane tokens via te-card (te-components.css, KDL-213) — the
+      // Cards pane tokens via th-card (te-components.css, KDL-213) — the
       // KDL-209 contract gives the Cards pane, not Layout, authority over
       // card surfaces. Layout > Border Radius/Shadow Level still drive the
       // generic --radius/--te-layout-shadow used by non-card surfaces.
-      className={cn('te-card text-card-foreground', className)}
+      className={cn('th-card text-card-foreground', className)}
       {...props}
     />
   )
@@ -21,7 +21,7 @@ const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn('te-card-header flex flex-col space-y-1.5', className)}
+      className={cn('th-card-header flex flex-col space-y-1.5', className)}
       {...props}
     />
   )
@@ -50,14 +50,14 @@ CardDescription.displayName = 'CardDescription'
 
 const CardContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn('te-card-content', className)} {...props} />
+    <div ref={ref} className={cn('th-card-content', className)} {...props} />
   )
 )
 CardContent.displayName = 'CardContent'
 
 const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn('te-card-footer flex items-center', className)} {...props} />
+    <div ref={ref} className={cn('th-card-footer flex items-center', className)} {...props} />
   )
 )
 CardFooter.displayName = 'CardFooter'

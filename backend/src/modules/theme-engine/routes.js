@@ -18,10 +18,10 @@ const router = Router();
 router.get('/tokens', optionalAuthenticate, validate(getTokensQuerySchema), getTokens);
 
 // All other routes require authentication and permission
-router.get('/schema', authenticate, requirePermission('template-engine', 'view'), validate(getSchemaQuerySchema), getSchema);
-router.get('/values', authenticate, requirePermission('template-engine', 'view'), validate(getValuesQuerySchema), getValues);
-router.post('/values', authenticate, requirePermission('template-engine', 'edit'), validate(postValuesBodySchema), postValues);
-router.post('/reset', authenticate, requirePermission('template-engine', 'edit'), validate(postResetBodySchema), postReset);
-router.post('/active-theme', authenticate, requirePermission('template-engine', 'edit'), validate(postActiveThemeBodySchema), postActiveTheme);
+router.get('/schema', authenticate, requirePermission('theme-engine', 'view'), validate(getSchemaQuerySchema), getSchema);
+router.get('/values', authenticate, requirePermission('theme-engine', 'view'), validate(getValuesQuerySchema), getValues);
+router.post('/values', authenticate, requirePermission('theme-engine', 'edit'), validate(postValuesBodySchema), postValues);
+router.post('/reset', authenticate, requirePermission('theme-engine', 'edit'), validate(postResetBodySchema), postReset);
+router.post('/active-theme', authenticate, requirePermission('theme-engine', 'edit'), validate(postActiveThemeBodySchema), postActiveTheme);
 
 export default router;

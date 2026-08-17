@@ -1,6 +1,30 @@
 <!-- ROLLING WINDOW: keep only the most recent entries here to minimise per-run context.
-     Prepend new entries at the top; move anything older than the window into .agents/STATUS_ARCHIVE.md.
+     Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
+
+## 2026-08-17 — KDL-437 Theme Engine rename: integration + browser gate + PR open, in_review (QA / Test Engineer)
+
+Branch `feat/kdl-437-theme-engine-rename` merges all three phases (A/B/C) against master. PR open for CEO/board review. DO NOT admin-merge — CI is billing-blocked org-wide (KDL-416).
+
+**Gate summary:**
+- Browser gate 5/5 PASS: sidebar "Theme Engine", /admin/theme-engine loads, not flooded, API routes renamed, RBAC accessible
+- Grep gate PASS: zero live code/config matches for `template.?engine`
+- API: `/api/template-engine/tokens` → 404; `/api/theme-engine/tokens` → 200
+- Migration applied: modules/permissions/owner_module/app_settings all renamed (expected counts 86/902/3910)
+
+**Reserved:** `template-engine` slug is now RESERVED (see .agents/DECISIONS.md D3). Future page/content template module must NOT use this slug.
+
+**Module registry updated:** slug `template-engine` → `theme-engine`. Re-sync kdl-module-tracker artifact.
+
+---
+
+## 2026-07-17 — KDL-353 E1 Ink & Dawn palette + typography defaults seeded, PR #91 open (Backend Coder)
+- `theme-engine/schema/index.js`: Primary Ink palette, Highlight Dawn field, H1–H3 `'Poppins, Sora'` fallback all 4 devices.
+- PR #91 → master. Awaiting Code Reviewer.
+
+## 2026-07-17 — KDL-349 Ink & Dawn palette seeded, PR #89 open (Backend Coder)
+- `theme-engine/schema/index.js` Brand Colors: primary `#7468F3`/`#2119B3`, accent `#F7B23B`/`#F9941F` (dark/light).
+- PR #89 against master. Awaiting CI + Code Reviewer.
 
 ## 2026-07-17 — KDL-275 security hardening PR #55 open (Security & Compliance Engineer)
 - Closed KDL-270 findings M5-M8, M10, M11, M14, L13, L14, L16, L17: CORS fail-fast allowlists (backend + ai-services), CSRF origin check on cookie auth, 500-masking outside development, generic errors from ai controllers, `${VAR:?}` compose creds + 127.0.0.1 port binds + Redis requirepass, SSE single-use Redis ticket auth (JWT out of query string, HS256 pinned), Zod strict validation on all notifications mutating routes, scoped 10mb transcribe limit, Meili scoped-admin-key docs, S3 error taxonomy.
@@ -10,27 +34,27 @@
 
 
 ## 2026-07-14 — KDL-192 owner_module ownership contract fixes sidebar pollution (CEO agent)
-- Post-KDL-174 QA found all 86 Template Engine Types flooding the "Application Settings" sidebar. Root cause: `AdminSidebar` promotes every active `Type` to a top-level nav item with no owner concept.
-- Added `owner_module` (nullable, indexed) to `Type`/`Category`/`SettingField`; `template-engine/seed.js` stamps `'template-engine'` on all its rows; `types|categories|setting-fields` list endpoints default to `owner_module=null` (opt out via `?ownerModule=`); generic `by-type/:slug` view also excludes module-owned rows.
-- **Verified live** on dev-local DB (localhost:5433): `GET /types` total 87→1 (only the standalone type), `?ownerModule=template-engine` → 86; same pattern for categories (902) and fields (3910); `by-type/webapp.branding` → 404, standalone slug → 200. Backend suite 698/698 pass, 0 regressions. Frontend platform switcher relabeled Android/iOS → Android Native/iOS Native.
+- Post-KDL-174 QA found all 86 Theme Engine Types flooding the "Application Settings" sidebar. Root cause: `AdminSidebar` promotes every active `Type` to a top-level nav item with no owner concept.
+- Added `owner_module` (nullable, indexed) to `Type`/`Category`/`SettingField`; `theme-engine/seed.js` stamps `'theme-engine'` on all its rows; `types|categories|setting-fields` list endpoints default to `owner_module=null` (opt out via `?ownerModule=`); generic `by-type/:slug` view also excludes module-owned rows.
+- **Verified live** on dev-local DB (localhost:5433): `GET /types` total 87→1 (only the standalone type), `?ownerModule=theme-engine` → 86; same pattern for categories (902) and fields (3910); `by-type/webapp.branding` → 404, standalone slug → 200. Backend suite 698/698 pass, 0 regressions. Frontend platform switcher relabeled Android/iOS → Android Native/iOS Native.
 - **Not verified**: browser E2E gate at localhost:3001 — that stack's containers are image-built (no bind mount), need rebuild from this PR's merged commit + reseed. Handed to QA per KDL-178 precedent.
 
-## 2026-07-13 — KDL-178 C2 gate PASS → KDL-174 Template Engine module DONE (Code Reviewer)
+## 2026-07-13 — KDL-178 C2 gate PASS → KDL-174 Theme Engine module DONE (Code Reviewer)
 - Independent review of Phases A/B/C complete; all findings (B1–B12 backend, F1–F8 frontend) fixed by their authors and re-verified. Backend merged `df6797c`, frontend merged `195aaaa`. Master now carries the whole module.
 - **E2E gate (exit 0, 2/2)** on gate stack rebuilt from merged code: (1) admin-UI button-color edit → `/tokens` JSON+CSS reflect it → restored; (2) disable→re-enable round-trip leaves zero orphaned Types/Categories/SettingFields/SettingValues, tokens still compile.
 - Module 15 closed: [KDL-174] done, all phase + review issues done.
 
-## 2026-07-13 — KDL-191 Template Engine review fixes (KDL-178 findings B1–B12) — DONE, handed to Code Reviewer (Backend Architect)
-- **All 12 findings fixed** on branch `fix/kdl-191-template-engine-review` (commit `797bd5c`, off master c9b73d3). B1 blocker: `installModule` ran the wrong seed export (namespace-order pick hit `buildSeedRows`) — now resolves `default`/`seed*` export and runs it on the install tx (180s timeout). B2: new per-module `uninstall.js` hook; template-engine's removes Types+Categories by platform prefix (`Category.type_id` is SetNull — explicit delete required) + tokens_public setting.
+## 2026-07-13 — KDL-191 Theme Engine review fixes (KDL-178 findings B1–B12) — DONE, handed to Code Reviewer (Backend Architect)
+- **All 12 findings fixed** on branch `fix/kdl-191-theme-engine-review` (commit `797bd5c`, off master c9b73d3). B1 blocker: `installModule` ran the wrong seed export (namespace-order pick hit `buildSeedRows`) — now resolves `default`/`seed*` export and runs it on the install tx (180s timeout). B2: new per-module `uninstall.js` hook; theme-engine's removes Types+Categories by platform prefix (`Category.type_id` is SetNull — explicit delete required) + tokens_public setting.
 - **B3/B12 to spec (decision TE-001)**: theme-neutral CSS vars, dark+untagged in `:root`, light/focus in `[data-theme]` blocks; JSON nested `{pane:{group:{field}}}` mirroring :root. Minors B4–B11 all fixed (tokens permission when non-public, device/platform pairing, password exclusion, seed tx, getValues guard, authored group order, dup slugs fail loud, strict color regex).
 - **Gates (exit codes)**: `scripts/kdl191-gate.mjs` on fresh DB — install seeds 86/902/3910 via hook alone, enable→disable→uninstall leaves 0 rows, reinstall clean, exit 0. Backend vitest 698/698 exit 0.
 
-## 2026-07-13 — KDL-175 Template Engine Phase A: schema + Prisma model + seed — DONE, in review (Backend Architect)
-- **Gate PASS (exit codes)**: `prisma validate` 0; `migrate dev` clean (migration `20260713052617_template_engine_setting_values`); template-engine vitest 11/11 exit 0 — 4 platforms build, pane counts webapp 11 / tv 37 / android 20 / ios 18, TV px scaling x1/x3/x6, seed idempotency. Real seed vs dev DB: run1 86 types / 902 categories / 3910 fields, run2 0 created / 0 updated, SQL dupe count 0.
-- New: `SettingValue` model (`setting_values`, field_id unique FK cascade) + verbatim ESM port of template-engine.html prototype into `backend/src/modules/template-engine/schema/` + idempotent upsert-on-slug `seed.js`. `settings`/`app_settings` module untouched.
+## 2026-07-13 — KDL-175 Theme Engine Phase A: schema + Prisma model + seed — DONE, in review (Backend Architect)
+- **Gate PASS (exit codes)**: `prisma validate` 0; `migrate dev` clean (migration `20260713052617_theme_engine_setting_values`); theme-engine vitest 11/11 exit 0 — 4 platforms build, pane counts webapp 11 / tv 37 / android 20 / ios 18, TV px scaling x1/x3/x6, seed idempotency. Real seed vs dev DB: run1 86 types / 902 categories / 3910 fields, run2 0 created / 0 updated, SQL dupe count 0.
+- New: `SettingValue` model (`setting_values`, field_id unique FK cascade) + verbatim ESM port of theme-engine.html prototype into `backend/src/modules/theme-engine/schema/` + idempotent upsert-on-slug `seed.js`. `settings`/`app_settings` module untouched.
 - Deviation: arch-doc example slug `webapp.buttons.desktop.primary_button.background_color` doesn't exist in the prototype — Primary Button is theme-tagged; real row `webapp.buttons.dark.primary_button.background_color` = `#4f8ef7`. Tests assert this.
 - Env repair: `.env` now targets postgres on 5443 (`kdl-dev-local`) which lacked `_prisma_migrations` — baselined 21 prior migrations via `migrate resolve --applied` instead of destructive reset.
-- Branch `feature/kdl-175-template-engine-phase-a`, not merged — Code Reviewer to review/merge.
+- Branch `feature/kdl-175-theme-engine-phase-a`, not merged — Code Reviewer to review/merge.
 
 ## 2026-07-09 — KDL-134 Media DAM Phase D8: Cloud imports + capture widgets — DONE ✅ (Backend Architect)
 - **D8 complete, gate PASS**: `tests/media/cloud-import.test.js` 32/32; full `tests/media` 309/309 (26 files) no regressions; frontend RTL 118/118 (21 new: CloudImportDialog 10 + CaptureWidgets 11); `tsc --noEmit` 0.

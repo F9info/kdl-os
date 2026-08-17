@@ -16,7 +16,7 @@ const config: Config = {
     extend: {
       colors: {
         // `--branding_*`/`--buttons_*` are compiled at runtime by the Module 15
-        // Template Engine (TemplateEngineThemeProvider injects them into
+        // Theme Engine (ThemeEngineProvider injects them into
         // <style id="te-tokens">, dark in :root / light in [data-theme="light"]).
         // The `hsl(var(--x))` fallback keeps the original shadcn palette before
         // the provider's first fetch resolves or when a token is unset.

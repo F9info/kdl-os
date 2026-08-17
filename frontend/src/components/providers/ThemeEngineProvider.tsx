@@ -3,8 +3,8 @@
 import { useEffect, useRef } from 'react'
 import api from '@/lib/axios'
 
-const STYLE_TAG_ID = 'te-tokens'
-const REFRESH_EVENT = 'te-tokens-refresh'
+const STYLE_TAG_ID = 'th-tokens'
+const REFRESH_EVENT = 'th-tokens-refresh'
 
 type ActiveTheme = 'dark' | 'light' | 'system'
 
@@ -39,7 +39,7 @@ function injectCss(css: string) {
 // with platform=webapp itself). Native clients (tv/android/ios) likewise
 // fetch this endpoint with their own `platform` and apply the JSON form.
 async function fetchAndApply(): Promise<ActiveTheme> {
-  const res = await api.get<TokensResponse>('/template-engine/tokens', {
+  const res = await api.get<TokensResponse>('/theme-engine/tokens', {
     params: { platform: 'webapp_admin' },
   })
   const { css, activeTheme } = res.data.data
@@ -48,13 +48,13 @@ async function fetchAndApply(): Promise<ActiveTheme> {
 }
 
 /**
- * Applies Module 15 Template Engine tokens at runtime: injects the compiled
- * `webapp_admin` CSS custom properties into `<style id="te-tokens">` and sets
+ * Applies Theme Engine tokens at runtime: injects the compiled
+ * `webapp_admin` CSS custom properties into `<style id="th-tokens">` and sets
  * `data-theme` from the saved Active Theme (or the OS preference when
- * "system"). The Template Engine admin page calls `refreshTemplateEngineTokens()`
+ * "system"). The Theme Engine admin page calls `refreshThemeEngineTokens()`
  * after a save so the change is visible without a hard reload.
  */
-export function TemplateEngineThemeProvider({ children }: { children: React.ReactNode }) {
+export function ThemeEngineProvider({ children }: { children: React.ReactNode }) {
   const activeThemeRef = useRef<ActiveTheme>('system')
 
   useEffect(() => {
@@ -93,6 +93,6 @@ export function TemplateEngineThemeProvider({ children }: { children: React.Reac
 }
 
 /** Ask the provider to re-fetch and re-apply tokens (call after a save). */
-export function refreshTemplateEngineTokens() {
+export function refreshThemeEngineTokens() {
   if (typeof window !== 'undefined') window.dispatchEvent(new Event(REFRESH_EVENT))
 }

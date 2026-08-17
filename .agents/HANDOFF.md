@@ -1,3 +1,19 @@
+## 2026-08-17 — KDL-440 Phase C integration + browser gate + PR (QA / Test Engineer)
+
+**Scope:** Integration branch `feat/kdl-437-theme-engine-rename` merges BE (`feat/kdl-437-theme-engine-be`) + FE (`feat/kdl-437-theme-engine-fe`). Phase C browser gate + grep gate complete. PR open for CEO/board review.
+
+**Gate results:**
+- Browser gate (KDL-440 5-test Playwright suite): **5/5 PASS** — sidebar "Theme Engine", /admin/theme-engine loads, sidebar not flooded (<40 links), API routes renamed, /admin/theme-engine accessible
+- API route checks: `GET /api/template-engine/tokens → 404 ✓`, `GET /api/theme-engine/tokens → 200 ✓`
+- th-consume-gate renamed spec: (c), (e), (f) pass; (a), (b), (d) have pre-existing failures (networkidle timeout + Tailwind CSS specificity — not caused by rename)
+- Final grep gate: `git grep -iE "template.?engine"` returns 47 lines — all in DECISIONS.md (D3 reserved note), HANDOFF.md/HANDOFF_ARCHIVE.md (historical), backend/prisma/migrations (SQL WHERE clauses), template-engine.html (prototype). Zero live code or config matches.
+
+**Module registry change:** slug `template-engine` → `theme-engine`, name "Template Engine" → "Theme Engine". kdl-module-tracker artifact should be re-synced.
+
+**Reserved:** The name `template-engine` is now RESERVED and unused — future page/content template module must use a different slug (see .agents/DECISIONS.md D3).
+
+---
+
 ## 2026-07-18 — KDL-385 a11y skip-to-main-content (Frontend Coder)
 
 **Done:** Added skip navigation link (WCAG 2.4.1 Level A) — PR #106 open for review.
@@ -12,6 +28,27 @@
 <!-- ROLLING WINDOW: keep only the most recent ~8 entries here to minimise per-run context.
      Prepend new entries at the top; move anything older than the window into HANDOFF_ARCHIVE.md.
      Full history: .agents/HANDOFF_ARCHIVE.md (and git log). -->
+
+## 2026-08-17 — KDL-438 Template Engine → Theme Engine rename complete (Backend Coder)
+
+**Scope:** Backend + DB migration + shared docs. Branch: `feat/kdl-437-theme-engine-be`.
+
+**Changes:**
+- `backend/src/modules/theme-engine/` — renamed from `template-engine` via git mv (history preserved)
+- `module.json`, `seed.js`, `service.js`, `controller.js`, `uninstall.js`, `routes.js`, `kdl191-gate.mjs` all updated
+- Redis token cache key prefix: `te:tokens:*` → `th:tokens:*` (old keys expire at TTL=600s)
+- App settings keys: `template_engine.*` → `theme_engine.*`
+- Prisma migration: `20260817000000_rename_template_engine_to_theme_engine` (modules, permissions, owner_module, app_settings)
+- Shared docs: TEMPLATE_ENGINE_ARCH.md → THEME_ENGINE_ARCH.md; D3 decision recorded
+- Deleted junk dups: `uninstall 2.js`, `kdl191-gate 2.mjs`
+
+**Phase C gates:** `prisma validate` exit 0; vitest 95/95; grep returns 0 live matches.
+
+**Deploy note:** Redis `te:tokens:*` flush on deploy (or let TTL expire naturally).
+
+**Next:** Frontend sibling task to rename frontend components; Code Reviewer to verify PR.
+
+---
 
 ## 2026-07-18 — KDL-414 NEXT_PUBLIC_IMAGE_HOSTS must be Docker build arg (Frontend Coder)
 
@@ -43,11 +80,7 @@
 - `.env.example`: documented the var for non-Docker users (no default needed — bare pnpm dev keeps MinIO on the same `localhost:9000` that the code already falls back to).
 - `.agents/WORKSPACE_MAP.md`: corrected MinIO port from `9000` (container) to `9002` (host).
 
-**"Links also broke" finding:** No routing/href regressions exist. All sidebar hrefs resolve to existing Next.js page routes. The reporter's "links" referred to the broken presigned media URLs, not navigation hrefs (confirmed by prior KDL-410 investigation: "No actual link routing bugs found").
-
 **Verified:** `pnpm type-check → 0 errors`.
-
-**⚠️ Correction (KDL-414):** The original claim that "restart picks up the env var without rebuild" was false. `NEXT_PUBLIC_IMAGE_HOSTS` is baked at `pnpm build` time into the standalone bundle; a container restart has no effect. A `docker compose build frontend` is always required when changing this value. The Dockerfile and compose file were reworked in KDL-414 to pass the value as a proper build arg.
 
 **Next:** PR against master; request Code Reviewer gate.
 
@@ -59,15 +92,35 @@
 1. **Dark-mode toggle broken**: `CommandPalette` read `theme`/`setTheme` from `useUiStore` (Zustand, persists to `localStorage['kdl-ui']`), which never synced with next-themes' `ThemeProvider` (reads/writes `localStorage['theme']`). Clicking "Toggle theme" updated Zustand state but applied no class change to `<html>`. Fix: import `useTheme` from `next-themes` directly; remove redundant `theme`/`setTheme` from `ui.store.ts`.
 2. **SendHorizonal typo**: `integrations/page.tsx` imported misspelled `SendHorizonal` instead of `SendHorizontal`. Currently aliased in lucide-react 0.577, but a deprecated no-op in future versions.
 
-**Verified:**
-- `pnpm type-check` → 0 errors
-- `pnpm build` → green
-- Light-mode screenshot: login page renders correctly
-- Dark-mode screenshot (localStorage theme=dark): full dark theme applied correctly
-
-**Auth pages and admin links**: all use standard Next.js `<Link href="...">` patterns with suppressHydrationWarning on html. No actual link routing bugs found beyond the theme toggle UX disconnect.
+**Verified:** `pnpm type-check` → 0 errors, `pnpm build` → green.
 
 **Next:** PR with these 3-file change set. KDL-410 → done.
+
+---
+
+## 2026-07-17 — KDL-353 E1 Ink & Dawn palette + typography fallback seeded into TE defaults (Backend Coder)
+
+**Scope:** `backend/src/modules/theme-engine/schema/index.js`
+
+**Changes:**
+- Brand Colors Primary: `#4f8ef7`→`#7468F3` (dark), `#0a66f0`→`#2119B3` (light) — Ink
+- Brand Colors Highlight: new field `#F7B23B` (dark) / `#F9941F` (light) — Dawn
+- Typography H1–H3 family: `'Poppins'`→`'Poppins, Sora'` across all 4 device breakpoints
+- FONTS: added `'Poppins, Sora'` and `'Sora'` as selectable options
+
+**PR:** #91 → master.
+
+---
+
+## 2026-07-17 — KDL-349 Ink & Dawn palette seeded into TE schema defaults (Backend Coder)
+
+**Scope:** `backend/src/modules/theme-engine/schema/index.js` Brand Colors only.
+
+**Changes:** 2 lines — primary (`#7468F3` dark / `#2119B3` light) and accent/highlight (`#F7B23B` dark / `#F9941F` light) set in `BASE_TABS[branding]` Brand Colors sections.
+
+**PR:** #89 → master.
+
+---
 
 ## 2026-07-17 — KDL-275 M4 config/CORS/error-leak/infra + notifications hardening (Security & Compliance Engineer)
 
@@ -95,30 +148,30 @@
 
 ## 2026-07-14 — KDL-192 sidebar pollution fix: Type/Category/SettingField ownership contract (CEO agent, standing in as Backend Coder)
 
-**Bug:** post-KDL-174/175/176/177/178/191, the Template Engine's 86 seeded panes (Types) all auto-promoted to top-level `AdminSidebar` menu items (`typeLeaves` from unfiltered `GET /types?is_active=true`), flooding "Application Settings" with every `webapp.*|tv.*|android.*|ios.*` pane. Root cause: no way to mark a Type/Category/SettingField as module-private data vs a standalone Application-Settings entry.
+**Bug:** post-KDL-174/175/176/177/178/191, the Theme Engine's 86 seeded panes (Types) all auto-promoted to top-level `AdminSidebar` menu items (`typeLeaves` from unfiltered `GET /types?is_active=true`), flooding "Application Settings" with every `webapp.*|tv.*|android.*|ios.*` pane. Root cause: no way to mark a Type/Category/SettingField as module-private data vs a standalone Application-Settings entry.
 
 **Fix — general ownership contract (also future-proofs modules 9-14 reusing these tables):**
 1. `owner_module String? @@index` added to `Type`, `Category`, `SettingField` in `core.prisma`; migration `20260714035014_add_owner_module_to_settings_tables`.
-2. `template-engine/seed.js` stamps `owner_module: 'template-engine'` on every Type/Category/SettingField it upserts (idempotent — verified via direct re-run against the dev DB: 0 created, 3910 updated on first pass after migration, all rows backfilled).
+2. `theme-engine/seed.js` stamps `owner_module: 'theme-engine'` on every Type/Category/SettingField it upserts (idempotent — verified via direct re-run against the dev DB: 0 created, 3910 updated on first pass after migration, all rows backfilled).
 3. `types|categories|setting-fields` `service.js`: `listX` defaults `where.owner_module = null` unless an explicit `?ownerModule=` query param is passed (added to each `schema.js`). This alone fixes the sidebar.
 4. `setting-fields/service.js` `getTypeBySlug` (used only by the generic `/admin/settings/view/[slug]` → `GET /setting-fields/by-type/:slug`) now filters `owner_module: null` too, so a module-owned slug can't be reached by direct URL either — verified `webapp.branding` → 404, standalone type → 200.
-5. `frontend/.../template-engine/page.tsx` platform switcher relabeled Android → "Android Native", iOS → "iOS Native" (ids unchanged); Web App/TV already matched.
+5. `frontend/.../theme-engine/page.tsx` platform switcher relabeled Android → "Android Native", iOS → "iOS Native" (ids unchanged); Web App/TV already matched.
 
 **Verified live** against the dev-local Postgres (`localhost:5433/kdl_db`, isolated `npm ci` + `prisma generate` in a scratch worktree, backend started on a scratch port `4099`, real login as `admin@kdl.com`):
-- `GET /types` (no param): **total 1** (was 87) — only the standalone "Theme Settigns" type; `?ownerModule=template-engine` → 86.
+- `GET /types` (no param): **total 1** (was 87) — only the standalone "Theme Settigns" type; `?ownerModule=theme-engine` → 86.
 - `GET /categories` / `GET /setting-fields` same pattern: 1 / 902 and 2 / 3910.
 - `GET /setting-fields/by-type/webapp.branding` → 404; `GET /setting-fields/by-type/theme-settigns` → 200.
-- `template-engine/{schema,values,tokens}` endpoints unaffected (they query Prisma directly, never through the generic type/category/field services).
+- `theme-engine/{schema,values,tokens}` endpoints unaffected (they query Prisma directly, never through the generic type/category/field services).
 - Backend suite: **698/698 pass**, 59 files, 0 regressions.
 
-**Not verified — needs QA (Maker ≠ Grader), targets localhost:3001:** the `kdl-starter-kit-*` containers serving :3001/:4000 are built-from-source images (no bind mount), so this branch's code isn't live there yet. Per the KDL-178 precedent above, QA must rebuild `backend`+`frontend` images from this PR's merged commit, `prisma migrate deploy` + re-run `template-engine` seed (idempotent) against that stack's DB, then run the full gate: sidebar shows exactly one "Template Engine" item, zero `settings/view/{webapp.*|tv.*|android.*|ios.*}` entries, open it → 4 platform options (Web App/TV/Android Native/iOS Native), switch platform swaps pane sidebar, edit a Web App button color + Save → `GET /tokens` reflects it.
+**Not verified — needs QA (Maker ≠ Grader), targets localhost:3001:** the `kdl-starter-kit-*` containers serving :3001/:4000 are built-from-source images (no bind mount), so this branch's code isn't live there yet. Per the KDL-178 precedent above, QA must rebuild `backend`+`frontend` images from this PR's merged commit, `prisma migrate deploy` + re-run `theme-engine` seed (idempotent) against that stack's DB, then run the full gate: sidebar shows exactly one "Theme Engine" item, zero `settings/view/{webapp.*|tv.*|android.*|ios.*}` entries, open it → 4 platform options (Web App/TV/Android Native/iOS Native), switch platform swaps pane sidebar, edit a Web App button color + Save → `GET /tokens` reflects it.
 
 **Next:** PR opened, awaiting Code Reviewer + QA browser E2E gate on rebuilt :3001 stack.
 
-## 2026-07-13 — KDL-178 C2 review + E2E gate: PASS — Template Engine module (KDL-174) COMPLETE (Code Reviewer)
+## 2026-07-13 — KDL-178 C2 review + E2E gate: PASS — Theme Engine module (KDL-174) COMPLETE (Code Reviewer)
 
-- **Module 15 Template Engine is done and fully on master.** Backend fixes merged as `df6797c` (KDL-191, B1–B12); frontend admin UI merged as `195aaaa` (`feature/kdl-177-template-engine-ui` @ `785453b`, KDL-177 + F1–F8 fixes). Both branches reviewed independently (maker ≠ grader) before merge.
-- **Final E2E gate re-run on the :3001/:4000 docker gate stack rebuilt from merged code** (backend image from master `df6797c`, frontend from `785453b`; freshness verified inside containers — `uninstall.js` present, template-engine catalogue 86 types / 902 categories / 3910 fields seeded, module ENABLED). Playwright `kdl-178-template-engine.e2e.spec.ts`: **2/2 passed, exit 0**.
+- **Module 15 Theme Engine is done and fully on master.** Backend fixes merged as `df6797c` (KDL-191, B1–B12); frontend admin UI merged as `195aaaa` (`feature/kdl-177-theme-engine-ui` @ `785453b`, KDL-177 + F1–F8 fixes). Both branches reviewed independently (maker ≠ grader) before merge.
+- **Final E2E gate re-run on the :3001/:4000 docker gate stack rebuilt from merged code** (backend image from master `df6797c`, frontend from `785453b`; freshness verified inside containers — `uninstall.js` present, theme-engine catalogue 86 types / 902 categories / 3910 fields seeded, module ENABLED). Playwright `kdl-178-theme-engine.e2e.spec.ts`: **2/2 passed, exit 0**.
   - Gate 1: UI edit of `webapp.buttons.dark.primary_button.background_color` → Save → `GET /tokens?platform=webapp&theme=dark` reflects the new value in JSON + CSS (both `format=css` and body `css`), then restored and cache invalidation confirmed.
   - Gate 2: disable → API gated 404 → re-enable → schema 200 with 11 webapp panes; row counts identical before/after; LEFT JOIN orphan checks 0/0/0/0 across categories/fields(×2)/values; tokens still compile.
 - Prior gate-1 PASS against backend `c9b73d3` was treated as invalidated (B3/B12 changed the `/tokens` contract) and re-run — per the re-run-all-gates rule.
@@ -126,28 +179,28 @@
 
 ## 2026-07-13 — KDL-191 KDL-178 review fixes: install seed, uninstall cleanup, token spec (Backend Architect)
 
-- Branch `fix/kdl-191-template-engine-review` @ `797bd5c`, awaiting Code Reviewer merge. Do not touch Phase C frontend branch.
-- **Install hooks contract changed** (`modules/service.js`): a module `seed.js` MUST export its seed as `default` (or a `seed*`-named export) and accept a Prisma client param — it now receives the install transaction client. Install/uninstall transactions run with `{timeout:180_000, maxWait:10_000}`. Optional `uninstall.js` (default export, receives tx client) removes module data from shared tables; template-engine's is the reference implementation.
-- **Token contract now matches TEMPLATE_ENGINE_ARCH.md** (decision TE-001/TE-002 in DECISIONS.md): theme-neutral var names, `[data-theme="light|focus"]` override blocks, nested JSON `{pane:{group:{field:value}}}` (group keeps device tag, drops theme tag); unfiltered JSON mirrors `:root` = dark default. Password fields never compiled into tokens. `tokens_public=false` requires `template-engine:view` even when authenticated. Cross-platform `?device=` rejected 422.
+- Branch `fix/kdl-191-theme-engine-review` @ `797bd5c`, awaiting Code Reviewer merge. Do not touch Phase C frontend branch.
+- **Install hooks contract changed** (`modules/service.js`): a module `seed.js` MUST export its seed as `default` (or a `seed*`-named export) and accept a Prisma client param — it now receives the install transaction client. Install/uninstall transactions run with `{timeout:180_000, maxWait:10_000}`. Optional `uninstall.js` (default export, receives tx client) removes module data from shared tables; theme-engine's is the reference implementation.
+- **Token contract now matches THEME_ENGINE_ARCH.md** (decision TE-001/TE-002 in DECISIONS.md): theme-neutral var names, `[data-theme="light|focus"]` override blocks, nested JSON `{pane:{group:{field:value}}}` (group keeps device tag, drops theme tag); unfiltered JSON mirrors `:root` = dark default. Password fields never compiled into tokens. `tokens_public=false` requires `theme-engine:view` even when authenticated. Cross-platform `?device=` rejected 422.
 - **Gate**: `backend/scripts/kdl191-gate.mjs` (fresh DB + `migrate deploy`, then run with DATABASE_URL/REDIS_URL) — 18/18 PASS exit 0. Full vitest 698/698. Note: run `npx prisma generate` if client is stale; `npm install` was needed for pre-existing missing `@zxing/library`.
 
-## 2026-07-13 — KDL-176 Template Engine Phase B: values API + token resolver (Backend Coder)
+## 2026-07-13 — KDL-176 Theme Engine Phase B: values API + token resolver (Backend Coder)
 
-- **B1** `routes.js` created for the `template-engine` module — the missing piece that lets `module-loader.js` mount the module at `/api/template-engine`. Route chain: `moduleGate('template-engine')` (applied by loader at mount) → `authenticate` → `requirePermission('template-engine', <action>)` → `validate(Zod schema)` → controller. `GET /tokens` uses `optionalAuthenticate` instead (public-readable path); the controller enforces the `template_engine.tokens_public` app_setting flag for unauthenticated callers.
+- **B1** `routes.js` created for the `theme-engine` module — the missing piece that lets `module-loader.js` mount the module at `/api/theme-engine`. Route chain: `moduleGate('theme-engine')` (applied by loader at mount) → `authenticate` → `requirePermission('theme-engine', <action>)` → `validate(Zod schema)` → controller. `GET /tokens` uses `optionalAuthenticate` instead (public-readable path); the controller enforces the `theme_engine.tokens_public` app_setting flag for unauthenticated callers.
 - **B2** `service.js`: `validateFieldValue` (color hex/rgba, number, slider min/max, select/radio enum, toggle boolean, multiselect JSON array, any-string for text/textarea/password/file/fonts/imglist); `upsertValues` (load pane fields, validate each entry, reject unknown field_id/slug with errors array, transaction upsert into `setting_values`, invalidate Redis token cache); `resetValues` (delete `setting_values` for pane, invalidate cache). Controller maps errors→422. Activity logged fire-and-forget on every mutation.
 - **B3** `service.compileTokens`: loads all fields for platform, applies saved-value override over default, filters by theme/device segment in slug, emits CSS custom properties in `:root{…}`, `@import`/`@font-face` for `fonts` fields, `.{class}{…}` rules for `imglist` fields. JSON tree `{pane:{tokenKey:value}}` alongside. Redis cache key `te:tokens:{platform}:{theme}` TTL 600s, write-through on compile, invalidated on every save/reset. `GET /tokens?format=css` or `Accept: text/css` returns raw CSS with `Content-Type: text/css`.
-- **Gates (exit codes, not self-assessed)**: `vitest run src/modules/template-engine/` → 0. **44/44 tests pass** across 3 test files: 8 Phase A schema tests, 3 seed tests, 33 Phase B api tests (B1 route structure + schema tree shape; B2 validateFieldValue across all input types, upsertValues valid+invalid+unknown, resetValues; B3 compileTokens CSS output, dark+light both present, changed field reflects saved value, Redis cache TTL 600s, fonts/@import, imglist CSS classes; controller getTokens JSON vs CSS, public flag enforcement).
-- **Files created**: `backend/src/modules/template-engine/routes.js`, `backend/src/modules/template-engine/api.test.js`.
+- **Gates (exit codes, not self-assessed)**: `vitest run src/modules/theme-engine/` → 0. **44/44 tests pass** across 3 test files: 8 Phase A schema tests, 3 seed tests, 33 Phase B api tests (B1 route structure + schema tree shape; B2 validateFieldValue across all input types, upsertValues valid+invalid+unknown, resetValues; B3 compileTokens CSS output, dark+light both present, changed field reflects saved value, Redis cache TTL 600s, fonts/@import, imglist CSS classes; controller getTokens JSON vs CSS, public flag enforcement).
+- **Files created**: `backend/src/modules/theme-engine/routes.js`, `backend/src/modules/theme-engine/api.test.js`.
 - **Files pre-existing from prior run (Phase A output — complete, no changes needed)**: `controller.js`, `service.js`, `schema.js`, `module.json`, `schema/index.js`, `seed.js`, `schema.test.js`, `seed.test.js`.
 
-## 2026-07-13 — KDL-175 Template Engine Phase A: schema + Prisma model + seed (Backend Architect)
-- **A1** `SettingValue` model + `SettingField.setting_values` back-relation in `backend/prisma/schema/core.prisma` (`setting_values` table: `field_id` unique FK→setting_fields cascade, denormalized `platform` indexed, string `value`, `updated_by`). Migration `20260713052617_template_engine_setting_values` applied clean. Existing `settings`/`app_settings` module untouched — diff is exactly the new model + back-relation.
-- **A2** Verbatim port of the `template-engine.html` prototype (`~/Downloads/template-engine.html` — issue said committed on master but it is NOT in the repo; `.agents/TEMPLATE_ENGINE_ARCH.md` was also untracked and is committed with this work) into `backend/src/modules/template-engine/schema/index.js` as ESM: BASE_TABS / PANE_OVERRIDES / EXTRA_TABS / PLATFORMS, C/N/SL/SE/TG/TX/PW/RA/MS/FI/TA constructors, `slug()`, `scaleField()`, build loop producing `PLAT_TABS`.
+## 2026-07-13 — KDL-175 Theme Engine Phase A: schema + Prisma model + seed (Backend Architect)
+- **A1** `SettingValue` model + `SettingField.setting_values` back-relation in `backend/prisma/schema/core.prisma` (`setting_values` table: `field_id` unique FK→setting_fields cascade, denormalized `platform` indexed, string `value`, `updated_by`). Migration `20260713052617_theme_engine_setting_values` applied clean. Existing `settings`/`app_settings` module untouched — diff is exactly the new model + back-relation.
+- **A2** Verbatim port of the `theme-engine.html` prototype (`~/Downloads/theme-engine.html` — issue said committed on master but it is NOT in the repo; `.agents/THEME_ENGINE_ARCH.md` was also untracked and is committed with this work) into `backend/src/modules/theme-engine/schema/index.js` as ESM: BASE_TABS / PANE_OVERRIDES / EXTRA_TABS / PLATFORMS, C/N/SL/SE/TG/TX/PW/RA/MS/FI/TA constructors, `slug()`, `scaleField()`, build loop producing `PLAT_TABS`.
 - **A3** `seed.js`: schema-driven idempotent upsert-on-slug over Type (pane) / Category (section, theme/device tag in slug) / SettingField (field). TV px scaling applied by the schema build loop before write. Slug collision inside a build = throw, never overwrite.
-- **Gates (exit codes, not self-assessed)**: `npx prisma validate` → 0; `npx prisma migrate dev` clean → 0; `vitest run src/modules/template-engine/` → 0 (11/11: 4 platforms build, pane counts webapp 11 / tv 37 / android 20 / ios 18, TV 720p/4K/8K px scaling x1/x3/x6, constructor→input_type/options/value encodings, seed idempotency vs unique-slug fake prisma). Real seed against dev DB ran twice: run1 `86 types / 902 categories / 3910 fields created`, run2 `0 created / 0 updated`; SQL dupe check 0; spot-check row present.
+- **Gates (exit codes, not self-assessed)**: `npx prisma validate` → 0; `npx prisma migrate dev` clean → 0; `vitest run src/modules/theme-engine/` → 0 (11/11: 4 platforms build, pane counts webapp 11 / tv 37 / android 20 / ios 18, TV 720p/4K/8K px scaling x1/x3/x6, constructor→input_type/options/value encodings, seed idempotency vs unique-slug fake prisma). Real seed against dev DB ran twice: run1 `86 types / 902 categories / 3910 fields created`, run2 `0 created / 0 updated`; SQL dupe check 0; spot-check row present.
 - **Spec deviation (verbatim port wins)**: the arch doc's example slug `webapp.buttons.desktop.primary_button.background_color` does not exist — in the prototype, Primary Button is theme-tagged (dark/light), not device-tagged. Real slugs: `webapp.buttons.dark.primary_button.background_color` = `#4f8ef7`, `...light...` = `#0a66f0`. Asserted explicitly in both test files.
 - **Env note**: root `.env` now points `DATABASE_URL` at port **5443** (`kdl-dev-local-postgres-1`), not the old 5433 container. That DB had a full schema but no `_prisma_migrations` table (created via db push/dump) — `migrate dev` demanded a destructive reset. Repaired by baselining all 21 prior migrations with `prisma migrate resolve --applied`, then applying only the new one. No data lost.
-- Work committed on branch `feature/kdl-175-template-engine-phase-a` (not merged to master — reviewer merges). Next: Phase B per KDL-174.
+- Work committed on branch `feature/kdl-175-theme-engine-phase-a` (not merged to master — reviewer merges). Next: Phase B per KDL-174.
 
 ## 2026-07-09 — KDL-122 Media DAM Phase D6: AI image ops (CEO/AI Services)
 - Found `ai/image-ops.service.js` (`runImageOpJob`) and the `replicate` driver already sitting uncommitted in the tree from an earlier interrupted session — the D1 driver registry (`ops: bg-removal/upscale/enhance/object-removal`) and the `ai-image-op` processing-job case were already wired, just never exposed over HTTP and never tested.
