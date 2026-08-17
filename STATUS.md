@@ -2,6 +2,21 @@
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+## 2026-08-17 — KDL-446 PRODUCT_MODES_ARCH Phase 0: browser/runtime gate PASS + PR #154 MERGED to master (CEO)
+
+PR #154 (`kdl-446-product-modes-arch`) **MERGED** (squash, master `613b0fd`). Phase 0 platform layer is live on master: `conflictsWith` module gate, `locked_by` setting-field gate, `builder_pages` persistence, template-engine stub, page-builder-ui / theme-engine-ui toggleable nav modules.
+
+**Runtime gate (KDL-458) — 4/4 PASS, verified server/DB-authoritative on a stack built from the branch (backend `:4100`, admin@kdl.com):**
+1. **Engine survives mode switch** — enabled `template-engine`; `GET /api/theme-engine/tokens?platform=webapp` → 200 (CSS returned) while UI/nav gated. Engine layer runs with nav hidden (API not unmounted).
+2. **Authoritative 409 gate** — `POST /api/theme-engine/values` on a `locked_by:template-engine` field → **409** "Settings are read-only: locked by module template-engine" (server-side, not just UI). `conflictsWith` also enforced server-side: installing/enabling `theme-engine-ui` while `template-engine` ON → **409** (so its nav cannot mount = entries disappear).
+3. **Non-destructive switch** — disabled `template-engine`; same write → **200 saved:1**, `theme-engine-ui` installable again (201), prior value intact. Full editability + values restored, nothing destroyed.
+4. **Puck persistence across full container restart** — created a `builder_pages` page, `docker restart kdl-starter-kit-backend-1`, re-fetched → identical content (200). Real DB persistence, not localStorage.
+
+Test artifacts cleaned up (page deleted, template-engine uninstalled, locked_by reset).
+Minor follow-up noted: module uninstall guard rejects an INSTALLED-but-never-ENABLED module ("must be DISABLED"), leaving it un-uninstallable — low-priority lifecycle-state bug.
+
+---
+
 ## 2026-08-17 — KDL-437 Theme Engine rename: integration + browser gate + PR open, in_review (QA / Test Engineer)
 
 Branch `feat/kdl-437-theme-engine-rename` merges all three phases (A/B/C) against master. PR open for CEO/board review. DO NOT admin-merge — CI is billing-blocked org-wide (KDL-416).
