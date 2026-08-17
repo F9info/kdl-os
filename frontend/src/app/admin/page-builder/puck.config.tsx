@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { composePacks } from './packs/compose'
 import { construction } from './packs/construction'
 import { general } from './packs/general'
+import { medical } from './packs/medical'
 
 /**
  * KDL Page Builder — single source of truth for editor and public renderer.
@@ -23,7 +24,7 @@ const root: Config['root'] = {
   ),
 }
 
-export const config = composePacks(root, [general, construction])
+export const config = composePacks(root, [general, construction, medical])
 
 export const emptyData: Data = {
   root: { props: { title: 'Untitled page' } },
