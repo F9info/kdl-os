@@ -6,7 +6,9 @@
   "core": false,
   "apiPrefix": "/api/template-engine",
   "permissions": [],
-  "nav": [],
+  "nav": [
+    { "label": "Template Engine", "path": "/admin/template-engine", "icon": "Sparkles", "permission": "template-engine:view" }
+  ],
   "dependsOn": ["theme-engine", "page-builder"],
   "conflictsWith": ["theme-engine-ui", "page-builder-ui"],
   "queues": [],

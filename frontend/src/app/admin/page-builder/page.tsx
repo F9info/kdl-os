@@ -1,26 +1,47 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Pencil, ExternalLink, Trash2, LayoutTemplate } from 'lucide-react'
 import { ModuleGuard } from '@/components/shared/ModuleGuard'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { listPages, createPage, deletePage, type PageRecord } from './store'
+import { toast } from '@/hooks/use-toast'
+import { listPages, createPage, deletePage } from './store'
 
 export default function PageBuilderList() {
   const router = useRouter()
-  const [pages, setPages] = useState<PageRecord[]>([])
+  const qc = useQueryClient()
   const [title, setTitle] = useState('')
 
-  const refresh = () => setPages(listPages())
-  useEffect(refresh, [])
+  const { data: pages = [], isLoading } = useQuery({
+    queryKey: ['page-builder-pages'],
+    queryFn: listPages,
+  })
+
+  const createMutation = useMutation({
+    mutationFn: (name: string) => createPage(name),
+    onSuccess: (rec) => {
+      void qc.invalidateQueries({ queryKey: ['page-builder-pages'] })
+      router.push(`/admin/page-builder/${rec.id}`)
+    },
+    onError: () =>
+      toast({ title: 'Error', description: 'Could not create page.', variant: 'destructive' }),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: deletePage,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['page-builder-pages'] }),
+    onError: () =>
+      toast({ title: 'Error', description: 'Could not delete page.', variant: 'destructive' }),
+  })
 
   const onCreate = () => {
     const name = title.trim() || 'Untitled page'
-    const rec = createPage(name)
-    router.push(`/admin/page-builder/${rec.id}`)
+    setTitle('')
+    createMutation.mutate(name)
   }
 
   return (
@@ -46,13 +67,18 @@ export default function PageBuilderList() {
             onKeyDown={(e) => e.key === 'Enter' && onCreate()}
             placeholder="New page title…"
             className="flex-1"
+            disabled={createMutation.isPending}
           />
-          <Button onClick={onCreate} className="gap-2">
-            <Plus size={18} /> New page
+          <Button onClick={onCreate} className="gap-2" disabled={createMutation.isPending}>
+            <Plus size={18} /> {createMutation.isPending ? 'Creating…' : 'New page'}
           </Button>
         </div>
 
-        {pages.length === 0 ? (
+        {isLoading ? (
+          <div className="rounded-xl border border-dashed p-12 text-center text-muted-foreground">
+            Loading pages…
+          </div>
+        ) : pages.length === 0 ? (
           <div className="rounded-xl border border-dashed p-12 text-center text-muted-foreground">
             No pages yet. Create your first one above.
           </div>
@@ -66,7 +92,8 @@ export default function PageBuilderList() {
                 <div className="min-w-0">
                   <p className="font-medium truncate">{p.title}</p>
                   <p className="text-xs text-muted-foreground truncate">
-                    /p/{p.slug} · updated {new Date(p.updatedAt).toLocaleString()}
+                    /p/{p.slug} · {p.status.toLowerCase()} · updated{' '}
+                    {new Date(p.updatedAt).toLocaleString()}
                   </p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
@@ -89,8 +116,7 @@ export default function PageBuilderList() {
                   <button
                     onClick={() => {
                       if (confirm(`Delete "${p.title}"?`)) {
-                        deletePage(p.id)
-                        refresh()
+                        deleteMutation.mutate(p.id)
                       }
                     }}
                     title="Delete"

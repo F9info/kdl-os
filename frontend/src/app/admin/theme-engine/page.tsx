@@ -8,6 +8,7 @@ import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { ModuleGuard } from '@/components/shared/ModuleGuard'
 import { refreshThemeEngineTokens } from '@/components/providers/ThemeEngineProvider'
+import { useModules } from '@/hooks/useModules'
 import { DeviceShell } from './previews/DeviceShell'
 import { DefaultShellPreview } from './previews/ThemeDevicePreviews'
 import { DEVICE_PANE_PREVIEWS } from './previews/registry'
@@ -555,9 +556,40 @@ function PreviewFrame({
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function ThemeEnginePage() {
+  const { isEnabled } = useModules()
+  const isLocked = isEnabled('template-engine')
+
   return (
     <ModuleGuard slug="theme-engine">
-      <ThemeEngineInner />
+      {isLocked && (
+        <div
+          className="flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-6 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+          data-testid="locked-by-banner"
+          role="status"
+        >
+          <svg
+            className="h-4 w-4 shrink-0"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+            />
+          </svg>
+          <span>
+            <strong>Managed by Template Engine</strong> — These settings are read-only while
+            Template Engine is active. Disable Template Engine to edit directly.
+          </span>
+        </div>
+      )}
+      <div className={isLocked ? 'pointer-events-none select-none opacity-75' : undefined}>
+        <ThemeEngineInner />
+      </div>
     </ModuleGuard>
   )
 }
