@@ -149,7 +149,7 @@ const MedicalServicesList: Config<MedicalProps>['components']['MedicalServicesLi
       '🫀 | Cardiology | Diagnosis and treatment of heart conditions',
       '🦴 | Orthopaedics | Bone, joint, and spine care',
       '🧠 | Neurology | Brain and nervous system disorders',
-      '🤰 | Gynaecology | Women\'s health and maternity care',
+      "🤰 | Gynaecology | Women's health and maternity care",
       '👁️ | Ophthalmology | Eye care and vision correction',
       '🦷 | Dental | Complete oral health services',
     ].join('\n'),
@@ -259,7 +259,15 @@ const MedicalAppointmentCTA: Config<MedicalProps>['components']['MedicalAppointm
     secondaryHref: '#doctors',
     phoneNumber: '+91 98765 43210',
   },
-  render: ({ headline, subtext, primaryLabel, primaryHref, secondaryLabel, secondaryHref, phoneNumber }) => (
+  render: ({
+    headline,
+    subtext,
+    primaryLabel,
+    primaryHref,
+    secondaryLabel,
+    secondaryHref,
+    phoneNumber,
+  }) => (
     <section className="py-12 md:py-20 px-6 bg-teal-600 text-white">
       <div className="mx-auto max-w-3xl text-center flex flex-col items-center gap-5">
         <h2 className="text-2xl md:text-4xl font-bold">{headline}</h2>
@@ -285,7 +293,10 @@ const MedicalAppointmentCTA: Config<MedicalProps>['components']['MedicalAppointm
         {phoneNumber ? (
           <p className="text-teal-200 text-sm">
             Or call us:{' '}
-            <a href={`tel:${phoneNumber.replace(/\s+/g, '')}`} className="font-semibold text-white hover:underline">
+            <a
+              href={`tel:${phoneNumber.replace(/\s+/g, '')}`}
+              className="font-semibold text-white hover:underline"
+            >
               {phoneNumber}
             </a>
           </p>
@@ -337,7 +348,9 @@ const MedicalDepartmentCards: Config<MedicalProps>['components']['MedicalDepartm
               >
                 <span className="text-3xl shrink-0">{icon}</span>
                 <div>
-                  <p className="font-semibold text-slate-900 group-hover:text-teal-700 transition">{name}</p>
+                  <p className="font-semibold text-slate-900 group-hover:text-teal-700 transition">
+                    {name}
+                  </p>
                   <p className="text-sm text-slate-500 mt-1">{desc}</p>
                 </div>
               </a>
@@ -352,55 +365,58 @@ const MedicalDepartmentCards: Config<MedicalProps>['components']['MedicalDepartm
 // ─── MedicalPatientTestimonials ───────────────────────────────────────────────
 // testimonials format: "Quote | Patient Name | Condition treated" per line
 
-const MedicalPatientTestimonials: Config<MedicalProps>['components']['MedicalPatientTestimonials'] = {
-  label: 'Patient Testimonials',
-  fields: {
-    sectionTitle: { type: 'text' },
-    sectionSubtitle: { type: 'textarea' },
-    testimonials: { type: 'textarea' },
-  },
-  defaultProps: {
-    sectionTitle: 'What Our Patients Say',
-    sectionSubtitle: "Real stories from people we've helped on their healing journey.",
-    testimonials: [
-      'The cardiac team saved my life. I am forever grateful. | Ramesh Nair | Heart Surgery',
-      'Best maternity care I could have asked for. | Deepa Krishnan | Maternity',
-      'My knee replacement went smoothly and recovery was fast. | Suresh Pillai | Orthopaedics',
-      'Very caring staff and world-class facilities. | Anu Thomas | General Medicine',
-    ].join('\n'),
-  },
-  render: ({ sectionTitle, sectionSubtitle, testimonials }) => {
-    const rows = parsePipeLines(testimonials, 2)
-    return (
-      <section className="py-12 md:py-20 px-6 bg-teal-50">
-        <div className="mx-auto max-w-5xl">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl md:text-3xl font-bold text-slate-900">{sectionTitle}</h2>
-            {sectionSubtitle ? (
-              <p className="mt-3 text-slate-500 max-w-2xl mx-auto">{sectionSubtitle}</p>
-            ) : null}
+const MedicalPatientTestimonials: Config<MedicalProps>['components']['MedicalPatientTestimonials'] =
+  {
+    label: 'Patient Testimonials',
+    fields: {
+      sectionTitle: { type: 'text' },
+      sectionSubtitle: { type: 'textarea' },
+      testimonials: { type: 'textarea' },
+    },
+    defaultProps: {
+      sectionTitle: 'What Our Patients Say',
+      sectionSubtitle: "Real stories from people we've helped on their healing journey.",
+      testimonials: [
+        'The cardiac team saved my life. I am forever grateful. | Ramesh Nair | Heart Surgery',
+        'Best maternity care I could have asked for. | Deepa Krishnan | Maternity',
+        'My knee replacement went smoothly and recovery was fast. | Suresh Pillai | Orthopaedics',
+        'Very caring staff and world-class facilities. | Anu Thomas | General Medicine',
+      ].join('\n'),
+    },
+    render: ({ sectionTitle, sectionSubtitle, testimonials }) => {
+      const rows = parsePipeLines(testimonials, 2)
+      return (
+        <section className="py-12 md:py-20 px-6 bg-teal-50">
+          <div className="mx-auto max-w-5xl">
+            <div className="text-center mb-10">
+              <h2 className="text-2xl md:text-3xl font-bold text-slate-900">{sectionTitle}</h2>
+              {sectionSubtitle ? (
+                <p className="mt-3 text-slate-500 max-w-2xl mx-auto">{sectionSubtitle}</p>
+              ) : null}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {rows.map(([quote, name, condition], i) => (
+                <figure
+                  key={i}
+                  className="bg-white rounded-xl p-6 shadow-sm border border-teal-100 flex flex-col gap-3"
+                >
+                  <blockquote className="text-slate-700 leading-relaxed">
+                    &ldquo;{quote}&rdquo;
+                  </blockquote>
+                  <figcaption className="flex flex-col">
+                    <span className="font-semibold text-slate-900">{name}</span>
+                    {condition ? (
+                      <span className="text-xs text-teal-600 font-medium">{condition}</span>
+                    ) : null}
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {rows.map(([quote, name, condition], i) => (
-              <figure
-                key={i}
-                className="bg-white rounded-xl p-6 shadow-sm border border-teal-100 flex flex-col gap-3"
-              >
-                <blockquote className="text-slate-700 leading-relaxed">&ldquo;{quote}&rdquo;</blockquote>
-                <figcaption className="flex flex-col">
-                  <span className="font-semibold text-slate-900">{name}</span>
-                  {condition ? (
-                    <span className="text-xs text-teal-600 font-medium">{condition}</span>
-                  ) : null}
-                </figcaption>
-              </figure>
-            ))}
-          </div>
-        </div>
-      </section>
-    )
-  },
-}
+        </section>
+      )
+    },
+  }
 
 // ─── MedicalInsuranceStrip ───────────────────────────────────────────────────
 // logos format: "Logo URL | Insurer Name" per line
@@ -429,7 +445,9 @@ const MedicalInsuranceStrip: Config<MedicalProps>['components']['MedicalInsuranc
       <section className="py-10 px-6 bg-white border-t border-b border-slate-100">
         <div className="mx-auto max-w-5xl flex flex-col items-center gap-6">
           {heading ? (
-            <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest">{heading}</p>
+            <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest">
+              {heading}
+            </p>
           ) : null}
           <div className="flex flex-wrap justify-center gap-6 items-center">
             {rows.map(([src, name], i) => (
@@ -467,11 +485,9 @@ const MedicalContactHours: Config<MedicalProps>['components']['MedicalContactHou
     address: '42, Healthcare Avenue\nMedical District, Bangalore – 560001\nKarnataka, India',
     phone: '+91 80 4567 8900',
     email: 'info@clinicname.in',
-    hours: [
-      'Monday – Friday | 8 AM – 8 PM',
-      'Saturday | 8 AM – 6 PM',
-      'Sunday | 9 AM – 1 PM',
-    ].join('\n'),
+    hours: ['Monday – Friday | 8 AM – 8 PM', 'Saturday | 8 AM – 6 PM', 'Sunday | 9 AM – 1 PM'].join(
+      '\n'
+    ),
     emergencyNote: '24/7 Emergency Services available',
   },
   render: ({ sectionTitle, address, phone, email, hours, emergencyNote }) => {
@@ -483,21 +499,33 @@ const MedicalContactHours: Config<MedicalProps>['components']['MedicalContactHou
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             <div className="flex flex-col gap-5">
               <div>
-                <p className="text-xs font-semibold text-teal-700 uppercase tracking-widest mb-1">Address</p>
+                <p className="text-xs font-semibold text-teal-700 uppercase tracking-widest mb-1">
+                  Address
+                </p>
                 <p className="text-slate-700 whitespace-pre-line">{address}</p>
               </div>
               {phone ? (
                 <div>
-                  <p className="text-xs font-semibold text-teal-700 uppercase tracking-widest mb-1">Phone</p>
-                  <a href={`tel:${phone.replace(/\s+/g, '')}`} className="text-slate-800 hover:text-teal-700 transition">
+                  <p className="text-xs font-semibold text-teal-700 uppercase tracking-widest mb-1">
+                    Phone
+                  </p>
+                  <a
+                    href={`tel:${phone.replace(/\s+/g, '')}`}
+                    className="text-slate-800 hover:text-teal-700 transition"
+                  >
                     {phone}
                   </a>
                 </div>
               ) : null}
               {email ? (
                 <div>
-                  <p className="text-xs font-semibold text-teal-700 uppercase tracking-widest mb-1">Email</p>
-                  <a href={`mailto:${email}`} className="text-slate-800 hover:text-teal-700 transition">
+                  <p className="text-xs font-semibold text-teal-700 uppercase tracking-widest mb-1">
+                    Email
+                  </p>
+                  <a
+                    href={`mailto:${email}`}
+                    className="text-slate-800 hover:text-teal-700 transition"
+                  >
                     {email}
                   </a>
                 </div>
@@ -509,7 +537,9 @@ const MedicalContactHours: Config<MedicalProps>['components']['MedicalContactHou
               ) : null}
             </div>
             <div>
-              <p className="text-xs font-semibold text-teal-700 uppercase tracking-widest mb-3">Opening Hours</p>
+              <p className="text-xs font-semibold text-teal-700 uppercase tracking-widest mb-3">
+                Opening Hours
+              </p>
               <table className="w-full text-sm">
                 <tbody>
                   {rows.map(([day, time], i) => (
@@ -565,7 +595,9 @@ const MedicalFAQ: Config<MedicalProps>['components']['MedicalFAQ'] = {
               <details key={i} className="group py-4">
                 <summary className="flex justify-between items-center cursor-pointer list-none">
                   <span className="font-medium text-slate-900">{question}</span>
-                  <span className="ml-4 shrink-0 text-teal-600 group-open:rotate-180 transition-transform">▾</span>
+                  <span className="ml-4 shrink-0 text-teal-600 group-open:rotate-180 transition-transform">
+                    ▾
+                  </span>
                 </summary>
                 <p className="mt-3 text-slate-600 leading-relaxed">{answer}</p>
               </details>
