@@ -60,7 +60,41 @@ jobs:
 
       - name: Fail on High/Critical
         working-directory: frontend
-        run: pnpm audit --audit-level=high
+        run: |
+          set -euo pipefail
+
+          # Waivered GHSA IDs — dev-only image-size advisories with Patched versions: <0.0.0.
+          # Remove waiver when image-size > 2.0.2 ships a fix.
+          # GHSA-w3rx-r6r6-pgpr — image-size ICNS DoS, dev-only (dated 2026-08-17)
+          # GHSA-5p2g-fcmc-qvqq — image-size JXL/HEIF DoS, dev-only (dated 2026-08-17)
+
+          AUDIT_FILE=$(mktemp)
+          SCRIPT_FILE=$(mktemp --suffix=.js)
+
+          pnpm audit --json > "$AUDIT_FILE" || true
+
+          cat > "$SCRIPT_FILE" << 'EOF'
+          const fs = require('fs');
+          const waivers = new Set(['GHSA-w3rx-r6r6-pgpr', 'GHSA-5p2g-fcmc-qvqq']);
+          const data = JSON.parse(fs.readFileSync(process.env.AUDIT_FILE, 'utf8'));
+          const advisories = data.advisories || {};
+          const failing = [];
+          for (const [key, adv] of Object.entries(advisories)) {
+            const sev = (adv.severity || '').toLowerCase();
+            if (sev !== 'high' && sev !== 'critical') continue;
+            const ghsas = (adv.identifiers && adv.identifiers.GHSA) || adv.ghsas || [key];
+            if (!ghsas.some(g => waivers.has(g))) {
+              failing.push(key + ': ' + (adv.title || '') + ' [' + adv.severity + ']');
+            }
+          }
+          if (failing.length) {
+            process.stderr.write('Non-waivered HIGH/CRITICAL advisories:\n' + failing.map(f => '  ' + f).join('\n') + '\n');
+            process.exit(1);
+          }
+          console.log('All HIGH/CRITICAL advisories are waivered. Audit passed.');
+          EOF
+
+          AUDIT_FILE="$AUDIT_FILE" node "$SCRIPT_FILE"
 
   audit-ai-services:
     name: Audit ai-services
