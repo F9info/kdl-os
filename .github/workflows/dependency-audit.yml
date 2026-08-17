@@ -63,10 +63,13 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Waivered GHSA IDs — dev-only image-size advisories with Patched versions: <0.0.0.
-          # Remove waiver when image-size > 2.0.2 ships a fix.
-          # GHSA-w3rx-r6r6-pgpr — image-size ICNS DoS, dev-only (dated 2026-08-17)
-          # GHSA-5p2g-fcmc-qvqq — image-size JXL/HEIF DoS, dev-only (dated 2026-08-17)
+          # Waivered GHSA IDs — dev-only transitive advisories with no upstream patched
+          # version (first_patched_version = null). Registry + justifications:
+          # docs/DEPENDENCY_TRIAGE.md → "Active security waivers" (KDL-460).
+          # GHSA-w3rx-r6r6-pgpr — image-size ICNS DoS, dev-only via @storybook/nextjs (review by 2026-11-17)
+          # GHSA-5p2g-fcmc-qvqq — image-size JXL/HEIF DoS, dev-only via @storybook/nextjs (review by 2026-11-17)
+          # GHSA-848j-6mx2-7j84 — elliptic risky crypto primitive (LOW; listed for the registry,
+          #   does not gate) — dev-only via node-polyfill-webpack-plugin (review by 2026-11-17)
 
           AUDIT_FILE=$(mktemp)
           SCRIPT_FILE=$(mktemp --suffix=.js)
@@ -75,7 +78,7 @@ jobs:
 
           cat > "$SCRIPT_FILE" << 'EOF'
           const fs = require('fs');
-          const waivers = new Set(['GHSA-w3rx-r6r6-pgpr', 'GHSA-5p2g-fcmc-qvqq']);
+          const waivers = new Set(['GHSA-w3rx-r6r6-pgpr', 'GHSA-5p2g-fcmc-qvqq', 'GHSA-848j-6mx2-7j84']);
           const data = JSON.parse(fs.readFileSync(process.env.AUDIT_FILE, 'utf8'));
           const advisories = data.advisories || {};
           const failing = [];
