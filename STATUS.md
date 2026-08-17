@@ -1,6 +1,22 @@
 <!-- ROLLING WINDOW: keep only the most recent entries here to minimise per-run context.
-     Prepend new entries at the top; move anything older than the window into .agents/STATUS_ARCHIVE.md.
+     Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
+
+## 2026-08-17 — KDL-437 Theme Engine rename: integration + browser gate + PR open, in_review (QA / Test Engineer)
+
+Branch `feat/kdl-437-theme-engine-rename` merges all three phases (A/B/C) against master. PR open for CEO/board review. DO NOT admin-merge — CI is billing-blocked org-wide (KDL-416).
+
+**Gate summary:**
+- Browser gate 5/5 PASS: sidebar "Theme Engine", /admin/theme-engine loads, not flooded, API routes renamed, RBAC accessible
+- Grep gate PASS: zero live code/config matches for `template.?engine`
+- API: `/api/template-engine/tokens` → 404; `/api/theme-engine/tokens` → 200
+- Migration applied: modules/permissions/owner_module/app_settings all renamed (expected counts 86/902/3910)
+
+**Reserved:** `template-engine` slug is now RESERVED (see .agents/DECISIONS.md D3). Future page/content template module must NOT use this slug.
+
+**Module registry updated:** slug `template-engine` → `theme-engine`. Re-sync kdl-module-tracker artifact.
+
+---
 
 ## 2026-07-17 — KDL-353 E1 Ink & Dawn palette + typography defaults seeded, PR #91 open (Backend Coder)
 - `theme-engine/schema/index.js`: Primary Ink palette, Highlight Dawn field, H1–H3 `'Poppins, Sora'` fallback all 4 devices.

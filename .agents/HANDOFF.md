@@ -1,3 +1,19 @@
+## 2026-08-17 — KDL-440 Phase C integration + browser gate + PR (QA / Test Engineer)
+
+**Scope:** Integration branch `feat/kdl-437-theme-engine-rename` merges BE (`feat/kdl-437-theme-engine-be`) + FE (`feat/kdl-437-theme-engine-fe`). Phase C browser gate + grep gate complete. PR open for CEO/board review.
+
+**Gate results:**
+- Browser gate (KDL-440 5-test Playwright suite): **5/5 PASS** — sidebar "Theme Engine", /admin/theme-engine loads, sidebar not flooded (<40 links), API routes renamed, /admin/theme-engine accessible
+- API route checks: `GET /api/template-engine/tokens → 404 ✓`, `GET /api/theme-engine/tokens → 200 ✓`
+- th-consume-gate renamed spec: (c), (e), (f) pass; (a), (b), (d) have pre-existing failures (networkidle timeout + Tailwind CSS specificity — not caused by rename)
+- Final grep gate: `git grep -iE "template.?engine"` returns 47 lines — all in DECISIONS.md (D3 reserved note), HANDOFF.md/HANDOFF_ARCHIVE.md (historical), backend/prisma/migrations (SQL WHERE clauses), template-engine.html (prototype). Zero live code or config matches.
+
+**Module registry change:** slug `template-engine` → `theme-engine`, name "Template Engine" → "Theme Engine". kdl-module-tracker artifact should be re-synced.
+
+**Reserved:** The name `template-engine` is now RESERVED and unused — future page/content template module must use a different slug (see .agents/DECISIONS.md D3).
+
+---
+
 ## 2026-07-18 — KDL-385 a11y skip-to-main-content (Frontend Coder)
 
 **Done:** Added skip navigation link (WCAG 2.4.1 Level A) — PR #106 open for review.
