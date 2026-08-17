@@ -2,6 +2,27 @@
      Prepend new entries at the top; move anything older than the window into HANDOFF_ARCHIVE.md.
      Full history: .agents/HANDOFF_ARCHIVE.md (and git log). -->
 
+## 2026-08-17 — KDL-438 Template Engine → Theme Engine rename complete (Backend Coder)
+
+**Scope:** Backend + DB migration + shared docs. Branch: `feat/kdl-437-theme-engine-be`.
+
+**Changes:**
+- `backend/src/modules/theme-engine/` — renamed from `template-engine` via git mv (history preserved)
+- `module.json`, `seed.js`, `service.js`, `controller.js`, `uninstall.js`, `routes.js`, `kdl191-gate.mjs` all updated
+- Redis token cache key prefix: `te:tokens:*` → `th:tokens:*` (old keys expire at TTL=600s)
+- App settings keys: `template_engine.*` → `theme_engine.*`
+- Prisma migration: `20260817000000_rename_template_engine_to_theme_engine` (modules, permissions, owner_module, app_settings)
+- Shared docs: TEMPLATE_ENGINE_ARCH.md → THEME_ENGINE_ARCH.md; D3 decision recorded
+- Deleted junk dups: `uninstall 2.js`, `kdl191-gate 2.mjs`
+
+**Phase C gates:** `prisma validate` exit 0; vitest 95/95; grep returns 0 live matches.
+
+**Deploy note:** Redis `te:tokens:*` flush on deploy (or let TTL expire naturally).
+
+**Next:** Frontend sibling task to rename frontend components; Code Reviewer to verify PR.
+
+---
+
 ## 2026-07-17 — KDL-353 E1 Ink & Dawn palette + typography fallback seeded into TE defaults (Backend Coder)
 
 **Scope:** `backend/src/modules/theme-engine/schema/index.js`
