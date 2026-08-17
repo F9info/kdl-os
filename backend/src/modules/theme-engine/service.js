@@ -254,10 +254,23 @@ export async function upsertValues(platform, typeId, values, actorId) {
   // Load all fields for the pane
   const fields = await prisma.settingField.findMany({
     where: { type_id: typeId },
-    select: { id: true, slug: true, field_name: true, input_type: true, options: true },
+    select: { id: true, slug: true, field_name: true, input_type: true, options: true, locked_by: true },
   });
   const byId = new Map(fields.map((f) => [f.id, f]));
   const bySlug = new Map(fields.map((f) => [f.slug, f]));
+
+  const lockedFields = fields.filter((f) => f.locked_by);
+  if (lockedFields.length > 0) {
+    const { getModuleStatus } = await import('../../middleware/module-gate.js');
+    for (const lf of lockedFields) {
+      const status = await getModuleStatus(lf.locked_by);
+      if (status === 'ENABLED') {
+        const err = new Error(`Settings are read-only: locked by module "${lf.locked_by}"`);
+        err.status = 409;
+        throw err;
+      }
+    }
+  }
 
   // The whole pane's fields (including "Custom Fonts") save in one request —
   // pull any custom font names out of this same batch so Font Family selects

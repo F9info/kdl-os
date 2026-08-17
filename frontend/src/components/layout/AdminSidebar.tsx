@@ -26,6 +26,8 @@ import {
   Sparkles,
   CloudUpload,
   HardDrive,
+  Palette,
+  LayoutTemplate,
 } from 'lucide-react'
 import { useUiStore } from '@/stores/ui.store'
 import { useIsMobile } from '@/hooks/useIsMobile'
@@ -48,6 +50,9 @@ const MODULE_ICON_MAP: Record<string, React.ElementType> = {
   Shield,
   Users,
   Cog,
+  Palette,
+  LayoutTemplate,
+  Sparkles,
 }
 
 // Slug of the setting field that holds the app logo (set under any Type).

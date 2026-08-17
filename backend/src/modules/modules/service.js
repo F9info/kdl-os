@@ -10,6 +10,28 @@ import { resolvePermissionEntry, permissionModuleLabel } from '../../shared/modu
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MODULES_DIR = join(__dirname, '..');
 
+async function checkConflicts(slug, manifest) {
+  const allEnabled = await prisma.module.findMany({ where: { status: 'ENABLED' }, select: { slug: true } });
+  const enabledSlugs = new Set(allEnabled.map((m) => m.slug));
+
+  for (const blocker of manifest.conflictsWith ?? []) {
+    if (enabledSlugs.has(blocker)) {
+      const err = new Error(`Cannot enable "${slug}": conflicts with active module "${blocker}"`);
+      err.status = 409;
+      throw err;
+    }
+  }
+
+  for (const [mSlug, mf] of loadedManifests) {
+    if (mSlug === slug) continue;
+    if ((mf.conflictsWith ?? []).includes(slug) && enabledSlugs.has(mSlug)) {
+      const err = new Error(`Cannot enable "${slug}": conflicts with active module "${mSlug}"`);
+      err.status = 409;
+      throw err;
+    }
+  }
+}
+
 function checkEnvVars(manifest) {
   const missing = (manifest.env ?? []).filter((key) => !process.env[key]);
   if (missing.length > 0) {
@@ -92,6 +114,7 @@ export async function installModule(slug, actorId) {
     }
   }
 
+  await checkConflicts(slug, manifest);
   checkEnvVars(manifest);
 
   // H3: resolve the module seed before opening the transaction. The seed must
@@ -179,6 +202,8 @@ export async function enableModule(slug, actorId) {
       throw err;
     }
   }
+
+  if (manifest) await checkConflicts(slug, manifest);
 
   const updated = await prisma.module.update({
     where: { slug },

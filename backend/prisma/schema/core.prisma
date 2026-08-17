@@ -144,6 +144,7 @@ model SettingField {
   category_id String?
   sort        Int       @default(0)
   owner_module String?
+  locked_by   String?
   created_at  DateTime  @default(now())
   updated_at  DateTime  @updatedAt
 
@@ -155,6 +156,7 @@ model SettingField {
   @@index([category_id])
   @@index([sort])
   @@index([owner_module])
+  @@index([locked_by])
   @@map("setting_fields")
 }
 

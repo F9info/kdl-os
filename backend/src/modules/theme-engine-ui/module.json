@@ -1,0 +1,16 @@
+{
+  "slug": "theme-engine-ui",
+  "name": "Theme Engine UI",
+  "version": "1.0.0",
+  "description": "Admin nav and screens for Theme Engine — toggleable",
+  "core": false,
+  "apiPrefix": "/api/theme-engine-ui",
+  "permissions": [],
+  "nav": [
+    { "label": "Theme Engine", "path": "/admin/theme-engine", "icon": "Palette", "permission": "theme-engine:view" }
+  ],
+  "dependsOn": ["theme-engine"],
+  "conflictsWith": [],
+  "queues": [],
+  "env": []
+}
