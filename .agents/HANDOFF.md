@@ -1,3 +1,19 @@
+## 2026-08-17 — KDL-447 Phase 0 BACKEND: conflictsWith + engine/UI split + locked_by + Puck persistence (Backend Coder)
+
+**Branch:** `kdl-446-product-modes-arch` — commit `6f9e3e7`
+
+**Done:** All 4 deliverables on `kdl-446-product-modes-arch`:
+1. `conflictsWith` — manifest schema + symmetric bidirectional 409 in installModule/enableModule
+2. Engine/UI split — theme-engine→core (no nav), +theme-engine-ui; page-builder→core (no nav), +page-builder-ui; template-engine stub (conflictsWith + seed/uninstall for locked_by)
+3. locked_by — migration (`ALTER TABLE setting_fields ADD COLUMN locked_by TEXT`) + 409 gate in theme-engine upsertValues
+4. Builder persistence — migration creating `builder_pages` table (service/controller/routes already existed)
+
+**Gates:** prisma validate exit 0; backend vitest 886/886 exit 0; ai-services vitest 21/21 exit 0.
+
+**Next:** KDL-448 (frontend child: nav hide + locked_by badge + browser gate) must complete before CEO opens the single KDL-446 PR.
+
+---
+
 ## 2026-08-17 — KDL-440 Phase C integration + browser gate + PR (QA / Test Engineer)
 
 **Scope:** Integration branch `feat/kdl-437-theme-engine-rename` merges BE (`feat/kdl-437-theme-engine-be`) + FE (`feat/kdl-437-theme-engine-fe`). Phase C browser gate + grep gate complete. PR open for CEO/board review.
