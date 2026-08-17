@@ -102,3 +102,13 @@
 **Reason:** The Prisma migration and all historical activity_log rows carry the old slug. Reusing `template-engine` for a different module would create ambiguous audit history and risk accidental DB matches on old data.
 
 **Log:** Recorded as required by KDL-438 issue scope.
+
+## PM-001 — Template Engine, Theme Engine & Page Builder are PRODUCT MODES, not peer modules (2026-08-17)
+
+**Decision:** Adopt `.agents/PRODUCT_MODES_ARCH.md` (board, Cowork 2026-08-17; source of truth KDL-446). Exclusivity between Template Engine and Theme-Engine+Page-Builder is a PACKAGING decision enforced at the product-surface layer, NOT an implementation fork. Layer 1 ENGINES (theme-engine, page-builder) are always installed and are the single source of truth; Layer 2 PRODUCT SURFACES (Mode A "Studio" = template-engine owns nav / Theme Engine UI read-only; Mode B "Toolkit" = engines' own UIs) are mutually exclusive. Mode switching is non-destructive both ways because all data always lives in the engines' tables. Phase 0 (KDL-446/447/448) adds: 2a `conflictsWith` manifest field + symmetric service-layer enforcement; 2b engine/UI manifest split (`theme-engine`+`theme-engine-ui`, `page-builder`+`page-builder-ui`); 2c `locked_by` read-only surface enforced server-side (409); 2d Page Builder backend persistence (pages table, draft/publish, RBAC). Board decisions D1 (one product, mode switch), D2 (real AI brand inference via ai-services), D3 (credits = internal metering v1).
+
+**Rejected alternative:** three peer modules → two token compilers, two block libraries, two export paths that diverge; security fixes land in one not the other; mode change becomes a destructive migration; all Theme Engine hardening (KDL-209, KDL-274/M12, `[data-theme]`, font-URL allowlist) reimplemented and re-audited.
+
+**Open questions (unresolved, board owns):** OQ-1 source-app IA must come from the board before the template-engine ARCH doc; OQ-2 the `template-engine` slug conflicts with DECISIONS.md D3's permanent reservation — board must lift D3 or rename the Studio surface (CEO recommends slug `studio`). Neither blocks Phase 0.
+
+**Log:** Authored from KDL-446 task description (board drafted locally, not committed to git). Committed FIRST, before any Phase 0 code, so every later agent boots with it.
