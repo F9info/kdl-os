@@ -53,12 +53,12 @@ Required changes:
 1. **Migration:** add `Type.owner_module` (nullable, indexed). Also add it to `Category` and `SettingField` (same meaning) so the generic Types/Categories/Fields admin lists can filter consistently. **MUST also backfill existing rows** — the column is nullable so rows seeded before it existed keep `owner_module = NULL` and still show in the sidebar; a data migration must `UPDATE … SET owner_module='theme-engine' WHERE owner_module IS NULL AND slug LIKE 'webapp.%'/'tv.%'/'android.%'/'ios.%'`. (PR #31 missed this; added by migration `20260714120000_backfill_owner_module_theme_engine`.)
 2. **Seed:** set `owner_module = 'theme-engine'` on every Type/Category/SettingField the engine creates.
 3. **`types` list endpoint** (`backend/src/modules/types/service.js`): default to standalone only — `where.owner_module = null` unless an explicit `ownerModule` query param is passed. Do the same in `categories` and `setting-fields` list services.
-4. **`AdminSidebar.tsx`:** the `sidebar-types` query is already unfiltered → it now only receives standalone Types (from the endpoint change). No per-slug hacks. Verify the only Template-Engine entry is the manifest nav item.
+4. **`AdminSidebar.tsx`:** the `sidebar-types` query is already unfiltered → it now only receives standalone Types (from the endpoint change). No per-slug hacks. Verify the only Theme Engine entry is the manifest nav item.
 5. **Generic settings pages** (`/admin/settings/types|categories|fields`, `/admin/settings/view/[slug]`): exclude module-owned rows (same endpoint default), so an admin can't accidentally edit engine internals through the generic UI.
 
 **Platform switcher labels** (match the prototype's `PLATFORMS`): show **Web App · TV · Android Native · iOS Native** (v1 shows "Android"/"iOS" — relabel to "Android Native"/"iOS Native"). This is the in-page switcher at the top of the Theme Engine page; it is the ONLY place platforms are chosen.
 
-**Gate:** with the module enabled and seeded, the admin sidebar shows exactly one Template-Engine item; opening it shows the 4 platform options; switching platform swaps the pane sidebar; no `/admin/settings/view/{webapp.*|tv.*|android.*|ios.*}` entries appear anywhere in the global menu.
+**Gate:** with the module enabled and seeded, the admin sidebar shows exactly one Theme Engine item; opening it shows the 4 platform options; switching platform swaps the pane sidebar; no `/admin/settings/view/{webapp.*|tv.*|android.*|ios.*}` entries appear anywhere in the global menu.
 
 ---
 
@@ -211,7 +211,7 @@ Resolution rules: value = `setting_values.value` if present else `SettingField.v
 
 **Required — build the consumer (this is the missing half of the module):**
 1. **Token CSS variables are the single source of truth for app chrome.** `compileTokens` already emits `--{token}` custom properties (dark set in `:root`, light in `[data-theme="light"]`). The app's colors/spacing/typography must resolve to these `var(--…)` (map the existing Tailwind/theme tokens onto them, or inject an override stylesheet).
-2. **A runtime `TemplateEngineThemeProvider`** (wrap the admin app, alongside `next-themes`): on load, `GET /api/theme-engine/tokens?platform=webapp` (public via `optionalAuthenticate` — no auth needed to boot the theme) and inject the returned CSS into a `<style id="te-tokens">` in `<head>` (or set each var on `document.documentElement`). Re-fetch/re-inject when the dark/light toggle changes. Cache-bust after a save (invalidate + refetch) so an admin sees their change without a hard reload.
+2. **A runtime `ThemeEngineProvider`** (wrap the admin app, alongside `next-themes`): on load, `GET /api/theme-engine/tokens?platform=webapp` (public via `optionalAuthenticate` — no auth needed to boot the theme) and inject the returned CSS into a `<style id="te-tokens">` in `<head>` (or set each var on `document.documentElement`). Re-fetch/re-inject when the dark/light toggle changes. Cache-bust after a save (invalidate + refetch) so an admin sees their change without a hard reload.
 3. **Platform mapping:** the web admin/app consumes `platform=webapp`; native clients (TV/Android/iOS) consume their own platform's tokens via the same endpoint (JSON form). The web app must NOT read tv/android/ios tokens.
 4. **Save → reflect loop:** after `POST /values`, the token cache for that platform is invalidated (already specified); the provider should refetch so the change is visible immediately (at minimum on next load).
 
@@ -254,7 +254,7 @@ Port `theme-engine.html` into `frontend/src/app/admin/theme-engine/page.tsx`, wr
 |---|---|---|
 | C1 | Port UI to `admin/theme-engine/page.tsx` under `<ModuleGuard>`; wire load/save/reset to API; keep previews | `tsc` strict; RTL: platform switch, dirty→save, reset |
 | C2 | Review → E2E (edit a Web App button color → Save → `GET /tokens` shows it; disable→re-enable module leaves no orphaned Types/values) → docs | PASS + Playwright exit 0; disable/enable round-trip clean |
-| C3 | **Runtime theming consumer** (§Runtime theming): `TemplateEngineThemeProvider` fetches `/tokens?platform=webapp`, injects `--` vars, refetches on theme toggle + after save; app chrome resolves to those vars; fix hex-field keyboard input + double-save | E2E: change Web App primary colour → Save → reload → app chrome shows new colour; revert restores it |
+| C3 | **Runtime theming consumer** (§Runtime theming): `ThemeEngineProvider` fetches `/tokens?platform=webapp`, injects `--` vars, refetches on theme toggle + after save; app chrome resolves to those vars; fix hex-field keyboard input + double-save | E2E: change Web App primary colour → Save → reload → app chrome shows new colour; revert restores it |
 
 ---
 
