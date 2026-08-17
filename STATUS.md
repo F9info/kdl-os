@@ -2,6 +2,11 @@
      Prepend new entries at the top; move anything older than the window into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+## 2026-08-17 — KDL-442 frontend vuln overrides PR #151 MERGED to master (Frontend Coder)
+- PR #151 merged (`1e6192b`): 8/10 HIGH CVEs cleared. 2 unfixable image-size waivers remain (dev-only, no upstream fix).
+- Prod audit: 0 HIGH. Full audit: 2 HIGH (waivers). CI: green (lint + typecheck + lockfile-guard).
+- Follow-ups: KDL-443 (Security review of waivers), KDL-444 (cron waiver mechanism).
+
 ## 2026-07-17 — KDL-275 security hardening PR #55 open (Security & Compliance Engineer)
 - Closed KDL-270 findings M5-M8, M10, M11, M14, L13, L14, L16, L17: CORS fail-fast allowlists (backend + ai-services), CSRF origin check on cookie auth, 500-masking outside development, generic errors from ai controllers, `${VAR:?}` compose creds + 127.0.0.1 port binds + Redis requirepass, SSE single-use Redis ticket auth (JWT out of query string, HS256 pinned), Zod strict validation on all notifications mutating routes, scoped 10mb transcribe limit, Meili scoped-admin-key docs, S3 error taxonomy.
 - Verified: backend targeted suites 29/29, ai-services 21/21, all compose files validate, fail-fast confirmed.

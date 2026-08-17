@@ -1,3 +1,23 @@
+## 2026-08-17 — KDL-442 Frontend dep-audit: 8/10 HIGH advisories cleared — PR #151 MERGED (Frontend Coder)
+
+**Done:** PR #151 merged to master (`1e6192b`) — `fix(security): clear 8/10 HIGH advisories with pnpm overrides`.
+
+**Overrides added** (`frontend/package.json` → `pnpm.overrides`):
+- `sharp@<0.35.0 → ^0.35.3` — runtime CVE-2026-33327/33328/35590/35591 (**prod-facing**)
+- `fast-uri@<3.1.4 → ^3.1.5` — GHSA-v2hh-gcrm-f6hx (dev, storybook)
+- `brace-expansion@<1.1.18 → ^1.1.18` — GHSA-mh99/rgw5 (dev, storybook + eslint)
+- `undici@<7.29.0 → ^7.29.0` — GHSA-4cwx-7wf7-3272 (dev, vitest/jsdom)
+- `js-yaml@<4.3.1 → ^4.3.1` — GHSA-5p4m-2wfm-xmqj (dev, storybook + eslint)
+
+**Waivers (2 remaining HIGH):** `image-size@1.2.1` via `@storybook/nextjs` —
+GHSA-w3rx-r6r6-pgpr + GHSA-5p2g-fcmc-qvqq. "Patched versions: <0.0.0" (no upstream fix as of 2026-08-17). Dev-only; never shipped to prod.
+
+**Verified:** `pnpm audit --prod → 0 vulns`, `pnpm build` → sharp@0.35.3 in standalone, `tsc --noEmit` exit 0, vitest 147/147.
+
+**Branch:** `fix/kdl-442-vuln-overrides` (based on dependabot bump for next@15.5.23), PR targets master.
+
+---
+
 ## 2026-07-18 — KDL-385 a11y skip-to-main-content (Frontend Coder)
 
 **Done:** Added skip navigation link (WCAG 2.4.1 Level A) — PR #106 open for review.
