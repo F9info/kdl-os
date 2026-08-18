@@ -62,6 +62,7 @@
     "seed": "node prisma/seed.js"
   },
   "overrides": {
-    "@hono/node-server": "^1.19.13"
+    "@hono/node-server": "^1.19.13",
+    "deepmerge-ts": "^8.0.0"
   }
 }
