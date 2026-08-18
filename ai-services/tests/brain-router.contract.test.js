@@ -1,11 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const claudeBrainMock = vi.hoisted(() => vi.fn());
+const writeFileMock = vi.hoisted(() => vi.fn());
 const openrouterBrainMock = vi.hoisted(() => vi.fn());
 const checkBudgetMock = vi.hoisted(() => vi.fn());
 const recordSpendMock = vi.hoisted(() => vi.fn());
 const auditLoggerMock = vi.hoisted(() => vi.fn());
 
+vi.mock('fs/promises', () => ({
+  writeFile: writeFileMock,
+  readFile: vi.fn().mockResolvedValue(''),
+}));
 vi.mock('../src/brains/claude.js', async (importOriginal) => ({
   ...(await importOriginal()),
   claudeBrain: claudeBrainMock,
@@ -112,10 +117,15 @@ describe('brainRouter routing contract (KDL-488)', () => {
     expect(claudeBrainMock).not.toHaveBeenCalled();
   });
 
-  it('survives an auditLogger failure and still returns the brain response', async () => {
+  it('survives an auditLogger failure, logging it to MANUAL_TASKS.md instead', async () => {
     auditLoggerMock.mockRejectedValue(new Error('audit db down'));
     const result = await brainRouter('task', 'HIGH');
     expect(result).toEqual(claudeResponse);
+    expect(writeFileMock).toHaveBeenCalledWith(
+      expect.stringContaining('MANUAL_TASKS.md'),
+      expect.stringContaining('audit db down'),
+      'utf8',
+    );
   });
 });
 
