@@ -162,7 +162,7 @@ The ledger has **no soft-mutation path**. Three layers, outermost first:
    ```sql
    CREATE OR REPLACE FUNCTION credits_ledger_append_only() RETURNS trigger AS $$
    BEGIN
-     RAISE EXCEPTION 'credit_ledger_entries is append-only (%% blocked)', TG_OP;
+     RAISE EXCEPTION 'credit_ledger_entries is append-only (% blocked)', TG_OP;
    END;
    $$ LANGUAGE plpgsql;
 
@@ -281,8 +281,11 @@ reserving 60:
    **blocks** — not fails — on the same lock.
 2. G1 reads 100, checks 100 ≥ 60, writes `RESERVE −60` with `balance_after_mc = 40`, updates the
    balance row, commits, releasing the lock.
-3. G2's `SELECT ... FOR UPDATE` now returns the **committed** value 40 (the lock wait forces
-   read-after-commit regardless of isolation level, because the read happens under the lock). Check
+3. G2's `SELECT ... FOR UPDATE` now returns the **committed** value 40. This relies on
+   **READ COMMITTED** (Postgres and Prisma default), where a lock wait re-reads the row version
+   committed by the lock holder; credits transactions MUST run at this level. (Under
+   REPEATABLE READ the same schedule would instead abort G2 with a serialization error — still no
+   double-spend, but a different failure mode than specified here.) Check
    40 ≥ 60 fails → `INSUFFICIENT_CREDITS`, transaction rolls back, nothing was written.
 
 Double-spend would require two transactions to both read a pre-debit balance, which would require
@@ -337,7 +340,10 @@ const brand = await withCreditHold(
   async () => {
     const r = await aiServices.inferTypography(input);       // AI_SERVICES_ARCH interface
     return { result: r, actualMc: usdToMc(r.cost ?? 0),
-             usage: { provider: r.provider, model: r.model, ...r.usage, costUsd: r.cost } };
+             // AI_SERVICES usage is snake_case — map explicitly, never spread:
+             usage: { provider: r.provider, model: r.model,
+                      inputTokens: r.usage.input_tokens, outputTokens: r.usage.output_tokens,
+                      costUsd: r.cost } };
   });
 ```
 
@@ -351,6 +357,21 @@ Notes for the AI Services agent:
   only the failed stage's hold.
 - The existing `auditLogger` in ai-services stays; it logs AI telemetry, the ledger logs money. The
   `session_id`/job id should go in both so an operator can join them.
+
+**Known divergence from the in-flight brand-kit spec (must be reconciled before C2).**
+`BRAND_KIT_AI_ARCH.md` on branch `arch/kdl-475-brand-kit-ai-contract` (unmerged at time of writing)
+currently proposes a different seam: a `recordBrandInferenceUsage(...)` decorator *inside*
+ai-services — post-hoc usage recording with no holds, no settle/release, and no idempotency keys —
+and an `InferenceEnvelope` exposing `estimatedCostUsd` plus camelCase usage fields rather than the
+raw `{ cost, usage }` shape consumed above. This spec's position: the preflight gate (§3) requires
+the hold lifecycle, so brand-kit stages must call `withCreditHold` in the backend service layer;
+a record-after-the-fact decorator cannot enforce a balance check and is not an acceptable
+substitute. Envelope mapping when KDL-475's shape is adopted: `estimatedCostUsd` feeds the
+*estimate* (`estimateMc = usdToMc(estimatedCostUsd)`), the settled `actualMc` comes from the final
+actual cost (`usdToMc(costUsd)`, or the envelope's actual-cost field if it grows one);
+`source: 'fallback'` (Claude-subscription path, no marginal cost) settles at `actualMc: 0` with
+usage still recorded, per the `cost: null` rule above. Whichever PR lands second reconciles §5 and
+the envelope; this dependency is also noted in §8.
 
 ---
 
@@ -421,7 +442,7 @@ Each PR < 400 non-generated lines, one concern, rebased on master, backend-works
 | PR | Contents | Gates | Depends on |
 |---|---|---|---|
 | **C1 — schema** | `prisma/schema/credits.prisma`; migration incl. append-only trigger + revoke SQL (`--create-only`, hand-edited — new precedent, call out in PR body) | `prisma validate` exit 0; migration applies clean on dev DB; trigger-rejection smoke (SQL `UPDATE` fails) | **projects PR-1** (`Project` model) — C1 is blocked until it merges |
-| **C2 — service core** | `service.js` (`applyEntries` lock path, `grantCredits`, `reserveCredits`, `settleHold`, `releaseHold`, `usdToMc`, `CreditError`); unit tests + **real-Postgres concurrency test** (two parallel reserves → exactly one wins; Σ ledger == balance) + append-only regression test (§2.3) | vitest green; concurrency test green against dev DB | C1 |
+| **C2 — service core** | `service.js` (`applyEntries` lock path, `grantCredits`, `reserveCredits`, `settleHold`, `releaseHold`, `usdToMc`, `CreditError`); unit tests + **real-Postgres concurrency test** (two parallel reserves → exactly one wins; Σ ledger == balance) + append-only regression test (§2.3). Tests are pre-split to keep C2 under the 400-line cap: `service.test.js` (unit, mocked Prisma) in C2; if the cap is still at risk, the two integration tests (`concurrency.integration.test.js`, `append-only.integration.test.js`) split into an immediate **C2b** test-only PR gated identically | vitest green; concurrency test green against dev DB | C1 |
 | **C3 — lifecycle edges** | `withCreditHold`, reap-on-touch, late-settlement `ADJUST`, overage policy + activity-log alert; tests for crash/expiry/late-settle/idempotent-retry matrix | vitest green | C2 |
 | **C4 — HTTP + ops** | routes/controller/Zod schemas/`module.json`; grant/adjust/force-release + reconciliation endpoints; activity logging; seed (AppSettings + dev grant); README | vitest green; manual curl transcript in PR | C3; RBAC perms seeded |
 
