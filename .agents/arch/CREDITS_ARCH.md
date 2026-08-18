@@ -13,8 +13,10 @@ generation carry a real per-call cost, so metering ships before any AI-driven mo
   Phase C1 (below) is **blocked on projects PR-1** (the migration that creates `projects`).
 - **`brand-kit` AI spec (KDL-475, referenced in this issue's text as KDL-451; target doc
   `.agents/arch/BRAND_KIT_AI_ARCH.md`)** — in progress by the AI Services agent, not merged. §5
-  *proposes* the metering hook shape for that spec to adopt; the shape is coordinated via this doc and
-  the KDL-476 PR review, and any divergence must be resolved in whichever PR merges second.
+  *proposes* the metering hook shape for that spec to adopt. The seam itself is now ruled: the CEO
+  ruling on KDL-451 (2026-08-18, relayed to KDL-476) fixed the brand-kit choke point
+  (`recordUsage`, BRAND-KIT SPEC v1.1 §7) and made price-table versioning binding — see the §5
+  reconciliation note.
 
 **Stack constraints (LOCKED):** Prisma singleton from `backend/src/config/database.js`; Zod for all
 request validation; `successResponse`/`errorResponse` from `backend/src/shared/utils/response.js`;
@@ -315,8 +317,10 @@ reserveCredits({ projectId, actorId, source, estimateMc, idempotencyKey })
   → { holdId, expiresAt, balanceAfterMc }
 
 // Success path. `usage` is stored (scrubbed) in ledger metadata.
+// `priceTableVersion` is REQUIRED (Zod) whenever `costUsd` is present — see the
+// price-table-versioning note below.
 settleHold({ holdId, actualMc, idempotencyKey,
-             usage: { provider, model, inputTokens, outputTokens, costUsd } })
+             usage: { provider, model, inputTokens, outputTokens, costUsd, priceTableVersion } })
   → { entryId, balanceAfterMc, overage: boolean }
 
 // Failure path.
@@ -339,39 +343,55 @@ const brand = await withCreditHold(
     idempotencyKey: `bk:${jobId}:typography` },
   async () => {
     const r = await aiServices.inferTypography(input);       // AI_SERVICES_ARCH interface
-    return { result: r, actualMc: usdToMc(r.cost ?? 0),
+    // Actual cost = returned usage × the versioned price table (CEO ruling on KDL-451);
+    // never blocks on the provider reporting a real cost:
+    const { costUsd, priceTableVersion } = priceTable.costFromUsage(r.model, r.usage);
+    return { result: r, actualMc: usdToMc(costUsd),
              // AI_SERVICES usage is snake_case — map explicitly, never spread:
              usage: { provider: r.provider, model: r.model,
                       inputTokens: r.usage.input_tokens, outputTokens: r.usage.output_tokens,
-                      costUsd: r.cost } };
+                      costUsd, priceTableVersion } };
   });
 ```
 
 Notes for the AI Services agent:
-- AI_SERVICES_ARCH already returns `{ content, usage, cost, model }` from OpenRouter calls and
-  `cost: null` for Claude-subscription calls. `cost: null` settles at `actualMc: 0` with usage still
-  recorded and `metadata.provider = 'claude_subscription'` — the ledger keeps the *fact* that a
-  zero-marginal-cost call happened; if the board later prices subscription calls, that's a rate-table
-  change, not a schema change.
+- **Price-table versioning (CEO ruling on KDL-451, 2026-08-18 — binding).** The USD cost of an
+  inference is computed by the brand-inference controller as *returned token usage × a price table*
+  (mirroring `openrouterBrain`), and that price table lives in a **single versioned config module**
+  owned by ai-services — credits does not own or duplicate it. Credits' obligation is the stamp:
+  **every cost-bearing metering record carries the price-table version it was computed under.**
+  `usage.priceTableVersion` is required by the settle Zod schema whenever `costUsd` is present and is
+  persisted in ledger `metadata` (§7 whitelist). Without the stamp, historical ledger rows silently
+  change meaning the first time a provider changes pricing; with it, every row stays auditable
+  against the exact table version that priced it. (Stored as a whitelisted metadata key, not a
+  column: it is an audit attribute, not a hot query dimension; if operators later need "all rows
+  priced under vN", promoting it to an indexed column is an additive migration — the append-only
+  rows themselves never change.)
+- Claude-subscription (`claudeBrain`) calls do **not** settle at 0 (supersedes the round-1
+  `cost: null → actualMc: 0` position). Per the same ruling, the controller computes
+  `estimatedCostUsd` from returned usage × the price table without blocking on `claudeBrain`
+  returning a real provider cost, so credits always receives a non-null, estimate-derived cost:
+  settle at `usdToMc(estimatedCostUsd)` with the version stamped and `metadata.costBasis`
+  distinguishing `'estimated'` (price-table-derived) from `'provider'` (provider-billed, e.g.
+  OpenRouter's returned cost) so later reconciliation against provider invoices can tell them apart.
 - One hold per provider call (per DAG stage), not per user request — partial failure then releases
   only the failed stage's hold.
 - The existing `auditLogger` in ai-services stays; it logs AI telemetry, the ledger logs money. The
   `session_id`/job id should go in both so an operator can join them.
 
-**Known divergence from the in-flight brand-kit spec (must be reconciled before C2).**
-`BRAND_KIT_AI_ARCH.md` on branch `arch/kdl-475-brand-kit-ai-contract` (unmerged at time of writing)
-currently proposes a different seam: a `recordBrandInferenceUsage(...)` decorator *inside*
-ai-services — post-hoc usage recording with no holds, no settle/release, and no idempotency keys —
-and an `InferenceEnvelope` exposing `estimatedCostUsd` plus camelCase usage fields rather than the
-raw `{ cost, usage }` shape consumed above. This spec's position: the preflight gate (§3) requires
-the hold lifecycle, so brand-kit stages must call `withCreditHold` in the backend service layer;
-a record-after-the-fact decorator cannot enforce a balance check and is not an acceptable
-substitute. Envelope mapping when KDL-475's shape is adopted: `estimatedCostUsd` feeds the
-*estimate* (`estimateMc = usdToMc(estimatedCostUsd)`), the settled `actualMc` comes from the final
-actual cost (`usdToMc(costUsd)`, or the envelope's actual-cost field if it grows one);
-`source: 'fallback'` (Claude-subscription path, no marginal cost) settles at `actualMc: 0` with
-usage still recorded, per the `cost: null` rule above. Whichever PR lands second reconciles §5 and
-the envelope; this dependency is also noted in §8.
+**Reconciliation with BRAND-KIT SPEC v1.1 (KDL-471 document `spec`, §7) — supersedes the round-1
+divergence note.** The ruled brand-kit metering choke point is
+`recordUsage(projectId, 'brand.inference', { estimatedCostUsd, model, usage })`, deliberately shaped
+so credits can decorate it with a ledger append **and** a preflight balance check at the same call
+site. Composition: the preflight gate (§3) still requires the hold lifecycle, so the credits-aware
+decoration of that seam is `withCreditHold` around the inference call — `reserveCredits` fires on
+entry (pre-call estimate: model max/typical tokens × the same price table), `settleHold` fires where
+`recordUsage` records (actual = `usdToMc(estimatedCostUsd)` from returned usage, stamped with
+`priceTableVersion`), `releaseHold` on throw. `recordUsage` itself remains brand-kit-side telemetry;
+the credits decoration is additive at the same call site and neither spec depends on the other's
+internals. Mapping: `estimatedCostUsd` → the settled actual (and the same price table feeds the
+pre-call reserve estimate); envelope camelCase usage fields → the settle `usage` object verbatim,
+plus `priceTableVersion`.
 
 ---
 
@@ -389,9 +409,11 @@ Everything a billing module needs later already exists; nothing here changes whe
 3. **Enum growth is additive.** New entry types (`PURCHASE_REVERSAL` for refunds/chargebacks, …) are
    Postgres `ALTER TYPE ... ADD VALUE` — no rewrite, no backfill. Refunds are new negative entries,
    never mutations, which is exactly what the append-only trigger already enforces.
-4. **Pricing lives outside.** `credits.usd_per_credit` is a metering conversion, not a price. Package
-   pricing, tax, currency are entirely the future module's tables; the ledger stays currency-free
-   (µc only) so no money-representation migration is ever needed.
+4. **Pricing lives outside.** `credits.usd_per_credit` is a metering conversion, not a price. The
+   provider price table (token → USD) is a versioned config module owned by ai-services (§5); package
+   pricing, tax, currency are entirely the future module's tables. The ledger stays currency-free
+   (µc only, with `priceTableVersion` stamps for audit) so no money-representation migration is ever
+   needed.
 5. **Gate is already the enforcement point.** Plan/quota logic later composes in front of
    `reserveCredits` (e.g. "free tier: max N generations/day") without touching the ledger.
 
@@ -418,7 +440,8 @@ route schemas; frontend treats amounts as strings).
 **Activity log** (existing `activity_logs`, `module: 'credits'`): `grant`, `adjust`,
 `hold_force_release`, and `settle_overage` (fired when overage exceeds `credits.max_overage_pct`).
 **PII scrubbing:** ledger `metadata` and activity-log `properties` accept a **whitelist only** —
-amounts, ids, model names, token counts, provider, `costUsd`, `external_ref`. Prompt text, generated
+amounts, ids, model names, token counts, provider, `costUsd`, `priceTableVersion`, `costBasis`,
+`external_ref`. Prompt text, generated
 content, and user input never enter the ledger or the activity log (the ai-services PII scrubber
 guards the AI side; credits simply never accepts free-form payloads). `source` is a code-defined tag,
 not user input.
