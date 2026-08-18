@@ -3,7 +3,8 @@
 **Issue:** KDL-485 (OQ-1 output, feeds the KDL-486 orchestrator ARCH). **Status:** PROPOSED — for review.
 **Governing decisions:** PM-001 (`.agents/DECISIONS.md:106-115`, OQ-1 resolution at `:112`),
 D1 (`.agents/PRODUCT_MODES_ARCH.md:131`), §3 Mode table (`:56-77`).
-**Verified at:** master `3369250` — every `file:line` citation below was read at that commit.
+**Verified at:** master `3369250` — every `file:line` citation below was read at that commit, and all of
+§1–§3's citations were re-verified unchanged at master `b7200ad` (KDL-491 review, 2026-08-18).
 
 > **What this doc is.** Per PM-001's OQ-1 resolution, the canonical source-app IA for the Studio
 > surface is **this repo's actual admin nav assembly** — not the unobtained prototype's `nav.ts` /
@@ -214,7 +215,7 @@ anything not listed as extensible is LOCKED by default.
 | L5 | Mode A suppression set is exactly `["theme-engine-ui", "page-builder-ui"]` — growing it is a board decision | `template-engine/module.json:13` |
 | L6 | Studio's sidebar presence is exactly one entry rooted at `/admin/template-engine`; stage navigation is in-surface, never sidebar items | §3.1, §5 |
 | L7 | Mechanism bindings: `conflictsWith` = surface exclusivity; `locked_by` + server 409 = read-only; module status = hidden-but-reserved (`enabled:false`). No parallel mechanisms. | §2.2, §3.2 |
-| L8 | The `template-engine` slug (board lifted D3, chose it over `studio` — OQ-2, KDL-453 2026-08-18). The DECISIONS.md D3→RESCINDED amendment + data-hygiene plan are owned by KDL-486, not here. | `DECISIONS.md:112` |
+| L8 | The `template-engine` slug (board lifted D3, chose it over `studio` — OQ-2, board interaction `2ee691cb` resolved 2026-08-18T07:56:05Z on KDL-453, the latest and most specifically-scoped of the three board answers). **Anchor caveat:** `DECISIONS.md:112` still records OQ-2 as *unresolved* — the board's answer arrived by interaction and the doc has not been amended yet, so the board thread is the authority until then. The DECISIONS.md D3→RESCINDED amendment + data-hygiene plan (old Module-15 migration and historical `activity_log` rows carry this slug) are owned by KDL-486, not here. | KDL-453 interaction `2ee691cb`; `DECISIONS.md:112` (stale, amendment pending) |
 
 ### Extensible (no board decision needed)
 
