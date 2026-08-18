@@ -95,13 +95,15 @@
 
 **Gate evidence:** `backend/scripts/kdl191-gate.mjs` on a fresh DB — install seeds 86/902/3910 via the hook alone, enable→disable→uninstall leaves 0/0/0/0 and no module/permission rows, reinstall seeds cleanly again; exit 0.
 
-## D3 — `template-engine` slug RESERVED (2026-08-17)
+## D3 — `template-engine` slug RESERVED (2026-08-17) — **RESCINDED 2026-08-18**
 
-**Decision:** The slug `template-engine` is permanently reserved. No new module may claim it. The module has been renamed to `theme-engine` (KDL-437/KDL-438). If a future page/content template module is ever built, it MUST use a different slug (e.g. `content-templates`, `page-templates`).
+**Decision (original):** The slug `template-engine` is permanently reserved. No new module may claim it. The module has been renamed to `theme-engine` (KDL-437/KDL-438). If a future page/content template module is ever built, it MUST use a different slug (e.g. `content-templates`, `page-templates`).
 
-**Reason:** The Prisma migration and all historical activity_log rows carry the old slug. Reusing `template-engine` for a different module would create ambiguous audit history and risk accidental DB matches on old data.
+**Reason (original):** The Prisma migration and all historical activity_log rows carry the old slug. Reusing `template-engine` for a different module would create ambiguous audit history and risk accidental DB matches on old data.
 
-**Log:** Recorded as required by KDL-438 issue scope.
+**RESCINDED (2026-08-18, board, KDL-453 / OQ-2):** The board lifted D3 and released the slug to the Studio orchestrator module (KDL-453/KDL-486). The question was answered three times on KDL-453 — interaction `13e9aa18` (07:54:43Z, keep D3 / name the surface `studio`), interaction `2ee691cb` (07:56:05Z, lift D3), and the final tie-breaker `d326e28f` (resolved 07:58:36Z, option `template-engine-lift-d3`), which is authoritative and supersedes the earlier two. The audit-history ambiguity D3 guarded against is **explicitly accepted** by the board; the mitigation is the data-hygiene plan in `.agents/arch/TEMPLATE_ENGINE_ARCH.md` §8 (cutover instant = the rename migration's `finished_at` in `_prisma_migrations`, plus a single query-scope helper that stops new-module code matching pre-cutover `activity_logs` rows). Old rows are NOT rewritten — the rename migration's "history is left untouched" stance stands.
+
+**Log:** Recorded as required by KDL-438 issue scope; rescission recorded by KDL-486.
 
 ## PM-001 — Template Engine, Theme Engine & Page Builder are PRODUCT MODES, not peer modules (2026-08-17)
 
@@ -109,6 +111,6 @@
 
 **Rejected alternative:** three peer modules → two token compilers, two block libraries, two export paths that diverge; security fixes land in one not the other; mode change becomes a destructive migration; all Theme Engine hardening (KDL-209, KDL-274/M12, `[data-theme]`, font-URL allowlist) reimplemented and re-audited.
 
-**Open questions:** OQ-1 **RESOLVED (2026-08-18, KDL-453)** — board answered "this repo's own nav.ts + EXPORT_SUBSECTIONS is canonical." Neither literally exists in this repo (`nav.ts` and `EXPORT_SUBSECTIONS` are terms quoted from an unobtained external prototype in this doc's own §8, not repo code); the board explicitly did not choose "external prototype" or "design fresh," so intent is read as: this repo's ACTUAL current admin nav assembly is the canonical source-app IA for template-engine's Studio nav — `frontend/src/components/layout/AdminSidebar.tsx` (`GROUPS`/`FLAT_ITEMS`, the grouped-subsection pattern), `frontend/src/hooks/useModules.ts` (merges enabled non-core modules' nav), and each module's `module.json` `nav[]` array. OQ-2 (unresolved, board owns): the `template-engine` slug conflicts with DECISIONS.md D3's permanent reservation — board must lift D3 or rename the Studio surface (CEO recommends slug `studio`); re-raised as its own board_only interaction on KDL-453. Neither blocked Phase 0.
+**Open questions:** OQ-1 **RESOLVED (2026-08-18, KDL-453)** — board answered "this repo's own nav.ts + EXPORT_SUBSECTIONS is canonical." Neither literally exists in this repo (`nav.ts` and `EXPORT_SUBSECTIONS` are terms quoted from an unobtained external prototype in this doc's own §8, not repo code); the board explicitly did not choose "external prototype" or "design fresh," so intent is read as: this repo's ACTUAL current admin nav assembly is the canonical source-app IA for template-engine's Studio nav — `frontend/src/components/layout/AdminSidebar.tsx` (`GROUPS`/`FLAT_ITEMS`, the grouped-subsection pattern), `frontend/src/hooks/useModules.ts` (merges enabled non-core modules' nav), and each module's `module.json` `nav[]` array. OQ-2 **RESOLVED (2026-08-18, KDL-453)** — the board lifted D3 and chose the slug `template-engine` for the Studio orchestrator (final tie-breaker interaction `d326e28f`, resolved 07:58:36Z, superseding the conflicting `13e9aa18`/`2ee691cb` answers; see the amended D3 entry above and TEMPLATE_ENGINE_ARCH.md §0/§8 for the accepted audit-history ambiguity and its data-hygiene plan). Neither blocked Phase 0.
 
 **Log:** Authored from KDL-446 task description (board drafted locally, not committed to git). Committed FIRST, before any Phase 0 code, so every later agent boots with it. OQ-1 resolution logged per KDL-453.
