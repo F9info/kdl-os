@@ -130,7 +130,8 @@ Contract invariants (tested in §6):
 
 Execution goes through a new `openrouterStructured()` brain function beside `openrouterBrain`
 (`ai-services/src/brains/openrouter.js`), built on LangChain.js: `ChatOpenAI` from `@langchain/openai`
-(already a dependency, `ai-services/package.json`) pointed at `OPENROUTER_BASE_URL`, with
+(new dependency — `ai-services/package.json` currently has only `@langchain/core`; add
+`@langchain/openai` alongside it) pointed at `OPENROUTER_BASE_URL`, with
 `.withStructuredOutput(zodSchema)` doing schema-enforced JSON. It reuses the existing gates verbatim:
 `checkBudget()` before the call, `recordSpend()` + `auditLogger()` after
 (`ai-services/src/orchestrator/budget-tracker.js:9-20`, `brain-router.js:28-36`).
