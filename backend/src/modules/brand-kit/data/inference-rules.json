@@ -1,0 +1,146 @@
+{
+  "rulesVersion": "v1",
+  "description": "Offline fallback inference rules — used when AI inference is unavailable (F-codes §4.4). These rules are a reasonable first-principles table, not a port of the prototype (OQ-A resolved: prototype source is unavailable).",
+  "rules": [
+    {
+      "industry": ["technology", "tech", "software", "saas", "it", "digital", "ai", "ml", "data"],
+      "typography": {
+        "heading": { "family": "Inter", "weights": [600, 700], "fallbackStack": "Inter, system-ui, sans-serif" },
+        "body": { "family": "Inter", "weights": [400, 500], "fallbackStack": "Inter, system-ui, sans-serif" },
+        "scaleRatio": 1.250
+      },
+      "tone": {
+        "voice": "Clear, precise, and forward-looking — communicates complexity with confidence and avoids jargon.",
+        "adjectives": ["innovative", "reliable", "precise", "efficient", "scalable"],
+        "dos": ["Use active voice", "Lead with outcomes", "Quantify where possible", "Be concise"],
+        "donts": ["Avoid buzzwords", "Don't overpromise", "Avoid passive constructions", "Don't use unexplained acronyms"]
+      }
+    },
+    {
+      "industry": ["healthcare", "health", "medical", "pharma", "hospital", "clinic", "wellness"],
+      "typography": {
+        "heading": { "family": "Source Serif 4", "weights": [600], "fallbackStack": "Source Serif 4, Georgia, serif" },
+        "body": { "family": "Source Sans 3", "weights": [400, 500], "fallbackStack": "Source Sans 3, Helvetica Neue, sans-serif" },
+        "scaleRatio": 1.200
+      },
+      "tone": {
+        "voice": "Empathetic, trustworthy, and evidence-based — speaks to patients and professionals alike.",
+        "adjectives": ["compassionate", "trusted", "precise", "caring", "expert"],
+        "dos": ["Use inclusive language", "Cite evidence", "Prioritise clarity", "Lead with patient benefit"],
+        "donts": ["Avoid alarmist language", "Don't trivialise conditions", "Avoid unexplained medical jargon", "Don't make unqualified health claims"]
+      }
+    },
+    {
+      "industry": ["finance", "fintech", "banking", "insurance", "investment", "wealth", "accounting"],
+      "typography": {
+        "heading": { "family": "Playfair Display", "weights": [700], "fallbackStack": "Playfair Display, Georgia, serif" },
+        "body": { "family": "Lato", "weights": [400, 700], "fallbackStack": "Lato, Helvetica Neue, sans-serif" },
+        "scaleRatio": 1.250
+      },
+      "tone": {
+        "voice": "Authoritative, transparent, and measured — projects stability and expertise without arrogance.",
+        "adjectives": ["trustworthy", "secure", "transparent", "strategic", "proven"],
+        "dos": ["Use precise figures", "Acknowledge risk", "Be transparent about fees", "Lead with trust signals"],
+        "donts": ["Avoid speculation", "Don't use slang", "Don't downplay risk", "Avoid hype"]
+      }
+    },
+    {
+      "industry": ["education", "edtech", "training", "learning", "school", "university", "tutoring"],
+      "typography": {
+        "heading": { "family": "Nunito", "weights": [700, 800], "fallbackStack": "Nunito, system-ui, sans-serif" },
+        "body": { "family": "Nunito", "weights": [400, 600], "fallbackStack": "Nunito, system-ui, sans-serif" },
+        "scaleRatio": 1.250
+      },
+      "tone": {
+        "voice": "Encouraging, accessible, and curious — makes learning feel achievable and exciting.",
+        "adjectives": ["inspiring", "accessible", "curious", "supportive", "engaging"],
+        "dos": ["Use second person", "Celebrate progress", "Simplify without condescending", "Use positive framing"],
+        "donts": ["Avoid gatekeeping language", "Don't be prescriptive", "Avoid passive voice", "Don't use academic jargon unnecessarily"]
+      }
+    },
+    {
+      "industry": ["retail", "ecommerce", "fashion", "lifestyle", "consumer", "fmcg", "grocery"],
+      "typography": {
+        "heading": { "family": "Raleway", "weights": [700, 800], "fallbackStack": "Raleway, system-ui, sans-serif" },
+        "body": { "family": "Raleway", "weights": [400, 500], "fallbackStack": "Raleway, system-ui, sans-serif" },
+        "scaleRatio": 1.333
+      },
+      "tone": {
+        "voice": "Vibrant, relatable, and aspirational — makes customers feel good about their choices.",
+        "adjectives": ["fresh", "bold", "approachable", "stylish", "value-driven"],
+        "dos": ["Lead with benefits", "Use sensory language", "Be conversational", "Celebrate the customer"],
+        "donts": ["Avoid corporate speak", "Don't bury the offer", "Avoid complex sentences", "Don't be exclusive"]
+      }
+    },
+    {
+      "industry": ["food", "restaurant", "hospitality", "catering", "beverage", "cafe"],
+      "typography": {
+        "heading": { "family": "Merriweather", "weights": [700], "fallbackStack": "Merriweather, Georgia, serif" },
+        "body": { "family": "Open Sans", "weights": [400, 600], "fallbackStack": "Open Sans, Helvetica Neue, sans-serif" },
+        "scaleRatio": 1.250
+      },
+      "tone": {
+        "voice": "Warm, indulgent, and genuine — makes people hungry and welcome.",
+        "adjectives": ["warm", "authentic", "indulgent", "welcoming", "handcrafted"],
+        "dos": ["Use sensory descriptors", "Tell the story of ingredients", "Be personal", "Evoke atmosphere"],
+        "donts": ["Avoid cold or clinical language", "Don't over-qualify", "Avoid corporate formats", "Don't be generic"]
+      }
+    },
+    {
+      "industry": ["construction", "real estate", "property", "infrastructure", "engineering"],
+      "typography": {
+        "heading": { "family": "Roboto Condensed", "weights": [700], "fallbackStack": "Roboto Condensed, Arial Narrow, sans-serif" },
+        "body": { "family": "Roboto", "weights": [400, 500], "fallbackStack": "Roboto, Helvetica Neue, sans-serif" },
+        "scaleRatio": 1.200
+      },
+      "tone": {
+        "voice": "Solid, expert, and delivery-focused — lets quality and track record speak.",
+        "adjectives": ["dependable", "expert", "durable", "delivery-focused", "professional"],
+        "dos": ["Lead with track record", "Quantify scale and timeline", "Use industry-standard terminology correctly", "Be direct"],
+        "donts": ["Avoid empty superlatives", "Don't understate risk", "Avoid jargon for non-specialist audiences", "Don't use passive voice for outcomes"]
+      }
+    },
+    {
+      "industry": ["legal", "law", "compliance", "consulting", "advisory", "professional services"],
+      "typography": {
+        "heading": { "family": "EB Garamond", "weights": [600], "fallbackStack": "EB Garamond, Georgia, serif" },
+        "body": { "family": "Source Sans 3", "weights": [400, 600], "fallbackStack": "Source Sans 3, Helvetica Neue, sans-serif" },
+        "scaleRatio": 1.200
+      },
+      "tone": {
+        "voice": "Precise, authoritative, and confidential — every word chosen with care.",
+        "adjectives": ["authoritative", "discreet", "precise", "strategic", "principled"],
+        "dos": ["Define terms on first use", "Acknowledge complexity", "Use structured arguments", "Project confidence"],
+        "donts": ["Avoid vague promises", "Don't use informal register", "Avoid excessive hedging", "Don't trivialise legal risk"]
+      }
+    },
+    {
+      "industry": ["ngo", "nonprofit", "charity", "social", "impact", "community", "development"],
+      "typography": {
+        "heading": { "family": "Nunito", "weights": [700], "fallbackStack": "Nunito, system-ui, sans-serif" },
+        "body": { "family": "Lato", "weights": [400, 400], "fallbackStack": "Lato, system-ui, sans-serif" },
+        "scaleRatio": 1.250
+      },
+      "tone": {
+        "voice": "Purposeful, human, and urgent — connects the cause to the reader's values.",
+        "adjectives": ["purposeful", "compassionate", "transparent", "community-driven", "hopeful"],
+        "dos": ["Lead with impact", "Use real stories", "Be transparent about outcomes", "Speak to shared values"],
+        "donts": ["Avoid poverty porn tropes", "Don't create saviour narratives", "Avoid bureaucratic language", "Don't guilt-trip"]
+      }
+    },
+    {
+      "industry": ["__default__"],
+      "typography": {
+        "heading": { "family": "Inter", "weights": [600, 700], "fallbackStack": "Inter, system-ui, sans-serif" },
+        "body": { "family": "Inter", "weights": [400, 500], "fallbackStack": "Inter, system-ui, sans-serif" },
+        "scaleRatio": 1.250
+      },
+      "tone": {
+        "voice": "Professional, clear, and approachable — communicates value with confidence.",
+        "adjectives": ["professional", "reliable", "clear", "friendly", "credible"],
+        "dos": ["Be direct", "Lead with benefits", "Use active voice", "Speak to the customer's goal"],
+        "donts": ["Avoid jargon", "Don't be generic", "Avoid passive voice", "Don't bury the key message"]
+      }
+    }
+  ]
+}

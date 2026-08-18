@@ -96,7 +96,6 @@ Key deliverables:
 ---
 
 ## 2026-08-17 — KDL-460: waived + dismissed 3 unpatchable dev-only Dependabot alerts (Security & Compliance Engineer)
-
 **Branch:** `security/kdl-460-waivers` — PR #155
 
 **Done:**
