@@ -215,7 +215,7 @@ anything not listed as extensible is LOCKED by default.
 | L5 | Mode A suppression set is exactly `["theme-engine-ui", "page-builder-ui"]` — growing it is a board decision | `template-engine/module.json:13` |
 | L6 | Studio's sidebar presence is exactly one entry rooted at `/admin/template-engine`; stage navigation is in-surface, never sidebar items | §3.1, §5 |
 | L7 | Mechanism bindings: `conflictsWith` = surface exclusivity; `locked_by` + server 409 = read-only; module status = hidden-but-reserved (`enabled:false`). No parallel mechanisms. | §2.2, §3.2 |
-| L8 | The `template-engine` slug (board lifted D3, chose it over `studio` — OQ-2, board interaction `2ee691cb` resolved 2026-08-18T07:56:05Z on KDL-453, the latest and most specifically-scoped of the three board answers). **Anchor caveat:** `DECISIONS.md:112` still records OQ-2 as *unresolved* — the board's answer arrived by interaction and the doc has not been amended yet, so the board thread is the authority until then. The DECISIONS.md D3→RESCINDED amendment + data-hygiene plan (old Module-15 migration and historical `activity_log` rows carry this slug) are owned by KDL-486, not here. | KDL-453 interaction `2ee691cb`; `DECISIONS.md:112` (stale, amendment pending) |
+| L8 | The `template-engine` slug (board lifted D3, chose it over `studio` — OQ-2). The board answered three times on KDL-453: `13e9aa18` (07:54:43Z, *studio*) conflicted with `2ee691cb` (07:56:05Z, *lift D3*), and the explicit FINAL tie-breaker `d326e28f` (board_only, resolved 2026-08-18T07:58:36Z) settled it: *template-engine, lift D3, audit-history ambiguity accepted*. **Anchor caveat:** `DECISIONS.md:112` still records OQ-2 as *unresolved* — the board's answer arrived by interaction and the doc has not been amended yet, so the board thread is the authority until then. The DECISIONS.md D3→RESCINDED amendment + data-hygiene plan (old Module-15 migration and historical `activity_log` rows carry this slug) are owned by KDL-486, not here. | KDL-453 interaction `d326e28f` (FINAL tie-breaker; supersedes `2ee691cb`/`13e9aa18`); `DECISIONS.md:112` (stale, amendment pending) |
 
 ### Extensible (no board decision needed)
 
@@ -225,7 +225,7 @@ anything not listed as extensible is LOCKED by default.
 | E2 | Adding icon names to `MODULE_ICON_MAP` (module icons are limited to its 13 entries; unknown names fall back to `Package`) | `AdminSidebar.tsx:42-56,299` |
 | E3 | New active Types creating type leaves — dynamic by design | `AdminSidebar.tsx:179-194` |
 | E4 | Additive children inside existing `GROUPS` (existing order preserved) | `AdminSidebar.tsx:82-146` |
-| E5 | Everything below `/admin/template-engine/*` — the Studio-internal IA is owned by the KDL-486 orchestrator ARCH and evolves without touching the sidebar | §5 |
+| E5 | Everything below `/admin/template-engine/*` — the Studio-internal IA is owned by the KDL-486 orchestrator ARCH and evolves without touching the sidebar, within the frozen §5 surface contract (S1–S4 and the `/{stage-slug}` route tail are not E5-extensible) | §5 |
 
 ## 5. The 9 DAG stages mapped onto surfaces
 
