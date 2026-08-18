@@ -1,3 +1,15 @@
+## 2026-08-18 — KDL-485: STUDIO_IA.md — canonical source-app IA for the template-engine surface (Frontend Architect)
+
+**Branch:** `docs/kdl-485-studio-ia` — docs-only
+
+**Done:** `.agents/arch/STUDIO_IA.md` (OQ-1 output, per PM-001 resolution): extracted the real admin nav tree at master `3369250` with file:line cites (`AdminSidebar.tsx` `FLAT_ITEMS`/`GROUPS`, `useModules.ts` `nonCoreNav`, module `nav[]`); ruled prototype `enabled:false` ≙ module registry status DISABLED/INSTALLED (no per-entry flag); stated the Mode A boundary (+1 sidebar entry `/admin/template-engine`, −2 via `conflictsWith`, everything else untouched, non-destructive Mode B restore); L1–L8 LOCKED vs E1–E5 extensible freeze table; 9-stage → surface mapping with a stage-list-agnostic contract (single sidebar entry, deep-linkable `/{stage-slug}` routes, in-surface stepper).
+
+**Gaps flagged (§6):** G1 the 9-stage list is enumerated NOWHERE in the repo (only the count at `PRODUCT_MODES_ARCH.md:158`) — KDL-486 must fix the canonical list; G2 manifest nav can't express subsections (intentional, don't extend); G3 core manifests' inert `nav[]` has drifted from rendered truth; G4 CommandPalette omits module entries (Studio unreachable via palette in Mode A); G5 no sidebar progress affordance (kept in-surface deliberately).
+
+**Next:** Code Reviewer reviews the PR (review child issue filed); KDL-486 (Backend Architect) consumes this doc and owns the canonical stage list + D3→RESCINDED hygiene.
+
+---
+
 ## 2026-08-17 — KDL-460: waived + dismissed 3 unpatchable dev-only Dependabot alerts (Security & Compliance Engineer)
 
 **Branch:** `security/kdl-460-waivers` — PR #155
