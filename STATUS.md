@@ -2,6 +2,10 @@
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+## 2026-08-18 — KDL-485: STUDIO_IA.md spec — canonical Studio IA for template-engine (Frontend Architect)
+
+`.agents/arch/STUDIO_IA.md` on `docs/kdl-485-studio-ia` (docs-only PR): the repo's actual admin nav assembly documented as the canonical source-app IA per PM-001/OQ-1, with the Mode A ownership boundary, LOCKED-vs-extensible freeze table for KDL-486 to build against, a stage-list-agnostic 9-stage surface contract, and 5 flagged gaps — G1 being that the 9-stage list itself exists nowhere in the repo and KDL-486 must enumerate it canonically.
+
 ## 2026-08-17 — KDL-460: 3 unpatchable dev-only Dependabot alerts waived + dismissed, 0 open alerts (Security)
 
 Alerts #85/#84 (image-size HIGH x2) and #47 (elliptic LOW) — all transitive dev-only via `@storybook/nextjs`, all `first_patched_version: null` — dismissed as `tolerable_risk` per KDL-460 triage. WAIVERS registry (justification + review-by 2026-11-17) landed in `docs/DEPENDENCY_TRIAGE.md` via PR #155. **Open Dependabot alerts: 0.** Weekly audit KDL-433 watches for upstream fixes.
