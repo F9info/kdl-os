@@ -1,8 +1,8 @@
 # TEMPLATE_ENGINE_ARCH — the `template-engine` orchestrator (Studio surface)
 
 **Issue:** KDL-486 (ARCH spec deliverable; parent KDL-453, Template Engine follow-on #5, last in
-sequence). **Status:** PROPOSED — for review. §7 freezes against STUDIO_IA.md as delivered by
-KDL-485 (PR #168); if that PR changes before merge, §7 must be re-checked against the merged text.
+sequence). **Status:** PROPOSED — for review. §7 freezes against the **merged** STUDIO_IA.md
+(KDL-485, PR #168, master merge `144d6c76`) — reconciled against the merged text 2026-08-18.
 **Governing decisions:** PRODUCT_MODES_ARCH §2–4 (thin orchestrator, drives-not-owns), D1/D2/D3,
 DECISIONS.md PM-001, D3 (RESCINDED — see §0/§8), STUDIO_IA.md §4 (LOCKED nav contract), this doc's own §0.
 **Sequencing:** `projects` (KDL-449) → `credits` (KDL-450) → `brand-kit` (KDL-451) → `collateral`
@@ -329,7 +329,9 @@ withdrawn).
 - **Deep-linkable stage routes (S2).** `/admin/template-engine/projects/{projectId}/{stage-slug}`,
   with `{stage-slug}` = §3's slug column (`intake`, `palette`, `inference`, `approval`, `guidelines`,
   `collateral`, `website`, `preflight`, `export`). Everything under `/admin/template-engine/*` is
-  Studio-internal IA and owned by this doc (E5).
+  Studio-internal IA and owned by this doc (E5) — **within the frozen §5 surface contract**: S1–S4
+  and the `/{stage-slug}` route tail are not E5-extensible (merged E5 wording), and §3/§7 here stay
+  inside them.
 - **In-surface stepper (S3, S4).** The stage navigation is an ordered 9-step stepper rendered inside
   the surface. Step display state maps from `TemplateEngineStage.status` + the server gate:
   `locked` (gate fails — shown disabled **with the blocking reason from the 409 payload**),
