@@ -145,6 +145,17 @@ Execution goes through a new `openrouterStructured()` brain function beside `ope
 Model ids are env-overridable (`BRANDKIT_MODEL_STRUCTURED`, `BRANDKIT_MODEL_COPY`) — swapping a model
 is a config change, not an interface change (§1 stability rule).
 
+**Provider and model are both selectable, not hardcoded.** `BRANDKIT_MODEL_STRUCTURED` /
+`BRANDKIT_MODEL_COPY` accept any OpenRouter-routable model id (`<provider>/<model>`, e.g.
+`openai/gpt-4o-mini`, `google/gemini-2.5-flash`) — the defaults above (Anthropic models) are a
+recommendation, not a constraint, so an operator can pick a different underlying provider or model
+per call type without a code change. What is fixed by the locked stack (KDL-475) is the transport:
+OpenRouter's single endpoint via `ChatOpenAI`, never a direct provider SDK. **This whole model-backed
+path is inert without a real key**: `OPENROUTER_API_KEY` must be a genuine key, not the KDL-262
+placeholder `local` — until one is supplied, every call short-circuits to `F1_NO_KEY` and resolves
+through the deterministic offline fallback (§4). Supplying a real key is what turns the model path on;
+no other config change is required.
+
 **Why these models.** Typography and tone are *constrained selection/structured-generation* tasks: the
 hard part is instruction-following and valid JSON, not creativity — Haiku-class models do this reliably
 at ~1/10th the cost of frontier models, and temperature 0 + few-shot makes output near-deterministic.
