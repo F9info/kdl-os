@@ -1,97 +1,254 @@
 /**
- * Stage driver registry — template-engine orchestrator (KDL-501).
+ * Stage driver registry — template-engine orchestrator (KDL-501 / KDL-509).
  *
  * Each driver is responsible for calling the downstream module's public API
  * for that stage. Drivers MUST NOT contain business logic — they are thin
- * HTTP adapter shims that translate the stage context into an API call and
+ * adapter shims that translate the stage context into a service call and
  * return { outputRef } on success, or throw a named error on failure.
  *
- * Phase 1 note: brand-kit, collateral, and credits are not yet built. All
- * drivers that call those modules throw UPSTREAM_NOT_BUILT (503) so the DAG
- * state machine and gating logic can be tested independently of the upstream
- * build status. Replace each stub with a real HTTP call once the module ships.
- *
- * theme-engine and page-builder ARE built; their drivers make real calls.
+ * Phase 2 wiring status (KDL-509):
+ *   wired:   intake, palette, inference, approval, collateral, website, preflight, export
+ *   stubbed: guidelines — brand-kit Phase 1 ships no PDF render endpoint yet
  */
 
-function notBuilt(stageName) {
-  const err = new Error(`UPSTREAM_NOT_BUILT — ${stageName} driver's upstream module is not yet built (KDL-501 Phase 1 stub)`);
-  err.status = 503;
-  err.code = 'UPSTREAM_NOT_BUILT';
-  return err;
+import {
+  getOrCreateKit,
+  extractPaletteForKit,
+  inferBrandKit,
+  getKit,
+  getTokens,
+} from '../../brand-kit/service.js';
+
+import { upsertValues } from '../../theme-engine/service.js';
+
+import {
+  listAssets,
+  createAsset,
+  preflightAsset,
+  renderAsset,
+} from '../../collateral/service.js';
+
+import { createPage, getPage } from '../../page-builder/service.js';
+
+import { prisma } from '../../config/database.js';
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function namedErr(msg, status, code) {
+  return Object.assign(new Error(msg), { status, code });
 }
 
+// Resolves the theme-engine SettingType DB id from the brand-kit token payload's
+// type_id string (which is a slug convention, not a raw DB id — see brand-kit/tokens.js).
+// Falls back to the raw string so upsertValues returns soft errors rather than throw.
+async function resolveThemeTypeId(platform, tokenTypeId) {
+  const slug = `${platform}.${tokenTypeId}`;
+  const row = await prisma.type.findFirst({ where: { slug }, select: { id: true } });
+  return row?.id ?? tokenTypeId;
+}
+
+// ── Drivers ───────────────────────────────────────────────────────────────────
+
 /**
- * intake — calls brand-kit intake API.
- * Accepts: company name, industry, tagline, logo upload ref.
- * Prerequisite: brand-kit module (KDL-451) built.
+ * intake — initialises (or retrieves) the brand-kit for the project.
+ * The user fills in company data and uploads the logo via the brand-kit UI
+ * before advancing this stage.
  */
 const intakeDriver = {
-  async execute() { throw notBuilt('intake'); },
-};
-
-/**
- * palette — calls brand-kit deterministic palette extraction.
- * Prerequisite: brand-kit module (KDL-451) built.
- */
-const paletteDriver = {
-  async execute() { throw notBuilt('palette'); },
-};
-
-/**
- * inference — calls brand-kit → ai-services brand inference.
- * Prerequisite: brand-kit module (KDL-451) + BRAND_KIT_AI_ARCH.md implementation built.
- */
-const inferenceDriver = {
-  async execute() { throw notBuilt('inference'); },
-};
-
-/**
- * approval — human sign-off stage.
- * Exit action: GET /api/brand-kit/:projectId/tokens → POST /api/theme-engine/values.
- * theme-engine IS built; brand-kit is not yet.
- * Prerequisite: brand-kit module (KDL-451) built.
- */
-const approvalDriver = {
-  async execute() { throw notBuilt('approval'); },
-};
-
-/**
- * guidelines — calls brand-kit brand-guidelines PDF render.
- * Prerequisite: brand-kit module (KDL-451) built.
- */
-const guidelinesDriver = {
-  async execute() { throw notBuilt('guidelines'); },
-};
-
-/**
- * collateral — calls collateral module preflight + render endpoints.
- * collateral module IS built (KDL-505). Driver calls POST /api/collateral/assets/:id/render
- * for each asset in the run's collateral stage outputRef, collecting named preflight errors.
- * Full implementation wired once the stage context carries per-asset IDs from the approval stage.
- * For now, preflight is delegated to the collateral module via its public API.
- */
-const collateralDriver = {
-  async execute({ run }) {
-    // Phase 1: assert collateral module is reachable; the orchestrator drive loop
-    // will pass per-asset render instructions via stage input once approval sets them.
-    const assetIds = run.stages?.find((s) => s.stage === 'COLLATERAL')?.inputRef?.assetIds ?? [];
-    return { outputRef: { rendered: [], skipped: assetIds.length === 0 ? 'no_assets_in_context' : null } };
+  async execute({ projectId }) {
+    const kit = await getOrCreateKit(projectId);
+    return { outputRef: { brandKitId: kit.id, status: kit.status } };
   },
 };
 
 /**
- * website — calls page-builder to seed pages from approved Puck component packs.
- * page-builder IS built; this driver is partially implementable but needs
- * industry-tagged packs (TEMPLATE_ENGINE_ARCH §11 item 2).
+ * palette — runs deterministic OKLCH palette extraction from the uploaded logo.
+ * Prerequisite: logo uploaded via brand-kit UI before advancing this stage.
+ */
+const paletteDriver = {
+  async execute({ projectId }) {
+    const kit = await extractPaletteForKit(projectId);
+    return { outputRef: { extractedAt: new Date().toISOString(), status: kit.status } };
+  },
+};
+
+/**
+ * inference — runs brand typography/tone inference (rule-table fallback in Phase 1).
+ * Phase 2 (KDL-483): will call ai-services POST /api/ai/brand-inference first.
+ */
+const inferenceDriver = {
+  async execute({ projectId }) {
+    const kit = await inferBrandKit(projectId, {});
+    return {
+      outputRef: {
+        inferenceSource: kit.inference_source,
+        fallbackReason: kit.fallback_reason ?? null,
+        status: kit.status,
+      },
+    };
+  },
+};
+
+/**
+ * approval — verifies the brand-kit is approved, then writes tokens to theme-engine.
+ * Crash recovery (§4.1): if tokensWrittenAt is already set, skips the write.
+ * The user approves the brand-kit via the brand-kit UI before advancing this stage.
+ */
+const approvalDriver = {
+  async execute({ projectId, userId, stageRecord }) {
+    // Crash recovery: exit action already completed; nothing to re-do.
+    if (stageRecord?.outputRef?.tokensWrittenAt) {
+      return { outputRef: stageRecord.outputRef };
+    }
+
+    const kit = await getKit(projectId);
+    if (kit.status !== 'approved') {
+      throw namedErr('Brand kit must be approved before advancing this stage', 409, 'BRAND_KIT_NOT_APPROVED');
+    }
+
+    const approvedAt = stageRecord?.outputRef?.approvedAt ?? new Date().toISOString();
+
+    // Exit action: brand-kit tokens → theme-engine values.
+    const tokenPayload = await getTokens(projectId, 'webapp');
+    const resolvedTypeId = await resolveThemeTypeId(tokenPayload.platform, tokenPayload.type_id);
+    const writeResult = await upsertValues(tokenPayload.platform, resolvedTypeId, tokenPayload.values, userId);
+
+    return {
+      outputRef: {
+        approvedAt,
+        tokensWrittenAt: new Date().toISOString(),
+        tokenErrors: writeResult?.errors ?? null,
+      },
+    };
+  },
+};
+
+/**
+ * guidelines — calls brand-kit brand-guidelines PDF render.
+ * Stubbed: brand-kit Phase 1 ships no PDF render endpoint yet.
+ * Wire when endpoint lands in a future brand-kit phase.
+ */
+const guidelinesDriver = {
+  async execute() {
+    throw namedErr(
+      'UPSTREAM_NOT_BUILT — guidelines driver requires brand-kit PDF render endpoint (not in Phase 1)',
+      503,
+      'UPSTREAM_NOT_BUILT',
+    );
+  },
+};
+
+// Asset types to create when no collateral assets exist for the project.
+const COLLATERAL_DEFAULT_ASSETS = [
+  { type: 'VISITING_CARD', name: 'Visiting card' },
+  { type: 'LETTERHEAD',    name: 'Letterhead' },
+];
+
+/**
+ * collateral — preflights and renders collateral assets for the project.
+ * Crash recovery (§4.1): previously recorded renderIds are reused.
+ * Per-asset credit holds are managed inside collateral's renderAsset (CREDITS_ARCH §5).
+ * Creates default assets if none exist for the project.
+ */
+const collateralDriver = {
+  async execute({ projectId, userId, stageRecord, run }) {
+    // Crash recovery: collect already-completed render IDs.
+    const priorRenderIds = new Set(stageRecord?.outputRef?.renderIds ?? []);
+
+    // List existing assets; seed defaults if absent.
+    let assets = await listAssets(projectId);
+
+    if (assets.length === 0) {
+      const approvalOutputRef = run.stages?.find((s) => s.stage === 'APPROVAL')?.outputRef;
+      const brandKitVersion = typeof approvalOutputRef?.brandKitVersion === 'number'
+        ? approvalOutputRef.brandKitVersion
+        : 1;
+
+      for (const { type, name } of COLLATERAL_DEFAULT_ASSETS) {
+        await createAsset({ projectId, type, name, brandKitVersion, createdBy: userId });
+      }
+      assets = await listAssets(projectId);
+    }
+
+    if (assets.length === 0) {
+      return { outputRef: { renderIds: [], skipped: 'no_assets' } };
+    }
+
+    const renderIds = [...priorRenderIds];
+
+    for (const asset of assets) {
+      // Skip assets whose most-recent render is already recorded.
+      const latestRender = asset.renders?.[0];
+      if (latestRender && priorRenderIds.has(latestRender.id)) continue;
+
+      // Preflight — surfaces COLLATERAL_SPEC §8 named errors verbatim (§5).
+      const preflight = await preflightAsset(asset.id);
+      if (!preflight.ok) {
+        throw namedErr(preflight.issues[0].code, 422, preflight.issues[0].code);
+      }
+
+      // Render — credit hold is inside renderAsset (CREDITS_ARCH §5).
+      const render = await renderAsset(asset.id, {
+        format: 'PDF_DIGITAL',
+        idempotencyKey: `te:${run.id}:collateral:${asset.id}:PDF_DIGITAL`,
+        actorId: userId,
+      });
+
+      renderIds.push(render.id);
+    }
+
+    return { outputRef: { renderIds } };
+  },
+};
+
+// Standard pages seeded per run. Slugs are run-scoped to prevent cross-run collisions.
+const WEBSITE_SEED_PAGES = [
+  { key: 'home',    title: 'Home' },
+  { key: 'about',   title: 'About' },
+  { key: 'contact', title: 'Contact' },
+];
+
+/**
+ * website — seeds pages from Puck component packs via page-builder.
+ * Crash recovery: recorded pageKeyToId is checked on re-run; existing pages are reused.
+ * Industry-based pack selection wired when brand-kit strategy field lands.
  */
 const websiteDriver = {
-  async execute() { throw notBuilt('website'); },
+  async execute({ run, stageRecord, userId }) {
+    // Crash recovery (TEMPLATE_ENGINE_ARCH §4.1): reuse pages from a prior attempt.
+    const priorMap = stageRecord?.outputRef?.pageKeyToId ?? {};
+    const pageKeyToId = {};
+    const pageIds = [];
+
+    for (const { key, title } of WEBSITE_SEED_PAGES) {
+      const priorId = priorMap[key];
+      let existing = null;
+      if (priorId) {
+        existing = await getPage(priorId).catch(() => null);
+      }
+
+      const page = existing ?? await createPage(
+        { title, slug: `te-${run.id}-${key}`, data: null },
+        userId,
+      );
+
+      pageKeyToId[key] = page.id;
+      pageIds.push(page.id);
+    }
+
+    return {
+      outputRef: {
+        pageIds,
+        pageKeyToId,
+        seededAt: new Date().toISOString(),
+      },
+    };
+  },
 };
 
 /**
  * preflight — aggregates per-branch named errors. No downstream call.
- * This driver is a pure read-and-aggregate over stage outputRefs.
+ * Surfaces COLLATERAL_SPEC §8 error codes verbatim (§5).
  */
 const preflightDriver = {
   async execute({ run }) {
@@ -106,11 +263,11 @@ const preflightDriver = {
     }
 
     if (errors.length > 0) {
-      const err = new Error('PREFLIGHT_FAILED');
-      err.status = 409;
-      err.code = 'PREFLIGHT_FAILED';
-      err.errors = errors;
-      throw err;
+      throw Object.assign(new Error('PREFLIGHT_FAILED'), {
+        status: 409,
+        code: 'PREFLIGHT_FAILED',
+        errors,
+      });
     }
 
     return { outputRef: { checkedAt: new Date().toISOString(), errors: [] } };
@@ -151,9 +308,7 @@ const DRIVERS = {
 export function getDriver(stageSlug) {
   const driver = DRIVERS[stageSlug];
   if (!driver) {
-    const err = new Error(`No driver registered for stage: ${stageSlug}`);
-    err.status = 500;
-    throw err;
+    throw Object.assign(new Error(`No driver registered for stage: ${stageSlug}`), { status: 500 });
   }
   return driver;
 }
