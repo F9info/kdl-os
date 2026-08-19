@@ -17,6 +17,9 @@ Two code-review blockers fixed: `templateEngineActivityScope()` now uses `create
 ## 2026-08-19 — KDL-503: template-engine Phase 1 — DAG + gates + migration + RBAC (Backend Coder) — PR #172
 
 `backend/` on `feat/kdl-501-template-engine-orchestrator`: Prisma `TemplateEngineRun`/`TemplateEngineStage` models + additive migration (`prisma validate` ✅); 9-stage DAG state machine (§3); server-side gates returning 409 `STAGE_GATE_FAILED`; crash recovery to `FAILED(INTERRUPTED)`; 9 driver stubs all throwing `UPSTREAM_NOT_BUILT(503)`; RBAC `["view","run","approve","export"]`; manifest updated; 71 tests passing (gate, dag, recovery, leakage). PR #172 open for review.
+## 2026-08-19 — KDL-502: Studio surface frontend — 9-stage DAG UI shipped (Frontend Coder)
+
+PR #171 (`feat/kdl-502-studio-frontend`): full Studio surface per STUDIO_IA.md §5 + TEMPLATE_ENGINE_ARCH.md §7. All 9 stage screens live with in-surface stepper (S3/S4), deep-linkable routes (S2), module.json promoted to v0.1.0 with permissions + updated dependsOn. LOCKED IA elements (L3/L5/L6) preserved. Frontend degrades gracefully while orchestrator backend (KDL-453 child) is pending. PR ready for code review.
 
 ## 2026-08-18 — KDL-485: STUDIO_IA.md spec — canonical Studio IA for template-engine (Frontend Architect)
 
