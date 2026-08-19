@@ -2,6 +2,10 @@
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+## 2026-08-19 — KDL-508: collateral module — 42/42 tests green, branch ready, blocked on brand-kit landing (Backend Coder)
+
+`feat/kdl-505-collateral-module` complete: COLLATERAL_SPEC §7 endpoints, §8 all 7 preflight error strings verbatim, §11 HTML-escaping, §4 geometry/render for visiting card / letterhead / t-shirt / ID card (PDF_PRINT/PDF_DIGITAL/DOCX/PNG), `withCreditHold` integration, 42 tests passing. Two bugs fixed: `resolveBrandKit()` now uses `findUnique` (not `findFirst` with invalid `version` field); migration retimed to `20260820000001` so it sorts after brand-kit's `20260820000000`. Branch pushed. Blocked on [KDL-506](/KDL/issues/KDL-506) (brand-kit on master) — once it lands, rebase + prisma validate + push PR + squash-merge.
+
 ## 2026-08-19 — KDL-501: template-engine orchestrator backend — 9-stage DAG live, all tests green (Backend Coder)
 
 9-stage DAG orchestrator on `feat/kdl-501-template-engine-orchestrator` (PR against master): Prisma schema + additive migration, `service.js` with `checkGate` / `markInterruptedStages` / `advanceStage` / `templateEngineActivityScope`, 9 stage drivers (7 Phase 1 stubs returning UPSTREAM_NOT_BUILT, preflight + export fully implemented), routes/controller/schema wired under `template-engine:view/run/approve/export` RBAC. **79 test files, 960 tests passing, `prisma validate` clean.** Brand-kit / collateral / credits stubs replaced by real drivers once those modules land.

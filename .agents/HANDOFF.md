@@ -1,3 +1,27 @@
+## 2026-08-19 — KDL-508: collateral module — implementation verified, branch ready, waiting for brand-kit on master (Backend Coder)
+
+**Branch:** `feat/kdl-505-collateral-module` — pushed, no PR yet (blocked on brand-kit landing)
+
+**State:** The full collateral implementation from the prior KDL-505 run exists on the branch. This heartbeat verified it, fixed two bugs, and retimed the migration. **42/42 tests pass.**
+
+**What's on the branch:**
+1. **Prisma:** `CollateralAsset` + `CollateralRender` models; `CollateralType`/`CollateralStatus`/`RenderFormat` enums; migration `20260820000001_add_collateral_module` (retimed to sort after brand-kit's `20260820000000`).
+2. **Preflight (preflight.js):** all 7 §8 named error codes verbatim — `BRANDKIT_MISSING_FIELD`, `LOGO_BELOW_MIN_WIDTH`, `CONTRAST_FAIL_SMALL_PRINT`, `SPOTCOLOR_LIMIT_EXCEEDED`, `GEOMETRY_OUT_OF_BOUNDS`, `FONT_NOT_ALLOWLISTED`, `CREDITS_INSUFFICIENT`.
+3. **HTML-escaping (render/escape.js):** `escapeHtml` + `escapeZoneContent` per §11.
+4. **Render pipeline:** `pdf.js` (PDF_PRINT with crop marks / PDF_DIGITAL), `docx.js` (DOCX letterhead, header/footer locked), PNG path. `layouts.js` with deterministic geometry per artifact type.
+5. **Service (service.js):** `createAsset`, `listAssets`, `getAsset`, `updateAsset`, `archiveAsset`, `preflightAsset`, `renderAsset` (with `withCreditHold` + idempotency-key forwarding), `getRender`. **Fixed:** `resolveBrandKit()` changed from `findFirst` (invalid `version` filter) to `findUnique` (correct — one kit per project).
+6. **Routes (routes.js):** all 8 §7 endpoints behind `moduleGate('collateral')` + RBAC.
+7. **Template-engine driver:** collateral driver returns `outputRef` (phase-1 passthrough, not UPSTREAM_NOT_BUILT).
+8. **Tests (collateral.test.js):** 42 passing.
+
+**Fixes applied this heartbeat:**
+- `resolveBrandKit()`: `db.brandKit.findFirst({ where: { version } })` → `db.brandKit.findUnique({ where: { project_id } })`. The `version` field doesn't exist on `BrandKit` and would cause a Prisma validation error once brand-kit lands on master.
+- Migration retimed: `20260819000002` → `20260820000001` so it sorts after brand-kit (`20260820000000`). Previous ordering would cause Prisma to reject an out-of-order migration on deploy.
+
+**Blocked on:** [KDL-506](/KDL/issues/KDL-506) (brand-kit Phase 1 on master). Once brand-kit lands: rebase `feat/kdl-505-collateral-module` on `origin/master`, run prisma validate, run tests, push, open PR, squash-merge.
+
+---
+
 ## 2026-08-19 — KDL-503: template-engine Phase 1 — DAG state machine, server-side gates, additive migration, RBAC (Backend Coder)
 
 **Branch:** `feat/kdl-501-template-engine-orchestrator` — PR #172
