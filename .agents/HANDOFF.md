@@ -1,3 +1,31 @@
+## 2026-08-19 — KDL-504: credits module — per-project metering, hold lifecycle, ledger (Backend Coder)
+
+**Branch:** `feat/kdl-504-credits-module` — PR #173
+
+**Done:**
+1. **Prisma schema** `backend/prisma/schema/credits.prisma` — `CreditBalance`, `CreditHold`, `CreditLedgerEntry` models; `CreditEntryType` + `CreditHoldStatus` enums; BigInt `balance_mc`/`amount_mc` columns; `@@unique` on hold `idempotency_key`; correct indexes per spec §4.
+2. **Projects stub** `backend/prisma/schema/projects.prisma` — minimal `Project` model (id/cuid, name, slug@unique, is_default, timestamps) to unblock credits FKs; full tenancy scoping lands in PROJECTS_ARCH build (KDL-474).
+3. **Migration** `20260819000001_add_credits_module/migration.sql` — creates all 3 tables + enums + FK constraints; **append-only trigger + function** on `credit_ledger_entries` (first DB trigger in repo — flagged as precedent).
+4. **`service.js`** (CREDITS_ARCH §3–6):
+   - `applyEntries` — locked mutation core: `SELECT ... FOR UPDATE` at READ COMMITTED, reaps expired holds, enforces balance ≥ estimate, inserts ledger entries with correct `balance_after_mc`, updates materialised balance, applies hold state transitions.
+   - `grantCredits`, `reserveCredits`, `settleHold`, `releaseHold`, `adjustCredits`, `forceReleaseHold`, `getBalance`, `getLedger`, `getReconciliation`, `withCreditHold`, `usdToMc`.
+   - Idempotency on holds via `@unique idempotency_key` — same key returns existing hold without re-debiting.
+   - Late settlement: EXPIRED holds get `ADJUST` entry (not silently dropped).
+   - Overage detection: `settle_overage` activity-log alert when overage > `credits.max_overage_pct`.
+5. **`controller.js`** — `serializeBigInts()` for JSON; all BigInt amounts returned as strings.
+6. **`routes.js`** — `GET balance/ledger/reconciliation` (credits:view) + `POST grants/adjustments` (credits:manage) + `POST holds/:holdId/release` (credits:manage). No POST /preflight per CEO ruling.
+7. **`schema.js`** — Zod validation with `bigIntString` transformer for `amount_mc` fields.
+8. **`seed.js`** — upserts AppSettings: `credits.usd_per_credit=0.01`, `credits.hold_ttl_seconds=900`, `credits.max_overage_pct=25`.
+9. **`module.json`** — slug `credits`, nav `Coins`, permissions `credits`.
+10. **34 tests** in `service.test.js` — `usdToMc`, `grantCredits`, `reserveCredits` (402 path, idempotency replay), `settleHold` (overage, double-settle guard, late settlement on EXPIRED), `releaseHold` (idempotent), hold lifecycle (reserve→settle, reserve→release), expired hold reaping, reconciliation arithmetic, cross-project isolation, `adjustCredits`, `forceReleaseHold`, `withCreditHold` (settle on success, release on error). **994 tests passing total.**
+
+**Notes:**
+- MERGE_DISCIPLINE exception: all 4 spec phases (C1–C4) combined in one PR per issue KDL-504 requirement. Line count: ~1300 non-generated lines (exceeds 400-line guideline). Code Reviewer may request split.
+- Projects stub is minimal — full tenancy migration (§1.2, PROJECTS_ARCH) belongs to KDL-474 build.
+- No real-Postgres concurrency/append-only integration tests (C2b in spec) — the append-only trigger is in the migration SQL; integration test coverage would require a live DB and is deferred.
+
+**Next:** brand-kit (KDL-482) and collateral engineers consume `withCreditHold` per §5 contract.
+
 ## 2026-08-19 — KDL-501: PR #172 blocker fixes — §8.2 field name + :export gate (Backend Coder)
 
 **Branch:** `feat/kdl-501-template-engine-orchestrator` — PR #172
