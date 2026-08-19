@@ -261,5 +261,5 @@ async function getCutover() {
 // to exclude legacy theme-engine history (§8.2).
 export async function templateEngineActivityScope() {
   const cutover = await getCutover();
-  return { module: 'template-engine', createdAt: { gte: cutover } };
+  return { module: 'template-engine', created_at: { gte: cutover } };
 }

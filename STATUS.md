@@ -2,6 +2,10 @@
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+## 2026-08-19 — KDL-501: PR #172 blocker fixes pushed, awaiting re-review (Backend Coder)
+
+Two code-review blockers fixed: `templateEngineActivityScope()` now uses `created_at` (Prisma snake_case); `advanceStage` controller now gates `stage === 'export'` with `:export` permission. Tests strengthened to catch the wrong key. 71/71 template-engine tests pass.
+
 ## 2026-08-19 — KDL-501: template-engine orchestrator backend — 9-stage DAG live, all tests green (Backend Coder)
 
 9-stage DAG orchestrator on `feat/kdl-501-template-engine-orchestrator` (PR against master): Prisma schema + additive migration, `service.js` with `checkGate` / `markInterruptedStages` / `advanceStage` / `templateEngineActivityScope`, 9 stage drivers (7 Phase 1 stubs returning UPSTREAM_NOT_BUILT, preflight + export fully implemented), routes/controller/schema wired under `template-engine:view/run/approve/export` RBAC. **79 test files, 960 tests passing, `prisma validate` clean.** Brand-kit / collateral / credits stubs replaced by real drivers once those modules land.

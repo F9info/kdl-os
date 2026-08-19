@@ -186,14 +186,17 @@ describe('(d) templateEngineActivityScope() — cutover guard', () => {
     prisma.$queryRaw.mockResolvedValue([{ finished_at: new Date('2026-08-17T00:00:00Z') }]);
     const scope = await service.templateEngineActivityScope();
     expect(scope).toMatchObject({ module: 'template-engine' });
-    expect(scope.createdAt?.gte).toBeInstanceOf(Date);
+    // Verify the Prisma column name is created_at (snake_case), not createdAt.
+    expect(scope).not.toHaveProperty('createdAt');
+    expect(scope.created_at?.gte).toBeInstanceOf(Date);
   });
 
   it('falls back to 2026-08-17 when DB query fails', async () => {
     prisma.$queryRaw.mockRejectedValue(new Error('DB error'));
     const scope = await service.templateEngineActivityScope();
-    expect(scope.createdAt.gte).toBeInstanceOf(Date);
-    expect(scope.createdAt.gte.toISOString()).toMatch(/^2026-08-17/);
+    expect(scope).not.toHaveProperty('createdAt');
+    expect(scope.created_at.gte).toBeInstanceOf(Date);
+    expect(scope.created_at.gte.toISOString()).toMatch(/^2026-08-17/);
   });
 });
 

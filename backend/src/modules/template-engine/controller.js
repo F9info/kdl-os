@@ -69,8 +69,8 @@ export const resumeRun = async (req, res, next) => {
   }
 };
 
-// Stage advance. The approval stage requires template-engine:approve in addition to :run.
-// All other gated stages require only :run. :export is enforced on the export endpoint.
+// Stage advance. The approval stage requires :approve; the export stage requires :export (§9).
+// All other gated stages require only :run (enforced at router level).
 export const advanceStage = async (req, res, next) => {
   try {
     const projectId = requireProjectId(req);
@@ -81,6 +81,14 @@ export const advanceStage = async (req, res, next) => {
       const perms = req.userPermissions ?? (await resolvePermissions(req.user.id));
       if (!perms.bypass && !perms.permissions.includes('template-engine:approve')) {
         return errorResponse(res, 'Forbidden — template-engine:approve required for the approval stage', 403);
+      }
+    }
+
+    // export stage requires :export permission (§3 row 9, §9).
+    if (stage === 'export') {
+      const perms = req.userPermissions ?? (await resolvePermissions(req.user.id));
+      if (!perms.bypass && !perms.permissions.includes('template-engine:export')) {
+        return errorResponse(res, 'Forbidden — template-engine:export required for the export stage', 403);
       }
     }
 

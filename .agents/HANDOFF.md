@@ -1,3 +1,16 @@
+## 2026-08-19 — KDL-501: PR #172 blocker fixes — §8.2 field name + :export gate (Backend Coder)
+
+**Branch:** `feat/kdl-501-template-engine-orchestrator` — PR #172
+
+**Fixes (Code Reviewer requested changes):**
+1. **`service.js:264` — §8.2 D3 guard**: `templateEngineActivityScope()` now returns `created_at: { gte: cutover }` (snake_case Prisma field) instead of `createdAt`. Previously would have thrown `PrismaClientValidationError` on first real query.
+2. **`controller.js` — §3/§9 export stage gate**: `advanceStage` now checks `template-engine:export` when `stage === 'export'`, same pattern as the `:approve` check for `stage === 'approval'`. `:run`-only users can no longer flip EXPORT to DONE.
+3. **`template-engine.test.js` — strengthened §8.2 test**: activity scope tests now assert `created_at` key is present and `createdAt` key is absent (explicit where-shape assertion).
+
+**Tests:** 71/71 pass.
+
+---
+
 ## 2026-08-19 — KDL-503: template-engine Phase 1 — DAG state machine, server-side gates, additive migration, RBAC (Backend Coder)
 
 **Branch:** `feat/kdl-501-template-engine-orchestrator` — PR #172
