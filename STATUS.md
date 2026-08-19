@@ -2,6 +2,10 @@
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+## 2026-08-19 — KDL-501: template-engine orchestrator backend — 9-stage DAG live, all tests green (Backend Coder)
+
+9-stage DAG orchestrator on `feat/kdl-501-template-engine-orchestrator` (PR against master): Prisma schema + additive migration, `service.js` with `checkGate` / `markInterruptedStages` / `advanceStage` / `templateEngineActivityScope`, 9 stage drivers (7 Phase 1 stubs returning UPSTREAM_NOT_BUILT, preflight + export fully implemented), routes/controller/schema wired under `template-engine:view/run/approve/export` RBAC. **79 test files, 960 tests passing, `prisma validate` clean.** Brand-kit / collateral / credits stubs replaced by real drivers once those modules land.
+
 ## 2026-08-18 — KDL-485: STUDIO_IA.md spec — canonical Studio IA for template-engine (Frontend Architect)
 
 `.agents/arch/STUDIO_IA.md` on `docs/kdl-485-studio-ia` (docs-only PR): the repo's actual admin nav assembly documented as the canonical source-app IA per PM-001/OQ-1, with the Mode A ownership boundary, LOCKED-vs-extensible freeze table for KDL-486 to build against, a stage-list-agnostic 9-stage surface contract, and 5 flagged gaps — G1 being that the 9-stage list itself exists nowhere in the repo and KDL-486 must enumerate it canonically.
