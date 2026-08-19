@@ -69,12 +69,18 @@ export function imageBlock(data, mediaType = 'image/png') {
 export async function claudeBrain(messages, options = {}) {
   const normalised = normaliseMessages(messages);
 
-  const response = await client.messages.create({
+  const params = {
     model: claudeModel(),
     max_tokens: options.max_tokens ?? 4096,
     ...(options.system ? { system: options.system } : {}),
     messages: normalised,
-  });
+  };
+
+  // Caller-supplied AbortSignal (KDL-510 §4.4 F3 — brand inference bounds the
+  // call at 20 s). SDK request option, not a message param.
+  const response = options.signal
+    ? await client.messages.create(params, { signal: options.signal })
+    : await client.messages.create(params);
 
   return {
     content: extractText(response.content),

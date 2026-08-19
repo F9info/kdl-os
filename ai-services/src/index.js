@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import { chatController } from './controllers/chat.js';
 import { embedController } from './controllers/embed.js';
 import { transcribeController } from './controllers/transcribe.js';
+import { brandInferenceController } from './controllers/brand-inference.js';
 import { authenticate } from './middleware/auth.js';
 import { successResponse, errorResponse } from './utils/response.js';
 import { logger } from './utils/logger.js';
@@ -48,6 +49,7 @@ app.get('/health', (req, res) => {
 app.post('/api/ai/chat', authenticate, chatController);
 app.post('/api/ai/embed', authenticate, embedController);
 app.post('/api/ai/transcribe', authenticate, transcribeController);
+app.post('/api/ai/brand-inference', authenticate, brandInferenceController);
 
 app.use((req, res) => errorResponse(res, 'Not found', 404));
 

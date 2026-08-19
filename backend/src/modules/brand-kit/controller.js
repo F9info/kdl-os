@@ -40,7 +40,13 @@ export const extractHandler = async (req, res, next) => {
 
 export const inferHandler = async (req, res, next) => {
   try {
-    const kit = await inferBrandKit(req.params.projectId, req.body ?? {});
+    const kit = await inferBrandKit(req.params.projectId, {
+      ...(req.body ?? {}),
+      // Credits idempotency transport (KDL-506 pattern): header passed
+      // verbatim into the hold; the service generates one when absent.
+      idempotencyKey: req.get('X-Idempotency-Key') ?? undefined,
+      userId: req.user?.id ?? null,
+    });
     successResponse(res, kit);
   } catch (err) {
     next(err);

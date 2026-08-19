@@ -14,6 +14,10 @@ export const inferSchema = z.object({
   params: z.object({ projectId: z.string().min(1) }),
   body: z.object({
     industry: z.string().max(200).optional(),
+    // Phase 2 (KDL-510): forwarded to POST /api/ai/brand-inference as AI context
+    companyName: z.string().max(200).optional(),
+    tagline: z.string().max(300).optional(),
+    locale: z.string().min(2).max(35).optional(),
   }).optional().default({}),
 });
 

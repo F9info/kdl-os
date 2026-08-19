@@ -404,3 +404,25 @@ export const extractPalette = (imageData) => {
     paletteConfidence,
   };
 };
+
+// ─── Hue naming ──────────────────────────────────────────────────────────────
+// Fixed 24-sector OKLCH hue-wheel lookup (BRAND_KIT_AI_ARCH §7): the human-
+// readable hue name fed to AI inference as palette context. Deterministic and
+// local — never model-generated. Sector anchors follow OKLCH hue angles
+// (h≈29 red, h≈110 yellow, h≈142 green, h≈264 blue), not HSL ones.
+
+const HUE_SECTORS = [
+  'rose', 'red', 'red', 'orange', 'orange', 'amber',
+  'yellow', 'yellow-green', 'lime', 'green', 'green', 'teal',
+  'teal', 'cyan', 'sky blue', 'azure', 'blue', 'blue',
+  'indigo', 'violet', 'purple', 'magenta', 'pink', 'rose',
+];
+
+const NEUTRAL_CHROMA_FLOOR = 0.02;
+
+export const hueNameFor = (hueDegrees, chroma = null) => {
+  if (chroma !== null && chroma < NEUTRAL_CHROMA_FLOOR) return 'neutral gray';
+  if (typeof hueDegrees !== 'number' || !Number.isFinite(hueDegrees)) return 'neutral gray';
+  const h = ((hueDegrees % 360) + 360) % 360;
+  return HUE_SECTORS[Math.floor(h / 15)];
+};
