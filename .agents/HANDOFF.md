@@ -1,3 +1,23 @@
+## 2026-08-19 — KDL-508: collateral module — implementation verified, PR ready (Backend Coder)
+
+**Branch:** `feat/kdl-508-collateral-on-master` — PR being opened
+
+**Done:**
+1. **Prisma:** `CollateralAsset` + `CollateralRender` models; `CollateralType`/`CollateralStatus`/`RenderFormat` enums; migration `20260820000001_add_collateral_module` (sorts after brand-kit's `20260820000000`).
+2. **Preflight (preflight.js):** all 7 §8 named error codes verbatim — `BRANDKIT_MISSING_FIELD`, `LOGO_BELOW_MIN_WIDTH`, `CONTRAST_FAIL_SMALL_PRINT`, `SPOTCOLOR_LIMIT_EXCEEDED`, `GEOMETRY_OUT_OF_BOUNDS`, `FONT_NOT_ALLOWLISTED`, `CREDITS_INSUFFICIENT`.
+3. **HTML-escaping (render/escape.js):** `escapeHtml` + `escapeZoneContent` per §11.
+4. **Render pipeline:** PDF_PRINT (crop marks) / PDF_DIGITAL / DOCX (letterhead header/footer locked) / PNG for all 4 artifact types.
+5. **Service:** `createAsset`, `listAssets`, `getAsset`, `updateAsset`, `archiveAsset`, `preflightAsset`, `renderAsset` with `withCreditHold` + idempotency-key forwarding.
+6. **Routes:** all 8 §7 endpoints behind `moduleGate('collateral')` + RBAC.
+7. **Credits:** `COLLATERAL_EXPORT_COST = 5` constant; `COLLATERAL_RENDER_ESTIMATE_MC = 5_000_000n`.
+8. **Template-engine driver:** collateral driver returns `outputRef` (phase-1 passthrough).
+9. **Tests:** 42/42 passing.
+10. **Bugs fixed:** `resolveBrandKit()` uses `findUnique` (not `findFirst` with invalid `version` field); migration retimed `20260819000002` → `20260820000001`.
+
+**Next:** CI pass → squash-merge.
+
+---
+
 ## 2026-08-19 — KDL-504: credits module — per-project metering, hold lifecycle, ledger (Backend Coder)
 
 **Branch:** `feat/kdl-504-credits-module` — PR #173

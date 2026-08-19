@@ -1,0 +1,57 @@
+// Collateral module — print-ready artifact render engine.
+// Spec: .agents/specs/COLLATERAL_SPEC.md (KDL-452 / KDL-505).
+// §5 data model — additive migration; no existing tables altered.
+
+enum CollateralType {
+  VISITING_CARD
+  LETTERHEAD
+  TSHIRT
+  ID_CARD
+}
+
+enum CollateralStatus {
+  DRAFT
+  READY
+  ARCHIVED
+}
+
+enum RenderFormat {
+  PDF_PRINT
+  PDF_DIGITAL
+  DOCX
+  PNG
+}
+
+model CollateralAsset {
+  id               String           @id @default(cuid())
+  project_id       String
+  type             CollateralType
+  name             String
+  brand_kit_version Int
+  spec             Json
+  status           CollateralStatus @default(DRAFT)
+  created_by       String
+  created_at       DateTime         @default(now())
+  updated_at       DateTime         @updatedAt
+  renders          CollateralRender[]
+
+  @@index([project_id, type])
+  @@map("collateral_assets")
+}
+
+model CollateralRender {
+  id                String          @id @default(cuid())
+  asset_id          String
+  asset             CollateralAsset @relation(fields: [asset_id], references: [id], onDelete: Cascade)
+  format            RenderFormat
+  variant           String?
+  file_url          String
+  bytes             Int
+  checksum          String
+  brand_kit_version Int
+  credits_cost      Int
+  created_at        DateTime        @default(now())
+
+  @@index([asset_id, format])
+  @@map("collateral_renders")
+}
