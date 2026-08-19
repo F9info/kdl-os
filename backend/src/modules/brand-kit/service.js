@@ -133,14 +133,9 @@ export const uploadLogo = async (projectId, file, userId) => {
 
   // 4. SVG sanitization + structural limits
   let logoBuffer = file.buffer;
+  let newOriginalKey = null;
   if (isSvgMime(file.mimetype)) {
-    // D-BK-5: store original bytes before sanitization
-    const originalKey = `brand-kit/originals/${projectId}/${randomUUID()}.svg`;
-    await storageService.uploadFile(
-      { buffer: file.buffer, mimetype: file.mimetype, originalname: 'original.svg', size: file.buffer.length },
-      originalKey,
-    );
-
+    // Run validation BEFORE writing to storage so a rejected upload leaves no orphaned object.
     logoBuffer = sanitizeSvg(file.buffer);
 
     if (logoBuffer.length > SVG_MAX_BYTES_AFTER_SANITIZE) {
@@ -150,20 +145,25 @@ export const uploadLogo = async (projectId, file, userId) => {
       throw err('SVG has too many nodes (max 20,000)', 422, 'SVG_TOO_COMPLEX');
     }
 
-    // Store original reference and expiry on the kit
-    const expiresAt = new Date(Date.now() + ORIGINAL_RETENTION_DAYS * 86400_000);
-    await prisma.brandKit.upsert({
+    // D-BK-5: original bytes stored only after passing all validation.
+    // Delete any superseded original first (re-upload path) to avoid orphaned objects.
+    const existingKit = await prisma.brandKit.findUnique({
       where: { project_id: projectId },
-      create: {
-        project_id: projectId,
-        logo_original_path: originalKey,
-        logo_original_expires_at: expiresAt,
-      },
-      update: {
-        logo_original_path: originalKey,
-        logo_original_expires_at: expiresAt,
-      },
+      select: { logo_original_path: true },
     });
+    if (existingKit?.logo_original_path) {
+      try {
+        await storageService.deleteFile(existingKit.logo_original_path);
+      } catch {
+        // Non-fatal — already deleted or never existed
+      }
+    }
+
+    newOriginalKey = `brand-kit/originals/${projectId}/${randomUUID()}.svg`;
+    await storageService.uploadFile(
+      { buffer: file.buffer, mimetype: file.mimetype, originalname: 'original.svg', size: file.buffer.length },
+      newOriginalKey,
+    );
 
     file = { ...file, buffer: logoBuffer, size: logoBuffer.length };
   }
@@ -217,7 +217,11 @@ export const uploadLogo = async (projectId, file, userId) => {
     // Non-fatal — raster generation failure doesn't block the upload
   }
 
-  // 7. Reset kit to draft with new logo, clearing derived fields
+  // 7. Reset kit to draft with new logo, clearing derived fields.
+  // Include logo_original_path when an SVG original was stored (newOriginalKey).
+  const expiresAt = newOriginalKey
+    ? new Date(Date.now() + ORIGINAL_RETENTION_DAYS * 86400_000)
+    : null;
   const kit = await prisma.brandKit.upsert({
     where: { project_id: projectId },
     create: {
@@ -225,6 +229,8 @@ export const uploadLogo = async (projectId, file, userId) => {
       status: 'draft',
       logo_media_id: mediaRecord.id,
       logo_raster_media_id: rasterMediaId,
+      logo_original_path: newOriginalKey,
+      logo_original_expires_at: expiresAt,
       palette: null,
       contrast_report: null,
       typography: null,
@@ -239,6 +245,8 @@ export const uploadLogo = async (projectId, file, userId) => {
       status: 'draft',
       logo_media_id: mediaRecord.id,
       logo_raster_media_id: rasterMediaId,
+      logo_original_path: newOriginalKey,
+      logo_original_expires_at: expiresAt,
       palette: null,
       contrast_report: null,
       typography: null,
@@ -271,9 +279,10 @@ export const extractPaletteForKit = async (projectId) => {
   const mediaRecord = await prisma.media.findUnique({ where: { id: rasterMediaId } });
   if (!mediaRecord) throw err('Logo media record not found', 404, 'MEDIA_NOT_FOUND');
 
-  // D-BK-3: if scan is required and not clean, reject
+  // D-BK-3: block unless scan_result is explicitly CLEAN (null = scan still pending).
+  // Matches the media module's own gate (media/service.js:348).
   const { requireScan } = await getUploadSettings();
-  if (requireScan && mediaRecord.scan_result && mediaRecord.scan_result !== 'CLEAN') {
+  if (requireScan && mediaRecord.scan_result !== 'CLEAN') {
     throw err('Logo has not passed virus scan', 423, 'SCAN_PENDING');
   }
 
@@ -288,9 +297,12 @@ export const extractPaletteForKit = async (projectId) => {
     stream.on('error', reject);
   });
 
-  // Downsample to 128×128 for extraction efficiency
+  // Downsample to 128×128 for extraction efficiency.
+  // ensureAlpha() guarantees a 4-byte RGBA stride for all source formats
+  // (JPEG/WebP are 3-channel without it, misaligning the pixel loop in palette.js).
   const thumbBuf = await sharp(fileBuffer)
     .resize(EXTRACT_THUMB_SIZE, EXTRACT_THUMB_SIZE, { fit: 'cover' })
+    .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
 
@@ -356,12 +368,16 @@ export const patchKit = async (projectId, overrides) => {
     throw err('Kit is approved. Use /reopen to modify.', 409, 'APPROVED_IMMUTABLE');
   }
 
-  const patchedNames = Object.keys(overrides).filter((k) => PATCHABLE_FIELDS.has(k));
+  // Whitelist — never spread raw overrides into Prisma; only PATCHABLE_FIELDS may be written.
+  const safeData = Object.fromEntries(
+    Object.entries(overrides).filter(([k]) => PATCHABLE_FIELDS.has(k)),
+  );
+  const patchedNames = Object.keys(safeData);
   const overriddenFields = [...new Set([...kit.overridden_fields, ...patchedNames])];
 
   const updated = await prisma.brandKit.update({
     where: { project_id: projectId },
-    data: { ...overrides, overridden_fields: overriddenFields },
+    data: { ...safeData, overridden_fields: overriddenFields },
   });
 
   return updated;
@@ -420,12 +436,28 @@ export const reopenKit = async (projectId) => {
 // ─── Tokens ───────────────────────────────────────────────────────────────────
 // D-BK-6: brand-kit only exposes the payload; orchestrator writes to theme-engine.
 
-export const getTokens = async (projectId, platform) => {
+export const getTokens = async (projectId, platform = 'webapp') => {
   const kit = await getKit(projectId);
   if (kit.status !== 'approved') {
     throw err('Kit must be approved before tokens are available', 409, 'NOT_APPROVED');
   }
-  return buildTokenPayload(kit, platform);
+
+  // Resolve the real Type UUID for ${platform}.brand-kit.
+  // theme-engine rejects type_id values that aren't real UUIDs or whose slug
+  // doesn't start with `${platform}.` — passing a plain string literal fails.
+  const brandKitType = await prisma.type.findFirst({
+    where: { slug: `${platform}.brand-kit`, is_active: true },
+    select: { id: true },
+  });
+  if (!brandKitType) {
+    throw err(
+      `Theme-engine type "${platform}.brand-kit" not found — run the brand-kit seed`,
+      409,
+      'TYPE_NOT_SEEDED',
+    );
+  }
+
+  return buildTokenPayload(kit, platform, brandKitType.id);
 };
 
 // ─── Cleanup: expired original SVG bytes (D-BK-5) ────────────────────────────

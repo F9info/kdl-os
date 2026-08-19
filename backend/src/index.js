@@ -19,6 +19,7 @@ import { startProcessingWorker, closeProcessingWorker } from './modules/media/pr
 import { integrationsWorker } from './modules/integrations/integrations.worker.js';
 import { notificationsWorker, notificationsRetentionWorker, startRetentionJob } from './modules/notifications/notifications.worker.js';
 import { startExpiryJob } from './modules/media/media.expiry.worker.js';
+import { startBrandKitExpiryJob } from './modules/brand-kit/brand-kit.queue.js';
 
 import authRoutes from './modules/auth/routes.js';
 import userRoutes from './modules/users/routes.js';
@@ -131,6 +132,7 @@ await loadModules(app);
 startProcessingWorker();
 startRetentionJob().catch((err) => logger.error(`Retention job init failed: ${err.message}`));
 startExpiryJob().catch((err) => logger.error(`Expiry job init failed: ${err.message}`));
+startBrandKitExpiryJob().catch((err) => logger.error(`Brand-kit expiry job init failed: ${err.message}`));
 
 // ─── Public share routes (no auth) ───────────────────────────────────────────
 // These live outside /api so they are not subject to the API rate limiter.
