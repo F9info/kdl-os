@@ -1,7 +1,7 @@
 import { writeFile, readFile } from 'fs/promises';
 import { fileURLToPath } from 'url';
 import { join } from 'path';
-import { claudeBrain } from '../brains/claude.js';
+import { claudeBrain, claudeModel } from '../brains/claude.js';
 import { openrouterBrain } from '../brains/openrouter.js';
 import { checkBudget, recordSpend } from './budget-tracker.js';
 import { auditLogger } from '../governance/audit-logger.js';
@@ -46,7 +46,7 @@ export async function brainRouter(task, priority = 'MEDIUM', options = {}) {
 
   try {
     await auditLogger({
-      model: useClaude ? 'claude-sonnet-4-6' : (process.env.OPENROUTER_DEFAULT_MODEL ?? 'moonshot-ai/moonshot-v1-32k'),
+      model: useClaude ? (response.model ?? claudeModel()) : (process.env.OPENROUTER_DEFAULT_MODEL ?? 'moonshot-ai/moonshot-v1-32k'),
       priority,
       input_tokens: response.usage?.input_tokens ?? 0,
       output_tokens: response.usage?.output_tokens ?? 0,
