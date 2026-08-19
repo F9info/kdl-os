@@ -13,15 +13,13 @@ const COLLATERAL_RENDER_CREDITS_COST = 5;
 
 // ── Brand-kit resolver ────────────────────────────────────────────────────────
 // Reads the pinned brand-kit snapshot for a project.
-// brand-kit module exposes GET /api/brand-kit/:projectId/kit which returns the full kit.
-// Phase 1: until brand-kit is mounted, returns a structured null so preflight can run.
-export async function resolveBrandKit(projectId, version) {
+// brand-kit module: one kit per project_id (unique). version arg is advisory —
+// collateral pins the version at asset creation time; the kit is immutable once approved.
+// Phase 1: resolved_tokens field is not on the BrandKit model yet; returns null gracefully.
+export async function resolveBrandKit(projectId, _version) {
   try {
     const { prisma: db } = await import('../../config/database.js');
-    const kit = await db.brandKit.findFirst({
-      where: { project_id: projectId, version },
-      orderBy: { created_at: 'desc' },
-    });
+    const kit = await db.brandKit.findUnique({ where: { project_id: projectId } });
     if (!kit) return null;
     return kit.resolved_tokens ?? null;
   } catch {
