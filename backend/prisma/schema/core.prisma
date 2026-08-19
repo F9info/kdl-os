@@ -204,6 +204,7 @@ model Media {
   transcript_text String?             // Phase D4 — flat transcript text, indexed in Meili
   transcript_lang String?             // Phase D4 — detected/requested language code
   barcodes        Json?               // Phase D7 — zxing-decoded QR/barcode hits: [{ value, format }], indexed in Meili
+  owner_module    String?             // KDL-512 — same ownership contract as settings tables (KDL-192/197)
   // Phase B — workflow / delivery
   workflow_status MediaWorkflowStatus @default(DRAFT)
   published_at    DateTime?
@@ -235,6 +236,7 @@ model Media {
   @@index([last_used_at])
   @@index([workflow_status])
   @@index([expires_at])
+  @@index([owner_module])
   @@map("media")
 }
 

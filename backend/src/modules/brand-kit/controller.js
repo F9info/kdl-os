@@ -49,7 +49,7 @@ export const inferHandler = async (req, res, next) => {
 
 export const patchKitHandler = async (req, res, next) => {
   try {
-    const kit = await patchKit(req.params.projectId, req.body);
+    const kit = await patchKit(req.params.projectId, req.validated.body);
     successResponse(res, kit);
   } catch (err) {
     next(err);

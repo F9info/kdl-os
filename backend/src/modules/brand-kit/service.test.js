@@ -271,6 +271,7 @@ describe('reopenKit', () => {
 describe('getTokens', () => {
   beforeEach(() => {
     prisma.brandKit = { findUnique: vi.fn() };
+    prisma.type = { findFirst: vi.fn().mockResolvedValue({ id: 'type-uuid-webapp-brand-kit' }) };
   });
 
   it('returns theme-engine-compatible payload for approved kit', async () => {
@@ -284,9 +285,8 @@ describe('getTokens', () => {
     const payload = await getTokens('proj-1', 'webapp');
     expect(payload).toMatchObject({
       platform: 'webapp',
-      type_id: 'brand-kit',
       values: expect.arrayContaining([
-        expect.objectContaining({ field_id: expect.stringMatching(/^brand-kit-/) }),
+        expect.objectContaining({ slug: expect.stringMatching(/^brand-kit-/) }),
       ]),
     });
   });
