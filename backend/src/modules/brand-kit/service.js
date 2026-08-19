@@ -1,0 +1,456 @@
+// Brand-Kit service — state machine, logo intake, palette extraction, contrast
+// report, fallback inference, approval gate, and token payload hand-off.
+//
+// State machine: draft → extracted → inferred → approved
+//   logo upload resets to draft (§1.3)
+//   reopen steps approved → inferred
+//
+// Decisions enforced here:
+//   D-BK-1  derived -text variant; never mutate stored brand colour
+//   D-BK-3  AA guaranteed
+//   D-BK-4  OKLCH ramps
+//   D-BK-5  retain original bytes in object storage (non-servable), 90-day expiry
+//   D-BK-6  tokens endpoint only; never write to theme-engine
+
+import { createHash, randomUUID } from 'crypto';
+import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { join, dirname } from 'node:path';
+import { prisma } from '../../config/database.js';
+import * as storageService from '../../shared/services/storage.service.js';
+import { uploadMedia } from '../media/service.js';
+import { sanitizeSvg, isSvgMime } from '../media/svg-sanitizer.js';
+import { getUploadSettings } from '../media/settings.js';
+import { enqueueScanJob } from '../media/media.queue.js';
+import { extractPalette } from './palette.js';
+import { buildContrastReport } from './contrast.js';
+import { buildTokenPayload } from './tokens.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// ─── Constants ───────────────────────────────────────────────────────────────
+
+const OWNER_MODULE = 'brand-kit';
+const MAX_LOGO_BYTES = 5 * 1024 * 1024; // 5 MB (stricter than media default)
+const MIN_LOGO_SHORT_EDGE = 64;
+const MAX_LOGO_LONG_EDGE = 8192;
+const MAX_LOGO_MEGAPIXELS = 40;
+const RASTER_SIZE = 1024;
+const EXTRACT_THUMB_SIZE = 128;
+const SVG_MAX_BYTES_AFTER_SANITIZE = 1024 * 1024; // 1 MB
+const SVG_MAX_NODES = 20000;
+const ORIGINAL_RETENTION_DAYS = 90;
+
+const ALLOWED_LOGO_MIMES = new Set([
+  'image/svg+xml',
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+]);
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+const err = (msg, status, code) => Object.assign(new Error(msg), { status, code });
+
+const countSvgNodes = (buf) => {
+  const text = buf.toString('utf8');
+  let count = 0;
+  let pos = 0;
+  while ((pos = text.indexOf('<', pos)) !== -1) {
+    if (text[pos + 1] !== '?' && text[pos + 1] !== '!') count++;
+    pos++;
+    if (count > SVG_MAX_NODES) break;
+  }
+  return count;
+};
+
+const loadInferenceRules = async () => {
+  const raw = await readFile(join(__dirname, 'data/inference-rules.json'), 'utf8');
+  return JSON.parse(raw);
+};
+
+const applyFallbackInference = async (industry) => {
+  const { rules } = await loadInferenceRules();
+  const term = (industry ?? '').toLowerCase();
+  const matched = rules.find(
+    (r) => r.industry[0] !== '__default__' &&
+      r.industry.some((kw) => term.includes(kw))
+  );
+  const rule = matched ?? rules.find((r) => r.industry[0] === '__default__');
+  return { typography: rule.typography, tone: rule.tone };
+};
+
+// ─── getOrCreate ─────────────────────────────────────────────────────────────
+
+export const getOrCreateKit = async (projectId) => {
+  let kit = await prisma.brandKit.findUnique({ where: { project_id: projectId } });
+  if (!kit) {
+    kit = await prisma.brandKit.create({ data: { project_id: projectId } });
+  }
+  return kit;
+};
+
+export const getKit = async (projectId) => {
+  const kit = await prisma.brandKit.findUnique({ where: { project_id: projectId } });
+  if (!kit) throw err('Brand kit not found', 404, 'NO_KIT');
+  return kit;
+};
+
+// ─── Logo upload ──────────────────────────────────────────────────────────────
+// §1 — reuses existing media module for validation, sanitization, and scan.
+// D-BK-5 — retains original bytes in MinIO under a private path.
+
+export const uploadLogo = async (projectId, file, userId) => {
+  // 1. MIME allowlist (brand-kit stricter than media default)
+  if (!ALLOWED_LOGO_MIMES.has(file.mimetype)) {
+    throw err(`File type not allowed for logos: ${file.mimetype}`, 422, 'LOGO_TYPE_NOT_ALLOWED');
+  }
+
+  // 2. Size cap
+  if (file.size > MAX_LOGO_BYTES) {
+    throw err('Logo exceeds 5 MB limit', 413, 'FILE_TOO_LARGE');
+  }
+
+  const { default: sharp } = await import('sharp');
+
+  // 3. Dimension and pixel-bomb guard (raster formats only)
+  if (file.mimetype !== 'image/svg+xml') {
+    let meta;
+    try {
+      meta = await sharp(file.buffer, { limitInputPixels: MAX_LOGO_MEGAPIXELS * 1_000_000 }).metadata();
+    } catch {
+      throw err('Invalid image file', 422, 'LOGO_INVALID');
+    }
+    const shortEdge = Math.min(meta.width, meta.height);
+    const longEdge = Math.max(meta.width, meta.height);
+    if (shortEdge < MIN_LOGO_SHORT_EDGE) {
+      throw err(`Logo short edge must be ≥ ${MIN_LOGO_SHORT_EDGE}px`, 422, 'LOGO_TOO_SMALL');
+    }
+    if (longEdge > MAX_LOGO_LONG_EDGE) {
+      throw err(`Logo long edge must be ≤ ${MAX_LOGO_LONG_EDGE}px`, 422, 'LOGO_TOO_LARGE');
+    }
+  }
+
+  // 4. SVG sanitization + structural limits
+  let logoBuffer = file.buffer;
+  if (isSvgMime(file.mimetype)) {
+    // D-BK-5: store original bytes before sanitization
+    const originalKey = `brand-kit/originals/${projectId}/${randomUUID()}.svg`;
+    await storageService.uploadFile(
+      { buffer: file.buffer, mimetype: file.mimetype, originalname: 'original.svg', size: file.buffer.length },
+      originalKey,
+    );
+
+    logoBuffer = sanitizeSvg(file.buffer);
+
+    if (logoBuffer.length > SVG_MAX_BYTES_AFTER_SANITIZE) {
+      throw err('SVG exceeds 1 MB after sanitization', 422, 'SVG_TOO_COMPLEX');
+    }
+    if (countSvgNodes(logoBuffer) > SVG_MAX_NODES) {
+      throw err('SVG has too many nodes (max 20,000)', 422, 'SVG_TOO_COMPLEX');
+    }
+
+    // Store original reference and expiry on the kit
+    const expiresAt = new Date(Date.now() + ORIGINAL_RETENTION_DAYS * 86400_000);
+    await prisma.brandKit.upsert({
+      where: { project_id: projectId },
+      create: {
+        project_id: projectId,
+        logo_original_path: originalKey,
+        logo_original_expires_at: expiresAt,
+      },
+      update: {
+        logo_original_path: originalKey,
+        logo_original_expires_at: expiresAt,
+      },
+    });
+
+    file = { ...file, buffer: logoBuffer, size: logoBuffer.length };
+  }
+
+  // 5. Upload sanitized logo via the media module (inherits scan + variants)
+  const sanitizedFile = { ...file, buffer: logoBuffer, size: logoBuffer.length };
+  const mediaRecord = await uploadMedia(
+    sanitizedFile,
+    userId,
+    null,
+    { maxBytesOverride: MAX_LOGO_BYTES, visibility: 'SHARED' },
+  );
+  // Tag as brand-kit owned (KDL-192/197 ownership contract)
+  await prisma.media.update({
+    where: { id: mediaRecord.id },
+    data: { owner_module: OWNER_MODULE },
+  });
+
+  // 6. Render 1024 px raster PNG for palette extraction and PDF embedding (§1.3)
+  let rasterMediaId = null;
+  try {
+    let rasterBuf;
+    if (isSvgMime(file.mimetype)) {
+      rasterBuf = await sharp(logoBuffer, { density: 300 })
+        .resize(RASTER_SIZE, RASTER_SIZE, { fit: 'inside', withoutEnlargement: false })
+        .png({ compressionLevel: 9 })
+        .toBuffer();
+    } else {
+      rasterBuf = await sharp(logoBuffer)
+        .resize(RASTER_SIZE, RASTER_SIZE, { fit: 'inside', withoutEnlargement: true })
+        .png({ compressionLevel: 9 })
+        .toBuffer();
+    }
+
+    const rasterFile = {
+      buffer: rasterBuf,
+      size: rasterBuf.length,
+      mimetype: 'image/png',
+      originalname: 'logo-raster.png',
+    };
+    const rasterRecord = await uploadMedia(rasterFile, userId, null, {
+      maxBytesOverride: 10 * 1024 * 1024,
+      visibility: 'SHARED',
+    });
+    await prisma.media.update({
+      where: { id: rasterRecord.id },
+      data: { owner_module: OWNER_MODULE },
+    });
+    rasterMediaId = rasterRecord.id;
+  } catch {
+    // Non-fatal — raster generation failure doesn't block the upload
+  }
+
+  // 7. Reset kit to draft with new logo, clearing derived fields
+  const kit = await prisma.brandKit.upsert({
+    where: { project_id: projectId },
+    create: {
+      project_id: projectId,
+      status: 'draft',
+      logo_media_id: mediaRecord.id,
+      logo_raster_media_id: rasterMediaId,
+      palette: null,
+      contrast_report: null,
+      typography: null,
+      tone: null,
+      inference_source: null,
+      fallback_reason: null,
+      overridden_fields: [],
+      acknowledged_contrast_adjustments: false,
+      guidelines_pdf_media_id: null,
+    },
+    update: {
+      status: 'draft',
+      logo_media_id: mediaRecord.id,
+      logo_raster_media_id: rasterMediaId,
+      palette: null,
+      contrast_report: null,
+      typography: null,
+      tone: null,
+      inference_source: null,
+      fallback_reason: null,
+      overridden_fields: [],
+      acknowledged_contrast_adjustments: false,
+      guidelines_pdf_media_id: null,
+    },
+  });
+
+  return kit;
+};
+
+// ─── Palette extraction ───────────────────────────────────────────────────────
+// §2 — OKLCH dominant-colour + 10-step ramps + §3 contrast report
+
+export const extractPaletteForKit = async (projectId) => {
+  const kit = await getKit(projectId);
+  if (!kit.logo_media_id) {
+    throw err('Logo must be uploaded before extraction', 409, 'NO_LOGO');
+  }
+  if (kit.status === 'approved') {
+    throw err('Kit is approved. Re-open before modifying.', 409, 'APPROVED_IMMUTABLE');
+  }
+
+  // Fetch the raster media record to get the storage path
+  const rasterMediaId = kit.logo_raster_media_id ?? kit.logo_media_id;
+  const mediaRecord = await prisma.media.findUnique({ where: { id: rasterMediaId } });
+  if (!mediaRecord) throw err('Logo media record not found', 404, 'MEDIA_NOT_FOUND');
+
+  // D-BK-3: if scan is required and not clean, reject
+  const { requireScan } = await getUploadSettings();
+  if (requireScan && mediaRecord.scan_result && mediaRecord.scan_result !== 'CLEAN') {
+    throw err('Logo has not passed virus scan', 423, 'SCAN_PENDING');
+  }
+
+  const { default: sharp } = await import('sharp');
+
+  // Retrieve the raster buffer from storage via stream → buffer
+  const stream = await storageService.getFileStream(mediaRecord.path);
+  const fileBuffer = await new Promise((resolve, reject) => {
+    const chunks = [];
+    stream.on('data', (c) => chunks.push(c));
+    stream.on('end', () => resolve(Buffer.concat(chunks)));
+    stream.on('error', reject);
+  });
+
+  // Downsample to 128×128 for extraction efficiency
+  const thumbBuf = await sharp(fileBuffer)
+    .resize(EXTRACT_THUMB_SIZE, EXTRACT_THUMB_SIZE, { fit: 'cover' })
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  const imageData = {
+    data: new Uint8Array(thumbBuf.data),
+    width: thumbBuf.info.width,
+    height: thumbBuf.info.height,
+  };
+
+  const palette = extractPalette(imageData);
+  const contrastReport = buildContrastReport(palette);
+
+  const updated = await prisma.brandKit.update({
+    where: { project_id: projectId },
+    data: {
+      status: 'extracted',
+      palette,
+      contrast_report: contrastReport,
+    },
+  });
+
+  return updated;
+};
+
+// ─── Inference ────────────────────────────────────────────────────────────────
+// Phase 1: always falls back to the rule table (D2 AI path is Phase 2 / KDL-483).
+// Phase 2 will upgrade this by calling POST /api/ai/brand-inference first.
+
+export const inferBrandKit = async (projectId, { industry } = {}) => {
+  const kit = await getKit(projectId);
+  if (kit.status === 'draft') {
+    throw err('Kit must be extracted before inference', 409, 'NOT_EXTRACTED');
+  }
+  if (kit.status === 'approved') {
+    throw err('Kit is approved. Re-open before modifying.', 409, 'APPROVED_IMMUTABLE');
+  }
+
+  // Phase 1 always uses fallback (F1_NO_KEY — no real AI key in Phase 1)
+  const fallbackReason = 'F1_NO_KEY';
+  const { typography, tone } = await applyFallbackInference(industry);
+
+  const updated = await prisma.brandKit.update({
+    where: { project_id: projectId },
+    data: {
+      status: 'inferred',
+      inference_source: 'fallback',
+      fallback_reason: fallbackReason,
+      typography,
+      tone,
+    },
+  });
+
+  return updated;
+};
+
+// ─── PATCH overrides ──────────────────────────────────────────────────────────
+
+const PATCHABLE_FIELDS = new Set(['typography', 'tone', 'palette']);
+
+export const patchKit = async (projectId, overrides) => {
+  const kit = await getKit(projectId);
+  if (kit.status === 'approved') {
+    throw err('Kit is approved. Use /reopen to modify.', 409, 'APPROVED_IMMUTABLE');
+  }
+
+  const patchedNames = Object.keys(overrides).filter((k) => PATCHABLE_FIELDS.has(k));
+  const overriddenFields = [...new Set([...kit.overridden_fields, ...patchedNames])];
+
+  const updated = await prisma.brandKit.update({
+    where: { project_id: projectId },
+    data: { ...overrides, overridden_fields: overriddenFields },
+  });
+
+  return updated;
+};
+
+// ─── Approve ──────────────────────────────────────────────────────────────────
+// Requires acknowledgment of every contrastReport.adjustments[] entry (§3.3 + D-BK-1).
+
+export const approveKit = async (projectId, { acknowledgedAdjustmentIds = [] } = {}) => {
+  const kit = await getKit(projectId);
+
+  if (kit.status !== 'inferred') {
+    throw err('Kit must be inferred before approval', 409, 'NOT_INFERRED');
+  }
+
+  const adjustments = kit.contrast_report?.adjustments ?? [];
+  const requiredIds = adjustments.map((a) => a.id);
+  const unacknowledged = requiredIds.filter((id) => !acknowledgedAdjustmentIds.includes(id));
+  if (unacknowledged.length > 0) {
+    throw err(
+      `Must acknowledge all contrast adjustments before approving. Unacknowledged: ${unacknowledged.join(', ')}`,
+      409,
+      'UNACKNOWLEDGED_CONTRAST',
+    );
+  }
+
+  const updated = await prisma.brandKit.update({
+    where: { project_id: projectId },
+    data: {
+      status: 'approved',
+      acknowledged_contrast_adjustments: true,
+      approved_at: new Date(),
+    },
+  });
+
+  return updated;
+};
+
+// ─── Reopen (approved → inferred) ────────────────────────────────────────────
+
+export const reopenKit = async (projectId) => {
+  const kit = await getKit(projectId);
+  if (kit.status !== 'approved') {
+    throw err('Only approved kits can be reopened', 409, 'NOT_APPROVED');
+  }
+  return prisma.brandKit.update({
+    where: { project_id: projectId },
+    data: {
+      status: 'inferred',
+      approved_at: null,
+      acknowledged_contrast_adjustments: false,
+    },
+  });
+};
+
+// ─── Tokens ───────────────────────────────────────────────────────────────────
+// D-BK-6: brand-kit only exposes the payload; orchestrator writes to theme-engine.
+
+export const getTokens = async (projectId, platform) => {
+  const kit = await getKit(projectId);
+  if (kit.status !== 'approved') {
+    throw err('Kit must be approved before tokens are available', 409, 'NOT_APPROVED');
+  }
+  return buildTokenPayload(kit, platform);
+};
+
+// ─── Cleanup: expired original SVG bytes (D-BK-5) ────────────────────────────
+// Called by a scheduled job or the media expiry worker.
+
+export const deleteExpiredOriginals = async () => {
+  const expired = await prisma.brandKit.findMany({
+    where: {
+      logo_original_path: { not: null },
+      logo_original_expires_at: { lte: new Date() },
+    },
+    select: { id: true, project_id: true, logo_original_path: true },
+  });
+
+  for (const kit of expired) {
+    try {
+      await storageService.deleteFile(kit.logo_original_path);
+    } catch {
+      // Non-fatal if already deleted
+    }
+    await prisma.brandKit.update({
+      where: { id: kit.id },
+      data: { logo_original_path: null, logo_original_expires_at: null },
+    });
+  }
+
+  return expired.length;
+};

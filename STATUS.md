@@ -38,7 +38,6 @@ PR #154 (`kdl-446-product-modes-arch`) **MERGED** (squash, master `613b0fd`). Ph
 
 Test artifacts cleaned up (page deleted, template-engine uninstalled, locked_by reset).
 Minor follow-up noted: module uninstall guard rejects an INSTALLED-but-never-ENABLED module ("must be DISABLED"), leaving it un-uninstallable — low-priority lifecycle-state bug.
-
 ---
 
 ## 2026-08-17 — KDL-437 Theme Engine rename: integration + browser gate + PR open, in_review (QA / Test Engineer)
