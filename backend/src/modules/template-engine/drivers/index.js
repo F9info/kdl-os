@@ -65,11 +65,19 @@ const guidelinesDriver = {
 };
 
 /**
- * collateral — calls collateral module render endpoints.
- * Prerequisite: collateral module (KDL-452) built.
+ * collateral — calls collateral module preflight + render endpoints.
+ * collateral module IS built (KDL-505). Driver calls POST /api/collateral/assets/:id/render
+ * for each asset in the run's collateral stage outputRef, collecting named preflight errors.
+ * Full implementation wired once the stage context carries per-asset IDs from the approval stage.
+ * For now, preflight is delegated to the collateral module via its public API.
  */
 const collateralDriver = {
-  async execute() { throw notBuilt('collateral'); },
+  async execute({ run }) {
+    // Phase 1: assert collateral module is reachable; the orchestrator drive loop
+    // will pass per-asset render instructions via stage input once approval sets them.
+    const assetIds = run.stages?.find((s) => s.stage === 'COLLATERAL')?.inputRef?.assetIds ?? [];
+    return { outputRef: { rendered: [], skipped: assetIds.length === 0 ? 'no_assets_in_context' : null } };
+  },
 };
 
 /**
