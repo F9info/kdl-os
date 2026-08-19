@@ -2,6 +2,10 @@
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+## 2026-08-19 — KDL-508: collateral module — 42/42 tests green, PR ready for CI + merge (Backend Coder)
+
+`feat/kdl-508-collateral-on-master` (rebased on master): COLLATERAL_SPEC §7 endpoints, §8 all 7 preflight error strings verbatim, §11 HTML-escaping, §4 geometry/render for all 4 artifact types (PDF_PRINT/PDF_DIGITAL/DOCX/PNG), `withCreditHold` + idempotency-key forwarding, `CREDITS_INSUFFICIENT` via credits module, migration `20260820000001` (sorts after brand-kit). 42/42 tests pass. PR opened — awaiting CI green for squash-merge.
+
 ## 2026-08-19 — KDL-504: credits module — per-project metering, hold lifecycle, ledger (Backend Coder)
 
 `feat/kdl-504-credits-module`: Prisma schema (CreditBalance/CreditHold/CreditLedgerEntry + enums + projects stub) + migration with append-only trigger (first DB trigger in repo); `service.js` with `applyEntries` locked mutation core (SELECT FOR UPDATE, reap-on-touch, idempotency, late settlement, overage alert); `withCreditHold` + full public API; HTTP surface (GET balance/ledger/reconciliation, POST grants/adjustments/release); seed (AppSettings defaults). **34 tests, 994 total passing.** PR #173 board-approved.
