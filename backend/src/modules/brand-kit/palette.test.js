@@ -284,3 +284,23 @@ describe('palette and contrast functions are pure (no I/O)', () => {
     expect(Array.isArray(report.adjustments)).toBe(true);
   });
 });
+
+// ─── hueNameFor (KDL-510) ─────────────────────────────────────────────────────
+
+describe('hueNameFor', () => {
+  it('is deterministic and covers the full wheel', async () => {
+    const { hueNameFor } = await import('./palette.js');
+    expect(hueNameFor(264, 0.11)).toBe('blue');
+    expect(hueNameFor(29, 0.15)).toBe('red');
+    expect(hueNameFor(142, 0.12)).toBe('green');
+    expect(hueNameFor(142, 0.12)).toBe(hueNameFor(142 + 360, 0.12)); // wraps
+    expect(hueNameFor(-15, 0.12)).toBe(hueNameFor(345, 0.12)); // negative wraps
+  });
+
+  it('near-zero chroma and non-finite hue name as neutral gray', async () => {
+    const { hueNameFor } = await import('./palette.js');
+    expect(hueNameFor(264, 0.01)).toBe('neutral gray');
+    expect(hueNameFor(null, 0.2)).toBe('neutral gray');
+    expect(hueNameFor(undefined)).toBe('neutral gray');
+  });
+});

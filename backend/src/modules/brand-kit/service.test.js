@@ -2,7 +2,7 @@
 // Mocks the database and storage layer to walk the full
 // draft → extracted → inferred → approved state machine.
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Hoist mocks before imports
 vi.mock('../../config/database.js', () => ({ prisma: {} }));
@@ -20,10 +20,23 @@ vi.mock('../../shared/services/storage.service.js', () => ({
   getFileStream: vi.fn(),
   deleteFile: vi.fn().mockResolvedValue(undefined),
 }));
+// Phase 2 (KDL-510): AI path + credits metering mocked at the module seams.
+// aiServicesConfigured defaults to false so the pre-Phase-2 tests keep
+// exercising the unwired F1_NO_KEY path unchanged.
+vi.mock('./ai-client.js', () => ({
+  aiServicesConfigured: vi.fn(() => false),
+  requestBrandInference: vi.fn(),
+}));
+vi.mock('../credits/service.js', () => ({
+  withCreditHold: vi.fn(),
+}));
 
 import { prisma } from '../../config/database.js';
 import * as storageService from '../../shared/services/storage.service.js';
 import { uploadMedia } from '../media/service.js';
+import { aiServicesConfigured, requestBrandInference } from './ai-client.js';
+import { withCreditHold } from '../credits/service.js';
+import { BRAND_INFERENCE_COST } from './costs.js';
 import { getKit, uploadLogo, extractPaletteForKit, inferBrandKit, patchKit, approveKit, reopenKit, getTokens, deleteExpiredOriginals } from './service.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -155,6 +168,165 @@ describe('inferBrandKit', () => {
 
     const result = await inferBrandKit('proj-1', { industry: 'saas product' });
     expect(result.typography.heading.family).toBe('Inter');
+  });
+});
+
+// ─── inferBrandKit — Phase 2 AI path (KDL-510) ────────────────────────────────
+
+describe('inferBrandKit — AI path', () => {
+  const aiConfiguredMock = vi.mocked(aiServicesConfigured);
+  const aiRequestMock = vi.mocked(requestBrandInference);
+  const holdMock = vi.mocked(withCreditHold);
+
+  const AI_ENVELOPE = {
+    schemaVersion: 1,
+    source: 'ai',
+    fallbackReason: null,
+    model: 'claude-opus-4-8',
+    usage: { input_tokens: 1500, output_tokens: 400 },
+    estimatedCostUsd: 0.0175,
+    confidence: 0.85,
+    typography: {
+      pairingId: 'space-grotesk-inter',
+      heading: { family: 'Space Grotesk', weights: [500, 700], fallbackStack: 'Space Grotesk, system-ui, sans-serif' },
+      body: { family: 'Inter', weights: [400, 500], fallbackStack: 'Inter, system-ui, sans-serif' },
+      scaleRatio: 1.25,
+      rationale: 'Technical but distinctive.',
+    },
+    tone: { voice: 'Confident and concrete.', adjectives: ['precise'], dos: ['Lead with outcomes'], donts: ['Avoid buzzwords'] },
+    strategy: { positioning: 'x', audienceNotes: 'y', elevatorPitch: 'z' },
+  };
+
+  let settled; // the { result, actualMc, usage } tuple handed to settleHold
+
+  beforeEach(() => {
+    prisma.brandKit = { findUnique: vi.fn(), update: vi.fn() };
+    prisma.brandKit.update.mockImplementation(async ({ data }) => ({ ...makeKit(), ...data }));
+    prisma.brandKit.findUnique.mockResolvedValue(
+      makeKit({ status: 'extracted', palette: GREEN_PALETTE, contrast_report: CONTRAST_REPORT }),
+    );
+    aiConfiguredMock.mockReturnValue(true);
+    settled = null;
+    holdMock.mockImplementation(async (_opts, fn) => {
+      settled = await fn();
+      return settled.result;
+    });
+  });
+
+  afterEach(() => {
+    aiConfiguredMock.mockReturnValue(false);
+    aiRequestMock.mockReset();
+    holdMock.mockReset();
+  });
+
+  it('persists source ai and settles the hold at BRAND_INFERENCE_COST', async () => {
+    aiRequestMock.mockResolvedValue(AI_ENVELOPE);
+
+    const result = await inferBrandKit('proj-1', { industry: 'technology', companyName: 'Acme' });
+
+    expect(result.inference_source).toBe('ai');
+    expect(result.fallback_reason).toBeNull();
+    expect(result.typography.heading.family).toBe('Space Grotesk');
+    expect(settled.actualMc).toBe(BigInt(BRAND_INFERENCE_COST));
+    expect(settled.usage).toMatchObject({ model: 'claude-opus-4-8', inputTokens: 1500, costUsd: 0.0175 });
+  });
+
+  it('reserves with the caller-side cost constant and passes the idempotency key verbatim', async () => {
+    aiRequestMock.mockResolvedValue(AI_ENVELOPE);
+
+    await inferBrandKit('proj-1', { industry: 'tech', idempotencyKey: 'idem-123', userId: 'user-9' });
+
+    expect(holdMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        projectId: 'proj-1',
+        source: 'brand.inference',
+        estimateMc: BigInt(BRAND_INFERENCE_COST),
+        idempotencyKey: 'idem-123',
+        actorId: 'user-9',
+      }),
+      expect.any(Function),
+    );
+  });
+
+  it('generates an idempotency key internally when the header is absent', async () => {
+    aiRequestMock.mockResolvedValue(AI_ENVELOPE);
+    await inferBrandKit('proj-1', { industry: 'tech' });
+    const key = holdMock.mock.calls[0][0].idempotencyKey;
+    expect(typeof key).toBe('string');
+    expect(key.length).toBeGreaterThan(10);
+  });
+
+  it('sends the deterministic palette summary with a hue name', async () => {
+    aiRequestMock.mockResolvedValue(AI_ENVELOPE);
+    await inferBrandKit('proj-1', { industry: 'tech', companyName: 'Acme' });
+    expect(aiRequestMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        companyName: 'Acme',
+        paletteSummary: expect.objectContaining({
+          primaryHex: '#0e6e5c',
+          neutralHex: '#6b7280',
+          chroma: 0.11,
+          hueName: expect.any(String),
+        }),
+      }),
+    );
+  });
+
+  it('endpoint-degraded envelope persists its F-code and settles at 0', async () => {
+    aiRequestMock.mockResolvedValue({
+      ...AI_ENVELOPE,
+      source: 'fallback',
+      fallbackReason: 'F6_BAD_OUTPUT',
+      model: null,
+      usage: null,
+      estimatedCostUsd: 0,
+    });
+
+    const result = await inferBrandKit('proj-1', { industry: 'tech' });
+
+    expect(result.inference_source).toBe('fallback');
+    expect(result.fallback_reason).toBe('F6_BAD_OUTPUT');
+    expect(settled.actualMc).toBe(0n);
+  });
+
+  it('transport failure degrades to local fallback F3_TIMEOUT, settled at 0', async () => {
+    aiRequestMock.mockRejectedValue(Object.assign(new Error('unreachable'), { code: 'AI_TRANSPORT' }));
+
+    const result = await inferBrandKit('proj-1', { industry: 'technology' });
+
+    expect(result.inference_source).toBe('fallback');
+    expect(result.fallback_reason).toBe('F3_TIMEOUT');
+    expect(result.typography.heading.family).toBe('Inter'); // local rule table
+    expect(settled.actualMc).toBe(0n);
+  });
+
+  it('rejected service credentials degrade to F2_AUTH', async () => {
+    aiRequestMock.mockRejectedValue(Object.assign(new Error('401'), { code: 'AI_AUTH' }));
+    const result = await inferBrandKit('proj-1', { industry: 'tech' });
+    expect(result.fallback_reason).toBe('F2_AUTH');
+  });
+
+  it('INSUFFICIENT_CREDITS degrades to F5_BUDGET instead of erroring', async () => {
+    holdMock.mockRejectedValue(Object.assign(new Error('no credits'), { code: 'INSUFFICIENT_CREDITS' }));
+
+    const result = await inferBrandKit('proj-1', { industry: 'tech' });
+
+    expect(result.inference_source).toBe('fallback');
+    expect(result.fallback_reason).toBe('F5_BUDGET');
+    expect(aiRequestMock).not.toHaveBeenCalled();
+  });
+
+  it('other credit errors propagate (caller bug, not AI failure)', async () => {
+    holdMock.mockRejectedValue(Object.assign(new Error('bad amount'), { code: 'INVALID_AMOUNT' }));
+    await expect(inferBrandKit('proj-1', { industry: 'tech' })).rejects.toMatchObject({ code: 'INVALID_AMOUNT' });
+  });
+
+  it('credits are never touched when the AI path is not wired', async () => {
+    aiConfiguredMock.mockReturnValue(false);
+    const result = await inferBrandKit('proj-1', { industry: 'tech' });
+    expect(result.fallback_reason).toBe('F1_NO_KEY');
+    expect(holdMock).not.toHaveBeenCalled();
+    expect(aiRequestMock).not.toHaveBeenCalled();
   });
 });
 

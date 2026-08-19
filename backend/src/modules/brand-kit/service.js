@@ -22,9 +22,12 @@ import { uploadMedia } from '../media/service.js';
 import { sanitizeSvg, isSvgMime } from '../media/svg-sanitizer.js';
 import { getUploadSettings } from '../media/settings.js';
 import { enqueueScanJob } from '../media/media.queue.js';
-import { extractPalette } from './palette.js';
+import { extractPalette, hueNameFor } from './palette.js';
 import { buildContrastReport } from './contrast.js';
 import { buildTokenPayload } from './tokens.js';
+import { BRAND_INFERENCE_COST } from './costs.js';
+import { withCreditHold } from '../credits/service.js';
+import { aiServicesConfigured, requestBrandInference } from './ai-client.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -316,10 +319,84 @@ export const extractPaletteForKit = async (projectId) => {
 };
 
 // ─── Inference ────────────────────────────────────────────────────────────────
-// Phase 1: always falls back to the rule table (D2 AI path is Phase 2 / KDL-483).
-// Phase 2 will upgrade this by calling POST /api/ai/brand-inference first.
+// Phase 2 (KDL-510): AI-first via POST /api/ai/brand-inference (two-brain
+// HIGH → Claude, D-BK-2), metered through the credits reserve → settle hold
+// lifecycle at BRAND_INFERENCE_COST. AI failure at any layer degrades to
+// inference_source: 'fallback' — never an HTTP error (§4.4/§5). Fallback
+// results settle at 0 µc (never meterable, §7). Idempotent re-run allowed:
+// a later call upgrades a fallback kit to a real one.
 
-export const inferBrandKit = async (projectId, { industry } = {}) => {
+const paletteSummaryFromKit = (kit) => {
+  const primary = kit.palette?.colors?.primary;
+  const neutral = kit.palette?.colors?.neutral;
+  return {
+    primaryHex: primary?.hex ?? '#4a4a4a',
+    neutralHex: neutral?.hex ?? '#6b6b6b',
+    chroma: primary?.oklch?.[1] ?? 0,
+    hueName: hueNameFor(primary?.oklch?.[2] ?? null, primary?.oklch?.[1] ?? 0),
+  };
+};
+
+// Transport failures to ai-services map onto the §4.4 codes the schema already
+// persists: not wired → F1_NO_KEY, rejected credentials → F2_AUTH, no/invalid
+// response → F3_TIMEOUT.
+const localFallback = async (industry, fallbackReason) => {
+  const { typography, tone } = await applyFallbackInference(industry);
+  return { typography, tone, source: 'fallback', fallbackReason };
+};
+
+const runInference = async (kit, { projectId, industry, companyName, tagline, locale }) => {
+  let envelope;
+  try {
+    envelope = await requestBrandInference({
+      projectId,
+      companyName: companyName?.trim() || `Project ${projectId}`,
+      industry: industry?.trim() || 'general',
+      ...(tagline ? { tagline } : {}),
+      ...(locale ? { locale } : {}),
+      paletteSummary: paletteSummaryFromKit(kit),
+    });
+  } catch (aiErr) {
+    const code = aiErr.code === 'AI_AUTH' ? 'F2_AUTH' : 'F3_TIMEOUT';
+    return { result: await localFallback(industry, code), actualMc: 0n, usage: null };
+  }
+
+  if (envelope.source === 'ai') {
+    return {
+      result: {
+        typography: envelope.typography,
+        tone: envelope.tone,
+        source: 'ai',
+        fallbackReason: null,
+      },
+      actualMc: BigInt(BRAND_INFERENCE_COST),
+      usage: {
+        provider: 'anthropic',
+        model: envelope.model,
+        inputTokens: envelope.usage?.input_tokens ?? 0,
+        outputTokens: envelope.usage?.output_tokens ?? 0,
+        costUsd: envelope.estimatedCostUsd ?? 0,
+      },
+    };
+  }
+
+  // Endpoint degraded internally (F1..F7) — complete kit, never billable.
+  return {
+    result: {
+      typography: envelope.typography,
+      tone: envelope.tone,
+      source: 'fallback',
+      fallbackReason: envelope.fallbackReason,
+    },
+    actualMc: 0n,
+    usage: null,
+  };
+};
+
+export const inferBrandKit = async (
+  projectId,
+  { industry, companyName, tagline, locale, idempotencyKey, userId } = {},
+) => {
   const kit = await getKit(projectId);
   if (kit.status === 'draft') {
     throw err('Kit must be extracted before inference', 409, 'NOT_EXTRACTED');
@@ -328,18 +405,41 @@ export const inferBrandKit = async (projectId, { industry } = {}) => {
     throw err('Kit is approved. Re-open before modifying.', 409, 'APPROVED_IMMUTABLE');
   }
 
-  // Phase 1 always uses fallback (F1_NO_KEY — no real AI key in Phase 1)
-  const fallbackReason = 'F1_NO_KEY';
-  const { typography, tone } = await applyFallbackInference(industry);
+  let outcome;
+  if (!aiServicesConfigured()) {
+    // AI path not wired — pure fallback, credits never touched.
+    outcome = await localFallback(industry, 'F1_NO_KEY');
+  } else {
+    try {
+      outcome = await withCreditHold(
+        {
+          projectId,
+          actorId: userId ?? null,
+          source: 'brand.inference',
+          estimateMc: BigInt(BRAND_INFERENCE_COST),
+          // X-Idempotency-Key passed verbatim; absent means generate internally.
+          idempotencyKey: idempotencyKey ?? randomUUID(),
+        },
+        () => runInference(kit, { projectId, industry, companyName, tagline, locale }),
+      );
+    } catch (creditErr) {
+      if (creditErr.code === 'INSUFFICIENT_CREDITS') {
+        // The budget gate refused the call — degrade, don't error (§4.4 F5).
+        outcome = await localFallback(industry, 'F5_BUDGET');
+      } else {
+        throw creditErr;
+      }
+    }
+  }
 
   const updated = await prisma.brandKit.update({
     where: { project_id: projectId },
     data: {
       status: 'inferred',
-      inference_source: 'fallback',
-      fallback_reason: fallbackReason,
-      typography,
-      tone,
+      inference_source: outcome.source,
+      fallback_reason: outcome.fallbackReason,
+      typography: outcome.typography,
+      tone: outcome.tone,
     },
   });
 
