@@ -1,134 +1,158 @@
 'use client'
 
-import { Sparkles, Lock, Eye, Palette } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Sparkles, Plus, ArrowRight } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { ModuleGuard } from '@/components/shared/ModuleGuard'
+import { PermissionGuard } from '@/components/shared/PermissionGuard'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { useModules } from '@/hooks/useModules'
+import { Button } from '@/components/ui/button'
+import { LoadingState } from '@/components/ui/loading-state'
+import { useTemplateEngineRuns } from '@/hooks/useTemplateEngine'
+import { useAuthStore } from '@/stores/auth.store'
+import api from '@/lib/axios'
 
-/**
- * Template Engine — Phase 0 stub admin screen.
- *
- * Serves as the browser gate proof for the mode switch:
- *  - Enabling this module hides Theme Engine + Page Builder from nav (conflictsWith)
- *  - Theme Engine settings screen goes read-only + badge (locked_by)
- *  - Disabling restores both nav entries and full editability
- *
- * The real Template Engine brand-kit / collateral / DAG logic ships in later phases.
- */
-export default function TemplateEnginePage() {
+interface Project {
+  id: string
+  name: string
+  slug: string
+  is_default: boolean
+}
+
+export default function StudioLandingPage() {
   return (
     <ModuleGuard slug="template-engine">
-      <TemplateEngineInner />
+      <PermissionGuard permission="template-engine:view">
+        <StudioInner />
+      </PermissionGuard>
     </ModuleGuard>
   )
 }
 
-function TemplateEngineInner() {
-  const { isEnabled } = useModules()
+function StudioInner() {
+  const router = useRouter()
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
 
-  const themeEngineUiEnabled = isEnabled('theme-engine-ui')
-  const pageBuilderUiEnabled = isEnabled('page-builder-ui')
+  const { data: projects, isLoading: projectsLoading, isError: projectsError } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () =>
+      api
+        .get<{ success: boolean; data: Project[] }>('/projects')
+        .then((r) => r.data.data)
+        .catch(() => null),
+    staleTime: 30_000,
+    enabled: isAuthenticated,
+  })
 
   return (
     <div className="max-w-3xl mx-auto">
       <PageHeader
-        title="Template Engine"
+        title="Studio"
         action={
           <div className="flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
             <Sparkles className="h-3.5 w-3.5" />
-            Studio Mode — Active
+            Mode A — Active
           </div>
         }
       />
 
       <p className="text-muted-foreground mb-8">
-        Template Engine is the brand-identity-to-website generator. While active it owns the theming
-        and page-builder engines — direct editing of those screens is suspended.
+        Studio guides your brand identity through a 9-stage pipeline — intake, palette extraction,
+        AI inference, approval, guidelines, collateral, website assembly, preflight, and export.
       </p>
 
-      {/* Mode status card */}
-      <div className="rounded-xl border bg-card p-6 mb-6">
-        <h2 className="text-base font-semibold mb-4">Mode Status</h2>
-        <div className="space-y-3">
-          <StatusRow
-            icon={<Lock className="h-4 w-4" />}
-            label="Theme Engine UI"
-            status={themeEngineUiEnabled ? 'conflict-hidden' : 'hidden'}
-            note={
-              themeEngineUiEnabled
-                ? 'Conflict active — should be hidden from nav'
-                : 'Hidden from nav — managed by Template Engine'
-            }
-          />
-          <StatusRow
-            icon={<Eye className="h-4 w-4" />}
-            label="Page Builder UI"
-            status={pageBuilderUiEnabled ? 'conflict-hidden' : 'hidden'}
-            note={
-              pageBuilderUiEnabled
-                ? 'Conflict active — should be hidden from nav'
-                : 'Hidden from nav — managed by Template Engine'
-            }
-          />
-          <StatusRow
-            icon={<Palette className="h-4 w-4" />}
-            label="Theme Engine (core)"
-            status="running"
-            note="Engine always on — Template Engine drives it via /api/theme-engine"
-          />
-        </div>
-      </div>
-
-      {/* Phase 0 notice */}
-      <div className="rounded-xl border border-dashed bg-muted/30 p-6">
-        <div className="flex items-start gap-3">
-          <Sparkles className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
-          <div>
-            <p className="font-medium text-sm">Phase 0 stub — proving the platform layer</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              The full brand-kit, collateral generation, and 9-stage DAG orchestration ship in later
-              phases. This stub screen exists to confirm the conflict and locked_by mechanics are
-              wired correctly: enabling Template Engine hides the two admin UIs and locks Theme
-              Engine settings; disabling it restores them non-destructively.
-            </p>
-          </div>
-        </div>
-      </div>
+      {projectsLoading ? (
+        <LoadingState />
+      ) : projectsError || projects === null ? (
+        <NoProjectsModule />
+      ) : projects && projects.length > 0 ? (
+        <ProjectList projects={projects} onOpen={(id) => router.push(`/admin/template-engine/projects/${id}`)} />
+      ) : (
+        <EmptyProjectsState />
+      )}
     </div>
   )
 }
 
-function StatusRow({
-  icon,
-  label,
-  status,
-  note,
+function ProjectList({
+  projects,
+  onOpen,
 }: {
-  icon: React.ReactNode
-  label: string
-  status: 'running' | 'hidden' | 'conflict-hidden'
-  note: string
+  projects: Project[]
+  onOpen: (id: string) => void
 }) {
-  const badge = {
-    running: 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300',
-    hidden: 'bg-muted text-muted-foreground',
-    'conflict-hidden': 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
-  }[status]
+  return (
+    <div className="space-y-3">
+      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+        Projects
+      </h2>
+      {projects.map((p) => (
+        <ProjectCard key={p.id} project={p} onOpen={() => onOpen(p.id)} />
+      ))}
+    </div>
+  )
+}
 
-  const label2 = {
-    running: 'Running',
-    hidden: 'Hidden',
-    'conflict-hidden': 'Conflict',
-  }[status]
+function ProjectCard({ project, onOpen }: { project: Project; onOpen: () => void }) {
+  const { data: runs } = useTemplateEngineRuns(project.id)
+  const run = runs?.[0]
+
+  const completedCount = run
+    ? run.stages.filter((s) => s.status === 'DONE' || s.status === 'SKIPPED').length
+    : 0
+  const totalStages = 9
 
   return (
-    <div className="flex items-center gap-3 py-2">
-      <span className="text-muted-foreground">{icon}</span>
-      <span className="flex-1 text-sm font-medium">{label}</span>
-      <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${badge}`}>{label2}</span>
-      <span className="text-xs text-muted-foreground hidden sm:block max-w-xs text-right">
-        {note}
-      </span>
+    <div className="group flex items-center justify-between rounded-xl border bg-card px-5 py-4 hover:border-primary/40 transition-colors">
+      <div className="space-y-1">
+        <p className="text-sm font-medium">
+          {project.name}
+          {project.is_default && (
+            <span className="ml-2 text-xs text-muted-foreground">(default)</span>
+          )}
+        </p>
+        {run ? (
+          <p className="text-xs text-muted-foreground">
+            {completedCount}/{totalStages} stages complete · Run {run.status.toLowerCase().replace('_', ' ')}
+          </p>
+        ) : (
+          <p className="text-xs text-muted-foreground">No run started</p>
+        )}
+      </div>
+      <Button size="sm" variant="ghost" onClick={onOpen} className="gap-1.5">
+        Open Studio
+        <ArrowRight className="h-3.5 w-3.5" />
+      </Button>
+    </div>
+  )
+}
+
+function EmptyProjectsState() {
+  return (
+    <div className="rounded-xl border border-dashed bg-muted/30 p-8 text-center">
+      <Sparkles className="mx-auto h-8 w-8 text-muted-foreground mb-3" />
+      <p className="text-sm font-medium">No projects yet</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Create a project in the projects module to start a Studio run.
+      </p>
+      <Button size="sm" variant="outline" className="mt-4 gap-2" asChild>
+        <a href="/admin/projects">
+          <Plus className="h-3.5 w-3.5" />
+          Go to Projects
+        </a>
+      </Button>
+    </div>
+  )
+}
+
+function NoProjectsModule() {
+  return (
+    <div className="rounded-xl border border-dashed bg-muted/30 p-8 text-center">
+      <p className="text-sm font-medium text-muted-foreground">Projects module not available</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        The projects module (<code>/api/projects</code>) is required. Enable it to create Studio
+        projects.
+      </p>
     </div>
   )
 }
