@@ -10,10 +10,7 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'WEBSITE')
   const advance = useAdvanceStage(run.id)
 
-  const outputRef = stage?.outputRef as
-    | { pageIds?: Record<string, string> }
-    | null
-    | undefined
+  const outputRef = stage?.outputRef as { pageIds?: Record<string, string> } | null | undefined
 
   const pageCount = outputRef?.pageIds ? Object.keys(outputRef.pageIds).length : 0
 

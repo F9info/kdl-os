@@ -10,9 +10,7 @@ export function PaletteStage({ run }: { run: TemplateEngineRun }) {
   const advance = useAdvanceStage(run.id)
 
   const outputRef = stage?.outputRef as
-    | { paletteVersion?: number; swatchCount?: number }
-    | null
-    | undefined
+    { paletteVersion?: number; swatchCount?: number } | null | undefined
 
   return (
     <StageShell
@@ -30,8 +28,8 @@ export function PaletteStage({ run }: { run: TemplateEngineRun }) {
           </div>
           {outputRef.swatchCount != null && (
             <p className="text-xs text-muted-foreground">
-              {outputRef.swatchCount} colour swatches extracted.
-              Full palette available in the brand-kit module.
+              {outputRef.swatchCount} colour swatches extracted. Full palette available in the
+              brand-kit module.
             </p>
           )}
         </div>

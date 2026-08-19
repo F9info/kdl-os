@@ -61,13 +61,7 @@ export default function StagePage() {
   return <StageComponent run={run} />
 }
 
-function NoRunPlaceholder({
-  stageSlug,
-  projectId,
-}: {
-  stageSlug: string
-  projectId: string
-}) {
+function NoRunPlaceholder({ stageSlug, projectId }: { stageSlug: string; projectId: string }) {
   return (
     <div className="flex h-64 flex-col items-center justify-center gap-3 text-center">
       <p className="text-sm font-medium">No Studio run exists for this project yet.</p>

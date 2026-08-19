@@ -15,10 +15,7 @@ export function PreflightStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'PREFLIGHT')
   const advance = useAdvanceStage(run.id)
 
-  const outputRef = stage?.outputRef as
-    | { results?: PreflightResult[] }
-    | null
-    | undefined
+  const outputRef = stage?.outputRef as { results?: PreflightResult[] } | null | undefined
 
   const results = outputRef?.results ?? []
 

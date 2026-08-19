@@ -11,9 +11,7 @@ export function ApprovalStage({ run }: { run: TemplateEngineRun }) {
   const advance = useAdvanceStage(run.id)
 
   const outputRef = stage?.outputRef as
-    | { approvedAt?: string; brandKitVersion?: number; tokensWrittenAt?: string }
-    | null
-    | undefined
+    { approvedAt?: string; brandKitVersion?: number; tokensWrittenAt?: string } | null | undefined
 
   const tokensWritten = !!outputRef?.tokensWrittenAt
   const approved = !!outputRef?.approvedAt

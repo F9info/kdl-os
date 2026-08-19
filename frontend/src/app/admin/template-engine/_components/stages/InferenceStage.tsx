@@ -21,7 +21,7 @@ export function InferenceStage({ run }: { run: TemplateEngineRun }) {
     queryFn: () =>
       api
         .get<{ success: boolean; data: CreditsBalance }>(
-          `/credits/projects/${run.projectId}/balance`,
+          `/credits/projects/${run.projectId}/balance`
         )
         .then((r) => r.data.data)
         .catch(() => null),
@@ -29,9 +29,7 @@ export function InferenceStage({ run }: { run: TemplateEngineRun }) {
   })
 
   const outputRef = stage?.outputRef as
-    | { inferenceVersion?: number; typographyPair?: string }
-    | null
-    | undefined
+    { inferenceVersion?: number; typographyPair?: string } | null | undefined
 
   return (
     <StageShell
@@ -66,7 +64,8 @@ export function InferenceStage({ run }: { run: TemplateEngineRun }) {
               </p>
             )}
             <p className="text-xs text-muted-foreground">
-              Full inference output (tone, strategy, typography) is available in the brand-kit module.
+              Full inference output (tone, strategy, typography) is available in the brand-kit
+              module.
             </p>
           </div>
         ) : (

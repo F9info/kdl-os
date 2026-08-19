@@ -44,10 +44,7 @@ export function StudioStepper({ run, projectId, activeSlug }: StudioStepperProps
             errorCode={errorCode}
             onClick={
               displayState !== 'locked'
-                ? () =>
-                    router.push(
-                      `/admin/template-engine/projects/${projectId}/${def.slug}`,
-                    )
+                ? () => router.push(`/admin/template-engine/projects/${projectId}/${def.slug}`)
                 : undefined
             }
           />
@@ -108,18 +105,20 @@ function StepItem({ label, index, displayState, isActive, errorCode, onClick }: 
         'group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors',
         isActive && 'bg-primary/10 text-primary font-medium',
         !isActive && isClickable && 'hover:bg-muted text-foreground',
-        !isActive && !isClickable && 'text-muted-foreground cursor-not-allowed opacity-60',
+        !isActive && !isClickable && 'text-muted-foreground cursor-not-allowed opacity-60'
       )}
     >
       <span
         className={cn(
           'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
-          displayState === 'done' && 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+          displayState === 'done' &&
+            'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
           displayState === 'in_progress' && 'bg-primary/20 text-primary',
-          displayState === 'needs_attention' && 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
+          displayState === 'needs_attention' &&
+            'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
           displayState === 'locked' && 'bg-muted text-muted-foreground',
           displayState === 'available' && !isActive && 'bg-muted text-muted-foreground',
-          displayState === 'available' && isActive && 'bg-primary/20 text-primary',
+          displayState === 'available' && isActive && 'bg-primary/20 text-primary'
         )}
         aria-hidden="true"
       >

@@ -11,9 +11,7 @@ export function GuidelinesStage({ run }: { run: TemplateEngineRun }) {
   const advance = useAdvanceStage(run.id)
 
   const outputRef = stage?.outputRef as
-    | { renderId?: string; downloadUrl?: string }
-    | null
-    | undefined
+    { renderId?: string; downloadUrl?: string } | null | undefined
 
   return (
     <StageShell

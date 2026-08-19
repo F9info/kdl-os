@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/axios'
 import type { TemplateEngineRun, DagStage, ExportManifest } from '@/types/template-engine.types'
+import { stageEnumToSlug } from '@/types/template-engine.types'
 
 const BASE = '/template-engine'
 
@@ -56,7 +57,7 @@ export function useAdvanceStage(runId: string) {
     mutationFn: (stage: DagStage) =>
       api
         .post<{ success: boolean; data: TemplateEngineRun }>(
-          `${BASE}/runs/${runId}/stages/${stage}/advance`,
+          `${BASE}/runs/${runId}/stages/${stageEnumToSlug(stage)}/advance`
         )
         .then((r) => r.data.data),
     onSuccess: (run) => {

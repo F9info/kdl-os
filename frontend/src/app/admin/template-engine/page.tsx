@@ -33,7 +33,11 @@ function StudioInner() {
   const router = useRouter()
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
 
-  const { data: projects, isLoading: projectsLoading, isError: projectsError } = useQuery({
+  const {
+    data: projects,
+    isLoading: projectsLoading,
+    isError: projectsError,
+  } = useQuery({
     queryKey: ['projects'],
     queryFn: () =>
       api
@@ -66,7 +70,10 @@ function StudioInner() {
       ) : projectsError || projects === null ? (
         <NoProjectsModule />
       ) : projects && projects.length > 0 ? (
-        <ProjectList projects={projects} onOpen={(id) => router.push(`/admin/template-engine/projects/${id}`)} />
+        <ProjectList
+          projects={projects}
+          onOpen={(id) => router.push(`/admin/template-engine/projects/${id}`)}
+        />
       ) : (
         <EmptyProjectsState />
       )}
@@ -74,13 +81,7 @@ function StudioInner() {
   )
 }
 
-function ProjectList({
-  projects,
-  onOpen,
-}: {
-  projects: Project[]
-  onOpen: (id: string) => void
-}) {
+function ProjectList({ projects, onOpen }: { projects: Project[]; onOpen: (id: string) => void }) {
   return (
     <div className="space-y-3">
       <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
@@ -113,7 +114,8 @@ function ProjectCard({ project, onOpen }: { project: Project; onOpen: () => void
         </p>
         {run ? (
           <p className="text-xs text-muted-foreground">
-            {completedCount}/{totalStages} stages complete · Run {run.status.toLowerCase().replace('_', ' ')}
+            {completedCount}/{totalStages} stages complete · Run{' '}
+            {run.status.toLowerCase().replace('_', ' ')}
           </p>
         ) : (
           <p className="text-xs text-muted-foreground">No run started</p>

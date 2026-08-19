@@ -13,9 +13,7 @@ export function CollateralStage({ run }: { run: TemplateEngineRun }) {
   const advance = useAdvanceStage(run.id)
 
   const outputRef = stage?.outputRef as
-    | { renderIds?: string[]; downloadUrls?: string[] }
-    | null
-    | undefined
+    { renderIds?: string[]; downloadUrls?: string[] } | null | undefined
 
   return (
     <StageShell
@@ -30,7 +28,8 @@ export function CollateralStage({ run }: { run: TemplateEngineRun }) {
           <div className="rounded-lg border bg-card p-4 space-y-3">
             <div className="flex items-center gap-2 text-sm font-medium">
               <Layers className="h-4 w-4 text-primary" />
-              {outputRef.renderIds.length} artifact{outputRef.renderIds.length !== 1 ? 's' : ''} rendered
+              {outputRef.renderIds.length} artifact{outputRef.renderIds.length !== 1 ? 's' : ''}{' '}
+              rendered
             </div>
             {outputRef.downloadUrls?.map((url, i) => (
               <Button key={i} variant="outline" size="sm" asChild className="mr-2 mb-1">

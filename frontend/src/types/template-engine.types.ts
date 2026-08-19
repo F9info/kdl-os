@@ -71,10 +71,7 @@ export function stageEnumToSlug(stage: DagStage): string {
   return DAG_STAGES.find((s) => s.stage === stage)?.slug ?? stage.toLowerCase()
 }
 
-export function stageStatusToDisplay(
-  status: StageStatus,
-  gateBlocked: boolean,
-): StepDisplayState {
+export function stageStatusToDisplay(status: StageStatus, gateBlocked: boolean): StepDisplayState {
   if (status === 'DONE' || status === 'SKIPPED') return 'done'
   if (status === 'RUNNING') return 'in_progress'
   if (status === 'AWAITING_INPUT' || status === 'FAILED') return 'needs_attention'
