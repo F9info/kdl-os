@@ -80,6 +80,23 @@ Key deliverables:
 **Phase 1 state:** Brand-kit (KDL-451), collateral (KDL-452), and credits modules are not yet on master → 7 of 9 drivers are stubs returning UPSTREAM_NOT_BUILT (503). Replace each with a real HTTP call once the upstream module ships. `preflight` and `export` drivers are fully implemented (pure read/aggregate, no upstream call needed).
 
 **Next:** Code Reviewer reviews this PR. KDL-502 (or similar) implements frontend stepper surface per STUDIO_IA.md. Once brand-kit lands, replace intake/palette/inference/approval/guidelines drivers with real calls.
+## 2026-08-19 — KDL-502: Studio surface frontend — 9-stage DAG UI (Frontend Coder)
+
+**Branch:** `feat/kdl-502-studio-frontend` → PR #171
+
+**Done:** Full Studio product-surface frontend per STUDIO_IA.md §5 and TEMPLATE_ENGINE_ARCH.md §7.
+- **Routes:** `/admin/template-engine` (project list landing), `projects/[projectId]` (auto-redirect to first incomplete stage), `projects/[projectId]/[stageSlug]` (9 dynamic stage screens).
+- **StudioStepper:** in-surface 9-step stepper with locked/available/in_progress/needs_attention/done display states; gate logic computed client-side from run data; blocked steps show errorCode; no client-side gate enforcement.
+- **Stage screens (×9):** intake, palette, inference, approval, guidelines, collateral, website, preflight, export. Each calls orchestrator API via `useTemplateEngine` hooks; handles API-not-yet-live gracefully.
+- **Approval stage:** surfaces two-step sub-state (approvedAt + tokensWrittenAt) per §4.1 crash-recovery spec.
+- **Inference stage:** displays advisory credit balance via `GET /api/credits/:projectId/balance` (display-only, not a gate — per TEMPLATE_ENGINE_ARCH §5).
+- **module.json:** promoted to v0.1.0 — nav label "Studio", permissions (view/run/approve/export), dependsOn extended to brand-kit + collateral + credits. conflictsWith unchanged (L5 — board decision required).
+- **LOCKED IA preserved:** L3 (flat-leaf-only nav), L5 (conflictsWith unchanged), L6 (single sidebar entry, no per-stage sidebar items).
+- **Types + hooks:** `src/types/template-engine.types.ts`, `src/hooks/useTemplateEngine.ts` — typed against TEMPLATE_ENGINE_ARCH §4 data model.
+
+**Blocker:** Backend orchestrator (KDL-453 child) not yet live. Frontend degrades gracefully (API error → empty/error state). PR ready for code review once backend lands.
+
+**Next:** Code Reviewer reviews PR #171; backend orchestrator child issues (KDL-453) land and wire up to these API endpoints.
 
 ---
 
