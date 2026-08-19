@@ -28,7 +28,7 @@ vi.mock('../../config/database.js', () => ({
       findUnique: vi.fn(),
     },
     brandKit: {
-      findFirst: vi.fn(),
+      findUnique: vi.fn(),
     },
   },
 }));
@@ -395,7 +395,7 @@ describe('idempotency-key forwarding to withCreditHold (COLLATERAL_SPEC §7)', (
     vi.clearAllMocks();
     prisma.collateralAsset.findUnique.mockResolvedValue(RENDER_SAFE_ASSET);
     // Return a full brand kit so preflight passes and withCreditHold is reached.
-    prisma.brandKit.findFirst.mockResolvedValue({ resolved_tokens: makeFullBrandKit() });
+    prisma.brandKit.findUnique.mockResolvedValue({ resolved_tokens: makeFullBrandKit() });
     prisma.collateralRender.create.mockResolvedValue({
       id: 'render-1', asset_id: 'asset-1', format: 'PDF_DIGITAL',
       variant: null, file_url: 'collateral/proj-1/asset-1/pdf.pdf',
@@ -437,7 +437,7 @@ describe('credit hold gating — CREDITS_INSUFFICIENT surfaces as 402', () => {
     vi.clearAllMocks();
     prisma.collateralAsset.findUnique.mockResolvedValue(RENDER_SAFE_ASSET);
     // Full brand kit so preflight passes; withCreditHold then throws INSUFFICIENT_CREDITS.
-    prisma.brandKit.findFirst.mockResolvedValue({ resolved_tokens: makeFullBrandKit() });
+    prisma.brandKit.findUnique.mockResolvedValue({ resolved_tokens: makeFullBrandKit() });
     withCreditHold.mockRejectedValueOnce(
       new CreditError('INSUFFICIENT_CREDITS', 'Insufficient credits: have 0 µc, need 5000000 µc')
     );
