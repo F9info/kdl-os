@@ -1,3 +1,88 @@
+## 2026-08-19 — KDL-504: credits module — per-project metering, hold lifecycle, ledger (Backend Coder)
+
+**Branch:** `feat/kdl-504-credits-module` — PR #173
+
+**Done:**
+1. **Prisma schema** `backend/prisma/schema/credits.prisma` — `CreditBalance`, `CreditHold`, `CreditLedgerEntry` models; `CreditEntryType` + `CreditHoldStatus` enums; BigInt `balance_mc`/`amount_mc` columns; `@@unique` on hold `idempotency_key`; correct indexes per spec §4.
+2. **Projects stub** `backend/prisma/schema/projects.prisma` — minimal `Project` model (id/cuid, name, slug@unique, is_default, timestamps) to unblock credits FKs; full tenancy scoping lands in PROJECTS_ARCH build (KDL-474).
+3. **Migration** `20260819000001_add_credits_module/migration.sql` — creates all 3 tables + enums + FK constraints; **append-only trigger + function** on `credit_ledger_entries` (first DB trigger in repo — flagged as precedent).
+4. **`service.js`** (CREDITS_ARCH §3–6):
+   - `applyEntries` — locked mutation core: `SELECT ... FOR UPDATE` at READ COMMITTED, reaps expired holds, enforces balance ≥ estimate, inserts ledger entries with correct `balance_after_mc`, updates materialised balance, applies hold state transitions.
+   - `grantCredits`, `reserveCredits`, `settleHold`, `releaseHold`, `adjustCredits`, `forceReleaseHold`, `getBalance`, `getLedger`, `getReconciliation`, `withCreditHold`, `usdToMc`.
+   - Idempotency on holds via `@unique idempotency_key` — same key returns existing hold without re-debiting.
+   - Late settlement: EXPIRED holds get `ADJUST` entry (not silently dropped).
+   - Overage detection: `settle_overage` activity-log alert when overage > `credits.max_overage_pct`.
+5. **`controller.js`** — `serializeBigInts()` for JSON; all BigInt amounts returned as strings.
+6. **`routes.js`** — `GET balance/ledger/reconciliation` (credits:view) + `POST grants/adjustments` (credits:manage) + `POST holds/:holdId/release` (credits:manage). No POST /preflight per CEO ruling.
+7. **`schema.js`** — Zod validation with `bigIntString` transformer for `amount_mc` fields.
+8. **`seed.js`** — upserts AppSettings: `credits.usd_per_credit=0.01`, `credits.hold_ttl_seconds=900`, `credits.max_overage_pct=25`.
+9. **`module.json`** — slug `credits`, nav `Coins`, permissions `credits`.
+10. **34 tests** in `service.test.js` — `usdToMc`, `grantCredits`, `reserveCredits` (402 path, idempotency replay), `settleHold` (overage, double-settle guard, late settlement on EXPIRED), `releaseHold` (idempotent), hold lifecycle (reserve→settle, reserve→release), expired hold reaping, reconciliation arithmetic, cross-project isolation, `adjustCredits`, `forceReleaseHold`, `withCreditHold` (settle on success, release on error). **994 tests passing total.**
+
+**Notes:**
+- MERGE_DISCIPLINE exception: all 4 spec phases (C1–C4) combined in one PR per issue KDL-504 requirement. Line count: ~1300 non-generated lines (exceeds 400-line guideline). Code Reviewer may request split.
+- Projects stub is minimal — full tenancy migration (§1.2, PROJECTS_ARCH) belongs to KDL-474 build.
+- No real-Postgres concurrency/append-only integration tests (C2b in spec) — the append-only trigger is in the migration SQL; integration test coverage would require a live DB and is deferred.
+
+**Next:** brand-kit (KDL-482) and collateral engineers consume `withCreditHold` per §5 contract.
+
+## 2026-08-19 — KDL-501: PR #172 blocker fixes — §8.2 field name + :export gate (Backend Coder)
+
+**Branch:** `feat/kdl-501-template-engine-orchestrator` — PR #172
+
+**Fixes (Code Reviewer requested changes):**
+1. **`service.js:264` — §8.2 D3 guard**: `templateEngineActivityScope()` now returns `created_at: { gte: cutover }` (snake_case Prisma field) instead of `createdAt`. Previously would have thrown `PrismaClientValidationError` on first real query.
+2. **`controller.js` — §3/§9 export stage gate**: `advanceStage` now checks `template-engine:export` when `stage === 'export'`, same pattern as the `:approve` check for `stage === 'approval'`. `:run`-only users can no longer flip EXPORT to DONE.
+3. **`template-engine.test.js` — strengthened §8.2 test**: activity scope tests now assert `created_at` key is present and `createdAt` key is absent (explicit where-shape assertion).
+
+**Tests:** 71/71 pass.
+
+---
+
+## 2026-08-19 — KDL-503: template-engine Phase 1 — DAG state machine, server-side gates, additive migration, RBAC (Backend Coder)
+
+**Branch:** `feat/kdl-501-template-engine-orchestrator` — PR #172
+
+**Done:**
+1. **Prisma additive migration** `20260819000000_add_template_engine_dag`: `TemplateEngineRun` + `TemplateEngineStage` models, `RunStatus`/`DagStage`/`StageStatus` enums, `@@unique([runId, stage])`, `@@index([projectId])`. `prisma validate` ✅
+2. **9-stage DAG** (stages + slugs verbatim from §3): intake → palette → inference → approval → [guidelines ‖ collateral ‖ website] → preflight → export. Fan-out is independent — one failing branch does not fail siblings.
+3. **Server-side gates**: `POST /runs/:id/stages/:stage/advance` returns 409 `STAGE_GATE_FAILED` with named `blockingReason` when §3 Depends-on unmet (KDL-446 precedent).
+4. **Crash recovery** (§4.1): orphaned RUNNING → FAILED(INTERRUPTED) at advance time; `markInterruptedStages()` on resume endpoint; approval sub-step outputRef contract.
+5. **Driver interface**: 9 stubs all throw `UPSTREAM_NOT_BUILT (503)`; preflight + export have real read-only implementations.
+6. **RBAC**: custom actions `["view","run","approve","export"]`; `:approve` double-enforced in controller for stage 4; cross-project 404 leakage guard.
+7. **Manifest**: `dependsOn` including brand-kit/collateral/credits; nav "Studio"/Sparkles; `conflictsWith` unchanged; `moduleGate` 404 when disabled.
+8. **Activity scope** (§8.2): `templateEngineActivityScope()` cutover-guard helper.
+9. **71 tests**: gate.test.js (30), dag.test.js (9), recovery.test.js (6), leakage.test.js (7), template-engine.test.js (19).
+
+**Next:** Code Reviewer reviews PR #172; Phase 2 fills in one driver at a time once upstream modules ship.
+
+---
+
+## 2026-08-19 — KDL-501: template-engine orchestrator backend — 9-stage DAG per TEMPLATE_ENGINE_ARCH.md (Backend Coder)
+
+**Branch:** `feat/kdl-501-template-engine-orchestrator` — PR against master
+
+**Done:** Full 9-stage DAG orchestrator backend for the `template-engine` module (promotion of Phase-0 stub). This is a thin coordination layer — contains NO theming/rendering logic; drives existing engines via public APIs only.
+
+Key deliverables:
+1. **Prisma schema** `backend/prisma/schema/template-engine.prisma` — `TemplateEngineRun` + `TemplateEngineStage` models; `RunStatus`, `StageStatus`, `DagStage` enums; `@@unique([runId, stage])`; `outputRef Json?` stores pointers not payloads (§4).
+2. **Additive migration** `20260819000000_add_template_engine_dag/migration.sql` — creates the two tables + enums; no destructive changes.
+3. **`module.json`** updated from Phase-0 stub: permissions `[{name:"template-engine",actions:["view","run","approve","export"]}]`; `dependsOn` wired; nav entry `/admin/template-engine`.
+4. **`service.js`** — `checkGate` (pure, per §3 Depends-on), `createRun`, `getRun` (cross-project 404 guard §10), `listRuns`, `markInterruptedStages` (crash-resume: RUNNING→FAILED INTERRUPTED), `advanceStage` (gate + orphan RUNNING detection + driver.execute + DB upsert/update), `getExportManifest`, `templateEngineActivityScope` (§8 D3 data-hygiene: cutover from `_prisma_migrations`, appends `created_at >= cutover` to activity_log queries).
+5. **`drivers/index.js`** — 9 stage drivers. `preflight` aggregates named branch errors; `export` builds handoff manifest from outputRefs. Brand-kit/collateral/credits stubs throw `UPSTREAM_NOT_BUILT` (503) — DAG state machine is fully testable independently (Phase 1).
+6. **`schema.js`** — Zod schemas using combined `z.object({params,body,query})` shape per validate middleware.
+7. **`controller.js`** — `requireProjectId` header guard; `advanceStage` checks `template-engine:approve` for the APPROVAL stage; named error codes (STAGE_GATE_FAILED, STAGE_INTERRUPTED, UPSTREAM_NOT_BUILT) surfaced.
+8. **`routes.js`** — full REST surface under module `apiPrefix`.
+9. **Test suite** (5 test files, 79 files total, 960 tests passing): `template-engine.test.js` (19 tests: gate pass/block, crash recovery, activity scope, server-side gate, preflight driver); `gate.test.js` (all 9 stage gate conditions); `dag.test.js` (fan-out independence, gate rejection, UPSTREAM_NOT_BUILT recording); `recovery.test.js` (crash recovery); `leakage.test.js` (cross-project isolation). Prisma validates clean.
+
+**D3 (slug conflict):** D3 was already RESCINDED in DECISIONS.md from PR #170; `template-engine` slug is locked to the orchestrator per board tie-breaker d326e28f.
+
+**Phase 1 state:** Brand-kit (KDL-451), collateral (KDL-452), and credits modules are not yet on master → 7 of 9 drivers are stubs returning UPSTREAM_NOT_BUILT (503). Replace each with a real HTTP call once the upstream module ships. `preflight` and `export` drivers are fully implemented (pure read/aggregate, no upstream call needed).
+
+**Next:** Code Reviewer reviews this PR. KDL-502 (or similar) implements frontend stepper surface per STUDIO_IA.md. Once brand-kit lands, replace intake/palette/inference/approval/guidelines drivers with real calls.
+
+---
+
 ## 2026-08-18 — KDL-485: STUDIO_IA.md — canonical source-app IA for the template-engine surface (Frontend Architect)
 
 **Branch:** `docs/kdl-485-studio-ia` — docs-only

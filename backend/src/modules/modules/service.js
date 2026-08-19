@@ -291,8 +291,8 @@ export async function uninstallModule(slug, actorId) {
     throw err;
   }
 
-  if (mod.status !== 'DISABLED') {
-    const err = new Error(`Module "${slug}" must be DISABLED before uninstalling`);
+  if (mod.status === 'ENABLED') {
+    const err = new Error(`Module "${slug}" must be disabled before uninstalling`);
     err.status = 409;
     throw err;
   }

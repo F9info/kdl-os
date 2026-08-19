@@ -1,15 +1,15 @@
 {
   "slug": "template-engine",
-  "name": "Template Engine (stub)",
-  "version": "0.0.1",
-  "description": "Phase 0 stub — proves conflictsWith and locked_by mechanics",
+  "name": "Template Engine",
+  "version": "1.0.0",
+  "description": "9-stage DAG orchestrator — drives brand-kit, theme-engine, page-builder, collateral, and credits via their public APIs (Mode A / Studio). No rendering logic lives here.",
   "core": false,
   "apiPrefix": "/api/template-engine",
-  "permissions": [],
+  "permissions": [{ "name": "template-engine", "actions": ["view", "run", "approve", "export"] }],
   "nav": [
-    { "label": "Template Engine", "path": "/admin/template-engine", "icon": "Sparkles", "permission": "template-engine:view" }
+    { "label": "Studio", "path": "/admin/template-engine", "icon": "Sparkles", "permission": "template-engine:view" }
   ],
-  "dependsOn": ["theme-engine", "page-builder"],
+  "dependsOn": ["theme-engine", "page-builder", "brand-kit", "collateral", "credits"],
   "conflictsWith": ["theme-engine-ui", "page-builder-ui"],
   "queues": [],
   "env": []

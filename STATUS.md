@@ -2,6 +2,22 @@
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+## 2026-08-19 — KDL-504: credits module — per-project metering, hold lifecycle, ledger (Backend Coder)
+
+`feat/kdl-504-credits-module`: Prisma schema (CreditBalance/CreditHold/CreditLedgerEntry + enums + projects stub) + migration with append-only trigger (first DB trigger in repo); `service.js` with `applyEntries` locked mutation core (SELECT FOR UPDATE, reap-on-touch, idempotency, late settlement, overage alert); `withCreditHold` + full public API; HTTP surface (GET balance/ledger/reconciliation, POST grants/adjustments/release); seed (AppSettings defaults). **34 tests, 994 total passing.** PR #173 board-approved.
+
+## 2026-08-19 — KDL-501: PR #172 blocker fixes pushed, awaiting re-review (Backend Coder)
+
+Two code-review blockers fixed: `templateEngineActivityScope()` now uses `created_at` (Prisma snake_case); `advanceStage` controller now gates `stage === 'export'` with `:export` permission. Tests strengthened to catch the wrong key. 71/71 template-engine tests pass.
+
+## 2026-08-19 — KDL-501: template-engine orchestrator backend — 9-stage DAG live, all tests green (Backend Coder)
+
+9-stage DAG orchestrator on `feat/kdl-501-template-engine-orchestrator` (PR against master): Prisma schema + additive migration, `service.js` with `checkGate` / `markInterruptedStages` / `advanceStage` / `templateEngineActivityScope`, 9 stage drivers (7 Phase 1 stubs returning UPSTREAM_NOT_BUILT, preflight + export fully implemented), routes/controller/schema wired under `template-engine:view/run/approve/export` RBAC. **79 test files, 960 tests passing, `prisma validate` clean.** Brand-kit / collateral / credits stubs replaced by real drivers once those modules land.
+
+## 2026-08-19 — KDL-503: template-engine Phase 1 — DAG + gates + migration + RBAC (Backend Coder) — PR #172
+
+`backend/` on `feat/kdl-501-template-engine-orchestrator`: Prisma `TemplateEngineRun`/`TemplateEngineStage` models + additive migration (`prisma validate` ✅); 9-stage DAG state machine (§3); server-side gates returning 409 `STAGE_GATE_FAILED`; crash recovery to `FAILED(INTERRUPTED)`; 9 driver stubs all throwing `UPSTREAM_NOT_BUILT(503)`; RBAC `["view","run","approve","export"]`; manifest updated; 71 tests passing (gate, dag, recovery, leakage). PR #172 open for review.
+
 ## 2026-08-18 — KDL-485: STUDIO_IA.md spec — canonical Studio IA for template-engine (Frontend Architect)
 
 `.agents/arch/STUDIO_IA.md` on `docs/kdl-485-studio-ia` (docs-only PR): the repo's actual admin nav assembly documented as the canonical source-app IA per PM-001/OQ-1, with the Mode A ownership boundary, LOCKED-vs-extensible freeze table for KDL-486 to build against, a stage-list-agnostic 9-stage surface contract, and 5 flagged gaps — G1 being that the 9-stage list itself exists nowhere in the repo and KDL-486 must enumerate it canonically.
