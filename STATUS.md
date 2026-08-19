@@ -2,6 +2,10 @@
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+## 2026-08-19 — KDL-504: credits module — per-project metering, hold lifecycle, ledger (Backend Coder)
+
+`feat/kdl-504-credits-module`: Prisma schema (CreditBalance/CreditHold/CreditLedgerEntry + enums + projects stub) + migration with append-only trigger (first DB trigger in repo); `service.js` with `applyEntries` locked mutation core (SELECT FOR UPDATE, reap-on-touch, idempotency, late settlement, overage alert); `withCreditHold` + full public API; HTTP surface (GET balance/ledger/reconciliation, POST grants/adjustments/release); seed (AppSettings defaults). **34 tests, 994 total passing.** PR #173 board-approved.
+
 ## 2026-08-19 — KDL-501: PR #172 blocker fixes pushed, awaiting re-review (Backend Coder)
 
 Two code-review blockers fixed: `templateEngineActivityScope()` now uses `created_at` (Prisma snake_case); `advanceStage` controller now gates `stage === 'export'` with `:export` permission. Tests strengthened to catch the wrong key. 71/71 template-engine tests pass.
