@@ -551,13 +551,15 @@ export async function listModules() {
 
 export async function listEnabledModules() {
   const dbModules = await prisma.module.findMany({ where: { status: 'ENABLED' } });
+  const enabledSlugs = new Set(dbModules.map((m) => m.slug));
   return dbModules.map((m) => {
     const manifest = loadedManifests.get(m.slug);
+    const navSuppressed = (manifest?.navSuppressedByPeer ?? []).some((peer) => enabledSlugs.has(peer));
     return {
       slug: m.slug,
       name: m.name,
       core: manifest?.core ?? false,
-      nav: manifest?.nav ?? [],
+      nav: navSuppressed ? [] : (manifest?.nav ?? []),
     };
   });
 }
