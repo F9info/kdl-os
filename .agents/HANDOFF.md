@@ -14,6 +14,18 @@
 
 **Next:** PR review → merge. Template-engine Studio page will show projects list on next deploy.
 
+## 2026-08-20 — KDL-560: auto-install deps + fix sidebar lies (Backend Coder)
+
+**Branch:** `feat/kdl-560-template-engine-one-install` → **PR #195** (in_review — request_confirmation pending board)
+
+**Done:**
+- `installModule` now resolves full transitive dep graph (DFS topological sort) and auto-installs missing deps in order before target. Returns `{ module, installedDependencies }`. 409 kept only for `conflictsWith` and cycles.
+- `template-engine/module.json` nav label: `Studio` → `Template Engine`.
+- `credits/module.json` nav removed (was /admin/credits 404 — internal metering ledger).
+- `settings/module.json` nav path: `/settings` (dead) → `/admin/settings`; added redirect page at `frontend/src/app/admin/settings/page.tsx`.
+- `backend/tests/module-nav-pages.test.js` added: asserts every declared nav path has a matching page.tsx — all 12 tests pass.
+- Status: `in_review`. Unblock: Prasanna merge PR #195 after CI green.
+
 ---
 
 ## 2026-08-20 — KDL-553: flip BRAND_INFERENCE_IMAGE_ENABLED to default-on (AI Services)

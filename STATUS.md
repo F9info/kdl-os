@@ -110,6 +110,10 @@ Recent per-issue detail is in the rolling changelog below; full history in
 
 `backend/src/modules/projects/` created (module.json core=true, CRUD routes/controller/service/schema/seed). `index.js` mounts `/api/projects`. `prisma/seed.js` calls `seedProjects`. `template-engine/module.json` adds `projects` to dependsOn. No new migration (table exists from credits stub). `GET /api/projects` verified live: returns default project. Studio will show project list on next deploy.
 
+## 2026-08-20 — KDL-560: auto-install transitive deps + fix sidebar lies — PR #195 in_review (Backend Coder)
+
+`installModule` now resolves full dep graph and auto-installs missing deps in order. Template Engine installs with one call from fresh DB. Nav label Studio→Template Engine. Credits nav removed (404). Settings nav fixed. Regression test added.
+
 ## 2026-08-20 — KDL-553: BRAND_INFERENCE_IMAGE_ENABLED flipped to default-on — PR #193 in CI (AI Services)
 
 Token cost measured (+320 tok/+19%/$0.0032/gen, not blocking). Default flipped. Tests updated.
