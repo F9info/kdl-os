@@ -575,3 +575,56 @@ describe('installModule("collateral") — KDL-542 regression guard', () => {
     expect(prisma.module.upsert).not.toHaveBeenCalled();
   });
 });
+
+// ── resolveBrandKit() — approval-path DB row resolves correctly ───────────────
+// Guards against regressions to the live-column mapper.
+// The "approved" row shape is what approveKit() produces: status flips to
+// 'approved' but the data columns (logo_media_id, palette, typography) are set
+// during extraction/infer and unchanged by the approval step.
+
+describe('resolveBrandKit() — approved BrandKit row resolves to non-null kit', () => {
+  const APPROVED_ROW = {
+    ...makeLiveBrandKitRow(),
+    status: 'approved',
+    approved_at: new Date('2026-08-20T00:00:00Z'),
+    acknowledged_contrast_adjustments: true,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prisma.brandKit.findUnique.mockResolvedValue(APPROVED_ROW);
+  });
+
+  it('returns non-null for an approved kit (not null like resolved_tokens always was)', async () => {
+    const kit = await service.resolveBrandKit('proj-1');
+    expect(kit).not.toBeNull();
+  });
+
+  it('maps logo_media_id to logo.primaryUrl', async () => {
+    const kit = await service.resolveBrandKit('proj-1');
+    expect(kit.logo.primaryUrl).toBe('/api/media/logo-media-1');
+  });
+
+  it('maps palette ramp to a non-empty palette.primary array', async () => {
+    const kit = await service.resolveBrandKit('proj-1');
+    expect(Array.isArray(kit.palette.primary)).toBe(true);
+    expect(kit.palette.primary.length).toBeGreaterThan(0);
+  });
+
+  it('maps neutral.ramp[900] to palette.onSurface', async () => {
+    const kit = await service.resolveBrandKit('proj-1');
+    expect(kit.palette.onSurface).toBe('#202124');
+  });
+
+  it('maps typography columns to heading and body', async () => {
+    const kit = await service.resolveBrandKit('proj-1');
+    expect(kit.typography.heading).toMatchObject({ family: 'Inter', weights: [700] });
+    expect(kit.typography.body).toMatchObject({ family: 'Inter', weights: [400] });
+  });
+
+  it('returns null when the project has no kit', async () => {
+    prisma.brandKit.findUnique.mockResolvedValue(null);
+    const kit = await service.resolveBrandKit('no-such-project');
+    expect(kit).toBeNull();
+  });
+});
