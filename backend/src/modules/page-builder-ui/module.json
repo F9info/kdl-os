@@ -10,6 +10,7 @@
     { "label": "Page Builder", "path": "/admin/page-builder", "icon": "LayoutTemplate", "permission": "page-builder:view" }
   ],
   "dependsOn": ["page-builder"],
+  "navSuppressedByPeer": ["template-engine"],
   "conflictsWith": [],
   "queues": [],
   "env": []

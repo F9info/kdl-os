@@ -8,14 +8,14 @@ vi.mock('../../middleware/module-gate.js', () => ({
 
 import { prisma } from '../../config/database.js';
 import { loadedManifests } from '../../shared/modules/module-loader.js';
-import { enableModule, installModule, disableModule, listModules } from './service.js';
+import { enableModule, installModule, disableModule, listModules, listEnabledModules } from './service.js';
 
 vi.mock('../../shared/modules/module-loader.js', () => ({
   loadedManifests: new Map(),
 }));
 
-function makeManifest(slug, { conflictsWith = [], dependsOn = [], core = false, name = slug } = {}) {
-  return { slug, name, version: '1.0.0', core, dependsOn, conflictsWith, permissions: [], env: [] };
+function makeManifest(slug, { conflictsWith = [], dependsOn = [], core = false, name = slug, navSuppressedByPeer, nav } = {}) {
+  return { slug, name, version: '1.0.0', core, dependsOn, conflictsWith, permissions: [], env: [], ...(navSuppressedByPeer !== undefined && { navSuppressedByPeer }), ...(nav !== undefined && { nav }) };
 }
 
 // ── Generic conflict scenario (used by KDL-555 tests) ───────────────────────
@@ -47,16 +47,21 @@ function loadTemplateEngineManifests() {
     name: 'Template Engine',
     conflictsWith: [],
     dependsOn: ['theme-engine', 'theme-engine-ui', 'page-builder', 'page-builder-ui', 'brand-kit', 'collateral', 'credits'],
+    nav: [{ label: 'Template Engine', path: '/admin/template-engine', icon: 'Layers' }],
   }));
   loadedManifests.set('theme-engine-ui', makeManifest('theme-engine-ui', {
     name: 'Theme Engine UI',
     conflictsWith: [],
     dependsOn: ['theme-engine'],
+    navSuppressedByPeer: ['template-engine'],
+    nav: [{ label: 'Theme Engine', path: '/admin/theme-engine', icon: 'Palette' }],
   }));
   loadedManifests.set('page-builder-ui', makeManifest('page-builder-ui', {
     name: 'Page Builder UI',
     conflictsWith: [],
     dependsOn: ['page-builder'],
+    navSuppressedByPeer: ['template-engine'],
+    nav: [{ label: 'Page Builder', path: '/admin/page-builder', icon: 'LayoutTemplate' }],
   }));
   loadedManifests.set('theme-engine', makeManifest('theme-engine', { name: 'Theme Engine', core: true }));
   loadedManifests.set('page-builder', makeManifest('page-builder', { name: 'Page Builder', core: true }));
@@ -439,5 +444,67 @@ describe('KDL-563: template-engine installs ui modules as dependencies, no confl
     // theme-engine-ui is visible alongside template-engine — no suppression
     expect(bySlug['theme-engine-ui']).toBeDefined();
     expect(bySlug['theme-engine-ui'].conflicts).toHaveLength(0);
+  });
+});
+
+// ── KDL-575: navSuppressedByPeer — suppress sidebar nav when peer is enabled ──
+
+describe('KDL-575: navSuppressedByPeer suppresses nav via listEnabledModules', () => {
+  it('theme-engine-ui alone ENABLED → nav entry is returned', async () => {
+    loadTemplateEngineManifests();
+
+    prisma.module = {
+      findMany: vi.fn().mockResolvedValue([
+        DB_THEME_ENGINE_UI_ENABLED,
+        DB_THEME_ENGINE_ENABLED,
+      ]),
+    };
+
+    const modules = await listEnabledModules();
+    const teui = modules.find((m) => m.slug === 'theme-engine-ui');
+    expect(teui).toBeDefined();
+    expect(teui.nav).toHaveLength(1);
+    expect(teui.nav[0].label).toBe('Theme Engine');
+  });
+
+  it('theme-engine-ui + template-engine both ENABLED → theme-engine-ui nav is suppressed', async () => {
+    loadTemplateEngineManifests();
+
+    prisma.module = {
+      findMany: vi.fn().mockResolvedValue([
+        DB_TEMPLATE_ENGINE_ENABLED,
+        DB_THEME_ENGINE_UI_ENABLED,
+        DB_PAGE_BUILDER_UI_ENABLED,
+        DB_THEME_ENGINE_ENABLED,
+        DB_PAGE_BUILDER_ENABLED,
+        DB_BRAND_KIT_ENABLED,
+        DB_COLLATERAL_ENABLED,
+        DB_CREDITS_ENABLED,
+      ]),
+    };
+
+    const modules = await listEnabledModules();
+    const bySlug = Object.fromEntries(modules.map((m) => [m.slug, m]));
+
+    expect(bySlug['theme-engine-ui'].nav).toEqual([]);
+    expect(bySlug['page-builder-ui'].nav).toEqual([]);
+    // template-engine itself keeps its own nav
+    expect(bySlug['template-engine'].nav).toHaveLength(1);
+  });
+
+  it('template-engine disabled (only theme-engine-ui ENABLED) → nav reappears', async () => {
+    loadTemplateEngineManifests();
+
+    prisma.module = {
+      findMany: vi.fn().mockResolvedValue([
+        DB_THEME_ENGINE_UI_ENABLED,
+        DB_THEME_ENGINE_ENABLED,
+      ]),
+    };
+
+    const modules = await listEnabledModules();
+    const teui = modules.find((m) => m.slug === 'theme-engine-ui');
+    expect(teui.nav).toHaveLength(1);
+    expect(teui.nav[0].label).toBe('Theme Engine');
   });
 });

@@ -1,3 +1,20 @@
+## 2026-08-20 — KDL-575: suppress theme-engine-ui/page-builder-ui sidebar nav when template-engine is enabled (Backend Coder)
+
+**PR:** https://github.com/F9info/kdl-os/pull/203 — awaiting CI + merge
+
+**Done:**
+- Added `navSuppressedByPeer` support to `listEnabledModules()` in `backend/src/modules/modules/service.js`. When a module's manifest declares `navSuppressedByPeer: ["template-engine"]`, the `/modules/enabled` response returns `nav: []` for that module if any listed peer slug is currently enabled.
+- Added `"navSuppressedByPeer": ["template-engine"]` to `theme-engine-ui/module.json` and `page-builder-ui/module.json`.
+- No frontend change needed — `useModules.nonCoreNav` already flattens whatever `nav` arrays the backend returns.
+- Added 3 regression tests to `conflicts.test.js` (KDL-575 describe block); all 16 tests pass.
+
+**Regression scenarios verified:**
+1. `theme-engine-ui` alone ENABLED → nav entry returned ✓
+2. `theme-engine-ui` + `template-engine` both ENABLED → nav suppressed to `[]` ✓
+3. `template-engine` uninstalled (only `theme-engine-ui` ENABLED) → nav reappears ✓
+
+**Next:** PR review → merge. Post PR link to KDL-574 and KDL-569 so both can be closed.
+
 ## 2026-08-20 — KDL-568: landed PR #195 on master — Studio→Template Engine rename + conflict removal live (CEO)
 
 **Merged:** `feat/kdl-560-template-engine-one-install` → master (`cbd78ea`, fast-forward, CI-green).
