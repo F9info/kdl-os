@@ -10,6 +10,12 @@ export interface ModuleNavItem {
   permission?: string
 }
 
+export interface ModuleConflict {
+  slug: string
+  name: string
+  status: ModuleStatus
+}
+
 export interface Module {
   slug: string
   name: string
@@ -22,6 +28,8 @@ export interface Module {
   installed_at: string | null
   enabled_at: string | null
   settings: Record<string, unknown> | null
+  conflictsWith?: string[]
+  conflicts?: ModuleConflict[]
 }
 
 export interface EnabledModule {
