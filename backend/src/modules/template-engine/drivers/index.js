@@ -9,13 +9,28 @@
  * Phase 2 wiring status (KDL-509):
  *   wired:   intake, palette, inference, approval, collateral, website, preflight, export
  *   stubbed: guidelines — brand-kit Phase 1 ships no PDF render endpoint yet
- *
- * Upstream service imports are dynamic (inside execute) so that importing this
- * registry module does not trigger eager MinIO/storage initialisation in tests
- * that only exercise the DAG state machine or leakage guards.
  */
 
-import { prisma } from '../../config/database.js';
+import {
+  getOrCreateKit,
+  extractPaletteForKit,
+  inferBrandKit,
+  getKit,
+  getTokens,
+} from '../../brand-kit/service.js';
+
+import { upsertValues } from '../../theme-engine/service.js';
+
+import {
+  listAssets,
+  createAsset,
+  preflightAsset,
+  renderAsset,
+} from '../../collateral/service.js';
+
+import { createPage, getPage } from '../../page-builder/service.js';
+
+import { prisma } from '../../../config/database.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -41,7 +56,6 @@ async function resolveThemeTypeId(platform, tokenTypeId) {
  */
 const intakeDriver = {
   async execute({ projectId }) {
-    const { getOrCreateKit } = await import('../../brand-kit/service.js');
     const kit = await getOrCreateKit(projectId);
     return { outputRef: { brandKitId: kit.id, status: kit.status } };
   },
@@ -53,7 +67,6 @@ const intakeDriver = {
  */
 const paletteDriver = {
   async execute({ projectId }) {
-    const { extractPaletteForKit } = await import('../../brand-kit/service.js');
     const kit = await extractPaletteForKit(projectId);
     return { outputRef: { extractedAt: new Date().toISOString(), status: kit.status } };
   },
@@ -65,7 +78,6 @@ const paletteDriver = {
  */
 const inferenceDriver = {
   async execute({ projectId }) {
-    const { inferBrandKit } = await import('../../brand-kit/service.js');
     const kit = await inferBrandKit(projectId, {});
     return {
       outputRef: {
@@ -88,9 +100,6 @@ const approvalDriver = {
     if (stageRecord?.outputRef?.tokensWrittenAt) {
       return { outputRef: stageRecord.outputRef };
     }
-
-    const { getKit, getTokens } = await import('../../brand-kit/service.js');
-    const { upsertValues } = await import('../../theme-engine/service.js');
 
     const kit = await getKit(projectId);
     if (kit.status !== 'approved') {
@@ -143,8 +152,6 @@ const COLLATERAL_DEFAULT_ASSETS = [
  */
 const collateralDriver = {
   async execute({ projectId, userId, stageRecord, run }) {
-    const { listAssets, createAsset, preflightAsset, renderAsset } = await import('../../collateral/service.js');
-
     // Crash recovery: collect already-completed render IDs.
     const priorRenderIds = new Set(stageRecord?.outputRef?.renderIds ?? []);
 
@@ -208,8 +215,6 @@ const WEBSITE_SEED_PAGES = [
  */
 const websiteDriver = {
   async execute({ run, stageRecord, userId }) {
-    const { createPage, getPage } = await import('../../page-builder/service.js');
-
     // Crash recovery (TEMPLATE_ENGINE_ARCH §4.1): reuse pages from a prior attempt.
     const priorMap = stageRecord?.outputRef?.pageKeyToId ?? {};
     const pageKeyToId = {};

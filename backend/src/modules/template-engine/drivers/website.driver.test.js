@@ -32,7 +32,7 @@ vi.mock('../../page-builder/service.js', () => ({
   getPage:    vi.fn(),
 }));
 
-vi.mock('../../config/database.js', () => ({
+vi.mock('../../../config/database.js', () => ({
   prisma: {
     type: { findFirst: vi.fn() },
   },
@@ -59,7 +59,7 @@ import {
 
 import { createPage, getPage } from '../../page-builder/service.js';
 
-import { prisma } from '../../config/database.js';
+import { prisma } from '../../../config/database.js';
 
 import { getDriver } from './index.js';
 
