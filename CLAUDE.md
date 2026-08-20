@@ -156,6 +156,7 @@ Full rules in [`docs/MERGE_DISCIPLINE.md`](docs/MERGE_DISCIPLINE.md). Summary:
 3. **One workspace lockfile per PR** — a PR may touch `frontend/pnpm-lock.yaml` OR `backend/package-lock.json` OR `ai-services/package-lock.json`, never more than one.
 4. **Dependabot owns lockfiles** — never manually modify a lockfile in a Dependabot PR. Merge them Mondays.
 5. **Pin policy** — pin only when there is a confirmed bug/CVE and no upstream fix. Document the reason and removal trigger in the PR. Never pin the same package twice across workspaces.
+6. **NEVER push directly to master** — all code lands via `gh pr merge` or the GitHub UI. Direct pushes cause GitHub to close open PRs with `mergedAt=null`, corrupting the audit trail. If CI is broken org-wide, mark the issue blocked — do not bypass the PR workflow. (Retired workaround: the 2026-08 billing-outage direct-push path. See §7 of [`docs/MERGE_DISCIPLINE.md`](docs/MERGE_DISCIPLINE.md).)
 
 ---
 
