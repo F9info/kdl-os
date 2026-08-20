@@ -2,7 +2,7 @@
 
 # STATUS — what is done, what is pending
 
-_Derived from code + GitHub + the board at master `6b04d4e` (latest commit 2026-08-20)._
+_Derived from code + GitHub + the board at master `cbd78ea` (latest commit 2026-08-20)._
 _Regenerate: `node scripts/status-rollup.mjs`. Hand edits to this block are overwritten._
 
 Read this instead of counting board issues or PRs — both mislead. The board has 500+ done
@@ -10,7 +10,7 @@ issues with no aggregate view, and PR state under-reports what shipped (§3).
 
 ### 1. Backend module build state
 
-`backend/src/modules/*` — **21 modules: 19 built, 2 stubbed, 0 spec-only.**
+`backend/src/modules/*` — **22 modules: 20 built, 2 stubbed, 0 spec-only.**
 
 State is decided by what the directory actually contains (service + routes + controller),
 not by whether a spec or a board issue says the module is done.
@@ -28,6 +28,7 @@ not by whether a spec or a board issue says the module is done.
 | `modules` | ✅ built | service + routes + controller | 2 | Module plugin lifecycle management |
 | `notifications` | ✅ built | service + routes + controller | 3 | Notifications module |
 | `page-builder` | ✅ built | service + routes + controller | **0** | Visual block-based page builder engine — always-on |
+| `projects` | ✅ built | service + routes + controller | **0** | Project management — Studio hard-depends on this module to scope template-engine runs. |
 | `setting-fields` | ✅ built | service + routes + controller | 2 | Dynamic admin-defined setting field definitions |
 | `settings` | ✅ built | service + routes + controller | 2 | Application settings management |
 | `storage-settings` | ✅ built | service + routes + controller | 1 | (no module.json) |
@@ -39,7 +40,7 @@ not by whether a spec or a board issue says the module is done.
 | `page-builder-ui` | 🟡 stubbed | nav-only shell — empty Router, no service/controller | **0** | Admin nav and screens for Page Builder — toggleable |
 | `theme-engine-ui` | 🟡 stubbed | nav-only shell — empty Router, no service/controller | **0** | Admin nav and screens for Theme Engine — toggleable |
 
-> ⚠ **2 built module(s) have no test file** in `backend/src/modules/<name>/` or `backend/tests/` matched by name: `example`, `page-builder`. Built ≠ verified — a name-based scan can also miss suites filed elsewhere, so check before acting.
+> ⚠ **3 built module(s) have no test file** in `backend/src/modules/<name>/` or `backend/tests/` matched by name: `example`, `page-builder`, `projects`. Built ≠ verified — a name-based scan can also miss suites filed elsewhere, so check before acting.
 
 ### 2. Template-engine 9-stage driver reality
 
@@ -79,18 +80,23 @@ _Scan window: the 40 most recent closed PRs. Older ghost merges are not covered.
 
 ### 4. Board state — blocked and in-flight
 
-**545 issues total: 541 done, 2 in progress, 0 blocked, 0 todo, 2 cancelled.**
+**559 issues total: 553 done, 1 in progress, 3 blocked, 0 todo, 1 cancelled.**
 
 #### Blocked — every row needs a named unblock owner
 
-_Nothing blocked._
+| Issue | Title | Unblock owner | Unblock action | Owner source |
+| --- | --- | --- | --- | --- |
+| KDL-558 | P1: walk the full 9-stage Studio flow as a user and report every dead end | **⚠ UNASSIGNED** | set `unblockDescriptor` on the board, or add KDL-558 to `.agents/unblock-owners.json` | — |
+| KDL-560 | P0: make Template Engine ONE install, and fix the sidebar lies (Studio label, Credits 404) | **⚠ UNASSIGNED** | set `unblockDescriptor` on the board, or add KDL-560 to `.agents/unblock-owners.json` | — |
+| KDL-567 | CEO: land the KDL-557 P0 set and close the loop with the user | **⚠ UNASSIGNED** | set `unblockDescriptor` on the board, or add KDL-567 to `.agents/unblock-owners.json` | — |
+
+> ⚠ 3 blocked issue(s) have no named unblock owner: KDL-558, KDL-560, KDL-567. A blocked issue without an owner never moves.
 
 #### In progress
 
 | Issue | Title |
 | --- | --- |
-| KDL-518 | what is the status of new template engine module |
-| KDL-553 | ai-services: measure image token cost, then flip BRAND_INFERENCE_IMAGE_ENABLED default (KDL-534 result) |
+| KDL-557 | i didnt understand what you built new template engine module |
 
 ---
 
@@ -105,6 +111,10 @@ Recent per-issue detail is in the rolling changelog below; full history in
 <!-- ROLLING WINDOW: keep only the most recent entries here to minimise per-run context.
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
+
+## 2026-08-20 — KDL-568: PR #195 merged to master — Template Engine rename + conflict fix live (CEO)
+
+Rebased and merged `feat/kdl-560-template-engine-one-install` (CI-green, `cbd78ea`). `template-engine/module.json` on master now has `conflictsWith: []`, nav label `Template Engine`, `dependsOn` includes `theme-engine-ui`/`page-builder-ui`/`projects`. Fixed a KDL-542-class regression the PR introduced (installModule return-shape break + double-create on already-installed deps). Live-verified: installing `template-engine` auto-installs all deps and Theme Engine's sidebar entry stays visible. KDL-557 root cause resolved on master.
 
 ## 2026-08-20 — KDL-559: projects module built — PR pending (Backend Coder)
 

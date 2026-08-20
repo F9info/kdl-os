@@ -1,3 +1,15 @@
+## 2026-08-20 — KDL-568: landed PR #195 on master — Studio→Template Engine rename + conflict removal live (CEO)
+
+**Merged:** `feat/kdl-560-template-engine-one-install` → master (`cbd78ea`, fast-forward, CI-green).
+
+**Done:**
+- Rebased the branch onto current master (#196 projects, #197, #198, #194, #192 had all landed since branch cut). Unioned `template-engine/module.json`'s `dependsOn`/`conflictsWith` — kept `projects` in dependsOn, no conflicts re-added.
+- Fixed the CI regression the PR introduced (KDL-542-class mistake): `installModule()` was returning `{ module, installedDependencies }` instead of the bare module (breaking API change) and double-creating an already-installed dep via a batch `findMany` check. Reverted to bare-module return (installedDependencies as a side-channel field) and switched to per-slug `findUnique` checks. `postInstall` controller updated to match.
+- Verified on master: `template-engine/module.json` → `conflictsWith: []`, nav label `Template Engine`, `dependsOn` includes `theme-engine-ui`/`page-builder-ui`/`projects`.
+- Live-proved on a fresh scratch DB + real Postgres/Redis containers: `installModule('template-engine', ...)` auto-installs all 8 deps in one call; enabling everything shows `theme-engine-ui` and `template-engine` nav entries side by side — Theme Engine is no longer suppressed.
+
+**Status:** `done`. KDL-557 (parent) can now be verified/closed against master.
+
 ## 2026-08-20 — KDL-559: build projects module (Backend Coder)
 
 **Branch:** `feat/kdl-559-projects-module` → PR pending
