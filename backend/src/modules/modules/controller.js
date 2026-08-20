@@ -38,8 +38,8 @@ export const postInstall = async (req, res, next) => {
     if (resolveConflicts && !hasEditPermission(req)) {
       return errorResponse(res, 'Module mode switch requires modules:edit permission', 403);
     }
-    const mod = await installModule(req.params.slug, req.user?.id, { resolveConflicts });
-    successResponse(res, { module: mod }, 201);
+    const result = await installModule(req.params.slug, req.user?.id, { resolveConflicts });
+    successResponse(res, { module: result.module, installedDependencies: result.installedDependencies }, 201);
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status, err.details ?? null);
     next(err);

@@ -139,7 +139,16 @@ async function deregisterPermissions(manifest, tx = prisma) {
 
 // ── Public lifecycle operations ──────────────────────────────────────────────
 
-export async function installModule(slug, actorId, { resolveConflicts = false } = {}) {
+// DFS topological sort — returns slugs in dependency-first install order.
+// Throws 404 for unknown slugs, 409 for cycles.
+function buildInstallOrder(slug, order = [], visiting = new Set(), done = new Set()) {
+  if (done.has(slug)) return order;
+  if (visiting.has(slug)) {
+    const err = new Error(`Circular dependency detected involving "${slug}"`);
+    err.status = 409;
+    throw err;
+  }
+
   const manifest = loadedManifests.get(slug);
   if (!manifest) {
     const err = new Error(`Module "${slug}" not found`);
@@ -147,24 +156,20 @@ export async function installModule(slug, actorId, { resolveConflicts = false } 
     throw err;
   }
 
-  const existing = await prisma.module.findUnique({ where: { slug } });
-  if (existing) {
-    const err = new Error(`Module "${slug}" is already installed`);
-    err.status = 409;
-    throw err;
-  }
-
-  // Check dependsOn modules are available (at least INSTALLED)
+  visiting.add(slug);
   for (const dep of manifest.dependsOn ?? []) {
-    const depMod = await prisma.module.findUnique({ where: { slug: dep } });
-    if (!depMod) {
-      const err = new Error(`Dependency "${dep}" is not installed`);
-      err.status = 409;
-      throw err;
-    }
+    buildInstallOrder(dep, order, visiting, done);
   }
+  visiting.delete(slug);
+  done.add(slug);
+  order.push(slug);
+  return order;
+}
 
-  // Fetch all currently-enabled modules once for both conflict detection and guard checks
+// Install exactly one module. Caller must ensure deps are already installed.
+async function _installSingle(slug, actorId, { resolveConflicts = false } = {}) {
+  const manifest = loadedManifests.get(slug);
+
   const allEnabled = await prisma.module.findMany({ where: { status: 'ENABLED' } });
   const blockingConflicts = computeBlockingConflicts(slug, manifest, allEnabled);
 
@@ -256,6 +261,38 @@ export async function installModule(slug, actorId, { resolveConflicts = false } 
   }
 
   return mod;
+}
+
+export async function installModule(slug, actorId, { resolveConflicts = false } = {}) {
+  // Build full transitive install order (throws 404 for unknown slugs, 409 on cycle)
+  const installOrder = buildInstallOrder(slug);
+
+  // Find which slugs in the order are already installed
+  const rows = await prisma.module.findMany({
+    where: { slug: { in: installOrder } },
+    select: { slug: true },
+  });
+  const installedSet = new Set(rows.map((r) => r.slug));
+
+  // Preserve existing 409 if the target itself is already installed
+  if (installedSet.has(slug)) {
+    const err = new Error(`Module "${slug}" is already installed`);
+    err.status = 409;
+    throw err;
+  }
+
+  // Auto-install every missing dep in topological order (target is last element)
+  const installedDependencies = [];
+  for (const depSlug of installOrder.slice(0, -1)) {
+    if (installedSet.has(depSlug)) continue;
+    await _installSingle(depSlug, actorId, { resolveConflicts });
+    installedDependencies.push(depSlug);
+  }
+
+  // Install the target itself
+  const mod = await _installSingle(slug, actorId, { resolveConflicts });
+
+  return { module: mod, installedDependencies };
 }
 
 export async function enableModule(slug, actorId, { resolveConflicts = false } = {}) {

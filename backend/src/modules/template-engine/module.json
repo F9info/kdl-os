@@ -7,7 +7,7 @@
   "apiPrefix": "/api/template-engine",
   "permissions": [{ "name": "template-engine", "actions": ["view", "run", "approve", "export"] }],
   "nav": [
-    { "label": "Template Engine", "path": "/admin/template-engine", "icon": "Sparkles", "permission": "template-engine:view" }
+    { "label": "Studio", "path": "/admin/template-engine", "icon": "Sparkles", "permission": "template-engine:view" }
   ],
   "dependsOn": ["projects", "theme-engine", "page-builder", "brand-kit", "collateral", "credits"],
   "conflictsWith": ["theme-engine-ui", "page-builder-ui"],
