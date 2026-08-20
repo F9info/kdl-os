@@ -25,9 +25,10 @@ import { enqueueScanJob } from '../media/media.queue.js';
 import { extractPalette, hueNameFor } from './palette.js';
 import { buildContrastReport } from './contrast.js';
 import { buildTokenPayload } from './tokens.js';
-import { BRAND_INFERENCE_COST } from './costs.js';
+import { BRAND_INFERENCE_COST, COLLATERAL_EXPORT_COST } from './costs.js';
 import { withCreditHold } from '../credits/service.js';
 import { aiServicesConfigured, requestBrandInference } from './ai-client.js';
+import { buildGuidelinesPdf } from './guidelines.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -558,6 +559,55 @@ export const getTokens = async (projectId, platform = 'webapp') => {
   }
 
   return buildTokenPayload(kit, platform, brandKitType.id);
+};
+
+// ─── Brand-guidelines PDF render (KDL-537) ───────────────────────────────────
+
+const GUIDELINES_PDF_ESTIMATE_MC = BigInt(COLLATERAL_EXPORT_COST) * 1_000_000n;
+
+function guidelinesErr(msg, status, code) {
+  return Object.assign(new Error(msg), { status, code });
+}
+
+export const renderGuidelines = async (projectId, { idempotencyKey, actorId } = {}) => {
+  const kit = await getKit(projectId);
+  if (kit.status !== 'approved') {
+    throw guidelinesErr('Kit must be approved before rendering guidelines', 409, 'NOT_APPROVED');
+  }
+
+  // Crash recovery (D-BK-7): prior render already stored — return without re-billing.
+  if (kit.guidelines_pdf_media_id) {
+    return { renderId: kit.guidelines_pdf_media_id, fileUrl: kit.guidelines_pdf_media_id, bytes: null };
+  }
+
+  const iKey = idempotencyKey ?? `brand-kit:guidelines:${projectId}:${randomUUID()}`;
+
+  return withCreditHold(
+    {
+      projectId,
+      actorId: actorId ?? null,
+      source: 'brand-kit:guidelines',
+      estimateMc: GUIDELINES_PDF_ESTIMATE_MC,
+      idempotencyKey: iKey,
+    },
+    async () => {
+      const pdfBuffer = await buildGuidelinesPdf(kit);
+      const fileKey = `brand-kit/guidelines/${projectId}/${randomUUID()}.pdf`;
+      await storageService.uploadFile(
+        { buffer: pdfBuffer, mimetype: 'application/pdf', originalname: 'brand-guidelines.pdf', size: pdfBuffer.length },
+        fileKey,
+      );
+      await prisma.brandKit.update({
+        where: { project_id: projectId },
+        data: { guidelines_pdf_media_id: fileKey },
+      });
+      return {
+        result: { renderId: fileKey, fileUrl: fileKey, bytes: pdfBuffer.length },
+        actualMc: GUIDELINES_PDF_ESTIMATE_MC,
+        usage: null,
+      };
+    },
+  );
 };
 
 // ─── Cleanup: expired original SVG bytes (D-BK-5) ────────────────────────────

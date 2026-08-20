@@ -46,3 +46,7 @@ export const getTokensSchema = z.object({
     platform: z.enum(['webapp', 'tv', 'android', 'ios']).optional().default('webapp'),
   }),
 });
+
+export const renderGuidelinesSchema = z.object({
+  params: z.object({ projectId: z.string().min(1) }),
+});
