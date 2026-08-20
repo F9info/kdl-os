@@ -1,4 +1,16 @@
 import { prisma } from '../../config/database.js';
+import { grantCredits } from '../credits/service.js';
+import { logger } from '../../shared/utils/logger.js';
+
+async function getSeedMc() {
+  try {
+    const row = await prisma.appSetting.findUnique({ where: { key: 'credits.new_project_seed_mc' } });
+    const v = row ? BigInt(row.value) : 10_000_000n;
+    return v > 0n ? v : 0n;
+  } catch {
+    return 10_000_000n;
+  }
+}
 
 export async function listProjects() {
   return prisma.project.findMany({
@@ -29,7 +41,7 @@ export async function createProject({ name, slug, is_default, actorId }) {
     throw err;
   }
 
-  return prisma.$transaction(async (tx) => {
+  const project = await prisma.$transaction(async (tx) => {
     if (is_default) {
       await tx.project.updateMany({ where: { is_default: true }, data: { is_default: false } });
     }
@@ -38,6 +50,22 @@ export async function createProject({ name, slug, is_default, actorId }) {
       select: { id: true, name: true, slug: true, is_default: true },
     });
   });
+
+  const seedMc = await getSeedMc();
+  if (seedMc > 0n) {
+    await grantCredits({
+      projectId: project.id,
+      amountMc: seedMc,
+      source: 'system',
+      actorId: actorId ?? null,
+      reason: 'new_project_seed',
+      idempotencyKey: `new_project_seed:${project.id}`,
+    }).catch((err) => {
+      logger.error('projects: failed to grant seed credits', { projectId: project.id, error: err.message });
+    });
+  }
+
+  return project;
 }
 
 export async function updateProject(id, { name, slug, is_default }) {
