@@ -1,3 +1,20 @@
+## 2026-08-20 — KDL-553: flip BRAND_INFERENCE_IMAGE_ENABLED to default-on (AI Services)
+
+**Branch:** `feat/kdl-553-image-default-on` → **PR #193** (awaiting CI)
+
+**Done:**
+- Token cost measured (formula-based, JWT auth not supported on count_tokens endpoint): +320 input tokens (+19%), $0.0032/gen — not blocking.
+- `imagePathEnabled()` flipped `=== 'true'` → `!== 'false'` (opt-out default, KDL-534 cleared).
+- `.env.example` updated with new default and routing constraint note.
+- Both affected tests updated deliberately (not deleted): default-on + opt-out cases renamed KDL-553.
+- KDL-475 spec (`.agents/arch/BRAND_KIT_AI_ARCH.md`) amended: multimodal routing constraint recorded.
+- Task 4 (grimsby-junior prompt fix) explicitly dropped — live inference not available in session, unverified nudges not added per task spec.
+- Issue comment posted with token cost numbers and method. KDL-553 pending merge → done.
+
+**Next:** CI must go green on PR #193 (`AI Services - lint + test`), then merge. Task 4 prompt fix can be revisited in a future session with API key access.
+
+---
+
 ## 2026-08-20 — KDL-536: fix status-rollup.mjs UPSTREAM_NOT_BUILT classifier (Backend Coder)
 
 **Branch:** `fix/kdl-536-status-rollup-classifier` → **PR #185**
