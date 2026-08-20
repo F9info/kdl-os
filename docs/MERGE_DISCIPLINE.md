@@ -146,14 +146,56 @@ git rebase -i origin/master  # mark fix(ci) commits as fixup
 
 ---
 
-## 7. Summary checklist (copy into every PR)
+## 7. No direct push to master — all code lands via GitHub PR merge (mandatory)
+
+**Rule:** Never push commits directly to `master`. Every change — feature, fix, docs, hotfix — must
+land through a GitHub Pull Request that is merged via the GitHub UI (or `gh pr merge`). GitHub
+Actions billing outages or local workarounds are **not** exceptions to this rule.
+
+**Why this matters:** When a commit is pushed directly to `master`, GitHub automatically closes any
+open PR whose branch contains that commit — setting `state=CLOSED` and leaving `mergedAt=null`.
+This corrupts the PR audit trail: the ledger shows the work as "closed" rather than "merged",
+making it impossible to reconstruct what shipped from PR history alone.
+
+**Incident record:** During the 2026-08 GH Actions billing outage, agents used a local-verify +
+direct-push-to-master workaround. This caused at least PR #169 (feat(KDL-482) brand-kit Phase 1,
+commit 3b3ab44) to be permanently recorded as CLOSED with no mergedAt, even though the code shipped.
+The workaround is retired as of 2026-08-19 when billing was restored.
+
+**The only correct merge path:**
 
 ```
+1. Commit to a feature branch (never commit directly to master)
+2. Push the branch: git push origin <branch>
+3. Open a PR: gh pr create --base master --head <branch> ...
+4. Wait for CI to pass (re-rebase on green master if needed)
+5. Merge via GitHub: gh pr merge <number> --squash   (or merge button in UI)
+```
+
+**If CI is broken org-wide** (e.g., billing outage):
+- Do NOT push directly to master.
+- Do NOT merge the PR manually.
+- Mark the Paperclip issue blocked with `unblockDescriptor: "CI billing outage — see BILLING_OUTAGE_RUNBOOK.md"`.
+- Wait for billing to be restored, then merge normally.
+- The billing-alert workflow (`billing-check.yml`) will open a GitHub issue when overage begins.
+
+**Forbidden actions:**
+- `git push origin master` (direct push)
+- `git push origin HEAD:master`
+- Any push that bypasses the PR workflow, regardless of emergency or time pressure
+
+---
+
+## 8. Summary checklist (copy into every PR)
+
+```
+- [ ] Branch pushed — not a direct push to master
 - [ ] Rebased on current master
 - [ ] Single concern (no mixed feature + lockfile)
 - [ ] Lockfile in at most one workspace
 - [ ] No fix(ci) commits (or squashed before merge)
 - [ ] Pin change documented with reason and removal trigger (if applicable)
+- [ ] Merged via GitHub PR (gh pr merge or UI) — never git push master
 ```
 
 The `.github/pull_request_template.md` includes this automatically.

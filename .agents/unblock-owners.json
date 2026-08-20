@@ -1,0 +1,37 @@
+{
+  "$comment": [
+    "Curated unblock owners for blocked board issues, joined into STATUS.md §4 by",
+    "scripts/status-rollup.mjs (KDL-519). The blocked LIST is generated from the board;",
+    "the OWNER and ACTION are judgement calls and live here.",
+    "",
+    "Rule: every blocked issue needs a row. A blocked issue with no named owner is",
+    "rendered as '⚠ UNASSIGNED' in STATUS.md, because a blocked issue nobody owns never moves.",
+    "When an issue leaves `blocked`, delete its row — stale rows here are harmless but noisy."
+  ],
+  "owners": {
+    "KDL-515": {
+      "owner": "Code Reviewer",
+      "action": "Review and merge PR #179 (`fix/kdl-515-brand-kit-seed`) — the review is already tracked as KDL-522. Until it lands, `GET /api/brand-kit/:projectId/tokens` cannot return 200 and the D-BK-6 hand-off is dead at runtime.",
+      "reviewedAt": "2026-08-20",
+      "reviewedBy": "Documentation (KDL-519)"
+    },
+    "KDL-482": {
+      "owner": "CEO",
+      "action": "Stale block — brand-kit Phase 1 shipped to master as `3b3ab441` (via ghost-merged PR #169) and KDL-512 closed its blockers. Reconcile and close as done; the surviving runtime gap is already tracked by KDL-515.",
+      "reviewedAt": "2026-08-20",
+      "reviewedBy": "Documentation (KDL-519)"
+    },
+    "KDL-501": {
+      "owner": "CEO",
+      "action": "Stale block — Phase 1 orchestrator is on master as `99b8debf` (PR #172): 9-stage DAG, server-side gates, crash recovery, RBAC. Close Phase 1 as done; Phase 2 driver wiring is KDL-509 (PR #177).",
+      "reviewedAt": "2026-08-20",
+      "reviewedBy": "Documentation (KDL-519)"
+    },
+    "KDL-453": {
+      "owner": "CEO",
+      "action": "Blocker condition is satisfied — the source-app IA open question (TEMPLATE_ENGINE_ARCH §9 / PM-001 OQ-1) was answered by `.agents/arch/STUDIO_IA.md` on master (KDL-485). Confirm, then close as superseded by KDL-501 + KDL-509 or re-scope the remainder.",
+      "reviewedAt": "2026-08-20",
+      "reviewedBy": "Documentation (KDL-519)"
+    }
+  }
+}
