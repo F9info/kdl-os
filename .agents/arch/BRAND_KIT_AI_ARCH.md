@@ -353,3 +353,44 @@ deterministic, not model-generated.
    `BLOCKERS.md` write.
 3. **Rule-table seeding** (§4): board still owes the prototype source (KDL-471 OQ-A) to replace
    `reconstructed-v0`.
+
+---
+
+## Amendment — KDL-553 (2026-08-20): default-on multimodal routing constraint
+
+**Context:** KDL-534 ran the multimodal A/B on 5 stereotype-incongruent logo fixtures and achieved
+5/5 pairingId divergence; the image arm outperformed text-only in every case. KDL-553 acted on that
+result by flipping `BRAND_INFERENCE_IMAGE_ENABLED` to default-on in
+`ai-services/src/services/brand-inference.js` (flag check changed from `=== 'true'` to `!== 'false'`).
+
+**New routing constraint (binding, added to this spec):**
+
+> When `BRAND_INFERENCE_IMAGE_ENABLED` is not explicitly `'false'` (i.e. the default or any truthy
+> value), the brand inference request includes a base64-encoded logo image block in the user message.
+> **Brand inference calls MUST NOT be routed to a text-only provider or model.** A text-only model
+> receiving an image block either drops it silently or returns an error; both outcomes produce a
+> silently-degraded result with no fallback code in the envelope, violating the §1 invariant
+> ("Never throws for provider reasons") and the §4 fallback transparency contract.
+
+**Operator requirement:** whenever `BRAND_INFERENCE_IMAGE_ENABLED != 'false'`:
+- The configured model (`BRANDKIT_MODEL_STRUCTURED`, `BRANDKIT_MODEL_COPY` on the OpenRouter path;
+  `CLAUDE_DEFAULT_MODEL` on the Claude-brain path) must support vision input.
+- Any future router layer that introduces per-model capability filtering (e.g. a capability-aware
+  routing table, provider fallback logic, or a multi-model A/B harness) must check for vision
+  support before accepting a brand inference call — routing to a text-only model is not a valid
+  fallback, it is a silent contract violation.
+
+**Opt-out:** setting `BRAND_INFERENCE_IMAGE_ENABLED=false` restores the text-only path and lifts
+the vision constraint, making brand inference routable to any model. Documented in `.env.example`
+(updated by KDL-553). The flag remains in place specifically so operators on constrained
+deployments can trade back to text-only without a code change.
+
+**Token cost data (KDL-553):** measured on `brackwell-hoyt.png` (800×300 px) against the
+`buildSystemPrompt()` / `buildUserText()` prompt via Anthropic's published image token formula
+`ceil(width × height / 750)`:
+- Text-only arm: ~1,682 input tokens
+- Image + text arm: ~2,002 input tokens (+320 tokens, +19%)
+- Delta cost at `claude-opus-5` / $10 per MTok: $0.0032 per generation
+
+The +19% input-token increase is acceptable given the 5/5 quality improvement; it was not large
+enough to reverse the KDL-534 recommendation.

@@ -106,6 +106,11 @@ Recent per-issue detail is in the rolling changelog below; full history in
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+## 2026-08-20 — KDL-553: BRAND_INFERENCE_IMAGE_ENABLED flipped to default-on — PR #193 in CI (AI Services)
+
+Token cost measured (+320 tok/+19%/$0.0032/gen, not blocking). Default flipped. Tests updated.
+KDL-475 spec amended with routing constraint. Task 4 (prompt fix) dropped — no live inference.
+
 ## 2026-08-20 — KDL-538: HTML-entity decode guard for AI prose fields — DONE (Backend Coder)
 
 `fix/kdl-538-html-entity-decode`: Added `decode-html-entities.js` utility + guard in `brand-inference.js` `runAiPath` over 5 prose fields. Reproduction verdict: model itself does NOT emit entities; escaping was transport artifact. 45 tests pass. PR pending.

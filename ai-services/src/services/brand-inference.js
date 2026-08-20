@@ -11,8 +11,8 @@
 //   OQ-A    rule table built from first principles, rulesVersion "v1".
 //   OQ-D    estimatedCostUsd computed here from usage × the versioned price
 //           table; every envelope stamps priceTableVersion.
-//   KDL-490 logo-image input exists as a seam but is OFF by default
-//           (BRAND_INFERENCE_IMAGE_ENABLED) — the A/B decides whether to flip.
+//   KDL-553 logo-image input is ON by default (KDL-534 A/B cleared the flip);
+//           set BRAND_INFERENCE_IMAGE_ENABLED=false to opt out.
 
 import { brainRouter } from '../orchestrator/brain-router.js';
 import { textBlock, imageBlock } from '../brains/claude.js';
@@ -41,7 +41,7 @@ const isPlaceholderKey = (key) =>
   !key || key === 'local' || /^(sk-your-|your-|placeholder)/i.test(key);
 
 const imagePathEnabled = () =>
-  process.env.BRAND_INFERENCE_IMAGE_ENABLED === 'true';
+  process.env.BRAND_INFERENCE_IMAGE_ENABLED !== 'false';
 
 // ─── Fallback path (§4.4) ────────────────────────────────────────────────────
 

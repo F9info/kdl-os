@@ -313,18 +313,8 @@ describe('AI path contract', () => {
     expect(env.typography.color).toBeUndefined();
   });
 
-  it('image path is OFF by default: logoImage in input is ignored (KDL-490)', async () => {
-    brainMock.mockResolvedValue(aiResponse(validModelJson()));
-    await inferBrandIdentity({
-      ...baseInput(),
-      logoImage: { data: 'aGVsbG8=', mediaType: 'image/png' },
-    });
-    const [messages] = brainMock.mock.calls[0];
-    expect(typeof messages[0].content).toBe('string');
-  });
-
-  it('image path opt-in: env flag on → image block precedes the text block', async () => {
-    process.env.BRAND_INFERENCE_IMAGE_ENABLED = 'true';
+  it('image path is ON by default: image block precedes text block when logoImage provided (KDL-553)', async () => {
+    // beforeEach deletes BRAND_INFERENCE_IMAGE_ENABLED; undefined !== 'false' → enabled
     brainMock.mockResolvedValue(aiResponse(validModelJson()));
     await inferBrandIdentity({
       ...baseInput(),
@@ -334,6 +324,17 @@ describe('AI path contract', () => {
     expect(Array.isArray(messages[0].content)).toBe(true);
     expect(messages[0].content[0].type).toBe('image');
     expect(messages[0].content[1].type).toBe('text');
+  });
+
+  it('image path opt-out: BRAND_INFERENCE_IMAGE_ENABLED=false suppresses image block (KDL-553)', async () => {
+    process.env.BRAND_INFERENCE_IMAGE_ENABLED = 'false';
+    brainMock.mockResolvedValue(aiResponse(validModelJson()));
+    await inferBrandIdentity({
+      ...baseInput(),
+      logoImage: { data: 'aGVsbG8=', mediaType: 'image/png' },
+    });
+    const [messages] = brainMock.mock.calls[0];
+    expect(typeof messages[0].content).toBe('string');
   });
 
   it('PII in inputs is scrubbed from the user message', async () => {
