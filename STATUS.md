@@ -2,7 +2,7 @@
 
 # STATUS — what is done, what is pending
 
-_Derived from code + GitHub + the board at master `68313ef` (latest commit 2026-08-20)._
+_Derived from code + GitHub + the board at master `faa80277` (latest commit 2026-08-20)._
 _Regenerate: `node scripts/status-rollup.mjs`. Hand edits to this block are overwritten._
 
 Read this instead of counting board issues or PRs — both mislead. The board has 500+ done
@@ -18,7 +18,7 @@ not by whether a spec or a board issue says the module is done.
 | Module | State | Evidence (code on disk) | Tests | Purpose (module.json) |
 | --- | --- | --- | --- | --- |
 | `auth` | ✅ built | service + routes + controller | 3 | Authentication, registration, and session management |
-| `brand-kit` | ✅ built | service + routes + controller | 4 | Logo intake, OKLCH palette extraction, WCAG AA contrast report, and theme-token hand-off for Template Engine Mode A |
+| `brand-kit` | ✅ built | service + routes + controller | 5 | Logo intake, OKLCH palette extraction, WCAG AA contrast report, and theme-token hand-off for Template Engine Mode A |
 | `categories` | ✅ built | service + routes + controller | 1 | Taxonomy categories grouped under types |
 | `collateral` | ✅ built | service + routes + controller | 1 | Print-ready collateral render engine — visiting card, letterhead, t-shirt, ID card (COLLATERAL_SPEC.md §2). |
 | `credits` | ✅ built | service + routes + controller | 1 | Per-project internal metering ledger — hold lifecycle, ledger, reconciliation. |
@@ -45,7 +45,7 @@ not by whether a spec or a board issue says the module is done.
 
 Parsed from `backend/src/modules/template-engine/drivers/index.js` — from the driver bodies, **not** the file's header comment (which has gone stale before: KDL-521).
 
-**8/9 stages real, 1 UPSTREAM_NOT_BUILT.**
+**9/9 stages real, 0 UPSTREAM_NOT_BUILT.**
 
 | # | Stage | Status | Derived from |
 | --- | --- | --- | --- |
@@ -53,7 +53,7 @@ Parsed from `backend/src/modules/template-engine/drivers/index.js` — from the 
 | 2 | `palette` | ✅ REAL | calls an upstream module |
 | 3 | `inference` | ✅ REAL | calls an upstream module |
 | 4 | `approval` | ✅ REAL | calls an upstream module |
-| 5 | `guidelines` | ⛔ UPSTREAM_NOT_BUILT | throws with error code 'UPSTREAM_NOT_BUILT' (503 stub) |
+| 5 | `guidelines` | ✅ REAL | calls an upstream module |
 | 6 | `collateral` | ✅ REAL | calls an upstream module |
 | 7 | `website` | ✅ REAL | calls an upstream module |
 | 8 | `preflight` | ✅ REAL | pure local aggregate — no downstream call by design |
@@ -61,9 +61,13 @@ Parsed from `backend/src/modules/template-engine/drivers/index.js` — from the 
 
 ### 3. Pull requests — true merge state
 
-**0 open PR(s).**
+**3 open PR(s).**
 
-_No open PRs._
+| PR | Title | Branch | CI / merge state | Review |
+| --- | --- | --- | --- | --- |
+| [#190](https://github.com/F9info/kdl-os/pull/190) | fix(ai-services): decode HTML entities in tone.adjectives/dos/donts arrays (KDL-540) | `fix/kdl-540-entity-decode-tone-arrays` | CLEAN | none |
+| [#187](https://github.com/F9info/kdl-os/pull/187) | feat(KDL-537): brand-kit brand-guidelines PDF render endpoint + driver wiring | `feat/kdl-537-guidelines-pdf-endpoint` | DIRTY · CONFLICTING | none |
+| [#185](https://github.com/F9info/kdl-os/pull/185) | fix(KDL-536): key UPSTREAM_NOT_BUILT classifier off error-code string, not helper name | `fix/kdl-536-status-rollup-classifier` | DIRTY · CONFLICTING | none |
 
 #### Ghost merges — CLOSED on GitHub, but the code IS on master
 
@@ -79,7 +83,7 @@ _Scan window: the 40 most recent closed PRs. Older ghost merges are not covered.
 
 ### 4. Board state — blocked and in-flight
 
-**529 issues total: 523 done, 2 in progress, 0 blocked, 2 todo, 2 cancelled.**
+**544 issues total: 540 done, 2 in progress, 0 blocked, 0 todo, 2 cancelled.**
 
 #### Blocked — every row needs a named unblock owner
 
@@ -89,15 +93,8 @@ _Nothing blocked._
 
 | Issue | Title |
 | --- | --- |
-| KDL-536 | FIX: status-rollup.mjs mislabels UPSTREAM_NOT_BUILT drivers as silent no-ops |
-| KDL-537 | BUILD: brand-kit brand-guidelines PDF render endpoint - unblocks template-engine stage 5 (guidelines) |
-
-#### Queued (todo)
-
-| Issue | Title |
-| --- | --- |
 | KDL-534 | brand-kit: re-run multimodal A/B on stereotype-INCONGRUENT logo fixtures |
-| KDL-535 | brand-kit: ampersand in companyName survives into strategy copy HTML-escaped |
+| KDL-537 | BUILD: brand-kit brand-guidelines PDF render endpoint - unblocks template-engine stage 5 (guidelines) |
 
 ---
 
