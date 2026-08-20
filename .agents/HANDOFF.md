@@ -1,3 +1,19 @@
+## 2026-08-20 — KDL-538: HTML-entity decode guard for AI prose fields (Backend Coder)
+
+**Branch:** `fix/kdl-538-html-entity-decode`
+
+**Done:**
+- Reproduced the defect path: model does NOT emit HTML entities under normal conditions; escaping was a transport artifact from the agent-subagent envelope (recorded in issue comment).
+- Added `ai-services/src/utils/decode-html-entities.js`: small local decoder (no new deps), named + numeric + hex entity support, bounded 3-pass double-escape resolution.
+- Applied `decodeHtmlEntities` to all five free-prose fields in `runAiPath` return envelope: `typography.rationale`, `tone.voice`, `strategy.positioning`, `strategy.audienceNotes`, `strategy.elevatorPitch`. Structured/enum fields untouched.
+- 11 decode-helper unit tests in `tests/decode-html-entities.test.js` covering all required cases.
+- 2 new service-level tests in `tests/brand-inference.test.js` (entity-laden mocked response → clean prose; clean response → identity).
+- All 45 tests pass (`decode-html-entities.test.js` + `brand-inference.test.js`).
+
+**Next:** PR review and merge.
+
+---
+
 ## 2026-08-20 — KDL-532: compileTokens namespace guard for brand-kit-* slugs (Backend Coder)
 
 **Branch:** `fix/kdl-515-brand-kit-seed` (same as KDL-515/KDL-528 fixes)

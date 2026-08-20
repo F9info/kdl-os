@@ -369,6 +369,81 @@ describe('AI path contract', () => {
   });
 });
 
+// ─── KDL-538: HTML-entity decode guard ───────────────────────────────────────
+// Reproduction + service-level guard for HTML entity escaping in AI prose.
+//
+// Reproduction verdict: the model itself does NOT emit HTML entities under
+// normal conditions. The escaping observed in KDL-535 was a transport artifact
+// introduced by the agent-subagent envelope, not by Claude's output.  The
+// decode guard below is defensive — it fires only when the transport has
+// already corrupted the prose, and is a no-op on clean output.
+
+describe('KDL-538 HTML-entity decode guard', () => {
+  it('entity-laden mocked model response yields clean prose in the envelope', async () => {
+    // Simulate a transport-corrupted response: model prose contains &amp; / &#39;
+    const entityLaden = JSON.stringify({
+      typography: {
+        pairingId: 'space-grotesk-inter',
+        scaleRatio: 1.25,
+        rationale: 'Willow &amp; Co. needed a rationale with an &amp;ampersand.',
+      },
+      tone: {
+        voice: "Willow &amp; Co. speaks with warmth. It&#39;s approachable.",
+        adjectives: ['warm', 'clear', 'trusted'],
+        dos: ['Lead with empathy', 'Use plain language', 'Be specific'],
+        donts: ['Avoid jargon', 'Skip corporate speak', 'Never be vague'],
+      },
+      strategy: {
+        positioning:
+          "Willow &amp; Co. positions itself as the partner that listens first. O&#39;Brien-style candour meets modern design.",
+        audienceNotes:
+          'Founders &amp; operators who distrust agencies that over-promise. They respond to honesty and clear deliverables.',
+        elevatorPitch: "Willow &amp; Co.: brand clarity for founders who&#39;ve been burned before.",
+      },
+      confidence: 0.88,
+    });
+
+    brainMock.mockResolvedValue(aiResponse(entityLaden));
+    const env = await inferBrandIdentity({
+      ...baseInput(),
+      companyName: 'Willow & Co.',
+    });
+
+    expect(env.source).toBe('ai');
+
+    // All prose fields must be entity-free
+    expect(env.typography.rationale).not.toContain('&amp;');
+    expect(env.typography.rationale).toContain('Willow & Co.');
+
+    expect(env.tone.voice).not.toContain('&amp;');
+    expect(env.tone.voice).not.toContain('&#39;');
+    expect(env.tone.voice).toContain("It's approachable");
+
+    expect(env.strategy.positioning).not.toContain('&amp;');
+    expect(env.strategy.positioning).not.toContain('&#39;');
+    expect(env.strategy.positioning).toContain('Willow & Co.');
+    expect(env.strategy.positioning).toContain("O'Brien-style");
+
+    expect(env.strategy.audienceNotes).not.toContain('&amp;');
+    expect(env.strategy.audienceNotes).toContain('Founders & operators');
+
+    expect(env.strategy.elevatorPitch).not.toContain('&amp;');
+    expect(env.strategy.elevatorPitch).not.toContain('&#39;');
+    expect(env.strategy.elevatorPitch).toContain("who've been burned");
+  });
+
+  it('clean model output passes through the decode guard unchanged', async () => {
+    brainMock.mockResolvedValue(aiResponse(validModelJson()));
+    const env = await inferBrandIdentity(baseInput());
+    expect(env.source).toBe('ai');
+    // Prose should be exactly what the model returned — no corruption
+    const raw = JSON.parse(validModelJson());
+    expect(env.strategy.positioning).toBe(raw.strategy.positioning);
+    expect(env.tone.voice).toBe(raw.tone.voice);
+    expect(env.typography.rationale).toBe(raw.typography.rationale);
+  });
+});
+
 // ─── Request schema ──────────────────────────────────────────────────────────
 
 describe('request schema', () => {
