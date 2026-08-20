@@ -20,6 +20,7 @@ import { scrubInput } from '../governance/compliance.js';
 import { auditLogger } from '../governance/audit-logger.js';
 import { logger } from '../utils/logger.js';
 import { PRICE_TABLE_VERSION, estimateCostUsd } from '../config/model-pricing.js';
+import { decodeHtmlEntities } from '../utils/decode-html-entities.js';
 import {
   FONT_PAIRINGS,
   INFERENCE_RULES,
@@ -330,6 +331,12 @@ async function runAiPath(input, opts) {
       return buildFallbackEnvelope(input, 'F7_LOW_CONFIDENCE', attempts);
     }
 
+    // KDL-538/KDL-540: guard free-prose fields against HTML-entity escaping
+    // that may enter via agent-subagent transport or model output.  Only the
+    // genuinely structured fields (pairingId, scaleRatio, confidence) are left
+    // untouched.  adjectives, dos, and donts are model-authored free-text arrays
+    // and must be decoded along with the other prose fields.
+    const d = decodeHtmlEntities;
     return {
       schemaVersion: SCHEMA_VERSION,
       source: 'ai',
@@ -344,10 +351,20 @@ async function runAiPath(input, opts) {
       typography: resolveTypography(
         out.typography.pairingId,
         out.typography.scaleRatio,
-        out.typography.rationale,
+        d(out.typography.rationale),
       ),
-      tone: out.tone,
-      strategy: out.strategy,
+      tone: {
+        ...out.tone,
+        voice: d(out.tone.voice),
+        adjectives: out.tone.adjectives.map(d),
+        dos: out.tone.dos.map(d),
+        donts: out.tone.donts.map(d),
+      },
+      strategy: {
+        positioning: d(out.strategy.positioning),
+        audienceNotes: d(out.strategy.audienceNotes),
+        elevatorPitch: d(out.strategy.elevatorPitch),
+      },
     };
   }
 }

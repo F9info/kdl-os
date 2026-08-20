@@ -33,6 +33,11 @@ vi.mock('../../config/database.js', () => ({
   },
 }));
 
+vi.mock('../../shared/modules/module-loader.js', () => ({ loadedManifests: new Map() }));
+vi.mock('../../middleware/module-gate.js', () => ({ invalidateModuleCache: vi.fn() }));
+vi.mock('../user-management/shared/activity-logger.js', () => ({ writeActivityAsync: vi.fn() }));
+vi.mock('node:fs', () => ({ existsSync: vi.fn(() => false) }));
+
 vi.mock('../credits/service.js', () => ({
   withCreditHold: vi.fn(async (_opts, fn) => {
     const { result } = await fn();
@@ -50,6 +55,8 @@ vi.mock('../credits/service.js', () => ({
 
 import { prisma } from '../../config/database.js';
 import { withCreditHold, CreditError } from '../credits/service.js';
+import { loadedManifests } from '../../shared/modules/module-loader.js';
+import { installModule } from '../modules/service.js';
 
 import { runPreflight, PREFLIGHT_CODES } from './preflight.js';
 import { contrastRatio } from './preflight.js';
@@ -447,5 +454,101 @@ describe('credit hold gating — CREDITS_INSUFFICIENT surfaces as 402', () => {
     await expect(
       service.renderAsset(RENDER_SAFE_ASSET.id, { format: 'PDF_DIGITAL', variant: null, idempotencyKey: null, actorId: 'user-1' })
     ).rejects.toMatchObject({ code: 'INSUFFICIENT_CREDITS', status: 402 });
+  });
+});
+
+// ── KDL-542: installModule('collateral') regression guard ─────────────────────
+// Asserts install creates exactly one Module row and never calls upsert.
+// Guards against both the original crash (missing 'name') and the P2002 double-
+// create that the parent issue's proposed fix would have introduced.
+
+describe('installModule("collateral") — KDL-542 regression guard', () => {
+  const COLLATERAL_MANIFEST = {
+    slug: 'collateral',
+    name: 'Collateral',
+    description: 'Print-ready collateral render engine.',
+    version: '1.0.0',
+    core: false,
+    dependsOn: ['brand-kit'],
+    conflictsWith: [],
+    permissions: [{ name: 'collateral', actions: ['view', 'edit', 'render', 'delete'] }],
+    env: [],
+  };
+
+  const BRAND_KIT_MANIFEST = {
+    slug: 'brand-kit',
+    name: 'Brand Kit',
+    version: '1.0.0',
+    core: false,
+    dependsOn: [],
+    conflictsWith: [],
+    permissions: [],
+    env: [],
+  };
+
+  const INSTALLED_MODULE = {
+    id: 'mod-collateral',
+    slug: 'collateral',
+    name: 'Collateral',
+    description: 'Print-ready collateral render engine.',
+    version: '1.0.0',
+    is_core: false,
+    status: 'INSTALLED',
+  };
+
+  beforeEach(() => {
+    loadedManifests.clear();
+    loadedManifests.set('collateral', COLLATERAL_MANIFEST);
+    loadedManifests.set('brand-kit', BRAND_KIT_MANIFEST);
+    vi.clearAllMocks();
+
+    prisma.module = {
+      findUnique: vi.fn().mockImplementation(({ where }) => {
+        // brand-kit already installed (satisfies dependsOn check); collateral not yet installed
+        if (where.slug === 'brand-kit') return Promise.resolve({ slug: 'brand-kit', status: 'INSTALLED' });
+        return Promise.resolve(null);
+      }),
+      findMany: vi.fn().mockResolvedValue([]),  // no enabled modules → no conflicts
+      create:   vi.fn().mockResolvedValue(INSTALLED_MODULE),
+      upsert:   vi.fn(),
+    };
+    prisma.permissionModule = {
+      upsert: vi.fn().mockResolvedValue({ id: 'pm-1', name: 'collateral' }),
+    };
+    prisma.permission = {
+      upsert: vi.fn().mockResolvedValue({}),
+    };
+    prisma.$transaction = vi.fn((fn) => fn(prisma));
+  });
+
+  it('resolves with slug=collateral, name=Collateral, version=1.0.0, status=INSTALLED', async () => {
+    const result = await installModule('collateral', 'actor');
+
+    expect(result).toMatchObject({
+      slug:    'collateral',
+      name:    'Collateral',
+      version: '1.0.0',
+      status:  'INSTALLED',
+    });
+  });
+
+  it('creates exactly one Module row', async () => {
+    await installModule('collateral', 'actor');
+
+    expect(prisma.module.create).toHaveBeenCalledTimes(1);
+    expect(prisma.module.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        slug:    'collateral',
+        name:    'Collateral',
+        version: '1.0.0',
+        status:  'INSTALLED',
+      }),
+    });
+  });
+
+  it('never calls module.upsert — seed.js is absent', async () => {
+    await installModule('collateral', 'actor');
+
+    expect(prisma.module.upsert).not.toHaveBeenCalled();
   });
 });

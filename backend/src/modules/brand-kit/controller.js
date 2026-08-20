@@ -8,6 +8,7 @@ import {
   approveKit,
   reopenKit,
   getTokens,
+  renderGuidelines,
 } from './service.js';
 
 export const getKitHandler = async (req, res, next) => {
@@ -86,6 +87,20 @@ export const getTokensHandler = async (req, res, next) => {
     const payload = await getTokens(req.params.projectId, req.query.platform);
     successResponse(res, payload);
   } catch (err) {
+    next(err);
+  }
+};
+
+export const renderGuidelinesHandler = async (req, res, next) => {
+  try {
+    const idempotencyKey = req.get('X-Idempotency-Key') ?? undefined;
+    const result = await renderGuidelines(req.params.projectId, {
+      idempotencyKey,
+      actorId: req.user?.id ?? null,
+    });
+    successResponse(res, result, 201);
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
     next(err);
   }
 };

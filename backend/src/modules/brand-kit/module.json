@@ -8,7 +8,7 @@
   "permissions": [
     {
       "name": "brand-kit",
-      "actions": ["view", "edit", "approve"]
+      "actions": ["view", "edit", "approve", "render"]
     }
   ],
   "nav": [],
