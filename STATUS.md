@@ -2,7 +2,7 @@
 
 # STATUS — what is done, what is pending
 
-_Derived from code + GitHub + the board at master `09d31af` (latest commit 2026-08-20)._
+_Derived from code + GitHub + the board at master `6b04d4e` (latest commit 2026-08-20)._
 _Regenerate: `node scripts/status-rollup.mjs`. Hand edits to this block are overwritten._
 
 Read this instead of counting board issues or PRs — both mislead. The board has 500+ done
@@ -61,11 +61,9 @@ Parsed from `backend/src/modules/template-engine/drivers/index.js` — from the 
 
 ### 3. Pull requests — true merge state
 
-**1 open PR(s).**
+**0 open PR(s).**
 
-| PR | Title | Branch | CI / merge state | Review |
-| --- | --- | --- | --- | --- |
-| [#185](https://github.com/F9info/kdl-os/pull/185) | fix(KDL-536): key UPSTREAM_NOT_BUILT classifier off error-code string, not helper name | `fix/kdl-536-status-rollup-classifier` | DIRTY · CONFLICTING | none |
+_No open PRs._
 
 #### Ghost merges — CLOSED on GitHub, but the code IS on master
 
