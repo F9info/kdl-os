@@ -7,10 +7,11 @@
  * (e) theme-engine module in registry; page accessible
  */
 import { test, expect, request, type APIRequestContext, type Page } from '@playwright/test'
+import { ADMIN } from './helpers/credentials'
 
 const BASE = process.env.E2E_BASE_URL ?? 'http://localhost:3101'
 const API_DIRECT = 'http://localhost:4100/api'
-const CREDS = { email: 'admin@kdl.com', password: 'Admin@123' }
+const CREDS = { email: ADMIN.email, password: ADMIN.password }
 
 let api: APIRequestContext
 
