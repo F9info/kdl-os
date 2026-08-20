@@ -64,7 +64,7 @@ const TEST_PROJECT_ID = 'integration-test-kdl515-d-bk-6';
 
 describe.skipIf(!HAS_DB)('D-BK-6 integration: brand-kit → theme-engine round-trip', () => {
   // Lazy-loaded so database.js is never imported when DATABASE_URL is absent.
-  let prisma, getTokens, upsertValues;
+  let prisma, getTokens, upsertValues, compileTokens;
 
   beforeAll(async () => {
     const db = await import('../../config/database.js');
@@ -75,6 +75,7 @@ describe.skipIf(!HAS_DB)('D-BK-6 integration: brand-kit → theme-engine round-t
     prisma = db.prisma;
     getTokens = brandKitSvc.getTokens;
     upsertValues = themeSvc.upsertValues;
+    compileTokens = themeSvc.compileTokens;
 
     // Seed the webapp.brand-kit Type and all 51 SettingField rows.
     await seeder.seedBrandKit(prisma);
@@ -140,5 +141,30 @@ describe.skipIf(!HAS_DB)('D-BK-6 integration: brand-kit → theme-engine round-t
     // Prove D-BK-6: no Unknown-field rejections, all entries saved.
     expect(result.errors).toBeUndefined();
     expect(result.saved).toBe(payload.values.length);
+  });
+
+  // KDL-532 regression: compileTokens namespace guard for single-segment slugs.
+  // Runs after the upsertValues test has written real SettingValue rows.
+  it('compileTokens emits distinct --brand-kit-* CSS vars with no junk keys or undefined pane', async () => {
+    const payload = await getTokens(TEST_PROJECT_ID, 'webapp');
+    const writtenSlugs = payload.values.map((v) => v.slug);
+
+    // upsertValues (previous test) invalidates the Redis cache, so this call
+    // recomputes from DB and picks up the freshly written SettingValue rows.
+    const result = await compileTokens('webapp', null, null);
+
+    // Every written brand-kit slug must appear as --<slug>: in :root CSS.
+    for (const slug of writtenSlugs) {
+      expect(result.css, `expected CSS var --${slug} to be present`).toContain(`--${slug}:`);
+    }
+
+    // No junk '--' key (produced when tokenName collapses to '').
+    expect(result.css).not.toMatch(/^\s*--:\s/m);
+
+    // No undefined pane in the JSON tree.
+    expect(Object.keys(result.json)).not.toContain('undefined');
+
+    // brand-kit pane exists in the JSON tree.
+    expect(result.json['brand-kit']).toBeDefined();
   });
 });
