@@ -12,16 +12,39 @@ const COLLATERAL_RENDER_ESTIMATE_MC = 5_000_000n;
 const COLLATERAL_RENDER_CREDITS_COST = 5;
 
 // ── Brand-kit resolver ────────────────────────────────────────────────────────
-// Reads the pinned brand-kit snapshot for a project.
-// brand-kit module: one kit per project_id (unique). version arg is advisory —
-// collateral pins the version at asset creation time; the kit is immutable once approved.
-// Phase 1: resolved_tokens field is not on the BrandKit model yet; returns null gracefully.
+// Reads the brand-kit for a project and maps live DB columns to the shape
+// expected by preflight and the render layer. version arg is advisory —
+// collateral pins the version at asset creation time.
+// company.legalName is omitted until the Project table ships (KDL-449).
 export async function resolveBrandKit(projectId, _version) {
   try {
     const { prisma: db } = await import('../../config/database.js');
     const kit = await db.brandKit.findUnique({ where: { project_id: projectId } });
     if (!kit) return null;
-    return kit.resolved_tokens ?? null;
+
+    const colors = kit.palette?.colors ?? {};
+    const primary = colors.primary;
+    const neutral  = colors.neutral;
+
+    return {
+      logo: {
+        primaryUrl: kit.logo_media_id ? `/api/media/${kit.logo_media_id}` : null,
+        minWidthMm: 0,
+      },
+      palette: {
+        primary:   primary?.ramp ? Object.values(primary.ramp) : (primary?.hex ? [primary.hex] : []),
+        secondary: colors.secondary?.hex ? [colors.secondary.hex] : [],
+        neutral:   neutral?.hex ? [neutral.hex] : [],
+        onPrimary: '#ffffff',
+        onSurface: neutral?.ramp?.[900] ?? '#202124',
+      },
+      typography: {
+        heading:    kit.typography?.heading    ?? null,
+        body:       kit.typography?.body       ?? null,
+        scaleRatio: kit.typography?.scaleRatio ?? null,
+      },
+      company: {},
+    };
   } catch {
     return null;
   }

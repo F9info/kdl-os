@@ -71,6 +71,29 @@ import * as service from './service.js';
 
 const MM_TO_PT = 72 / 25.4;
 
+// Live BrandKit DB row shape — mirrors what resolveBrandKit() now reads.
+function makeLiveBrandKitRow() {
+  return {
+    logo_media_id: 'logo-media-1',
+    palette: {
+      colors: {
+        primary: {
+          hex: '#1a73e8',
+          ramp: { 50: '#e8f0fe', 100: '#c5cae9', 200: '#9fa8da', 300: '#7986cb', 400: '#5c6bc0', 500: '#1a73e8', 600: '#3949ab', 700: '#303f9f', 800: '#283593', 900: '#1a237e' },
+        },
+        neutral: {
+          hex: '#f1f3f4',
+          ramp: { 50: '#f8f9fa', 100: '#f1f3f4', 900: '#202124' },
+        },
+      },
+    },
+    typography: {
+      heading: { family: 'Inter', weights: [700], fallbackStack: 'sans-serif' },
+      body:    { family: 'Inter', weights: [400], fallbackStack: 'sans-serif' },
+    },
+  };
+}
+
 function makeAsset(overrides = {}) {
   return {
     id: 'asset-1',
@@ -402,7 +425,7 @@ describe('idempotency-key forwarding to withCreditHold (COLLATERAL_SPEC §7)', (
     vi.clearAllMocks();
     prisma.collateralAsset.findUnique.mockResolvedValue(RENDER_SAFE_ASSET);
     // Return a full brand kit so preflight passes and withCreditHold is reached.
-    prisma.brandKit.findUnique.mockResolvedValue({ resolved_tokens: makeFullBrandKit() });
+    prisma.brandKit.findUnique.mockResolvedValue(makeLiveBrandKitRow());
     prisma.collateralRender.create.mockResolvedValue({
       id: 'render-1', asset_id: 'asset-1', format: 'PDF_DIGITAL',
       variant: null, file_url: 'collateral/proj-1/asset-1/pdf.pdf',
@@ -444,7 +467,7 @@ describe('credit hold gating — CREDITS_INSUFFICIENT surfaces as 402', () => {
     vi.clearAllMocks();
     prisma.collateralAsset.findUnique.mockResolvedValue(RENDER_SAFE_ASSET);
     // Full brand kit so preflight passes; withCreditHold then throws INSUFFICIENT_CREDITS.
-    prisma.brandKit.findUnique.mockResolvedValue({ resolved_tokens: makeFullBrandKit() });
+    prisma.brandKit.findUnique.mockResolvedValue(makeLiveBrandKitRow());
     withCreditHold.mockRejectedValueOnce(
       new CreditError('INSUFFICIENT_CREDITS', 'Insufficient credits: have 0 µc, need 5000000 µc')
     );
@@ -550,5 +573,58 @@ describe('installModule("collateral") — KDL-542 regression guard', () => {
     await installModule('collateral', 'actor');
 
     expect(prisma.module.upsert).not.toHaveBeenCalled();
+  });
+});
+
+// ── resolveBrandKit() — approval-path DB row resolves correctly ───────────────
+// Guards against regressions to the live-column mapper.
+// The "approved" row shape is what approveKit() produces: status flips to
+// 'approved' but the data columns (logo_media_id, palette, typography) are set
+// during extraction/infer and unchanged by the approval step.
+
+describe('resolveBrandKit() — approved BrandKit row resolves to non-null kit', () => {
+  const APPROVED_ROW = {
+    ...makeLiveBrandKitRow(),
+    status: 'approved',
+    approved_at: new Date('2026-08-20T00:00:00Z'),
+    acknowledged_contrast_adjustments: true,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prisma.brandKit.findUnique.mockResolvedValue(APPROVED_ROW);
+  });
+
+  it('returns non-null for an approved kit (not null like resolved_tokens always was)', async () => {
+    const kit = await service.resolveBrandKit('proj-1');
+    expect(kit).not.toBeNull();
+  });
+
+  it('maps logo_media_id to logo.primaryUrl', async () => {
+    const kit = await service.resolveBrandKit('proj-1');
+    expect(kit.logo.primaryUrl).toBe('/api/media/logo-media-1');
+  });
+
+  it('maps palette ramp to a non-empty palette.primary array', async () => {
+    const kit = await service.resolveBrandKit('proj-1');
+    expect(Array.isArray(kit.palette.primary)).toBe(true);
+    expect(kit.palette.primary.length).toBeGreaterThan(0);
+  });
+
+  it('maps neutral.ramp[900] to palette.onSurface', async () => {
+    const kit = await service.resolveBrandKit('proj-1');
+    expect(kit.palette.onSurface).toBe('#202124');
+  });
+
+  it('maps typography columns to heading and body', async () => {
+    const kit = await service.resolveBrandKit('proj-1');
+    expect(kit.typography.heading).toMatchObject({ family: 'Inter', weights: [700] });
+    expect(kit.typography.body).toMatchObject({ family: 'Inter', weights: [400] });
+  });
+
+  it('returns null when the project has no kit', async () => {
+    prisma.brandKit.findUnique.mockResolvedValue(null);
+    const kit = await service.resolveBrandKit('no-such-project');
+    expect(kit).toBeNull();
   });
 });

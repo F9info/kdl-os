@@ -61,7 +61,7 @@ function checkBrandKitFields(brandKit) {
   if (!brandKit.palette?.onSurface) missing.push('palette.onSurface');
   if (!brandKit.typography?.heading) missing.push('typography.heading');
   if (!brandKit.typography?.body) missing.push('typography.body');
-  if (!brandKit.company?.legalName) missing.push('company.legalName');
+  // company.legalName — deferred until the Project table ships (KDL-449)
   return missing;
 }
 
