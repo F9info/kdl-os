@@ -18,12 +18,35 @@ function makeManifest(slug, { conflictsWith = [], dependsOn = [], core = false, 
   return { slug, name, version: '1.0.0', core, dependsOn, conflictsWith, permissions: [], env: [] };
 }
 
-// ── Manifests used across template-engine scenario tests ────────────────────
+// ── Generic conflict scenario (used by KDL-555 tests) ───────────────────────
+// mode-studio conflicts with ui-a and ui-b; mirrors the old template-engine
+// scenario but keeps the conflict mechanism tests independent of template-engine.
+function loadConflictScenarioManifests() {
+  loadedManifests.set('mode-studio', makeManifest('mode-studio', {
+    name: 'Studio Mode',
+    conflictsWith: ['ui-a', 'ui-b'],
+    dependsOn: ['engine-x', 'engine-y'],
+  }));
+  loadedManifests.set('ui-a', makeManifest('ui-a', {
+    name: 'UI A',
+    conflictsWith: [],
+    dependsOn: ['engine-x'],
+  }));
+  loadedManifests.set('ui-b', makeManifest('ui-b', {
+    name: 'UI B',
+    conflictsWith: [],
+    dependsOn: ['engine-y'],
+  }));
+  loadedManifests.set('engine-x', makeManifest('engine-x', { name: 'Engine X', core: true }));
+  loadedManifests.set('engine-y', makeManifest('engine-y', { name: 'Engine Y', core: true }));
+}
+
+// ── Template Engine scenario (no conflicts — KDL-563) ───────────────────────
 function loadTemplateEngineManifests() {
   loadedManifests.set('template-engine', makeManifest('template-engine', {
     name: 'Template Engine',
-    conflictsWith: ['theme-engine-ui', 'page-builder-ui'],
-    dependsOn: ['theme-engine', 'page-builder', 'brand-kit', 'collateral', 'credits'],
+    conflictsWith: [],
+    dependsOn: ['theme-engine', 'theme-engine-ui', 'page-builder', 'page-builder-ui', 'brand-kit', 'collateral', 'credits'],
   }));
   loadedManifests.set('theme-engine-ui', makeManifest('theme-engine-ui', {
     name: 'Theme Engine UI',
@@ -41,6 +64,14 @@ function loadTemplateEngineManifests() {
   loadedManifests.set('collateral', makeManifest('collateral', { name: 'Collateral' }));
   loadedManifests.set('credits', makeManifest('credits', { name: 'Credits' }));
 }
+
+// DB rows for the generic conflict scenario
+const DB_STUDIO_INSTALLED = { slug: 'mode-studio', name: 'Studio Mode', status: 'INSTALLED', is_core: false, id: 'id-ms' };
+const DB_STUDIO_ENABLED = { slug: 'mode-studio', name: 'Studio Mode', status: 'ENABLED', is_core: false, id: 'id-ms' };
+const DB_UI_A_ENABLED = { slug: 'ui-a', name: 'UI A', status: 'ENABLED', is_core: false, id: 'id-uia' };
+const DB_UI_B_ENABLED = { slug: 'ui-b', name: 'UI B', status: 'ENABLED', is_core: false, id: 'id-uib' };
+const DB_ENGINE_X_ENABLED = { slug: 'engine-x', name: 'Engine X', status: 'ENABLED', is_core: true, id: 'id-ex' };
+const DB_ENGINE_Y_ENABLED = { slug: 'engine-y', name: 'Engine Y', status: 'ENABLED', is_core: true, id: 'id-ey' };
 
 // DB rows for the template-engine scenario
 const DB_TEMPLATE_ENGINE_INSTALLED = { slug: 'template-engine', name: 'Template Engine', status: 'INSTALLED', is_core: false, id: 'id-te' };
@@ -116,161 +147,159 @@ describe('checkConflicts via enableModule', () => {
   });
 });
 
-// ── New tests for KDL-555 ────────────────────────────────────────────────────
+// ── KDL-555 tests: conflict mechanism (generic scenario) ────────────────────
+// Uses mode-studio / ui-a / ui-b so these tests stay valid after template-engine
+// dropped its own conflictsWith (KDL-563).
 
 describe('KDL-555: structured conflict details + resolveConflicts mode switch', () => {
   /**
    * Test 1: enable without resolveConflicts flag when BOTH ui modules are enabled
-   * → 409 with details.conflicts listing both page-builder-ui and theme-engine-ui
+   * → 409 with details.conflicts listing both ui-a and ui-b
    */
   it('enable without flag → 409 with details.conflicts listing both blocking modules', async () => {
-    loadTemplateEngineManifests();
+    loadConflictScenarioManifests();
 
     const depRecord = (slug) => ({ slug, status: 'ENABLED', is_core: false });
     prisma.module = {
       findUnique: vi.fn().mockImplementation(({ where }) => {
-        if (where.slug === 'template-engine') return Promise.resolve(DB_TEMPLATE_ENGINE_INSTALLED);
+        if (where.slug === 'mode-studio') return Promise.resolve(DB_STUDIO_INSTALLED);
         return Promise.resolve(depRecord(where.slug));
       }),
       findMany: vi.fn().mockResolvedValue([
-        DB_THEME_ENGINE_UI_ENABLED, DB_PAGE_BUILDER_UI_ENABLED,
-        DB_THEME_ENGINE_ENABLED, DB_PAGE_BUILDER_ENABLED,
-        DB_BRAND_KIT_ENABLED, DB_COLLATERAL_ENABLED, DB_CREDITS_ENABLED,
+        DB_UI_A_ENABLED, DB_UI_B_ENABLED,
+        DB_ENGINE_X_ENABLED, DB_ENGINE_Y_ENABLED,
       ]),
       update: vi.fn(),
     };
 
-    const err = await enableModule('template-engine', 'actor').catch((e) => e);
+    const err = await enableModule('mode-studio', 'actor').catch((e) => e);
 
     expect(err.status).toBe(409);
     expect(err.details).toBeDefined();
     expect(err.details.code).toBe('MODULE_CONFLICT');
 
     const conflictSlugs = err.details.conflicts.map((c) => c.slug);
-    expect(conflictSlugs).toContain('theme-engine-ui');
-    expect(conflictSlugs).toContain('page-builder-ui');
+    expect(conflictSlugs).toContain('ui-a');
+    expect(conflictSlugs).toContain('ui-b');
     expect(err.details.conflicts.length).toBe(2);
   });
 
   /**
-   * Test 2: with resolveConflicts: true → template-engine ENABLED,
-   * both -ui modules DISABLED; page-builder + theme-engine remain ENABLED
+   * Test 2: with resolveConflicts: true → mode-studio ENABLED,
+   * both -ui modules DISABLED; engines remain ENABLED
    */
-  it('resolveConflicts: true → atomic switch: target ENABLED, conflicting -ui modules DISABLED', async () => {
-    loadTemplateEngineManifests();
+  it('resolveConflicts: true → atomic switch: target ENABLED, conflicting ui modules DISABLED', async () => {
+    loadConflictScenarioManifests();
 
     const depRecord = (slug, isCore = false) => ({ slug, status: 'ENABLED', is_core: isCore });
     prisma.module = {
       findUnique: vi.fn().mockImplementation(({ where }) => {
-        if (where.slug === 'template-engine') return Promise.resolve(DB_TEMPLATE_ENGINE_INSTALLED);
-        const cores = { 'theme-engine': true, 'page-builder': true };
+        if (where.slug === 'mode-studio') return Promise.resolve(DB_STUDIO_INSTALLED);
+        const cores = { 'engine-x': true, 'engine-y': true };
         return Promise.resolve(depRecord(where.slug, !!cores[where.slug]));
       }),
       findMany: vi.fn().mockResolvedValue([
-        DB_THEME_ENGINE_UI_ENABLED, DB_PAGE_BUILDER_UI_ENABLED,
-        DB_THEME_ENGINE_ENABLED, DB_PAGE_BUILDER_ENABLED,
-        DB_BRAND_KIT_ENABLED, DB_COLLATERAL_ENABLED, DB_CREDITS_ENABLED,
+        DB_UI_A_ENABLED, DB_UI_B_ENABLED,
+        DB_ENGINE_X_ENABLED, DB_ENGINE_Y_ENABLED,
       ]),
       update: vi.fn(),
     };
 
-    const enabledResult = { slug: 'template-engine', status: 'ENABLED', id: 'id-te' };
+    const enabledResult = { slug: 'mode-studio', status: 'ENABLED', id: 'id-ms' };
     prisma.$transaction = vi.fn().mockImplementation(async (fn) => {
       const updates = [];
       const tx = {
         module: {
           update: vi.fn().mockImplementation(({ where, data }) => {
             updates.push({ slug: where.slug, status: data.status });
-            if (where.slug === 'template-engine') return Promise.resolve(enabledResult);
+            if (where.slug === 'mode-studio') return Promise.resolve(enabledResult);
             return Promise.resolve({ slug: where.slug, status: data.status });
           }),
         },
       };
       const result = await fn(tx);
-      // Verify: both -ui modules disabled before target enabled
+      // Verify: both ui modules disabled before target enabled
       const disabledSlugs = updates.filter((u) => u.status === 'DISABLED').map((u) => u.slug);
-      expect(disabledSlugs).toContain('theme-engine-ui');
-      expect(disabledSlugs).toContain('page-builder-ui');
+      expect(disabledSlugs).toContain('ui-a');
+      expect(disabledSlugs).toContain('ui-b');
       return result;
     });
 
-    const result = await enableModule('template-engine', 'actor', { resolveConflicts: true });
+    const result = await enableModule('mode-studio', 'actor', { resolveConflicts: true });
     expect(result.status).toBe('ENABLED');
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
   });
 
   /**
-   * Test 3: symmetric direction — with template-engine ENABLED, enabling
-   * page-builder-ui → 409 (template-engine's conflictsWith lists it)
+   * Test 3: symmetric direction — with mode-studio ENABLED, enabling
+   * ui-b → 409 (mode-studio's conflictsWith lists it)
    */
-  it('symmetric direction: enabling page-builder-ui while template-engine is ENABLED → 409 with details', async () => {
-    loadTemplateEngineManifests();
+  it('symmetric direction: enabling ui-b while mode-studio is ENABLED → 409 with details', async () => {
+    loadConflictScenarioManifests();
 
-    const DB_PAGE_BUILDER_UI_INSTALLED = {
-      slug: 'page-builder-ui', name: 'Page Builder UI', status: 'INSTALLED', is_core: false, id: 'id-pbui',
+    const DB_UI_B_INSTALLED = {
+      slug: 'ui-b', name: 'UI B', status: 'INSTALLED', is_core: false, id: 'id-uib',
     };
 
     prisma.module = {
       findUnique: vi.fn().mockImplementation(({ where }) => {
-        if (where.slug === 'page-builder-ui') return Promise.resolve(DB_PAGE_BUILDER_UI_INSTALLED);
-        if (where.slug === 'page-builder') return Promise.resolve(DB_PAGE_BUILDER_ENABLED);
+        if (where.slug === 'ui-b') return Promise.resolve(DB_UI_B_INSTALLED);
+        if (where.slug === 'engine-y') return Promise.resolve(DB_ENGINE_Y_ENABLED);
         return Promise.resolve(null);
       }),
       findMany: vi.fn().mockResolvedValue([
-        DB_TEMPLATE_ENGINE_ENABLED, DB_THEME_ENGINE_ENABLED, DB_PAGE_BUILDER_ENABLED,
-        DB_BRAND_KIT_ENABLED, DB_COLLATERAL_ENABLED, DB_CREDITS_ENABLED,
+        DB_STUDIO_ENABLED, DB_ENGINE_X_ENABLED, DB_ENGINE_Y_ENABLED,
       ]),
       update: vi.fn(),
     };
 
-    const err = await enableModule('page-builder-ui', 'actor').catch((e) => e);
+    const err = await enableModule('ui-b', 'actor').catch((e) => e);
 
     expect(err.status).toBe(409);
     expect(err.details).toBeDefined();
     expect(err.details.code).toBe('MODULE_CONFLICT');
     const conflictSlugs = err.details.conflicts.map((c) => c.slug);
-    expect(conflictSlugs).toContain('template-engine');
+    expect(conflictSlugs).toContain('mode-studio');
   });
 
   /**
-   * Test 4: round trip — disable template-engine → enable page-builder-ui succeeds
+   * Test 4: round trip — disable mode-studio → enable ui-b succeeds
    */
-  it('round trip: disable template-engine → enable page-builder-ui succeeds', async () => {
-    loadTemplateEngineManifests();
+  it('round trip: disable mode-studio → enable ui-b succeeds', async () => {
+    loadConflictScenarioManifests();
 
-    const DB_PAGE_BUILDER_UI_INSTALLED = {
-      slug: 'page-builder-ui', name: 'Page Builder UI', status: 'INSTALLED', is_core: false, id: 'id-pbui',
+    const DB_UI_B_INSTALLED = {
+      slug: 'ui-b', name: 'UI B', status: 'INSTALLED', is_core: false, id: 'id-uib',
     };
-    const DB_PAGE_BUILDER_UI_ENABLED = {
-      slug: 'page-builder-ui', name: 'Page Builder UI', status: 'ENABLED', is_core: false, id: 'id-pbui',
+    const DB_UI_B_ENABLED_RESULT = {
+      slug: 'ui-b', name: 'UI B', status: 'ENABLED', is_core: false, id: 'id-uib',
     };
 
-    // Disable template-engine first
-    const DB_TE_ENABLED = { ...DB_TEMPLATE_ENGINE_ENABLED };
+    // Disable mode-studio first
     prisma.module = {
       findUnique: vi.fn().mockImplementation(({ where }) => {
-        if (where.slug === 'template-engine') return Promise.resolve(DB_TE_ENABLED);
+        if (where.slug === 'mode-studio') return Promise.resolve(DB_STUDIO_ENABLED);
         return Promise.resolve(null);
       }),
-      findMany: vi.fn().mockResolvedValue([DB_TEMPLATE_ENGINE_ENABLED, DB_THEME_ENGINE_ENABLED, DB_PAGE_BUILDER_ENABLED]),
-      update: vi.fn().mockResolvedValue({ slug: 'template-engine', status: 'DISABLED' }),
+      findMany: vi.fn().mockResolvedValue([DB_STUDIO_ENABLED, DB_ENGINE_X_ENABLED, DB_ENGINE_Y_ENABLED]),
+      update: vi.fn().mockResolvedValue({ slug: 'mode-studio', status: 'DISABLED' }),
     };
 
-    await disableModule('template-engine', 'actor');
+    await disableModule('mode-studio', 'actor');
 
-    // Now enable page-builder-ui (template-engine is now DISABLED — not in enabled set)
+    // Now enable ui-b (mode-studio is now DISABLED — not in enabled set)
     prisma.module = {
       findUnique: vi.fn().mockImplementation(({ where }) => {
-        if (where.slug === 'page-builder-ui') return Promise.resolve(DB_PAGE_BUILDER_UI_INSTALLED);
-        if (where.slug === 'page-builder') return Promise.resolve(DB_PAGE_BUILDER_ENABLED);
+        if (where.slug === 'ui-b') return Promise.resolve(DB_UI_B_INSTALLED);
+        if (where.slug === 'engine-y') return Promise.resolve(DB_ENGINE_Y_ENABLED);
         return Promise.resolve(null);
       }),
-      // template-engine is now DISABLED — absent from ENABLED set
-      findMany: vi.fn().mockResolvedValue([DB_THEME_ENGINE_ENABLED, DB_PAGE_BUILDER_ENABLED]),
-      update: vi.fn().mockResolvedValue(DB_PAGE_BUILDER_UI_ENABLED),
+      // mode-studio is now DISABLED — absent from ENABLED set
+      findMany: vi.fn().mockResolvedValue([DB_ENGINE_X_ENABLED, DB_ENGINE_Y_ENABLED]),
+      update: vi.fn().mockResolvedValue(DB_UI_B_ENABLED_RESULT),
     };
 
-    const result = await enableModule('page-builder-ui', 'actor');
+    const result = await enableModule('ui-b', 'actor');
     expect(result.status).toBe('ENABLED');
   });
 
@@ -279,25 +308,24 @@ describe('KDL-555: structured conflict details + resolveConflicts mode switch', 
    * conflicting modules remain ENABLED
    */
   it('rollback: transaction failure leaves no partial state', async () => {
-    loadTemplateEngineManifests();
+    loadConflictScenarioManifests();
 
     const depRecord = (slug) => ({ slug, status: 'ENABLED', is_core: false });
     prisma.module = {
       findUnique: vi.fn().mockImplementation(({ where }) => {
-        if (where.slug === 'template-engine') return Promise.resolve(DB_TEMPLATE_ENGINE_INSTALLED);
+        if (where.slug === 'mode-studio') return Promise.resolve(DB_STUDIO_INSTALLED);
         return Promise.resolve(depRecord(where.slug));
       }),
       findMany: vi.fn().mockResolvedValue([
-        DB_THEME_ENGINE_UI_ENABLED, DB_PAGE_BUILDER_UI_ENABLED,
-        DB_THEME_ENGINE_ENABLED, DB_PAGE_BUILDER_ENABLED,
-        DB_BRAND_KIT_ENABLED, DB_COLLATERAL_ENABLED, DB_CREDITS_ENABLED,
+        DB_UI_A_ENABLED, DB_UI_B_ENABLED,
+        DB_ENGINE_X_ENABLED, DB_ENGINE_Y_ENABLED,
       ]),
       update: vi.fn(),
     };
 
     prisma.$transaction = vi.fn().mockRejectedValue(new Error('DB connection lost'));
 
-    const err = await enableModule('template-engine', 'actor', { resolveConflicts: true }).catch((e) => e);
+    const err = await enableModule('mode-studio', 'actor', { resolveConflicts: true }).catch((e) => e);
 
     // The thrown error propagates — not a 409 status error
     expect(err.message).toMatch(/DB connection lost/);
@@ -306,18 +334,92 @@ describe('KDL-555: structured conflict details + resolveConflicts mode switch', 
   });
 
   /**
-   * Test 6: listModules() reports conflicts in both directions
-   * Setup: template-engine ENABLED; page-builder-ui INSTALLED; theme-engine-ui ENABLED
-   * - template-engine.conflicts = [theme-engine-ui] (direction 1: own conflictsWith, theme-engine-ui is ENABLED)
-   * - page-builder-ui.conflicts = [template-engine] (direction 2: template-engine lists page-builder-ui and is ENABLED)
+   * Test 6: listModules() reports conflicts in both directions (generic scenario)
+   * Setup: mode-studio ENABLED; ui-b INSTALLED; ui-a ENABLED
+   * - mode-studio.conflicts = [ui-a] (direction 1: own conflictsWith, ui-a is ENABLED)
+   * - ui-b.conflicts = [mode-studio] (direction 2: mode-studio lists ui-b and is ENABLED)
    */
   it('listModules() reports conflicts in both directions', async () => {
+    loadConflictScenarioManifests();
+
+    const allDbModules = [
+      DB_STUDIO_ENABLED,
+      { slug: 'ui-b', name: 'UI B', status: 'INSTALLED', is_core: false, id: 'id-uib' },
+      DB_UI_A_ENABLED,
+      DB_ENGINE_X_ENABLED,
+      DB_ENGINE_Y_ENABLED,
+    ];
+
+    prisma.module = {
+      findMany: vi.fn().mockResolvedValue(allDbModules),
+    };
+
+    const modules = await listModules();
+    const bySlug = Object.fromEntries(modules.map((m) => [m.slug, m]));
+
+    // Direction 1: mode-studio's own conflictsWith → ui-a is ENABLED
+    const studioConflictSlugs = bySlug['mode-studio'].conflicts.map((c) => c.slug);
+    expect(studioConflictSlugs).toContain('ui-a');
+    // ui-b is INSTALLED (not ENABLED) so does NOT appear in mode-studio.conflicts
+    expect(studioConflictSlugs).not.toContain('ui-b');
+
+    // Direction 2: mode-studio (ENABLED) lists ui-b in its conflictsWith
+    const uiBConflictSlugs = bySlug['ui-b'].conflicts.map((c) => c.slug);
+    expect(uiBConflictSlugs).toContain('mode-studio');
+
+    // Verify conflictsWith field present on manifests
+    expect(bySlug['mode-studio'].conflictsWith).toEqual(
+      expect.arrayContaining(['ui-a', 'ui-b'])
+    );
+    expect(bySlug['ui-b'].conflictsWith).toEqual([]);
+  });
+});
+
+// ── KDL-563: template-engine no longer conflicts ─────────────────────────────
+
+describe('KDL-563: template-engine installs ui modules as dependencies, no conflict', () => {
+  it('template-engine manifest has no conflictsWith entries', () => {
+    loadTemplateEngineManifests();
+    const manifest = loadedManifests.get('template-engine');
+    expect(manifest.conflictsWith).toEqual([]);
+  });
+
+  it('template-engine dependsOn includes theme-engine-ui and page-builder-ui', () => {
+    loadTemplateEngineManifests();
+    const manifest = loadedManifests.get('template-engine');
+    expect(manifest.dependsOn).toContain('theme-engine-ui');
+    expect(manifest.dependsOn).toContain('page-builder-ui');
+  });
+
+  it('enabling template-engine succeeds when theme-engine-ui is already ENABLED', async () => {
+    loadTemplateEngineManifests();
+
+    const updated = { slug: 'template-engine', status: 'ENABLED', id: 'id-te' };
+    prisma.module = {
+      findUnique: vi.fn().mockImplementation(({ where }) => {
+        if (where.slug === 'template-engine') return Promise.resolve(DB_TEMPLATE_ENGINE_INSTALLED);
+        return Promise.resolve({ slug: where.slug, status: 'ENABLED', is_core: false });
+      }),
+      // theme-engine-ui and page-builder-ui are ENABLED — no conflict should fire
+      findMany: vi.fn().mockResolvedValue([
+        DB_THEME_ENGINE_UI_ENABLED, DB_PAGE_BUILDER_UI_ENABLED,
+        DB_THEME_ENGINE_ENABLED, DB_PAGE_BUILDER_ENABLED,
+        DB_BRAND_KIT_ENABLED, DB_COLLATERAL_ENABLED, DB_CREDITS_ENABLED,
+      ]),
+      update: vi.fn().mockResolvedValue(updated),
+    };
+
+    const result = await enableModule('template-engine', 'actor');
+    expect(result.status).toBe('ENABLED');
+  });
+
+  it('listModules() shows template-engine with no active conflicts alongside theme-engine-ui', async () => {
     loadTemplateEngineManifests();
 
     const allDbModules = [
       DB_TEMPLATE_ENGINE_ENABLED,
-      { slug: 'page-builder-ui', name: 'Page Builder UI', status: 'INSTALLED', is_core: false, id: 'id-pbui' },
       DB_THEME_ENGINE_UI_ENABLED,
+      DB_PAGE_BUILDER_UI_ENABLED,
       DB_THEME_ENGINE_ENABLED,
       DB_PAGE_BUILDER_ENABLED,
       DB_BRAND_KIT_ENABLED,
@@ -332,20 +434,10 @@ describe('KDL-555: structured conflict details + resolveConflicts mode switch', 
     const modules = await listModules();
     const bySlug = Object.fromEntries(modules.map((m) => [m.slug, m]));
 
-    // Direction 1: template-engine's own conflictsWith → theme-engine-ui is ENABLED
-    const teConflictSlugs = bySlug['template-engine'].conflicts.map((c) => c.slug);
-    expect(teConflictSlugs).toContain('theme-engine-ui');
-    // page-builder-ui is INSTALLED (not ENABLED) so does NOT appear in template-engine.conflicts
-    expect(teConflictSlugs).not.toContain('page-builder-ui');
-
-    // Direction 2: template-engine (ENABLED) lists page-builder-ui in its conflictsWith
-    const pbUiConflictSlugs = bySlug['page-builder-ui'].conflicts.map((c) => c.slug);
-    expect(pbUiConflictSlugs).toContain('template-engine');
-
-    // Verify conflictsWith field present on manifests
-    expect(bySlug['template-engine'].conflictsWith).toEqual(
-      expect.arrayContaining(['theme-engine-ui', 'page-builder-ui'])
-    );
-    expect(bySlug['page-builder-ui'].conflictsWith).toEqual([]);
+    expect(bySlug['template-engine'].conflicts).toHaveLength(0);
+    expect(bySlug['template-engine'].conflictsWith).toEqual([]);
+    // theme-engine-ui is visible alongside template-engine — no suppression
+    expect(bySlug['theme-engine-ui']).toBeDefined();
+    expect(bySlug['theme-engine-ui'].conflicts).toHaveLength(0);
   });
 });

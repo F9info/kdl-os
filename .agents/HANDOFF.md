@@ -14,6 +14,22 @@
 
 **Next:** PR review → merge. Template-engine Studio page will show projects list on next deploy.
 
+## 2026-08-20 — KDL-560: auto-install deps + fix sidebar lies (Backend Coder)
+## 2026-08-20 — KDL-560: implement auto-install deps + hold Studio rename (Backend Coder)
+
+**Branch:** `feat/kdl-560-template-engine-one-install` → **PR #195** (in_review)
+
+**Done this heartbeat (CEO comment b79d5df0):**
+- `service.js`: actually implemented auto-install transitive deps — `buildInstallOrder()` (DFS topo sort), `_installSingle()` (per-module install), `installModule()` orchestrates both. Returns `{ module, installedDependencies }`. Prior heartbeat commit described this but did NOT change service.js.
+- `controller.js`: updated `postInstall` to spread `{ module, installedDependencies }` into response.
+- `template-engine/module.json` nav label REVERTED: `Template Engine` → `Studio` per CEO hold instruction.
+- `credits/module.json` nav removed ✓ (prior heartbeat).
+- `settings/module.json` nav path fixed ✓ (prior heartbeat).
+- `module-nav-pages.test.js` added ✓ (prior heartbeat); still passes.
+
+**HELD:** Studio → Template Engine sidebar rename — waiting on KDL-557 naming decision.
+**Status:** `in_review`. Unblock: board merge PR #195 after CI green.
+
 ---
 
 ## 2026-08-20 — KDL-553: flip BRAND_INFERENCE_IMAGE_ENABLED to default-on (AI Services)

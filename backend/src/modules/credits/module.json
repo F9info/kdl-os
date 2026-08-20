@@ -8,14 +8,7 @@
   "permissions": [
     "credits"
   ],
-  "nav": [
-    {
-      "label": "Credits",
-      "path": "/admin/credits",
-      "icon": "Coins",
-      "permission": "credits:view"
-    }
-  ],
+  "nav": [],
   "dependsOn": [],
   "queues": [],
   "env": []

@@ -7,7 +7,7 @@
   "apiPrefix": "/api/settings",
   "permissions": ["settings"],
   "nav": [
-    { "label": "Settings", "path": "/settings", "icon": "Settings", "permission": "settings:view" }
+    { "label": "Settings", "path": "/admin/settings", "icon": "Settings", "permission": "settings:view" }
   ],
   "dependsOn": [],
   "queues": [],
