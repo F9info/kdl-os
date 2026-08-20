@@ -39,7 +39,7 @@ export const listRuns = async (req, res, next) => {
   try {
     const projectId = req.validated.query.projectId;
     const runs = await service.listRuns(projectId);
-    return successResponse(res, { runs });
+    return successResponse(res, runs);
   } catch (err) {
     next(err);
   }
