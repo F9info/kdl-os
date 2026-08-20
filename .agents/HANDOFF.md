@@ -13,7 +13,7 @@
 
 ## 2026-08-20 — KDL-577: fix collateral resolveBrandKit() — resolved_tokens always null (Backend Coder)
 
-**PR:** pending
+**PR:** https://github.com/F9info/kdl-os/pull/207 — awaiting CI + code review
 
 **Done:**
 - `resolveBrandKit()` in `collateral/service.js` was returning `kit.resolved_tokens ?? null`. That column doesn't exist on the BrandKit model — always null. Every Studio run stuck at Stage 6 with `BRANDKIT_MISSING_FIELD`.
