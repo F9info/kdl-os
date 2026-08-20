@@ -54,6 +54,7 @@ const templateEngineModule: Module = {
   description: 'Brand identity and collateral generator.',
   version: '1.0.0',
   core: false,
+  visibleInCatalog: true,
   apiPrefix: '/api/template-engine',
   icon: 'Sparkles',
   status: 'AVAILABLE',
@@ -70,6 +71,7 @@ const pageBuilderModule: Module = {
   description: 'Page editor admin surface.',
   version: '1.0.0',
   core: false,
+  visibleInCatalog: true,
   apiPrefix: '/api/page-builder',
   icon: 'Box',
   status: 'ENABLED',
@@ -86,10 +88,46 @@ const plainModule: Module = {
   description: 'Usage analytics.',
   version: '1.0.0',
   core: false,
+  visibleInCatalog: true,
   apiPrefix: '/api/analytics',
   icon: 'Activity',
   status: 'AVAILABLE',
   installed_at: null,
+  enabled_at: null,
+  settings: null,
+  conflictsWith: [],
+  conflicts: [],
+}
+
+/** Internal-only module (visibleInCatalog: false) */
+const brandKitModule: Module = {
+  slug: 'brand-kit',
+  name: 'Brand Kit',
+  description: 'Logo intake and palette extraction.',
+  version: '1.0.0',
+  core: false,
+  visibleInCatalog: false,
+  apiPrefix: '/api/brand-kit',
+  icon: null,
+  status: 'ENABLED',
+  installed_at: '2026-01-01T00:00:00.000Z',
+  enabled_at: '2026-01-01T00:00:00.000Z',
+  settings: null,
+  conflictsWith: [],
+  conflicts: [],
+}
+
+const creditsModule: Module = {
+  slug: 'credits',
+  name: 'Credits',
+  description: 'Per-project internal metering ledger.',
+  version: '1.0.0',
+  core: false,
+  visibleInCatalog: false,
+  apiPrefix: '/api/credits',
+  icon: null,
+  status: 'INSTALLED',
+  installed_at: '2026-01-01T00:00:00.000Z',
   enabled_at: null,
   settings: null,
   conflictsWith: [],
@@ -260,6 +298,120 @@ describe('ModulesPage — switch dialog', () => {
       expect(screen.getByRole('dialog')).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /^Install & switch$/i })).toBeInTheDocument()
     })
+  })
+})
+
+describe('ModulesPage — visibleInCatalog filtering', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    useAuthStore.setState({ accessToken: 'token', isAuthenticated: true, isLoading: false })
+  })
+
+  it('hides internal modules (visibleInCatalog: false) by default', async () => {
+    mockGetBase((url) => {
+      if (url === '/modules') {
+        return {
+          data: {
+            data: { modules: [templateEngineModule, brandKitModule, creditsModule, plainModule] },
+          },
+        }
+      }
+    })
+    render(<ModulesPage />)
+    await waitFor(() => {
+      expect(screen.getByText('Template Engine')).toBeInTheDocument()
+      expect(screen.getByText('Analytics')).toBeInTheDocument()
+    })
+    expect(screen.queryByText('Brand Kit')).not.toBeInTheDocument()
+    expect(screen.queryByText('Credits')).not.toBeInTheDocument()
+  })
+
+  it('reveals internal modules when "Show internal" toggle is on', async () => {
+    mockGetBase((url) => {
+      if (url === '/modules') {
+        return {
+          data: {
+            data: { modules: [templateEngineModule, brandKitModule, creditsModule] },
+          },
+        }
+      }
+    })
+    render(<ModulesPage />)
+    await waitFor(() => {
+      expect(screen.getByText('Template Engine')).toBeInTheDocument()
+    })
+    expect(screen.queryByText('Brand Kit')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /show internal/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Brand Kit')).toBeInTheDocument()
+      expect(screen.getByText('Credits')).toBeInTheDocument()
+    })
+  })
+
+  it('hides internal modules again when "Show internal" is toggled off', async () => {
+    mockGetBase((url) => {
+      if (url === '/modules') {
+        return { data: { data: { modules: [brandKitModule, plainModule] } } }
+      }
+    })
+    render(<ModulesPage />)
+    await waitFor(() => expect(screen.getByText('Analytics')).toBeInTheDocument())
+
+    // Turn on
+    fireEvent.click(screen.getByRole('button', { name: /show internal/i }))
+    await waitFor(() => expect(screen.getByText('Brand Kit')).toBeInTheDocument())
+
+    // Turn off
+    fireEvent.click(screen.getByRole('button', { name: /show internal/i }))
+    await waitFor(() => expect(screen.queryByText('Brand Kit')).not.toBeInTheDocument())
+    expect(screen.getByText('Analytics')).toBeInTheDocument()
+  })
+
+  it('treats absent visibleInCatalog as visible (backward compat with old backend)', async () => {
+    const legacyModule: Module = {
+      slug: 'legacy',
+      name: 'Legacy Module',
+      description: 'No visibleInCatalog field.',
+      version: '1.0.0',
+      core: false,
+      apiPrefix: '/api/legacy',
+      icon: null,
+      status: 'AVAILABLE',
+      installed_at: null,
+      enabled_at: null,
+      settings: null,
+      conflictsWith: [],
+      conflicts: [],
+    }
+    mockGetBase((url) => {
+      if (url === '/modules') {
+        return { data: { data: { modules: [legacyModule] } } }
+      }
+    })
+    render(<ModulesPage />)
+    await waitFor(() => {
+      expect(screen.getByText('Legacy Module')).toBeInTheDocument()
+    })
+  })
+
+  it('status counts exclude internal modules when showInternal is off', async () => {
+    mockGetBase((url) => {
+      if (url === '/modules') {
+        return {
+          data: {
+            data: { modules: [plainModule, brandKitModule] },
+          },
+        }
+      }
+    })
+    render(<ModulesPage />)
+    await waitFor(() => expect(screen.getByText('Analytics')).toBeInTheDocument())
+
+    // "All" chip should show 1 (only analytics visible), not 2
+    const allChip = screen.getByRole('button', { name: /^All\s*1$/i })
+    expect(allChip).toBeInTheDocument()
   })
 })
 

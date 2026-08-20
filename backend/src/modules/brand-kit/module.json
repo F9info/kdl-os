@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Logo intake, OKLCH palette extraction, WCAG AA contrast report, and theme-token hand-off for Template Engine Mode A",
   "core": false,
+  "visibleInCatalog": false,
   "apiPrefix": "/api/brand-kit",
   "permissions": [
     {

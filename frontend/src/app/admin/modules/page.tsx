@@ -130,6 +130,7 @@ export default function ModulesPage() {
   })
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
+  const [showInternal, setShowInternal] = useState(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ['modules'],
@@ -273,21 +274,27 @@ export default function ModulesPage() {
 
   const modules = useMemo(() => data ?? [], [data])
 
+  /** Catalog-visible modules: hides internal-only deps unless showInternal is on. */
+  const catalogModules = useMemo(
+    () => modules.filter((mod) => showInternal || mod.visibleInCatalog !== false),
+    [modules, showInternal]
+  )
+
   const statusCounts = useMemo(() => {
     const counts: Record<StatusFilter, number> = {
-      ALL: modules.length,
+      ALL: catalogModules.length,
       AVAILABLE: 0,
       INSTALLED: 0,
       ENABLED: 0,
       DISABLED: 0,
     }
-    for (const mod of modules) counts[mod.status] += 1
+    for (const mod of catalogModules) counts[mod.status] += 1
     return counts
-  }, [modules])
+  }, [catalogModules])
 
   const filteredModules = useMemo(() => {
     const query = search.trim().toLowerCase()
-    return modules.filter((mod) => {
+    return catalogModules.filter((mod) => {
       if (statusFilter !== 'ALL' && mod.status !== statusFilter) return false
       if (!query) return true
       return (
@@ -296,7 +303,7 @@ export default function ModulesPage() {
         (mod.description ?? '').toLowerCase().includes(query)
       )
     })
-  }, [modules, search, statusFilter])
+  }, [catalogModules, search, statusFilter])
 
   const filterChips: Array<{ key: StatusFilter; label: string }> = [
     { key: 'ALL', label: 'All' },
@@ -370,6 +377,23 @@ export default function ModulesPage() {
                 <span className="ml-1 tabular-nums opacity-70">{statusCounts[chip.key]}</span>
               </button>
             ))}
+
+            {/* Separator */}
+            <span className="self-center border-l border-input h-4 mx-0.5" aria-hidden="true" />
+
+            <button
+              type="button"
+              onClick={() => setShowInternal((v) => !v)}
+              aria-pressed={showInternal}
+              className={cn(
+                'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                showInternal
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-input bg-background text-muted-foreground hover:bg-muted'
+              )}
+            >
+              Show internal
+            </button>
           </div>
         </div>
 
