@@ -35,6 +35,12 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  NO_DOWNSTREAM_BY_DESIGN,
+  stripComments,
+  extractObjectBody,
+  classifyDriverBody,
+} from './lib/classify-driver.mjs';
 
 const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const MODULES_DIR = join(REPO_ROOT, 'backend/src/modules');
@@ -45,9 +51,6 @@ const STATUS_FILE = join(REPO_ROOT, 'STATUS.md');
 
 const BEGIN = '<!-- BEGIN GENERATED ROLLUP — regenerate with `node scripts/status-rollup.mjs`; do not hand-edit -->';
 const END = '<!-- END GENERATED ROLLUP -->';
-
-/** Drivers that legitimately make no downstream call — they are pure aggregates. */
-const NO_DOWNSTREAM_BY_DESIGN = new Set(['preflight', 'export']);
 
 const args = new Set(process.argv.slice(2));
 
@@ -69,11 +72,6 @@ function trySh(cmd, cmdArgs, opts) {
   } catch (e) {
     return { ok: false, err: e.message };
   }
-}
-
-/** Strip comments so a header comment can never be mistaken for code. */
-function stripComments(src) {
-  return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/[^\n]*/g, '$1');
 }
 
 function walk(dir, out = []) {
@@ -222,42 +220,12 @@ function collectDrivers() {
       s.evidence = `no \`const ${s.varName} = {\` found`;
       continue;
     }
-    const callsUpstream =
-      /\bfetch\s*\(/.test(body) ||
-      /\baxios\b/.test(body) ||
-      [...upstreamSymbols].some((sym) => new RegExp(`\\b${sym}\\b`).test(body));
-
-    if (/\bnotBuilt\s*\(/.test(body)) {
-      s.status = 'UPSTREAM_NOT_BUILT';
-      s.evidence = 'throws notBuilt() — Phase 1 stub';
-    } else if (callsUpstream) {
-      s.status = 'REAL';
-      s.evidence = 'calls an upstream module';
-    } else if (NO_DOWNSTREAM_BY_DESIGN.has(s.stage)) {
-      s.status = 'REAL';
-      s.evidence = 'pure local aggregate — no downstream call by design';
-    } else {
-      s.status = 'NO_DOWNSTREAM';
-      s.evidence = 'resolves without calling its upstream module — silent no-op';
-    }
+    const classified = classifyDriverBody(body, { stage: s.stage, upstreamSymbols });
+    s.status = classified.status;
+    s.evidence = classified.evidence;
   }
 
   return { stages };
-}
-
-function extractObjectBody(src, varName) {
-  const start = src.search(new RegExp(`const\\s+${varName}\\s*=\\s*\\{`));
-  if (start < 0) return null;
-  const open = src.indexOf('{', start);
-  let depth = 0;
-  for (let i = open; i < src.length; i += 1) {
-    if (src[i] === '{') depth += 1;
-    else if (src[i] === '}') {
-      depth -= 1;
-      if (depth === 0) return src.slice(open, i + 1);
-    }
-  }
-  return null;
 }
 
 // -------------------------------------------------------- 3. PR reality
