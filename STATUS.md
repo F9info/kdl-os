@@ -2,6 +2,10 @@
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+## 2026-08-20 — KDL-532: compileTokens namespace guard — DONE (Backend Coder)
+
+`fix/kdl-515-brand-kit-seed`: single-segment slug guard added to `compileTokens()` in `theme-engine/service.js`. Single-segment brand-kit-* slugs now emit `--{slug}` verbatim as CSS vars and group under `'brand-kit'` pane in JSON tree. Regression test added to `brand-kit.d-bk-6.integration.test.js`. 142/142 existing tests pass. Commit `acca80a`. PR needed → master.
+
 ## 2026-08-19 — KDL-508: collateral module — 42/42 tests green, PR ready for CI + merge (Backend Coder)
 
 `feat/kdl-508-collateral-on-master` (rebased on master): COLLATERAL_SPEC §7 endpoints, §8 all 7 preflight error strings verbatim, §11 HTML-escaping, §4 geometry/render for all 4 artifact types (PDF_PRINT/PDF_DIGITAL/DOCX/PNG), `withCreditHold` + idempotency-key forwarding, `CREDITS_INSUFFICIENT` via credits module, migration `20260820000001` (sorts after brand-kit). 42/42 tests pass. PR opened — awaiting CI green for squash-merge.

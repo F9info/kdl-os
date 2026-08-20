@@ -1,3 +1,17 @@
+## 2026-08-20 — KDL-532: compileTokens namespace guard for brand-kit-* slugs (Backend Coder)
+
+**Branch:** `fix/kdl-515-brand-kit-seed` (same as KDL-515/KDL-528 fixes)
+
+**Done:**
+- Added single-segment slug guard in `compileTokens()` (`service.js:470-476`): when `slugParts.length === 1`, emit `--{slug}` verbatim as the CSS var and group the JSON tree entry under `'brand-kit'` pane. Prevents the old behavior where `neutralParts = []` → `tokenName = ''` → CSS emits junk `--:` key + `undefined` pane.
+- Extended `brand-kit.d-bk-6.integration.test.js` with a 3rd test that calls `compileTokens()` after `upsertValues()` and asserts: distinct `--brand-kit-*` CSS vars present, no `--:` junk key, no `undefined` pane.
+- All 142 existing tests still pass. New test is DB-opt-in (skipped without `RUN_DB_TESTS=1`).
+- Commit: `acca80a` — `fix(theme-engine): namespace guard for single-segment brand-kit-* slugs (KDL-532)`
+
+**Next:** PR into master; parent KDL-526 can be closed once this is verified merged.
+
+---
+
 ## 2026-08-19 — KDL-508: collateral module — implementation verified, PR ready (Backend Coder)
 
 **Branch:** `feat/kdl-508-collateral-on-master` — PR being opened
