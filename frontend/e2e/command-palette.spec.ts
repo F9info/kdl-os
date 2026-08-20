@@ -1,11 +1,12 @@
 // KDL-292 — command palette (Cmd/Ctrl-K) + keyboard-shortcut layer smoke test.
 import { test, expect } from '@playwright/test'
+import { ADMIN } from './helpers/credentials'
 
 test.describe('Command palette', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/login')
-    await page.getByPlaceholder('admin@kdl.com').fill('admin@kdl.com')
-    await page.getByPlaceholder('••••••••').fill('Admin@123')
+    await page.getByPlaceholder('admin@kdl.com').fill(ADMIN.email)
+    await page.getByPlaceholder('••••••••').fill(ADMIN.password)
     await page.getByRole('button', { name: 'Sign in' }).click()
     await expect(page).toHaveURL(/\/admin\/dashboard/)
   })
