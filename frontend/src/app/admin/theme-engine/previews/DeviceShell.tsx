@@ -20,13 +20,25 @@ function Screen({ children, className }: { children: ReactNode; className: strin
   )
 }
 
+/** True when the device id or label indicates landscape orientation.
+ *  Prototype uses `_h` suffixes (phone_h, tablet_h, ipad_h, laptop_h) and
+ *  `↔` in the label to denote horizontal/landscape variants. */
+function isLandscape(device: string | undefined): boolean {
+  if (!device) return false
+  return device.endsWith('_h') || device.includes('↔') || device.includes('landscape')
+}
+
 export function DeviceShell({
   platform,
+  device,
   children,
 }: {
   platform: string
+  device?: string
   children: ReactNode
 }): JSX.Element {
+  const landscape = isLandscape(device)
+
   if (platform === 'tv') {
     return (
       <div className="flex flex-col items-center gap-0">
@@ -41,7 +53,25 @@ export function DeviceShell({
       </div>
     )
   }
+
   if (platform === 'android') {
+    if (landscape) {
+      // Landscape: phone rotated — wider, shorter, nav bar moves to side
+      return (
+        <div className="flex flex-row">
+          <div className="h-[190px] w-[340px] overflow-hidden rounded-[20px] border-[8px] border-[#0b0b0c] shadow-[0_16px_44px_rgba(0,0,0,.5)]">
+            <div className="flex h-full flex-row">
+              <Screen className="flex-1 bg-card">{children}</Screen>
+              <div className="flex flex-col justify-around bg-[#0b0b0c] px-1.5 py-6 text-xs text-[#9a9aa2]">
+                <span>◁</span>
+                <span>○</span>
+                <span>▢</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
     return (
       <div className="flex flex-col">
         <div className="w-[240px] overflow-hidden rounded-[28px] border-[8px] border-[#0b0b0c] shadow-[0_16px_44px_rgba(0,0,0,.5)]">
@@ -55,7 +85,21 @@ export function DeviceShell({
       </div>
     )
   }
+
   if (platform === 'ios') {
+    if (landscape) {
+      // Landscape: phone rotated — wider, shorter, notch moves to side
+      return (
+        <div className="h-[190px] w-[340px] overflow-hidden rounded-[20px] border-[8px] border-[#0b0b0c] shadow-[0_16px_44px_rgba(0,0,0,.5)]">
+          <div className="flex h-full flex-row">
+            <div className="flex flex-col justify-center bg-black px-1 py-6">
+              <span className="h-16 w-2.5 rounded-full border border-[#232325] bg-[#0b0b0c]" />
+            </div>
+            <Screen className="flex-1 bg-card">{children}</Screen>
+          </div>
+        </div>
+      )
+    }
     return (
       <div className="w-[240px] overflow-hidden rounded-[28px] border-[8px] border-[#0b0b0c] shadow-[0_16px_44px_rgba(0,0,0,.5)]">
         <div className="flex justify-center bg-black py-1.5">
@@ -65,7 +109,24 @@ export function DeviceShell({
       </div>
     )
   }
-  // webapp → browser frame
+
+  // webapp → browser frame; landscape = wider, shorter (laptop_h, tablet_h, mobile_h)
+  if (landscape) {
+    return (
+      <div className="w-[380px] overflow-hidden rounded-[8px] border border-border shadow-lg">
+        <div className="flex items-center gap-1.5 border-b border-border bg-muted px-2 py-1.5">
+          <span className="h-2 w-2 rounded-full bg-[#ff5f57]" />
+          <span className="h-2 w-2 rounded-full bg-[#febc2e]" />
+          <span className="h-2 w-2 rounded-full bg-[#28c840]" />
+          <span className="ml-1.5 flex-1 rounded bg-background px-2 py-0.5 text-[10px] text-muted-foreground">
+            app.kdl.dev
+          </span>
+        </div>
+        <Screen className="min-h-[160px] bg-card">{children}</Screen>
+      </div>
+    )
+  }
+
   return (
     <div className="w-[280px] overflow-hidden rounded-[8px] border border-border shadow-lg">
       <div className="flex items-center gap-1.5 border-b border-border bg-muted px-2 py-1.5">
