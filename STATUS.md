@@ -2,7 +2,7 @@
 
 # STATUS — what is done, what is pending
 
-_Derived from code + GitHub + the board at master `f958cbd` (latest commit 2026-08-20)._
+_Derived from code + GitHub + the board at master `68313ef` (latest commit 2026-08-20)._
 _Regenerate: `node scripts/status-rollup.mjs`. Hand edits to this block are overwritten._
 
 Read this instead of counting board issues or PRs — both mislead. The board has 500+ done
@@ -18,7 +18,7 @@ not by whether a spec or a board issue says the module is done.
 | Module | State | Evidence (code on disk) | Tests | Purpose (module.json) |
 | --- | --- | --- | --- | --- |
 | `auth` | ✅ built | service + routes + controller | 3 | Authentication, registration, and session management |
-| `brand-kit` | ✅ built | service + routes + controller | 3 | Logo intake, OKLCH palette extraction, WCAG AA contrast report, and theme-token hand-off for Template Engine Mode A |
+| `brand-kit` | ✅ built | service + routes + controller | 4 | Logo intake, OKLCH palette extraction, WCAG AA contrast report, and theme-token hand-off for Template Engine Mode A |
 | `categories` | ✅ built | service + routes + controller | 1 | Taxonomy categories grouped under types |
 | `collateral` | ✅ built | service + routes + controller | 1 | Print-ready collateral render engine — visiting card, letterhead, t-shirt, ID card (COLLATERAL_SPEC.md §2). |
 | `credits` | ✅ built | service + routes + controller | 1 | Per-project internal metering ledger — hold lifecycle, ledger, reconciliation. |
@@ -45,7 +45,7 @@ not by whether a spec or a board issue says the module is done.
 
 Parsed from `backend/src/modules/template-engine/drivers/index.js` — from the driver bodies, **not** the file's header comment (which has gone stale before: KDL-521).
 
-**8/9 stages real, 0 UPSTREAM_NOT_BUILT, 1 silent no-op.**
+**8/9 stages real, 1 UPSTREAM_NOT_BUILT.**
 
 | # | Stage | Status | Derived from |
 | --- | --- | --- | --- |
@@ -53,25 +53,17 @@ Parsed from `backend/src/modules/template-engine/drivers/index.js` — from the 
 | 2 | `palette` | ✅ REAL | calls an upstream module |
 | 3 | `inference` | ✅ REAL | calls an upstream module |
 | 4 | `approval` | ✅ REAL | calls an upstream module |
-| 5 | `guidelines` | ⚠ NO_DOWNSTREAM | resolves without calling its upstream module — silent no-op |
+| 5 | `guidelines` | ⛔ UPSTREAM_NOT_BUILT | throws with error code 'UPSTREAM_NOT_BUILT' (503 stub) |
 | 6 | `collateral` | ✅ REAL | calls an upstream module |
 | 7 | `website` | ✅ REAL | calls an upstream module |
 | 8 | `preflight` | ✅ REAL | pure local aggregate — no downstream call by design |
 | 9 | `export` | ✅ REAL | pure local aggregate — no downstream call by design |
 
-> ⚠ **NO_DOWNSTREAM** means the driver resolves successfully without calling its upstream
-> module. The DAG goes green while nothing is produced — worse than an honest 503, because
-> it reads as done. Only `preflight` and `export` are allowed to make no downstream call.
-
 ### 3. Pull requests — true merge state
 
-**3 open PR(s).**
+**0 open PR(s).**
 
-| PR | Title | Branch | CI / merge state | Review |
-| --- | --- | --- | --- | --- |
-| [#181](https://github.com/F9info/kdl-os/pull/181) | docs(KDL-519): generated STATUS rollup — single source of truth for done vs pending | `docs/kdl-519-status-rollup` | UNKNOWN | none |
-| [#180](https://github.com/F9info/kdl-os/pull/180) | docs(process): retire direct-push-to-master — enforce PR-only merge path (KDL-520) | `docs/kdl-520-merge-process-fix` | UNKNOWN | none |
-| [#179](https://github.com/F9info/kdl-os/pull/179) | fix(brand-kit): seed webapp.brand-kit Type + SettingField rows for D-BK-6 handoff (KDL-515) | `fix/kdl-515-brand-kit-seed` | UNKNOWN | none |
+_No open PRs._
 
 #### Ghost merges — CLOSED on GitHub, but the code IS on master
 
@@ -87,30 +79,25 @@ _Scan window: the 40 most recent closed PRs. Older ghost merges are not covered.
 
 ### 4. Board state — blocked and in-flight
 
-**519 issues total: 504 done, 2 in progress, 9 blocked, 0 todo, 3 cancelled.**
+**529 issues total: 523 done, 2 in progress, 0 blocked, 2 todo, 2 cancelled.**
 
 #### Blocked — every row needs a named unblock owner
 
-| Issue | Title | Unblock owner | Unblock action | Owner source |
-| --- | --- | --- | --- | --- |
-| KDL-453 | Template Engine follow-on: `template-engine` orchestrator — 9-stage DAG (thin, drives engines) | CEO | Blocker condition is satisfied — the source-app IA open question (TEMPLATE_ENGINE_ARCH §9 / PM-001 OQ-1) was answered by `.agents/arch/STUDIO_IA.md` on master (KDL-485). Confirm, then close as superseded by KDL-501 + KDL-509 or re-scope the remainder. | `.agents/unblock-owners.json` |
-| KDL-482 | BUILD: brand-kit Phase 1 — data model, logo intake, OKLCH palette extraction, contrast report | CEO | Stale block — brand-kit Phase 1 shipped to master as `3b3ab441` (via ghost-merged PR #169) and KDL-512 closed its blockers. Reconcile and close as done; the surviving runtime gap is already tracked by KDL-515. | `.agents/unblock-owners.json` |
-| KDL-501 | IMPL: template-engine orchestrator backend — 9-stage DAG per TEMPLATE_ENGINE_ARCH.md | CEO | Stale block — Phase 1 orchestrator is on master as `99b8debf` (PR #172): 9-stage DAG, server-side gates, crash recovery, RBAC. Close Phase 1 as done; Phase 2 driver wiring is KDL-509 (PR #177). | `.agents/unblock-owners.json` |
-| KDL-509 | WIRE: template-engine Phase 2 — replace UPSTREAM_NOT_BUILT driver stubs with real API calls | **⚠ UNASSIGNED** | set `unblockDescriptor` on the board, or add KDL-509 to `.agents/unblock-owners.json` | — |
-| KDL-515 | FIX: brand-kit D-BK-6 hand-off is dead at runtime — theme-engine `${platform}.brand-kit` Type + `brand-kit-*` fields are never seeded | Code Reviewer | Review and merge PR #179 (`fix/kdl-515-brand-kit-seed`) — the review is already tracked as KDL-522. Until it lands, `GET /api/brand-kit/:projectId/tokens` cannot return 200 and the D-BK-6 hand-off is dead at runtime. | `.agents/unblock-owners.json` |
-| KDL-521 | FIX: stale UPSTREAM_NOT_BUILT header comment in template-engine drivers | Backend Coder | merge PR #177 (feat/kdl-509-driver-wiring / KDL-509) to master; no file change needed after merge — fix already embedded in branch | board `unblockDescriptor` |
-| KDL-523 | REVIEW: PR #177 — KDL-509 Phase 2 driver wiring + CI fix | **⚠ UNASSIGNED** | set `unblockDescriptor` on the board, or add KDL-523 to `.agents/unblock-owners.json` | — |
-| KDL-524 | CODE REVIEW: KDL-519 — PR #181 generated STATUS rollup + docs/ADMIN_ACCESS.md | **⚠ UNASSIGNED** | set `unblockDescriptor` on the board, or add KDL-524 to `.agents/unblock-owners.json` | — |
-| KDL-525 | FIX: two Playwright specs still hardcode the purged Admin@123 password (KDL-307 residual) | **⚠ UNASSIGNED** | set `unblockDescriptor` on the board, or add KDL-525 to `.agents/unblock-owners.json` | — |
-
-> ⚠ 4 blocked issue(s) have no named unblock owner: KDL-509, KDL-523, KDL-524, KDL-525. A blocked issue without an owner never moves.
+_Nothing blocked._
 
 #### In progress
 
 | Issue | Title |
 | --- | --- |
-| KDL-490 | brand-kit: opt-in logo-image multimodal inference + 5-logo A/B vs text-only baseline (KDL-484 follow-up) |
-| KDL-527 | IMPLEMENT: brand-kit seed (Type + brand-kit-* SettingFields) to unblock D-BK-6 hand-off (KDL-515) |
+| KDL-536 | FIX: status-rollup.mjs mislabels UPSTREAM_NOT_BUILT drivers as silent no-ops |
+| KDL-537 | BUILD: brand-kit brand-guidelines PDF render endpoint - unblocks template-engine stage 5 (guidelines) |
+
+#### Queued (todo)
+
+| Issue | Title |
+| --- | --- |
+| KDL-534 | brand-kit: re-run multimodal A/B on stereotype-INCONGRUENT logo fixtures |
+| KDL-535 | brand-kit: ampersand in companyName survives into strategy copy HTML-escaped |
 
 ---
 
