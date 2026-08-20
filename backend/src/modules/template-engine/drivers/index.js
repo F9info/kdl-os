@@ -6,9 +6,9 @@
  * adapter shims that translate the stage context into a service call and
  * return { outputRef } on success, or throw a named error on failure.
  *
- * Phase 2 wiring status (KDL-509):
- *   wired:   intake, palette, inference, approval, collateral, website, preflight, export
- *   stubbed: guidelines — brand-kit Phase 1 ships no PDF render endpoint yet
+ * Phase 2 wiring status (KDL-509 / KDL-537):
+ *   wired: all 9 drivers — intake, palette, inference, approval, guidelines,
+ *          collateral, website, preflight, export
  */
 
 import {
@@ -17,6 +17,7 @@ import {
   inferBrandKit,
   getKit,
   getTokens,
+  renderGuidelines,
 } from '../../brand-kit/service.js';
 
 import { upsertValues } from '../../theme-engine/service.js';
@@ -124,17 +125,30 @@ const approvalDriver = {
 };
 
 /**
- * guidelines — calls brand-kit brand-guidelines PDF render.
- * Stubbed: brand-kit Phase 1 ships no PDF render endpoint yet.
- * Wire when endpoint lands in a future brand-kit phase.
+ * guidelines — renders the brand-guidelines PDF via brand-kit (KDL-537).
+ * Crash recovery (D-BK-7): if stageRecord.outputRef.renderId is already set,
+ * the prior render succeeded and is reused without re-billing.
  */
 const guidelinesDriver = {
-  async execute() {
-    throw namedErr(
-      'UPSTREAM_NOT_BUILT — guidelines driver requires brand-kit PDF render endpoint (not in Phase 1)',
-      503,
-      'UPSTREAM_NOT_BUILT',
-    );
+  async execute({ projectId, userId, stageRecord }) {
+    // Crash recovery: prior attempt already rendered — return immediately.
+    if (stageRecord?.outputRef?.renderId) {
+      return { outputRef: stageRecord.outputRef };
+    }
+
+    const result = await renderGuidelines(projectId, {
+      idempotencyKey: `te:${projectId}:guidelines`,
+      actorId: userId,
+    });
+
+    return {
+      outputRef: {
+        renderId:   result.renderId,
+        fileUrl:    result.fileUrl,
+        bytes:      result.bytes,
+        renderedAt: new Date().toISOString(),
+      },
+    };
   },
 };
 

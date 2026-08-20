@@ -18,6 +18,7 @@ import {
   patchKitSchema,
   approveSchema,
   getTokensSchema,
+  renderGuidelinesSchema,
 } from './schema.js';
 import {
   getKitHandler,
@@ -28,6 +29,7 @@ import {
   approveHandler,
   reopenHandler,
   getTokensHandler,
+  renderGuidelinesHandler,
 } from './controller.js';
 
 const router = Router();
@@ -95,6 +97,13 @@ router.post(
   authenticate, requirePermission('brand-kit', 'edit'),
   validate(getKitSchema),
   reopenHandler,
+);
+
+router.post(
+  '/:projectId/guidelines/render',
+  authenticate, requirePermission('brand-kit', 'render'),
+  validate(renderGuidelinesSchema),
+  renderGuidelinesHandler,
 );
 
 export default router;

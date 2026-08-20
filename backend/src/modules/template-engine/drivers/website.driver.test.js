@@ -14,6 +14,7 @@ vi.mock('../../brand-kit/service.js', () => ({
   inferBrandKit:       vi.fn(),
   getKit:              vi.fn(),
   getTokens:           vi.fn(),
+  renderGuidelines:    vi.fn(),
 }));
 
 vi.mock('../../theme-engine/service.js', () => ({
@@ -46,6 +47,7 @@ import {
   inferBrandKit,
   getKit,
   getTokens,
+  renderGuidelines,
 } from '../../brand-kit/service.js';
 
 import { upsertValues } from '../../theme-engine/service.js';
@@ -327,13 +329,45 @@ describe('website driver — crash recovery (§4.1)', () => {
   });
 });
 
-// ── guidelines still stubbed ──────────────────────────────────────────────────
+// ── guidelines driver (KDL-537 — wired) ──────────────────────────────────────
 
 describe('guidelines driver', () => {
-  it('throws UPSTREAM_NOT_BUILT (503) — no PDF endpoint in brand-kit Phase 1', async () => {
-    await expect(getDriver('guidelines').execute({})).rejects.toMatchObject({
-      code: 'UPSTREAM_NOT_BUILT',
-      status: 503,
+  it('calls renderGuidelines and returns outputRef with renderId', async () => {
+    renderGuidelines.mockResolvedValue({
+      renderId: 'brand-kit/guidelines/proj-A/abc.pdf',
+      fileUrl:  'brand-kit/guidelines/proj-A/abc.pdf',
+      bytes:    4096,
     });
+
+    const result = await getDriver('guidelines').execute({
+      projectId: 'proj-A',
+      userId: 'user-1',
+      stageRecord: { outputRef: null },
+    });
+
+    expect(renderGuidelines).toHaveBeenCalledWith('proj-A', {
+      idempotencyKey: 'te:proj-A:guidelines',
+      actorId: 'user-1',
+    });
+    expect(result.outputRef.renderId).toBe('brand-kit/guidelines/proj-A/abc.pdf');
+    expect(result.outputRef.renderedAt).toBeTruthy();
+  });
+
+  it('returns prior outputRef without re-calling renderGuidelines (crash recovery)', async () => {
+    const priorRef = {
+      renderId:   'brand-kit/guidelines/proj-A/prior.pdf',
+      fileUrl:    'brand-kit/guidelines/proj-A/prior.pdf',
+      bytes:      2048,
+      renderedAt: '2026-08-20T10:00:00Z',
+    };
+
+    const result = await getDriver('guidelines').execute({
+      projectId: 'proj-A',
+      userId: 'user-1',
+      stageRecord: { outputRef: priorRef },
+    });
+
+    expect(renderGuidelines).not.toHaveBeenCalled();
+    expect(result.outputRef).toEqual(priorRef);
   });
 });
