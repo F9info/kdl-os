@@ -1,3 +1,15 @@
+## 2026-08-20 — KDL-536: fix status-rollup.mjs UPSTREAM_NOT_BUILT classifier (Backend Coder)
+
+**Branch:** `fix/kdl-536-status-rollup-classifier` → **PR #185**
+
+**Done:**
+- Root cause: KDL-509 replaced `notBuilt()` helper with `namedErr(..., 503, 'UPSTREAM_NOT_BUILT')`. The old classifier keyed off `/\bnotBuilt\s*\(/` which matched nothing, causing `guidelines` to fall into the `NO_DOWNSTREAM` bucket.
+- Fix: classifier now matches `/'UPSTREAM_NOT_BUILT'/` (error-code string literal), helper-rename-proof.
+- Extracted `stripComments`, `extractObjectBody`, `classifyDriverBody` into `scripts/lib/classify-driver.mjs` so the parser is unit-testable.
+- 15 unit tests in `scripts/status-rollup.test.mjs` — 15/15 pass.
+- STATUS.md regenerated: section 2 now shows `8/9 stages real, 1 UPSTREAM_NOT_BUILT, 0 silent no-op`; stage 5 `guidelines` labelled `⛔ UPSTREAM_NOT_BUILT`.
+- Commit: `9865dd7`; PR #185 open for review.
+
 ## 2026-08-20 — KDL-532: compileTokens namespace guard for brand-kit-* slugs (Backend Coder)
 
 **Branch:** `fix/kdl-515-brand-kit-seed` (same as KDL-515/KDL-528 fixes)

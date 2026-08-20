@@ -113,6 +113,10 @@ Recent per-issue detail is in the rolling changelog below; full history in
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+## 2026-08-20 — KDL-536: fix status-rollup.mjs UPSTREAM_NOT_BUILT classifier (Backend Coder)
+
+`fix/kdl-536-status-rollup-classifier` (PR #185): KDL-509 replaced `notBuilt()` helper with `namedErr(..., 503, 'UPSTREAM_NOT_BUILT')` but the classifier still matched `/\bnotBuilt\s*\(/` — zero hits, so `guidelines` fell to `NO_DOWNSTREAM`. Fix: key off `'UPSTREAM_NOT_BUILT'` string literal in driver body. Extracted classifier into `scripts/lib/classify-driver.mjs`; 15/15 unit tests pass. STATUS.md now correctly reports `8/9 stages real, 1 UPSTREAM_NOT_BUILT, 0 silent no-op`.
+
 ## 2026-08-20 — KDL-532: compileTokens namespace guard — DONE (Backend Coder)
 
 `fix/kdl-515-brand-kit-seed`: single-segment slug guard added to `compileTokens()` in `theme-engine/service.js`. Single-segment brand-kit-* slugs now emit `--{slug}` verbatim as CSS vars and group under `'brand-kit'` pane in JSON tree. Regression test added to `brand-kit.d-bk-6.integration.test.js`. 142/142 existing tests pass. Commit `acca80a`. PR #182 → master.
