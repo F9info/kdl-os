@@ -10,22 +10,72 @@ import { resolvePermissionEntry, permissionModuleLabel } from '../../shared/modu
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MODULES_DIR = join(__dirname, '..');
 
-async function checkConflicts(slug, manifest) {
-  const allEnabled = await prisma.module.findMany({ where: { status: 'ENABLED' }, select: { slug: true } });
-  const enabledSlugs = new Set(allEnabled.map((m) => m.slug));
+/**
+ * Compute which ENABLED modules currently block `slug` from being enabled.
+ * Checks both directions: own manifest's conflictsWith AND other manifests
+ * that list this slug. Pure function — DB results must be supplied.
+ */
+function computeBlockingConflicts(slug, manifest, allEnabledModules) {
+  const enabledBySlug = new Map(allEnabledModules.map((m) => [m.slug, m]));
+  const blockers = new Map();
 
+  // Direction 1: this manifest lists a currently-enabled slug as a conflict
   for (const blocker of manifest.conflictsWith ?? []) {
-    if (enabledSlugs.has(blocker)) {
-      const err = new Error(`Cannot enable "${slug}": conflicts with active module "${blocker}"`);
-      err.status = 409;
-      throw err;
+    if (enabledBySlug.has(blocker)) {
+      const bf = loadedManifests.get(blocker);
+      const dbMod = enabledBySlug.get(blocker);
+      blockers.set(blocker, { slug: blocker, name: bf?.name ?? dbMod?.name ?? blocker, status: 'ENABLED' });
     }
   }
 
+  // Direction 2: another enabled manifest lists this slug as a conflict
   for (const [mSlug, mf] of loadedManifests) {
     if (mSlug === slug) continue;
-    if ((mf.conflictsWith ?? []).includes(slug) && enabledSlugs.has(mSlug)) {
-      const err = new Error(`Cannot enable "${slug}": conflicts with active module "${mSlug}"`);
+    if ((mf.conflictsWith ?? []).includes(slug) && enabledBySlug.has(mSlug)) {
+      blockers.set(mSlug, { slug: mSlug, name: mf.name ?? mSlug, status: 'ENABLED' });
+    }
+  }
+
+  return [...blockers.values()];
+}
+
+function throwConflictError(slug, blockingConflicts) {
+  const names = blockingConflicts.map((c) => `"${c.slug}"`).join(', ');
+  const err = new Error(`Cannot enable "${slug}": conflicts with active modules: ${names}`);
+  err.status = 409;
+  err.details = {
+    code: 'MODULE_CONFLICT',
+    conflicts: blockingConflicts.map((c) => ({ slug: c.slug, name: c.name })),
+  };
+  throw err;
+}
+
+/**
+ * Validate that each conflict slug can safely be disabled in a mode switch.
+ * Guards mirror disableModule: refuse if core, refuse if a non-switching
+ * ENABLED module depends on it.
+ */
+function validateModeSwitchGuards(blockingConflicts, allEnabledModules) {
+  const conflictSlugs = new Set(blockingConflicts.map((c) => c.slug));
+
+  for (const conflict of blockingConflicts) {
+    const conflictMod = allEnabledModules.find((m) => m.slug === conflict.slug);
+
+    if (conflictMod?.is_core) {
+      const err = new Error(`Cannot disable core module "${conflict.slug}" as part of mode switch`);
+      err.status = 409;
+      throw err;
+    }
+
+    const dependents = allEnabledModules.filter((m) => {
+      if (conflictSlugs.has(m.slug)) return false;
+      const mf = loadedManifests.get(m.slug);
+      return mf?.dependsOn?.includes(conflict.slug);
+    });
+
+    if (dependents.length > 0) {
+      const names = dependents.map((m) => m.slug).join(', ');
+      const err = new Error(`Cannot disable "${conflict.slug}" as part of mode switch: modules [${names}] depend on it`);
       err.status = 409;
       throw err;
     }
@@ -89,7 +139,7 @@ async function deregisterPermissions(manifest, tx = prisma) {
 
 // ── Public lifecycle operations ──────────────────────────────────────────────
 
-export async function installModule(slug, actorId) {
+export async function installModule(slug, actorId, { resolveConflicts = false } = {}) {
   const manifest = loadedManifests.get(slug);
   if (!manifest) {
     const err = new Error(`Module "${slug}" not found`);
@@ -114,7 +164,15 @@ export async function installModule(slug, actorId) {
     }
   }
 
-  await checkConflicts(slug, manifest);
+  // Fetch all currently-enabled modules once for both conflict detection and guard checks
+  const allEnabled = await prisma.module.findMany({ where: { status: 'ENABLED' } });
+  const blockingConflicts = computeBlockingConflicts(slug, manifest, allEnabled);
+
+  if (blockingConflicts.length > 0) {
+    if (!resolveConflicts) throwConflictError(slug, blockingConflicts);
+    validateModeSwitchGuards(blockingConflicts, allEnabled);
+  }
+
   checkEnvVars(manifest);
 
   // H3: resolve the module seed before opening the transaction. The seed must
@@ -138,6 +196,11 @@ export async function installModule(slug, actorId) {
   try {
     mod = await prisma.$transaction(
       async (tx) => {
+        // When resolving conflicts atomically, disable blockers first
+        for (const conflict of blockingConflicts) {
+          await tx.module.update({ where: { slug: conflict.slug }, data: { status: 'DISABLED' } });
+        }
+
         await registerPermissions(manifest, tx);
 
         // Seed runs on the transaction client so a failed install leaves no
@@ -167,19 +230,35 @@ export async function installModule(slug, actorId) {
     throw err;
   }
 
-  writeActivityAsync({
-    actor: actorId,
-    module: 'user-management/modules',
-    action: 'installed',
-    subject_type: 'Module',
-    subject_id: mod.id,
-    description: `Module "${slug}" installed`,
-  });
+  await invalidateModuleCache(slug);
+  for (const conflict of blockingConflicts) {
+    await invalidateModuleCache(conflict.slug);
+  }
+
+  if (blockingConflicts.length > 0) {
+    writeActivityAsync({
+      actor: actorId,
+      module: 'user-management/modules',
+      action: 'mode_switched',
+      subject_type: 'Module',
+      subject_id: mod.id,
+      description: `Mode switched: "${slug}" installed, disabled [${blockingConflicts.map((c) => c.slug).join(', ')}]`,
+    });
+  } else {
+    writeActivityAsync({
+      actor: actorId,
+      module: 'user-management/modules',
+      action: 'installed',
+      subject_type: 'Module',
+      subject_id: mod.id,
+      description: `Module "${slug}" installed`,
+    });
+  }
 
   return mod;
 }
 
-export async function enableModule(slug, actorId) {
+export async function enableModule(slug, actorId, { resolveConflicts = false } = {}) {
   const mod = await prisma.module.findUnique({ where: { slug } });
   if (!mod) {
     const err = new Error(`Module "${slug}" not found`);
@@ -203,23 +282,54 @@ export async function enableModule(slug, actorId) {
     }
   }
 
-  if (manifest) await checkConflicts(slug, manifest);
+  // Fetch all currently-enabled modules once for both conflict detection and guard checks
+  const allEnabled = await prisma.module.findMany({ where: { status: 'ENABLED' } });
+  const blockingConflicts = manifest ? computeBlockingConflicts(slug, manifest, allEnabled) : [];
 
-  const updated = await prisma.module.update({
-    where: { slug },
-    data: { status: 'ENABLED', enabled_at: new Date() },
-  });
+  if (blockingConflicts.length > 0) {
+    if (!resolveConflicts) throwConflictError(slug, blockingConflicts);
+    validateModeSwitchGuards(blockingConflicts, allEnabled);
+  }
 
-  await invalidateModuleCache(slug);
+  let updated;
+  if (blockingConflicts.length > 0) {
+    updated = await prisma.$transaction(async (tx) => {
+      for (const conflict of blockingConflicts) {
+        await tx.module.update({ where: { slug: conflict.slug }, data: { status: 'DISABLED' } });
+      }
+      return tx.module.update({ where: { slug }, data: { status: 'ENABLED', enabled_at: new Date() } });
+    });
 
-  writeActivityAsync({
-    actor: actorId,
-    module: 'user-management/modules',
-    action: 'enabled',
-    subject_type: 'Module',
-    subject_id: mod.id,
-    description: `Module "${slug}" enabled`,
-  });
+    await invalidateModuleCache(slug);
+    for (const conflict of blockingConflicts) {
+      await invalidateModuleCache(conflict.slug);
+    }
+
+    writeActivityAsync({
+      actor: actorId,
+      module: 'user-management/modules',
+      action: 'mode_switched',
+      subject_type: 'Module',
+      subject_id: mod.id,
+      description: `Mode switched: "${slug}" enabled, disabled [${blockingConflicts.map((c) => c.slug).join(', ')}]`,
+    });
+  } else {
+    updated = await prisma.module.update({
+      where: { slug },
+      data: { status: 'ENABLED', enabled_at: new Date() },
+    });
+
+    await invalidateModuleCache(slug);
+
+    writeActivityAsync({
+      actor: actorId,
+      module: 'user-management/modules',
+      action: 'enabled',
+      subject_type: 'Module',
+      subject_id: mod.id,
+      description: `Module "${slug}" enabled`,
+    });
+  }
 
   return updated;
 }
@@ -362,11 +472,15 @@ export async function listModules() {
   const dbModules = await prisma.module.findMany({ orderBy: { name: 'asc' } });
   const dbBySlug = new Map(dbModules.map((m) => [m.slug, m]));
 
+  const enabledModules = dbModules.filter((m) => m.status === 'ENABLED');
+
   // Merge manifest-only (AVAILABLE) with DB rows
   const results = [];
 
   for (const [slug, manifest] of loadedManifests) {
     const dbMod = dbBySlug.get(slug);
+    const conflicts = computeBlockingConflicts(slug, manifest, enabledModules);
+
     results.push({
       slug,
       name: manifest.name,
@@ -379,13 +493,15 @@ export async function listModules() {
       installed_at: dbMod?.installed_at ?? null,
       enabled_at: dbMod?.enabled_at ?? null,
       settings: dbMod?.settings ?? null,
+      conflictsWith: manifest.conflictsWith ?? [],
+      conflicts,
     });
   }
 
   // Also include DB rows whose manifest is no longer on disk (orphaned)
   for (const [slug, dbMod] of dbBySlug) {
     if (!loadedManifests.has(slug)) {
-      results.push({ ...dbMod, status: dbMod.status, _orphaned: true });
+      results.push({ ...dbMod, status: dbMod.status, _orphaned: true, conflictsWith: [], conflicts: [] });
     }
   }
 
