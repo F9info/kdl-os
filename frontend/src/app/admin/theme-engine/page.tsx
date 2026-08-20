@@ -536,16 +536,18 @@ function PreviewFrame({
   platform,
   pane,
   values,
+  device,
 }: {
   platform: string
   pane: TEPane | undefined
   values: Record<string, string>
+  device?: string
 }) {
   const renderer = pane
     ? { ...DEVICE_PANE_PREVIEWS, ...COMPONENT_PANE_PREVIEWS }[pane.id]
     : undefined
   return (
-    <DeviceShell platform={platform}>
+    <DeviceShell platform={platform} device={device}>
       {renderer && pane ? renderer({ pane, values }) : <DefaultShellPreview platform={platform} />}
     </DeviceShell>
   )
@@ -1359,7 +1361,12 @@ function ThemeEngineInner() {
           <div className="self-start text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
             Live Preview
           </div>
-          <PreviewFrame platform={platform} pane={activePaneData} values={activePaneValues} />
+          <PreviewFrame
+            platform={platform}
+            pane={activePaneData}
+            values={activePaneValues}
+            device={activePaneData ? paneDevice[activePaneData.id] : undefined}
+          />
           <div className="text-center text-[11px] text-muted-foreground">
             {activePaneData?.label ?? 'Select a pane'} — updates live as you edit
           </div>

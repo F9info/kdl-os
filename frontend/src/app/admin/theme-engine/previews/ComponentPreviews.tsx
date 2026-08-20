@@ -57,6 +57,10 @@ const resolve = (field: { id: string; value: string }, values: Values): string =
 const groupByName = (pane: TEPaneLite, name: string) =>
   pane.groups.find((g) => g.name.toLowerCase() === name.toLowerCase())
 
+/** Try a list of group names in order; returns the first one found. */
+const groupByAnyName = (pane: TEPaneLite, ...names: string[]) =>
+  names.map((n) => groupByName(pane, n)).find(Boolean)
+
 /** Resolved value of a named field inside a named group ('' when absent). */
 function fieldValue(
   pane: TEPaneLite,
@@ -111,12 +115,28 @@ const MUT = '#a5a5ad'
 
 // ── ButtonPreview ────────────────────────────────────────────────────────────
 
-const BUTTON_VARIANTS: [string, string][] = [
+const WEBAPP_BUTTON_VARIANTS: [string, string][] = [
   ['Primary', 'Primary Button'],
   ['Secondary', 'Secondary Button'],
   ['Tertiary', 'Tertiary Button'],
   ['Outline', 'Outline Button'],
   ['White', 'White Button'],
+]
+
+const IOS_BUTTON_VARIANTS: [string, string][] = [
+  ['Filled', 'Filled Button'],
+  ['Tinted', 'Tinted Button'],
+  ['Gray', 'Gray Button'],
+  ['Bordered', 'Bordered Button'],
+  ['Plain', 'Plain Button'],
+]
+
+const ANDROID_BUTTON_VARIANTS: [string, string][] = [
+  ['Primary', 'Primary Button'],
+  ['Secondary', 'Secondary Button'],
+  ['Outlined', 'Outlined Button'],
+  ['Text', 'Text Button'],
+  ['Icon', 'Icon Button'],
 ]
 
 export function ButtonPreview({ pane, values }: { pane: TEPaneLite; values: Values }): JSX.Element {
@@ -127,6 +147,16 @@ export function ButtonPreview({ pane, values }: { pane: TEPaneLite; values: Valu
   const pad = fieldValue(pane, 'Button Sizes', 'Padding', values) || '10px 20px'
   const h = px(fieldValue(pane, 'Button Sizes', 'Height', values)) || '38px'
   const br = px(fieldValue(pane, 'Button Sizes', 'Border Radius', values)) || '8px'
+
+  // Detect platform variant by checking which button groups are present
+  const hasFilledButton = !!groupByName(pane, 'Filled Button')
+  const hasOutlinedButton =
+    !groupByName(pane, 'Outline Button') && !!groupByName(pane, 'Outlined Button')
+  const BUTTON_VARIANTS = hasFilledButton
+    ? IOS_BUTTON_VARIANTS
+    : hasOutlinedButton
+      ? ANDROID_BUTTON_VARIANTS
+      : WEBAPP_BUTTON_VARIANTS
 
   return (
     <div
@@ -616,12 +646,22 @@ export function CardPreview({ pane, values }: { pane: TEPaneLite; values: Values
 // ── PopupPreview ─────────────────────────────────────────────────────────────
 
 export function PopupPreview({ pane, values }: { pane: TEPaneLite; values: Values }): JSX.Element {
-  const bg = fieldValue(pane, 'Popup Colors', 'Background Color', values) || '#2a2a2e'
-  const tc = fieldValue(pane, 'Popup Colors', 'Text Color', values) || TXT
-  const bd = fieldValue(pane, 'Popup Colors', 'Border Color', values) || '#3d3d42'
-  const ov = fieldValue(pane, 'Popup Colors', 'Overlay Color', values) || '#000000'
-  const cl = fieldValue(pane, 'Popup Colors', 'Close Icon Color', values) || MUT
-  const br = px(fieldValue(pane, 'Size & Shape', 'Border Radius', values)) || '12px'
+  // Platform variants: webapp=Popup Colors, Android=Dialog Colors, iOS=Alert Colors
+  const colorGroup =
+    groupByAnyName(pane, 'Popup Colors', 'Dialog Colors', 'Alert Colors') ?? pane.groups[0]
+  const colorGroupName = colorGroup?.name ?? 'Popup Colors'
+  const bg = fieldValue(pane, colorGroupName, 'Background Color', values) || '#2a2a2e'
+  const tc =
+    fieldValue(pane, colorGroupName, 'Text Color', values) ||
+    fieldValue(pane, colorGroupName, 'Title Color', values) ||
+    TXT
+  const bd = fieldValue(pane, colorGroupName, 'Border Color', values) || '#3d3d42'
+  const ov = fieldValue(pane, colorGroupName, 'Overlay Color', values) || '#000000'
+  const cl = fieldValue(pane, colorGroupName, 'Close Icon Color', values) || MUT
+  const br =
+    px(fieldValue(pane, 'Size & Shape', 'Border Radius', values)) ||
+    px(fieldValue(pane, 'Alert Dialog', 'Corner Radius', values)) ||
+    '12px'
   const pad = px(fieldValue(pane, 'Size & Shape', 'Padding', values)) || '24px'
   const sh = fieldValue(pane, 'Size & Shape', 'Box Shadow', values) || '0 20px 60px rgba(0,0,0,.4)'
   const op = num(fieldValue(pane, 'Overlay', 'Overlay Opacity', values), 60) / 100
@@ -665,7 +705,7 @@ export function PopupPreview({ pane, values }: { pane: TEPaneLite; values: Value
 
 // ── AlertPreview ─────────────────────────────────────────────────────────────
 
-const ALERT_KINDS: [string, string, string][] = [
+const WEBAPP_ALERT_KINDS: [string, string, string][] = [
   ['Success Alert', '✓', 'Success — changes saved.'],
   ['Warning Alert', '⚠', 'Warning — check this value.'],
   ['Error Alert', '✕', 'Error — something went wrong.'],
@@ -678,13 +718,33 @@ export function AlertPreview({ pane, values }: { pane: TEPaneLite; values: Value
   const bs = fieldValue(pane, 'Shape', 'Border Style', values) || 'Left accent'
   const icon = bool(fieldValue(pane, 'Behavior', 'Show Icon', values) || 'true')
 
+  // Platform variants: webapp=Success/Warning/Error/Info Alert,
+  // Android=Snackbar (single group), iOS=Notification Banner (single group)
+  const hasSnackbar = !!groupByName(pane, 'Snackbar')
+  const hasBanner = !!groupByName(pane, 'Notification Banner')
+  const ALERT_KINDS: [string, string, string][] = hasSnackbar
+    ? [
+        ['Snackbar', '✓', 'Action completed.'],
+        ['Snackbar', '⚠', 'Warning message.'],
+      ]
+    : hasBanner
+      ? [
+          ['Notification Banner', '✓', 'Update available.'],
+          ['Notification Banner', '⚠', 'Check this action.'],
+        ]
+      : WEBAPP_ALERT_KINDS
+
   return (
     <div style={{ padding: 20, borderRadius: 9, maxWidth: 460, background: PANE_BG }}>
-      {ALERT_KINDS.map(([group, ic, msg]) => {
+      {ALERT_KINDS.map(([group, ic, msg], idx) => {
         const abg = fieldValue(pane, group, 'Background Color', values)
         const atc = fieldValue(pane, group, 'Text Color', values)
-        const abd = fieldValue(pane, group, 'Border Color', values)
-        const aic = fieldValue(pane, group, 'Icon Color', values)
+        const abd =
+          fieldValue(pane, group, 'Border Color', values) ||
+          fieldValue(pane, group, 'Separator Color', values)
+        const aic =
+          fieldValue(pane, group, 'Icon Color', values) ||
+          fieldValue(pane, group, 'Action Color', values)
         const border: CSSProperties =
           bs === 'Full border'
             ? { border: `1px solid ${abd}` }
@@ -693,7 +753,7 @@ export function AlertPreview({ pane, values }: { pane: TEPaneLite; values: Value
               : {}
         return (
           <div
-            key={group}
+            key={`${group}-${idx}`}
             style={{
               background: abg,
               color: atc,
@@ -719,10 +779,26 @@ export function AlertPreview({ pane, values }: { pane: TEPaneLite; values: Value
 // ── NavPreview ───────────────────────────────────────────────────────────────
 
 export function NavPreview({ pane, values }: { pane: TEPaneLite; values: Values }): JSX.Element {
-  const txt = fieldValue(pane, 'Menu Colors', 'Menu Text Color', values) || MUT
-  const hov = fieldValue(pane, 'Menu Colors', 'Menu Hover Color', values) || '#323236'
-  const act = fieldValue(pane, 'Menu Colors', 'Active Menu Color', values) || '#4f8ef7'
-  const actBg = fieldValue(pane, 'Menu Colors', 'Active Background', values) || '#1f3a63'
+  // Platform variants: webapp=Menu Colors, Android=Drawer Colors, iOS=Navigation Bar Colors, TV=Rail Colors
+  const colorGroup =
+    groupByAnyName(pane, 'Menu Colors', 'Drawer Colors', 'Navigation Bar Colors', 'Rail Colors') ??
+    pane.groups[0]
+  const colorGroupName = colorGroup?.name ?? 'Menu Colors'
+  const txt =
+    fieldValue(pane, colorGroupName, 'Menu Text Color', values) ||
+    fieldValue(pane, colorGroupName, 'Item Text Color', values) ||
+    fieldValue(pane, colorGroupName, 'Title Color', values) ||
+    MUT
+  const hov = fieldValue(pane, colorGroupName, 'Menu Hover Color', values) || '#323236'
+  const act =
+    fieldValue(pane, colorGroupName, 'Active Menu Color', values) ||
+    fieldValue(pane, colorGroupName, 'Active Item Color', values) ||
+    fieldValue(pane, colorGroupName, 'Tint Color', values) ||
+    '#4f8ef7'
+  const actBg =
+    fieldValue(pane, colorGroupName, 'Active Background', values) ||
+    fieldValue(pane, colorGroupName, 'Active Item Background', values) ||
+    '#1f3a63'
   // Menu font size now comes from Typography Scale's "Navigation" row (single
   // source of truth) rather than this pane's own field — cross-pane data isn't
   // available to this preview, so it just uses the shared default.
@@ -774,13 +850,33 @@ const LAY_ACCENT = '#4f8ef7'
 const LAY_ACCENT_SOFT = 'rgba(79,142,247,.15)'
 
 export function LayoutPreview({ pane, values }: { pane: TEPaneLite; values: Values }): JSX.Element {
-  const sw = num(fieldValue(pane, 'Structure', 'Sidebar Width', values), 220)
-  const pos = fieldValue(pane, 'Structure', 'Sidebar Position', values) || 'Left'
-  const headH = px(fieldValue(pane, 'Structure', 'Header Height', values)) || '56px'
-  const footH = px(fieldValue(pane, 'Structure', 'Footer Height', values)) || '44px'
-  const cols = num(fieldValue(pane, 'Container & Grid', 'Grid Columns', values), 12)
-  const gap = num(fieldValue(pane, 'Container & Grid', 'Grid Gap', values), 16)
-  const cw = fieldValue(pane, 'Container & Grid', 'Container Width', values) || 'Fluid (100%)'
+  // Platform variants: webapp=Structure/Container & Grid, Android/iOS=Screen (no sidebar concept)
+  const structureGroup = groupByAnyName(pane, 'Structure', 'Screen')
+  const structureGroupName = structureGroup?.name ?? 'Structure'
+  const sw = num(fieldValue(pane, structureGroupName, 'Sidebar Width', values), 220)
+  const pos = fieldValue(pane, structureGroupName, 'Sidebar Position', values) || 'Left'
+  const headH =
+    px(fieldValue(pane, structureGroupName, 'Header Height', values)) ||
+    px(fieldValue(pane, structureGroupName, 'Status Bar Height', values)) ||
+    '56px'
+  const footH =
+    px(fieldValue(pane, structureGroupName, 'Footer Height', values)) ||
+    px(fieldValue(pane, structureGroupName, 'Home Indicator Height', values)) ||
+    '44px'
+  const cols = num(
+    fieldValue(pane, 'Container & Grid', 'Grid Columns', values) ||
+      fieldValue(pane, 'Grid', 'Grid Columns', values),
+    12
+  )
+  const gap = num(
+    fieldValue(pane, 'Container & Grid', 'Grid Gap', values) ||
+      fieldValue(pane, 'Grid', 'Gutter', values),
+    16
+  )
+  const cw =
+    fieldValue(pane, 'Container & Grid', 'Container Width', values) ||
+    fieldValue(pane, structureGroupName, 'Screen Width', values) ||
+    'Fluid (100%)'
   const sideW = Math.round(sw / 5)
 
   const bar: CSSProperties = {
@@ -912,6 +1008,744 @@ export function ImagesPreview({ pane, values }: { pane: TEPaneLite; values: Valu
           </div>
         )
       })}
+    </div>
+  )
+}
+
+// ── BottomNavPreview (Android `bottomnav`) ────────────────────────────────────
+
+export function BottomNavPreview({
+  pane,
+  values,
+}: {
+  pane: TEPaneLite
+  values: Values
+}): JSX.Element {
+  const colorGroup =
+    groupByAnyName(pane, 'Bottom Bar Colors dark', 'Bottom Navigation Bar') ?? pane.groups[0]
+  const cgn = colorGroup?.name ?? 'Bottom Bar Colors dark'
+  const bg = fieldValue(pane, cgn, 'Background Color', values) || '#1e1e20'
+  const act =
+    fieldValue(pane, cgn, 'Active Icon Color', values) ||
+    fieldValue(pane, cgn, 'Active Label Color', values) ||
+    '#4f8ef7'
+  const inact =
+    fieldValue(pane, cgn, 'Inactive Icon Color', values) ||
+    fieldValue(pane, cgn, 'Inactive Label Color', values) ||
+    MUT
+  const ind = fieldValue(pane, cgn, 'Indicator Color', values) || 'rgba(79,142,247,.18)'
+
+  const tabs = [
+    { ic: '🏠', label: 'Home', active: true },
+    { ic: '🔍', label: 'Search', active: false },
+    { ic: '🔔', label: 'Alerts', active: false },
+    { ic: '👤', label: 'Profile', active: false },
+  ]
+
+  return (
+    <div style={{ padding: '18px 12px', background: PANE_BG, borderRadius: 9 }}>
+      <div style={{ background: bg, borderRadius: 12, overflow: 'hidden', padding: '6px 0 4px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+          {tabs.map((t) => (
+            <div
+              key={t.label}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 2,
+                padding: '4px 12px',
+                borderRadius: 8,
+                background: t.active ? ind : 'transparent',
+              }}
+            >
+              <span style={{ fontSize: 18, color: t.active ? act : inact }}>{t.ic}</span>
+              <span
+                style={{
+                  fontSize: 10,
+                  color: t.active ? act : inact,
+                  fontWeight: t.active ? 600 : 400,
+                }}
+              >
+                {t.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── AppBarPreview (Android `appbar`) ─────────────────────────────────────────
+
+export function AppBarPreview({ pane, values }: { pane: TEPaneLite; values: Values }): JSX.Element {
+  const colorGroup =
+    groupByAnyName(pane, 'App Bar Colors dark', 'App Bar Toolbar') ?? pane.groups[0]
+  const cgn = colorGroup?.name ?? 'App Bar Colors dark'
+  const bg = fieldValue(pane, cgn, 'Background Color', values) || '#1e1e20'
+  const tc =
+    fieldValue(pane, cgn, 'Title Color', values) ||
+    fieldValue(pane, cgn, 'Text Color', values) ||
+    TXT
+  const ic = fieldValue(pane, cgn, 'Icon Color', values) || MUT
+
+  return (
+    <div style={{ padding: '18px 12px', background: PANE_BG, borderRadius: 9 }}>
+      <div
+        style={{
+          background: bg,
+          borderRadius: 10,
+          padding: '12px 14px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+        }}
+      >
+        <span style={{ color: ic, fontSize: 20 }}>☰</span>
+        <b style={{ color: tc, flex: 1, fontSize: 14 }}>App Bar Title</b>
+        <span style={{ color: ic, fontSize: 18 }}>🔍</span>
+        <span style={{ color: ic, fontSize: 18 }}>⋮</span>
+      </div>
+      <div
+        style={{
+          marginTop: 8,
+          background: bg,
+          opacity: 0.6,
+          borderRadius: 10,
+          padding: '12px 14px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+        }}
+      >
+        <span style={{ color: ic, fontSize: 16 }}>‹</span>
+        <b style={{ color: tc, flex: 1, fontSize: 14 }}>Detail Screen</b>
+        <span style={{ color: ic, fontSize: 18 }}>♡</span>
+        <span style={{ color: ic, fontSize: 18 }}>⋮</span>
+      </div>
+    </div>
+  )
+}
+
+// ── TabBarPreview (iOS `tabbar`) ──────────────────────────────────────────────
+
+export function TabBarPreview({ pane, values }: { pane: TEPaneLite; values: Values }): JSX.Element {
+  const colorGroup = groupByAnyName(pane, 'Tab Bar Colors dark', 'Tab Bar') ?? pane.groups[0]
+  const cgn = colorGroup?.name ?? 'Tab Bar Colors dark'
+  const bg = fieldValue(pane, cgn, 'Background Color', values) || '#1c1c1e'
+  const act =
+    fieldValue(pane, cgn, 'Active Tab Color', values) ||
+    fieldValue(pane, cgn, 'Active Icon Color', values) ||
+    '#4f8ef7'
+  const inact =
+    fieldValue(pane, cgn, 'Inactive Tab Color', values) ||
+    fieldValue(pane, cgn, 'Inactive Icon Color', values) ||
+    MUT
+
+  const tabs = [
+    { ic: '🏠', label: 'Home', active: true },
+    { ic: '🔍', label: 'Discover', active: false },
+    { ic: '♡', label: 'Saved', active: false },
+    { ic: '👤', label: 'Profile', active: false },
+  ]
+
+  return (
+    <div style={{ padding: '18px 12px', background: PANE_BG, borderRadius: 9 }}>
+      <div
+        style={{
+          background: bg,
+          borderRadius: 12,
+          padding: '8px 0 12px',
+          display: 'flex',
+          justifyContent: 'space-around',
+        }}
+      >
+        {tabs.map((t) => (
+          <div
+            key={t.label}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}
+          >
+            <span style={{ fontSize: 22, color: t.active ? act : inact }}>{t.ic}</span>
+            <span
+              style={{
+                fontSize: 9,
+                color: t.active ? act : inact,
+                fontWeight: t.active ? 600 : 400,
+              }}
+            >
+              {t.label}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div style={{ marginTop: 8, display: 'flex', justifyContent: 'center' }}>
+        <div style={{ height: 4, width: 80, borderRadius: 2, background: TXT, opacity: 0.4 }} />
+      </div>
+    </div>
+  )
+}
+
+// ── FabPreview (Android `fab`) ────────────────────────────────────────────────
+
+export function FabPreview({ pane, values }: { pane: TEPaneLite; values: Values }): JSX.Element {
+  const colorGroup = groupByAnyName(pane, 'FAB Colors dark', 'FAB') ?? pane.groups[0]
+  const cgn = colorGroup?.name ?? 'FAB Colors dark'
+  const bg =
+    fieldValue(pane, cgn, 'FAB Color', values) ||
+    fieldValue(pane, cgn, 'Background Color', values) ||
+    '#4f8ef7'
+  const ic = fieldValue(pane, cgn, 'Icon Color', values) || '#ffffff'
+  const br = px(fieldValue(pane, 'FAB', 'Corner Radius', values)) || '16px'
+
+  return (
+    <div style={{ padding: 24, background: PANE_BG, borderRadius: 9 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, justifyContent: 'center' }}>
+        {/* Standard FAB */}
+        <div
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: br,
+            background: bg,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 24,
+            color: ic,
+            boxShadow: '0 4px 16px rgba(0,0,0,.35)',
+          }}
+        >
+          ＋
+        </div>
+        {/* Small FAB */}
+        <div
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: br,
+            background: bg,
+            opacity: 0.8,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 18,
+            color: ic,
+            boxShadow: '0 3px 10px rgba(0,0,0,.3)',
+          }}
+        >
+          ✏️
+        </div>
+        {/* Extended FAB */}
+        <div
+          style={{
+            height: 40,
+            padding: '0 16px',
+            borderRadius: '20px',
+            background: bg,
+            opacity: 0.7,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            fontSize: 13,
+            color: ic,
+            fontWeight: 600,
+            boxShadow: '0 3px 10px rgba(0,0,0,.3)',
+          }}
+        >
+          <span>＋</span> Create
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── ChipsPreview (Android `chips`) ────────────────────────────────────────────
+
+export function ChipsPreview({ pane, values }: { pane: TEPaneLite; values: Values }): JSX.Element {
+  const colorGroup = groupByAnyName(pane, 'Chip Colors dark', 'Chips') ?? pane.groups[0]
+  const cgn = colorGroup?.name ?? 'Chip Colors dark'
+  const bg =
+    fieldValue(pane, cgn, 'Selected Background', values) ||
+    fieldValue(pane, cgn, 'Background Color', values) ||
+    '#2a2a2e'
+  const selBg = fieldValue(pane, cgn, 'Selected Background', values) || 'rgba(79,142,247,.2)'
+  const tc = fieldValue(pane, cgn, 'Text Color', values) || TXT
+  const selTc = fieldValue(pane, cgn, 'Selected Text Color', values) || '#4f8ef7'
+  const bd = fieldValue(pane, cgn, 'Border Color', values) || '#3d3d42'
+  const selBd = fieldValue(pane, cgn, 'Selected Border Color', values) || '#4f8ef7'
+  const br = px(fieldValue(pane, 'Chips', 'Border Radius', values)) || '8px'
+
+  const chips = [
+    { label: 'Design', icon: '🎨', selected: true },
+    { label: 'Code', icon: '💻', selected: false },
+    { label: 'Preview', icon: '👁', selected: true },
+    { label: 'Export', icon: '📤', selected: false },
+    { label: 'Share', icon: '🔗', selected: false },
+  ]
+
+  return (
+    <div style={{ padding: 20, background: PANE_BG, borderRadius: 9 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        {chips.map((c) => (
+          <div
+            key={c.label}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              padding: '5px 12px',
+              borderRadius: br,
+              border: `1px solid ${c.selected ? selBd : bd}`,
+              background: c.selected ? selBg : bg,
+              color: c.selected ? selTc : tc,
+              fontSize: 12.5,
+              fontWeight: c.selected ? 600 : 400,
+            }}
+          >
+            <span style={{ fontSize: 13 }}>{c.icon}</span>
+            {c.label}
+            {c.selected && <span style={{ fontSize: 11, fontWeight: 700 }}>✓</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── EmptyStatePreview (`emptystates`) ─────────────────────────────────────────
+
+export function EmptyStatePreview({
+  pane,
+  values,
+}: {
+  pane: TEPaneLite
+  values: Values
+}): JSX.Element {
+  const colorGroup =
+    groupByAnyName(pane, 'Empty State Colors dark', 'Empty State') ?? pane.groups[0]
+  const cgn = colorGroup?.name ?? 'Empty State Colors dark'
+  const bg = fieldValue(pane, cgn, 'Background Color', values) || PANE_BG
+  const tc = fieldValue(pane, cgn, 'Text Color', values) || TXT
+  const ic = fieldValue(pane, cgn, 'Icon Color', values) || MUT
+  const btnBg = fieldValue(pane, cgn, 'Action Button Background', values) || '#4f8ef7'
+  const btnTc = fieldValue(pane, cgn, 'Action Button Text Color', values) || '#ffffff'
+
+  return (
+    <div
+      style={{
+        padding: 24,
+        background: bg,
+        borderRadius: 12,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 10,
+        textAlign: 'center',
+        margin: 16,
+      }}
+    >
+      <span style={{ fontSize: 42, color: ic }}>📭</span>
+      <b style={{ color: tc, fontSize: 14 }}>Nothing here yet</b>
+      <p style={{ color: MUT, fontSize: 12, lineHeight: 1.5, maxWidth: 200, margin: 0 }}>
+        Start by adding your first item to get things going.
+      </p>
+      <div
+        style={{
+          marginTop: 4,
+          padding: '8px 20px',
+          background: btnBg,
+          color: btnTc,
+          borderRadius: 8,
+          fontSize: 12.5,
+          fontWeight: 600,
+        }}
+      >
+        Get started
+      </div>
+    </div>
+  )
+}
+
+// ── OnboardingPreview (`onboarding`) ─────────────────────────────────────────
+
+export function OnboardingPreview({
+  pane,
+  values,
+}: {
+  pane: TEPaneLite
+  values: Values
+}): JSX.Element {
+  const colorGroup = groupByAnyName(pane, 'Onboarding Colors dark', 'Onboarding') ?? pane.groups[0]
+  const cgn = colorGroup?.name ?? 'Onboarding Colors dark'
+  const bg = fieldValue(pane, cgn, 'Background Color', values) || '#18181b'
+  const tc =
+    fieldValue(pane, cgn, 'Title Color', values) ||
+    fieldValue(pane, cgn, 'Text Color', values) ||
+    TXT
+  const desc = fieldValue(pane, cgn, 'Description Color', values) || MUT
+  const dot =
+    fieldValue(pane, cgn, 'Active Dot Color', values) ||
+    fieldValue(pane, cgn, 'Dot Color', values) ||
+    '#4f8ef7'
+  const dotInact = fieldValue(pane, cgn, 'Inactive Dot Color', values) || '#3d3d42'
+  const btnBg =
+    fieldValue(pane, cgn, 'Button Background', values) ||
+    fieldValue(pane, cgn, 'Next Button Color', values) ||
+    '#4f8ef7'
+  const btnTc = fieldValue(pane, cgn, 'Button Text Color', values) || '#ffffff'
+
+  return (
+    <div
+      style={{
+        background: bg,
+        borderRadius: 12,
+        padding: '24px 20px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 12,
+        textAlign: 'center',
+        margin: 12,
+      }}
+    >
+      <div
+        style={{
+          width: 72,
+          height: 72,
+          borderRadius: 18,
+          background: 'linear-gradient(135deg, #4f8ef7, #a855f7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 32,
+        }}
+      >
+        🎨
+      </div>
+      <b style={{ color: tc, fontSize: 15 }}>Customize Your Theme</b>
+      <p style={{ color: desc, fontSize: 12, lineHeight: 1.5, maxWidth: 200, margin: 0 }}>
+        Configure colors, typography, and layout to match your brand.
+      </p>
+      <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            style={{
+              width: i === 0 ? 20 : 6,
+              height: 6,
+              borderRadius: 3,
+              background: i === 0 ? dot : dotInact,
+            }}
+          />
+        ))}
+      </div>
+      <div
+        style={{
+          marginTop: 8,
+          padding: '10px 28px',
+          background: btnBg,
+          color: btnTc,
+          borderRadius: 10,
+          fontSize: 13,
+          fontWeight: 600,
+        }}
+      >
+        Next
+      </div>
+    </div>
+  )
+}
+
+// ── TokensPreview (`tokens`) ──────────────────────────────────────────────────
+
+export function TokensPreview({ pane, values }: { pane: TEPaneLite; values: Values }): JSX.Element {
+  const spacingGroup = groupByName(pane, 'Spacing Scale')
+  const spacingFields = spacingGroup?.fields.slice(0, 6) ?? []
+
+  const radiusGroup = groupByName(pane, 'Border Radius Scale')
+  const radiusFields = radiusGroup?.fields.slice(0, 4) ?? []
+
+  const sampleSpacings = spacingFields.length
+    ? spacingFields
+    : [
+        { id: 'xs', field_name: 'XS', value: '4' },
+        { id: 'sm', field_name: 'SM', value: '8' },
+        { id: 'md', field_name: 'MD', value: '16' },
+        { id: 'lg', field_name: 'LG', value: '24' },
+      ]
+
+  const sampleRadii = radiusFields.length
+    ? radiusFields
+    : [
+        { id: 'none', field_name: 'None', value: '0' },
+        { id: 'sm', field_name: 'SM', value: '4' },
+        { id: 'md', field_name: 'MD', value: '8' },
+        { id: 'lg', field_name: 'LG', value: '12' },
+      ]
+
+  return (
+    <div style={{ padding: 16, background: PANE_BG, borderRadius: 9 }}>
+      <div
+        style={{
+          color: MUT,
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: '.06em',
+          textTransform: 'uppercase',
+          marginBottom: 8,
+        }}
+      >
+        Spacing Scale
+      </div>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
+        {sampleSpacings.map((f) => {
+          const v = values[f.id] ?? f.value
+          const w = Math.min(Math.max(Number(v) || 8, 4), 48)
+          return (
+            <div key={f.id} style={{ textAlign: 'center' }}>
+              <div
+                style={{
+                  height: w,
+                  width: w,
+                  background: '#4f8ef7',
+                  borderRadius: 3,
+                  margin: '0 auto',
+                }}
+              />
+              <div style={{ fontSize: 9.5, color: MUT, marginTop: 4 }}>{f.field_name}</div>
+              <div style={{ fontSize: 9.5, color: TXT, fontFamily: 'monospace' }}>{v}px</div>
+            </div>
+          )
+        })}
+      </div>
+      <div
+        style={{
+          color: MUT,
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: '.06em',
+          textTransform: 'uppercase',
+          marginBottom: 8,
+        }}
+      >
+        Border Radius Scale
+      </div>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        {sampleRadii.map((f) => {
+          const v = values[f.id] ?? f.value
+          const r = Math.min(Number(v) || 0, 24)
+          return (
+            <div key={f.id} style={{ textAlign: 'center' }}>
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  background: '#323236',
+                  border: '2px solid #4f8ef7',
+                  borderRadius: r,
+                  margin: '0 auto',
+                }}
+              />
+              <div style={{ fontSize: 9.5, color: MUT, marginTop: 4 }}>{f.field_name}</div>
+              <div style={{ fontSize: 9.5, color: TXT, fontFamily: 'monospace' }}>{v}px</div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ── AssetsPreview (`assets`) ──────────────────────────────────────────────────
+
+export function AssetsPreview({ pane, values }: { pane: TEPaneLite; values: Values }): JSX.Element {
+  const identityGroup = groupByName(pane, 'App Identity')
+  const appName = identityGroup?.fields.find((f) => f.field_name.toLowerCase().includes('app name'))
+  const appNameVal = appName ? (values[appName.id] ?? appName.value) || 'My App' : 'My App'
+
+  return (
+    <div style={{ padding: 20, background: PANE_BG, borderRadius: 9 }}>
+      <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 16 }}>
+        <div
+          style={{
+            width: 64,
+            height: 64,
+            borderRadius: 14,
+            background: 'linear-gradient(135deg, #4f8ef7 0%, #a855f7 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 28,
+            boxShadow: '0 4px 16px rgba(0,0,0,.4)',
+          }}
+        >
+          ◈
+        </div>
+        <div>
+          <div style={{ color: TXT, fontWeight: 700, fontSize: 14 }}>{appNameVal}</div>
+          <div style={{ color: MUT, fontSize: 11, marginTop: 2 }}>512 × 512 · App Icon</div>
+        </div>
+      </div>
+      <div
+        style={{
+          borderRadius: 10,
+          overflow: 'hidden',
+          background: '#121212',
+          height: 80,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <div
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 10,
+            background: 'linear-gradient(135deg, #4f8ef7 0%, #a855f7 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 18,
+          }}
+        >
+          ◈
+        </div>
+      </div>
+      <div style={{ color: MUT, fontSize: 10, textAlign: 'center', marginTop: 4 }}>
+        Splash Screen
+      </div>
+    </div>
+  )
+}
+
+// ── SideMenuPreview (iOS `sidemenu`) ──────────────────────────────────────────
+
+export function SideMenuPreview({
+  pane,
+  values,
+}: {
+  pane: TEPaneLite
+  values: Values
+}): JSX.Element {
+  const colorGroup = groupByAnyName(pane, 'Side Menu Colors dark', 'Side Menu') ?? pane.groups[0]
+  const cgn = colorGroup?.name ?? 'Side Menu Colors dark'
+  const bg = fieldValue(pane, cgn, 'Background Color', values) || '#1c1c1e'
+  const hdrBg =
+    fieldValue(pane, cgn, 'Header Background', values) ||
+    fieldValue(pane, 'Side Menu Header', 'Background Color', values) ||
+    '#111113'
+  const tc = fieldValue(pane, cgn, 'Text Color', values) || TXT
+  const act = fieldValue(pane, cgn, 'Active Item Color', values) || '#4f8ef7'
+  const actBg = fieldValue(pane, cgn, 'Active Item Background', values) || 'rgba(79,142,247,.15)'
+  const sep = fieldValue(pane, cgn, 'Separator Color', values) || '#2a2a2e'
+
+  const items = [
+    { ic: '🏠', label: 'Home', active: true },
+    { ic: '👤', label: 'Profile', active: false },
+    { ic: '🔔', label: 'Notifications', active: false },
+    { ic: '⚙️', label: 'Settings', active: false },
+  ]
+
+  return (
+    <div style={{ padding: 12, background: PANE_BG, borderRadius: 9 }}>
+      <div style={{ background: bg, borderRadius: 10, overflow: 'hidden', maxWidth: 200 }}>
+        <div style={{ background: hdrBg, padding: '14px 14px 12px' }}>
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              background: '#4f8ef7',
+              marginBottom: 8,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 16,
+            }}
+          >
+            👤
+          </div>
+          <div style={{ color: tc, fontWeight: 600, fontSize: 13 }}>Jane Smith</div>
+          <div style={{ color: MUT, fontSize: 11, marginTop: 1 }}>jane@example.com</div>
+        </div>
+        <div style={{ padding: '6px 0' }}>
+          {items.map((item, i) => (
+            <div key={item.label}>
+              {i === 2 && <div style={{ height: 1, background: sep, margin: '4px 14px' }} />}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '9px 14px',
+                  background: item.active ? actBg : 'transparent',
+                  color: item.active ? act : tc,
+                  fontSize: 13,
+                  fontWeight: item.active ? 600 : 400,
+                }}
+              >
+                <span style={{ fontSize: 16 }}>{item.ic}</span>
+                {item.label}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── CollectionsPreview (iOS `collections`) ────────────────────────────────────
+
+export function CollectionsPreview({
+  pane,
+  values,
+}: {
+  pane: TEPaneLite
+  values: Values
+}): JSX.Element {
+  const colorGroup = groupByAnyName(pane, 'Collection Colors dark', 'Grid') ?? pane.groups[0]
+  const cgn = colorGroup?.name ?? 'Collection Colors dark'
+  const bg = fieldValue(pane, cgn, 'Background Color', values) || '#1e1e20'
+  const cellBg = fieldValue(pane, cgn, 'Cell Background', values) || '#2a2a2e'
+  const selBg = fieldValue(pane, cgn, 'Selected Cell Background', values) || 'rgba(79,142,247,.2)'
+  const selBd = fieldValue(pane, cgn, 'Selected Border Color', values) || '#4f8ef7'
+  const br = px(fieldValue(pane, 'Grid', 'Cell Corner Radius', values)) || '10px'
+
+  const cells = Array.from({ length: 6 }, (_, i) => ({ selected: i === 0 || i === 3 }))
+
+  return (
+    <div style={{ padding: 16, background: PANE_BG, borderRadius: 9 }}>
+      <div
+        style={{
+          background: bg,
+          borderRadius: 10,
+          padding: 10,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 6,
+        }}
+      >
+        {cells.map((c, i) => (
+          <div
+            key={i}
+            style={{
+              height: 54,
+              borderRadius: br,
+              background: c.selected ? selBg : cellBg,
+              border: c.selected ? `2px solid ${selBd}` : '2px solid transparent',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 18,
+            }}
+          >
+            {['🌅', '🌃', '🏙️', '🌄', '🌇', '🌉'][i]}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
