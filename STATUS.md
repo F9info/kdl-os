@@ -126,6 +126,10 @@ Recent per-issue detail is in the rolling changelog below; full history in
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+## 2026-08-20 — KDL-532: compileTokens namespace guard — DONE (Backend Coder)
+
+`fix/kdl-515-brand-kit-seed`: single-segment slug guard added to `compileTokens()` in `theme-engine/service.js`. Single-segment brand-kit-* slugs now emit `--{slug}` verbatim as CSS vars and group under `'brand-kit'` pane in JSON tree. Regression test added to `brand-kit.d-bk-6.integration.test.js`. 142/142 existing tests pass. Commit `acca80a`. PR #182 → master.
+
 ## 2026-08-20 — KDL-519: STATUS.md is now a generated rollup + docs/ADMIN_ACCESS.md (Documentation)
 
 `scripts/status-rollup.mjs` derives the four tables above and rewrites only the region between the

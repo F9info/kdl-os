@@ -12,15 +12,21 @@
 //   4. Feed the returned payload verbatim into upsertValues() — must return
 //      { saved: N } with NO errors (zero Unknown-field rejections)
 //
-// Guard: skipped when DATABASE_URL is absent (unit CI).
-// Run against a full stack with: DATABASE_URL=<url> npx vitest run brand-kit.d-bk-6
+// Guard: opt-in only — skipped unless both DATABASE_URL and RUN_DB_TESTS=1 are set.
+// This test writes and deletes real SettingValue rows; the guard prevents it from
+// running accidentally against a shared or staging database.
+// Run against a full stack with:
+//   DATABASE_URL=<url> REDIS_URL=<url> \
+//   MINIO_ENDPOINT=<host> MINIO_PORT=9000 MINIO_BUCKET=<bucket> \
+//   MINIO_ACCESS_KEY=<key> MINIO_SECRET_KEY=<secret> MINIO_USE_SSL=false \
+//   RUN_DB_TESTS=1 npx vitest run brand-kit.d-bk-6
 //
 // All DB-touching imports are lazy (inside beforeAll) so this file does not
 // throw at module-load time in environments without DATABASE_URL.
 
 import { describe, it, beforeAll, afterAll, expect } from 'vitest';
 
-const HAS_DB = !!process.env.DATABASE_URL;
+const HAS_DB = !!process.env.DATABASE_URL && !!process.env.RUN_DB_TESTS;
 
 // Minimal approved-kit palette that exercises primary + neutral ramps + hex slots.
 const TEST_PALETTE = {
@@ -58,7 +64,7 @@ const TEST_PROJECT_ID = 'integration-test-kdl515-d-bk-6';
 
 describe.skipIf(!HAS_DB)('D-BK-6 integration: brand-kit → theme-engine round-trip', () => {
   // Lazy-loaded so database.js is never imported when DATABASE_URL is absent.
-  let prisma, getTokens, upsertValues;
+  let prisma, getTokens, upsertValues, compileTokens;
 
   beforeAll(async () => {
     const db = await import('../../config/database.js');
@@ -69,6 +75,7 @@ describe.skipIf(!HAS_DB)('D-BK-6 integration: brand-kit → theme-engine round-t
     prisma = db.prisma;
     getTokens = brandKitSvc.getTokens;
     upsertValues = themeSvc.upsertValues;
+    compileTokens = themeSvc.compileTokens;
 
     // Seed the webapp.brand-kit Type and all 51 SettingField rows.
     await seeder.seedBrandKit(prisma);
@@ -134,5 +141,30 @@ describe.skipIf(!HAS_DB)('D-BK-6 integration: brand-kit → theme-engine round-t
     // Prove D-BK-6: no Unknown-field rejections, all entries saved.
     expect(result.errors).toBeUndefined();
     expect(result.saved).toBe(payload.values.length);
+  });
+
+  // KDL-532 regression: compileTokens namespace guard for single-segment slugs.
+  // Runs after the upsertValues test has written real SettingValue rows.
+  it('compileTokens emits distinct --brand-kit-* CSS vars with no junk keys or undefined pane', async () => {
+    const payload = await getTokens(TEST_PROJECT_ID, 'webapp');
+    const writtenSlugs = payload.values.map((v) => v.slug);
+
+    // upsertValues (previous test) invalidates the Redis cache, so this call
+    // recomputes from DB and picks up the freshly written SettingValue rows.
+    const result = await compileTokens('webapp', null, null);
+
+    // Every written brand-kit slug must appear as --<slug>: in :root CSS.
+    for (const slug of writtenSlugs) {
+      expect(result.css, `expected CSS var --${slug} to be present`).toContain(`--${slug}:`);
+    }
+
+    // No junk '--' key (produced when tokenName collapses to '').
+    expect(result.css).not.toMatch(/^\s*--:\s/m);
+
+    // No undefined pane in the JSON tree.
+    expect(Object.keys(result.json)).not.toContain('undefined');
+
+    // brand-kit pane exists in the JSON tree.
+    expect(result.json['brand-kit']).toBeDefined();
   });
 });

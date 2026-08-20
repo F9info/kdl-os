@@ -462,6 +462,19 @@ export async function compileTokens(platform, theme, device) {
     // Slug shape: {platform}.{pane}.[{tag}.]{section}.{field} where tag is a
     // theme or a device id. Token names strip the platform AND the theme tag.
     const slugParts = f.slug.split('.');
+
+    // Single-segment slugs (e.g. brand-kit-primary-50) are pre-namespaced and
+    // do not follow the platform.pane.section.field dot-convention. Without this
+    // guard, neutralParts would be [] → tokenName '' → CSS emits the junk '--'
+    // key and paneKey is undefined in the JSON tree.
+    if (slugParts.length === 1) {
+      rootVars[`--${f.slug}`] = sanitizeCssValue(effectiveValue);
+      if (!jsonTree['brand-kit']) jsonTree['brand-kit'] = {};
+      if (!jsonTree['brand-kit']['brand-kit']) jsonTree['brand-kit']['brand-kit'] = {};
+      jsonTree['brand-kit']['brand-kit'][f.slug] = effectiveValue;
+      continue;
+    }
+
     const tagSegment = slugParts[2];
     const themeTag = THEMES.has(tagSegment) ? tagSegment : null;
     const deviceTag = deviceIds.has(tagSegment) ? tagSegment : null;
