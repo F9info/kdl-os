@@ -8,10 +8,10 @@ import type { TemplateEngineRun } from '@/types/template-engine.types'
 
 export function ExportStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'EXPORT')
-  const advance = useAdvanceStage(run.id)
+  const advance = useAdvanceStage(run.id, run.projectId)
 
   const isDone = stage?.status === 'DONE'
-  const { data: manifest } = useExportManifest(isDone ? run.id : null)
+  const { data: manifest } = useExportManifest(isDone ? run.id : null, run.projectId)
 
   return (
     <StageShell

@@ -14,7 +14,7 @@ interface CreditsBalance {
 
 export function InferenceStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'INFERENCE')
-  const advance = useAdvanceStage(run.id)
+  const advance = useAdvanceStage(run.id, run.projectId)
 
   const { data: credits } = useQuery({
     queryKey: ['credits', 'balance', run.projectId],

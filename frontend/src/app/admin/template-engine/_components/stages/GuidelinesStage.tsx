@@ -8,7 +8,7 @@ import type { TemplateEngineRun } from '@/types/template-engine.types'
 
 export function GuidelinesStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'GUIDELINES')
-  const advance = useAdvanceStage(run.id)
+  const advance = useAdvanceStage(run.id, run.projectId)
 
   const outputRef = stage?.outputRef as
     { renderId?: string; downloadUrl?: string } | null | undefined

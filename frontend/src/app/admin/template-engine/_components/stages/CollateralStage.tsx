@@ -10,7 +10,7 @@ const ARTIFACTS = ['Visiting Card', 'Letterhead', 'T-shirt', 'ID Card']
 
 export function CollateralStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'COLLATERAL')
-  const advance = useAdvanceStage(run.id)
+  const advance = useAdvanceStage(run.id, run.projectId)
 
   const outputRef = stage?.outputRef as
     { renderIds?: string[]; downloadUrls?: string[] } | null | undefined

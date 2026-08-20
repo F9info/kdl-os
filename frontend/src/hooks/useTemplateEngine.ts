@@ -51,30 +51,33 @@ export function useCreateRun() {
   })
 }
 
-export function useAdvanceStage(runId: string) {
+export function useAdvanceStage(runId: string, projectId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (stage: DagStage) =>
       api
         .post<{ success: boolean; data: TemplateEngineRun }>(
-          `${BASE}/runs/${runId}/stages/${stageEnumToSlug(stage)}/advance`
+          `${BASE}/runs/${runId}/stages/${stageEnumToSlug(stage)}/advance`,
+          {},
+          { headers: { 'X-Project-Id': projectId } }
         )
         .then((r) => r.data.data),
-    onSuccess: (run) => {
-      qc.setQueryData(runKey(runId), run)
-      qc.invalidateQueries({ queryKey: runsKey(run.projectId) })
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: runsKey(projectId) })
     },
   })
 }
 
-export function useExportManifest(runId: string | null) {
+export function useExportManifest(runId: string | null, projectId: string | null) {
   return useQuery({
     queryKey: runId ? ['template-engine', 'export', runId] : [],
     queryFn: () =>
       api
-        .get<{ success: boolean; data: ExportManifest }>(`${BASE}/runs/${runId}/export`)
+        .get<{ success: boolean; data: ExportManifest }>(`${BASE}/runs/${runId}/export`, {
+          headers: { 'X-Project-Id': projectId! },
+        })
         .then((r) => r.data.data),
-    enabled: !!runId,
+    enabled: !!runId && !!projectId,
     staleTime: 30_000,
   })
 }

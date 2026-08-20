@@ -7,7 +7,7 @@ import type { TemplateEngineRun } from '@/types/template-engine.types'
 
 export function IntakeStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'INTAKE')
-  const advance = useAdvanceStage(run.id)
+  const advance = useAdvanceStage(run.id, run.projectId)
 
   return (
     <StageShell
