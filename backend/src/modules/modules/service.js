@@ -267,15 +267,13 @@ export async function installModule(slug, actorId, { resolveConflicts = false } 
   // Build full transitive install order (throws 404 for unknown slugs, 409 on cycle)
   const installOrder = buildInstallOrder(slug);
 
-  // Find which slugs in the order are already installed
-  const rows = await prisma.module.findMany({
-    where: { slug: { in: installOrder } },
-    select: { slug: true },
-  });
-  const installedSet = new Set(rows.map((r) => r.slug));
-
-  // Preserve existing 409 if the target itself is already installed
-  if (installedSet.has(slug)) {
+  // Preserve existing 409 if the target itself is already installed. Checked
+  // per-slug (not a batch findMany) so each dep's own install state is read
+  // fresh right before we decide whether to install it — a batch check taken
+  // once up front raced with `_installSingle`'s effects and, for a module that
+  // depends on something already installed, re-created that dependency's row
+  // (P2002 double-create — KDL-568).
+  if (await prisma.module.findUnique({ where: { slug } })) {
     const err = new Error(`Module "${slug}" is already installed`);
     err.status = 409;
     throw err;
@@ -284,7 +282,8 @@ export async function installModule(slug, actorId, { resolveConflicts = false } 
   // Auto-install every missing dep in topological order (target is last element)
   const installedDependencies = [];
   for (const depSlug of installOrder.slice(0, -1)) {
-    if (installedSet.has(depSlug)) continue;
+    const existingDep = await prisma.module.findUnique({ where: { slug: depSlug } });
+    if (existingDep) continue;
     await _installSingle(depSlug, actorId, { resolveConflicts });
     installedDependencies.push(depSlug);
   }
@@ -292,7 +291,11 @@ export async function installModule(slug, actorId, { resolveConflicts = false } 
   // Install the target itself
   const mod = await _installSingle(slug, actorId, { resolveConflicts });
 
-  return { module: mod, installedDependencies };
+  // Return shape stays the bare module (KDL-542 contract) — installedDependencies
+  // rides along as a side-channel field rather than nesting the module under
+  // `.module`, which silently broke every existing caller/test expecting the
+  // bare object.
+  return { ...mod, installedDependencies };
 }
 
 export async function enableModule(slug, actorId, { resolveConflicts = false } = {}) {
