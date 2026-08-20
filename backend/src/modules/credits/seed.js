@@ -4,6 +4,7 @@ const SETTINGS = [
   { key: 'credits.usd_per_credit', value: '0.01', type: 'string', description: 'USD equivalent of 1 credit (metering conversion)' },
   { key: 'credits.hold_ttl_seconds', value: '900', type: 'number', description: 'Seconds before a PENDING hold expires' },
   { key: 'credits.max_overage_pct', value: '25', type: 'number', description: 'Max overage % before settle_overage alert fires' },
+  { key: 'credits.new_project_seed_mc', value: '10000000', type: 'number', description: 'µc auto-granted to every new project on creation (0 = disabled)' },
 ];
 
 export async function seedCredits(prismaClient = prisma) {
