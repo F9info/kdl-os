@@ -1,3 +1,15 @@
+## 2026-08-20 — KDL-583: collateral blank company name — source from projects module (Backend Coder)
+
+**PR:** https://github.com/F9info/kdl-os/pull/208 — awaiting CI + code review
+
+**Done:**
+- `resolveBrandKit()` in `collateral/service.js` now fetches the project row and maps `project.name` → `company.displayName` + `company.legalName`. Project lookup is in a nested try/catch so a missing project never hard-fails a render.
+- `checkBrandKitFields()` in `preflight.js` restored the company name requirement (deferred comment removed; `Project.name` is non-nullable, guaranteed at project creation).
+- `collateral.test.js`: `project: { findUnique: vi.fn() }` added to global DB mock; project mock wired in all render-path `beforeEach` blocks; 2 new assertions cover company mapping and graceful-null.
+- 53/53 tests pass (up from 51).
+
+**Next:** PR #208 review → merge.
+
 ## 2026-08-20 — KDL-580: add retry/skip recovery for FAILED Studio stages (Backend Coder)
 
 **PR:** https://github.com/F9info/kdl-os/pull/206 — awaiting CI + merge
