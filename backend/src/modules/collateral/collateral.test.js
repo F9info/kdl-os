@@ -71,6 +71,29 @@ import * as service from './service.js';
 
 const MM_TO_PT = 72 / 25.4;
 
+// Live BrandKit DB row shape — mirrors what resolveBrandKit() now reads.
+function makeLiveBrandKitRow() {
+  return {
+    logo_media_id: 'logo-media-1',
+    palette: {
+      colors: {
+        primary: {
+          hex: '#1a73e8',
+          ramp: { 50: '#e8f0fe', 100: '#c5cae9', 200: '#9fa8da', 300: '#7986cb', 400: '#5c6bc0', 500: '#1a73e8', 600: '#3949ab', 700: '#303f9f', 800: '#283593', 900: '#1a237e' },
+        },
+        neutral: {
+          hex: '#f1f3f4',
+          ramp: { 50: '#f8f9fa', 100: '#f1f3f4', 900: '#202124' },
+        },
+      },
+    },
+    typography: {
+      heading: { family: 'Inter', weights: [700], fallbackStack: 'sans-serif' },
+      body:    { family: 'Inter', weights: [400], fallbackStack: 'sans-serif' },
+    },
+  };
+}
+
 function makeAsset(overrides = {}) {
   return {
     id: 'asset-1',
@@ -402,7 +425,7 @@ describe('idempotency-key forwarding to withCreditHold (COLLATERAL_SPEC §7)', (
     vi.clearAllMocks();
     prisma.collateralAsset.findUnique.mockResolvedValue(RENDER_SAFE_ASSET);
     // Return a full brand kit so preflight passes and withCreditHold is reached.
-    prisma.brandKit.findUnique.mockResolvedValue({ resolved_tokens: makeFullBrandKit() });
+    prisma.brandKit.findUnique.mockResolvedValue(makeLiveBrandKitRow());
     prisma.collateralRender.create.mockResolvedValue({
       id: 'render-1', asset_id: 'asset-1', format: 'PDF_DIGITAL',
       variant: null, file_url: 'collateral/proj-1/asset-1/pdf.pdf',
@@ -444,7 +467,7 @@ describe('credit hold gating — CREDITS_INSUFFICIENT surfaces as 402', () => {
     vi.clearAllMocks();
     prisma.collateralAsset.findUnique.mockResolvedValue(RENDER_SAFE_ASSET);
     // Full brand kit so preflight passes; withCreditHold then throws INSUFFICIENT_CREDITS.
-    prisma.brandKit.findUnique.mockResolvedValue({ resolved_tokens: makeFullBrandKit() });
+    prisma.brandKit.findUnique.mockResolvedValue(makeLiveBrandKitRow());
     withCreditHold.mockRejectedValueOnce(
       new CreditError('INSUFFICIENT_CREDITS', 'Insufficient credits: have 0 µc, need 5000000 µc')
     );

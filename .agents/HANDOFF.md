@@ -1,3 +1,28 @@
+## 2026-08-20 — KDL-580: add retry/skip recovery for FAILED Studio stages (Backend Coder)
+
+**PR:** https://github.com/F9info/kdl-os/pull/206 — awaiting CI + merge
+
+**Done:**
+- Added `retryStage(runId, stageSlug, userId, projectId)` to service — resets FAILED → PENDING for any stage
+- Added `skipStage(runId, stageSlug, userId, projectId)` to service — moves FAILED optional (guidelines/collateral/website) → SKIPPED
+- Guards: required stages cannot be skipped (409 STAGE_NOT_SKIPPABLE); exported runs are immutable (409 EXPORT_ALREADY_DONE); both require FAILED state (409 STAGE_NOT_FAILED)
+- Wired `POST /runs/:runId/stages/:stage/retry` and `POST /runs/:runId/stages/:stage/skip` in routes/controller/schema
+- 17 new unit tests in `stage-recovery.test.js`; all 106 template-engine tests pass
+
+**Next:** PR #206 review → merge. File frontend follow-up (UI for retry/skip buttons in Studio) per issue description.
+
+## 2026-08-20 — KDL-577: fix collateral resolveBrandKit() — resolved_tokens always null (Backend Coder)
+
+**PR:** pending
+
+**Done:**
+- `resolveBrandKit()` in `collateral/service.js` was returning `kit.resolved_tokens ?? null`. That column doesn't exist on the BrandKit model — always null. Every Studio run stuck at Stage 6 with `BRANDKIT_MISSING_FIELD`.
+- Replaced with a direct mapping from live BrandKit DB columns: `logo_media_id` → `logo.primaryUrl`, OKLCH ramp values → `palette.primary`, `neutral.ramp[900]` → `palette.onSurface`, `kit.typography.heading/body` → `typography.heading/body`, `company: {}` (Project table pending KDL-449).
+- Removed `company.legalName` from `checkBrandKitFields()` in `preflight.js` — field has no DB source until KDL-449; render layer already uses `?? ''` fallbacks throughout.
+- Updated two `beforeEach` mocks in `collateral.test.js` from `{ resolved_tokens: makeFullBrandKit() }` to `makeLiveBrandKitRow()` (new helper with live DB column shape). All 45 collateral tests pass, 79 brand-kit tests pass.
+
+**Next:** PR → code review → merge.
+
 ## 2026-08-20 — KDL-575: suppress theme-engine-ui/page-builder-ui sidebar nav when template-engine is enabled (Backend Coder)
 
 **PR:** https://github.com/F9info/kdl-os/pull/203 — awaiting CI + merge
@@ -578,3 +603,15 @@ Key deliverables:
 
 ---
 *Older entries archived in [HANDOFF_ARCHIVE.md](HANDOFF_ARCHIVE.md) to reduce session-load tokens.*
+
+---
+
+## KDL-579 — 2026-08-20 (Backend Coder)
+
+**Fix: auto-grant seed credits on project creation**
+
+- Branch `fix/kdl-579-seed-credits`, PR #204 open
+- `projects/service.js`: calls `grantCredits` (10M µc by default) after project creation transaction; idempotency key `new_project_seed:{projectId}`; failure logged, not thrown
+- `credits/seed.js`: new `credits.new_project_seed_mc` app setting (default 10_000_000, 0 = disabled)
+- No schema migration needed (uses existing credits ledger)
+- Status: done (PR awaiting Code Reviewer)
