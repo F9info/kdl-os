@@ -1,6 +1,148 @@
+<!-- BEGIN GENERATED ROLLUP — regenerate with `node scripts/status-rollup.mjs`; do not hand-edit -->
+
+# STATUS — what is done, what is pending
+
+_Derived from code + GitHub + the board at master `09d203d2` (latest commit 2026-08-19)._
+_Regenerate: `node scripts/status-rollup.mjs`. Hand edits to this block are overwritten._
+
+Read this instead of counting board issues or PRs — both mislead. The board has 500+ done
+issues with no aggregate view, and PR state under-reports what shipped (§3).
+
+### 1. Backend module build state
+
+`backend/src/modules/*` — **21 modules: 19 built, 2 stubbed, 0 spec-only.**
+
+State is decided by what the directory actually contains (service + routes + controller),
+not by whether a spec or a board issue says the module is done.
+
+| Module | State | Evidence (code on disk) | Tests | Purpose (module.json) |
+| --- | --- | --- | --- | --- |
+| `auth` | ✅ built | service + routes + controller | 3 | Authentication, registration, and session management |
+| `brand-kit` | ✅ built | service + routes + controller | 3 | Logo intake, OKLCH palette extraction, WCAG AA contrast report, and theme-token hand-off for Template Engine Mode A |
+| `categories` | ✅ built | service + routes + controller | 1 | Taxonomy categories grouped under types |
+| `collateral` | ✅ built | service + routes + controller | 1 | Print-ready collateral render engine — visiting card, letterhead, t-shirt, ID card (COLLATERAL_SPEC.md §2). |
+| `credits` | ✅ built | service + routes + controller | 1 | Per-project internal metering ledger — hold lifecycle, ledger, reconciliation. |
+| `example` | ✅ built | service + routes + controller | **0** | Example module |
+| `integrations` | ✅ built | service + routes + controller | 9 | Integrations module |
+| `media` | ✅ built | service + routes + controller | 30 | File upload and media library |
+| `modules` | ✅ built | service + routes + controller | 2 | Module plugin lifecycle management |
+| `notifications` | ✅ built | service + routes + controller | 3 | Notifications module |
+| `page-builder` | ✅ built | service + routes + controller | **0** | Visual block-based page builder engine — always-on |
+| `setting-fields` | ✅ built | service + routes + controller | 2 | Dynamic admin-defined setting field definitions |
+| `settings` | ✅ built | service + routes + controller | 2 | Application settings management |
+| `storage-settings` | ✅ built | service + routes + controller | 1 | (no module.json) |
+| `template-engine` | ✅ built | service + routes + controller | 5 | 9-stage DAG orchestrator — drives brand-kit, theme-engine, page-builder, collateral, and credits via their public APIs (Mode A / Studio). No rendering logic lives here. |
+| `theme-engine` | ✅ built | service + routes + controller | 4 | Design-system token compiler — always-on engine layer |
+| `types` | ✅ built | service + routes + controller | 1 | Taxonomy types for categories and setting fields |
+| `user-management` | ✅ built | service + routes + controller | 3 | RBAC roles, permissions matrix, and activity log |
+| `users` | ✅ built | service + routes + controller | 2 | User accounts, profile management, and soft-delete |
+| `page-builder-ui` | 🟡 stubbed | nav-only shell — empty Router, no service/controller | **0** | Admin nav and screens for Page Builder — toggleable |
+| `theme-engine-ui` | 🟡 stubbed | nav-only shell — empty Router, no service/controller | **0** | Admin nav and screens for Theme Engine — toggleable |
+
+> ⚠ **2 built module(s) have no test file** in `backend/src/modules/<name>/` or `backend/tests/` matched by name: `example`, `page-builder`. Built ≠ verified — a name-based scan can also miss suites filed elsewhere, so check before acting.
+
+### 2. Template-engine 9-stage driver reality
+
+Parsed from `backend/src/modules/template-engine/drivers/index.js` — from the driver bodies, **not** the file's header comment (which has gone stale before: KDL-521).
+
+**2/9 stages real, 6 UPSTREAM_NOT_BUILT, 1 silent no-op.**
+
+| # | Stage | Status | Derived from |
+| --- | --- | --- | --- |
+| 1 | `intake` | ⛔ UPSTREAM_NOT_BUILT | throws notBuilt() — Phase 1 stub |
+| 2 | `palette` | ⛔ UPSTREAM_NOT_BUILT | throws notBuilt() — Phase 1 stub |
+| 3 | `inference` | ⛔ UPSTREAM_NOT_BUILT | throws notBuilt() — Phase 1 stub |
+| 4 | `approval` | ⛔ UPSTREAM_NOT_BUILT | throws notBuilt() — Phase 1 stub |
+| 5 | `guidelines` | ⛔ UPSTREAM_NOT_BUILT | throws notBuilt() — Phase 1 stub |
+| 6 | `collateral` | ⚠ NO_DOWNSTREAM | resolves without calling its upstream module — silent no-op |
+| 7 | `website` | ⛔ UPSTREAM_NOT_BUILT | throws notBuilt() — Phase 1 stub |
+| 8 | `preflight` | ✅ REAL | pure local aggregate — no downstream call by design |
+| 9 | `export` | ✅ REAL | pure local aggregate — no downstream call by design |
+
+> ⚠ **NO_DOWNSTREAM** means the driver resolves successfully without calling its upstream
+> module. The DAG goes green while nothing is produced — worse than an honest 503, because
+> it reads as done. Only `preflight` and `export` are allowed to make no downstream call.
+
+### 3. Pull requests — true merge state
+
+**3 open PR(s).**
+
+| PR | Title | Branch | CI / merge state | Review |
+| --- | --- | --- | --- | --- |
+| [#180](https://github.com/F9info/kdl-os/pull/180) | docs(process): retire direct-push-to-master — enforce PR-only merge path (KDL-520) | `docs/kdl-520-merge-process-fix` | CLEAN | none |
+| [#179](https://github.com/F9info/kdl-os/pull/179) | fix(brand-kit): seed webapp.brand-kit Type + SettingField rows for D-BK-6 handoff (KDL-515) | `fix/kdl-515-brand-kit-seed` | CLEAN | none |
+| [#177](https://github.com/F9info/kdl-os/pull/177) | feat(KDL-509): wire template-engine Phase 2 drivers — brand-kit, collateral, website | `feat/kdl-509-driver-wiring` | CLEAN | none |
+
+#### Ghost merges — CLOSED on GitHub, but the code IS on master
+
+**1 of the last 40 closed PRs actually shipped.** This is the
+KDL-520 defect: pushing straight to master makes GitHub close the PR instead of merging it,
+so PR history under-reports what was delivered. Do not read these as abandoned work.
+
+| PR | Title | Evidence it landed |
+| --- | --- | --- |
+| [#169](https://github.com/F9info/kdl-os/pull/169) | feat(KDL-482): brand-kit Phase 1 — data model, OKLCH palette extraction, contrast report | squash commit "feat(KDL-482): brand-kit Phase 1 — data model, OKLCH palette, contrast report, state machine (#169)" |
+
+_Scan window: the 40 most recent closed PRs. Older ghost merges are not covered._
+
+### 4. Board state — blocked and in-flight
+
+**515 issues total: 502 done, 4 in progress, 6 blocked, 0 todo, 3 cancelled.**
+
+#### Blocked — every row needs a named unblock owner
+
+| Issue | Title | Unblock owner | Unblock action | Owner source |
+| --- | --- | --- | --- | --- |
+| KDL-453 | Template Engine follow-on: `template-engine` orchestrator — 9-stage DAG (thin, drives engines) | CEO | Blocker condition is satisfied — the source-app IA open question (TEMPLATE_ENGINE_ARCH §9 / PM-001 OQ-1) was answered by `.agents/arch/STUDIO_IA.md` on master (KDL-485). Confirm, then close as superseded by KDL-501 + KDL-509 or re-scope the remainder. | `.agents/unblock-owners.json` |
+| KDL-482 | BUILD: brand-kit Phase 1 — data model, logo intake, OKLCH palette extraction, contrast report | CEO | Stale block — brand-kit Phase 1 shipped to master as `3b3ab441` (via ghost-merged PR #169) and KDL-512 closed its blockers. Reconcile and close as done; the surviving runtime gap is already tracked by KDL-515. | `.agents/unblock-owners.json` |
+| KDL-501 | IMPL: template-engine orchestrator backend — 9-stage DAG per TEMPLATE_ENGINE_ARCH.md | CEO | Stale block — Phase 1 orchestrator is on master as `99b8debf` (PR #172): 9-stage DAG, server-side gates, crash recovery, RBAC. Close Phase 1 as done; Phase 2 driver wiring is KDL-509 (PR #177). | `.agents/unblock-owners.json` |
+| KDL-509 | WIRE: template-engine Phase 2 — replace UPSTREAM_NOT_BUILT driver stubs with real API calls | **⚠ UNASSIGNED** | set `unblockDescriptor` on the board, or add KDL-509 to `.agents/unblock-owners.json` | — |
+| KDL-515 | FIX: brand-kit D-BK-6 hand-off is dead at runtime — theme-engine `${platform}.brand-kit` Type + `brand-kit-*` fields are never seeded | Code Reviewer | Review and merge PR #179 (`fix/kdl-515-brand-kit-seed`) — the review is already tracked as KDL-522. Until it lands, `GET /api/brand-kit/:projectId/tokens` cannot return 200 and the D-BK-6 hand-off is dead at runtime. | `.agents/unblock-owners.json` |
+| KDL-521 | FIX: stale UPSTREAM_NOT_BUILT header comment in template-engine drivers | Backend Coder | merge PR #177 (feat/kdl-509-driver-wiring / KDL-509) to master; no file change needed after merge — fix already embedded in branch | board `unblockDescriptor` |
+
+> ⚠ 1 blocked issue(s) have no named unblock owner: KDL-509. A blocked issue without an owner never moves.
+
+#### In progress
+
+| Issue | Title |
+| --- | --- |
+| KDL-490 | brand-kit: opt-in logo-image multimodal inference + 5-logo A/B vs text-only baseline (KDL-484 follow-up) |
+| KDL-519 | DOCS: living STATUS rollup — single source of truth for done vs pending |
+| KDL-522 | CODE REVIEW: KDL-515 — brand-kit.seed.js + D-BK-6 integration test |
+| KDL-523 | REVIEW: PR #177 — KDL-509 Phase 2 driver wiring + CI fix |
+
+---
+
+Related: [`docs/ADMIN_ACCESS.md`](docs/ADMIN_ACCESS.md) — admin login / lockout recovery.
+Recent per-issue detail is in the rolling changelog below; full history in
+[`.agents/STATUS_ARCHIVE.md`](.agents/STATUS_ARCHIVE.md).
+
+<!-- END GENERATED ROLLUP -->
+
+## Rolling changelog
+
 <!-- ROLLING WINDOW: keep only the most recent entries here to minimise per-run context.
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
+
+## 2026-08-20 — KDL-519: STATUS.md is now a generated rollup + docs/ADMIN_ACCESS.md (Documentation)
+
+`scripts/status-rollup.mjs` derives the four tables above and rewrites only the region between the
+`BEGIN/END GENERATED ROLLUP` markers — this changelog is untouched by it. Module state comes from
+the filesystem (service+routes+controller, so a docs-only module can no longer read as built);
+the driver table is parsed from `drivers/index.js` bodies, never its header comment (KDL-521);
+PR state is reconciled against the master log to surface ghost merges (found PR #169 — CLOSED but
+its code is on master as `3b3ab441`); blocked issues join the board's `unblockDescriptor`, falling
+back to curated `.agents/unblock-owners.json`. Sections that lose network/credentials render
+"UNAVAILABLE — treat as UNKNOWN" rather than an empty table that reads as all-clear.
+
+Findings surfaced by the first run: `page-builder` is built with **zero** tests; the `collateral`
+driver resolves without calling its upstream module (silent no-op, greener than an honest 503);
+3 of 5 blocked issues (KDL-482, KDL-501, KDL-453) are stale — their code is on master.
+
+`docs/ADMIN_ACCESS.md` documents the seeded-credential story end to end (`Admin@123` purged in
+KDL-307; `SEED_ADMIN_PASSWORD` or a one-time random; docker stack pins `kdl-dev-seed-password`;
+forced first-login change per KDL-283 is expected; `db:reset-admin` recovery; Redis lockout tiers).
 
 ## 2026-08-19 — KDL-508: collateral module — 42/42 tests green, PR ready for CI + merge (Backend Coder)
 
