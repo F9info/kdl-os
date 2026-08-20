@@ -16,6 +16,10 @@ const STAGE_SLUG_TO_ENUM = {
   export:     'EXPORT',
 };
 
+// Stages that may be skipped (optional fan-out branches per §3 DAG).
+// Required stages (all others) cannot be skipped — only retried.
+const OPTIONAL_STAGES = new Set(['GUIDELINES', 'COLLATERAL', 'WEBSITE']);
+
 // ── Gate logic (§3 Depends on column) ────────────────────────────────────────
 
 function stageStatusMap(stages) {
@@ -116,6 +120,74 @@ export async function markInterruptedStages(runId) {
     data: { status: 'FAILED', errorCode: 'INTERRUPTED', completedAt: new Date() },
   });
   return updated.count;
+}
+
+// ── Stage recovery ────────────────────────────────────────────────────────────
+
+// Guard shared by retry and skip: a run that has already exported is immutable.
+function assertNotExported(run) {
+  const exportStage = run.stages.find((s) => s.stage === 'EXPORT');
+  if (exportStage?.status === 'DONE') {
+    const err = new Error('EXPORT_ALREADY_DONE');
+    err.status = 409;
+    err.code = 'EXPORT_ALREADY_DONE';
+    throw err;
+  }
+}
+
+// Reset a FAILED stage to PENDING so it can be re-advanced.
+// Throws 409 EXPORT_ALREADY_DONE if the run has already exported.
+// Throws 409 STAGE_NOT_FAILED if the stage is not in FAILED state.
+export async function retryStage(runId, stageSlug, userId, projectId) {
+  const run = await getRun(runId, projectId);
+  assertNotExported(run);
+
+  const stageEnum = STAGE_SLUG_TO_ENUM[stageSlug];
+  const stage = run.stages.find((s) => s.stage === stageEnum);
+
+  if (!stage || stage.status !== 'FAILED') {
+    const err = new Error('STAGE_NOT_FAILED');
+    err.status = 409;
+    err.code = 'STAGE_NOT_FAILED';
+    throw err;
+  }
+
+  return prisma.templateEngineStage.update({
+    where: { id: stage.id },
+    data: { status: 'PENDING', errorCode: null, startedAt: null, completedAt: null },
+  });
+}
+
+// Move a FAILED optional stage to SKIPPED so the run can proceed to preflight.
+// Throws 409 EXPORT_ALREADY_DONE if the run has already exported.
+// Throws 409 STAGE_NOT_SKIPPABLE if the stage is a required stage.
+// Throws 409 STAGE_NOT_FAILED if the stage is not in FAILED state.
+export async function skipStage(runId, stageSlug, userId, projectId) {
+  const run = await getRun(runId, projectId);
+  assertNotExported(run);
+
+  const stageEnum = STAGE_SLUG_TO_ENUM[stageSlug];
+
+  if (!OPTIONAL_STAGES.has(stageEnum)) {
+    const err = new Error('STAGE_NOT_SKIPPABLE');
+    err.status = 409;
+    err.code = 'STAGE_NOT_SKIPPABLE';
+    throw err;
+  }
+
+  const stage = run.stages.find((s) => s.stage === stageEnum);
+
+  if (!stage || stage.status !== 'FAILED') {
+    const err = new Error('STAGE_NOT_FAILED');
+    err.status = 409;
+    err.code = 'STAGE_NOT_FAILED';
+    throw err;
+  }
+
+  return prisma.templateEngineStage.update({
+    where: { id: stage.id },
+    data: { status: 'SKIPPED', errorCode: null, completedAt: new Date() },
+  });
 }
 
 // ── Stage advance ─────────────────────────────────────────────────────────────

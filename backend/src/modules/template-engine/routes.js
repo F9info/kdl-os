@@ -7,6 +7,7 @@ import {
   runParamSchema,
   listRunsQuerySchema,
   advanceStageSchema,
+  stageRecoveryParamSchema,
 } from './schema.js';
 import {
   createRun,
@@ -15,6 +16,8 @@ import {
   resumeRun,
   advanceStage,
   getExport,
+  retryStage,
+  skipStage,
 } from './controller.js';
 
 const router = Router();
@@ -33,6 +36,10 @@ router.post('/runs/:runId/resume', requirePermission('template-engine', 'run'), 
 // Stage advance — single endpoint for all transitions.
 // Permission enforced per-stage in controller (run vs approve vs export).
 router.post('/runs/:runId/stages/:stage/advance', requirePermission('template-engine', 'run'), validate(advanceStageSchema), advanceStage);
+
+// Stage recovery — retry resets FAILED → PENDING; skip moves FAILED optional → SKIPPED.
+router.post('/runs/:runId/stages/:stage/retry', requirePermission('template-engine', 'run'), validate(stageRecoveryParamSchema), retryStage);
+router.post('/runs/:runId/stages/:stage/skip', requirePermission('template-engine', 'run'), validate(stageRecoveryParamSchema), skipStage);
 
 // Export — requires :export permission (TEMPLATE_ENGINE_ARCH.md §9).
 router.get('/runs/:runId/export', requirePermission('template-engine', 'export'), validate(runParamSchema), getExport);

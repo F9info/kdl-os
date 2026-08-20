@@ -131,3 +131,49 @@ export const getExport = async (req, res, next) => {
     next(err);
   }
 };
+
+export const retryStage = async (req, res, next) => {
+  try {
+    const projectId = requireProjectId(req);
+    const { runId, stage } = req.validated.params;
+    const stageRecord = await service.retryStage(runId, stage, req.user.id, projectId);
+    writeActivityAsync({
+      actor: req.user.id,
+      module: 'template-engine',
+      action: 'stage_retried',
+      subject_type: 'TemplateEngineStage',
+      subject_id: stageRecord.id,
+      description: `Retried stage ${stage} → PENDING`,
+      properties: { runId, stage },
+      ip_address: getClientIp(req),
+    });
+    return successResponse(res, stageRecord);
+  } catch (err) {
+    if (err.status === 409) return errorResponse(res, err.message, 409, { code: err.code });
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+export const skipStage = async (req, res, next) => {
+  try {
+    const projectId = requireProjectId(req);
+    const { runId, stage } = req.validated.params;
+    const stageRecord = await service.skipStage(runId, stage, req.user.id, projectId);
+    writeActivityAsync({
+      actor: req.user.id,
+      module: 'template-engine',
+      action: 'stage_skipped',
+      subject_type: 'TemplateEngineStage',
+      subject_id: stageRecord.id,
+      description: `Skipped stage ${stage} → SKIPPED`,
+      properties: { runId, stage },
+      ip_address: getClientIp(req),
+    });
+    return successResponse(res, stageRecord);
+  } catch (err) {
+    if (err.status === 409) return errorResponse(res, err.message, 409, { code: err.code });
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};

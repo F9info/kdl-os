@@ -45,3 +45,10 @@ export const advanceStageSchema = z.object({
     })
     .optional(),
 });
+
+export const stageRecoveryParamSchema = z.object({
+  params: z.object({
+    runId: z.string().min(1),
+    stage: stageSlugEnum,
+  }),
+});
