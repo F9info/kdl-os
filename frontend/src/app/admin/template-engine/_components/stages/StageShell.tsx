@@ -14,6 +14,7 @@ interface StageShellProps {
   onSkip?: () => void
   isRunning?: boolean
   hideRunButton?: boolean
+  runDisabled?: boolean
 }
 
 export function StageShell({
@@ -25,6 +26,7 @@ export function StageShell({
   onSkip,
   isRunning,
   hideRunButton,
+  runDisabled,
 }: StageShellProps) {
   const status = stage?.status ?? 'PENDING'
   const errorCode = stage?.errorCode ?? null
@@ -62,7 +64,7 @@ export function StageShell({
           {onRun && (
             <Button
               onClick={onRun}
-              disabled={isRunning || status === 'DONE' || status === 'RUNNING'}
+              disabled={isRunning || runDisabled || status === 'DONE' || status === 'RUNNING'}
               size="sm"
             >
               {isRunning || status === 'RUNNING' ? (

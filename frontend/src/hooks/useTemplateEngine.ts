@@ -1,6 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/axios'
-import type { TemplateEngineRun, DagStage, ExportManifest } from '@/types/template-engine.types'
+import type {
+  TemplateEngineRun,
+  DagStage,
+  ExportManifest,
+  BrandKit,
+} from '@/types/template-engine.types'
 import { stageEnumToSlug } from '@/types/template-engine.types'
 
 const BASE = '/template-engine'
@@ -64,6 +69,18 @@ export function useAdvanceStage(runId: string) {
       qc.setQueryData(runKey(runId), run)
       qc.invalidateQueries({ queryKey: runsKey(run.projectId) })
     },
+  })
+}
+
+export function useBrandKit(projectId: string | null) {
+  return useQuery({
+    queryKey: projectId ? ['brand-kit', projectId] : [],
+    queryFn: () =>
+      api
+        .get<{ success: boolean; data: BrandKit }>(`/brand-kit/${projectId}`)
+        .then((r) => r.data.data),
+    enabled: !!projectId,
+    staleTime: 10_000,
   })
 }
 
