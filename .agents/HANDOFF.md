@@ -1,3 +1,53 @@
+## 2026-08-20 — KDL-542: Remove self-referential Module upsert from collateral seed.js (Backend Coder)
+
+**Branch:** `fix/kdl-542-collateral-seed` → PR pending
+
+**Done:**
+- Deleted `backend/src/modules/collateral/seed.js` — the entire body was a `tx.module.upsert()` that created the module's own row, conflicting with `installModule()`'s `tx.module.create()` which runs after the seed. This would cause P2002 (duplicate slug) on every install.
+- Added 3-test KDL-542 regression guard describe block in `collateral.test.js`: (1) resolves with correct slug/name/version/status=INSTALLED, (2) exactly one `module.create` call, (3) `module.upsert` never called. All 45 collateral tests + 6 modules tests pass.
+- Confirmed no template-engine code assumes collateral is ENABLED immediately post-install.
+- `grep -rn 'module\.upsert\|tx\.module' backend/src/modules/*/seed.js` returns nothing.
+
+**Next:** CI green → merge via normal path. Comment PR URL + merge commit on KDL-542, set done.
+
+---
+
+## 2026-08-20 — KDL-539: stereotype-INCONGRUENT logo fixtures + generator (Backend Coder)
+
+**Branch:** `feat/kdl-539-incongruent-logo-fixtures` → **PR #188**
+
+**Done:**
+- Wrote `ai-services/scripts/generate-logo-fixtures.mjs`: headless-Chromium renderer via `@playwright/test` from `frontend/node_modules`. Loads Google Fonts (`Fredoka One`, `Bebas Neue`, `Great Vibes`, `Bodoni Moda`, `Roboto Mono`), waits for `document.fonts.ready`, captures 800×300 PNG per logo. Run: `node ai-services/scripts/generate-logo-fixtures.mjs` from repo root.
+- Generated and committed 5 PNGs to `ai-services/tests/fixtures/logos/`:
+  - `brackwell-hoyt.png` — Fredoka One bouncy lowercase, desaturated plum → reads kids'-app (law firm)
+  - `grimsby-junior.png` — Bebas Neue condensed grotesque + hard rule, slate-mauve → reads institutional (children's brand)
+  - `marigold-pay.png` — Great Vibes calligraphic script + flourish, ochre-grey → reads artisanal (fintech)
+  - `ironhall-forge.png` — Bodoni Moda didone + hairlines, dusty rose → reads luxury-editorial (forge)
+  - `atelier-sevigne.png` — Roboto Mono `[ brackets ]` + version string, muted olive → reads dev-tool (luxury atelier)
+- All 5 confirmed 800×300, genre-neutral palette. Incongruence visually obvious at a glance.
+- PR #188 opened against master.
+
+**Next:** CI green → normal merge path. CEO runs the A/B against merged fixtures.
+
+---
+
+## 2026-08-20 — KDL-537: brand-kit guidelines PDF render endpoint + guidelinesDriver wiring (Backend Coder)
+
+**Branch:** `feat/kdl-537-guidelines-pdf-endpoint` — **PR #187 open, awaiting review**
+
+**Done:**
+1. `brand-kit/guidelines.js` — 4-page A4 PDF builder (cover, OKLCH palette, typography/tone, WCAG AA) reusing `buildPdf` from collateral render pipeline; no second render path.
+2. `brand-kit/service.js` — `renderGuidelines` export: approval gate, two-level crash recovery (checks `kit.guidelines_pdf_media_id` before billing), `withCreditHold` (5 Mc estimate, idempotency-key forwarding), stores file key in `guidelines_pdf_media_id` String field.
+3. `brand-kit/schema.js` — `renderGuidelinesSchema` (Zod).
+4. `brand-kit/controller.js` — `renderGuidelinesHandler` with `X-Idempotency-Key` forwarding.
+5. `brand-kit/routes.js` — `POST /:projectId/guidelines/render` behind `requirePermission('brand-kit', 'render')`.
+6. `template-engine/drivers/index.js` — replaced `UPSTREAM_NOT_BUILT` stub with real `renderGuidelines` call + driver-level crash recovery; updated header comment to "wired: all 9".
+7. Tests: 8 guidelines unit tests, 3 new DAG describe blocks (stage-5 completion, crash recovery, full 9-stage run), 2 new driver tests replacing old stub test. All 35 new + existing tests pass.
+
+**Next:** Code Reviewer to review PR #187 and merge.
+
+---
+
 ## 2026-08-20 — KDL-538: HTML-entity decode guard for AI prose fields (Backend Coder)
 
 **Branch:** `fix/kdl-538-html-entity-decode`
