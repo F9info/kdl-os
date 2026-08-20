@@ -2,7 +2,7 @@
 
 # STATUS — what is done, what is pending
 
-_Derived from code + GitHub + the board at master `faa80277` (latest commit 2026-08-20)._
+_Derived from code + GitHub + the board at master `09d31af` (latest commit 2026-08-20)._
 _Regenerate: `node scripts/status-rollup.mjs`. Hand edits to this block are overwritten._
 
 Read this instead of counting board issues or PRs — both mislead. The board has 500+ done
@@ -61,12 +61,10 @@ Parsed from `backend/src/modules/template-engine/drivers/index.js` — from the 
 
 ### 3. Pull requests — true merge state
 
-**3 open PR(s).**
+**1 open PR(s).**
 
 | PR | Title | Branch | CI / merge state | Review |
 | --- | --- | --- | --- | --- |
-| [#190](https://github.com/F9info/kdl-os/pull/190) | fix(ai-services): decode HTML entities in tone.adjectives/dos/donts arrays (KDL-540) | `fix/kdl-540-entity-decode-tone-arrays` | CLEAN | none |
-| [#187](https://github.com/F9info/kdl-os/pull/187) | feat(KDL-537): brand-kit brand-guidelines PDF render endpoint + driver wiring | `feat/kdl-537-guidelines-pdf-endpoint` | DIRTY · CONFLICTING | none |
 | [#185](https://github.com/F9info/kdl-os/pull/185) | fix(KDL-536): key UPSTREAM_NOT_BUILT classifier off error-code string, not helper name | `fix/kdl-536-status-rollup-classifier` | DIRTY · CONFLICTING | none |
 
 #### Ghost merges — CLOSED on GitHub, but the code IS on master
@@ -83,7 +81,7 @@ _Scan window: the 40 most recent closed PRs. Older ghost merges are not covered.
 
 ### 4. Board state — blocked and in-flight
 
-**544 issues total: 540 done, 2 in progress, 0 blocked, 0 todo, 2 cancelled.**
+**545 issues total: 541 done, 2 in progress, 0 blocked, 0 todo, 2 cancelled.**
 
 #### Blocked — every row needs a named unblock owner
 
@@ -93,8 +91,8 @@ _Nothing blocked._
 
 | Issue | Title |
 | --- | --- |
-| KDL-534 | brand-kit: re-run multimodal A/B on stereotype-INCONGRUENT logo fixtures |
-| KDL-537 | BUILD: brand-kit brand-guidelines PDF render endpoint - unblocks template-engine stage 5 (guidelines) |
+| KDL-518 | what is the status of new template engine module |
+| KDL-553 | ai-services: measure image token cost, then flip BRAND_INFERENCE_IMAGE_ENABLED default (KDL-534 result) |
 
 ---
 
