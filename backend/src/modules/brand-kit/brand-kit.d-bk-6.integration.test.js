@@ -12,15 +12,21 @@
 //   4. Feed the returned payload verbatim into upsertValues() — must return
 //      { saved: N } with NO errors (zero Unknown-field rejections)
 //
-// Guard: skipped when DATABASE_URL is absent (unit CI).
-// Run against a full stack with: DATABASE_URL=<url> npx vitest run brand-kit.d-bk-6
+// Guard: opt-in only — skipped unless both DATABASE_URL and RUN_DB_TESTS=1 are set.
+// This test writes and deletes real SettingValue rows; the guard prevents it from
+// running accidentally against a shared or staging database.
+// Run against a full stack with:
+//   DATABASE_URL=<url> REDIS_URL=<url> \
+//   MINIO_ENDPOINT=<host> MINIO_PORT=9000 MINIO_BUCKET=<bucket> \
+//   MINIO_ACCESS_KEY=<key> MINIO_SECRET_KEY=<secret> MINIO_USE_SSL=false \
+//   RUN_DB_TESTS=1 npx vitest run brand-kit.d-bk-6
 //
 // All DB-touching imports are lazy (inside beforeAll) so this file does not
 // throw at module-load time in environments without DATABASE_URL.
 
 import { describe, it, beforeAll, afterAll, expect } from 'vitest';
 
-const HAS_DB = !!process.env.DATABASE_URL;
+const HAS_DB = !!process.env.DATABASE_URL && !!process.env.RUN_DB_TESTS;
 
 // Minimal approved-kit palette that exercises primary + neutral ramps + hex slots.
 const TEST_PALETTE = {
