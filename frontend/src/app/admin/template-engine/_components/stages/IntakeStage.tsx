@@ -1,13 +1,15 @@
 'use client'
 
-import { Building2, Tag, Image } from 'lucide-react'
-import { useAdvanceStage } from '@/hooks/useTemplateEngine'
+import { Building2, Tag, Image, AlertCircle } from 'lucide-react'
+import { useAdvanceStage, useBrandKit } from '@/hooks/useTemplateEngine'
 import { StageShell } from './StageShell'
 import type { TemplateEngineRun } from '@/types/template-engine.types'
 
 export function IntakeStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'INTAKE')
   const advance = useAdvanceStage(run.id)
+  const { data: brandKit } = useBrandKit(run.projectId)
+  const hasLogo = !!brandKit?.logo_media_id
 
   return (
     <StageShell
@@ -16,6 +18,7 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
       stage={stage ?? null}
       onRun={() => advance.mutate('INTAKE')}
       isRunning={advance.isPending}
+      runDisabled={!hasLogo}
     >
       <div className="grid gap-4 max-w-xl">
         <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
@@ -34,6 +37,12 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
           Intake data is managed via the brand-kit module. Running this stage sends the project to
           the brand-kit intake endpoint and records the kit version.
         </p>
+        {!hasLogo && (
+          <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400">
+            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+            Upload a logo to continue.
+          </div>
+        )}
       </div>
     </StageShell>
   )

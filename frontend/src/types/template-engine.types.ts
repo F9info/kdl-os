@@ -63,6 +63,10 @@ export const DAG_STAGES: { slug: string; label: string; stage: DagStage }[] = [
   { slug: 'export', label: 'Export', stage: 'EXPORT' },
 ]
 
+export interface BrandKit {
+  logo_media_id: string | null
+}
+
 export function stageSlugToEnum(slug: string): DagStage | null {
   return DAG_STAGES.find((s) => s.slug === slug)?.stage ?? null
 }
