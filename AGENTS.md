@@ -81,6 +81,26 @@ Act like a senior engineer who just joined an unfamiliar codebase — reverse-en
 
 ---
 
+## Merge Path — All Code via GitHub PR (KDL-520, mandatory)
+
+**Never push commits directly to `master`.** All work — features, fixes, docs, hotfixes — must land
+through a Pull Request merged via the GitHub UI or `gh pr merge`. Direct pushes cause GitHub to
+close open PRs with `mergedAt=null`, corrupting the ledger the team uses to track progress.
+
+**Correct sequence:**
+1. `git push origin <branch>`
+2. `gh pr create --base master`
+3. Wait for CI green, rebase if needed
+4. `gh pr merge <number> --squash` (or merge via GitHub UI)
+
+**If CI is org-wide broken** (billing outage, infra incident): mark the Paperclip issue **blocked**
+and wait. Do not bypass the PR merge path under any circumstances.
+
+**Retired (2026-08-19):** The local-verify + `git push origin master` workaround used during the
+2026-08 GH Actions billing outage is retired. Full rules: [`docs/MERGE_DISCIPLINE.md §7`](docs/MERGE_DISCIPLINE.md).
+
+---
+
 ## PR Convention — Screenshots Required (KDL-333)
 
 Every PR that touches any user-visible UI **must** include before/after screenshots
