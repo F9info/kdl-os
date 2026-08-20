@@ -126,6 +126,10 @@ Recent per-issue detail is in the rolling changelog below; full history in
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+## 2026-08-20 — KDL-538: HTML-entity decode guard for AI prose fields — DONE (Backend Coder)
+
+`fix/kdl-538-html-entity-decode`: Added `decode-html-entities.js` utility + guard in `brand-inference.js` `runAiPath` over 5 prose fields. Reproduction verdict: model itself does NOT emit entities; escaping was transport artifact. 45 tests pass. PR pending.
+
 ## 2026-08-20 — KDL-532: compileTokens namespace guard — DONE (Backend Coder)
 
 `fix/kdl-515-brand-kit-seed`: single-segment slug guard added to `compileTokens()` in `theme-engine/service.js`. Single-segment brand-kit-* slugs now emit `--{slug}` verbatim as CSS vars and group under `'brand-kit'` pane in JSON tree. Regression test added to `brand-kit.d-bk-6.integration.test.js`. 142/142 existing tests pass. Commit `acca80a`. PR #182 → master.
