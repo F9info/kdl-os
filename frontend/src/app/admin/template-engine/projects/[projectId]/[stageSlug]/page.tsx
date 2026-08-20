@@ -1,8 +1,10 @@
 'use client'
 
-import { useParams } from 'next/navigation'
-import { useTemplateEngineRuns } from '@/hooks/useTemplateEngine'
+import { useParams, useRouter } from 'next/navigation'
+import { useTemplateEngineRuns, useCreateRun } from '@/hooks/useTemplateEngine'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { Button } from '@/components/ui/button'
+import { toast } from '@/hooks/use-toast'
 import { IntakeStage } from '../../../_components/stages/IntakeStage'
 import { PaletteStage } from '../../../_components/stages/PaletteStage'
 import { InferenceStage } from '../../../_components/stages/InferenceStage'
@@ -62,16 +64,39 @@ export default function StagePage() {
 }
 
 function NoRunPlaceholder({ stageSlug, projectId }: { stageSlug: string; projectId: string }) {
+  const router = useRouter()
+  const createRun = useCreateRun()
+
+  function handleStart() {
+    createRun.mutate(projectId, {
+      onSuccess: () => {
+        // Invalidation triggers a re-fetch; navigate to intake so the run is found
+        router.push(`/admin/template-engine/projects/${projectId}/intake`)
+      },
+      onError: () => {
+        toast({
+          variant: 'destructive',
+          title: 'Failed to start run',
+          description: 'Could not create a Studio run. Please try again.',
+        })
+      },
+    })
+  }
+
   return (
     <div className="flex h-64 flex-col items-center justify-center gap-3 text-center">
       <p className="text-sm font-medium">No Studio run exists for this project yet.</p>
       <p className="text-xs text-muted-foreground max-w-xs">
-        Start a run from the{' '}
-        <a href="/admin/template-engine" className="underline underline-offset-2">
-          Studio landing page
-        </a>{' '}
-        to begin the {stageSlug} stage.
+        Start a run to begin the {stageSlug} stage.
       </p>
+      <Button
+        size="sm"
+        onClick={handleStart}
+        disabled={createRun.isPending}
+        data-testid="btn-start-run"
+      >
+        {createRun.isPending ? 'Starting…' : 'Start Studio run'}
+      </Button>
     </div>
   )
 }
