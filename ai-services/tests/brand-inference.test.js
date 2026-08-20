@@ -432,6 +432,48 @@ describe('KDL-538 HTML-entity decode guard', () => {
     expect(env.strategy.elevatorPitch).toContain("who've been burned");
   });
 
+  it('entities in tone.dos and tone.donts entries are decoded (KDL-540)', async () => {
+    const entityLaden = JSON.stringify({
+      typography: {
+        pairingId: 'space-grotesk-inter',
+        scaleRatio: 1.25,
+        rationale: 'Willow &amp; Co. needed a rationale with an &amp;ampersand here.',
+      },
+      tone: {
+        voice: 'Willow &amp; Co. speaks with clarity and conviction across every channel.',
+        adjectives: ['Willow &amp; Co.', 'clear', 'trusted'],
+        dos: [
+          'Always write Willow &amp; Co. in full',
+          'Use active voice',
+          'Lead with outcomes',
+        ],
+        donts: [
+          'Never abbreviate Willow &amp; Co.',
+          'Avoid jargon',
+          'Skip vague claims',
+        ],
+      },
+      strategy: {
+        positioning:
+          'Willow &amp; Co. positions itself as the partner that listens first and delivers clarity to founders who need a trusted creative collaborator.',
+        audienceNotes:
+          'Founders &amp; operators who distrust agencies that over-promise. They respond to honesty, plain language, and clear deliverables.',
+        elevatorPitch: 'Brand clarity for founders who value honesty and precision.',
+      },
+      confidence: 0.88,
+    });
+
+    brainMock.mockResolvedValue(aiResponse(entityLaden));
+    const env = await inferBrandIdentity({ ...baseInput(), companyName: 'Willow & Co.' });
+
+    expect(env.source).toBe('ai');
+    expect(env.tone.dos[0]).toBe('Always write Willow & Co. in full');
+    expect(env.tone.donts[0]).toBe('Never abbreviate Willow & Co.');
+    expect(env.tone.adjectives[0]).toBe('Willow & Co.');
+    expect(env.tone.dos[0]).not.toContain('&amp;');
+    expect(env.tone.donts[0]).not.toContain('&amp;');
+  });
+
   it('clean model output passes through the decode guard unchanged', async () => {
     brainMock.mockResolvedValue(aiResponse(validModelJson()));
     const env = await inferBrandIdentity(baseInput());

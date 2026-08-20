@@ -331,10 +331,11 @@ async function runAiPath(input, opts) {
       return buildFallbackEnvelope(input, 'F7_LOW_CONFIDENCE', attempts);
     }
 
-    // KDL-538: guard free-prose fields against HTML-entity escaping that may
-    // enter via agent-subagent transport or model output.  Structured/enum
-    // fields (pairingId, scaleRatio, confidence, adjectives, dos, donts) are
-    // intentionally left untouched.
+    // KDL-538/KDL-540: guard free-prose fields against HTML-entity escaping
+    // that may enter via agent-subagent transport or model output.  Only the
+    // genuinely structured fields (pairingId, scaleRatio, confidence) are left
+    // untouched.  adjectives, dos, and donts are model-authored free-text arrays
+    // and must be decoded along with the other prose fields.
     const d = decodeHtmlEntities;
     return {
       schemaVersion: SCHEMA_VERSION,
@@ -352,7 +353,13 @@ async function runAiPath(input, opts) {
         out.typography.scaleRatio,
         d(out.typography.rationale),
       ),
-      tone: { ...out.tone, voice: d(out.tone.voice) },
+      tone: {
+        ...out.tone,
+        voice: d(out.tone.voice),
+        adjectives: out.tone.adjectives.map(d),
+        dos: out.tone.dos.map(d),
+        donts: out.tone.donts.map(d),
+      },
       strategy: {
         positioning: d(out.strategy.positioning),
         audienceNotes: d(out.strategy.audienceNotes),
