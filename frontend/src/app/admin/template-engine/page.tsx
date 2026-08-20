@@ -8,7 +8,8 @@ import { PermissionGuard } from '@/components/shared/PermissionGuard'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { LoadingState } from '@/components/ui/loading-state'
-import { useTemplateEngineRuns } from '@/hooks/useTemplateEngine'
+import { useTemplateEngineRuns, useCreateRun } from '@/hooks/useTemplateEngine'
+import { toast } from '@/hooks/use-toast'
 import { useAuthStore } from '@/stores/auth.store'
 import api from '@/lib/axios'
 
@@ -95,13 +96,30 @@ function ProjectList({ projects, onOpen }: { projects: Project[]; onOpen: (id: s
 }
 
 function ProjectCard({ project, onOpen }: { project: Project; onOpen: () => void }) {
+  const router = useRouter()
   const { data: runs } = useTemplateEngineRuns(project.id)
+  const createRun = useCreateRun()
   const run = runs?.[0]
 
   const completedCount = run
     ? run.stages.filter((s) => s.status === 'DONE' || s.status === 'SKIPPED').length
     : 0
   const totalStages = 9
+
+  function handleStartRun() {
+    createRun.mutate(project.id, {
+      onSuccess: () => {
+        router.push(`/admin/template-engine/projects/${project.id}/intake`)
+      },
+      onError: () => {
+        toast({
+          variant: 'destructive',
+          title: 'Failed to start run',
+          description: 'Could not create a Studio run. Please try again.',
+        })
+      },
+    })
+  }
 
   return (
     <div className="group flex items-center justify-between rounded-xl border bg-card px-5 py-4 hover:border-primary/40 transition-colors">
@@ -121,10 +139,22 @@ function ProjectCard({ project, onOpen }: { project: Project; onOpen: () => void
           <p className="text-xs text-muted-foreground">No run started</p>
         )}
       </div>
-      <Button size="sm" variant="ghost" onClick={onOpen} className="gap-1.5">
-        Open Studio
-        <ArrowRight className="h-3.5 w-3.5" />
-      </Button>
+      {run ? (
+        <Button size="sm" variant="ghost" onClick={onOpen} className="gap-1.5">
+          Open Studio
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Button>
+      ) : (
+        <Button
+          size="sm"
+          onClick={handleStartRun}
+          disabled={createRun.isPending}
+          data-testid={`btn-start-run-${project.id}`}
+          className="gap-1.5"
+        >
+          {createRun.isPending ? 'Starting…' : 'Start run'}
+        </Button>
+      )}
     </div>
   )
 }
