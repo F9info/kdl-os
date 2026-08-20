@@ -1,3 +1,21 @@
+## 2026-08-20 — KDL-559: build projects module (Backend Coder)
+
+**Branch:** `feat/kdl-559-projects-module` → PR pending
+
+**Done:**
+- Created `backend/src/modules/projects/` with full CRUD: `module.json` (core=true, apiPrefix=/api/projects, permissions projects:[view,create,update,delete], no nav), `routes.js`, `controller.js`, `service.js`, `schema.js`, `seed.js`.
+- `service.js`: listProjects (sorted default-first), getProject, createProject (slug-unique guard, atomically transfers is_default), updateProject, deleteProject (blocks default deletion). All soft-delete aware.
+- `seed.js`: creates `{ name: "Default Project", slug: "default", is_default: true }` if no default project exists. Both module install path (default export) and `npm run db:seed` path (named `seedProjects`) covered.
+- `index.js`: mounted `projectRoutes` at `/api/projects` alongside other core routes (bypasses moduleGate).
+- `prisma/seed.js`: added `seedProjects(prisma)` call after `seedCoreModules`.
+- `template-engine/module.json`: added `"projects"` to `dependsOn`.
+- DB: no new migration needed — `projects` table was created as a stub in `20260819000001_add_credits_module`.
+- Verified with running container on port 4001: `GET /api/projects` → `{"success":true,"data":[{"id":"...","name":"Default Project","slug":"default","is_default":true}]}`. Full CRUD tested.
+
+**Next:** PR review → merge. Template-engine Studio page will show projects list on next deploy.
+
+---
+
 ## 2026-08-20 — KDL-553: flip BRAND_INFERENCE_IMAGE_ENABLED to default-on (AI Services)
 
 **Branch:** `feat/kdl-553-image-default-on` → **PR #193** (awaiting CI)

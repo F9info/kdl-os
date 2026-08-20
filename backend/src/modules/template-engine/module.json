@@ -9,7 +9,7 @@
   "nav": [
     { "label": "Studio", "path": "/admin/template-engine", "icon": "Sparkles", "permission": "template-engine:view" }
   ],
-  "dependsOn": ["theme-engine", "page-builder", "brand-kit", "collateral", "credits"],
+  "dependsOn": ["projects", "theme-engine", "page-builder", "brand-kit", "collateral", "credits"],
   "conflictsWith": ["theme-engine-ui", "page-builder-ui"],
   "queues": [],
   "env": []

@@ -106,6 +106,10 @@ Recent per-issue detail is in the rolling changelog below; full history in
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+## 2026-08-20 — KDL-559: projects module built — PR pending (Backend Coder)
+
+`backend/src/modules/projects/` created (module.json core=true, CRUD routes/controller/service/schema/seed). `index.js` mounts `/api/projects`. `prisma/seed.js` calls `seedProjects`. `template-engine/module.json` adds `projects` to dependsOn. No new migration (table exists from credits stub). `GET /api/projects` verified live: returns default project. Studio will show project list on next deploy.
+
 ## 2026-08-20 — KDL-553: BRAND_INFERENCE_IMAGE_ENABLED flipped to default-on — PR #193 in CI (AI Services)
 
 Token cost measured (+320 tok/+19%/$0.0032/gen, not blocking). Default flipped. Tests updated.
