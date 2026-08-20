@@ -527,6 +527,7 @@ export async function listModules() {
       description: manifest.description ?? null,
       version: manifest.version,
       core: manifest.core ?? false,
+      visibleInCatalog: manifest.visibleInCatalog ?? true,
       apiPrefix: manifest.apiPrefix,
       icon: manifest.nav?.[0]?.icon ?? null,
       status: dbMod?.status ?? 'AVAILABLE',

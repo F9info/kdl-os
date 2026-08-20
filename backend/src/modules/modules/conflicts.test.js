@@ -441,3 +441,80 @@ describe('KDL-563: template-engine installs ui modules as dependencies, no confl
     expect(bySlug['theme-engine-ui'].conflicts).toHaveLength(0);
   });
 });
+
+// ── KDL-571: visibleInCatalog flag ────────────────────────────────────────────
+
+describe('KDL-571: visibleInCatalog flag', () => {
+  /**
+   * Helper that builds a manifest with an optional visibleInCatalog override.
+   * When omitted the schema default (true) should apply — we test the explicit
+   * false case as returned by listModules().
+   */
+  function makeManifestWithVisibility(slug, { visibleInCatalog, nav = [], ...rest } = {}) {
+    const m = makeManifest(slug, rest);
+    m.nav = nav;
+    if (visibleInCatalog !== undefined) m.visibleInCatalog = visibleInCatalog;
+    return m;
+  }
+
+  beforeEach(() => {
+    loadedManifests.clear();
+    vi.clearAllMocks();
+  });
+
+  it('template-engine internal deps report visibleInCatalog: false', async () => {
+    // The 4 modules that must be hidden from the catalog
+    const hiddenSlugs = ['projects', 'brand-kit', 'collateral', 'credits'];
+    for (const slug of hiddenSlugs) {
+      loadedManifests.set(slug, makeManifestWithVisibility(slug, { visibleInCatalog: false }));
+    }
+
+    // A few modules that should remain visible (no flag → defaults to true)
+    loadedManifests.set('template-engine', makeManifestWithVisibility('template-engine'));
+    loadedManifests.set('theme-engine', makeManifestWithVisibility('theme-engine'));
+
+    prisma.module = {
+      findMany: vi.fn().mockResolvedValue([]),
+    };
+
+    const modules = await listModules();
+    const bySlug = Object.fromEntries(modules.map((m) => [m.slug, m]));
+
+    for (const slug of hiddenSlugs) {
+      expect(bySlug[slug].visibleInCatalog, `${slug} should have visibleInCatalog: false`).toBe(false);
+    }
+
+    // Modules without the flag should default to true
+    expect(bySlug['template-engine'].visibleInCatalog).toBe(true);
+    expect(bySlug['theme-engine'].visibleInCatalog).toBe(true);
+  });
+
+  it('modules without visibleInCatalog in manifest default to true', async () => {
+    // makeManifest does NOT set visibleInCatalog — the service should default to true
+    loadedManifests.set('some-module', makeManifest('some-module'));
+
+    prisma.module = {
+      findMany: vi.fn().mockResolvedValue([]),
+    };
+
+    const modules = await listModules();
+    const mod = modules.find((m) => m.slug === 'some-module');
+    expect(mod).toBeDefined();
+    expect(mod.visibleInCatalog).toBe(true);
+  });
+
+  it('visibleInCatalog: false does NOT affect install/enable/disable — module is still operable', async () => {
+    // visibleInCatalog: false on brand-kit should not prevent it from being enabled
+    loadedManifests.set('brand-kit', makeManifestWithVisibility('brand-kit', { visibleInCatalog: false }));
+
+    const updated = { slug: 'brand-kit', status: 'ENABLED', id: 'id-bk' };
+    prisma.module = {
+      findUnique: vi.fn().mockResolvedValue({ slug: 'brand-kit', status: 'INSTALLED', is_core: false, id: 'id-bk' }),
+      findMany: vi.fn().mockResolvedValue([]),
+      update: vi.fn().mockResolvedValue(updated),
+    };
+
+    const result = await enableModule('brand-kit', 'actor');
+    expect(result.status).toBe('ENABLED');
+  });
+});

@@ -43,6 +43,11 @@ frontend/src/app/admin/<slug>/page.tsx  wrapped in <ModuleGuard slug="<slug>">
   "version": "1.0.0",             // semver
   "description": "Blog posts",    // optional
   "core": false,                   // true = always ENABLED, never uninstallable
+  "visibleInCatalog": true,        // optional (default: true) — set to false for internal-only
+                                   // dependency modules that users should not manage directly
+                                   // (e.g. transitive deps of template-engine). Does NOT affect
+                                   // install/enable/disable behaviour or the API; purely a
+                                   // catalog-listing/UI filter. See KDL-571.
   "apiPrefix": "/api/blog",        // must start with /api/
   "permissions": ["blog"],         // permission module names to auto-register on install
   "nav": [                         // sidebar nav entries shown when module is ENABLED

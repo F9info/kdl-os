@@ -1,3 +1,19 @@
+## 2026-08-20 — KDL-571: visibleInCatalog manifest flag + hide internal deps (Backend Coder)
+
+**Branch:** `feat/kdl-571-visible-in-catalog` → PR pending
+
+**Done:**
+- Added `visibleInCatalog: z.boolean().default(true)` to `manifest-schema.js` with inline docblock explaining the flag's purpose (catalog filter only, does not affect lifecycle).
+- Updated `listModules()` in `modules/service.js` to include `visibleInCatalog` in every returned object so the frontend can filter without a second round-trip.
+- Set `"visibleInCatalog": false` in `module.json` for: `projects`, `brand-kit`, `collateral`, `credits` (all internal-only transitive deps of `template-engine`).
+- Added 3 tests to `conflicts.test.js` (KDL-571 describe block): hidden modules report `false`, modules without the flag default to `true`, and `visibleInCatalog: false` doesn't block `enableModule`.
+- Documented the new field in `docs/MODULE_GUIDE.md` with example, semantics note, and KDL-571 reference.
+- All 19 tests in `src/modules/modules/` pass; schema validation confirmed for all 4 new `module.json` files.
+
+**Next:** CI green → merge. Frontend child issue can now consume `visibleInCatalog` from `listModules()` API.
+
+---
+
 ## 2026-08-20 — KDL-568: landed PR #195 on master — Studio→Template Engine rename + conflict removal live (CEO)
 
 **Merged:** `feat/kdl-560-template-engine-one-install` → master (`cbd78ea`, fast-forward, CI-green).

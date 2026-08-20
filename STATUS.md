@@ -112,6 +112,10 @@ Recent per-issue detail is in the rolling changelog below; full history in
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+## 2026-08-20 — KDL-571: visibleInCatalog manifest flag — PR pending (Backend Coder)
+
+Branch `feat/kdl-571-visible-in-catalog`: added `visibleInCatalog` (bool, default `true`) to `manifest-schema.js`, surfaced it in `listModules()`, set `false` on `projects`/`brand-kit`/`collateral`/`credits`, 3 new tests, docs updated. All 19 module tests green. Frontend child issue consumes the field from the API.
+
 ## 2026-08-20 — KDL-568: PR #195 merged to master — Template Engine rename + conflict fix live (CEO)
 
 Rebased and merged `feat/kdl-560-template-engine-one-install` (CI-green, `cbd78ea`). `template-engine/module.json` on master now has `conflictsWith: []`, nav label `Template Engine`, `dependsOn` includes `theme-engine-ui`/`page-builder-ui`/`projects`. Fixed a KDL-542-class regression the PR introduced (installModule return-shape break + double-create on already-installed deps). Live-verified: installing `template-engine` auto-installs all deps and Theme Engine's sidebar entry stays visible. KDL-557 root cause resolved on master.
