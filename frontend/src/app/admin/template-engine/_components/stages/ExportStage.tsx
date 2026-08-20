@@ -2,13 +2,14 @@
 
 import { PackageCheck, Download, Globe, FileText, Layers } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useAdvanceStage, useExportManifest } from '@/hooks/useTemplateEngine'
+import { useAdvanceStage, useRetryStage, useExportManifest } from '@/hooks/useTemplateEngine'
 import { StageShell } from './StageShell'
 import type { TemplateEngineRun } from '@/types/template-engine.types'
 
 export function ExportStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'EXPORT')
   const advance = useAdvanceStage(run.id)
+  const retry = useRetryStage(run.id)
 
   const isDone = stage?.status === 'DONE'
   const { data: manifest } = useExportManifest(isDone ? run.id : null)
@@ -18,8 +19,10 @@ export function ExportStage({ run }: { run: TemplateEngineRun }) {
       title="Export"
       description="Produce the handoff manifest and download the guidelines + collateral archive. Theme and pages stay live in their engines — this is a read/aggregate operation."
       stage={stage ?? null}
-      onRun={() => advance.mutate('EXPORT')}
-      isRunning={advance.isPending}
+      onRun={
+        stage?.status === 'FAILED' ? () => retry.mutate('EXPORT') : () => advance.mutate('EXPORT')
+      }
+      isRunning={advance.isPending || retry.isPending}
     >
       {manifest ? (
         <div className="space-y-4 max-w-xl">

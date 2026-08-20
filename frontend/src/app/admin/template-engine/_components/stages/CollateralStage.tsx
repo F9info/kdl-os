@@ -2,7 +2,7 @@
 
 import { Layers, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useAdvanceStage } from '@/hooks/useTemplateEngine'
+import { useAdvanceStage, useRetryStage, useSkipStage } from '@/hooks/useTemplateEngine'
 import { StageShell } from './StageShell'
 import type { TemplateEngineRun } from '@/types/template-engine.types'
 
@@ -11,6 +11,8 @@ const ARTIFACTS = ['Visiting Card', 'Letterhead', 'T-shirt', 'ID Card']
 export function CollateralStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'COLLATERAL')
   const advance = useAdvanceStage(run.id)
+  const retry = useRetryStage(run.id)
+  const skip = useSkipStage(run.id)
 
   const outputRef = stage?.outputRef as
     { renderIds?: string[]; downloadUrls?: string[] } | null | undefined
@@ -20,8 +22,13 @@ export function CollateralStage({ run }: { run: TemplateEngineRun }) {
       title="Collateral"
       description="Render branded collateral artifacts — visiting card, letterhead, t-shirt, and ID card — as PDF and Word exports. Parallel with guidelines and website."
       stage={stage ?? null}
-      onRun={() => advance.mutate('COLLATERAL')}
-      isRunning={advance.isPending}
+      onRun={
+        stage?.status === 'FAILED'
+          ? () => retry.mutate('COLLATERAL')
+          : () => advance.mutate('COLLATERAL')
+      }
+      onSkip={() => skip.mutate('COLLATERAL')}
+      isRunning={advance.isPending || retry.isPending}
     >
       <div className="space-y-3">
         {outputRef?.renderIds && outputRef.renderIds.length > 0 ? (

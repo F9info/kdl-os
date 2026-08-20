@@ -90,13 +90,8 @@ export function StageShell({
               )}
             </Button>
           )}
-          {onSkip && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onSkip}
-              disabled={status === 'DONE' || status === 'SKIPPED'}
-            >
+          {onSkip && status === 'FAILED' && (
+            <Button variant="ghost" size="sm" onClick={onSkip}>
               <SkipForward className="mr-2 h-3.5 w-3.5" />
               Skip
             </Button>

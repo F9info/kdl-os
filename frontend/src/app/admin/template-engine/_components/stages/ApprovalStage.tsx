@@ -2,13 +2,14 @@
 
 import { ShieldCheck, Palette } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useAdvanceStage } from '@/hooks/useTemplateEngine'
+import { useAdvanceStage, useRetryStage } from '@/hooks/useTemplateEngine'
 import { StageShell } from './StageShell'
 import type { TemplateEngineRun } from '@/types/template-engine.types'
 
 export function ApprovalStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'APPROVAL')
   const advance = useAdvanceStage(run.id)
+  const retry = useRetryStage(run.id)
 
   const outputRef = stage?.outputRef as
     { approvedAt?: string; brandKitVersion?: number; tokensWrittenAt?: string } | null | undefined
@@ -60,17 +61,25 @@ export function ApprovalStage({ run }: { run: TemplateEngineRun }) {
 
         <div className="flex items-center gap-3">
           <Button
-            onClick={() => advance.mutate('APPROVAL')}
-            disabled={advance.isPending || approved}
+            onClick={
+              stage?.status === 'FAILED'
+                ? () => retry.mutate('APPROVAL')
+                : () => advance.mutate('APPROVAL')
+            }
+            disabled={advance.isPending || retry.isPending || approved}
             size="sm"
             className="gap-2"
           >
             <ShieldCheck className="h-3.5 w-3.5" />
-            {approved ? 'Approved' : 'Approve brand'}
+            {approved
+              ? 'Approved'
+              : stage?.status === 'FAILED'
+                ? 'Retry approval'
+                : 'Approve brand'}
           </Button>
-          {advance.isError && (
+          {(advance.isError || retry.isError) && (
             <span className="text-xs text-destructive">
-              {(advance.error as Error)?.message ?? 'Approval failed'}
+              {((advance.error ?? retry.error) as Error)?.message ?? 'Approval failed'}
             </span>
           )}
         </div>

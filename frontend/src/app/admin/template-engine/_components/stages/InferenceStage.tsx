@@ -3,7 +3,7 @@
 import { Sparkles, CreditCard } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/axios'
-import { useAdvanceStage } from '@/hooks/useTemplateEngine'
+import { useAdvanceStage, useRetryStage } from '@/hooks/useTemplateEngine'
 import { StageShell } from './StageShell'
 import type { TemplateEngineRun } from '@/types/template-engine.types'
 
@@ -15,6 +15,7 @@ interface CreditsBalance {
 export function InferenceStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'INFERENCE')
   const advance = useAdvanceStage(run.id)
+  const retry = useRetryStage(run.id)
 
   const { data: credits } = useQuery({
     queryKey: ['credits', 'balance', run.projectId],
@@ -36,8 +37,12 @@ export function InferenceStage({ run }: { run: TemplateEngineRun }) {
       title="Brand Inference"
       description="AI-powered typography pairing, tone analysis, and brand strategy copy — driven by the extracted palette and intake details."
       stage={stage ?? null}
-      onRun={() => advance.mutate('INFERENCE')}
-      isRunning={advance.isPending}
+      onRun={
+        stage?.status === 'FAILED'
+          ? () => retry.mutate('INFERENCE')
+          : () => advance.mutate('INFERENCE')
+      }
+      isRunning={advance.isPending || retry.isPending}
     >
       <div className="space-y-4">
         {credits != null && (
