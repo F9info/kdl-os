@@ -70,8 +70,45 @@ export const DAG_STAGES: { slug: string; label: string; stage: DagStage }[] = [
   { slug: 'export', label: 'Export', stage: 'EXPORT' },
 ]
 
+export interface ContrastAdjustment {
+  id: string
+  original: string
+  derived: string
+  tokenName: string
+  surface: string
+  surfaceName: string
+  ratio: number
+  reason: string
+}
+
+export interface PaletteColor {
+  hex: string
+  oklch: [number, number, number]
+  ramp: Record<string, string>
+}
+
 export interface BrandKit {
+  id: string
+  project_id: string
+  status: 'draft' | 'extracted' | 'inferred' | 'approved'
   logo_media_id: string | null
+  logo_raster_media_id: string | null
+  palette: {
+    colors: {
+      primary: PaletteColor
+      secondary?: PaletteColor
+      accent?: PaletteColor
+      neutral?: PaletteColor
+    }
+  } | null
+  contrast_report: {
+    schemaVersion: number
+    allPairsPass: boolean
+    adjustments: ContrastAdjustment[]
+  } | null
+  typography: Record<string, unknown> | null
+  tone: Record<string, unknown> | null
+  approved_at: string | null
 }
 
 export function stageSlugToEnum(slug: string): DagStage | null {

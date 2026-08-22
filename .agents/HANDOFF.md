@@ -1,3 +1,22 @@
+## 2026-08-22 — KDL-602: Admin projects page + brand-kit panel in Studio (Frontend Coder)
+
+**Branch:** `feat/kdl-602-admin-ui` off `origin/master` (`e15048a`).
+
+**KDL-596 — `/admin/projects` 404 fixed:**
+- Created `frontend/src/app/admin/projects/page.tsx` — full CRUD for projects (list, create, rename, delete).
+- Uses existing `GET/POST/PATCH/DELETE /api/projects` endpoints; no new backend endpoints.
+- Default project is pinned (delete disabled), slug auto-generated from name.
+- `EmptyProjectsState` link in Studio (`/admin/projects`) now lands on a real page.
+
+**KDL-595 — Brand-kit panel in Intake + Approval stages:**
+- **IntakeStage**: Added logo upload card with `useUploadLogo` hook → multipart `POST /api/brand-kit/:projectId/logo`; invalidates brand-kit query on success so "Run stage" enables without a page refresh.
+- **ApprovalStage**: Loads brand kit via `useBrandKit`; renders palette swatches; renders contrast report with per-adjustment checkboxes; "Approve brand" calls `POST /api/brand-kit/:projectId/approve` with `acknowledgedAdjustmentIds` before advancing the stage — eliminates the `BRAND_KIT_NOT_APPROVED` 409.
+- New hooks in `useTemplateEngine.ts`: `useUploadLogo`, `useApproveBrandKit`.
+- Updated `BrandKit` type in `template-engine.types.ts` to include `status`, `palette`, `contrast_report`, `typography`, `tone`, `approved_at`.
+- TypeScript clean, prettier passed.
+
+**Verification required:** Screenshots needed per KDL-602 bar — projects page, logo upload, contrast report with acks, "Approve brand" advancing past Approval. Cannot screenshot without running the app; PR describes the verification bar.
+
 ## 2026-08-22 — KDL-594: Studio stage buttons dead — X-Project-Id never sent (Frontend Architect)
 
 **PR #213 open** (`fix/kdl-594-studio-x-project-id`). Root cause of KDL-557 "click Studio,
