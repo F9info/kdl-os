@@ -96,6 +96,7 @@ describe('advanceStage — RUNNING orphan → INTERRUPTED', () => {
         .mockResolvedValueOnce({ ...stageUpsertResult, status: 'FAILED', errorCode: 'INTERRUPTED' })
         .mockResolvedValueOnce({ ...stageUpsertResult, status: 'DONE' }),
       upsert: vi.fn().mockResolvedValue(stageUpsertResult),
+      count: vi.fn().mockResolvedValue(0),
     };
 
     const mockDriver = { execute: vi.fn().mockResolvedValue({ outputRef: null }) };

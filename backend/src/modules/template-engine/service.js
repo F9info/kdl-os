@@ -20,6 +20,9 @@ const STAGE_SLUG_TO_ENUM = {
 // Required stages (all others) cannot be skipped — only retried.
 const OPTIONAL_STAGES = new Set(['GUIDELINES', 'COLLATERAL', 'WEBSITE']);
 
+// Total number of stages in the DAG — used to detect run completion.
+const TOTAL_STAGES = Object.keys(STAGE_SLUG_TO_ENUM).length;
+
 // ── Gate logic (§3 Depends on column) ────────────────────────────────────────
 
 function stageStatusMap(stages) {
@@ -240,6 +243,7 @@ export async function advanceStage(runId, stageSlug, userId, projectId) {
 
   // Call driver. On any error: record errorCode (never the raw message), throw named error.
   const driver = getDriver(stageSlug);
+  let updated;
   try {
     const result = await driver.execute({
       run,
@@ -248,7 +252,7 @@ export async function advanceStage(runId, stageSlug, userId, projectId) {
       projectId,
     });
 
-    const updated = await prisma.templateEngineStage.update({
+    updated = await prisma.templateEngineStage.update({
       where: { id: stageRecord.id },
       data: {
         status: 'DONE',
@@ -256,7 +260,6 @@ export async function advanceStage(runId, stageSlug, userId, projectId) {
         completedAt: new Date(),
       },
     });
-    return updated;
   } catch (driverErr) {
     // Never echo raw messages — only the named code (§10, §5).
     const errorCode = driverErr.code ?? 'DRIVER_ERROR';
@@ -269,6 +272,19 @@ export async function advanceStage(runId, stageSlug, userId, projectId) {
     err.code = errorCode;
     throw err;
   }
+
+  // Flip run to COMPLETED when every stage has reached a terminal state.
+  const terminalCount = await prisma.templateEngineStage.count({
+    where: { runId, status: { in: ['DONE', 'SKIPPED'] } },
+  });
+  if (terminalCount === TOTAL_STAGES) {
+    await prisma.templateEngineRun.update({
+      where: { id: runId },
+      data: { status: 'COMPLETED' },
+    });
+  }
+
+  return updated;
 }
 
 // ── Export manifest (§6) ──────────────────────────────────────────────────────
