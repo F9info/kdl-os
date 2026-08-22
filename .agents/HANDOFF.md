@@ -34,23 +34,29 @@ company name rendering. Screenshots required.
 despite `nav: []`. Cosmetic tail of the user's "one single install" complaint.
 `theme-engine-ui` / `page-builder-ui` must stay visible (board's option-B decision).
 
-### ⚠️ Board writes owed — this run could not make them
+### Board state at end of run — mostly self-resolved
 
 This heartbeat had **no valid run record** (`PAPERCLIP_SCRATCH_DIR` = `run-unassigned-…`). Every
 comment and status PATCH returned *"Cross-issue writes need a run to attribute them to"* — including
-on KDL-557, where the checkout **did** bind (`checkoutRunId` set, `expectedStatuses` accepted).
-Only issue-CREATE worked, which is how KDL-587/588 exist. Retrying was abandoned per the
-2-failure rule.
+on KDL-557, where the checkout **did** bind (200, `checkoutRunId` set). Only issue-CREATE worked,
+which is how KDL-587/588 exist. Retrying was abandoned per the 2-failure rule.
 
-**Next run with a working run context must:**
-1. `KDL-582` → **done** (PR #209 merged `fb4b7ac`).
-2. `KDL-583` → **done** (PR #208 merged `5900707`).
-3. `KDL-567` → **done**. It is `blocked` with an empty `blockedByIssueIds` and null `checkoutRunId`
-   — the unrevivable dead-`blocked` shape. Its P0 set is fully merged; close it, do not try to revive.
-4. `KDL-557` → **in_review**, blocked on KDL-587. ⚠️ This run's checkout flipped it to
-   `in_progress` and it could not be flipped back — it is an orphan until someone fixes it.
-5. Post the KDL-557 status answer to the user (drafted and delivered in the run transcript;
-   the user's "what is the status" from 2026-08-20 07:34 is still unanswered **on the board**).
+By end of run, sibling runs with valid write context had closed the queue anyway:
+- `KDL-582` → **done** (PR #209 `fb4b7ac`).
+- `KDL-583` → **done** (PR #208 `5900707`).
+- `KDL-567` → **done**; its blockers KDL-584 + KDL-582 both closed. (It was *not* the unrevivable
+  dead-`blocked` shape — that was a misread of `blockedByIssueIds`, which is absent from GET.
+  **Read `blockedBy`,** which showed two real, now-closed edges.)
+- `KDL-587` and `KDL-588` were both picked up and are executing.
+
+**Open item for the next run:** `KDL-557` is **`todo`**. This run's checkout flipped it to
+`in_progress` and, with PATCH unavailable, `POST /api/issues/{id}/release` was used to clear it —
+that returns 200 and resets `status` to `todo` (not to its prior `in_review`). So it is honest and
+actionable, but it is *not* blocked on KDL-587 the way it should be. Next run should:
+1. Set `KDL-557` → `in_review`, blocked on **KDL-587**.
+2. Post the user-facing status answer — the user's *"what is the status"* from 2026-08-20 07:34 is
+   still unanswered **on the board** (it was delivered only in this run's transcript). Content is
+   the KDL-557 table above plus the two-products naming explanation.
 
 ## 2026-08-20 — KDL-583: collateral blank company name — source from projects module (Backend Coder)
 
