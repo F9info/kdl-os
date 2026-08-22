@@ -313,7 +313,12 @@ export async function enableModule(slug, actorId, { resolveConflicts = false } =
   }
 
   const manifest = loadedManifests.get(slug);
-  for (const dep of manifest?.dependsOn ?? []) {
+  if (!manifest) {
+    const err = new Error(`Manifest for "${slug}" is not loaded — cannot verify dependencies before enabling`);
+    err.status = 500;
+    throw err;
+  }
+  for (const dep of manifest.dependsOn ?? []) {
     const depMod = await prisma.module.findUnique({ where: { slug: dep } });
     if (depMod?.status !== 'ENABLED') {
       const err = new Error(`Dependency "${dep}" must be ENABLED before enabling "${slug}"`);

@@ -12,6 +12,27 @@ const MODULES_DIR = join(__dirname, '../../modules');
 // Loaded manifests keyed by slug — available to other parts of the app.
 export const loadedManifests = new Map();
 
+/**
+ * Pure integrity check: for each ENABLED slug, verifies that every entry in
+ * its manifest's dependsOn is also present in enabledSlugs.
+ * Returns an array of { module, disabledDep } violation objects (empty = clean).
+ * Does NOT touch the database or mutate any state.
+ */
+export function checkDependencyIntegrity(enabledSlugs, manifests = loadedManifests) {
+  const enabledSet = new Set(enabledSlugs);
+  const violations = [];
+  for (const slug of enabledSet) {
+    const manifest = manifests.get(slug);
+    if (!manifest) continue;
+    for (const dep of manifest.dependsOn ?? []) {
+      if (!enabledSet.has(dep)) {
+        violations.push({ module: slug, disabledDep: dep });
+      }
+    }
+  }
+  return violations;
+}
+
 export async function loadModules(app) {
   let entries;
   try {
