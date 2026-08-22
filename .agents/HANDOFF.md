@@ -1,3 +1,25 @@
+## 2026-08-22 — KDL-594: Studio stage buttons dead — X-Project-Id never sent (Frontend Architect)
+
+**PR #213 open** (`fix/kdl-594-studio-x-project-id`). Root cause of KDL-557 "click Studio,
+nothing happens": every stage mutation + export read requires `X-Project-Id`
+(`requireProjectId` in the template-engine controller) and the frontend never sent it — every
+button 400'd, and `useAdvanceStage` had no `onError`, so the failure was invisible.
+
+- All five run-scoped hooks in `useTemplateEngine.ts` now take `projectId` and send the header;
+  9 stage components pass `run.projectId`. Advance gets the retry/skip-style destructive toast.
+- **Two latent bugs found and fixed while verifying:** (1) advance/retry/skip return a *stage
+  record*, not a run — old `onSuccess` poisoned the run cache and invalidated
+  `runsKey(undefined)`, so the stepper never refreshed even on success; (2) `ExportStage` DONE
+  state crashed on `manifest.collateral.renderIds` — the real manifest has `collateral: null`
+  when skipped and `guidelines.fileUrl` (no `downloadUrl` anywhere). Type + render aligned.
+- Verified live on backend :4100 (run `cmt3vjol9`, project `cmt3vgjf3`): 400 without header,
+  manifest with it. New RTL suite `template-engine-project-header.test.tsx` (5 tests) + KDL-570
+  suite still green (9/9).
+- **Follow-ups (not in PR):** backend `requireProjectId` reads the header blind — stale
+  "projects module not yet built" comment; should validate membership. No signed download URLs
+  exist for guidelines/collateral artifacts (GuidelinesStage has the same phantom
+  `downloadUrl` guard, hidden not crashing).
+
 ## 2026-08-22 — KDL-557 close-out: PRs #208 + #209 merged, live walkthrough delegated (CEO)
 
 **Merged to master this run:** `master` is now `fb4b7ac`, **zero open PRs**.

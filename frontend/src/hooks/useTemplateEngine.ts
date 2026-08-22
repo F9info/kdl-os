@@ -3,6 +3,7 @@ import type { AxiosError } from 'axios'
 import api from '@/lib/axios'
 import type {
   TemplateEngineRun,
+  TemplateEngineStage,
   DagStage,
   ExportManifest,
   BrandKit,
@@ -16,6 +17,12 @@ function extractErrorCode(err: unknown): string {
 }
 
 const BASE = '/template-engine'
+
+// Run-scoped and stage endpoints require project scope via X-Project-Id
+// (backend template-engine controller requireProjectId).
+function projectScope(projectId: string) {
+  return { headers: { 'X-Project-Id': projectId } }
+}
 
 function runsKey(projectId: string) {
   return ['template-engine', 'runs', projectId]
@@ -38,14 +45,17 @@ export function useTemplateEngineRuns(projectId: string | null) {
   })
 }
 
-export function useTemplateEngineRun(runId: string | null) {
+export function useTemplateEngineRun(runId: string | null, projectId: string | null) {
   return useQuery({
     queryKey: runId ? runKey(runId) : [],
     queryFn: () =>
       api
-        .get<{ success: boolean; data: TemplateEngineRun }>(`${BASE}/runs/${runId}`)
+        .get<{ success: boolean; data: TemplateEngineRun }>(
+          `${BASE}/runs/${runId}`,
+          projectScope(projectId!)
+        )
         .then((r) => r.data.data),
-    enabled: !!runId,
+    enabled: !!runId && !!projectId,
     refetchInterval: 5_000,
   })
 }
@@ -63,18 +73,25 @@ export function useCreateRun() {
   })
 }
 
-export function useAdvanceStage(runId: string) {
+export function useAdvanceStage(runId: string, projectId: string) {
   const qc = useQueryClient()
   return useMutation({
+    // Advance/retry/skip return the mutated stage record, not the run —
+    // invalidate both run caches so the UI refetches the fresh run.
     mutationFn: (stage: DagStage) =>
       api
-        .post<{ success: boolean; data: TemplateEngineRun }>(
-          `${BASE}/runs/${runId}/stages/${stageEnumToSlug(stage)}/advance`
+        .post<{ success: boolean; data: TemplateEngineStage }>(
+          `${BASE}/runs/${runId}/stages/${stageEnumToSlug(stage)}/advance`,
+          undefined,
+          projectScope(projectId)
         )
         .then((r) => r.data.data),
-    onSuccess: (run) => {
-      qc.setQueryData(runKey(runId), run)
-      qc.invalidateQueries({ queryKey: runsKey(run.projectId) })
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: runKey(runId) })
+      qc.invalidateQueries({ queryKey: runsKey(projectId) })
+    },
+    onError: (err) => {
+      toast({ title: extractErrorCode(err), variant: 'destructive' })
     },
   })
 }
@@ -91,18 +108,20 @@ export function useBrandKit(projectId: string | null) {
   })
 }
 
-export function useRetryStage(runId: string) {
+export function useRetryStage(runId: string, projectId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (stage: DagStage) =>
       api
-        .post<{ success: boolean; data: TemplateEngineRun }>(
-          `${BASE}/runs/${runId}/stages/${stageEnumToSlug(stage)}/retry`
+        .post<{ success: boolean; data: TemplateEngineStage }>(
+          `${BASE}/runs/${runId}/stages/${stageEnumToSlug(stage)}/retry`,
+          undefined,
+          projectScope(projectId)
         )
         .then((r) => r.data.data),
-    onSuccess: (run) => {
-      qc.setQueryData(runKey(runId), run)
-      qc.invalidateQueries({ queryKey: runsKey(run.projectId) })
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: runKey(runId) })
+      qc.invalidateQueries({ queryKey: runsKey(projectId) })
     },
     onError: (err) => {
       toast({ title: extractErrorCode(err), variant: 'destructive' })
@@ -110,18 +129,20 @@ export function useRetryStage(runId: string) {
   })
 }
 
-export function useSkipStage(runId: string) {
+export function useSkipStage(runId: string, projectId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (stage: DagStage) =>
       api
-        .post<{ success: boolean; data: TemplateEngineRun }>(
-          `${BASE}/runs/${runId}/stages/${stageEnumToSlug(stage)}/skip`
+        .post<{ success: boolean; data: TemplateEngineStage }>(
+          `${BASE}/runs/${runId}/stages/${stageEnumToSlug(stage)}/skip`,
+          undefined,
+          projectScope(projectId)
         )
         .then((r) => r.data.data),
-    onSuccess: (run) => {
-      qc.setQueryData(runKey(runId), run)
-      qc.invalidateQueries({ queryKey: runsKey(run.projectId) })
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: runKey(runId) })
+      qc.invalidateQueries({ queryKey: runsKey(projectId) })
     },
     onError: (err) => {
       toast({ title: extractErrorCode(err), variant: 'destructive' })
@@ -129,14 +150,17 @@ export function useSkipStage(runId: string) {
   })
 }
 
-export function useExportManifest(runId: string | null) {
+export function useExportManifest(runId: string | null, projectId: string | null) {
   return useQuery({
     queryKey: runId ? ['template-engine', 'export', runId] : [],
     queryFn: () =>
       api
-        .get<{ success: boolean; data: ExportManifest }>(`${BASE}/runs/${runId}/export`)
+        .get<{ success: boolean; data: ExportManifest }>(
+          `${BASE}/runs/${runId}/export`,
+          projectScope(projectId!)
+        )
         .then((r) => r.data.data),
-    enabled: !!runId,
+    enabled: !!runId && !!projectId,
     staleTime: 30_000,
   })
 }

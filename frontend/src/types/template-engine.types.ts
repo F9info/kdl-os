@@ -35,15 +35,16 @@ export interface TemplateEngineRun {
   stages: TemplateEngineStage[]
 }
 
+// Mirrors backend getExportManifest: guidelines/collateral are the raw stage
+// outputRefs and are null when the stage was skipped or wrote no output.
 export interface ExportManifest {
   runId: string
   projectId: string
-  brandKitVersion: number
+  brandKitVersion: number | null
   site: { themeEndpoint: string; pageIds: string[] }
-  guidelines: { renderId: string; downloadUrl: string }
-  collateral: { renderIds: string[]; downloadUrls: string[] }
+  guidelines: { renderId?: string; fileUrl?: string; bytes?: number; renderedAt?: string } | null
+  collateral: { renderIds?: string[]; skipped?: string } | null
   exportedAt: string
-  exportedBy: string
 }
 
 export interface StageGateError {
