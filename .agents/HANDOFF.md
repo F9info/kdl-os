@@ -1,3 +1,57 @@
+## 2026-08-22 — KDL-557 close-out: PRs #208 + #209 merged, live walkthrough delegated (CEO)
+
+**Merged to master this run:** `master` is now `fb4b7ac`, **zero open PRs**.
+- PR #208 (KDL-583) `5900707` — collateral sources company name from the projects module.
+- PR #209 (KDL-582) `fb4b7ac` — Studio stage Retry/Skip buttons wired into the Stage UI.
+
+Both were CI-green and `MERGEABLE/CLEAN`. Pre-merge checks performed rather than trusting the
+green tick, per the three prior fake-green incidents:
+- **No shared-path overlap** between #208 (backend/collateral) and #209 (frontend/template-engine),
+  so no cross-PR duplication risk.
+- **#208's new Prisma mock validated against the schema.** `collateral.test.js` mocks
+  `prisma.project.findUnique → { id, name }`; `backend/prisma/schema/projects.prisma:7` has
+  `name String` (non-nullable). Real column, not a phantom shape. This is the check that
+  KDL-577 and two earlier issues failed.
+
+**KDL-557 verified on master (files read, not labels trusted):**
+
+| User complaint | Verified fix on `fb4b7ac` |
+|---|---|
+| Multiple modules to install | `brand-kit`, `projects`, `collateral`, `credits` are `visibleInCatalog: false` |
+| "Template Engine" menu missing | `template-engine/module.json` → `conflictsWith: []`, nav label `Template Engine` |
+| Credits → 404 | `credits/module.json` → `nav: []` |
+| Studio → nothing happens | `backend/src/modules/projects/` exists (controller, routes, schema, seed, service) |
+| Prototype vision missing | `theme-engine-ui` nav `Theme Engine` is visible and no longer suppressed |
+
+**Still unproven — do not tell the user it works yet.** All of the above is code-presence only.
+Nobody has clicked through it in a browser. KDL-557 has already burned the user once with a
+"done" they could not see, so reachability is the bar. **KDL-587** (P0, Frontend Coder) owns the
+live walkthrough: clean install, both sidebar entries, 9 stages, forced-FAIL → Retry, collateral
+company name rendering. Screenshots required.
+
+**New finding — KDL-588** (P3, Backend Coder): KDL-572 only flagged 4 modules internal.
+`theme-engine`, `page-builder`, `setting-fields`, `types`, `categories` are still catalog-visible
+despite `nav: []`. Cosmetic tail of the user's "one single install" complaint.
+`theme-engine-ui` / `page-builder-ui` must stay visible (board's option-B decision).
+
+### ⚠️ Board writes owed — this run could not make them
+
+This heartbeat had **no valid run record** (`PAPERCLIP_SCRATCH_DIR` = `run-unassigned-…`). Every
+comment and status PATCH returned *"Cross-issue writes need a run to attribute them to"* — including
+on KDL-557, where the checkout **did** bind (`checkoutRunId` set, `expectedStatuses` accepted).
+Only issue-CREATE worked, which is how KDL-587/588 exist. Retrying was abandoned per the
+2-failure rule.
+
+**Next run with a working run context must:**
+1. `KDL-582` → **done** (PR #209 merged `fb4b7ac`).
+2. `KDL-583` → **done** (PR #208 merged `5900707`).
+3. `KDL-567` → **done**. It is `blocked` with an empty `blockedByIssueIds` and null `checkoutRunId`
+   — the unrevivable dead-`blocked` shape. Its P0 set is fully merged; close it, do not try to revive.
+4. `KDL-557` → **in_review**, blocked on KDL-587. ⚠️ This run's checkout flipped it to
+   `in_progress` and it could not be flipped back — it is an orphan until someone fixes it.
+5. Post the KDL-557 status answer to the user (drafted and delivered in the run transcript;
+   the user's "what is the status" from 2026-08-20 07:34 is still unanswered **on the board**).
+
 ## 2026-08-20 — KDL-583: collateral blank company name — source from projects module (Backend Coder)
 
 **PR:** https://github.com/F9info/kdl-os/pull/208 — awaiting CI + code review
