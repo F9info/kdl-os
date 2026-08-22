@@ -38,7 +38,7 @@ import themeEngineRoutes from './modules/theme-engine/routes.js';
 import pageBuilderRoutes from './modules/page-builder/routes.js';
 import projectRoutes from './modules/projects/routes.js';
 import { verifyLocalPresignToken } from './shared/services/storage/drivers/local.driver.js';
-import { loadModules } from './shared/modules/module-loader.js';
+import { loadModules, checkDependencyIntegrity } from './shared/modules/module-loader.js';
 
 const app = express();
 const PORT = process.env.APP_PORT || 4000;
@@ -129,6 +129,26 @@ app.use('/api/projects', projectRoutes);
 
 // Mount plugin modules (those with module.json + routes.js) behind moduleGate
 await loadModules(app);
+
+// KDL-593: detect dependency drift — ENABLED modules whose deps are not ENABLED.
+// Logs loudly; never auto-enables dependencies.
+{
+  const enabledMods = await prisma.module.findMany({ where: { status: 'ENABLED' }, select: { slug: true } });
+  const violations = checkDependencyIntegrity(enabledMods.map((m) => m.slug));
+  if (violations.length > 0) {
+    for (const { module, disabledDep } of violations) {
+      logger.error(
+        `module-integrity: ENABLED module "${module}" has non-ENABLED dependency "${disabledDep}". ` +
+        `Routes for "${disabledDep}" are unmounted — calls will 404 at runtime. ` +
+        `Fix: enable "${disabledDep}" first, or disable "${module}".`
+      );
+    }
+    logger.error(
+      `module-integrity: ${violations.length} dependency violation(s) detected. ` +
+      `This is likely stale data from a manifest change. Check the Module admin panel.`
+    );
+  }
+}
 
 // Start background jobs
 startProcessingWorker();
