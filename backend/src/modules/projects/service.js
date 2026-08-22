@@ -1,8 +1,17 @@
 import { prisma } from '../../config/database.js';
-import { grantCredits } from '../credits/service.js';
-import { logger } from '../../shared/utils/logger.js';
 
+// Resolves starter credit balance in µc (1 credit = 1_000_000 µc).
+// Priority: PROJECT_STARTER_CREDITS env var → credits.new_project_seed_mc app setting → 10 credits.
 async function getSeedMc() {
+  const envVal = process.env.PROJECT_STARTER_CREDITS;
+  if (envVal !== undefined && envVal !== '') {
+    try {
+      const parsed = BigInt(envVal.trim());
+      return parsed > 0n ? parsed : 0n;
+    } catch {
+      // Invalid value — fall through to app setting
+    }
+  }
   try {
     const row = await prisma.appSetting.findUnique({ where: { key: 'credits.new_project_seed_mc' } });
     const v = row ? BigInt(row.value) : 10_000_000n;
@@ -41,29 +50,38 @@ export async function createProject({ name, slug, is_default, actorId }) {
     throw err;
   }
 
+  // Resolve seed amount before opening the transaction so the DB query
+  // does not hold the transaction open longer than needed.
+  const seedMc = await getSeedMc();
+
   const project = await prisma.$transaction(async (tx) => {
     if (is_default) {
       await tx.project.updateMany({ where: { is_default: true }, data: { is_default: false } });
     }
-    return tx.project.create({
+    const proj = await tx.project.create({
       data: { name, slug, is_default: is_default ?? false, created_by: actorId ?? null },
       select: { id: true, name: true, slug: true, is_default: true },
     });
-  });
 
-  const seedMc = await getSeedMc();
-  if (seedMc > 0n) {
-    await grantCredits({
-      projectId: project.id,
-      amountMc: seedMc,
-      source: 'system',
-      actorId: actorId ?? null,
-      reason: 'new_project_seed',
-      idempotencyKey: `new_project_seed:${project.id}`,
-    }).catch((err) => {
-      logger.error('projects: failed to grant seed credits', { projectId: project.id, error: err.message });
-    });
-  }
+    // Seed credits atomically so a project can never exist with no balance.
+    if (seedMc > 0n) {
+      await tx.creditBalance.create({ data: { project_id: proj.id, balance_mc: seedMc } });
+      await tx.creditLedgerEntry.create({
+        data: {
+          project_id: proj.id,
+          entry_type: 'GRANT',
+          amount_mc: seedMc,
+          balance_after_mc: seedMc,
+          source: 'system',
+          reason: 'new_project_seed',
+          idempotency_key: `new_project_seed:${proj.id}`,
+          actor_id: actorId ?? null,
+        },
+      });
+    }
+
+    return proj;
+  });
 
   return project;
 }

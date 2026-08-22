@@ -8,6 +8,7 @@
  *   (d) templateEngineActivityScope() cutover guard resolves to a Date.
  *   (e) advanceStage gate is enforced server-side via service.
  *   (f) preflight driver aggregates branch errors correctly.
+ *   (g) run.status transitions to COMPLETED when all 9 stages reach a terminal state (KDL-597).
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -25,6 +26,7 @@ vi.mock('../../config/database.js', () => ({
       update: vi.fn(),
       upsert: vi.fn(),
       updateMany: vi.fn(),
+      count: vi.fn(),
     },
     $queryRaw: vi.fn(),
   },
@@ -285,5 +287,78 @@ describe('(f) preflight driver — aggregates branch errors', () => {
 
     const result = await service.advanceStage('run-1', 'preflight', 'user-1', 'proj-1');
     expect(result.status).toBe('DONE');
+  });
+});
+
+// ─── (g) run completion — status → COMPLETED when all stages terminal (KDL-597) ─
+
+describe('(g) run.status transitions to COMPLETED (KDL-597)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('marks run COMPLETED when advancing export completes all 9 DONE stages', async () => {
+    // 8 stages already DONE, advancing the last one (export)
+    const run = makeRun({
+      INTAKE: 'DONE', PALETTE: 'DONE', INFERENCE: 'DONE', APPROVAL: 'DONE',
+      GUIDELINES: 'DONE', COLLATERAL: 'DONE', WEBSITE: 'DONE', PREFLIGHT: 'DONE',
+    });
+    prisma.templateEngineRun.findUnique.mockResolvedValue(run);
+
+    const upsertResult = { id: 'stage-EXPORT', stage: 'EXPORT', status: 'RUNNING' };
+    const doneResult = { id: 'stage-EXPORT', stage: 'EXPORT', status: 'DONE', outputRef: {} };
+    prisma.templateEngineStage.upsert.mockResolvedValue(upsertResult);
+    prisma.templateEngineStage.update.mockResolvedValue(doneResult);
+    // All 9 stages are now terminal after the EXPORT update
+    prisma.templateEngineStage.count.mockResolvedValue(9);
+    prisma.templateEngineRun.update.mockResolvedValue({ id: 'run-1', status: 'COMPLETED' });
+
+    await service.advanceStage('run-1', 'export', 'user-1', 'proj-1');
+
+    expect(prisma.templateEngineRun.update).toHaveBeenCalledWith({
+      where: { id: 'run-1' },
+      data: { status: 'COMPLETED' },
+    });
+  });
+
+  it('marks run COMPLETED when EXPORT is SKIPPED and final required stage is advanced', async () => {
+    // Simulate EXPORT already SKIPPED — 8 stages DONE + EXPORT SKIPPED = 9 terminal
+    const run = makeRun({
+      INTAKE: 'DONE', PALETTE: 'DONE', INFERENCE: 'DONE', APPROVAL: 'DONE',
+      GUIDELINES: 'DONE', COLLATERAL: 'DONE', WEBSITE: 'DONE',
+    });
+    prisma.templateEngineRun.findUnique.mockResolvedValue(run);
+
+    const upsertResult = { id: 'stage-PREFLIGHT', stage: 'PREFLIGHT', status: 'RUNNING' };
+    const doneResult = { id: 'stage-PREFLIGHT', stage: 'PREFLIGHT', status: 'DONE', outputRef: {} };
+    prisma.templateEngineStage.upsert.mockResolvedValue(upsertResult);
+    prisma.templateEngineStage.update.mockResolvedValue(doneResult);
+    // count returns 9: 8 DONE + 1 SKIPPED EXPORT
+    prisma.templateEngineStage.count.mockResolvedValue(9);
+    prisma.templateEngineRun.update.mockResolvedValue({ id: 'run-1', status: 'COMPLETED' });
+
+    await service.advanceStage('run-1', 'preflight', 'user-1', 'proj-1');
+
+    expect(prisma.templateEngineRun.update).toHaveBeenCalledWith({
+      where: { id: 'run-1' },
+      data: { status: 'COMPLETED' },
+    });
+  });
+
+  it('does NOT mark run COMPLETED when fewer than 9 stages are terminal', async () => {
+    const run = makeRun(); // all PENDING
+    prisma.templateEngineRun.findUnique.mockResolvedValue(run);
+
+    const upsertResult = { id: 'stage-INTAKE', stage: 'INTAKE', status: 'RUNNING' };
+    const doneResult = { id: 'stage-INTAKE', stage: 'INTAKE', status: 'DONE', outputRef: {} };
+    prisma.templateEngineStage.upsert.mockResolvedValue(upsertResult);
+    prisma.templateEngineStage.update.mockResolvedValue(doneResult);
+    // Only 1 stage terminal after INTAKE advance
+    prisma.templateEngineStage.count.mockResolvedValue(1);
+    prisma.templateEngineRun.update.mockResolvedValue({});
+
+    await service.advanceStage('run-1', 'intake', 'user-1', 'proj-1');
+
+    expect(prisma.templateEngineRun.update).not.toHaveBeenCalledWith(
+      expect.objectContaining({ data: { status: 'COMPLETED' } }),
+    );
   });
 });

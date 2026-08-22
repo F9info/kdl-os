@@ -172,6 +172,7 @@ describe('advanceStage stage 5 — guidelines completes (KDL-537)', () => {
     prisma.templateEngineStage = {
       upsert: vi.fn().mockResolvedValue(stageUpsert),
       update: vi.fn().mockResolvedValue(stageDone),
+      count: vi.fn().mockResolvedValue(0),
     };
 
     const mockDriver = {
@@ -207,6 +208,7 @@ describe('advanceStage stage 5 — guidelines completes (KDL-537)', () => {
     prisma.templateEngineStage = {
       upsert: vi.fn().mockResolvedValue(stageUpsert),
       update: vi.fn().mockResolvedValue(stageDone),
+      count: vi.fn().mockResolvedValue(0),
     };
 
     const mockDriver = {
@@ -246,6 +248,7 @@ describe('full 9-stage run reaches EXPORT (KDL-537)', () => {
       prisma.templateEngineStage = {
         upsert: vi.fn().mockResolvedValue(stageRec),
         update: vi.fn().mockResolvedValue(stageDone),
+        count: vi.fn().mockResolvedValue(0),
       };
 
       getDriver.mockReturnValue({
