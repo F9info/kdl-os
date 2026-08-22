@@ -53,14 +53,12 @@ function loadTemplateEngineManifests() {
     name: 'Theme Engine UI',
     conflictsWith: [],
     dependsOn: ['theme-engine'],
-    navSuppressedByPeer: ['template-engine'],
     nav: [{ label: 'Theme Engine', path: '/admin/theme-engine', icon: 'Palette' }],
   }));
   loadedManifests.set('page-builder-ui', makeManifest('page-builder-ui', {
     name: 'Page Builder UI',
     conflictsWith: [],
     dependsOn: ['page-builder'],
-    navSuppressedByPeer: ['template-engine'],
     nav: [{ label: 'Page Builder', path: '/admin/page-builder', icon: 'LayoutTemplate' }],
   }));
   loadedManifests.set('theme-engine', makeManifest('theme-engine', { name: 'Theme Engine', core: true }));
@@ -447,9 +445,9 @@ describe('KDL-563: template-engine installs ui modules as dependencies, no confl
   });
 });
 
-// ── KDL-575: navSuppressedByPeer — suppress sidebar nav when peer is enabled ──
+// ── KDL-609: theme-engine-ui and page-builder-ui nav coexists with template-engine ──
 
-describe('KDL-575: navSuppressedByPeer suppresses nav via listEnabledModules', () => {
+describe('KDL-609: theme-engine-ui and page-builder-ui nav always visible alongside template-engine', () => {
   it('theme-engine-ui alone ENABLED → nav entry is returned', async () => {
     loadTemplateEngineManifests();
 
@@ -467,7 +465,7 @@ describe('KDL-575: navSuppressedByPeer suppresses nav via listEnabledModules', (
     expect(teui.nav[0].label).toBe('Theme Engine');
   });
 
-  it('theme-engine-ui + template-engine both ENABLED → theme-engine-ui nav is suppressed', async () => {
+  it('theme-engine-ui + template-engine both ENABLED → both nav entries are visible', async () => {
     loadTemplateEngineManifests();
 
     prisma.module = {
@@ -486,13 +484,16 @@ describe('KDL-575: navSuppressedByPeer suppresses nav via listEnabledModules', (
     const modules = await listEnabledModules();
     const bySlug = Object.fromEntries(modules.map((m) => [m.slug, m]));
 
-    expect(bySlug['theme-engine-ui'].nav).toEqual([]);
-    expect(bySlug['page-builder-ui'].nav).toEqual([]);
-    // template-engine itself keeps its own nav
+    // KDL-609: both nav entries must be visible — they are complementary products
+    expect(bySlug['theme-engine-ui'].nav).toHaveLength(1);
+    expect(bySlug['theme-engine-ui'].nav[0].label).toBe('Theme Engine');
+    expect(bySlug['page-builder-ui'].nav).toHaveLength(1);
+    expect(bySlug['page-builder-ui'].nav[0].label).toBe('Page Builder');
+    // template-engine itself also keeps its own nav
     expect(bySlug['template-engine'].nav).toHaveLength(1);
   });
 
-  it('template-engine disabled (only theme-engine-ui ENABLED) → nav reappears', async () => {
+  it('template-engine disabled (only theme-engine-ui ENABLED) → nav is returned', async () => {
     loadTemplateEngineManifests();
 
     prisma.module = {
