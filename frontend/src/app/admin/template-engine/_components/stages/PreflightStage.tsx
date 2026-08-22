@@ -13,8 +13,8 @@ interface PreflightResult {
 
 export function PreflightStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'PREFLIGHT')
-  const advance = useAdvanceStage(run.id)
-  const retry = useRetryStage(run.id)
+  const advance = useAdvanceStage(run.id, run.projectId)
+  const retry = useRetryStage(run.id, run.projectId)
 
   const outputRef = stage?.outputRef as { results?: PreflightResult[] } | null | undefined
 
