@@ -10,12 +10,10 @@
  *   node backend/scripts/backfill-project-credits.mjs [--dry-run]
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../src/config/database.js';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 const DEFAULT_SEED_MC = 10_000_000n;
-
-const prisma = new PrismaClient();
 
 async function getSeedMc() {
   const envVal = process.env.PROJECT_STARTER_CREDITS;

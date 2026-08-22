@@ -9,13 +9,11 @@
  *   node backend/scripts/backfill-completed-runs.mjs [--dry-run]
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../src/config/database.js';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 const TOTAL_STAGES = 9;
 const TERMINAL = ['DONE', 'SKIPPED'];
-
-const prisma = new PrismaClient();
 
 async function main() {
   console.log(`backfill-completed-runs: dry-run=${DRY_RUN}`);

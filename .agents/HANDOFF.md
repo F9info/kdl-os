@@ -1,3 +1,14 @@
+## 2026-08-22 — KDL-608: Fix backfill scripts crash — replace new PrismaClient() with singleton (Backend Coder)
+
+**PR:** `fix/kdl-608-backfill-prisma-adapter` → open (this run)
+
+Both `backend/scripts/backfill-completed-runs.mjs` and `backend/scripts/backfill-project-credits.mjs` (shipped in PR #215) used `new PrismaClient()` with no arguments. On Prisma 7 with a PrismaPg driver adapter, this throws `PrismaClientInitializationError`. Fixed by importing the `prisma` singleton from `../src/config/database.js` — the project-mandated pattern.
+
+**Backfill results (dev DB, postgres container `kdl-starter-kit-postgres-1` port 5443):**
+- `backfill-completed-runs.mjs --dry-run` → 2 stuck runs found: `cmt18teqh…`, `cmt3vjol9…`
+- `backfill-completed-runs.mjs` → both marked COMPLETED ✅
+- `backfill-project-credits.mjs --dry-run` → 0 projects have no credit balance row (all projects already seeded; no backfill needed) — 0 rows changed is the expected state, not a bug.
+
 ## 2026-08-22 — KDL-602: Admin projects page + brand-kit panel in Studio (Frontend Coder)
 
 **Branch:** `feat/kdl-602-admin-ui` off `origin/master` (`e15048a`).
