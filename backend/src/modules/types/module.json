@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Taxonomy types for categories and setting fields",
   "core": true,
+  "visibleInCatalog": false,
   "apiPrefix": "/api/types",
   "permissions": ["types"],
   "nav": [],

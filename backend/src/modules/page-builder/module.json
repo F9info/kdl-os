@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Visual block-based page builder engine — always-on",
   "core": true,
+  "visibleInCatalog": false,
   "apiPrefix": "/api/page-builder",
   "permissions": ["page-builder"],
   "nav": [],
