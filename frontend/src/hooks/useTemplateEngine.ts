@@ -92,6 +92,7 @@ export function useAdvanceStage(runId: string, projectId: string) {
     },
     onError: (err) => {
       toast({ title: extractErrorCode(err), variant: 'destructive' })
+      qc.invalidateQueries({ queryKey: runKey(runId) })
     },
   })
 }
@@ -163,6 +164,7 @@ export function useRetryStage(runId: string, projectId: string) {
     },
     onError: (err) => {
       toast({ title: extractErrorCode(err), variant: 'destructive' })
+      qc.invalidateQueries({ queryKey: runKey(runId) })
     },
   })
 }
@@ -184,6 +186,7 @@ export function useSkipStage(runId: string, projectId: string) {
     },
     onError: (err) => {
       toast({ title: extractErrorCode(err), variant: 'destructive' })
+      qc.invalidateQueries({ queryKey: runKey(runId) })
     },
   })
 }

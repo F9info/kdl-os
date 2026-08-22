@@ -1,3 +1,17 @@
+## 2026-08-22 — KDL-612: Studio stage screens — fix palette/inference placeholders, credit balance, failed-stage refresh (Frontend Coder)
+
+**Branch:** `fix/kdl-612-studio-state-bugs` off `origin/master`.
+
+Three display bugs fixed in Studio stage screens:
+
+1. **PaletteStage.tsx / InferenceStage.tsx** — render condition changed from `outputRef?.paletteVersion != null` / `outputRef?.inferenceVersion != null` (fields the backend never writes) to `stage?.status === 'DONE'`. Cards now correctly show after a completed stage. Remaining optional outputRef fields (`paletteVersion`, `swatchCount`, `inferenceSource`, `typographyPair`) are still rendered when present for forward-compat.
+
+2. **InferenceStage.tsx** — `CreditsBalance` interface corrected from `{ balance: number; currency: string }` to `{ balance_mc: string; open_holds: unknown[] }` matching `GET /api/credits/projects/:id/balance` actual response. Display now reads `credits.balance_mc`.
+
+3. **useTemplateEngine.ts** — added `qc.invalidateQueries({ queryKey: runKey(runId) })` to the `onError` handler of `useAdvanceStage`, `useRetryStage`, and `useSkipStage`. Failed stage state now renders immediately without a manual page reload.
+
+TypeScript clean (`tsc --noEmit` exit 0). No backend changes required.
+
 ## 2026-08-22 — KDL-608: Fix backfill scripts crash — replace new PrismaClient() with singleton (Backend Coder)
 
 **PR:** `fix/kdl-608-backfill-prisma-adapter` → open (this run)
