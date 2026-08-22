@@ -12,16 +12,16 @@ function readModule(slug) {
 }
 
 describe('manifestSchema — field preservation', () => {
-  it('preserves navSuppressedByPeer from theme-engine-ui', () => {
+  it('theme-engine-ui parses with empty navSuppressedByPeer (KDL-609: no peer suppression)', () => {
     const result = manifestSchema.safeParse(readModule('theme-engine-ui'));
     expect(result.success).toBe(true);
-    expect(result.data.navSuppressedByPeer).toEqual(['template-engine']);
+    expect(result.data.navSuppressedByPeer).toEqual([]);
   });
 
-  it('preserves navSuppressedByPeer from page-builder-ui', () => {
+  it('page-builder-ui parses with empty navSuppressedByPeer (KDL-609: no peer suppression)', () => {
     const result = manifestSchema.safeParse(readModule('page-builder-ui'));
     expect(result.success).toBe(true);
-    expect(result.data.navSuppressedByPeer).toEqual(['template-engine']);
+    expect(result.data.navSuppressedByPeer).toEqual([]);
   });
 
   it('preserves visibleInCatalog: false from brand-kit', () => {

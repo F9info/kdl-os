@@ -10,7 +10,6 @@
     { "label": "Theme Engine", "path": "/admin/theme-engine", "icon": "Palette", "permission": "theme-engine:view" }
   ],
   "dependsOn": ["theme-engine"],
-  "navSuppressedByPeer": ["template-engine"],
   "conflictsWith": [],
   "queues": [],
   "env": []
