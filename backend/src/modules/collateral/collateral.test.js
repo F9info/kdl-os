@@ -30,6 +30,9 @@ vi.mock('../../config/database.js', () => ({
     brandKit: {
       findUnique: vi.fn(),
     },
+    project: {
+      findUnique: vi.fn(),
+    },
   },
 }));
 
@@ -426,6 +429,7 @@ describe('idempotency-key forwarding to withCreditHold (COLLATERAL_SPEC §7)', (
     prisma.collateralAsset.findUnique.mockResolvedValue(RENDER_SAFE_ASSET);
     // Return a full brand kit so preflight passes and withCreditHold is reached.
     prisma.brandKit.findUnique.mockResolvedValue(makeLiveBrandKitRow());
+    prisma.project.findUnique.mockResolvedValue({ id: 'proj-1', name: 'Acme Pvt Ltd' });
     prisma.collateralRender.create.mockResolvedValue({
       id: 'render-1', asset_id: 'asset-1', format: 'PDF_DIGITAL',
       variant: null, file_url: 'collateral/proj-1/asset-1/pdf.pdf',
@@ -468,6 +472,7 @@ describe('credit hold gating — CREDITS_INSUFFICIENT surfaces as 402', () => {
     prisma.collateralAsset.findUnique.mockResolvedValue(RENDER_SAFE_ASSET);
     // Full brand kit so preflight passes; withCreditHold then throws INSUFFICIENT_CREDITS.
     prisma.brandKit.findUnique.mockResolvedValue(makeLiveBrandKitRow());
+    prisma.project.findUnique.mockResolvedValue({ id: 'proj-1', name: 'Acme Pvt Ltd' });
     withCreditHold.mockRejectedValueOnce(
       new CreditError('INSUFFICIENT_CREDITS', 'Insufficient credits: have 0 µc, need 5000000 µc')
     );
@@ -593,6 +598,7 @@ describe('resolveBrandKit() — approved BrandKit row resolves to non-null kit',
   beforeEach(() => {
     vi.clearAllMocks();
     prisma.brandKit.findUnique.mockResolvedValue(APPROVED_ROW);
+    prisma.project.findUnique.mockResolvedValue({ id: 'proj-1', name: 'Acme Pvt Ltd' });
   });
 
   it('returns non-null for an approved kit (not null like resolved_tokens always was)', async () => {
@@ -620,6 +626,19 @@ describe('resolveBrandKit() — approved BrandKit row resolves to non-null kit',
     const kit = await service.resolveBrandKit('proj-1');
     expect(kit.typography.heading).toMatchObject({ family: 'Inter', weights: [700] });
     expect(kit.typography.body).toMatchObject({ family: 'Inter', weights: [400] });
+  });
+
+  it('maps project.name to company.displayName and company.legalName (KDL-583)', async () => {
+    const kit = await service.resolveBrandKit('proj-1');
+    expect(kit.company.displayName).toBe('Acme Pvt Ltd');
+    expect(kit.company.legalName).toBe('Acme Pvt Ltd');
+  });
+
+  it('returns company: {} when project row is not found — does not hard-fail', async () => {
+    prisma.project.findUnique.mockResolvedValue(null);
+    const kit = await service.resolveBrandKit('proj-1');
+    expect(kit).not.toBeNull();
+    expect(kit.company).toEqual({});
   });
 
   it('returns null when the project has no kit', async () => {

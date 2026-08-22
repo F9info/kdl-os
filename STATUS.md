@@ -112,6 +112,10 @@ Recent per-issue detail is in the rolling changelog below; full history in
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+## 2026-08-20 — KDL-583: collateral blank company name fixed — PR #208 open (Backend Coder)
+
+`resolveBrandKit()` now fetches the project row and maps `project.name` → `company.displayName` + `company.legalName`. Preflight restored the company name requirement (Project.name is non-nullable). 53/53 collateral tests pass. PR #208 awaiting CI + review.
+
 ## 2026-08-20 — KDL-568: PR #195 merged to master — Template Engine rename + conflict fix live (CEO)
 
 Rebased and merged `feat/kdl-560-template-engine-one-install` (CI-green, `cbd78ea`). `template-engine/module.json` on master now has `conflictsWith: []`, nav label `Template Engine`, `dependsOn` includes `theme-engine-ui`/`page-builder-ui`/`projects`. Fixed a KDL-542-class regression the PR introduced (installModule return-shape break + double-create on already-installed deps). Live-verified: installing `template-engine` auto-installs all deps and Theme Engine's sidebar entry stays visible. KDL-557 root cause resolved on master.

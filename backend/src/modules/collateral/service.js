@@ -15,12 +15,20 @@ const COLLATERAL_RENDER_CREDITS_COST = 5;
 // Reads the brand-kit for a project and maps live DB columns to the shape
 // expected by preflight and the render layer. version arg is advisory —
 // collateral pins the version at asset creation time.
-// company.legalName is omitted until the Project table ships (KDL-449).
+// company is sourced from the projects module (KDL-583; Project.name is non-nullable).
 export async function resolveBrandKit(projectId, _version) {
   try {
     const { prisma: db } = await import('../../config/database.js');
     const kit = await db.brandKit.findUnique({ where: { project_id: projectId } });
     if (!kit) return null;
+
+    // Project lookup is best-effort — a missing/erroring project must not hard-fail a render.
+    let project = null;
+    try {
+      project = await db.project.findUnique({ where: { id: projectId } });
+    } catch {
+      // swallow — company fields will be absent; preflight will reject if required
+    }
 
     const colors = kit.palette?.colors ?? {};
     const primary = colors.primary;
@@ -43,7 +51,9 @@ export async function resolveBrandKit(projectId, _version) {
         body:       kit.typography?.body       ?? null,
         scaleRatio: kit.typography?.scaleRatio ?? null,
       },
-      company: {},
+      company: project
+        ? { displayName: project.name, legalName: project.name }
+        : {},
     };
   } catch {
     return null;
