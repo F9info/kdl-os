@@ -1,7 +1,12 @@
 import { prisma } from '../../config/database.js';
 
+// Default starter credit grant for new projects: 100 credits (100_000_000 µc).
+// Covers: brand.inference (≤10 cr) + guidelines PDF (5 cr) + ≥15 collateral renders @ 5 cr each.
+// Exported so tests can assert headroom arithmetic without re-implementing the constant.
+export const DEFAULT_SEED_MC = 100_000_000n;
+
 // Resolves starter credit balance in µc (1 credit = 1_000_000 µc).
-// Priority: PROJECT_STARTER_CREDITS env var → credits.new_project_seed_mc app setting → 10 credits.
+// Priority: PROJECT_STARTER_CREDITS env var → credits.new_project_seed_mc app setting → 100 credits.
 async function getSeedMc() {
   const envVal = process.env.PROJECT_STARTER_CREDITS;
   if (envVal !== undefined && envVal !== '') {
@@ -14,10 +19,10 @@ async function getSeedMc() {
   }
   try {
     const row = await prisma.appSetting.findUnique({ where: { key: 'credits.new_project_seed_mc' } });
-    const v = row ? BigInt(row.value) : 10_000_000n;
+    const v = row ? BigInt(row.value) : DEFAULT_SEED_MC;
     return v > 0n ? v : 0n;
   } catch {
-    return 10_000_000n;
+    return DEFAULT_SEED_MC;
   }
 }
 
