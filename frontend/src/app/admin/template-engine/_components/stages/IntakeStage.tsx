@@ -7,8 +7,8 @@ import type { TemplateEngineRun } from '@/types/template-engine.types'
 
 export function IntakeStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'INTAKE')
-  const advance = useAdvanceStage(run.id)
-  const retry = useRetryStage(run.id)
+  const advance = useAdvanceStage(run.id, run.projectId)
+  const retry = useRetryStage(run.id, run.projectId)
   const { data: brandKit } = useBrandKit(run.projectId)
   const hasLogo = !!brandKit?.logo_media_id
 

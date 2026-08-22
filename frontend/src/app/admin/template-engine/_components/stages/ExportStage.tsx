@@ -1,18 +1,17 @@
 'use client'
 
-import { PackageCheck, Download, Globe, FileText, Layers } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { PackageCheck, Globe, FileText, Layers } from 'lucide-react'
 import { useAdvanceStage, useRetryStage, useExportManifest } from '@/hooks/useTemplateEngine'
 import { StageShell } from './StageShell'
 import type { TemplateEngineRun } from '@/types/template-engine.types'
 
 export function ExportStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'EXPORT')
-  const advance = useAdvanceStage(run.id)
-  const retry = useRetryStage(run.id)
+  const advance = useAdvanceStage(run.id, run.projectId)
+  const retry = useRetryStage(run.id, run.projectId)
 
   const isDone = stage?.status === 'DONE'
-  const { data: manifest } = useExportManifest(isDone ? run.id : null)
+  const { data: manifest } = useExportManifest(isDone ? run.id : null, run.projectId)
 
   return (
     <StageShell
@@ -39,33 +38,19 @@ export function ExportStage({ run }: { run: TemplateEngineRun }) {
               </div>
               <div className="flex items-center gap-2">
                 <FileText className="h-3.5 w-3.5" />
-                Brand guidelines PDF
+                {manifest.guidelines?.renderId
+                  ? `Brand guidelines PDF rendered (${manifest.guidelines.fileUrl ?? manifest.guidelines.renderId})`
+                  : 'Brand guidelines stage skipped — no PDF'}
               </div>
               <div className="flex items-center gap-2">
                 <Layers className="h-3.5 w-3.5" />
-                {manifest.collateral.renderIds.length} collateral artifact
-                {manifest.collateral.renderIds.length !== 1 ? 's' : ''}
+                {manifest.collateral?.renderIds?.length
+                  ? `${manifest.collateral.renderIds.length} collateral artifact${
+                      manifest.collateral.renderIds.length !== 1 ? 's' : ''
+                    }`
+                  : 'Collateral stage skipped — no artifacts'}
               </div>
             </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {manifest.guidelines.downloadUrl && (
-              <Button variant="outline" size="sm" asChild>
-                <a href={manifest.guidelines.downloadUrl} target="_blank" rel="noreferrer">
-                  <Download className="mr-2 h-3.5 w-3.5" />
-                  Guidelines PDF
-                </a>
-              </Button>
-            )}
-            {manifest.collateral.downloadUrls.map((url, i) => (
-              <Button key={i} variant="outline" size="sm" asChild>
-                <a href={url} target="_blank" rel="noreferrer">
-                  <Download className="mr-2 h-3.5 w-3.5" />
-                  Collateral {i + 1}
-                </a>
-              </Button>
-            ))}
           </div>
         </div>
       ) : (
