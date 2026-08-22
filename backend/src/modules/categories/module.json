@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Taxonomy categories grouped under types",
   "core": true,
+  "visibleInCatalog": false,
   "apiPrefix": "/api/categories",
   "permissions": ["categories"],
   "nav": [],

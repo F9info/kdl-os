@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Dynamic admin-defined setting field definitions",
   "core": true,
+  "visibleInCatalog": false,
   "apiPrefix": "/api/setting-fields",
   "permissions": ["setting-fields"],
   "nav": [],
