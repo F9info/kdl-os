@@ -8,8 +8,8 @@ import { StageShell } from './StageShell'
 import type { TemplateEngineRun } from '@/types/template-engine.types'
 
 interface CreditsBalance {
-  balance: number
-  currency: string
+  balance_mc: string
+  open_holds: unknown[]
 }
 
 export function InferenceStage({ run }: { run: TemplateEngineRun }) {
@@ -30,7 +30,9 @@ export function InferenceStage({ run }: { run: TemplateEngineRun }) {
   })
 
   const outputRef = stage?.outputRef as
-    { inferenceVersion?: number; typographyPair?: string } | null | undefined
+    | { inferenceVersion?: number; typographyPair?: string; inferenceSource?: string }
+    | null
+    | undefined
 
   return (
     <StageShell
@@ -50,22 +52,28 @@ export function InferenceStage({ run }: { run: TemplateEngineRun }) {
             <CreditCard className="h-4 w-4 shrink-0 text-muted-foreground" />
             <span className="text-muted-foreground">
               Project balance:{' '}
-              <span className="font-medium text-foreground">{credits.balance}</span>{' '}
-              {credits.currency}
+              <span className="font-medium text-foreground">{credits.balance_mc}</span>
             </span>
             <span className="ml-auto text-xs text-muted-foreground">Display only — not a gate</span>
           </div>
         )}
 
-        {outputRef?.inferenceVersion != null ? (
+        {stage?.status === 'DONE' ? (
           <div className="rounded-lg border bg-card p-4 space-y-2">
             <div className="flex items-center gap-2 text-sm font-medium">
               <Sparkles className="h-4 w-4 text-primary" />
-              Inference complete (v{outputRef.inferenceVersion})
+              {outputRef?.inferenceVersion != null
+                ? `Inference complete (v${outputRef.inferenceVersion})`
+                : 'Inference complete'}
             </div>
-            {outputRef.typographyPair && (
+            {outputRef?.typographyPair && (
               <p className="text-xs text-muted-foreground">
                 Typography pair: <span className="font-medium">{outputRef.typographyPair}</span>
+              </p>
+            )}
+            {outputRef?.inferenceSource && (
+              <p className="text-xs text-muted-foreground">
+                Source: <span className="font-medium">{outputRef.inferenceSource}</span>
               </p>
             )}
             <p className="text-xs text-muted-foreground">

@@ -11,7 +11,7 @@ export function PaletteStage({ run }: { run: TemplateEngineRun }) {
   const retry = useRetryStage(run.id, run.projectId)
 
   const outputRef = stage?.outputRef as
-    { paletteVersion?: number; swatchCount?: number } | null | undefined
+    { paletteVersion?: number; swatchCount?: number; extractedAt?: string } | null | undefined
 
   return (
     <StageShell
@@ -23,16 +23,23 @@ export function PaletteStage({ run }: { run: TemplateEngineRun }) {
       }
       isRunning={advance.isPending || retry.isPending}
     >
-      {outputRef?.paletteVersion != null ? (
+      {stage?.status === 'DONE' ? (
         <div className="rounded-lg border bg-card p-4 space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium">
             <Palette className="h-4 w-4 text-primary" />
-            Extracted palette (v{outputRef.paletteVersion})
+            {outputRef?.paletteVersion != null
+              ? `Extracted palette (v${outputRef.paletteVersion})`
+              : 'Palette extracted'}
           </div>
-          {outputRef.swatchCount != null && (
+          {outputRef?.swatchCount != null && (
             <p className="text-xs text-muted-foreground">
               {outputRef.swatchCount} colour swatches extracted. Full palette available in the
               brand-kit module.
+            </p>
+          )}
+          {outputRef?.swatchCount == null && (
+            <p className="text-xs text-muted-foreground">
+              Full palette available in the brand-kit module.
             </p>
           )}
         </div>
