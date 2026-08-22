@@ -2,13 +2,15 @@
 
 import { Globe, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useAdvanceStage } from '@/hooks/useTemplateEngine'
+import { useAdvanceStage, useRetryStage, useSkipStage } from '@/hooks/useTemplateEngine'
 import { StageShell } from './StageShell'
 import type { TemplateEngineRun } from '@/types/template-engine.types'
 
 export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'WEBSITE')
   const advance = useAdvanceStage(run.id)
+  const retry = useRetryStage(run.id)
+  const skip = useSkipStage(run.id)
 
   const outputRef = stage?.outputRef as { pageIds?: Record<string, string> } | null | undefined
 
@@ -19,8 +21,11 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
       title="Website Assembly"
       description="Seed website pages from Puck component packs filtered by industry, using the approved brand kit as slot defaults. Pages are created in the page-builder engine."
       stage={stage ?? null}
-      onRun={() => advance.mutate('WEBSITE')}
-      isRunning={advance.isPending}
+      onRun={
+        stage?.status === 'FAILED' ? () => retry.mutate('WEBSITE') : () => advance.mutate('WEBSITE')
+      }
+      onSkip={() => skip.mutate('WEBSITE')}
+      isRunning={advance.isPending || retry.isPending}
     >
       <div className="space-y-3">
         {pageCount > 0 ? (

@@ -2,13 +2,15 @@
 
 import { FileText, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useAdvanceStage } from '@/hooks/useTemplateEngine'
+import { useAdvanceStage, useRetryStage, useSkipStage } from '@/hooks/useTemplateEngine'
 import { StageShell } from './StageShell'
 import type { TemplateEngineRun } from '@/types/template-engine.types'
 
 export function GuidelinesStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'GUIDELINES')
   const advance = useAdvanceStage(run.id)
+  const retry = useRetryStage(run.id)
+  const skip = useSkipStage(run.id)
 
   const outputRef = stage?.outputRef as
     { renderId?: string; downloadUrl?: string } | null | undefined
@@ -18,8 +20,13 @@ export function GuidelinesStage({ run }: { run: TemplateEngineRun }) {
       title="Brand Guidelines"
       description="Generate the brand-guidelines PDF from the approved brand kit. Parallel with collateral and website assembly."
       stage={stage ?? null}
-      onRun={() => advance.mutate('GUIDELINES')}
-      isRunning={advance.isPending}
+      onRun={
+        stage?.status === 'FAILED'
+          ? () => retry.mutate('GUIDELINES')
+          : () => advance.mutate('GUIDELINES')
+      }
+      onSkip={() => skip.mutate('GUIDELINES')}
+      isRunning={advance.isPending || retry.isPending}
     >
       {outputRef?.renderId ? (
         <div className="rounded-lg border bg-card p-4 space-y-3">

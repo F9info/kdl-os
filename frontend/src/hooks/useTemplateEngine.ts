@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import type { AxiosError } from 'axios'
 import api from '@/lib/axios'
 import type {
   TemplateEngineRun,
@@ -7,6 +8,12 @@ import type {
   BrandKit,
 } from '@/types/template-engine.types'
 import { stageEnumToSlug } from '@/types/template-engine.types'
+import { toast } from '@/hooks/use-toast'
+
+function extractErrorCode(err: unknown): string {
+  const data = (err as AxiosError<{ code?: string; error?: string }>).response?.data
+  return data?.code ?? data?.error ?? 'Request failed'
+}
 
 const BASE = '/template-engine'
 
@@ -81,6 +88,44 @@ export function useBrandKit(projectId: string | null) {
         .then((r) => r.data.data),
     enabled: !!projectId,
     staleTime: 10_000,
+  })
+}
+
+export function useRetryStage(runId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (stage: DagStage) =>
+      api
+        .post<{ success: boolean; data: TemplateEngineRun }>(
+          `${BASE}/runs/${runId}/stages/${stageEnumToSlug(stage)}/retry`
+        )
+        .then((r) => r.data.data),
+    onSuccess: (run) => {
+      qc.setQueryData(runKey(runId), run)
+      qc.invalidateQueries({ queryKey: runsKey(run.projectId) })
+    },
+    onError: (err) => {
+      toast({ title: extractErrorCode(err), variant: 'destructive' })
+    },
+  })
+}
+
+export function useSkipStage(runId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (stage: DagStage) =>
+      api
+        .post<{ success: boolean; data: TemplateEngineRun }>(
+          `${BASE}/runs/${runId}/stages/${stageEnumToSlug(stage)}/skip`
+        )
+        .then((r) => r.data.data),
+    onSuccess: (run) => {
+      qc.setQueryData(runKey(runId), run)
+      qc.invalidateQueries({ queryKey: runsKey(run.projectId) })
+    },
+    onError: (err) => {
+      toast({ title: extractErrorCode(err), variant: 'destructive' })
+    },
   })
 }
 

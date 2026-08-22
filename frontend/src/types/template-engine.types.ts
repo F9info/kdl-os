@@ -47,7 +47,13 @@ export interface ExportManifest {
 }
 
 export interface StageGateError {
-  code: 'STAGE_GATE_FAILED' | 'INSUFFICIENT_CREDITS' | string
+  code:
+    | 'STAGE_GATE_FAILED'
+    | 'INSUFFICIENT_CREDITS'
+    | 'STAGE_NOT_FAILED'
+    | 'STAGE_NOT_SKIPPABLE'
+    | 'EXPORT_ALREADY_DONE'
+    | string
   reason: string
 }
 

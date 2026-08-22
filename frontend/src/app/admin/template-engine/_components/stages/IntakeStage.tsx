@@ -1,13 +1,14 @@
 'use client'
 
 import { Building2, Tag, Image, AlertCircle } from 'lucide-react'
-import { useAdvanceStage, useBrandKit } from '@/hooks/useTemplateEngine'
+import { useAdvanceStage, useBrandKit, useRetryStage } from '@/hooks/useTemplateEngine'
 import { StageShell } from './StageShell'
 import type { TemplateEngineRun } from '@/types/template-engine.types'
 
 export function IntakeStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'INTAKE')
   const advance = useAdvanceStage(run.id)
+  const retry = useRetryStage(run.id)
   const { data: brandKit } = useBrandKit(run.projectId)
   const hasLogo = !!brandKit?.logo_media_id
 
@@ -16,9 +17,11 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
       title="Intake"
       description="Provide your brand's foundational details — company name, industry, tagline, and logo. These become the starting point for the entire brand pipeline."
       stage={stage ?? null}
-      onRun={() => advance.mutate('INTAKE')}
-      isRunning={advance.isPending}
-      runDisabled={!hasLogo}
+      onRun={
+        stage?.status === 'FAILED' ? () => retry.mutate('INTAKE') : () => advance.mutate('INTAKE')
+      }
+      isRunning={advance.isPending || retry.isPending}
+      runDisabled={!hasLogo && stage?.status !== 'FAILED'}
     >
       <div className="grid gap-4 max-w-xl">
         <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">

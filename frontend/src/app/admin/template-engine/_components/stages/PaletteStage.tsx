@@ -1,13 +1,14 @@
 'use client'
 
 import { Palette } from 'lucide-react'
-import { useAdvanceStage } from '@/hooks/useTemplateEngine'
+import { useAdvanceStage, useRetryStage } from '@/hooks/useTemplateEngine'
 import { StageShell } from './StageShell'
 import type { TemplateEngineRun } from '@/types/template-engine.types'
 
 export function PaletteStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'PALETTE')
   const advance = useAdvanceStage(run.id)
+  const retry = useRetryStage(run.id)
 
   const outputRef = stage?.outputRef as
     { paletteVersion?: number; swatchCount?: number } | null | undefined
@@ -17,8 +18,10 @@ export function PaletteStage({ run }: { run: TemplateEngineRun }) {
       title="Palette Extraction"
       description="Deterministic colour extraction from the uploaded logo — dominant colours, OKLCH ramps, and contrast ratios. No AI involved; this is algorithmic."
       stage={stage ?? null}
-      onRun={() => advance.mutate('PALETTE')}
-      isRunning={advance.isPending}
+      onRun={
+        stage?.status === 'FAILED' ? () => retry.mutate('PALETTE') : () => advance.mutate('PALETTE')
+      }
+      isRunning={advance.isPending || retry.isPending}
     >
       {outputRef?.paletteVersion != null ? (
         <div className="rounded-lg border bg-card p-4 space-y-3">
