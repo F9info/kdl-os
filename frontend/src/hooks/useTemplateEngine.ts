@@ -12,8 +12,9 @@ import { stageEnumToSlug } from '@/types/template-engine.types'
 import { toast } from '@/hooks/use-toast'
 
 function extractErrorCode(err: unknown): string {
-  const data = (err as AxiosError<{ code?: string; error?: string }>).response?.data
-  return data?.code ?? data?.error ?? 'Request failed'
+  const data = (err as AxiosError<{ code?: string; error?: string; message?: string }>).response
+    ?.data
+  return data?.code ?? data?.error ?? data?.message ?? 'Request failed'
 }
 
 const BASE = '/template-engine'
