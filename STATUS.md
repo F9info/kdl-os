@@ -112,6 +112,15 @@ Recent per-issue detail is in the rolling changelog below; full history in
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+## 2026-08-22 — KDL-594: Studio stage buttons fixed — X-Project-Id header + advance error toasts — PR #213 open (Frontend Architect)
+
+Frontend never sent `X-Project-Id` on stage advance/retry/skip or the export-manifest read, so
+every Studio stage button 400'd silently (root cause of KDL-557 "nothing happens"). Hooks now
+send the header, advance surfaces backend gate errors via toast, post-mutation cache
+invalidation fixed (was invalidating `runsKey(undefined)`), and `ExportStage` no longer crashes
+on `collateral: null` manifests. 5 new RTL regression tests. Follow-up owed: backend should
+validate the header against the projects module (stale "not yet built" comment).
+
 ## 2026-08-20 — KDL-583: collateral blank company name fixed — PR #208 open (Backend Coder)
 
 `resolveBrandKit()` now fetches the project row and maps `project.name` → `company.displayName` + `company.legalName`. Preflight restored the company name requirement (Project.name is non-nullable). 53/53 collateral tests pass. PR #208 awaiting CI + review.
