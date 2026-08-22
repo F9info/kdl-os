@@ -108,6 +108,44 @@ export function useBrandKit(projectId: string | null) {
   })
 }
 
+export function useUploadLogo(projectId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (file: File) => {
+      const form = new FormData()
+      form.append('file', file)
+      return api
+        .post<{ success: boolean; data: BrandKit }>(`/brand-kit/${projectId}/logo`, form)
+        .then((r) => r.data.data)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['brand-kit', projectId] })
+      toast({ title: 'Logo uploaded' })
+    },
+    onError: (err) => {
+      toast({ title: extractErrorCode(err), variant: 'destructive' })
+    },
+  })
+}
+
+export function useApproveBrandKit(projectId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (acknowledgedAdjustmentIds: string[]) =>
+      api
+        .post<{ success: boolean; data: BrandKit }>(`/brand-kit/${projectId}/approve`, {
+          acknowledgedAdjustmentIds,
+        })
+        .then((r) => r.data.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['brand-kit', projectId] })
+    },
+    onError: (err) => {
+      toast({ title: extractErrorCode(err), variant: 'destructive' })
+    },
+  })
+}
+
 export function useRetryStage(runId: string, projectId: string) {
   const qc = useQueryClient()
   return useMutation({

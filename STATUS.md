@@ -112,6 +112,13 @@ Recent per-issue detail is in the rolling changelog below; full history in
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+## 2026-08-22 — KDL-602: admin projects page + brand-kit panel in Studio — PR pending (Frontend Coder)
+
+Branch `feat/kdl-602-admin-ui`. Two missing UIs that blocked walkthrough:
+1. `/admin/projects` now exists — list/create/rename/delete projects using the `projects` module API.
+2. IntakeStage: logo upload card (multipart `POST /brand-kit/:id/logo`), enables Run stage on success.
+3. ApprovalStage: palette swatches + contrast-report checkboxes; "Approve brand" calls `POST /brand-kit/:id/approve` with acked IDs before advancing — eliminates `BRAND_KIT_NOT_APPROVED` 409.
+
 ## 2026-08-22 — KDL-594: Studio stage buttons fixed — X-Project-Id header + advance error toasts — PR #213 open (Frontend Architect)
 
 Frontend never sent `X-Project-Id` on stage advance/retry/skip or the export-manifest read, so
