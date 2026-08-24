@@ -8,9 +8,10 @@ import {
   postValuesBodySchema,
   postResetBodySchema,
   postActiveThemeBodySchema,
+  postLocksReleaseBodySchema,
   getTokensQuerySchema,
 } from './schema.js';
-import { getSchema, getValues, postValues, postReset, postActiveTheme, getTokens } from './controller.js';
+import { getSchema, getValues, postValues, postReset, postActiveTheme, releaseLocks, getTokens } from './controller.js';
 
 const router = Router();
 
@@ -23,5 +24,6 @@ router.get('/values', authenticate, requirePermission('theme-engine', 'view'), v
 router.post('/values', authenticate, requirePermission('theme-engine', 'edit'), validate(postValuesBodySchema), postValues);
 router.post('/reset', authenticate, requirePermission('theme-engine', 'edit'), validate(postResetBodySchema), postReset);
 router.post('/active-theme', authenticate, requirePermission('theme-engine', 'edit'), validate(postActiveThemeBodySchema), postActiveTheme);
+router.post('/locks/release', authenticate, requirePermission('theme-engine', 'edit'), validate(postLocksReleaseBodySchema), releaseLocks);
 
 export default router;

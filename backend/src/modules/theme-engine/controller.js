@@ -83,6 +83,23 @@ export const postReset = async (req, res, next) => {
   }
 };
 
+export const releaseLocks = async (req, res, next) => {
+  try {
+    const result = await service.releaseLocks(req.validated.body, req.user?.id);
+    writeActivityAsync({
+      actor: req.user?.id,
+      module: 'theme-engine',
+      action: 'locks_released',
+      description: `Force-released ${result.released} theme-engine field lock(s)`,
+      properties: { released: result.released, ...req.validated.body },
+      ip_address: getClientIp(req),
+    });
+    return successResponse(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const getTokens = async (req, res, next) => {
   try {
     const { platform, theme, device } = req.validated.query;

@@ -50,6 +50,13 @@ export const postActiveThemeBodySchema = z.object({
   }),
 });
 
+export const postLocksReleaseBodySchema = z.object({
+  body: z.object({
+    platform: platformEnum.optional(),
+    type_id: z.string().min(1).optional(),
+  }),
+});
+
 export const getTokensQuerySchema = z.object({
   query: z
     .object({

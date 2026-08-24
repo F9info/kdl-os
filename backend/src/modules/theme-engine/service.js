@@ -244,7 +244,9 @@ export async function getValues(platform, typeId) {
 
 // ── Upsert values (POST /values) ─────────────────────────────────────────────
 
-export async function upsertValues(platform, typeId, values, actorId) {
+// opts.lockedByModule: when set (e.g. 'template-engine'), the caller is the owning
+// module itself — skip the user-facing lock check and re-acquire locks on written fields.
+export async function upsertValues(platform, typeId, values, actorId, { lockedByModule = null } = {}) {
   // Guard against cross-platform writes
   const type = await prisma.type.findUnique({ where: { id: typeId }, select: { slug: true } });
   if (!type || !type.slug.startsWith(`${platform}.`)) {
@@ -259,13 +261,18 @@ export async function upsertValues(platform, typeId, values, actorId) {
   const byId = new Map(fields.map((f) => [f.id, f]));
   const bySlug = new Map(fields.map((f) => [f.slug, f]));
 
-  const lockedFields = fields.filter((f) => f.locked_by);
-  if (lockedFields.length > 0) {
-    const { getModuleStatus } = await import('../../middleware/module-gate.js');
-    for (const lf of lockedFields) {
-      const status = await getModuleStatus(lf.locked_by);
-      if (status === 'ENABLED') {
-        const err = new Error(`Settings are read-only: locked by module "${lf.locked_by}"`);
+  // Lock guard: block user writes when a non-terminal template-engine run holds the field.
+  // When lockedByModule is set the caller IS the owning module — bypass the check.
+  if (!lockedByModule) {
+    const lockedFields = fields.filter((f) => f.locked_by);
+    if (lockedFields.length > 0) {
+      const activeRun = await prisma.templateEngineRun.findFirst({
+        where: { status: { in: ['IN_PROGRESS', 'AWAITING_APPROVAL'] } },
+        select: { id: true },
+      });
+      if (activeRun) {
+        const lockedByName = lockedFields[0].locked_by;
+        const err = new Error(`Settings are read-only: locked by module "${lockedByName}"`);
         err.status = 409;
         throw err;
       }
@@ -309,6 +316,15 @@ export async function upsertValues(platform, typeId, values, actorId) {
     )
   );
 
+  // When called by the owning module, re-acquire locks on the fields it just wrote.
+  if (lockedByModule && upserts.length > 0) {
+    const writtenIds = upserts.map((u) => u.field_id);
+    await prisma.settingField.updateMany({
+      where: { id: { in: writtenIds } },
+      data: { locked_by: lockedByModule },
+    });
+  }
+
   await invalidateTokenCache(platform);
   return { saved: upserts.length };
 }
@@ -332,6 +348,29 @@ export async function resetValues(platform, typeId) {
   });
   await invalidateTokenCache(platform);
   return { deleted: count };
+}
+
+// ── Force-release locks (POST /locks/release) ────────────────────────────────
+
+// Lets a human take back control of theme-engine fields when a template-engine
+// run is stuck or was never cleaned up.  Filters by platform (via type slug
+// prefix) or by a single type_id; defaults to all template-engine locks.
+export async function releaseLocks({ platform, type_id } = {}, actorId) {
+  const where = { locked_by: 'template-engine' };
+
+  if (type_id) {
+    // Field-level filter: fields whose type_id matches
+    where.type_id = type_id;
+  } else if (platform) {
+    // Platform-level filter: only fields whose owning type slug starts with <platform>.
+    where.type = { slug: { startsWith: `${platform}.` } };
+  }
+
+  const { count } = await prisma.settingField.updateMany({
+    where,
+    data: { locked_by: null },
+  });
+  return { released: count };
 }
 
 // ── Token cache invalidation ──────────────────────────────────────────────────

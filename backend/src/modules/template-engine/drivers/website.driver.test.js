@@ -157,7 +157,7 @@ describe('approval driver', () => {
     });
 
     expect(getTokens).toHaveBeenCalledWith('proj-A', 'webapp');
-    expect(upsertValues).toHaveBeenCalledWith('webapp', 'type-db-id', tokenPayload.values, 'user-1');
+    expect(upsertValues).toHaveBeenCalledWith('webapp', 'type-db-id', tokenPayload.values, 'user-1', { lockedByModule: 'template-engine' });
     expect(result.outputRef.tokensWrittenAt).toBeTruthy();
     expect(result.outputRef.approvedAt).toBeTruthy();
   });
@@ -202,7 +202,7 @@ describe('approval driver', () => {
     });
 
     // upsertValues called with raw fallback type_id
-    expect(upsertValues).toHaveBeenCalledWith('webapp', 'brand-kit', tokenPayload.values, 'user-1');
+    expect(upsertValues).toHaveBeenCalledWith('webapp', 'brand-kit', tokenPayload.values, 'user-1', { lockedByModule: 'template-engine' });
     // Stage still advances; errors recorded in outputRef
     expect(result.outputRef.tokenErrors).toEqual(expect.arrayContaining([expect.any(String)]));
     expect(result.outputRef.tokensWrittenAt).toBeTruthy();

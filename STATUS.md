@@ -112,6 +112,18 @@ Recent per-issue detail is in the rolling changelog below; full history in
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+## 2026-08-24 — KDL-630: theme-engine lock scoped to active run — PR pending (Backend Coder)
+
+`theme-engine/service.js` guard changed from module-status to active-run check; approval driver passes `{ lockedByModule }` to bypass guard and re-acquire locks. Run completion in `template-engine/service.js` now clears locks. New `POST /api/theme-engine/locks/release` takeover endpoint. Backfill migration clears 4094 stale locked rows from dev DB. 1230 tests green.
+
+---
+
+## 2026-08-24 — KDL-622: P0 stale AppSetting row fixed — migration applied, PR #222 merged (Backend Coder)
+
+Migration `20260822000000_backfill_credits_new_project_seed_mc` applied to local dev DB.
+`credits.new_project_seed_mc` is now `100000000` (was `10000000`). `seedCredits()` update:{} contract
+documented as intentional. PR #222 squash-merged to master at `a20a50e`. Closes the INSUFFICIENT_CREDITS regression.
+
 ## 2026-08-22 — KDL-602: admin projects page + brand-kit panel in Studio — PR pending (Frontend Coder)
 
 Branch `feat/kdl-602-admin-ui`. Two missing UIs that blocked walkthrough:

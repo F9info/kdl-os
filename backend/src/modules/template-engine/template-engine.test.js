@@ -28,6 +28,9 @@ vi.mock('../../config/database.js', () => ({
       updateMany: vi.fn(),
       count: vi.fn(),
     },
+    settingField: {
+      updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+    },
     $queryRaw: vi.fn(),
   },
 }));
