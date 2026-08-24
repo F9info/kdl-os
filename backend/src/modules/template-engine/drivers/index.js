@@ -112,7 +112,7 @@ const approvalDriver = {
     // Exit action: brand-kit tokens → theme-engine values.
     const tokenPayload = await getTokens(projectId, 'webapp');
     const resolvedTypeId = await resolveThemeTypeId(tokenPayload.platform, tokenPayload.type_id);
-    const writeResult = await upsertValues(tokenPayload.platform, resolvedTypeId, tokenPayload.values, userId);
+    const writeResult = await upsertValues(tokenPayload.platform, resolvedTypeId, tokenPayload.values, userId, { lockedByModule: 'template-engine' });
 
     return {
       outputRef: {

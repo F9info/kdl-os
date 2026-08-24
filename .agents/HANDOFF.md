@@ -1,3 +1,54 @@
+## 2026-08-24 — KDL-630: theme-engine lock scoped to active run — PR pending (Backend Coder)
+
+**Issue:** KDL-630 (P0 root cause — all 4094 fields permanently read-only)
+
+**What was done:**
+- `theme-engine/service.js` `upsertValues`: replaced `getModuleStatus()` guard with active-run check (`prisma.templateEngineRun.findFirst({ status: IN_PROGRESS | AWAITING_APPROVAL })`). Added `{ lockedByModule }` option so template-engine approval driver bypasses the check and re-acquires locks on written fields.
+- `template-engine/service.js` `advanceStage`: when run transitions to COMPLETED, clears `locked_by` on all template-engine fields.
+- `template-engine/drivers/index.js` `approvalDriver`: passes `{ lockedByModule: 'template-engine' }` to `upsertValues`.
+- `theme-engine/routes.js` + `controller.js` + `service.js` + `schema.js`: added `POST /api/theme-engine/locks/release` (permission `theme-engine:edit`) for manual takeover.
+- `locked-by.test.js`: rewrote to run-scoped contract (4 tests, all green).
+- New migration `20260824000000_release_template_engine_locks_backfill`: clears stale install-scoped locks.
+- Backfill verified on live dev DB: `groupBy(locked_by)` → 0 rows locked by `template-engine`.
+- All 1230 backend tests pass.
+
+**Next:** PR → master; Code Reviewer reviews; Frontend agent (KDL-629 sibling) picks up after merge.
+
+---
+
+## 2026-08-24 — KDL-619: enableModule() cascade-enable fix — PR #227 open (Backend Coder)
+
+**PR:** #227 open — `fix/kdl-619-enable-cascade` → master
+**Issue:** KDL-619 (Enable button 409s instead of cascading)
+
+**What was done:**
+- Extracted `_enableSingle()` private helper from existing `enableModule()` body (holds conflict-detection, DB update, cache invalidation, activity-log for one module; idempotent on ENABLED modules).
+- Replaced the `throw 409 if dep not ENABLED` guard in `enableModule()` with a topological cascade loop using `buildInstallOrder(slug).slice(0, -1)`:
+  - For each dep in dep-first order: auto-install if not in DB (`_installSingle`), then enable (`_enableSingle` — idempotent).
+  - Then enable the target via `_enableSingle`.
+- Secondary fix: each `_enableSingle()` call invalidates the Redis `module:status:{slug}` cache, so stale DISABLED entries for just-enabled deps are cleared immediately.
+- 3 new regression tests in `conflicts.test.js` (cascade-enable with INSTALLED deps, no-op cascade with ENABLED deps, conflict on target still fires).
+- All 22 module tests pass. Rebased on master.
+
+**Next:** Code Reviewer to review #227; merge → master.
+
+## 2026-08-24 — KDL-622: Stale AppSetting row fixed — DB migration applied + merged (Backend Coder)
+
+**PR:** #222 merged → master `a20a50e` (squash)
+**Issue:** KDL-622 (root cause of KDL-611 reopen / INSUFFICIENT_CREDITS on new projects)
+
+**What was done:**
+- Migration `20260822000000_backfill_credits_new_project_seed_mc` already existed (created by prior KDL-618 run) — idempotent UPDATE: sets `credits.new_project_seed_mc` from `10000000` → `100000000` only when value is still the stale pre-KDL-613 default.
+- Applied migration to local dev DB (`kdl_db` port 5443): value is now `100000000` ✅
+- Added documentation comment to `credits/seed.js` explaining `update:{}` is intentional (create-only initial seed), and that migrations are the canonical path for backfilling provisioned DBs — closes the KDL-622 requirement to either fix or document the no-op.
+- CI green; PR #222 squash-merged.
+
+**Verified locally:**
+```sql
+SELECT key, value FROM app_settings WHERE key = 'credits.new_project_seed_mc';
+-- credits.new_project_seed_mc | 100000000
+```
+
 ## 2026-08-22 — KDL-612: Studio stage screens — fix palette/inference placeholders, credit balance, failed-stage refresh (Frontend Coder)
 
 **Branch:** `fix/kdl-612-studio-state-bugs` off `origin/master`.

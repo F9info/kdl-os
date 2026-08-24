@@ -282,6 +282,11 @@ export async function advanceStage(runId, stageSlug, userId, projectId) {
       where: { id: runId },
       data: { status: 'COMPLETED' },
     });
+    // Release theme-engine field locks so the editor becomes writable again.
+    await prisma.settingField.updateMany({
+      where: { locked_by: 'template-engine' },
+      data: { locked_by: null },
+    });
   }
 
   return updated;
