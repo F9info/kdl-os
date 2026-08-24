@@ -47,12 +47,17 @@ export async function getProject(id) {
   return project;
 }
 
-// Returns only the fields needed for access-control checks (id + created_by).
-// Used by the requireProjectId shared middleware; not intended for API responses.
+// Returns only the fields needed for access-control checks.
+// Used by the requireProject shared middleware; not intended for API responses.
 export async function getProjectForAccessCheck(id) {
   const project = await prisma.project.findFirst({
     where: { id, deleted_at: null },
-    select: { id: true, created_by: true },
+    select: {
+      id: true,
+      created_by: true,
+      is_shared: true,
+      members: { select: { user_id: true, role: true } },
+    },
   });
   if (!project) {
     const err = new Error('Project not found');
@@ -82,6 +87,14 @@ export async function createProject({ name, slug, is_default, actorId }) {
       data: { name, slug, is_default: is_default ?? false, created_by: actorId ?? null },
       select: { id: true, name: true, slug: true, is_default: true },
     });
+
+    // Grant the creator an owner-role membership row so ownership and membership
+    // stay in sync and the membership model can be the single access-control source.
+    if (actorId) {
+      await tx.projectMember.create({
+        data: { project_id: proj.id, user_id: actorId, role: 'owner' },
+      });
+    }
 
     // Seed credits atomically so a project can never exist with no balance.
     if (seedMc > 0n) {

@@ -1,21 +1,25 @@
 /**
- * requireProject middleware — KDL-627
+ * requireProject middleware — KDL-627, KDL-635
  *
- * Verifies the project id (from header, body, or query) is validated against
- * the real projects module:
- *   1. Unknown project id             → 404
- *   2. Caller does not own project    → 403  (core security assertion)
- *   3. Valid, authorized project      → passes through (req.projectId set)
- *   4. Super-admin bypass             → passes through even if not the creator
- *   5. Missing header                 → 400
- *   6. Mutation route (advanceStage)  → 403 for unauthorised caller
- *   7. null created_by (org-shared)   → passes through for any authenticated user
- *   8. requireProject('body')         → reads projectId from req.validated.body
- *   9. requireProject('query')        → reads projectId from req.validated.query
+ * Access model (KDL-635): owner OR member OR super-admin OR shared-project.
+ *
+ * Covered cases:
+ *   1.  Unknown project id                  → 404
+ *   2.  Non-member, non-owner               → 403  (core security assertion)
+ *   3.  Project owner                       → 200
+ *   4.  Super-admin bypass                  → 200  (even when not owner/member)
+ *   5.  Missing header                      → 400
+ *   6.  Mutation route, unauthorised caller → 403
+ *   7.  is_shared=true (org-shared)         → 200  (any authenticated user)
+ *   8.  requireProject('body')              → reads projectId from req.validated.body
+ *   9.  requireProject('query')             → reads projectId from req.validated.query
+ *   10. Explicit project member             → 200  (non-owner with membership row)
+ *   11. Member on mutation route            → 200  (member can mutate)
  *
  * Mock-key audit (KDL-577 lesson):
- *   getProjectForAccessCheck is mocked — it returns { id, created_by } matching
- *   backend/prisma/schema/projects.prisma fields (both present; created_by is String?).
+ *   getProjectForAccessCheck is mocked — it returns:
+ *     { id, created_by, is_shared, members: [{ user_id, role }] }
+ *   All fields match backend/prisma/schema/projects.prisma exactly.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -56,6 +60,7 @@ function makeRes() {
 
 const CALLER_ID  = 'user-abc';
 const OTHER_ID   = 'user-xyz';
+const MEMBER_ID  = 'user-member-001';
 const PROJECT_ID = 'proj-1';
 
 function notFoundError() {
@@ -64,9 +69,19 @@ function notFoundError() {
   return err;
 }
 
-const ownedProject   = { id: PROJECT_ID, created_by: CALLER_ID };
-const foreignProject = { id: PROJECT_ID, created_by: OTHER_ID };
-const sharedProject  = { id: PROJECT_ID, created_by: null }; // org-shared (Default Project)
+// Fixtures include all fields returned by getProjectForAccessCheck (KDL-635).
+// is_shared and members must be present — the middleware accesses both.
+const ownedProject   = { id: PROJECT_ID, created_by: CALLER_ID, is_shared: false, members: [] };
+const foreignProject = { id: PROJECT_ID, created_by: OTHER_ID,  is_shared: false, members: [] };
+// Org-shared project (e.g. seeded Default Project) — is_shared flag replaces null created_by.
+const sharedProject  = { id: PROJECT_ID, created_by: null,      is_shared: true,  members: [] };
+// Project where CALLER_ID is a non-owner explicit member.
+const memberProject  = {
+  id: PROJECT_ID,
+  created_by: OTHER_ID,
+  is_shared: false,
+  members: [{ user_id: CALLER_ID, role: 'member' }],
+};
 
 // ── Test cases ─────────────────────────────────────────────────────────────────
 
@@ -93,9 +108,9 @@ describe('requireProject middleware', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  // ── 2. Valid project id, caller does not own → 403 (core security check) ────
+  // ── 2. Non-member, non-owner → 403 (core security check) ────────────────────
 
-  it('returns 403 when project exists but caller does not own it', async () => {
+  it('returns 403 when caller is neither owner nor member of the project', async () => {
     getProjectForAccessCheck.mockResolvedValue(foreignProject);
     resolvePermissions.mockResolvedValue({ bypass: false, permissions: [] });
 
@@ -108,7 +123,7 @@ describe('requireProject middleware', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  // ── 3. Valid, authorized project id → passes through ────────────────────────
+  // ── 3. Project owner → passes through ───────────────────────────────────────
 
   it('calls next and sets req.projectId for project owner', async () => {
     getProjectForAccessCheck.mockResolvedValue(ownedProject);
@@ -124,9 +139,9 @@ describe('requireProject middleware', () => {
     expect(res.status).not.toHaveBeenCalled();
   });
 
-  // ── 4. Super-admin bypass → passes through regardless of creator ─────────────
+  // ── 4. Super-admin bypass → passes through regardless of creator/members ────
 
-  it('calls next for super-admin user even when not the project creator', async () => {
+  it('calls next for super-admin user even when not owner or member', async () => {
     getProjectForAccessCheck.mockResolvedValue(foreignProject);
     resolvePermissions.mockResolvedValue({ bypass: true, permissions: [] });
 
@@ -154,17 +169,16 @@ describe('requireProject middleware', () => {
 
   // ── 6. Mutation route — 403 on unauthorised caller ───────────────────────────
   // The mutation path (advanceStage, retryStage, etc.) is the actual security hole
-  // described in KDL-606/KDL-627. This test simulates that call context.
+  // described in KDL-606/KDL-627. Simulates POST /runs/:runId/stages/:stage/advance.
 
   it('blocks an unauthorised mutation caller with 403', async () => {
-    // Simulates POST /runs/:runId/stages/:stage/advance with a foreign project id.
-    getProjectForAccessCheck.mockResolvedValue(foreignProject); // project owned by OTHER_ID
+    getProjectForAccessCheck.mockResolvedValue(foreignProject); // owned by OTHER_ID, no members
     resolvePermissions.mockResolvedValue({ bypass: false, permissions: ['template-engine:run'] });
 
     const req = {
       headers: { 'x-project-id': PROJECT_ID },
-      user: { id: CALLER_ID },   // caller != project.created_by
-      userPermissions: null,     // will be resolved by middleware
+      user: { id: CALLER_ID },   // caller is not owner or member
+      userPermissions: null,
       validated: {
         params: { runId: 'run-1', stage: 'intake' },
         body: {},
@@ -179,11 +193,11 @@ describe('requireProject middleware', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  // ── 7. null created_by (org-shared Default Project) → passes through ─────────
-  // The seeded Default Project has no created_by (null). Any authenticated user
-  // must be able to access it; otherwise all non-super-admin users get 403.
+  // ── 7. is_shared=true → passes through for any authenticated user ─────────────
+  // The seeded Default Project is org-shared via is_shared=true (KDL-635 replaces
+  // the old null-created_by convention with this explicit column).
 
-  it('calls next for any authenticated user on an org-shared project (null created_by)', async () => {
+  it('calls next for any authenticated user on an org-shared project (is_shared=true)', async () => {
     getProjectForAccessCheck.mockResolvedValue(sharedProject);
     resolvePermissions.mockResolvedValue({ bypass: false, permissions: [] });
 
@@ -198,15 +212,13 @@ describe('requireProject middleware', () => {
   });
 
   // ── 8. requireProject('body') — reads projectId from request body ────────────
-  // Covers POST /runs (createRun) where projectId comes from the request body,
-  // not the X-Project-Id header.
+  // Covers POST /runs (createRun) where projectId comes from the request body.
 
   it("reads projectId from req.validated.body when source is 'body'", async () => {
     getProjectForAccessCheck.mockResolvedValue(ownedProject);
     resolvePermissions.mockResolvedValue({ bypass: false, permissions: [] });
 
     const req = makeReq({ userId: CALLER_ID, body: { projectId: PROJECT_ID } });
-    // No x-project-id header — the middleware must not look at headers.
     const res = makeRes();
 
     await requireProject('body')(req, res, next);
@@ -228,8 +240,7 @@ describe('requireProject middleware', () => {
   });
 
   // ── 9. requireProject('query') — reads projectId from query string ───────────
-  // Covers GET /runs (listRuns) where projectId comes from ?projectId=...,
-  // not the X-Project-Id header.
+  // Covers GET /runs (listRuns) where projectId comes from ?projectId=...
 
   it("reads projectId from req.validated.query when source is 'query'", async () => {
     getProjectForAccessCheck.mockResolvedValue(ownedProject);
@@ -245,7 +256,7 @@ describe('requireProject middleware', () => {
     expect(req.projectId).toBe(PROJECT_ID);
   });
 
-  it("returns 403 for 'query' source when caller does not own the project", async () => {
+  it("returns 403 for 'query' source when caller is not owner or member", async () => {
     getProjectForAccessCheck.mockResolvedValue(foreignProject);
     resolvePermissions.mockResolvedValue({ bypass: false, permissions: [] });
 
@@ -256,6 +267,51 @@ describe('requireProject middleware', () => {
 
     expect(res.status).toHaveBeenCalledWith(403);
     expect(next).not.toHaveBeenCalled();
+  });
+
+  // ── 10. Explicit project member → passes through (KDL-635) ──────────────────
+  // A user who is not the owner but has an explicit project_members row must be
+  // allowed. This is the functional gap fixed by KDL-635.
+
+  it('calls next for an explicit project member (non-owner)', async () => {
+    getProjectForAccessCheck.mockResolvedValue(memberProject);
+    resolvePermissions.mockResolvedValue({ bypass: false, permissions: [] });
+
+    const req = makeReq({ projectIdHeader: PROJECT_ID, userId: CALLER_ID });
+    const res = makeRes();
+
+    await requireProject()(req, res, next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(req.projectId).toBe(PROJECT_ID);
+    expect(res.status).not.toHaveBeenCalled();
+  });
+
+  // ── 11. Member on mutation route → passes through (KDL-635) ─────────────────
+  // Verifies that membership gates mutations too, not only reads.
+  // Simulates POST /runs/:runId/stages/:stage/advance by a project member.
+
+  it('allows a project member on a mutation route (advanceStage)', async () => {
+    getProjectForAccessCheck.mockResolvedValue(memberProject);
+    resolvePermissions.mockResolvedValue({ bypass: false, permissions: ['template-engine:run'] });
+
+    const req = {
+      headers: { 'x-project-id': PROJECT_ID },
+      user: { id: CALLER_ID },  // CALLER_ID is in memberProject.members
+      userPermissions: null,
+      validated: {
+        params: { runId: 'run-1', stage: 'intake' },
+        body: {},
+        query: {},
+      },
+    };
+    const res = makeRes();
+
+    await requireProject()(req, res, next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(req.projectId).toBe(PROJECT_ID);
+    expect(res.status).not.toHaveBeenCalled();
   });
 
   // ── Uses cached req.userPermissions if already loaded ────────────────────────
