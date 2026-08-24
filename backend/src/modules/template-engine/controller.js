@@ -3,10 +3,10 @@ import { writeActivityAsync, getClientIp } from '../user-management/shared/activ
 import { resolvePermissions } from '../user-management/shared/permission-resolver.js';
 import * as service from './service.js';
 
-// Project scope (req.projectId) is injected by the requireProjectId shared middleware
-// (backend/src/shared/middleware/require-project-id.js) on every route that reads
-// X-Project-Id — see routes.js.  That middleware validates project existence (404) and
-// caller access (403) against the projects module before this controller runs.
+// Project scope (req.projectId) is injected by the requireProject shared middleware
+// (backend/src/middleware/project.js) on every route that reads X-Project-Id — see
+// routes.js.  That middleware validates project existence (404) and caller access (403)
+// against the projects module before this controller runs.
 
 export const createRun = async (req, res, next) => {
   try {

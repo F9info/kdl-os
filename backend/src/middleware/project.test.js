@@ -4,32 +4,28 @@
  * Verifies X-Project-Id is validated against the real projects module:
  *   1. Unknown project id             → 404
  *   2. Caller does not own project    → 403  (core security assertion)
- *   3. Valid, authorized project      → passes through (req.project + req.projectId set)
+ *   3. Valid, authorized project      → passes through (req.projectId set)
  *   4. Super-admin bypass             → passes through even if not the creator
  *   5. Missing header                 → 400
  *   6. Mutation route (advanceStage)  → 403 for unauthorised caller
  *
  * Mock-key audit (KDL-577 lesson):
- *   prisma.project.findFirst is mocked with fields id, created_by, deleted_at —
- *   all present in backend/prisma/schema/projects.prisma.
+ *   getProjectForAccessCheck is mocked — it returns { id, created_by } matching
+ *   backend/prisma/schema/projects.prisma fields (both present).
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Hoist mocks before any real imports.
-vi.mock('../config/database.js', () => ({
-  prisma: {
-    project: {
-      findFirst: vi.fn(),
-    },
-  },
+vi.mock('../modules/projects/service.js', () => ({
+  getProjectForAccessCheck: vi.fn(),
 }));
 
 vi.mock('../modules/user-management/shared/permission-resolver.js', () => ({
   resolvePermissions: vi.fn(),
 }));
 
-import { prisma } from '../config/database.js';
+import { getProjectForAccessCheck } from '../modules/projects/service.js';
 import { resolvePermissions } from '../modules/user-management/shared/permission-resolver.js';
 import { requireProject } from './project.js';
 
@@ -50,23 +46,18 @@ function makeRes() {
   return res;
 }
 
-const CALLER_ID = 'user-abc';
-const OTHER_ID  = 'user-xyz';
+const CALLER_ID  = 'user-abc';
+const OTHER_ID   = 'user-xyz';
 const PROJECT_ID = 'proj-1';
 
-const ownedProject = {
-  id: PROJECT_ID,
-  name: 'Test Project',
-  slug: 'test-project',
-  created_by: CALLER_ID,
-};
+function notFoundError() {
+  const err = new Error('Project not found');
+  err.status = 404;
+  return err;
+}
 
-const foreignProject = {
-  id: PROJECT_ID,
-  name: 'Test Project',
-  slug: 'test-project',
-  created_by: OTHER_ID,
-};
+const ownedProject   = { id: PROJECT_ID, created_by: CALLER_ID };
+const foreignProject = { id: PROJECT_ID, created_by: OTHER_ID };
 
 // ── Test cases ─────────────────────────────────────────────────────────────────
 
@@ -82,7 +73,7 @@ describe('requireProject middleware', () => {
   // ── 1. Unknown project id → 404 ─────────────────────────────────────────────
 
   it('returns 404 when project does not exist', async () => {
-    prisma.project.findFirst.mockResolvedValue(null);
+    getProjectForAccessCheck.mockRejectedValue(notFoundError());
 
     const req = makeReq({ projectIdHeader: 'nonexistent-id', userId: CALLER_ID });
     const res = makeRes();
@@ -96,7 +87,7 @@ describe('requireProject middleware', () => {
   // ── 2. Valid project id, caller does not own → 403 (core security check) ────
 
   it('returns 403 when project exists but caller does not own it', async () => {
-    prisma.project.findFirst.mockResolvedValue(foreignProject);
+    getProjectForAccessCheck.mockResolvedValue(foreignProject);
     resolvePermissions.mockResolvedValue({ bypass: false, permissions: [] });
 
     const req = makeReq({ projectIdHeader: PROJECT_ID, userId: CALLER_ID });
@@ -110,8 +101,8 @@ describe('requireProject middleware', () => {
 
   // ── 3. Valid, authorized project id → passes through ────────────────────────
 
-  it('calls next and sets req.project + req.projectId for project owner', async () => {
-    prisma.project.findFirst.mockResolvedValue(ownedProject);
+  it('calls next and sets req.projectId for project owner', async () => {
+    getProjectForAccessCheck.mockResolvedValue(ownedProject);
     resolvePermissions.mockResolvedValue({ bypass: false, permissions: [] });
 
     const req = makeReq({ projectIdHeader: PROJECT_ID, userId: CALLER_ID });
@@ -120,7 +111,6 @@ describe('requireProject middleware', () => {
     await requireProject(req, res, next);
 
     expect(next).toHaveBeenCalledTimes(1);
-    expect(req.project).toEqual(ownedProject);
     expect(req.projectId).toBe(PROJECT_ID);
     expect(res.status).not.toHaveBeenCalled();
   });
@@ -128,7 +118,7 @@ describe('requireProject middleware', () => {
   // ── 4. Super-admin bypass → passes through regardless of creator ─────────────
 
   it('calls next for super-admin user even when not the project creator', async () => {
-    prisma.project.findFirst.mockResolvedValue(foreignProject);
+    getProjectForAccessCheck.mockResolvedValue(foreignProject);
     resolvePermissions.mockResolvedValue({ bypass: true, permissions: [] });
 
     const req = makeReq({ projectIdHeader: PROJECT_ID, userId: CALLER_ID });
@@ -137,7 +127,6 @@ describe('requireProject middleware', () => {
     await requireProject(req, res, next);
 
     expect(next).toHaveBeenCalledTimes(1);
-    expect(req.project).toEqual(foreignProject);
     expect(req.projectId).toBe(PROJECT_ID);
   });
 
@@ -151,7 +140,7 @@ describe('requireProject middleware', () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(next).not.toHaveBeenCalled();
-    expect(prisma.project.findFirst).not.toHaveBeenCalled();
+    expect(getProjectForAccessCheck).not.toHaveBeenCalled();
   });
 
   // ── 6. Mutation route — 403 on unauthorised caller ───────────────────────────
@@ -160,7 +149,7 @@ describe('requireProject middleware', () => {
 
   it('blocks an unauthorised mutation caller with 403', async () => {
     // Simulates POST /runs/:runId/stages/:stage/advance with a foreign project id.
-    prisma.project.findFirst.mockResolvedValue(foreignProject); // project owned by OTHER_ID
+    getProjectForAccessCheck.mockResolvedValue(foreignProject); // project owned by OTHER_ID
     resolvePermissions.mockResolvedValue({ bypass: false, permissions: ['template-engine:run'] });
 
     const req = {
@@ -182,7 +171,7 @@ describe('requireProject middleware', () => {
   // ── Uses cached req.userPermissions if already loaded ────────────────────────
 
   it('skips resolvePermissions call when req.userPermissions is already set', async () => {
-    prisma.project.findFirst.mockResolvedValue(ownedProject);
+    getProjectForAccessCheck.mockResolvedValue(ownedProject);
 
     const req = makeReq({
       projectIdHeader: PROJECT_ID,
