@@ -9,9 +9,13 @@
 // On success:  sets req.projectId and calls next().
 // On missing value:                400.
 // On unknown project (or soft-deleted): 404.
-// On no access (non-null owner != caller and not super-admin): 403.
-// Projects with null created_by are org-shared (e.g. the seeded Default Project)
-// and are accessible to all authenticated users.
+// On no access (not owner, not member, not super-admin, not shared): 403.
+//
+// Access is granted when ANY of the following hold:
+//   1. project.is_shared = true  (org-shared; e.g. the seeded Default Project)
+//   2. perms.bypass = true       (super-admin)
+//   3. project.created_by === userId  (project owner)
+//   4. project.members contains a row for userId  (explicit member)
 //
 // Brand-kit, collateral, and credits routes will use this same middleware when
 // their project scoping lands.
@@ -47,13 +51,26 @@ export function requireProject(source = 'header') {
       return next(err);
     }
 
+    // is_shared = explicit org-shared flag; allow all authenticated users (e.g. Default Project).
+    if (project.is_shared) {
+      req.projectId = projectId;
+      return next();
+    }
+
     const userId = req.user?.id;
     // Reuse already-resolved permissions when the route ran requirePermission before us.
     const perms = req.userPermissions ?? (await resolvePermissions(userId));
 
-    // null created_by = org-shared project (e.g. the seeded Default Project); allow all.
-    // Only deny when the project has an explicit owner and it is not the caller.
-    if (!perms.bypass && project.created_by !== null && project.created_by !== userId) {
+    // super-admin bypass
+    if (perms.bypass) {
+      req.projectId = projectId;
+      return next();
+    }
+
+    const isOwner = project.created_by === userId;
+    const isMember = project.members.some((m) => m.user_id === userId);
+
+    if (!isOwner && !isMember) {
       return errorResponse(res, 'Forbidden — no access to this project', 403);
     }
 

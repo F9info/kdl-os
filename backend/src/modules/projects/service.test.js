@@ -16,6 +16,9 @@ const { mockTx, mockPrisma } = vi.hoisted(() => {
       updateMany: vi.fn(),
       create: vi.fn(),
     },
+    projectMember: {
+      create: vi.fn(),
+    },
     creditBalance: {
       create: vi.fn(),
     },
@@ -49,6 +52,7 @@ const PROJECT = { id: 'proj-1', name: 'Test', slug: 'test', is_default: false };
 function setupNewProject() {
   mockPrisma.project.findUnique.mockResolvedValue(null); // no slug conflict
   mockTx.project.create.mockResolvedValue(PROJECT);
+  mockTx.projectMember.create.mockResolvedValue({});
   mockTx.creditBalance.create.mockResolvedValue({});
   mockTx.creditLedgerEntry.create.mockResolvedValue({});
 }
