@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import './config/env-preflight.js';
 import path from 'node:path';
 import fs from 'node:fs';
 import express from 'express';
