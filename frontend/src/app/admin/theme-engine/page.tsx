@@ -2,13 +2,12 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Save, RotateCcw } from 'lucide-react'
+import { Search, Save, RotateCcw, Lock } from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { ModuleGuard } from '@/components/shared/ModuleGuard'
 import { refreshThemeEngineTokens } from '@/components/providers/ThemeEngineProvider'
-import { useModules } from '@/hooks/useModules'
 import { DeviceShell } from './previews/DeviceShell'
 import { DefaultShellPreview } from './previews/ThemeDevicePreviews'
 import { DEVICE_PANE_PREVIEWS } from './previews/registry'
@@ -40,6 +39,7 @@ interface TEField {
   value: string
   default_value: string
   sort: number
+  locked_by?: string | null
 }
 
 interface TEGroup {
@@ -67,6 +67,7 @@ type TEFieldRaw = Omit<TEField, 'options' | 'value' | 'default_value'> & {
   options: string | null
   value: string | null
   default_value: string | null
+  locked_by?: string | null
 }
 type TEGroupRaw = Omit<TEGroup, 'fields'> & { fields: TEFieldRaw[] }
 type TEPaneRaw = Omit<TEPane, 'groups'> & { groups: TEGroupRaw[] }
@@ -558,40 +559,9 @@ function PreviewFrame({
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function ThemeEnginePage() {
-  const { isEnabled } = useModules()
-  const isLocked = isEnabled('template-engine')
-
   return (
     <ModuleGuard slug="theme-engine">
-      {isLocked && (
-        <div
-          className="flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-6 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
-          data-testid="locked-by-banner"
-          role="status"
-        >
-          <svg
-            className="h-4 w-4 shrink-0"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-            />
-          </svg>
-          <span>
-            <strong>Managed by Template Engine</strong> — These settings are read-only while
-            Template Engine is active. Disable Template Engine to edit directly.
-          </span>
-        </div>
-      )}
-      <div className={isLocked ? 'pointer-events-none select-none opacity-75' : undefined}>
-        <ThemeEngineInner />
-      </div>
+      <ThemeEngineInner />
     </ModuleGuard>
   )
 }
@@ -798,11 +768,25 @@ function ThemeEngineInner() {
       toast({ title: 'Saved', description: 'Settings saved successfully.' })
     },
     onError: (err) => {
-      toast({
-        title: 'Save failed',
-        description: mutationErrorMessage(err, 'Could not save settings.'),
-        variant: 'destructive',
-      })
+      const status = (err as { response?: { status?: number } })?.response?.status
+      if (status === 409) {
+        const body = (err as { response?: { data?: { field?: string; message?: string } } })
+          ?.response?.data
+        const fieldName = body?.field
+        toast({
+          title: 'Field locked',
+          description: fieldName
+            ? `"${fieldName}" is locked by an active Template Engine run. Use "Take over" to release it.`
+            : 'One or more fields are locked by an active Template Engine run.',
+          variant: 'destructive',
+        })
+      } else {
+        toast({
+          title: 'Save failed',
+          description: mutationErrorMessage(err, 'Could not save settings.'),
+          variant: 'destructive',
+        })
+      }
     },
   })
 
@@ -857,6 +841,26 @@ function ThemeEngineInner() {
       })
     },
   })
+
+  const takeoverMutation = useMutation({
+    mutationFn: async () => api.post('/theme-engine/lock/release', { platform }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['theme-engine-schema', platform] })
+      toast({ title: 'Taken over', description: 'You now control these settings.' })
+    },
+    onError: (err) => {
+      toast({
+        title: 'Take over failed',
+        description: mutationErrorMessage(err, 'Could not release the run lock.'),
+        variant: 'destructive',
+      })
+    },
+  })
+
+  const hasLockedFields = useMemo(
+    () => panes.some((pane) => pane.groups.some((g) => g.fields.some((f) => f.locked_by))),
+    [panes]
+  )
 
   const handleFieldChange = (paneId: string, fieldId: string, value: string) => {
     const k = vkey(paneId)
@@ -1108,6 +1112,31 @@ function ThemeEngineInner() {
         </div>
       </div>
 
+      {/* ── Lock banner — only when schema reports at least one locked field ── */}
+      {hasLockedFields && (
+        <div
+          className="flex flex-shrink-0 items-center justify-between gap-2 border-b border-amber-200 bg-amber-50 px-6 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+          data-testid="locked-by-banner"
+          role="status"
+        >
+          <div className="flex items-center gap-2">
+            <Lock className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>
+              A Template Engine run is currently writing some of these values. Locked fields are
+              marked; everything else is editable.
+            </span>
+          </div>
+          <button
+            data-testid="btn-takeover"
+            onClick={() => takeoverMutation.mutate()}
+            disabled={takeoverMutation.isPending}
+            className="shrink-0 rounded-md border border-amber-400 bg-amber-100 px-3 py-1 text-xs font-medium text-amber-900 transition-colors hover:bg-amber-200 disabled:opacity-50 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-200 dark:hover:bg-amber-900/50"
+          >
+            {takeoverMutation.isPending ? 'Taking over…' : 'Take over these settings'}
+          </button>
+        </div>
+      )}
+
       {/* ── Body ─────────────────────────────────────────────────────────── */}
       <div className="flex min-h-0 flex-1">
         {/* Sidebar */}
@@ -1282,6 +1311,7 @@ function ThemeEngineInner() {
                         // headers + row names) — the generic field_name/alt_text
                         // label column would just repeat the group name above it.
                         const isTable = field.input_type === 'typo_table'
+                        const isFieldLocked = Boolean(field.locked_by)
                         return (
                           <div
                             key={field.id}
@@ -1289,24 +1319,37 @@ function ThemeEngineInner() {
                               isTable
                                 ? 'p-3'
                                 : 'grid grid-cols-[minmax(200px,340px)_1fr] items-center gap-3 px-5 py-3',
-                              fi < group.fields.length - 1 ? 'border-b' : ''
+                              fi < group.fields.length - 1 ? 'border-b' : '',
+                              isFieldLocked ? 'opacity-60' : ''
                             )}
                             data-testid={`field-row-${field.id}`}
                           >
                             {!isTable && (
-                              <div>
-                                <div className="text-sm font-medium">{field.field_name}</div>
-                                {field.alt_text && (
-                                  <div className="mt-0.5 font-mono text-[11px] text-muted-foreground">
-                                    {field.alt_text}
-                                  </div>
+                              <div className="flex items-center gap-1.5">
+                                <div>
+                                  <div className="text-sm font-medium">{field.field_name}</div>
+                                  {field.alt_text && (
+                                    <div className="mt-0.5 font-mono text-[11px] text-muted-foreground">
+                                      {field.alt_text}
+                                    </div>
+                                  )}
+                                </div>
+                                {isFieldLocked && (
+                                  <span
+                                    title={`Locked by ${field.locked_by}`}
+                                    className="shrink-0 text-amber-500"
+                                    aria-label={`Locked by ${field.locked_by}`}
+                                  >
+                                    <Lock className="h-3.5 w-3.5" />
+                                  </span>
                                 )}
                               </div>
                             )}
                             <div
-                              className={
-                                isTable ? '' : 'flex flex-wrap items-center justify-end gap-2'
-                              }
+                              className={cn(
+                                isTable ? '' : 'flex flex-wrap items-center justify-end gap-2',
+                                isFieldLocked ? 'pointer-events-none' : ''
+                              )}
                             >
                               <FieldControl
                                 field={field}
