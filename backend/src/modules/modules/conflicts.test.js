@@ -509,3 +509,120 @@ describe('KDL-609: theme-engine-ui and page-builder-ui nav always visible alongs
     expect(teui.nav[0].label).toBe('Theme Engine');
   });
 });
+
+// ── KDL-619: enableModule cascades to install/enable deps automatically ───────
+
+describe('KDL-619: enableModule cascades to install/enable deps automatically', () => {
+  /**
+   * Primary regression: all deps are INSTALLED (not ENABLED).
+   * enableModule() must cascade-enable each dep before enabling the target.
+   * Previously this threw 409 — now it must succeed.
+   */
+  it('cascade-enables all INSTALLED deps when enabling template-engine', async () => {
+    loadTemplateEngineManifests();
+
+    // Stateful status map — update() mutates this so findUnique/findMany reflect
+    // the changes that _enableSingle() applies during the cascade.
+    const statuses = {
+      'template-engine': 'INSTALLED',
+      'theme-engine': 'INSTALLED',
+      'theme-engine-ui': 'INSTALLED',
+      'page-builder': 'INSTALLED',
+      'page-builder-ui': 'INSTALLED',
+      'brand-kit': 'INSTALLED',
+      'collateral': 'INSTALLED',
+      'credits': 'INSTALLED',
+    };
+    const isCore = { 'theme-engine': true, 'page-builder': true };
+
+    prisma.module = {
+      findUnique: vi.fn().mockImplementation(({ where }) => {
+        const s = statuses[where.slug];
+        if (s == null) return Promise.resolve(null);
+        return Promise.resolve({
+          slug: where.slug,
+          status: s,
+          is_core: !!isCore[where.slug],
+          id: `id-${where.slug}`,
+          name: where.slug,
+        });
+      }),
+      findMany: vi.fn().mockImplementation(({ where } = {}) => {
+        if (where?.status === 'ENABLED') {
+          return Promise.resolve(
+            Object.entries(statuses)
+              .filter(([, s]) => s === 'ENABLED')
+              .map(([slug]) => ({ slug, status: 'ENABLED', is_core: !!isCore[slug], id: `id-${slug}`, name: slug }))
+          );
+        }
+        return Promise.resolve([]);
+      }),
+      update: vi.fn().mockImplementation(({ where, data }) => {
+        statuses[where.slug] = data.status;
+        return Promise.resolve({ slug: where.slug, status: data.status, is_core: !!isCore[where.slug], id: `id-${where.slug}`, name: where.slug });
+      }),
+    };
+
+    const result = await enableModule('template-engine', 'actor');
+
+    expect(result.status).toBe('ENABLED');
+    // Every dep must have been cascade-enabled
+    for (const dep of ['theme-engine', 'theme-engine-ui', 'page-builder', 'page-builder-ui', 'brand-kit', 'collateral', 'credits']) {
+      expect(statuses[dep]).toBe('ENABLED');
+    }
+  });
+
+  /**
+   * When all deps are already ENABLED the behaviour is identical to the
+   * pre-KDL-619 happy path — the cascade no-ops on each ENABLED dep.
+   */
+  it('succeeds (no-op cascade) when all deps are already ENABLED', async () => {
+    loadTemplateEngineManifests();
+
+    const updated = { slug: 'template-engine', status: 'ENABLED', id: 'id-te' };
+    prisma.module = {
+      findUnique: vi.fn().mockImplementation(({ where }) => {
+        if (where.slug === 'template-engine') return Promise.resolve(DB_TEMPLATE_ENGINE_INSTALLED);
+        return Promise.resolve({ slug: where.slug, status: 'ENABLED', is_core: false, id: `id-${where.slug}`, name: where.slug });
+      }),
+      findMany: vi.fn().mockResolvedValue([
+        DB_THEME_ENGINE_UI_ENABLED, DB_PAGE_BUILDER_UI_ENABLED,
+        DB_THEME_ENGINE_ENABLED, DB_PAGE_BUILDER_ENABLED,
+        DB_BRAND_KIT_ENABLED, DB_COLLATERAL_ENABLED, DB_CREDITS_ENABLED,
+      ]),
+      update: vi.fn().mockResolvedValue(updated),
+    };
+
+    const result = await enableModule('template-engine', 'actor');
+    expect(result.status).toBe('ENABLED');
+    // update() called exactly once — only for the target itself
+    expect(prisma.module.update).toHaveBeenCalledTimes(1);
+    expect(prisma.module.update.mock.calls[0][0].where.slug).toBe('template-engine');
+  });
+
+  /**
+   * Conflicts on the target itself still surface correctly after the cascade.
+   */
+  it('still throws 409 MODULE_CONFLICT when the target has active conflicts', async () => {
+    loadConflictScenarioManifests();
+
+    // mode-studio's deps (engine-x, engine-y) are ENABLED; the conflict modules
+    // (ui-a, ui-b) are also ENABLED — conflict must be raised on the target.
+    const depRecord = (slug) => ({ slug, status: 'ENABLED', is_core: false, id: `id-${slug}`, name: slug });
+    prisma.module = {
+      findUnique: vi.fn().mockImplementation(({ where }) => {
+        if (where.slug === 'mode-studio') return Promise.resolve(DB_STUDIO_INSTALLED);
+        return Promise.resolve(depRecord(where.slug));
+      }),
+      findMany: vi.fn().mockResolvedValue([
+        DB_UI_A_ENABLED, DB_UI_B_ENABLED,
+        DB_ENGINE_X_ENABLED, DB_ENGINE_Y_ENABLED,
+      ]),
+      update: vi.fn(),
+    };
+
+    const err = await enableModule('mode-studio', 'actor').catch((e) => e);
+    expect(err.status).toBe(409);
+    expect(err.details?.code).toBe('MODULE_CONFLICT');
+  });
+});
