@@ -298,7 +298,10 @@ export async function installModule(slug, actorId, { resolveConflicts = false } 
   return { ...mod, installedDependencies };
 }
 
-export async function enableModule(slug, actorId, { resolveConflicts = false } = {}) {
+// Private helper: enable exactly one module, assuming all its deps are already
+// ENABLED. Idempotent — returns the module record unchanged when already ENABLED,
+// so the cascade loop in enableModule() can call it unconditionally (KDL-619).
+async function _enableSingle(slug, actorId, { resolveConflicts = false } = {}) {
   const mod = await prisma.module.findUnique({ where: { slug } });
   if (!mod) {
     const err = new Error(`Module "${slug}" not found`);
@@ -306,30 +309,19 @@ export async function enableModule(slug, actorId, { resolveConflicts = false } =
     throw err;
   }
 
-  if (mod.status === 'ENABLED') {
-    const err = new Error(`Module "${slug}" is already enabled`);
-    err.status = 409;
-    throw err;
-  }
+  // Idempotent: already ENABLED → nothing to do
+  if (mod.status === 'ENABLED') return mod;
 
   const manifest = loadedManifests.get(slug);
   if (!manifest) {
-    const err = new Error(`Manifest for "${slug}" is not loaded — cannot verify dependencies before enabling`);
+    const err = new Error(`Manifest for "${slug}" is not loaded`);
     err.status = 500;
     throw err;
   }
-  for (const dep of manifest.dependsOn ?? []) {
-    const depMod = await prisma.module.findUnique({ where: { slug: dep } });
-    if (depMod?.status !== 'ENABLED') {
-      const err = new Error(`Dependency "${dep}" must be ENABLED before enabling "${slug}"`);
-      err.status = 409;
-      throw err;
-    }
-  }
 
-  // Fetch all currently-enabled modules once for both conflict detection and guard checks
+  // Fetch all currently-enabled modules once for conflict detection and guard checks
   const allEnabled = await prisma.module.findMany({ where: { status: 'ENABLED' } });
-  const blockingConflicts = manifest ? computeBlockingConflicts(slug, manifest, allEnabled) : [];
+  const blockingConflicts = computeBlockingConflicts(slug, manifest, allEnabled);
 
   if (blockingConflicts.length > 0) {
     if (!resolveConflicts) throwConflictError(slug, blockingConflicts);
@@ -377,6 +369,48 @@ export async function enableModule(slug, actorId, { resolveConflicts = false } =
   }
 
   return updated;
+}
+
+export async function enableModule(slug, actorId, { resolveConflicts = false } = {}) {
+  const mod = await prisma.module.findUnique({ where: { slug } });
+  if (!mod) {
+    const err = new Error(`Module "${slug}" not found`);
+    err.status = 404;
+    throw err;
+  }
+
+  if (mod.status === 'ENABLED') {
+    const err = new Error(`Module "${slug}" is already enabled`);
+    err.status = 409;
+    throw err;
+  }
+
+  const manifest = loadedManifests.get(slug);
+  if (!manifest) {
+    const err = new Error(`Manifest for "${slug}" is not loaded — cannot verify dependencies before enabling`);
+    err.status = 500;
+    throw err;
+  }
+
+  // KDL-619: Cascade — auto-install and/or enable every transitive dependency
+  // in topological (dependency-first) order before enabling the target.
+  // Previously this block threw 409 if any dep was not already ENABLED; now it
+  // silently installs missing deps and enables any dep that is INSTALLED/DISABLED.
+  const depOrder = buildInstallOrder(slug).slice(0, -1);
+  for (const depSlug of depOrder) {
+    const depMod = await prisma.module.findUnique({ where: { slug: depSlug } });
+    if (!depMod) {
+      // Dep is not in DB at all — install it first (status → INSTALLED).
+      // buildInstallOrder() guarantees depSlug appears before any slug that
+      // depends on it, so its own deps are already installed by this point.
+      await _installSingle(depSlug, actorId, { resolveConflicts });
+    }
+    // Enable the dep if not already ENABLED (_enableSingle is idempotent).
+    await _enableSingle(depSlug, actorId, { resolveConflicts });
+  }
+
+  // All transitive deps are now ENABLED — enable the target itself.
+  return _enableSingle(slug, actorId, { resolveConflicts });
 }
 
 export async function disableModule(slug, actorId) {
