@@ -47,6 +47,21 @@ export async function getProject(id) {
   return project;
 }
 
+// Returns only the fields needed for access-control checks (id + created_by).
+// Used by the requireProjectId shared middleware; not intended for API responses.
+export async function getProjectForAccessCheck(id) {
+  const project = await prisma.project.findFirst({
+    where: { id, deleted_at: null },
+    select: { id: true, created_by: true },
+  });
+  if (!project) {
+    const err = new Error('Project not found');
+    err.status = 404;
+    throw err;
+  }
+  return project;
+}
+
 export async function createProject({ name, slug, is_default, actorId }) {
   const existing = await prisma.project.findUnique({ where: { slug } });
   if (existing) {

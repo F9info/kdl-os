@@ -118,6 +118,12 @@ Recent per-issue detail is in the rolling changelog below; full history in
 
 ---
 
+## 2026-08-24 — KDL-627: Security — X-Project-Id cross-tenant hole closed — PR open (Backend Coder)
+
+New shared middleware `backend/src/middleware/project.js` validates `X-Project-Id` against the DB (404 if unknown, 403 if not the project owner). Applied to all 6 template-engine mutation/read routes that previously trusted the header unchecked. Stale "projects module not yet built" comment deleted. 7 new middleware unit tests; 1229 total tests pass.
+
+---
+
 ## 2026-08-24 — KDL-622: P0 stale AppSetting row fixed — migration applied, PR #222 merged (Backend Coder)
 
 Migration `20260822000000_backfill_credits_new_project_seed_mc` applied to local dev DB.

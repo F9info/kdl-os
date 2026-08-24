@@ -16,6 +16,23 @@
 
 ---
 
+## 2026-08-24 — KDL-627: Security — validate X-Project-Id against project existence + caller access (Backend Coder)
+
+**Branch:** `fix/kdl-627-project-id-validation` off `origin/master` (`02e8761`).
+
+**Fix:** Cross-tenant authorization hole closed. `requireProjectId` in template-engine/controller.js trusted any `X-Project-Id` header value without database validation, allowing any authenticated user to mutate another project's runs.
+
+- **New shared middleware** `backend/src/middleware/project.js` — exports `requireProject`:
+  - 400 if `X-Project-Id` header is absent
+  - 404 if the project does not exist in the DB (or is soft-deleted)
+  - 403 if project exists but `created_by !== req.user.id` and caller is not super-admin
+  - Sets `req.project` and `req.projectId` on success for downstream reuse
+- **template-engine/controller.js** — removed `requireProjectId()` and its stale "projects module not yet built" comment; all six handlers now read `req.project.id`
+- **template-engine/routes.js** — `requireProject` middleware added after `requirePermission` on all six routes that previously called `requireProjectId` (getRun, resumeRun, advanceStage, retryStage, skipStage, getExport)
+- **Tests** — 7 new unit tests in `src/middleware/project.test.js` covering all required cases; all 1229 existing tests pass
+
+---
+
 ## 2026-08-24 — KDL-619: enableModule() cascade-enable fix — PR #227 open (Backend Coder)
 
 **PR:** #227 open — `fix/kdl-619-enable-cascade` → master
