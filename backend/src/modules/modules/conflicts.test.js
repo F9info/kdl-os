@@ -445,6 +445,68 @@ describe('KDL-563: template-engine installs ui modules as dependencies, no confl
   });
 });
 
+// ── KDL-616: theme-engine-ui DISABLED (stale from KDL-447 conflictsWith) ────
+// When the old conflictsWith mechanic disabled theme-engine-ui, listEnabledModules
+// correctly excludes it — confirming the bug that the backfill script fixes.
+
+describe('KDL-616: theme-engine-ui DISABLED alongside ENABLED template-engine → absent from nav', () => {
+  it('theme-engine-ui DISABLED → not returned by listEnabledModules (bug scenario — fixed by backfill)', async () => {
+    loadTemplateEngineManifests();
+
+    // listEnabledModules() queries findMany({ where: { status: 'ENABLED' } }).
+    // A DISABLED theme-engine-ui is excluded at the DB level — the mock must
+    // reflect that so the test accurately simulates the bug scenario.
+    prisma.module = {
+      findMany: vi.fn().mockResolvedValue([
+        DB_TEMPLATE_ENGINE_ENABLED,
+        // theme-engine-ui is DISABLED → Prisma omits it from status=ENABLED query
+        DB_PAGE_BUILDER_UI_ENABLED,
+        DB_THEME_ENGINE_ENABLED,
+        DB_PAGE_BUILDER_ENABLED,
+        DB_BRAND_KIT_ENABLED,
+        DB_COLLATERAL_ENABLED,
+        DB_CREDITS_ENABLED,
+      ]),
+    };
+
+    const modules = await listEnabledModules();
+    const bySlug = Object.fromEntries(modules.map((m) => [m.slug, m]));
+
+    // template-engine nav visible
+    expect(bySlug['template-engine'].nav).toHaveLength(1);
+    // theme-engine-ui is DISABLED → absent from results (KDL-616 bug — backfill re-enables it)
+    expect(bySlug['theme-engine-ui']).toBeUndefined();
+    // page-builder-ui is ENABLED → still visible
+    expect(bySlug['page-builder-ui'].nav).toHaveLength(1);
+  });
+
+  it('after re-enable: theme-engine-ui ENABLED → both Theme Engine + Template Engine nav visible', async () => {
+    loadTemplateEngineManifests();
+
+    prisma.module = {
+      findMany: vi.fn().mockResolvedValue([
+        DB_TEMPLATE_ENGINE_ENABLED,
+        DB_THEME_ENGINE_UI_ENABLED,   // re-enabled by backfill-enable-ui-modules.mjs
+        DB_PAGE_BUILDER_UI_ENABLED,
+        DB_THEME_ENGINE_ENABLED,
+        DB_PAGE_BUILDER_ENABLED,
+        DB_BRAND_KIT_ENABLED,
+        DB_COLLATERAL_ENABLED,
+        DB_CREDITS_ENABLED,
+      ]),
+    };
+
+    const modules = await listEnabledModules();
+    const bySlug = Object.fromEntries(modules.map((m) => [m.slug, m]));
+
+    // Both entries must coexist after re-enable (KDL-587 / KDL-616 acceptance)
+    expect(bySlug['theme-engine-ui'].nav).toHaveLength(1);
+    expect(bySlug['theme-engine-ui'].nav[0].label).toBe('Theme Engine');
+    expect(bySlug['template-engine'].nav).toHaveLength(1);
+    expect(bySlug['template-engine'].nav[0].label).toBe('Template Engine');
+  });
+});
+
 // ── KDL-609: theme-engine-ui and page-builder-ui nav coexists with template-engine ──
 
 describe('KDL-609: theme-engine-ui and page-builder-ui nav always visible alongside template-engine', () => {
