@@ -138,6 +138,33 @@ describe('Studio project scoping — X-Project-Id header (KDL-594)', () => {
     })
   })
 
+  // B2: KDL-615 — backend sends { message } instead of { code }; must not fall through to
+  //     "Request failed".
+  it.each([
+    ['STAGE_NOT_FAILED', useRetryStage],
+    ['STAGE_NOT_SKIPPABLE', useSkipStage],
+    ['EXPORT_ALREADY_DONE', useAdvanceStage],
+  ] as const)(
+    'shows "%s" (from data.message) when the 409 body has no code/error field',
+    async (code, useHook) => {
+      apiPost.mockRejectedValue({
+        response: { status: 409, data: { success: false, message: code } },
+      })
+      const { toast } = await import('@/hooks/use-toast')
+
+      const { result } = renderHook(() => useHook('run-1', 'proj-1'), { wrapper })
+      await act(async () => {
+        result.current.mutate('INTAKE')
+      })
+
+      await waitFor(() => {
+        expect(toast).toHaveBeenCalledWith(
+          expect.objectContaining({ title: code, variant: 'destructive' })
+        )
+      })
+    }
+  )
+
   // C: DONE export renders the manifest — header sent, null collateral survives
   it('renders the export manifest (collateral null) instead of the placeholder', async () => {
     apiGet.mockResolvedValue({ data: { success: true, data: MOCK_MANIFEST } })
