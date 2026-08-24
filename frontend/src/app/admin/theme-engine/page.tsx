@@ -169,40 +169,15 @@ const NAV_GROUPS: Record<string, [string, string[]][]> = {
   ],
 }
 
-// Landing screen shown before the editor — step 1 (top-level platform) and
-// step 2 (sub-section within it) of the three-step flow.
-const LANDING_PLATFORMS = [
-  { id: 'webapp', icon: '🌐', label: 'Webapp' },
+const PLATFORMS = [
+  { id: 'webapp', icon: '🌐', label: 'Web App' },
   { id: 'tv', icon: '📺', label: 'TV' },
-  { id: 'android', icon: '🤖', label: 'Android Native' },
-  { id: 'ios', icon: '🍎', label: 'iOS Native' },
+  { id: 'android', icon: '🤖', label: 'Android Native App' },
+  { id: 'ios', icon: '🍎', label: 'iOS Native App' },
 ]
-
-// Sub-cards per top-level platform. `platformId` is the real backend platform
-// this sub-section edits — a UI grouping only for now, no new data per sub
-// (e.g. Webapp's Frontend and Landing Page both edit the 'webapp' platform
-// until a dedicated Landing Page platform is actually requested). TV/Android/
-// iOS have one sub each today since there's no real split yet — more to come
-// per user direction, one at a time.
-const LANDING_SUBTABS: Record<
-  string,
-  { key: string; platformId: string; icon: string; label: string }[]
-> = {
-  webapp: [
-    { key: 'webapp-frontend', platformId: 'webapp', icon: '🖥️', label: 'Frontend' },
-    { key: 'webapp-admin', platformId: 'webapp_admin', icon: '🛠️', label: 'Admin' },
-    { key: 'webapp-landing', platformId: 'webapp', icon: '📄', label: 'Landing Page' },
-  ],
-  tv: [{ key: 'tv-app', platformId: 'tv', icon: '📺', label: 'TV App' }],
-  android: [{ key: 'android-app', platformId: 'android', icon: '🤖', label: 'Android App' }],
-  ios: [{ key: 'ios-app', platformId: 'ios', icon: '🍎', label: 'iOS App' }],
-}
 
 const LS_PLATFORM = 'th_platform'
 const LS_PANE = 'te_pane'
-const LS_TOP_PLATFORM = 'te_top_platform'
-const LS_SUB_LABEL = 'te_sub_label'
-const LS_ENTERED = 'te_entered'
 
 function lsGet(key: string, fallback: string) {
   if (typeof window === 'undefined') return fallback
@@ -570,17 +545,6 @@ function ThemeEngineInner() {
   const qc = useQueryClient()
 
   // ── UI prefs (localStorage only) ──────────────────────────────────────────
-  // Three-step flow, persisted like everything else here — a refresh must land
-  // back where you were, not reset to step 1: 1) pick a top-level platform
-  // card, 2) pick a sub-section card within it, 3) the existing full editor
-  // for whichever platform that sub-section edits.
-  const [topPlatform, setTopPlatformState] = useState<string | null>(
-    () => lsGet(LS_TOP_PLATFORM, '') || null
-  )
-  const [subLabel, setSubLabelState] = useState<string | null>(
-    () => lsGet(LS_SUB_LABEL, '') || null
-  )
-  const [entered, setEnteredState] = useState(() => lsGet(LS_ENTERED, '') === 'true')
   const [platform, setPlatformState] = useState(() => lsGet(LS_PLATFORM, 'webapp'))
   const [activePane, setActivePaneState] = useState(() => lsGet(LS_PANE, ''))
   const [search, setSearch] = useState('')
@@ -590,18 +554,6 @@ function ThemeEngineInner() {
   // Which sections are open (default: all open)
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({})
 
-  const setTopPlatform = (p: string | null) => {
-    setTopPlatformState(p)
-    lsSet(LS_TOP_PLATFORM, p ?? '')
-  }
-  const setSubLabel = (s: string | null) => {
-    setSubLabelState(s)
-    lsSet(LS_SUB_LABEL, s ?? '')
-  }
-  const setEntered = (v: boolean) => {
-    setEnteredState(v)
-    lsSet(LS_ENTERED, String(v))
-  }
   const setPlatform = (p: string) => {
     setPlatformState(p)
     lsSet(LS_PLATFORM, p)
@@ -963,76 +915,6 @@ function ThemeEngineInner() {
   const isSaving = saveMutation.isPending || activeThemeMutation.isPending
   const isResetting = resetMutation.isPending
 
-  if (!topPlatform) {
-    return (
-      <div
-        className="-m-6 flex flex-col items-center justify-center gap-10 bg-muted/30"
-        data-testid="theme-engine-landing"
-        style={{ height: 'calc(100dvh - 4rem)' }}
-      >
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">Theme Engine</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Choose a platform to configure</p>
-        </div>
-        <div className="flex flex-wrap items-center justify-center gap-4">
-          {LANDING_PLATFORMS.map((p) => (
-            <button
-              key={p.id}
-              data-testid={`landing-card-${p.id}`}
-              onClick={() => setTopPlatform(p.id)}
-              className="flex w-40 flex-col items-center gap-2 rounded-xl border border-border bg-card p-6 text-center transition-colors hover:border-primary hover:bg-secondary"
-            >
-              <span className="text-4xl">{p.icon}</span>
-              <span className="text-sm font-semibold">{p.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-    )
-  }
-
-  if (!entered) {
-    const subtabs = LANDING_SUBTABS[topPlatform] ?? []
-    return (
-      <div
-        className="-m-6 flex flex-col items-center justify-center gap-10 bg-muted/30"
-        data-testid="theme-engine-sublanding"
-        style={{ height: 'calc(100dvh - 4rem)' }}
-      >
-        <div className="text-center">
-          <button
-            data-testid="landing-back"
-            onClick={() => setTopPlatform(null)}
-            className="mb-3 text-sm text-muted-foreground hover:text-foreground"
-          >
-            ← Back
-          </button>
-          <h1 className="text-2xl font-bold">
-            {LANDING_PLATFORMS.find((p) => p.id === topPlatform)?.label}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">Choose a section to configure</p>
-        </div>
-        <div className="flex flex-wrap items-center justify-center gap-4">
-          {subtabs.map((s) => (
-            <button
-              key={s.key}
-              data-testid={`landing-subcard-${s.key}`}
-              onClick={() => {
-                setPlatform(s.platformId)
-                setSubLabel(s.label)
-                setEntered(true)
-              }}
-              className="flex w-40 flex-col items-center gap-2 rounded-xl border border-border bg-card p-6 text-center transition-colors hover:border-primary hover:bg-secondary"
-            >
-              <span className="text-4xl">{s.icon}</span>
-              <span className="text-sm font-semibold">{s.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div
       className="-m-6 flex flex-col overflow-hidden bg-muted/30"
@@ -1049,35 +931,27 @@ function ThemeEngineInner() {
         </span>
       </div>
 
-      {/* ── Breadcrumb — back out of the 3-step platform/section flow ───────── */}
+      {/* ── Platform bar ─────────────────────────────────────────────────── */}
       <div
-        className="flex flex-shrink-0 items-center gap-1.5 border-b bg-sidebar px-4 py-2 text-sm"
-        data-testid="breadcrumb"
+        className="flex flex-shrink-0 items-center gap-1 border-b bg-sidebar px-4 py-2"
+        data-testid="platform-bar"
       >
-        <button
-          data-testid="breadcrumb-root"
-          onClick={() => {
-            setTopPlatform(null)
-            setEntered(false)
-          }}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          Theme Engine
-        </button>
-        <span className="text-muted-foreground">/</span>
-        <button
-          data-testid="breadcrumb-platform"
-          onClick={() => setEntered(false)}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          {LANDING_PLATFORMS.find((p) => p.id === topPlatform)?.label ?? topPlatform}
-        </button>
-        {subLabel && (
-          <>
-            <span className="text-muted-foreground">/</span>
-            <span className="font-medium text-foreground">{subLabel}</span>
-          </>
-        )}
+        {PLATFORMS.map((p) => (
+          <button
+            key={p.id}
+            data-testid={`platform-btn-${p.id}`}
+            onClick={() => setPlatform(p.id)}
+            className={cn(
+              'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+              platform === p.id
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+            )}
+          >
+            <span>{p.icon}</span>
+            <span>{p.label}</span>
+          </button>
+        ))}
       </div>
 
       {/* ── Active theme bar ─────────────────────────────────────────────── */}

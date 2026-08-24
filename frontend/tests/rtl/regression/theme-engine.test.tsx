@@ -159,14 +159,11 @@ async function importPage() {
   return mod.default
 }
 
-// Step 1 of the page's two-step flow is a platform-picker landing screen —
-// every test needs to click through it before the editor (platform bar,
-// panes, etc.) exists in the DOM.
+// The wizard was removed in KDL-637: the editor renders on first paint.
+// webapp is the default platform (localStorage fallback), so the schema
+// query fires immediately — no landing-card navigation required.
 async function enterWebapp() {
-  await waitFor(() => screen.getByTestId('landing-card-webapp'))
-  fireEvent.click(screen.getByTestId('landing-card-webapp'))
-  await waitFor(() => screen.getByTestId('landing-subcard-webapp-frontend'))
-  fireEvent.click(screen.getByTestId('landing-subcard-webapp-frontend'))
+  await waitFor(() => screen.getByTestId('theme-engine-page'))
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -200,21 +197,17 @@ describe('Theme Engine page (KDL-177 C1 gates)', () => {
     })
   })
 
-  // Platform selection is a two-level landing screen (platform → sub-section)
-  // — picking a sub-card fires the query for that platform and persists it,
-  // no in-editor switcher anymore.
-  it('picking a landing sub-card fires the query for that platform param', async () => {
+  // Platform bar replaces the two-level landing screen: clicking a platform
+  // button fires the schema query for that platform in place and persists the
+  // selection — no navigation, no unmount of the editor.
+  it('clicking a platform-bar button fires the schema query with the correct platform param', async () => {
     const Page = await importPage()
     wrapWithQueryClient(<Page />)
-    apiGet.mockResolvedValueOnce({ data: tvSchema })
 
-    await waitFor(() => screen.getByTestId('landing-card-tv'))
+    await waitFor(() => screen.getByTestId('platform-bar'))
+
     await act(async () => {
-      fireEvent.click(screen.getByTestId('landing-card-tv'))
-    })
-    await waitFor(() => screen.getByTestId('landing-subcard-tv-app'))
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('landing-subcard-tv-app'))
+      fireEvent.click(screen.getByTestId('platform-btn-tv'))
     })
 
     await waitFor(() => {
@@ -223,7 +216,7 @@ describe('Theme Engine page (KDL-177 C1 gates)', () => {
       expect(tvCall).toBeTruthy()
     })
 
-    // localStorage updated
+    // localStorage updated for the new platform
     expect(localStorageMock.getItem('th_platform')).toBe('tv')
   })
 
@@ -451,5 +444,25 @@ describe('Theme Engine page (KDL-177 C1 gates)', () => {
     await waitFor(() => {
       expect(screen.getByText('Failed to load schema.')).toBeTruthy()
     })
+  })
+
+  // KDL-637 regression guard: the two-step wizard was deleted and replaced
+  // with an always-visible platform-bar. This test locks that in so a future
+  // reintroduction of landing-card/sub-card testids is caught immediately.
+  it('KDL-637 regression: editor renders on first paint — platform-bar visible, no landing cards', async () => {
+    const Page = await importPage()
+    wrapWithQueryClient(<Page />)
+
+    // platform-bar present before any user interaction
+    await waitFor(() => screen.getByTestId('platform-bar'))
+    expect(screen.getByTestId('theme-engine-page')).toBeTruthy()
+
+    // no wizard / landing-card testids anywhere in the DOM
+    expect(screen.queryByTestId('landing-card-webapp')).toBeNull()
+    expect(screen.queryByTestId('landing-card-tv')).toBeNull()
+    expect(screen.queryByTestId('landing-subcard-webapp-frontend')).toBeNull()
+
+    // sidebar pane buttons appear once the schema loads
+    await waitFor(() => screen.getByTestId('pane-btn-pane-branding'))
   })
 })
