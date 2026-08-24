@@ -239,3 +239,155 @@ test('Gate 2 — disable → routes 404 → re-enable → schema/tokens identica
   await page.getByTestId('landing-subcard-webapp-frontend').click()
   await expect(page.getByTestId('theme-engine-page')).toBeVisible({ timeout: 15_000 })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// KDL-631: blanket pointer-events-none removed — platform navigation must work
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Returns true when no ancestor of `locator` carries pointer-events:none or the CSS class pointer-events-none. */
+async function noPointerBlockingAncestor(
+  locator: import('@playwright/test').Locator
+): Promise<boolean> {
+  return locator.evaluate((el) => {
+    let node: Element | null = el.parentElement
+    while (node) {
+      const style = window.getComputedStyle(node)
+      if (style.pointerEvents === 'none') return false
+      node = node.parentElement
+    }
+    return true
+  })
+}
+
+test.describe('KDL-631 — platform navigation clickable with template-engine enabled', () => {
+  test.describe.configure({ mode: 'serial' })
+
+  test.beforeAll(async () => {
+    // Re-use the `api` / `adminToken` established in the outer beforeAll.
+    await ensureEnabled()
+  })
+
+  test('platform cards have no pointer-events-none ancestor (blanket wrapper gone)', async ({
+    page,
+  }) => {
+    await loginUi(page)
+    await page.goto('/admin/theme-engine')
+    await expect(page.getByTestId('theme-engine-landing')).toBeVisible({ timeout: 10_000 })
+
+    const webappCard = page.getByTestId('landing-card-webapp')
+    await expect(webappCard).toBeVisible()
+
+    const clean = await noPointerBlockingAncestor(webappCard)
+    expect(clean, 'An ancestor of the Webapp card carries pointer-events:none').toBe(true)
+  })
+
+  const PLATFORMS: { cardId: string; subCardId: string; label: string }[] = [
+    {
+      cardId: 'landing-card-webapp',
+      subCardId: 'landing-subcard-webapp-frontend',
+      label: 'Webapp',
+    },
+    { cardId: 'landing-card-tv', subCardId: 'landing-subcard-tv-app', label: 'TV' },
+    {
+      cardId: 'landing-card-android',
+      subCardId: 'landing-subcard-android-app',
+      label: 'Android Native',
+    },
+    { cardId: 'landing-card-ios', subCardId: 'landing-subcard-ios-app', label: 'iOS Native' },
+  ]
+
+  for (const { cardId, subCardId, label } of PLATFORMS) {
+    test(`${label} — card click → sub-section → editor renders with ≥1 editable input`, async ({
+      page,
+    }) => {
+      await loginUi(page)
+      // Clear localStorage so we always start from the landing screen.
+      await page.goto('/admin/theme-engine')
+      await page.evaluate(() => {
+        localStorage.removeItem('te_top_platform')
+        localStorage.removeItem('te_sub_label')
+        localStorage.removeItem('te_entered')
+        localStorage.removeItem('th_platform')
+        localStorage.removeItem('te_pane')
+      })
+      await page.reload()
+
+      await expect(page.getByTestId('theme-engine-landing')).toBeVisible({ timeout: 10_000 })
+
+      await page.getByTestId(cardId).click()
+      await expect(page.getByTestId('theme-engine-sublanding')).toBeVisible({ timeout: 8_000 })
+
+      await page.getByTestId(subCardId).click()
+      await expect(page.getByTestId('theme-engine-page')).toBeVisible({ timeout: 15_000 })
+
+      // At least one input or button inside the field area (editor loaded real schema).
+      const fieldInputs = page.locator(
+        '[data-testid^="field-row-"] input, [data-testid^="field-row-"] select, [data-testid^="field-row-"] button'
+      )
+      await expect(fieldInputs.first()).toBeVisible({ timeout: 15_000 })
+      const count = await fieldInputs.count()
+      expect(count, `${label} editor rendered 0 editable inputs`).toBeGreaterThan(0)
+    })
+  }
+
+  test('Webapp — edit one color, save, reload, value persisted', async ({ page }) => {
+    const EDIT_COLOR = '#1a2b3c'
+
+    await loginUi(page)
+    await page.goto('/admin/theme-engine')
+    await page.evaluate(() => {
+      localStorage.removeItem('te_top_platform')
+      localStorage.removeItem('te_sub_label')
+      localStorage.removeItem('te_entered')
+      localStorage.removeItem('th_platform')
+      localStorage.removeItem('te_pane')
+    })
+    await page.reload()
+
+    await expect(page.getByTestId('theme-engine-landing')).toBeVisible({ timeout: 10_000 })
+    await page.getByTestId('landing-card-webapp').click()
+    await page.getByTestId('landing-subcard-webapp-frontend').click()
+    await expect(page.getByTestId('theme-engine-page')).toBeVisible({ timeout: 15_000 })
+
+    // Wait for the pane sidebar to load from the real API.
+    await expect(page.getByTestId(`pane-btn-${targetPaneId}`)).toBeVisible({ timeout: 15_000 })
+    await page.getByTestId(`pane-btn-${targetPaneId}`).click()
+
+    const fieldRow = page.getByTestId(`field-row-${targetFieldId}`)
+    await expect(fieldRow).toBeVisible({ timeout: 10_000 })
+
+    const colorInput = fieldRow.locator('input[type="color"]')
+    await expect(colorInput).toBeVisible()
+    await colorInput.fill(EDIT_COLOR)
+    await colorInput.dispatchEvent('change')
+
+    const saveBtn = page.getByTestId('btn-save')
+    await expect(saveBtn).toBeEnabled()
+
+    const [saveResponse] = await Promise.all([
+      page.waitForResponse(
+        (r) => r.url().includes('/theme-engine/values') && r.request().method() === 'POST'
+      ),
+      saveBtn.click(),
+    ])
+    expect(saveResponse.status(), `POST /values returned ${saveResponse.status()}`).toBe(200)
+
+    // Reload and assert value persisted.
+    await page.reload()
+    await expect(page.getByTestId('theme-engine-page')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByTestId(`pane-btn-${targetPaneId}`)).toBeVisible({ timeout: 15_000 })
+    await page.getByTestId(`pane-btn-${targetPaneId}`).click()
+
+    const reloadedRow = page.getByTestId(`field-row-${targetFieldId}`)
+    await expect(reloadedRow).toBeVisible({ timeout: 10_000 })
+    const reloadedInput = reloadedRow.locator('input[type="color"]')
+    await expect(reloadedInput).toHaveValue(EDIT_COLOR)
+
+    // Restore original value.
+    await reloadedInput.fill(targetOriginalValue)
+    await reloadedInput.dispatchEvent('change')
+    const restoreBtn = page.getByTestId('btn-save')
+    await expect(restoreBtn).toBeEnabled()
+    await restoreBtn.click()
+  })
+})
