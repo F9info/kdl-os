@@ -3,17 +3,10 @@ import { writeActivityAsync, getClientIp } from '../user-management/shared/activ
 import { resolvePermissions } from '../user-management/shared/permission-resolver.js';
 import * as service from './service.js';
 
-// Read project scope from header — X-Project-Id (TEMPLATE_ENGINE_ARCH §9, §10).
-// projects module not yet built; we read the header directly.
-function requireProjectId(req) {
-  const projectId = req.headers['x-project-id'];
-  if (!projectId) {
-    const err = new Error('X-Project-Id header is required');
-    err.status = 400;
-    throw err;
-  }
-  return projectId;
-}
+// Project scope (req.projectId) is injected by the requireProjectId shared middleware
+// (backend/src/shared/middleware/require-project-id.js) on every route that reads
+// X-Project-Id — see routes.js.  That middleware validates project existence (404) and
+// caller access (403) against the projects module before this controller runs.
 
 export const createRun = async (req, res, next) => {
   try {
@@ -47,8 +40,7 @@ export const listRuns = async (req, res, next) => {
 
 export const getRun = async (req, res, next) => {
   try {
-    const projectId = requireProjectId(req);
-    const run = await service.getRun(req.validated.params.runId, projectId);
+    const run = await service.getRun(req.validated.params.runId, req.projectId);
     return successResponse(res, run);
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);
@@ -59,8 +51,7 @@ export const getRun = async (req, res, next) => {
 // Crash-recovery: flip RUNNING → FAILED(INTERRUPTED) for a run.
 export const resumeRun = async (req, res, next) => {
   try {
-    const projectId = requireProjectId(req);
-    await service.getRun(req.validated.params.runId, projectId); // 404 guard
+    await service.getRun(req.validated.params.runId, req.projectId); // 404 guard
     const count = await service.markInterruptedStages(req.validated.params.runId);
     return successResponse(res, { interrupted: count });
   } catch (err) {
@@ -73,8 +64,8 @@ export const resumeRun = async (req, res, next) => {
 // All other gated stages require only :run (enforced at router level).
 export const advanceStage = async (req, res, next) => {
   try {
-    const projectId = requireProjectId(req);
     const { runId, stage } = req.validated.params;
+    const projectId = req.projectId;
 
     // approval stage requires the extra :approve permission (§9).
     if (stage === 'approval') {
@@ -123,8 +114,7 @@ export const advanceStage = async (req, res, next) => {
 
 export const getExport = async (req, res, next) => {
   try {
-    const projectId = requireProjectId(req);
-    const manifest = await service.getExportManifest(req.validated.params.runId, projectId);
+    const manifest = await service.getExportManifest(req.validated.params.runId, req.projectId);
     return successResponse(res, manifest);
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status, { code: err.code });
@@ -134,9 +124,8 @@ export const getExport = async (req, res, next) => {
 
 export const retryStage = async (req, res, next) => {
   try {
-    const projectId = requireProjectId(req);
     const { runId, stage } = req.validated.params;
-    const stageRecord = await service.retryStage(runId, stage, req.user.id, projectId);
+    const stageRecord = await service.retryStage(runId, stage, req.user.id, req.projectId);
     writeActivityAsync({
       actor: req.user.id,
       module: 'template-engine',
@@ -157,9 +146,8 @@ export const retryStage = async (req, res, next) => {
 
 export const skipStage = async (req, res, next) => {
   try {
-    const projectId = requireProjectId(req);
     const { runId, stage } = req.validated.params;
-    const stageRecord = await service.skipStage(runId, stage, req.user.id, projectId);
+    const stageRecord = await service.skipStage(runId, stage, req.user.id, req.projectId);
     writeActivityAsync({
       actor: req.user.id,
       module: 'template-engine',
