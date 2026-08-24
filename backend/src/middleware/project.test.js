@@ -1,17 +1,21 @@
 /**
  * requireProject middleware — KDL-627
  *
- * Verifies X-Project-Id is validated against the real projects module:
+ * Verifies the project id (from header, body, or query) is validated against
+ * the real projects module:
  *   1. Unknown project id             → 404
  *   2. Caller does not own project    → 403  (core security assertion)
  *   3. Valid, authorized project      → passes through (req.projectId set)
  *   4. Super-admin bypass             → passes through even if not the creator
  *   5. Missing header                 → 400
  *   6. Mutation route (advanceStage)  → 403 for unauthorised caller
+ *   7. null created_by (org-shared)   → passes through for any authenticated user
+ *   8. requireProject('body')         → reads projectId from req.validated.body
+ *   9. requireProject('query')        → reads projectId from req.validated.query
  *
  * Mock-key audit (KDL-577 lesson):
  *   getProjectForAccessCheck is mocked — it returns { id, created_by } matching
- *   backend/prisma/schema/projects.prisma fields (both present).
+ *   backend/prisma/schema/projects.prisma fields (both present; created_by is String?).
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -31,11 +35,15 @@ import { requireProject } from './project.js';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-function makeReq({ projectIdHeader, userId, userPermissions } = {}) {
+function makeReq({ projectIdHeader, userId, userPermissions, body, query } = {}) {
   return {
     headers: projectIdHeader !== undefined ? { 'x-project-id': projectIdHeader } : {},
     user: userId !== undefined ? { id: userId } : undefined,
     userPermissions: userPermissions ?? null,
+    validated: {
+      body: body ?? {},
+      query: query ?? {},
+    },
   };
 }
 
@@ -58,6 +66,7 @@ function notFoundError() {
 
 const ownedProject   = { id: PROJECT_ID, created_by: CALLER_ID };
 const foreignProject = { id: PROJECT_ID, created_by: OTHER_ID };
+const sharedProject  = { id: PROJECT_ID, created_by: null }; // org-shared (Default Project)
 
 // ── Test cases ─────────────────────────────────────────────────────────────────
 
@@ -78,7 +87,7 @@ describe('requireProject middleware', () => {
     const req = makeReq({ projectIdHeader: 'nonexistent-id', userId: CALLER_ID });
     const res = makeRes();
 
-    await requireProject(req, res, next);
+    await requireProject()(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(404);
     expect(next).not.toHaveBeenCalled();
@@ -93,7 +102,7 @@ describe('requireProject middleware', () => {
     const req = makeReq({ projectIdHeader: PROJECT_ID, userId: CALLER_ID });
     const res = makeRes();
 
-    await requireProject(req, res, next);
+    await requireProject()(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(403);
     expect(next).not.toHaveBeenCalled();
@@ -108,7 +117,7 @@ describe('requireProject middleware', () => {
     const req = makeReq({ projectIdHeader: PROJECT_ID, userId: CALLER_ID });
     const res = makeRes();
 
-    await requireProject(req, res, next);
+    await requireProject()(req, res, next);
 
     expect(next).toHaveBeenCalledTimes(1);
     expect(req.projectId).toBe(PROJECT_ID);
@@ -124,7 +133,7 @@ describe('requireProject middleware', () => {
     const req = makeReq({ projectIdHeader: PROJECT_ID, userId: CALLER_ID });
     const res = makeRes();
 
-    await requireProject(req, res, next);
+    await requireProject()(req, res, next);
 
     expect(next).toHaveBeenCalledTimes(1);
     expect(req.projectId).toBe(PROJECT_ID);
@@ -136,7 +145,7 @@ describe('requireProject middleware', () => {
     const req = makeReq({ userId: CALLER_ID }); // no projectIdHeader key
     const res = makeRes();
 
-    await requireProject(req, res, next);
+    await requireProject()(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(next).not.toHaveBeenCalled();
@@ -158,11 +167,92 @@ describe('requireProject middleware', () => {
       userPermissions: null,     // will be resolved by middleware
       validated: {
         params: { runId: 'run-1', stage: 'intake' },
+        body: {},
+        query: {},
       },
     };
     const res = makeRes();
 
-    await requireProject(req, res, next);
+    await requireProject()(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  // ── 7. null created_by (org-shared Default Project) → passes through ─────────
+  // The seeded Default Project has no created_by (null). Any authenticated user
+  // must be able to access it; otherwise all non-super-admin users get 403.
+
+  it('calls next for any authenticated user on an org-shared project (null created_by)', async () => {
+    getProjectForAccessCheck.mockResolvedValue(sharedProject);
+    resolvePermissions.mockResolvedValue({ bypass: false, permissions: [] });
+
+    const req = makeReq({ projectIdHeader: PROJECT_ID, userId: CALLER_ID });
+    const res = makeRes();
+
+    await requireProject()(req, res, next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(req.projectId).toBe(PROJECT_ID);
+    expect(res.status).not.toHaveBeenCalled();
+  });
+
+  // ── 8. requireProject('body') — reads projectId from request body ────────────
+  // Covers POST /runs (createRun) where projectId comes from the request body,
+  // not the X-Project-Id header.
+
+  it("reads projectId from req.validated.body when source is 'body'", async () => {
+    getProjectForAccessCheck.mockResolvedValue(ownedProject);
+    resolvePermissions.mockResolvedValue({ bypass: false, permissions: [] });
+
+    const req = makeReq({ userId: CALLER_ID, body: { projectId: PROJECT_ID } });
+    // No x-project-id header — the middleware must not look at headers.
+    const res = makeRes();
+
+    await requireProject('body')(req, res, next);
+
+    expect(getProjectForAccessCheck).toHaveBeenCalledWith(PROJECT_ID);
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(req.projectId).toBe(PROJECT_ID);
+  });
+
+  it("returns 400 for 'body' source when projectId is absent from body", async () => {
+    const req = makeReq({ userId: CALLER_ID }); // body is {}
+    const res = makeRes();
+
+    await requireProject('body')(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(next).not.toHaveBeenCalled();
+    expect(getProjectForAccessCheck).not.toHaveBeenCalled();
+  });
+
+  // ── 9. requireProject('query') — reads projectId from query string ───────────
+  // Covers GET /runs (listRuns) where projectId comes from ?projectId=...,
+  // not the X-Project-Id header.
+
+  it("reads projectId from req.validated.query when source is 'query'", async () => {
+    getProjectForAccessCheck.mockResolvedValue(ownedProject);
+    resolvePermissions.mockResolvedValue({ bypass: false, permissions: [] });
+
+    const req = makeReq({ userId: CALLER_ID, query: { projectId: PROJECT_ID } });
+    const res = makeRes();
+
+    await requireProject('query')(req, res, next);
+
+    expect(getProjectForAccessCheck).toHaveBeenCalledWith(PROJECT_ID);
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(req.projectId).toBe(PROJECT_ID);
+  });
+
+  it("returns 403 for 'query' source when caller does not own the project", async () => {
+    getProjectForAccessCheck.mockResolvedValue(foreignProject);
+    resolvePermissions.mockResolvedValue({ bypass: false, permissions: [] });
+
+    const req = makeReq({ userId: CALLER_ID, query: { projectId: PROJECT_ID } });
+    const res = makeRes();
+
+    await requireProject('query')(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(403);
     expect(next).not.toHaveBeenCalled();
@@ -180,7 +270,7 @@ describe('requireProject middleware', () => {
     });
     const res = makeRes();
 
-    await requireProject(req, res, next);
+    await requireProject()(req, res, next);
 
     expect(resolvePermissions).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalledTimes(1);

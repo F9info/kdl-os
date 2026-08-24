@@ -10,7 +10,7 @@ import * as service from './service.js';
 
 export const createRun = async (req, res, next) => {
   try {
-    const projectId = req.validated.body.projectId;
+    const projectId = req.projectId;
     const run = await service.createRun(projectId, req.user.id);
     writeActivityAsync({
       actor: req.user.id,
@@ -30,7 +30,7 @@ export const createRun = async (req, res, next) => {
 
 export const listRuns = async (req, res, next) => {
   try {
-    const projectId = req.validated.query.projectId;
+    const projectId = req.projectId;
     const runs = await service.listRuns(projectId);
     return successResponse(res, runs);
   } catch (err) {
