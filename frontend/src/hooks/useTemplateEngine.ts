@@ -91,6 +91,11 @@ export function useAdvanceStage(runId: string, projectId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: runKey(runId) })
       qc.invalidateQueries({ queryKey: runsKey(projectId) })
+      // Several stages (PALETTE, INFERENCE, GUIDELINES, ...) write brand-kit
+      // fields server-side as a side effect of completing — without this the
+      // brand-kit query stays on its pre-stage-run snapshot until something
+      // else (a full page reload) forces a refetch.
+      qc.invalidateQueries({ queryKey: ['brand-kit', projectId] })
     },
     onError: (err) => {
       toast({ title: extractErrorCode(err), variant: 'destructive' })
@@ -183,6 +188,7 @@ export function useRetryStage(runId: string, projectId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: runKey(runId) })
       qc.invalidateQueries({ queryKey: runsKey(projectId) })
+      qc.invalidateQueries({ queryKey: ['brand-kit', projectId] })
     },
     onError: (err) => {
       toast({ title: extractErrorCode(err), variant: 'destructive' })
