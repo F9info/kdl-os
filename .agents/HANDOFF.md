@@ -1,3 +1,19 @@
+## 2026-08-25 — KDL-558 row 1: Intake stage "Logo & Contact Details" form (CEO)
+
+**Roadmap:** `.agents/TEMPLATE_ENGINE_HTML_INTEGRATION.md` row 1 of 9 (page-by-page port of the new `templateEngine 2.html` prototype into `/admin/template-engine`).
+
+**What was done:**
+- `BrandKit` has zero contact-detail columns (only logo/palette/typography/tone). User directive: don't add a migration for these — reuse the existing Application Settings engine (`/admin/settings/fields`) the same way theme-engine already scopes per-platform values.
+- New `backend/src/modules/brand-kit/contact-fields.js` — 7-field catalogue (company_name, primary/secondary email, primary/secondary phone, address1/2). One `Type` + one `SettingField` per (project, field key) is find-or-created on demand, tagged `owner_module: 'brand-kit'` (invisible to the generic `/admin/settings/*` screens and sidebar nav, per `.agents/THEME_ENGINE_ARCH.md`'s established mechanism). Values live in theme-engine's own `SettingValue` table (not `SettingField.value`, which the generic engine's own write path owns) — zero schema migration.
+- `backend/src/modules/brand-kit/{routes,controller,schema}.js` — new `GET/PUT /api/brand-kit/:projectId/contact`.
+- `backend/src/modules/collateral/service.js` `resolveBrandKit()` — now populates `company.email/phone/addressLines` from these fields (previously only `displayName`/`legalName` from `project.name`; print layouts for visiting card/letterhead already read `company.email/phone/addressLines` but they were always empty — real functional gap closed, not just cosmetic). Falls back to `project.name` when no contact fields saved yet (existing KDL-583 test behavior preserved), and is best-effort (try/catch) so a lookup failure never blocks a render.
+- Frontend: `IntakeStage.tsx` rewritten — real "Logo & Contact Details" form (2-col grid matching the prototype's Overview screen) replacing the two static placeholder lines ("Company name — collected from brand-kit intake" was never true; no such storage existed). New hooks `useBrandContactFields`/`useSaveBrandContactFields` in `useTemplateEngine.ts`.
+- Tests: `brand-kit/contact-fields.test.js` (5), `collateral/company-info.test.js` (3, isolated from `collateral.test.js` so mocking `contact-fields.js` can't affect its existing assertions), `template-engine-intake-contact.test.tsx` (3 RTL). Full suites green: backend 1257/1257, frontend 167/167 regression + type-check + lint clean.
+
+**Next:** Row 2 of the roadmap (Color Palette stage audit) — see tracking file for the full row-by-row plan and status.
+
+---
+
 ## 2026-08-24 — KDL-630: theme-engine lock scoped to active run — PR pending (Backend Coder)
 
 **Issue:** KDL-630 (P0 root cause — all 4094 fields permanently read-only)

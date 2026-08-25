@@ -1,16 +1,29 @@
 'use client'
 
-import { useRef } from 'react'
-import { Building2, Tag, Upload, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Upload, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
 import {
   useAdvanceStage,
   useBrandKit,
+  useBrandContactFields,
+  useSaveBrandContactFields,
   useRetryStage,
   useUploadLogo,
 } from '@/hooks/useTemplateEngine'
 import { StageShell } from './StageShell'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import type { TemplateEngineRun } from '@/types/template-engine.types'
+
+// Two-column layout order matching the prototype's "Logo & Contact Details"
+// screen (templateEngine 2.html Overview stage). Fields not paired here
+// (secondary_phone, address1, address2) render full-width below.
+const PAIRED_ROWS: Array<[string, string]> = [
+  ['company_name', 'primary_email'],
+  ['secondary_email', 'primary_phone'],
+]
+const FULL_WIDTH_KEYS = ['secondary_phone', 'address1', 'address2']
 
 export function IntakeStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'INTAKE')
@@ -18,8 +31,23 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
   const retry = useRetryStage(run.id, run.projectId)
   const { data: brandKit, isLoading: kitLoading } = useBrandKit(run.projectId)
   const uploadLogo = useUploadLogo(run.projectId)
+  const { data: contactFields } = useBrandContactFields(run.projectId)
+  const saveContact = useSaveBrandContactFields(run.projectId)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const [values, setValues] = useState<Record<string, string>>({})
+
+  // Seed local edit state once the saved values load; don't clobber in-progress edits on refetch.
+  useEffect(() => {
+    if (!contactFields) return
+    setValues((prev) =>
+      Object.keys(prev).length > 0
+        ? prev
+        : Object.fromEntries(contactFields.map((f) => [f.key, f.value]))
+    )
+  }, [contactFields])
+
+  const byKey = Object.fromEntries((contactFields ?? []).map((f) => [f.key, f]))
   const hasLogo = !!brandKit?.logo_media_id
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -28,6 +56,23 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
     uploadLogo.mutate(file)
     // Reset so the same file can be re-selected if needed
     e.target.value = ''
+  }
+
+  function field(key: string) {
+    return (
+      <div key={key}>
+        <Label htmlFor={`intake-${key}`}>
+          {byKey[key]?.label ?? key}
+          {key === 'company_name' && <span className="text-destructive"> *</span>}
+        </Label>
+        <Input
+          id={`intake-${key}`}
+          value={values[key] ?? ''}
+          placeholder="Type a value…"
+          onChange={(e) => setValues((prev) => ({ ...prev, [key]: e.target.value }))}
+        />
+      </div>
+    )
   }
 
   return (
@@ -42,13 +87,22 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
       runDisabled={!hasLogo && stage?.status !== 'FAILED'}
     >
       <div className="grid gap-4 max-w-xl">
-        <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-          <Building2 className="h-4 w-4 shrink-0" />
-          <span>Company name — collected from brand-kit intake</span>
-        </div>
-        <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-          <Tag className="h-4 w-4 shrink-0" />
-          <span>Industry + tagline — used to seed tone inference</span>
+        <div className="rounded-lg border bg-card p-4 space-y-4">
+          <h3 className="text-sm font-medium">Logo &amp; Contact Details</h3>
+          {PAIRED_ROWS.map(([left, right]) => (
+            <div key={left} className="grid grid-cols-2 gap-4">
+              {field(left)}
+              {field(right)}
+            </div>
+          ))}
+          {FULL_WIDTH_KEYS.map((key) => field(key))}
+          <Button
+            size="sm"
+            onClick={() => saveContact.mutate(values)}
+            disabled={saveContact.isPending || !values.company_name?.trim()}
+          >
+            {saveContact.isPending ? 'Submitting…' : 'Submit'}
+          </Button>
         </div>
 
         {/* Logo upload */}

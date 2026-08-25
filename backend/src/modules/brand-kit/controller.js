@@ -10,6 +10,7 @@ import {
   getTokens,
   renderGuidelines,
 } from './service.js';
+import { getContactFields, saveContactFields } from './contact-fields.js';
 
 export const getKitHandler = async (req, res, next) => {
   try {
@@ -101,6 +102,24 @@ export const renderGuidelinesHandler = async (req, res, next) => {
     successResponse(res, result, 201);
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+export const getContactFieldsHandler = async (req, res, next) => {
+  try {
+    const fields = await getContactFields(req.params.projectId);
+    successResponse(res, { fields });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const saveContactFieldsHandler = async (req, res, next) => {
+  try {
+    const fields = await saveContactFields(req.params.projectId, req.validated.body, req.user?.id ?? null);
+    successResponse(res, { fields });
+  } catch (err) {
     next(err);
   }
 };

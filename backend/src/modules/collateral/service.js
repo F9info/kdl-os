@@ -4,6 +4,7 @@
 import { randomUUID } from 'crypto';
 import { prisma } from '../../config/database.js';
 import { withCreditHold } from '../credits/service.js';
+import { getCompanyInfo } from '../brand-kit/contact-fields.js';
 import { runPreflight } from './preflight.js';
 import { renderArtifact } from './render/index.js';
 
@@ -30,6 +31,14 @@ export async function resolveBrandKit(projectId, _version) {
       // swallow — company fields will be absent; preflight will reject if required
     }
 
+    // Contact fields (KDL-558 row 1) are best-effort too — never block a render.
+    let contact = {};
+    try {
+      contact = await getCompanyInfo(projectId);
+    } catch {
+      // swallow — falls back to project.name below, same as before this field existed
+    }
+
     const colors = kit.palette?.colors ?? {};
     const primary = colors.primary;
     const neutral  = colors.neutral;
@@ -51,8 +60,14 @@ export async function resolveBrandKit(projectId, _version) {
         body:       kit.typography?.body       ?? null,
         scaleRatio: kit.typography?.scaleRatio ?? null,
       },
-      company: project
-        ? { displayName: project.name, legalName: project.name }
+      company: (project || contact.company_name)
+        ? {
+            displayName: contact.company_name || project?.name,
+            legalName:   contact.company_name || project?.name,
+            email:        contact.email || undefined,
+            phone:        contact.phone || undefined,
+            addressLines: contact.addressLines?.length ? contact.addressLines : undefined,
+          }
         : {},
     };
   } catch {
