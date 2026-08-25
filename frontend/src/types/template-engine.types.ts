@@ -84,7 +84,17 @@ export interface ContrastAdjustment {
 export interface PaletteColor {
   hex: string
   oklch: [number, number, number]
+  confidence: number
   ramp: Record<string, string>
+  anchorStep: string
+}
+
+export type PaletteRole = 'primary' | 'secondary' | 'accent' | 'neutral'
+
+export interface BrandKitPalette {
+  schemaVersion: number
+  colors: Record<PaletteRole, PaletteColor | null>
+  paletteConfidence: 'high' | 'medium' | 'low'
 }
 
 export interface BrandKit {
@@ -93,14 +103,11 @@ export interface BrandKit {
   status: 'draft' | 'extracted' | 'inferred' | 'approved'
   logo_media_id: string | null
   logo_raster_media_id: string | null
-  palette: {
-    colors: {
-      primary: PaletteColor
-      secondary?: PaletteColor
-      accent?: PaletteColor
-      neutral?: PaletteColor
-    }
-  } | null
+  // Backend colors.{primary,secondary,accent,neutral} can each be null
+  // (e.g. a single-color logo — see palette.test.js fixtures); primary/accent
+  // /secondary/neutral are NOT "Tertiary/Quaternary", those are display-only
+  // UI labels PaletteStage no longer uses (KDL-558 row 2).
+  palette: BrandKitPalette | null
   contrast_report: {
     schemaVersion: number
     allPairsPass: boolean
