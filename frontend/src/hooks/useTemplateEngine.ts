@@ -8,6 +8,7 @@ import type {
   ExportManifest,
   BrandKit,
   BrandKitPalette,
+  BrandKitTypography,
 } from '@/types/template-engine.types'
 import { stageEnumToSlug } from '@/types/template-engine.types'
 import { toast } from '@/hooks/use-toast'
@@ -146,6 +147,24 @@ export function usePatchBrandKit(projectId: string) {
     mutationFn: (palette: BrandKitPalette) =>
       api
         .patch<{ success: boolean; data: BrandKit }>(`/brand-kit/${projectId}`, { palette })
+        .then((r) => r.data.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['brand-kit', projectId] })
+    },
+    onError: (err) => {
+      toast({ title: extractErrorCode(err), variant: 'destructive' })
+    },
+  })
+}
+
+// PATCH /brand-kit/:projectId — typography is one of the three PATCHABLE_FIELDS
+// (backend brand-kit/service.js), same endpoint usePatchBrandKit uses for palette.
+export function usePatchTypography(projectId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (typography: BrandKitTypography) =>
+      api
+        .patch<{ success: boolean; data: BrandKit }>(`/brand-kit/${projectId}`, { typography })
         .then((r) => r.data.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['brand-kit', projectId] })

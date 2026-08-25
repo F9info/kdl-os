@@ -97,6 +97,19 @@ export interface BrandKitPalette {
   paletteConfidence: 'high' | 'medium' | 'low'
 }
 
+// Backend brand-kit/tokens.js reads typography.heading.family / .body.family /
+// .scaleRatio as single values (one font per role, not a list) — the design
+// prototype's "pick one or more" checkbox wording doesn't reflect a real
+// multi-value field, so the Studio UI treats these as an exclusive choice.
+export interface TypographyRole {
+  family: string
+}
+export interface BrandKitTypography {
+  heading: TypographyRole | null
+  body: TypographyRole | null
+  scaleRatio?: number
+}
+
 export interface BrandKit {
   id: string
   project_id: string
@@ -113,7 +126,7 @@ export interface BrandKit {
     allPairsPass: boolean
     adjustments: ContrastAdjustment[]
   } | null
-  typography: Record<string, unknown> | null
+  typography: BrandKitTypography | null
   tone: Record<string, unknown> | null
   approved_at: string | null
 }

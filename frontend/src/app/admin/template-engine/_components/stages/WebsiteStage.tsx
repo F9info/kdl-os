@@ -1,11 +1,22 @@
 'use client'
 
-import { useState } from 'react'
-import { ArrowLeft, ArrowRight, Globe, ExternalLink } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { ArrowLeft, ArrowRight, Globe, ExternalLink, Upload as UploadIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useAdvanceStage, useRetryStage, useSkipStage } from '@/hooks/useTemplateEngine'
+import { Input } from '@/components/ui/input'
+import { MediaPicker } from '@/components/shared/MediaPicker'
+import { cn } from '@/lib/utils'
+import { loadGoogleFont, loadCustomFontFace } from '@/lib/load-google-font'
+import {
+  useAdvanceStage,
+  useBrandKit,
+  usePatchTypography,
+  useRetryStage,
+  useSkipStage,
+} from '@/hooks/useTemplateEngine'
 import { StageShell } from './StageShell'
 import type { TemplateEngineRun } from '@/types/template-engine.types'
+import type { Media } from '@/types/media.types'
 
 // Mirrors the design prototype's "Brands" grid (a card per brand surface —
 // web app, admin app, visiting card, letterhead, t-shirt, ID card). Only
@@ -15,23 +26,36 @@ import type { TemplateEngineRun } from '@/types/template-engine.types'
 // shown disabled — nothing to click through to yet.
 const BRAND_CARDS = [{ key: 'webapp', name: 'Web app' }] as const
 
+// Curated starter sets matching the prototype's Web app Typography screen.
+const HEADING_FONTS = ['Poppins', 'Inter', 'Manrope', 'Space Grotesk']
+const BODY_FONTS = ['Inter', 'Roboto', 'Open Sans', 'Work Sans']
+
 export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'WEBSITE')
   const advance = useAdvanceStage(run.id, run.projectId)
   const retry = useRetryStage(run.id, run.projectId)
   const skip = useSkipStage(run.id, run.projectId)
+  const { data: brandKit } = useBrandKit(run.projectId)
+  const patchTypography = usePatchTypography(run.projectId)
   const [openBrand, setOpenBrand] = useState<(typeof BRAND_CARDS)[number]['key'] | null>(null)
+  const [webAppStep, setWebAppStep] = useState<'typography' | 'assemble'>('typography')
 
   const outputRef = stage?.outputRef as { pageIds?: Record<string, string> } | null | undefined
-
   const pageCount = outputRef?.pageIds ? Object.keys(outputRef.pageIds).length : 0
+
+  function openWebApp() {
+    setOpenBrand('webapp')
+    // A prior visit's Next click already saved typography — skip straight to
+    // the assemble view instead of re-showing a step that's already done.
+    setWebAppStep(brandKit?.typography ? 'assemble' : 'typography')
+  }
 
   return (
     <StageShell
       title="Website Assembly"
       description="Seed website pages from Puck component packs filtered by industry, using the approved brand kit as slot defaults. Pages are created in the page-builder engine."
       stage={stage ?? null}
-      hideRunButton={openBrand === null}
+      hideRunButton={openBrand === null || webAppStep === 'typography'}
       onRun={
         stage?.status === 'FAILED' ? () => retry.mutate('WEBSITE') : () => advance.mutate('WEBSITE')
       }
@@ -51,7 +75,7 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
               <button
                 key={b.key}
                 type="button"
-                onClick={() => setOpenBrand(b.key)}
+                onClick={openWebApp}
                 className="rounded-lg border bg-card p-4 text-left transition-colors hover:bg-accent"
               >
                 <div className="text-sm font-semibold">{b.name}</div>
@@ -75,7 +99,15 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
             Back to Brands
           </Button>
 
-          {pageCount > 0 ? (
+          {webAppStep === 'typography' ? (
+            <WebAppTypographyStep
+              typography={brandKit?.typography ?? null}
+              isSaving={patchTypography.isPending}
+              onNext={(typography) =>
+                patchTypography.mutate(typography, { onSuccess: () => setWebAppStep('assemble') })
+              }
+            />
+          ) : pageCount > 0 ? (
             <div className="rounded-lg border bg-card p-4 space-y-2">
               <div className="flex items-center gap-2 text-sm font-medium">
                 <Globe className="h-4 w-4 text-primary" />
@@ -104,5 +136,202 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
         </div>
       )}
     </StageShell>
+  )
+}
+
+// Backend brand-kit/tokens.js reads typography.heading.family / .body.family
+// as single values, not a list — despite the prototype's "pick one or more"
+// checkbox wording, only one font per role is ever actually consumed. Tiles
+// behave as an exclusive choice (selecting one deselects the rest) rather
+// than a true multi-select, to stay honest about what gets saved.
+function WebAppTypographyStep({
+  typography,
+  isSaving,
+  onNext,
+}: {
+  typography: { heading: { family: string } | null; body: { family: string } | null } | null
+  isSaving: boolean
+  onNext: (typography: { heading: { family: string }; body: { family: string } }) => void
+}) {
+  const [heading, setHeading] = useState(typography?.heading?.family || HEADING_FONTS[0]!)
+  const [body, setBody] = useState(typography?.body?.family || BODY_FONTS[0]!)
+  const [headingOptions, setHeadingOptions] = useState<string[]>(() =>
+    dedupePrepend(HEADING_FONTS, typography?.heading?.family)
+  )
+  const [bodyOptions, setBodyOptions] = useState<string[]>(() =>
+    dedupePrepend(BODY_FONTS, typography?.body?.family)
+  )
+
+  return (
+    <div className="rounded-lg border bg-card p-4 space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold">Web app</h3>
+        <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+          Digital
+        </span>
+      </div>
+      <p className="text-xs text-muted-foreground -mt-4">
+        Pick the heading and body fonts for this surface, then continue with Next.
+      </p>
+
+      <FontRoleSection
+        label="Heading"
+        options={headingOptions}
+        selected={heading}
+        onSelect={setHeading}
+        onAddGoogleFont={(name) => {
+          setHeadingOptions((prev) => dedupePrepend(prev, name))
+          setHeading(name)
+        }}
+        onUpload={(name, url) => {
+          loadCustomFontFace(name, url)
+          setHeadingOptions((prev) => dedupePrepend(prev, name))
+          setHeading(name)
+        }}
+      />
+
+      <FontRoleSection
+        label="Body"
+        options={bodyOptions}
+        selected={body}
+        onSelect={setBody}
+        onAddGoogleFont={(name) => {
+          setBodyOptions((prev) => dedupePrepend(prev, name))
+          setBody(name)
+        }}
+        onUpload={(name, url) => {
+          loadCustomFontFace(name, url)
+          setBodyOptions((prev) => dedupePrepend(prev, name))
+          setBody(name)
+        }}
+      />
+
+      <div className="flex justify-end">
+        <Button
+          onClick={() => onNext({ heading: { family: heading }, body: { family: body } })}
+          disabled={isSaving}
+        >
+          {isSaving ? 'Saving…' : 'Next'}
+          <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function dedupePrepend(options: string[], name: string | undefined | null): string[] {
+  if (!name || options.includes(name)) return options
+  return [name, ...options]
+}
+
+function FontRoleSection({
+  label,
+  options,
+  selected,
+  onSelect,
+  onAddGoogleFont,
+  onUpload,
+}: {
+  label: string
+  options: string[]
+  selected: string
+  onSelect: (name: string) => void
+  onAddGoogleFont: (name: string) => void
+  onUpload: (name: string, url: string) => void
+}) {
+  const [customName, setCustomName] = useState('')
+  const [pickerOpen, setPickerOpen] = useState(false)
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-medium text-muted-foreground">{label} — pick one (1 selected)</p>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {options.map((name) => (
+          <FontTile
+            key={name}
+            name={name}
+            selected={name === selected}
+            onSelect={() => onSelect(name)}
+          />
+        ))}
+      </div>
+      <div className="flex items-center gap-2">
+        <Input
+          placeholder="Google Font name (e.g. Roboto)"
+          value={customName}
+          onChange={(e) => setCustomName(e.target.value)}
+          className="font-mono text-sm"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            const name = customName.trim()
+            if (!name) return
+            onAddGoogleFont(name)
+            setCustomName('')
+          }}
+        >
+          Add
+        </Button>
+        <Button type="button" variant="outline" size="sm" onClick={() => setPickerOpen(true)}>
+          <UploadIcon className="mr-1.5 h-3.5 w-3.5" />
+          Upload
+        </Button>
+      </div>
+
+      {pickerOpen && (
+        <MediaPicker
+          open
+          onClose={() => setPickerOpen(false)}
+          onSelect={(media: Media[]) => {
+            const m = media[0]
+            if (m?.url) {
+              const derived = (
+                m.original_name ||
+                (m.url.split(/[?#]/)[0] ?? '').split('/').pop() ||
+                'Custom font'
+              ).replace(/\.[^.]+$/, '')
+              onUpload(derived, m.url)
+            }
+            setPickerOpen(false)
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+function FontTile({
+  name,
+  selected,
+  onSelect,
+}: {
+  name: string
+  selected: boolean
+  onSelect: () => void
+}) {
+  useEffect(() => {
+    loadGoogleFont(name)
+  }, [name])
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={cn(
+        'rounded-lg border p-3 text-left transition-colors',
+        selected ? 'border-primary ring-1 ring-primary' : 'hover:bg-accent'
+      )}
+    >
+      <div className="flex items-center gap-2">
+        <input type="checkbox" checked={selected} readOnly className="pointer-events-none" />
+        <span className="text-sm font-medium">{name}</span>
+      </div>
+      <div className="mt-1.5 text-lg" style={{ fontFamily: `'${name}', sans-serif` }}>
+        Aa Bb Cc
+      </div>
+    </button>
   )
 }

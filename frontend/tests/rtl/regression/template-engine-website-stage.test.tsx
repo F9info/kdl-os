@@ -1,21 +1,47 @@
 /**
  * RTL regression tests for KDL-558 roadmap row 4a — WebsiteStage gets the
  * design prototype's "Brands" cards grid (one brand surface per card, click
- * to open). Only the "Web app" card is wired up per explicit instruction —
- * ship one card's flow before adding the rest.
+ * to open) and, per the follow-up instruction, the "Web app" card opens the
+ * prototype's Typography step (pick heading/body fonts) before the existing
+ * assemble/skip flow. Only the "Web app" card is wired up — ship one card's
+ * flow before adding the rest.
  */
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WebsiteStage } from '@/app/admin/template-engine/_components/stages/WebsiteStage'
-import type { TemplateEngineRun } from '@/types/template-engine.types'
+import type { TemplateEngineRun, BrandKit } from '@/types/template-engine.types'
+
+const { mockPatchTypography, mockUseBrandKit } = vi.hoisted(() => ({
+  mockPatchTypography: vi.fn(),
+  mockUseBrandKit: vi.fn(),
+}))
 
 vi.mock('@/hooks/useTemplateEngine', () => ({
   useAdvanceStage: () => ({ mutate: vi.fn(), isPending: false }),
   useRetryStage: () => ({ mutate: vi.fn(), isPending: false }),
   useSkipStage: () => ({ mutate: vi.fn(), isPending: false }),
+  useBrandKit: mockUseBrandKit,
+  usePatchTypography: () => ({ mutate: mockPatchTypography, isPending: false }),
 }))
+
+vi.mock('@/components/shared/MediaPicker', () => ({
+  MediaPicker: () => null,
+}))
+
+const BRAND_KIT: BrandKit = {
+  id: 'kit-1',
+  project_id: 'proj-1',
+  status: 'inferred',
+  logo_media_id: 'media-1',
+  logo_raster_media_id: null,
+  palette: null,
+  contrast_report: null,
+  typography: null,
+  tone: null,
+  approved_at: null,
+}
 
 function renderWithQC(ui: React.ReactElement) {
   const qc = new QueryClient({
@@ -50,6 +76,7 @@ function makeRun(pageIds?: Record<string, string>): TemplateEngineRun {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  mockUseBrandKit.mockReturnValue({ data: BRAND_KIT, isLoading: false })
 })
 
 describe('WebsiteStage — Brands cards grid (KDL-558)', () => {
@@ -65,19 +92,91 @@ describe('WebsiteStage — Brands cards grid (KDL-558)', () => {
     expect(screen.queryByRole('button', { name: /^run$/i })).not.toBeInTheDocument()
   })
 
-  it('opens the Web app flow on click, and Back returns to the grid', () => {
+  it('opens the Web app flow (Typography step) on click, and Back returns to the grid', () => {
     renderWithQC(<WebsiteStage run={makeRun()} />)
 
     fireEvent.click(screen.getByText('Web app'))
-    expect(screen.getByText(/no pages assembled yet/i)).toBeInTheDocument()
+    expect(screen.getByText(/pick the heading and body fonts/i)).toBeInTheDocument()
     expect(screen.queryByText('Brands')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /back to brands/i }))
     expect(screen.getByText('Brands')).toBeInTheDocument()
     expect(screen.getByText('Web app')).toBeInTheDocument()
   })
+})
 
-  it('shows the assembled page count inside the opened Web app card', () => {
+describe('WebsiteStage — Web app Typography step (KDL-558)', () => {
+  it('defaults to Poppins/Inter, saves the selection, and advances to the assemble view', async () => {
+    renderWithQC(<WebsiteStage run={makeRun()} />)
+    fireEvent.click(screen.getByText('Web app'))
+
+    // Defaults pre-selected (first curated option per role).
+    const poppinsTile = screen.getByText('Poppins').closest('button')!
+    expect(poppinsTile.querySelector('input[type="checkbox"]')).toBeChecked()
+
+    fireEvent.click(screen.getByRole('button', { name: /^next/i }))
+
+    await waitFor(() => expect(mockPatchTypography).toHaveBeenCalled())
+    expect(mockPatchTypography).toHaveBeenCalledWith(
+      { heading: { family: 'Poppins' }, body: { family: 'Inter' } },
+      expect.objectContaining({ onSuccess: expect.any(Function) })
+    )
+
+    // Simulate the mutation's onSuccess firing (mutate is a bare vi.fn()).
+    const [, opts] = mockPatchTypography.mock.calls[0] as [unknown, { onSuccess: () => void }]
+    act(() => opts.onSuccess())
+    expect(screen.getByText(/no pages assembled yet/i)).toBeInTheDocument()
+  })
+
+  it('selecting a different heading font is exclusive (only one checked at a time)', () => {
+    renderWithQC(<WebsiteStage run={makeRun()} />)
+    fireEvent.click(screen.getByText('Web app'))
+
+    fireEvent.click(screen.getByText('Manrope'))
+
+    const poppinsTile = screen.getByText('Poppins').closest('button')!
+    const manropeTile = screen.getByText('Manrope').closest('button')!
+    expect(poppinsTile.querySelector('input[type="checkbox"]')).not.toBeChecked()
+    expect(manropeTile.querySelector('input[type="checkbox"]')).toBeChecked()
+  })
+
+  it('adding a custom Google Font name selects it immediately', () => {
+    renderWithQC(<WebsiteStage run={makeRun()} />)
+    fireEvent.click(screen.getByText('Web app'))
+
+    const [headingInput] = screen.getAllByPlaceholderText(/google font name/i)
+    fireEvent.change(headingInput!, { target: { value: 'Sora' } })
+    fireEvent.click(screen.getAllByRole('button', { name: /^add$/i })[0]!)
+
+    const soraTile = screen.getByText('Sora').closest('button')!
+    expect(soraTile.querySelector('input[type="checkbox"]')).toBeChecked()
+  })
+
+  it('skips straight to the assemble view when typography was already saved', () => {
+    mockUseBrandKit.mockReturnValue({
+      data: {
+        ...BRAND_KIT,
+        typography: { heading: { family: 'Manrope' }, body: { family: 'Roboto' } },
+      },
+      isLoading: false,
+    })
+    renderWithQC(<WebsiteStage run={makeRun()} />)
+
+    fireEvent.click(screen.getByText('Web app'))
+    expect(screen.queryByText(/pick the heading and body fonts/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/no pages assembled yet/i)).toBeInTheDocument()
+  })
+})
+
+describe('WebsiteStage — assemble view (post-typography)', () => {
+  it('shows the assembled page count once typography is already saved', () => {
+    mockUseBrandKit.mockReturnValue({
+      data: {
+        ...BRAND_KIT,
+        typography: { heading: { family: 'Poppins' }, body: { family: 'Inter' } },
+      },
+      isLoading: false,
+    })
     renderWithQC(<WebsiteStage run={makeRun({ home: 'page-1', about: 'page-2' })} />)
 
     fireEvent.click(screen.getByText('Web app'))
