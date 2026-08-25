@@ -152,6 +152,30 @@ describe('WebsiteStage — Web app Typography step (KDL-558)', () => {
     expect(soraTile.querySelector('input[type="checkbox"]')).toBeChecked()
   })
 
+  it('supports adding and removing custom font rows ("+ Add row" from the prototype)', () => {
+    renderWithQC(<WebsiteStage run={makeRun()} />)
+    fireEvent.click(screen.getByText('Web app'))
+
+    // Starts with 1 custom-font row per section (Heading + Body = 2 total).
+    expect(screen.getAllByPlaceholderText(/google font name/i)).toHaveLength(2)
+
+    const [addRowHeading] = screen.getAllByRole('button', { name: /add row/i })
+    fireEvent.click(addRowHeading!)
+    expect(screen.getAllByPlaceholderText(/google font name/i)).toHaveLength(3)
+
+    // The new row works independently — typing + Add adds a new tile.
+    const headingInputs = screen.getAllByPlaceholderText(/google font name/i)
+    fireEvent.change(headingInputs[1]!, { target: { value: 'Lato' } })
+    const addButtons = screen.getAllByRole('button', { name: /^add$/i })
+    fireEvent.click(addButtons[1]!)
+    expect(screen.getByText('Lato')).toBeInTheDocument()
+
+    // Removing a row drops it back down.
+    const removeButtons = screen.getAllByRole('button', { name: /remove font row/i })
+    fireEvent.click(removeButtons[0]!)
+    expect(screen.getAllByPlaceholderText(/google font name/i)).toHaveLength(2)
+  })
+
   it('skips straight to the assemble view when typography was already saved', () => {
     mockUseBrandKit.mockReturnValue({
       data: {
