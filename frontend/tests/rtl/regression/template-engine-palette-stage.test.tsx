@@ -172,17 +172,18 @@ describe('PaletteStage — editable colour groups', () => {
 
     expect(screen.getByText('Primary')).toBeInTheDocument()
     expect(screen.getByText('Secondary')).toBeInTheDocument()
-    expect(screen.getByText('Accent')).toBeInTheDocument()
-    expect(screen.getByText('Neutral')).toBeInTheDocument()
-    expect(screen.getAllByDisplayValue('#ec1b34')).toHaveLength(1)
+    expect(screen.getByText('Tertiary')).toBeInTheDocument()
+    expect(screen.getByText('Quaternary')).toBeInTheDocument()
+    // one hex value renders in both the colour picker and the text field
+    expect(screen.getAllByDisplayValue('#ec1b34')).toHaveLength(2)
     // accent was null in the fixture — falls back to a grey default, not a crash
-    expect(screen.getAllByDisplayValue('#888888')).toHaveLength(1)
+    expect(screen.getAllByDisplayValue('#888888')).toHaveLength(2)
   })
 
   it('editing a base hex regenerates its ramp (anchor step matches the new hex)', () => {
     renderWithQC(<PaletteStage run={makeRun()} />)
 
-    const primaryInput = screen.getByDisplayValue('#ec1b34')
+    const primaryInput = screen.getByLabelText('Primary hex value')
     fireEvent.change(primaryInput, { target: { value: '#1a73e8' } })
 
     // the badge showing the current hex updates

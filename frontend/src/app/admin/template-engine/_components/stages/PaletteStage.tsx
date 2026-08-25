@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
-import { Palette, Pipette } from 'lucide-react'
+import { Palette, Pipette, Shuffle } from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
 import {
@@ -24,12 +24,21 @@ import {
   type TemplateEngineRun,
 } from '@/types/template-engine.types'
 
+// Display labels match the prototype's naming (Primary/Secondary/Tertiary/
+// Quaternary) — these map onto the backend's real field names
+// (primary/secondary/accent/neutral, see BrandKitPalette) at the `role` key,
+// the label is purely cosmetic.
 const ROLES: { role: PaletteRole; label: string }[] = [
   { role: 'primary', label: 'Primary' },
   { role: 'secondary', label: 'Secondary' },
-  { role: 'accent', label: 'Accent' },
-  { role: 'neutral', label: 'Neutral' },
+  { role: 'accent', label: 'Tertiary' },
+  { role: 'neutral', label: 'Quaternary' },
 ]
+
+function randomHex(): string {
+  const n = Math.floor(Math.random() * 0xffffff)
+  return '#' + n.toString(16).padStart(6, '0')
+}
 
 const RAMP_STEPS = ['50', '100', '200', '300', '400', '500', '600', '700', '800', '900']
 
@@ -238,11 +247,16 @@ export function PaletteStage({ run }: { run: TemplateEngineRun }) {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span
-                          className="h-9 w-9 shrink-0 rounded-md border"
-                          style={{ backgroundColor: color.hex }}
+                        <input
+                          type="color"
+                          aria-label={`${label} colour picker`}
+                          value={/^#[0-9a-fA-F]{6}$/.test(color.hex) ? color.hex : FALLBACK_HEX}
+                          disabled={isApproved}
+                          onChange={(e) => updateHex(role, e.target.value)}
+                          className="h-9 w-9 shrink-0 cursor-pointer rounded-md border p-0.5 disabled:cursor-not-allowed"
                         />
                         <Input
+                          aria-label={`${label} hex value`}
                           value={color.hex}
                           disabled={isApproved}
                           onChange={(e) => updateHex(role, e.target.value)}
@@ -258,6 +272,17 @@ export function PaletteStage({ run }: { run: TemplateEngineRun }) {
                         >
                           <Pipette className="h-3.5 w-3.5" />
                           Pick from logo
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={isApproved}
+                          onClick={() => updateHex(role, randomHex())}
+                          className="shrink-0 gap-1.5"
+                        >
+                          <Shuffle className="h-3.5 w-3.5" />
+                          Randomize
                         </Button>
                       </div>
                       <p className="text-xs text-muted-foreground">
