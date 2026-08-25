@@ -87,6 +87,22 @@ export function PaletteStage({ run }: { run: TemplateEngineRun }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [brandKit?.palette])
 
+  // Auto-trigger extraction — no manual "Extract palette" click required.
+  // Runs once per distinct logo while there's no palette yet. A FAILED stage
+  // is never auto-retried — that always needs an explicit Retry click (see
+  // the FAILED branch below) so a persistently-bad logo doesn't refire on
+  // every mount.
+  const triggeredForLogoRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (!hasLogo || hasPalette || stage?.status === 'FAILED') return
+    if (advance.isPending) return
+    const logoId = brandKit?.logo_media_id ?? null
+    if (triggeredForLogoRef.current === logoId) return
+    triggeredForLogoRef.current = logoId
+    advance.mutate('PALETTE')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasLogo, hasPalette, brandKit?.logo_media_id, stage?.status])
+
   const isApproved = brandKit?.status === 'approved'
 
   function updateHex(role: PaletteRole, hex: string) {
@@ -194,29 +210,36 @@ export function PaletteStage({ run }: { run: TemplateEngineRun }) {
 
         {!hasPalette ? (
           <div className="space-y-3">
-            <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-              <Palette className="h-4 w-4 shrink-0" />
-              <span>
-                {hasLogo
-                  ? // Replacing the logo on Intake resets the brand kit to draft and clears the
-                    // previously-extracted palette server-side (brand-kit/service.js uploadLogo) —
-                    // this stage's DAG status can still read DONE from an earlier logo, but
-                    // StageShell's own Run button disables once a stage is DONE. So this stage
-                    // owns its own trigger instead of relying on StageShell's, to stay clickable
-                    // after a logo replace.
-                    'Palette not yet extracted for the current logo. Extract it to continue.'
-                  : 'Upload a logo on the Overview stage first — extraction needs one.'}
-              </span>
-            </div>
-            <Button
-              size="sm"
-              disabled={!hasLogo || advance.isPending || retry.isPending}
-              onClick={() =>
-                stage?.status === 'FAILED' ? retry.mutate('PALETTE') : advance.mutate('PALETTE')
-              }
-            >
-              {advance.isPending || retry.isPending ? 'Extracting…' : 'Extract palette'}
-            </Button>
+            {stage?.status === 'FAILED' ? (
+              <>
+                <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
+                  <Palette className="h-4 w-4 shrink-0" />
+                  <span>Palette extraction failed for the current logo.</span>
+                </div>
+                <Button
+                  size="sm"
+                  disabled={retry.isPending}
+                  onClick={() => retry.mutate('PALETTE')}
+                >
+                  {retry.isPending ? 'Retrying…' : 'Retry extraction'}
+                </Button>
+              </>
+            ) : (
+              <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                <Palette className="h-4 w-4 shrink-0" />
+                <span>
+                  {hasLogo
+                    ? // Replacing the logo on Intake resets the brand kit to draft and clears the
+                      // previously-extracted palette server-side (brand-kit/service.js uploadLogo) —
+                      // this stage's DAG status can still read DONE from an earlier logo, but
+                      // StageShell's own Run button disables once a stage is DONE. So this stage
+                      // auto-triggers its own extraction instead of relying on StageShell's Run
+                      // button, to stay working after a logo replace.
+                      'Extracting palette from your logo…'
+                    : 'Upload a logo on the Overview stage first — extraction needs one.'}
+                </span>
+              </div>
+            )}
           </div>
         ) : (
           <>
@@ -316,7 +339,7 @@ export function PaletteStage({ run }: { run: TemplateEngineRun }) {
                 </p>
               </div>
               <Button onClick={handleSubmit} disabled={isApproved || patchPalette.isPending}>
-                {patchPalette.isPending ? 'Saving…' : 'Submit palette'}
+                {patchPalette.isPending ? 'Saving…' : 'Next'}
               </Button>
             </div>
           </>
