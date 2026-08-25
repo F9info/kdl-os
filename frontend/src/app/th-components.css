@@ -61,7 +61,7 @@
      proportional Tailwind sizes (radius/font/colors still token-driven). */
   .th-btn-size-default {
     height: var(--buttons_button_sizes_height, 2.5rem);
-    padding: var(--buttons_button_sizes_padding, 0.5rem 1rem);
+    /* padding is UNLAYERED below (KDL-213 follow-up fix) — see that comment */
     font-size: var(--buttons_button_sizes_font_size, 0.875rem);
   }
 
@@ -237,7 +237,7 @@
   /* ── Inputs (Forms pane, Full Border style — the app's input shape) ──── */
   .th-input {
     height: calc(var(--forms_full_border_settings_height, 40) * 1px);
-    padding: var(--forms_full_border_settings_padding, 0.5rem 0.75rem);
+    /* padding is UNLAYERED below (KDL-213 follow-up fix) — see that comment */
     font-size: calc(var(--forms_full_border_settings_font_size, 14) * 1px);
     font-family: var(--forms_full_border_settings_font_family, inherit);
     border-radius: calc(var(--forms_full_border_settings_radius, 6) * 1px);
@@ -321,6 +321,23 @@
  * source order; no current call-site passes border utilities to these
  * primitives (grep-verified).
  */
+
+/*
+ * Button/input padding — UNLAYERED for the same reason (KDL-558 follow-up).
+ *
+ * Tailwind preflight also ships
+ * `button, input, optgroup, select, textarea { margin: 0; padding: 0; }`,
+ * UNLAYERED. That beat `.th-btn-size-default`/`.th-input`'s padding the same
+ * way it beat borders above — every button and text input in the app was
+ * rendering with 0 padding regardless of the configured Theme Engine value.
+ * Same fix as the border block: pull just `padding` out of the layer.
+ */
+.th-btn-size-default {
+  padding: var(--buttons_button_sizes_padding, 0.5rem 1rem);
+}
+.th-input {
+  padding: var(--forms_full_border_settings_padding, 0.5rem 0.75rem);
+}
 .th-card {
   /* Transparent keeps geometry identical across Flat/Elevated/Bordered. */
   border: 1px solid transparent;
