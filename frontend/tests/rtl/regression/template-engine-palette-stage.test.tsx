@@ -247,7 +247,10 @@ describe('PaletteStage — editable colour groups', () => {
 
     // Simulate the mutation's onSuccess firing (mockPatchMutate is a bare vi.fn(),
     // so invoke the passed options.onSuccess directly to assert the navigation wiring).
+    // Jumps straight to Brands (WEBSITE) — the Studio nav only surfaces
+    // Overview/Color Palette/Brands (KDL-558), not the DAG's literal next
+    // stage (Brand Inference), which has no visible tab.
     opts.onSuccess()
-    expect(mockPush).toHaveBeenCalledWith('/admin/template-engine/projects/proj-1/inference')
+    expect(mockPush).toHaveBeenCalledWith('/admin/template-engine/projects/proj-1/website')
   })
 })
