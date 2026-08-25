@@ -186,3 +186,38 @@ describe('Studio project scoping — X-Project-Id header (KDL-594)', () => {
     expect(screen.queryByText(/Export not yet complete/)).toBeNull()
   })
 })
+
+describe('Studio stage mutations invalidate brand-kit (KDL-558)', () => {
+  // Reproduces the reported bug: clicking Next (Intake -> Palette) triggers
+  // auto-extraction via useAdvanceStage, but the brand-kit query — which
+  // PaletteStage reads for `hasPalette` — was never invalidated on success,
+  // only the run/stages queries were. Colours stayed stuck on "Extracting…"
+  // until a full page reload forced every query to refetch from scratch.
+  let apiPost: ReturnType<typeof vi.fn>
+
+  beforeEach(async () => {
+    vi.clearAllMocks()
+    const api = await import('@/lib/axios')
+    apiPost = api.default.post as ReturnType<typeof vi.fn>
+  })
+
+  it.each([
+    ['advance', useAdvanceStage],
+    ['retry', useRetryStage],
+  ] as const)('invalidates the brand-kit query on %s success', async (_action, useHook) => {
+    apiPost.mockResolvedValue({ data: { success: true, data: MOCK_STAGE } })
+    const qc = makeQC()
+    qc.setQueryData(['brand-kit', 'proj-1'], { id: 'kit-1', palette: null })
+
+    const { result } = renderHook(() => useHook('run-1', 'proj-1'), {
+      wrapper: ({ children }) => <QueryClientProvider client={qc}>{children}</QueryClientProvider>,
+    })
+    await act(async () => {
+      result.current.mutate('PALETTE')
+    })
+
+    await waitFor(() => {
+      expect(qc.getQueryState(['brand-kit', 'proj-1'])?.isInvalidated).toBe(true)
+    })
+  })
+})
