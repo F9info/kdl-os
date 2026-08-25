@@ -44,6 +44,10 @@ docker compose up --build
 cd backend && npx prisma migrate dev && node prisma/seed.js
 ```
 
+# cd backend - node scripts/reset-admin-password.js --password 'Admin@123456'
+
+# npm run db:migrate and npm run db:seed
+
 ---
 
 ## Service URLs

@@ -20,6 +20,7 @@ frontend/out/
 frontend/tsconfig.tsbuildinfo
 backend/dist/
 ai-services/dist/
+frontend/storybook-static/
 
 # logs
 *.log
