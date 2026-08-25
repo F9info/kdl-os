@@ -89,28 +89,43 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
     e.target.value = ''
   }
 
-  function fieldRow(slug: string) {
+  const [showErrors, setShowErrors] = useState(false)
+
+  function fieldRow(slug: string, errorMessage?: string) {
     const f = bySlug[slug]
     if (!f) return <div key={slug} />
+    // Company name is required — mark it in the label without touching the
+    // shared FieldControl component (used by every generic settings screen).
+    const displayField =
+      slug === 'brand-profile-company-name' ? { ...f, field_name: `${f.field_name} *` } : f
     return (
-      <FieldControl
-        key={f.id}
-        field={f}
-        state={form[f.id] ?? { value: '', alt_text: '' }}
-        onChange={(patch) =>
-          setForm((prev) => ({
-            ...prev,
-            [f.id]: { ...(prev[f.id] ?? { value: '', alt_text: '' }), ...patch },
-          }))
-        }
-      />
+      <div key={f.id}>
+        <FieldControl
+          field={displayField}
+          state={form[f.id] ?? { value: '', alt_text: '' }}
+          onChange={(patch) =>
+            setForm((prev) => ({
+              ...prev,
+              [f.id]: { ...(prev[f.id] ?? { value: '', alt_text: '' }), ...patch },
+            }))
+          }
+        />
+        {errorMessage && <p className="mt-1 text-xs text-destructive">{errorMessage}</p>}
+      </div>
     )
   }
 
   const companyField = bySlug['brand-profile-company-name']
   const companyValue = companyField ? (form[companyField.id]?.value ?? '') : ''
+  const companyMissing = !companyValue.trim()
+  const logoMissing = !hasLogo
 
   function handleNext() {
+    if (companyMissing || logoMissing) {
+      setShowErrors(true)
+      return
+    }
+    setShowErrors(false)
     saveMutation.mutate(undefined, {
       onSuccess: () => {
         if (stage?.status === 'FAILED') retry.mutate('INTAKE')
@@ -147,7 +162,9 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
               retention, OKLCH palette extraction), not the generic settings-field
               upload, even though "Logo file" also exists as a standalone field. */}
           <div className="space-y-2">
-            <p className="text-sm font-medium">Logo file</p>
+            <p className="text-sm font-medium">
+              Logo file <span className="text-destructive">*</span>
+            </p>
             <div className="flex items-center gap-3">
               {kitLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -187,21 +204,25 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
               This image is what &ldquo;Prepare Brand System&rdquo; actually samples pixels from to
               build your colour palette.
             </p>
+            {showErrors && logoMissing && (
+              <p className="text-xs text-destructive">Logo file is required.</p>
+            )}
           </div>
 
           {PAIRED_ROWS.map(([left, right]) => (
             <div key={left} className="grid grid-cols-2 gap-4">
-              {fieldRow(left)}
+              {fieldRow(
+                left,
+                left === 'brand-profile-company-name' && showErrors && companyMissing
+                  ? 'Company name is required.'
+                  : undefined
+              )}
               {fieldRow(right)}
             </div>
           ))}
           {FULL_WIDTH_SLUGS.map((slug) => fieldRow(slug))}
 
-          <Button
-            size="sm"
-            onClick={handleNext}
-            disabled={isBusy || !companyValue.trim() || (!hasLogo && stage?.status !== 'FAILED')}
-          >
+          <Button size="sm" onClick={handleNext} disabled={isBusy}>
             {isBusy ? 'Saving…' : 'Next'}
           </Button>
         </div>

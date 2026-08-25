@@ -99,10 +99,19 @@ const { FIELDS } = vi.hoisted(() => ({
   ],
 }))
 
+const { mockUseBrandKit } = vi.hoisted(() => ({
+  mockUseBrandKit: vi.fn(
+    (): { data: { logo_media_id: string | null; status: string }; isLoading: boolean } => ({
+      data: { logo_media_id: 'media-1', status: 'draft' },
+      isLoading: false,
+    })
+  ),
+}))
+
 vi.mock('@/hooks/useTemplateEngine', () => ({
   useAdvanceStage: () => ({ mutate: vi.fn(), isPending: false }),
   useRetryStage: () => ({ mutate: vi.fn(), isPending: false }),
-  useBrandKit: () => ({ data: { logo_media_id: 'media-1', status: 'draft' }, isLoading: false }),
+  useBrandKit: mockUseBrandKit,
   useUploadLogo: () => ({ mutate: vi.fn(), isPending: false }),
 }))
 
@@ -146,7 +155,16 @@ function makeRun(): TemplateEngineRun {
   }
 }
 
-beforeEach(() => vi.clearAllMocks())
+beforeEach(() => {
+  vi.clearAllMocks()
+  // Re-arm the default (logo present) after clearAllMocks and after any
+  // test overrides it — the component re-renders multiple times per test,
+  // so a mockReturnValueOnce would only cover the first render.
+  mockUseBrandKit.mockReturnValue({
+    data: { logo_media_id: 'media-1', status: 'draft' },
+    isLoading: false,
+  })
+})
 
 describe('IntakeStage — Logo & Contact Details (standalone Application Settings fields)', () => {
   it('fetches fields from GET /setting-fields/by-type/brand-profile', async () => {
@@ -161,8 +179,9 @@ describe('IntakeStage — Logo & Contact Details (standalone Application Setting
   it('renders the 7 contact fields (not the generic Logo field, which stays on brand-kit upload)', async () => {
     renderWithQC(<IntakeStage run={makeRun()} />)
 
+    // Company name's label includes a trailing " *" (required marker), so it's matched by regex.
     for (const label of [
-      'Company name',
+      /^Company name/,
       'Primary email',
       'Secondary email',
       'Primary phone',
@@ -177,18 +196,39 @@ describe('IntakeStage — Logo & Contact Details (standalone Application Setting
     expect(screen.getByRole('button', { name: /replace file/i })).toBeInTheDocument()
   })
 
-  it('Next is disabled until company name is filled', async () => {
+  it('clicking Next with an empty company name shows a validation error and does not save', async () => {
+    const api = (await import('@/lib/axios')).default
     renderWithQC(<IntakeStage run={makeRun()} />)
-    await screen.findByLabelText('Company name')
+    await screen.findByLabelText(/^Company name/)
 
-    expect(screen.getByRole('button', { name: /next/i })).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+
+    expect(await screen.findByText('Company name is required.')).toBeInTheDocument()
+    expect(api.post).not.toHaveBeenCalled()
+  })
+
+  it('clicking Next with no logo uploaded shows a validation error and does not save', async () => {
+    const api = (await import('@/lib/axios')).default
+    mockUseBrandKit.mockReturnValue({
+      data: { logo_media_id: null, status: 'draft' },
+      isLoading: false,
+    })
+    renderWithQC(<IntakeStage run={makeRun()} />)
+
+    fireEvent.change(await screen.findByLabelText(/^Company name/), {
+      target: { value: 'Aster Foundation' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+
+    expect(await screen.findByText('Logo file is required.')).toBeInTheDocument()
+    expect(api.post).not.toHaveBeenCalled()
   })
 
   it('clicking Next saves via POST /setting-fields/values with the Brand Profile type_id, excluding the logo field', async () => {
     const api = (await import('@/lib/axios')).default
     renderWithQC(<IntakeStage run={makeRun()} />)
 
-    fireEvent.change(await screen.findByLabelText('Company name'), {
+    fireEvent.change(await screen.findByLabelText(/^Company name/), {
       target: { value: 'Aster Foundation' },
     })
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
