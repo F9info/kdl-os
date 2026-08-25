@@ -117,8 +117,15 @@ vi.mock('@/hooks/useTemplateEngine', () => ({
 
 vi.mock('@/lib/axios', () => ({
   default: {
-    get: vi.fn().mockResolvedValue({
-      data: { data: { type: { id: 'type-1', name: 'Brand Profile' }, fields: FIELDS } },
+    get: vi.fn().mockImplementation((url: string) => {
+      if (url.startsWith('/media/')) {
+        return Promise.resolve({
+          data: { data: { media: { url: 'https://minio.test/logo.png' } } },
+        })
+      }
+      return Promise.resolve({
+        data: { data: { type: { id: 'type-1', name: 'Brand Profile' }, fields: FIELDS } },
+      })
     }),
     post: vi.fn().mockResolvedValue({ data: { data: { fields: FIELDS } } }),
   },
@@ -194,6 +201,15 @@ describe('IntakeStage — Logo & Contact Details (standalone Application Setting
     // Two "Logo file" labels would be ambiguous — assert Studio's own upload button instead.
     // hasLogo is true in this fixture, so the button reads "Replace file".
     expect(screen.getByRole('button', { name: /replace file/i })).toBeInTheDocument()
+    // No "Category: …" clutter — every field shares the one category the card title already names.
+    expect(screen.queryByText(/Category:/)).not.toBeInTheDocument()
+  })
+
+  it('shows the uploaded logo as an image preview once its media record resolves', async () => {
+    renderWithQC(<IntakeStage run={makeRun()} />)
+
+    const img = await screen.findByAltText('Uploaded logo')
+    expect(img).toHaveAttribute('src', 'https://minio.test/logo.png')
   })
 
   it('clicking Next with an empty company name shows a validation error and does not save', async () => {
