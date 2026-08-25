@@ -110,16 +110,23 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
   const companyField = bySlug['brand-profile-company-name']
   const companyValue = companyField ? (form[companyField.id]?.value ?? '') : ''
 
+  function handleNext() {
+    saveMutation.mutate(undefined, {
+      onSuccess: () => {
+        if (stage?.status === 'FAILED') retry.mutate('INTAKE')
+        else advance.mutate('INTAKE')
+      },
+    })
+  }
+
+  const isBusy = saveMutation.isPending || advance.isPending || retry.isPending
+
   return (
     <StageShell
       title="Overview"
       description="Upload your logo and enter your contact details, then submit to unlock Brand System."
       stage={stage ?? null}
-      onRun={
-        stage?.status === 'FAILED' ? () => retry.mutate('INTAKE') : () => advance.mutate('INTAKE')
-      }
-      isRunning={advance.isPending || retry.isPending}
-      runDisabled={!hasLogo && stage?.status !== 'FAILED'}
+      hideRunButton
     >
       <div className="grid gap-4 w-full">
         <div className="rounded-lg border bg-card px-6 py-6 space-y-4 [&_.th-input]:!px-4 [&_.th-input]:!py-2.5">
@@ -192,10 +199,10 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
 
           <Button
             size="sm"
-            onClick={() => saveMutation.mutate()}
-            disabled={saveMutation.isPending || !companyValue.trim()}
+            onClick={handleNext}
+            disabled={isBusy || !companyValue.trim() || (!hasLogo && stage?.status !== 'FAILED')}
           >
-            {saveMutation.isPending ? 'Submitting…' : 'Submit'}
+            {isBusy ? 'Saving…' : 'Next'}
           </Button>
         </div>
       </div>
