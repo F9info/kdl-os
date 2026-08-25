@@ -152,7 +152,7 @@ describe('Studio StagePage — no-run dead-end fix (KDL-570)', () => {
 
     // After query invalidation + refetch, IntakeStage renders (heading "Intake" visible)
     await waitFor(() => {
-      expect(screen.getByText('Intake')).toBeTruthy()
+      expect(screen.getByText('Overview')).toBeTruthy() // IntakeStage title (KDL-558)
     })
   })
 

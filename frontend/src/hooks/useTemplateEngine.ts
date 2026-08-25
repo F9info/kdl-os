@@ -130,46 +130,6 @@ export function useUploadLogo(projectId: string) {
   })
 }
 
-export interface BrandContactField {
-  key: string
-  label: string
-  value: string
-}
-
-export function useBrandContactFields(projectId: string | null) {
-  return useQuery({
-    queryKey: projectId ? ['brand-kit', projectId, 'contact'] : [],
-    queryFn: () =>
-      api
-        .get<{ success: boolean; data: { fields: BrandContactField[] } }>(
-          `/brand-kit/${projectId}/contact`
-        )
-        .then((r) => r.data.data.fields),
-    enabled: !!projectId,
-    staleTime: 10_000,
-  })
-}
-
-export function useSaveBrandContactFields(projectId: string) {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (values: Record<string, string>) =>
-      api
-        .put<{ success: boolean; data: { fields: BrandContactField[] } }>(
-          `/brand-kit/${projectId}/contact`,
-          values
-        )
-        .then((r) => r.data.data.fields),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['brand-kit', projectId, 'contact'] })
-      toast({ title: 'Contact details saved' })
-    },
-    onError: (err) => {
-      toast({ title: extractErrorCode(err), variant: 'destructive' })
-    },
-  })
-}
-
 export function useApproveBrandKit(projectId: string) {
   const qc = useQueryClient()
   return useMutation({

@@ -41,10 +41,17 @@ generic `/admin/settings/*` screens, created via idempotent seeder
 Category "Logo & Contact Details" (`brand-profile.logo-contact`) → 8 fields (Logo file + 7 contact
 fields). Seeded on the live dev DB and verified idempotent.
 
-**Not yet decided:** how/whether these standalone fields connect to Studio's INTAKE stage UI, and
-whether the earlier per-project `contact-fields.js` work stays, gets removed, or gets repurposed
-(e.g. standalone fields as schema template, a separate mechanism for per-project values). Wait for
-the next instruction.
+**Step 2 (done):** killed the Studio project-picker landing page entirely —
+`/admin/template-engine` now redirects straight to the default project's flow (confirmed with the
+user before removing it). `IntakeStage.tsx` ("Overview") now renders its 7 contact fields via the
+real shared `FieldControl` component against the standalone `brand-profile` fields from Step 1
+(`GET /setting-fields/by-type/brand-profile` / `POST /setting-fields/values`) — this is the actual
+"using application settings" the user asked for, not a bespoke form.
+
+**Still orphaned, not removed:** `backend/src/modules/brand-kit/contact-fields.js` (per-project
+hidden fields from the very first, corrected attempt) + its `/contact` routes + `collateral`'s
+`resolveBrandKit()` wiring to it. Nothing calls these anymore but they haven't been deleted or
+repointed — see `.agents/HANDOFF.md`'s step-3 entry for the two options. Wait for instruction.
 
 ## Row 2 — next up
 

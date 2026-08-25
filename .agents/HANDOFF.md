@@ -1,3 +1,45 @@
+## 2026-08-25 — KDL-558 row 1 step 3: kill Studio project-picker, wire Overview to the standalone fields (CEO)
+
+**User-confirmed scope** (asked before touching nav): "remove all this" = kill the project-picker
+landing page entirely, `/admin/template-engine` goes straight to the default project's flow. Multi-
+project support stays in the backend/DAG, just not surfaced as a picker on first load.
+
+**What was done:**
+- `frontend/src/app/admin/template-engine/page.tsx` rewritten — no more "Studio guides your brand
+  identity through a 9-stage pipeline" text / "Mode A — Active" badge / project-card list. It now
+  resolves the default project (`is_default` flag, falls back to the first project) and
+  `router.replace`s straight into `/admin/template-engine/projects/{id}` — which already had its own
+  auto-redirect-to-first-incomplete-stage logic (`projects/[projectId]/page.tsx`, pre-existing, unchanged),
+  so this reuses existing infra rather than duplicating redirect logic.
+- `IntakeStage.tsx` — title "Intake" → "Overview", description now "Upload your logo and enter your
+  contact details, then submit to unlock Brand System." (matches the user's mockup). The "Logo &
+  Contact Details" card now shows brand-kit's live status pill (draft/extracted/inferred/approved).
+- **Contact fields now render via the REAL shared `FieldControl` component**
+  (`app/admin/settings/_components/FieldControl.tsx` — the same one `/admin/settings/view/[slug]`
+  uses), fetching `GET /setting-fields/by-type/brand-profile` and saving via
+  `POST /setting-fields/values` — i.e. actually "using application settings" now, not a bespoke form
+  bound to the per-project hidden store from two steps ago. Logo upload deliberately stays on
+  brand-kit's own endpoint (real sanitization + OKLCH palette extraction depends on it) even though a
+  generic "Logo file" field also exists in the standalone catalogue — the two are intentionally not
+  the same upload path.
+- Removed now-dead `useBrandContactFields`/`useSaveBrandContactFields` hooks from
+  `useTemplateEngine.ts` (superseded by the generic setting-fields query/mutation used directly in
+  `IntakeStage.tsx`).
+- Rewrote `template-engine-intake-contact.test.tsx` against the new data source; fixed one now-stale
+  assertion in `template-engine-studio.test.tsx` (`getByText('Intake')` → `'Overview'`).
+- Full suites green: backend 1257/1257 (untouched by this step, re-run to confirm), frontend 168/168,
+  type-check + lint clean.
+
+**Left alone, still orphaned (flagging again, not removed without instruction):** the per-project
+`backend/src/modules/brand-kit/contact-fields.js` + its `/contact` routes + the `collateral`
+`resolveBrandKit()` wiring from the first attempt are now **fully unused** by the frontend (nothing
+calls `/api/brand-kit/:projectId/contact` anymore). They still work, just dead. Options for next time
+this comes up: (a) delete them outright, or (b) repoint `resolveBrandKit()`'s company lookup at the
+new standalone `brand-profile-*` fields (global values) instead of deleting the per-project
+plumbing. Not deciding this without being told.
+
+---
+
 ## 2026-08-25 — KDL-558 row 1 correction: standalone seeder instead of per-project hidden fields (CEO)
 
 **User correction on the prior entry below** ("Not like this"): the per-project, `owner_module`-hidden

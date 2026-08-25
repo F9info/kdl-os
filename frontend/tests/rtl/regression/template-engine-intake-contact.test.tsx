@@ -1,9 +1,11 @@
 /**
- * RTL regression tests for KDL-558 roadmap row 1 — IntakeStage gains a real
- * "Logo & Contact Details" form (company name, primary/secondary email,
- * primary/secondary phone, address1/2), backed by Application Settings
- * (Types/SettingField) via useBrandContactFields/useSaveBrandContactFields,
- * not new BrandKit columns.
+ * RTL regression tests for KDL-558 roadmap row 1 (corrected) — IntakeStage's
+ * "Logo & Contact Details" card sources its 7 contact fields from the
+ * standalone Application Settings "brand-profile" Type (seeded by
+ * backend/prisma/seeders/brand-profile-fields.seed.js) via the generic
+ * GET /setting-fields/by-type/:slug + POST /setting-fields/values endpoints —
+ * the same mechanism /admin/settings/view/[slug] uses — not a per-project
+ * hidden store.
  */
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
@@ -12,25 +14,107 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { IntakeStage } from '@/app/admin/template-engine/_components/stages/IntakeStage'
 import type { TemplateEngineRun } from '@/types/template-engine.types'
 
-const { mockSaveMutate } = vi.hoisted(() => ({ mockSaveMutate: vi.fn() }))
-
-const CONTACT_FIELDS = [
-  { key: 'company_name', label: 'Company name', value: '' },
-  { key: 'primary_email', label: 'Primary email', value: '' },
-  { key: 'secondary_email', label: 'Secondary email', value: '' },
-  { key: 'primary_phone', label: 'Primary phone', value: '' },
-  { key: 'secondary_phone', label: 'Secondary phone', value: '' },
-  { key: 'address1', label: 'Address 1', value: '' },
-  { key: 'address2', label: 'Address 2', value: '' },
-]
+const { FIELDS } = vi.hoisted(() => ({
+  FIELDS: [
+    {
+      id: 'f-logo',
+      field_name: 'Logo file',
+      slug: 'brand-profile-logo',
+      input_type: 'file',
+      value: null,
+      alt_text: null,
+      options: null,
+      sort: 0,
+    },
+    {
+      id: 'f-company',
+      field_name: 'Company name',
+      slug: 'brand-profile-company-name',
+      input_type: 'textbox',
+      value: '',
+      alt_text: null,
+      options: null,
+      sort: 1,
+    },
+    {
+      id: 'f-pemail',
+      field_name: 'Primary email',
+      slug: 'brand-profile-primary-email',
+      input_type: 'textbox',
+      value: '',
+      alt_text: null,
+      options: null,
+      sort: 2,
+    },
+    {
+      id: 'f-semail',
+      field_name: 'Secondary email',
+      slug: 'brand-profile-secondary-email',
+      input_type: 'textbox',
+      value: '',
+      alt_text: null,
+      options: null,
+      sort: 3,
+    },
+    {
+      id: 'f-pphone',
+      field_name: 'Primary phone',
+      slug: 'brand-profile-primary-phone',
+      input_type: 'textbox',
+      value: '',
+      alt_text: null,
+      options: null,
+      sort: 4,
+    },
+    {
+      id: 'f-sphone',
+      field_name: 'Secondary phone',
+      slug: 'brand-profile-secondary-phone',
+      input_type: 'textbox',
+      value: '',
+      alt_text: null,
+      options: null,
+      sort: 5,
+    },
+    {
+      id: 'f-addr1',
+      field_name: 'Address 1',
+      slug: 'brand-profile-address-1',
+      input_type: 'textbox',
+      value: '',
+      alt_text: null,
+      options: null,
+      sort: 6,
+    },
+    {
+      id: 'f-addr2',
+      field_name: 'Address 2',
+      slug: 'brand-profile-address-2',
+      input_type: 'textbox',
+      value: '',
+      alt_text: null,
+      options: null,
+      sort: 7,
+    },
+  ],
+}))
 
 vi.mock('@/hooks/useTemplateEngine', () => ({
   useAdvanceStage: () => ({ mutate: vi.fn(), isPending: false }),
   useRetryStage: () => ({ mutate: vi.fn(), isPending: false }),
-  useBrandKit: () => ({ data: { logo_media_id: null }, isLoading: false }),
+  useBrandKit: () => ({ data: { logo_media_id: null, status: 'draft' }, isLoading: false }),
   useUploadLogo: () => ({ mutate: vi.fn(), isPending: false }),
-  useBrandContactFields: () => ({ data: CONTACT_FIELDS }),
-  useSaveBrandContactFields: () => ({ mutate: mockSaveMutate, isPending: false }),
+}))
+
+vi.mock('@/lib/axios', () => ({
+  default: {
+    get: vi
+      .fn()
+      .mockResolvedValue({
+        data: { data: { type: { id: 'type-1', name: 'Brand Profile' }, fields: FIELDS } },
+      }),
+    post: vi.fn().mockResolvedValue({ data: { data: { fields: FIELDS } } }),
+  },
 }))
 
 function renderWithQC(ui: React.ReactElement) {
@@ -66,34 +150,63 @@ function makeRun(): TemplateEngineRun {
 
 beforeEach(() => vi.clearAllMocks())
 
-describe('IntakeStage — Logo & Contact Details form', () => {
-  it('renders all 7 contact fields with their labels', () => {
+describe('IntakeStage — Logo & Contact Details (standalone Application Settings fields)', () => {
+  it('fetches fields from GET /setting-fields/by-type/brand-profile', async () => {
+    const api = (await import('@/lib/axios')).default
     renderWithQC(<IntakeStage run={makeRun()} />)
 
-    for (const f of CONTACT_FIELDS) {
-      expect(screen.getByLabelText(new RegExp(f.label, 'i'))).toBeInTheDocument()
-    }
+    await waitFor(() =>
+      expect(api.get).toHaveBeenCalledWith('/setting-fields/by-type/brand-profile')
+    )
   })
 
-  it('Submit is disabled until company name is filled', () => {
+  it('renders the 7 contact fields (not the generic Logo field, which stays on brand-kit upload)', async () => {
     renderWithQC(<IntakeStage run={makeRun()} />)
+
+    for (const label of [
+      'Company name',
+      'Primary email',
+      'Secondary email',
+      'Primary phone',
+      'Secondary phone',
+      'Address 1',
+      'Address 2',
+    ]) {
+      expect(await screen.findByLabelText(label)).toBeInTheDocument()
+    }
+    // Two "Logo file" labels would be ambiguous — assert Studio's own upload button instead.
+    expect(screen.getByRole('button', { name: /upload logo/i })).toBeInTheDocument()
+  })
+
+  it('Submit is disabled until company name is filled', async () => {
+    renderWithQC(<IntakeStage run={makeRun()} />)
+    await screen.findByLabelText('Company name')
 
     expect(screen.getByRole('button', { name: /submit/i })).toBeDisabled()
   })
 
-  it('submits the current field values via useSaveBrandContactFields', async () => {
+  it('submits via POST /setting-fields/values with the Brand Profile type_id, excluding the logo field', async () => {
+    const api = (await import('@/lib/axios')).default
     renderWithQC(<IntakeStage run={makeRun()} />)
 
-    fireEvent.change(screen.getByLabelText(/company name/i), {
+    fireEvent.change(await screen.findByLabelText('Company name'), {
       target: { value: 'Aster Foundation' },
     })
-    fireEvent.change(screen.getByLabelText(/primary email/i), { target: { value: 'hi@aster.org' } })
     fireEvent.click(screen.getByRole('button', { name: /submit/i }))
 
     await waitFor(() =>
-      expect(mockSaveMutate).toHaveBeenCalledWith(
-        expect.objectContaining({ company_name: 'Aster Foundation', primary_email: 'hi@aster.org' })
+      expect(api.post).toHaveBeenCalledWith(
+        '/setting-fields/values',
+        expect.objectContaining({
+          type_id: 'type-1',
+          values: expect.arrayContaining([
+            expect.objectContaining({ id: 'f-company', value: 'Aster Foundation' }),
+          ]),
+        })
       )
     )
+    const call = (api.post as ReturnType<typeof vi.fn>).mock.calls[0]
+    const body = call?.[1] as { values: Array<{ id: string }> }
+    expect(body.values.some((v) => v.id === 'f-logo')).toBe(false)
   })
 })

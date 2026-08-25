@@ -1,29 +1,39 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Upload, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
+import api from '@/lib/axios'
+import { toast } from '@/hooks/use-toast'
 import {
   useAdvanceStage,
   useBrandKit,
-  useBrandContactFields,
-  useSaveBrandContactFields,
   useRetryStage,
   useUploadLogo,
 } from '@/hooks/useTemplateEngine'
 import { StageShell } from './StageShell'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { FieldControl, type FieldState } from '@/app/admin/settings/_components/FieldControl'
+import type { SettingField, Type } from '@/types/models.types'
 import type { TemplateEngineRun } from '@/types/template-engine.types'
 
+// Standalone Application Settings Type seeded by
+// backend/prisma/seeders/brand-profile-fields.seed.js — global (not per-project),
+// managed the same way as any other /admin/settings/fields entry.
+const BRAND_PROFILE_TYPE_SLUG = 'brand-profile'
+
 // Two-column layout order matching the prototype's "Logo & Contact Details"
-// screen (templateEngine 2.html Overview stage). Fields not paired here
-// (secondary_phone, address1, address2) render full-width below.
+// screen. Fields not paired here (secondary_phone, address1, address2) render
+// full-width below.
 const PAIRED_ROWS: Array<[string, string]> = [
-  ['company_name', 'primary_email'],
-  ['secondary_email', 'primary_phone'],
+  ['brand-profile-company-name', 'brand-profile-primary-email'],
+  ['brand-profile-secondary-email', 'brand-profile-primary-phone'],
 ]
-const FULL_WIDTH_KEYS = ['secondary_phone', 'address1', 'address2']
+const FULL_WIDTH_SLUGS = [
+  'brand-profile-secondary-phone',
+  'brand-profile-address-1',
+  'brand-profile-address-2',
+]
 
 export function IntakeStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'INTAKE')
@@ -31,54 +41,79 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
   const retry = useRetryStage(run.id, run.projectId)
   const { data: brandKit, isLoading: kitLoading } = useBrandKit(run.projectId)
   const uploadLogo = useUploadLogo(run.projectId)
-  const { data: contactFields } = useBrandContactFields(run.projectId)
-  const saveContact = useSaveBrandContactFields(run.projectId)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const qc = useQueryClient()
 
-  const [values, setValues] = useState<Record<string, string>>({})
+  const { data } = useQuery({
+    queryKey: ['setting-fields-by-type', BRAND_PROFILE_TYPE_SLUG],
+    queryFn: () =>
+      api
+        .get(`/setting-fields/by-type/${BRAND_PROFILE_TYPE_SLUG}`)
+        .then((r) => r.data.data as { type: Type; fields: SettingField[] }),
+  })
 
-  // Seed local edit state once the saved values load; don't clobber in-progress edits on refetch.
+  const fields = useMemo(() => data?.fields ?? [], [data])
+  const bySlug = useMemo(() => Object.fromEntries(fields.map((f) => [f.slug, f])), [fields])
+
+  const [form, setForm] = useState<Record<string, FieldState>>({})
+
   useEffect(() => {
-    if (!contactFields) return
-    setValues((prev) =>
-      Object.keys(prev).length > 0
-        ? prev
-        : Object.fromEntries(contactFields.map((f) => [f.key, f.value]))
-    )
-  }, [contactFields])
+    setForm((prev) => {
+      if (Object.keys(prev).length > 0) return prev // don't clobber in-progress edits on refetch
+      const next: Record<string, FieldState> = {}
+      for (const f of fields) next[f.id] = { value: f.value ?? '', alt_text: f.alt_text ?? '' }
+      return next
+    })
+  }, [fields])
 
-  const byKey = Object.fromEntries((contactFields ?? []).map((f) => [f.key, f]))
+  const saveMutation = useMutation({
+    mutationFn: () => {
+      const values = fields
+        .filter((f) => f.slug !== 'brand-profile-logo') // Studio's own logo upload owns this field
+        .map((f) => ({ id: f.id, value: form[f.id]?.value ?? '', alt_text: null }))
+      return api.post('/setting-fields/values', { type_id: data!.type.id, values })
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['setting-fields-by-type', BRAND_PROFILE_TYPE_SLUG] })
+      toast({ title: 'Contact details saved' })
+    },
+    onError: () => toast({ title: 'Could not save contact details', variant: 'destructive' }),
+  })
+
   const hasLogo = !!brandKit?.logo_media_id
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     uploadLogo.mutate(file)
-    // Reset so the same file can be re-selected if needed
     e.target.value = ''
   }
 
-  function field(key: string) {
+  function fieldRow(slug: string) {
+    const f = bySlug[slug]
+    if (!f) return <div key={slug} />
     return (
-      <div key={key}>
-        <Label htmlFor={`intake-${key}`}>
-          {byKey[key]?.label ?? key}
-          {key === 'company_name' && <span className="text-destructive"> *</span>}
-        </Label>
-        <Input
-          id={`intake-${key}`}
-          value={values[key] ?? ''}
-          placeholder="Type a value…"
-          onChange={(e) => setValues((prev) => ({ ...prev, [key]: e.target.value }))}
-        />
-      </div>
+      <FieldControl
+        key={f.id}
+        field={f}
+        state={form[f.id] ?? { value: '', alt_text: '' }}
+        onChange={(patch) =>
+          setForm((prev) => ({
+            ...prev,
+            [f.id]: { ...(prev[f.id] ?? { value: '', alt_text: '' }), ...patch },
+          }))
+        }
+      />
     )
   }
 
+  const companyField = bySlug['brand-profile-company-name']
+  const companyValue = companyField ? (form[companyField.id]?.value ?? '') : ''
+
   return (
     <StageShell
-      title="Intake"
-      description="Provide your brand's foundational details — company name, industry, tagline, and logo. These become the starting point for the entire brand pipeline."
+      title="Overview"
+      description="Upload your logo and enter your contact details, then submit to unlock Brand System."
       stage={stage ?? null}
       onRun={
         stage?.status === 'FAILED' ? () => retry.mutate('INTAKE') : () => advance.mutate('INTAKE')
@@ -88,27 +123,21 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
     >
       <div className="grid gap-4 max-w-xl">
         <div className="rounded-lg border bg-card p-4 space-y-4">
-          <h3 className="text-sm font-medium">Logo &amp; Contact Details</h3>
-          {PAIRED_ROWS.map(([left, right]) => (
-            <div key={left} className="grid grid-cols-2 gap-4">
-              {field(left)}
-              {field(right)}
-            </div>
-          ))}
-          {FULL_WIDTH_KEYS.map((key) => field(key))}
-          <Button
-            size="sm"
-            onClick={() => saveContact.mutate(values)}
-            disabled={saveContact.isPending || !values.company_name?.trim()}
-          >
-            {saveContact.isPending ? 'Submitting…' : 'Submit'}
-          </Button>
-        </div>
-
-        {/* Logo upload */}
-        <div className="rounded-lg border bg-card p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm font-medium">
+            <h3 className="text-sm font-medium">Logo &amp; Contact Details</h3>
+            {brandKit?.status && (
+              <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium capitalize text-muted-foreground">
+                {brandKit.status}
+              </span>
+            )}
+          </div>
+
+          {/* Logo upload — stays wired to brand-kit's real pipeline (sanitization,
+              retention, OKLCH palette extraction), not the generic settings-field
+              upload, even though "Logo file" also exists as a standalone field. */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Logo file</p>
+            <div className="flex items-center gap-3">
               {kitLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               ) : hasLogo ? (
@@ -116,47 +145,54 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
               ) : (
                 <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
               )}
-              <span>Logo</span>
-              {hasLogo && (
-                <span className="text-xs font-normal text-muted-foreground">(uploaded)</span>
-              )}
+              <Button
+                size="sm"
+                variant={hasLogo ? 'outline' : 'default'}
+                className="gap-2"
+                disabled={uploadLogo.isPending}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {uploadLogo.isPending ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Uploading…
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-3.5 w-3.5" />
+                    {hasLogo ? 'Replace file' : 'Upload logo'}
+                  </>
+                )}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/svg+xml,image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={handleFileChange}
+              />
             </div>
-            <Button
-              size="sm"
-              variant={hasLogo ? 'outline' : 'default'}
-              className="gap-2"
-              disabled={uploadLogo.isPending}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {uploadLogo.isPending ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Uploading…
-                </>
-              ) : (
-                <>
-                  <Upload className="h-3.5 w-3.5" />
-                  {hasLogo ? 'Replace logo' : 'Upload logo'}
-                </>
-              )}
-            </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/svg+xml,image/png,image/jpeg,image/webp"
-              className="hidden"
-              onChange={handleFileChange}
-            />
+            <p className="text-xs text-muted-foreground">
+              This image is what &ldquo;Prepare Brand System&rdquo; actually samples pixels from to
+              build your colour palette.
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground">
-            SVG, PNG, JPEG or WebP · max 5 MB. Required for palette extraction (stage 2).
-          </p>
-          {!hasLogo && !kitLoading && (
-            <div className="flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400">
-              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-              Upload a logo to enable &ldquo;Run stage&rdquo;.
+
+          {PAIRED_ROWS.map(([left, right]) => (
+            <div key={left} className="grid grid-cols-2 gap-4">
+              {fieldRow(left)}
+              {fieldRow(right)}
             </div>
-          )}
+          ))}
+          {FULL_WIDTH_SLUGS.map((slug) => fieldRow(slug))}
+
+          <Button
+            size="sm"
+            onClick={() => saveMutation.mutate()}
+            disabled={saveMutation.isPending || !companyValue.trim()}
+          >
+            {saveMutation.isPending ? 'Submitting…' : 'Submit'}
+          </Button>
         </div>
       </div>
     </StageShell>
