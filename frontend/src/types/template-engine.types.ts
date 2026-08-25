@@ -59,13 +59,13 @@ export interface StageGateError {
 }
 
 export const DAG_STAGES: { slug: string; label: string; stage: DagStage }[] = [
-  { slug: 'intake', label: 'Intake', stage: 'INTAKE' },
-  { slug: 'palette', label: 'Palette', stage: 'PALETTE' },
+  { slug: 'intake', label: 'Overview', stage: 'INTAKE' },
+  { slug: 'palette', label: 'Color Palette', stage: 'PALETTE' },
   { slug: 'inference', label: 'Brand Inference', stage: 'INFERENCE' },
   { slug: 'approval', label: 'Brand Approval', stage: 'APPROVAL' },
   { slug: 'guidelines', label: 'Brand Guidelines', stage: 'GUIDELINES' },
   { slug: 'collateral', label: 'Collateral', stage: 'COLLATERAL' },
-  { slug: 'website', label: 'Website Assembly', stage: 'WEBSITE' },
+  { slug: 'website', label: 'Brands', stage: 'WEBSITE' },
   { slug: 'preflight', label: 'Preflight', stage: 'PREFLIGHT' },
   { slug: 'export', label: 'Export', stage: 'EXPORT' },
 ]

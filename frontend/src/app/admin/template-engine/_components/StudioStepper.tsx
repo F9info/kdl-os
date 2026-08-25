@@ -6,9 +6,17 @@ import { cn } from '@/lib/utils'
 import {
   DAG_STAGES,
   stageStatusToDisplay,
+  type DagStage,
   type TemplateEngineRun,
   type StepDisplayState,
 } from '@/types/template-engine.types'
+
+// The Studio nav only surfaces the three stages with a real built-out screen
+// so far (Overview/Color Palette/Brands — KDL-558). The other six DAG stages
+// still run underneath (each has its own advance/skip controls on its page,
+// reachable via each stage's own "Next" — see PaletteStage.goToNextStage) —
+// this only hides them from the top tab bar, it does not skip or remove them.
+const VISIBLE_STAGES: DagStage[] = ['INTAKE', 'PALETTE', 'WEBSITE']
 
 interface StudioStepperProps {
   run: TemplateEngineRun
@@ -20,10 +28,11 @@ export function StudioStepper({ run, projectId, activeSlug }: StudioStepperProps
   const router = useRouter()
 
   const stageMap = Object.fromEntries(run.stages.map((s) => [s.stage, s]))
+  const visibleDefs = DAG_STAGES.filter((def) => VISIBLE_STAGES.includes(def.stage))
 
   return (
     <nav aria-label="Studio stages" className="flex flex-row gap-1 overflow-x-auto">
-      {DAG_STAGES.map((def, idx) => {
+      {visibleDefs.map((def, idx) => {
         const stageRow = stageMap[def.stage]
         const status = stageRow?.status ?? 'PENDING'
 
