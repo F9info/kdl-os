@@ -1,3 +1,45 @@
+## 2026-08-25 — KDL-558: row 1 polish streak + row 2 (Palette editor) done (CEO)
+
+Six PRs merged in quick succession after step 4 (each its own branch/PR, verified locally + merged
+per user confirmation each time — CI is down org-wide, billing issue, same as every PR this
+session):
+
+- **#238** — Overview had two action buttons (StageShell's generic Run-stage/Complete + a custom
+  Submit); consolidated into one "Next" that saves the contact fields then advances/retries.
+- **#239** — Logo file + Company name were silently gating Next with no visible indication; added
+  red required asterisks + inline error messages on a failed click instead of a mystery-disabled
+  button.
+- **#240** — Logo upload now shows an actual image thumbnail (`GET /media/:id` presigned URL), not
+  just a checkmark; removed the "Category: Logo & Contact Details" hint repeated under all 7
+  fields (one shared category, card title already says it).
+- **#241** — Clicking Next saved + advanced the stage on the backend but never navigated — Studio's
+  routes are URL-based (`/projects/:id/:stageSlug`), so the page silently stayed on Overview.
+  Fixed: routes to `/palette` on a successful advance only (not on retry, which just resets
+  FAILED→PENDING without completing the stage).
+- **#242 — row 2 of the roadmap, a real feature, not a polish fix**: Palette stage was a stub (a
+  static "Palette extracted" card, no data shown). Rebuilt as an editor with 4 colour groups —
+  **Primary/Secondary/Accent/Neutral** (researched the actual backend `palette.colors` shape before
+  building; the prototype's "Tertiary/Quaternary" naming doesn't exist on the backend, would have
+  been a silent mismatch). Each group: editable base hex + logo eyedropper (canvas pixel sample,
+  falls back to a toast on CORS-tainted images — **not verified against real MinIO CORS headers,
+  flagged for manual test**) + live-regenerated 10-step OKLCH ramp. `frontend/src/lib/oklch-ramp.ts`
+  ports `backend/src/modules/brand-kit/palette.js`'s ramp math verbatim (same sRGB↔OKLab↔OKLCH,
+  same gamut-mapping by chroma reduction) — pure client-side, no new backend endpoint, unit-tested
+  against the same invariants the backend's own `palette.test.js` asserts. New `usePatchBrandKit`
+  hook (the PATCH endpoint existed, had no frontend consumer). Known gap surfaced, not fixed:
+  editing the palette doesn't recompute `contrast_report`, and approval only checks acknowledgment
+  of the possibly-now-stale existing adjustments.
+
+All six: typecheck + lint clean, full frontend suite green (199/199 as of #242). Backend untouched
+throughout this streak (still 1257/1257 from the last time it was touched, PR #233).
+
+**Next:** row 3 of the roadmap (Typography — embed theme-engine's per-platform panel inline in
+Studio, per `.agents/TEMPLATE_ENGINE_HTML_INTEGRATION.md`), or whatever the user asks for next —
+this session has been fully user-directed, screenshot by screenshot, not following the roadmap
+sequentially.
+
+---
+
 ## 2026-08-25 — KDL-558 row 1 step 4: Studio stepper — left sidebar → top horizontal tabs (CEO)
 
 Pure layout change, no data/logic touched. `StudioStepper.tsx`: `nav` wrapper

@@ -15,7 +15,7 @@ module yet — never invent a new Prisma migration where the generic engine alre
 | # | Prototype page | Studio location | Backing engine | Status |
 |---|---|---|---|---|
 | 1 | Overview (logo + contact intake) | INTAKE stage | `brand-kit` + Application Settings | ✅ **Done** (2026-08-25) |
-| 2 | Color Palette (4-group ramps) | PALETTE stage | `brand-kit` (OKLCH extraction) | ⬜ Pending — audit existing PaletteStage UI vs prototype fidelity |
+| 2 | Color Palette (4-group ramps) | PALETTE stage | `brand-kit` (OKLCH extraction) | ✅ **Done** (2026-08-25) |
 | 3 | Typography (per-platform type scale + fonts) | APPROVAL stage → theme-engine | `theme-engine` | ⬜ Pending — embed theme-engine's typography panel inline in Studio |
 | 4a | Platforms → Web/Admin/Mobile | WEBSITE stage | `page-builder` (Puck) | ⬜ Pending — **already spec'd + planned**: `docs/superpowers/specs/2026-08-24-template-engine-website-cms-design.md` + `docs/superpowers/plans/2026-08-24-template-engine-website-cms.md` (13 TDD tasks, ready to execute) |
 | 4b | Platforms → print/ID (card/letterhead/t-shirt/ID) | COLLATERAL stage | `collateral` | ⬜ Pending — needs its own brainstorm+spec+plan pass (interactive editor: live preview, drag logo, colour-role picker) |
@@ -53,9 +53,29 @@ hidden fields from the very first, corrected attempt) + its `/contact` routes + 
 `resolveBrandKit()` wiring to it. Nothing calls these anymore but they haven't been deleted or
 repointed — see `.agents/HANDOFF.md`'s step-3 entry for the two options. Wait for instruction.
 
-## Row 2 — next up
+## Row 2 — done (2026-08-25, PR #242)
 
-Not started. First step when picked up: read `frontend/src/app/admin/template-engine/_components/stages/PaletteStage.tsx`
-and compare against the prototype's Color Palette screen (4 named groups — Primary/Secondary/Tertiary/Quaternary
-— each with a 10-step tint/shade ramp) to find the actual gap, the same way row 1 started with reading
-`IntakeStage.tsx` before assuming what was missing.
+Built: `frontend/src/app/admin/template-engine/_components/stages/PaletteStage.tsx` rewritten from a
+stub into a real editor. **Correction to this file's own row-2 note below** (left for history) — the
+backend's actual roles are **Primary/Secondary/Accent/Neutral**, not "Tertiary/Quaternary" (that was
+this doc's own assumption before checking; researched via a dedicated Explore pass on
+`backend/src/modules/brand-kit/service.js` + `palette.js` before building, per the row 1 lesson —
+"read the current code before assuming the gap").
+
+New `frontend/src/lib/oklch-ramp.ts` — verbatim client-side port of `palette.js`'s ramp math, so
+editing a base hex regenerates the exact same ramp shape the backend's own extraction produces. New
+`usePatchBrandKit` hook. Full detail in `.agents/HANDOFF.md`'s "row 1 polish streak + row 2" entry.
+
+**Known gap surfaced, not fixed:** editing the palette doesn't recompute `contrast_report` on the
+backend (no such endpoint exists); approval only checks acknowledgment of the possibly-now-stale
+existing adjustments. Flag if this becomes a real problem — needs a backend change to fix properly.
+
+**Not verified:** the "Pick from logo" eyedropper against real MinIO CORS headers — falls back to a
+toast on a CORS-tainted canvas read, but this hasn't been exercised against the actual deployed
+MinIO config from this session (no browser tool available). User asked to test manually.
+
+## Row 3 — next up
+
+Not started. Per the row 1/2 lesson: read the actual current code (theme-engine's typography panel,
+`frontend/src/app/admin/theme-engine/`) before assuming what the gap is or what the backend's real
+field names are — do not assume the prototype's naming/structure carries over.
