@@ -82,6 +82,15 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
 
   const hasLogo = !!brandKit?.logo_media_id
 
+  const { data: logoMedia } = useQuery({
+    queryKey: ['media', brandKit?.logo_media_id],
+    queryFn: () =>
+      api
+        .get(`/media/${brandKit!.logo_media_id}`)
+        .then((r) => r.data.data.media as { url: string | null }),
+    enabled: hasLogo,
+  })
+
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -96,8 +105,14 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
     if (!f) return <div key={slug} />
     // Company name is required — mark it in the label without touching the
     // shared FieldControl component (used by every generic settings screen).
-    const displayField =
-      slug === 'brand-profile-company-name' ? { ...f, field_name: `${f.field_name} *` } : f
+    // Every field here shares one Category ("Logo & Contact Details"), and
+    // the card title already says that — FieldControl's per-field "Category: …"
+    // hint would just repeat it 7 times, so it's stripped at this call site.
+    const displayField = {
+      ...f,
+      category: undefined,
+      field_name: slug === 'brand-profile-company-name' ? `${f.field_name} *` : f.field_name,
+    }
     return (
       <div key={f.id}>
         <FieldControl
@@ -204,6 +219,14 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
               This image is what &ldquo;Prepare Brand System&rdquo; actually samples pixels from to
               build your colour palette.
             </p>
+            {hasLogo && logoMedia?.url && (
+              // eslint-disable-next-line @next/next/no-img-element -- external presigned MinIO URL, not a Next-optimizable local asset
+              <img
+                src={logoMedia.url}
+                alt="Uploaded logo"
+                className="h-16 w-16 rounded-md border object-contain bg-white p-1"
+              />
+            )}
             {showErrors && logoMissing && (
               <p className="text-xs text-destructive">Logo file is required.</p>
             )}
