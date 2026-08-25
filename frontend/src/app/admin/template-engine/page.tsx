@@ -16,9 +16,10 @@ interface Project {
   is_default: boolean
 }
 
-// No more project-picker landing page (KDL-558) — goes straight to the
-// default project's Studio flow, same way /projects/[projectId]/page.tsx
-// already auto-routes to the first incomplete stage (or intake for a new run).
+// No more project-picker landing page (KDL-558) — clicking "Template Engine"
+// in the nav always lands on the default project's Overview/Intake stage,
+// not wherever /projects/[projectId]/page.tsx's resume logic would otherwise
+// jump to (e.g. Export, for a run that's already 9/9 complete).
 export default function StudioLandingPage() {
   return (
     <ModuleGuard slug="template-engine">
@@ -52,7 +53,7 @@ function StudioRedirect() {
     if (isLoading || !projects || projects.length === 0) return
     const target = projects.find((p) => p.is_default) ?? projects[0]
     if (!target) return
-    router.replace(`/admin/template-engine/projects/${target.id}`)
+    router.replace(`/admin/template-engine/projects/${target.id}/intake`)
   }, [isLoading, projects, router])
 
   if (isError || projects === null) {

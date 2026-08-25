@@ -121,7 +121,7 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
       isRunning={advance.isPending || retry.isPending}
       runDisabled={!hasLogo && stage?.status !== 'FAILED'}
     >
-      <div className="grid gap-4 max-w-xl">
+      <div className="grid gap-4 w-full">
         <div className="rounded-lg border bg-card p-4 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium">Logo &amp; Contact Details</h3>
