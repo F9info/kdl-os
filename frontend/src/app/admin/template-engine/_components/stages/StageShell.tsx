@@ -15,6 +15,9 @@ interface StageShellProps {
   isRunning?: boolean
   hideRunButton?: boolean
   runDisabled?: boolean
+  // Hides the title/description/status-badge row — for stages whose own
+  // content already covers that (e.g. WebsiteStage's "Brands" heading).
+  hideHeader?: boolean
 }
 
 export function StageShell({
@@ -27,19 +30,22 @@ export function StageShell({
   isRunning,
   hideRunButton,
   runDisabled,
+  hideHeader,
 }: StageShellProps) {
   const status = stage?.status ?? 'PENDING'
   const errorCode = stage?.errorCode ?? null
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold">{title}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+      {!hideHeader && (
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold">{title}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+          </div>
+          <StageBadge status={status} />
         </div>
-        <StageBadge status={status} />
-      </div>
+      )}
 
       {errorCode && (
         <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-950">

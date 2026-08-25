@@ -63,6 +63,7 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
       title="Website Assembly"
       description="Seed website pages from Puck component packs filtered by industry, using the approved brand kit as slot defaults. Pages are created in the page-builder engine."
       stage={stage ?? null}
+      hideHeader
       hideRunButton={openBrand === null || webAppStep === 'typography'}
       onRun={
         stage?.status === 'FAILED' ? () => retry.mutate('WEBSITE') : () => advance.mutate('WEBSITE')

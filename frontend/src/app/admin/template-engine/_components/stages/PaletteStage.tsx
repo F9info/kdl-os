@@ -170,8 +170,16 @@ export function PaletteStage({ run }: { run: TemplateEngineRun }) {
   }
 
   function goToNextStage() {
-    const nextDef = DAG_STAGES[DAG_STAGES.findIndex((s) => s.stage === 'PALETTE') + 1]
-    if (nextDef) router.push(`/admin/template-engine/projects/${run.projectId}/${nextDef.slug}`)
+    // The Studio nav only surfaces Overview/Color Palette/Brands (KDL-558) —
+    // jump straight to Brands (WEBSITE) rather than the DAG's literal next
+    // stage (Brand Inference), which has no visible tab. This only changes
+    // where the browser navigates; it doesn't skip or auto-run the hidden
+    // Inference/Approval/Guidelines/Collateral stages server-side — their
+    // real gates (e.g. Brand Approval's human review) still apply wherever
+    // they already did.
+    const websiteDef = DAG_STAGES.find((s) => s.stage === 'WEBSITE')
+    if (websiteDef)
+      router.push(`/admin/template-engine/projects/${run.projectId}/${websiteDef.slug}`)
   }
 
   function handleSubmit() {
