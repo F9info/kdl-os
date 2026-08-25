@@ -63,12 +63,16 @@ const BRAND_KIT: BrandKit = {
   approved_at: null,
 }
 
-const { mockPatchMutate } = vi.hoisted(() => ({ mockPatchMutate: vi.fn() }))
+const { mockPatchMutate, mockAdvanceMutate, mockUseBrandKit } = vi.hoisted(() => ({
+  mockPatchMutate: vi.fn(),
+  mockAdvanceMutate: vi.fn(),
+  mockUseBrandKit: vi.fn(),
+}))
 
 vi.mock('@/hooks/useTemplateEngine', () => ({
-  useAdvanceStage: () => ({ mutate: vi.fn(), isPending: false }),
+  useAdvanceStage: () => ({ mutate: mockAdvanceMutate, isPending: false }),
   useRetryStage: () => ({ mutate: vi.fn(), isPending: false }),
-  useBrandKit: () => ({ data: BRAND_KIT, isLoading: false }),
+  useBrandKit: mockUseBrandKit,
   usePatchBrandKit: () => ({ mutate: mockPatchMutate, isPending: false }),
 }))
 
@@ -111,7 +115,42 @@ function makeRun(): TemplateEngineRun {
   }
 }
 
-beforeEach(() => vi.clearAllMocks())
+beforeEach(() => {
+  vi.clearAllMocks()
+  mockUseBrandKit.mockReturnValue({ data: BRAND_KIT, isLoading: false })
+})
+
+describe('PaletteStage — re-extraction after a logo replace (stage stuck at stale DONE)', () => {
+  it('shows an "Extract palette" trigger — not StageShell\'s disabled DONE button — when palette is null but the DAG stage still reads DONE from a prior logo', () => {
+    // Reproduces the reported bug: uploading a new logo resets brand-kit's
+    // palette to null server-side (brand-kit/service.js uploadLogo), but the
+    // PALETTE DAG stage row is untouched and still says DONE from the old
+    // logo's extraction. StageShell's own button disables at status===DONE,
+    // so PaletteStage must own its own trigger instead of relying on it.
+    mockUseBrandKit.mockReturnValue({
+      data: { ...BRAND_KIT, palette: null, status: 'draft' },
+      isLoading: false,
+    })
+    renderWithQC(<PaletteStage run={makeRun()} />) // run's PALETTE stage.status is 'DONE'
+
+    const button = screen.getByRole('button', { name: /extract palette/i })
+    expect(button).toBeInTheDocument()
+    expect(button).not.toBeDisabled()
+
+    fireEvent.click(button)
+    expect(mockAdvanceMutate).toHaveBeenCalledWith('PALETTE')
+  })
+
+  it('disables the trigger when no logo has been uploaded yet', () => {
+    mockUseBrandKit.mockReturnValue({
+      data: { ...BRAND_KIT, palette: null, logo_media_id: null },
+      isLoading: false,
+    })
+    renderWithQC(<PaletteStage run={makeRun()} />)
+
+    expect(screen.getByRole('button', { name: /extract palette/i })).toBeDisabled()
+  })
+})
 
 describe('PaletteStage — editable colour groups', () => {
   it('renders all 4 groups with their extracted base hex', () => {
