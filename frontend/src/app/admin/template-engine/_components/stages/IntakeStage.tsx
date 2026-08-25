@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Upload, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
 import api from '@/lib/axios'
@@ -15,7 +16,7 @@ import { StageShell } from './StageShell'
 import { Button } from '@/components/ui/button'
 import { FieldControl, type FieldState } from '@/app/admin/settings/_components/FieldControl'
 import type { SettingField, Type } from '@/types/models.types'
-import type { TemplateEngineRun } from '@/types/template-engine.types'
+import { DAG_STAGES, type TemplateEngineRun } from '@/types/template-engine.types'
 
 // Standalone Application Settings Type seeded by
 // backend/prisma/seeders/brand-profile-fields.seed.js — global (not per-project),
@@ -36,6 +37,7 @@ const FULL_WIDTH_SLUGS = [
 ]
 
 export function IntakeStage({ run }: { run: TemplateEngineRun }) {
+  const router = useRouter()
   const stage = run.stages.find((s) => s.stage === 'INTAKE')
   const advance = useAdvanceStage(run.id, run.projectId)
   const retry = useRetryStage(run.id, run.projectId)
@@ -135,6 +137,11 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
   const companyMissing = !companyValue.trim()
   const logoMissing = !hasLogo
 
+  function goToNextStage() {
+    const nextDef = DAG_STAGES[DAG_STAGES.findIndex((s) => s.stage === 'INTAKE') + 1]
+    if (nextDef) router.push(`/admin/template-engine/projects/${run.projectId}/${nextDef.slug}`)
+  }
+
   function handleNext() {
     if (companyMissing || logoMissing) {
       setShowErrors(true)
@@ -143,8 +150,11 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
     setShowErrors(false)
     saveMutation.mutate(undefined, {
       onSuccess: () => {
-        if (stage?.status === 'FAILED') retry.mutate('INTAKE')
-        else advance.mutate('INTAKE')
+        if (stage?.status === 'FAILED') {
+          retry.mutate('INTAKE') // resets FAILED -> PENDING; user clicks Next again to actually advance
+        } else {
+          advance.mutate('INTAKE', { onSuccess: goToNextStage })
+        }
       },
     })
   }
