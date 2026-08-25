@@ -163,7 +163,11 @@ describe('PaletteStage — re-extraction after a logo replace (stage stuck at st
     expect(screen.getByText(/upload a logo/i)).toBeInTheDocument()
   })
 
-  it('shows a Retry button instead of auto-triggering again when the stage already failed', () => {
+  it('falls back to random starter colours (with logo picker + randomize still available) instead of dead-ending when extraction failed', () => {
+    // Two flows: API extraction succeeds -> real sampled colours (covered
+    // above/below). API unavailable/fails -> don't block the user behind an
+    // error; seed random colours so they can still build a palette via the
+    // logo picker, Randomize, or manual hex entry.
     mockUseBrandKit.mockReturnValue({
       data: { ...BRAND_KIT, palette: null, status: 'draft' },
       isLoading: false,
@@ -173,11 +177,33 @@ describe('PaletteStage — re-extraction after a logo replace (stage stuck at st
     renderWithQC(<PaletteStage run={run} />)
 
     expect(mockAdvanceMutate).not.toHaveBeenCalled()
-    const button = screen.getByRole('button', { name: /retry extraction/i })
-    expect(button).toBeInTheDocument()
 
-    fireEvent.click(button)
+    // Random colours are seeded — the full editor renders, not just an error.
+    expect(screen.getByText('Primary')).toBeInTheDocument()
+    expect(screen.getByText('Quaternary')).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: /pick from logo/i })[0]).toBeEnabled()
+    expect(screen.getAllByRole('button', { name: /randomize/i })[0]).toBeEnabled()
+
+    // Retry is still offered, and stays manual (not auto-fired).
+    const retryButton = screen.getByRole('button', { name: /retry extraction/i })
+    fireEvent.click(retryButton)
     expect(mockRetryMutate).toHaveBeenCalledWith('PALETTE')
+  })
+
+  it('submits random-fallback colours with low confidence when there was no real extraction to inherit from', async () => {
+    mockUseBrandKit.mockReturnValue({
+      data: { ...BRAND_KIT, palette: null, status: 'draft' },
+      isLoading: false,
+    })
+    const run = makeRun()
+    run.stages[0]!.status = 'FAILED'
+    renderWithQC(<PaletteStage run={run} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /^next$/i }))
+
+    await waitFor(() => expect(mockPatchMutate).toHaveBeenCalled())
+    const [palette] = mockPatchMutate.mock.calls[0] as [{ paletteConfidence: string }]
+    expect(palette.paletteConfidence).toBe('low')
   })
 })
 

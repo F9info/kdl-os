@@ -74,34 +74,54 @@ export function PaletteStage({ run }: { run: TemplateEngineRun }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   const hasPalette = !!brandKit?.palette
+  const extractionFailed = stage?.status === 'FAILED'
 
-  // Seed local edit state once, from the extracted (or previously saved) palette.
+  // Seed local edit state from the extracted (or previously saved) palette.
   // Null roles (common for single-color logos) default to a neutral grey.
+  // Also re-seeds from the real palette if a Retry (see below) succeeds after
+  // the random-fallback branch already populated `edits`.
+  const usedFallbackColorsRef = useRef(false)
   useEffect(() => {
-    if (!brandKit?.palette || edits) return
+    if (!brandKit?.palette) return
+    if (edits && !usedFallbackColorsRef.current) return
     const seeded = {} as Record<PaletteRole, PaletteColor>
     for (const { role } of ROLES) {
       seeded[role] = brandKit.palette.colors[role] ?? colorFromHex(FALLBACK_HEX)
     }
+    usedFallbackColorsRef.current = false
     setEdits(seeded)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [brandKit?.palette])
 
+  // Two flows: the API extraction succeeds -> real sampled colours (above).
+  // The API is unavailable/fails -> don't dead-end on an error; seed random
+  // starter colours instead so the user can still build a palette via the
+  // logo picker / randomize / manual hex entry below.
+  useEffect(() => {
+    if (!hasLogo || brandKit?.palette || edits || !extractionFailed) return
+    const seeded = {} as Record<PaletteRole, PaletteColor>
+    for (const { role } of ROLES) {
+      seeded[role] = colorFromHex(randomHex())
+    }
+    usedFallbackColorsRef.current = true
+    setEdits(seeded)
+  }, [hasLogo, brandKit?.palette, edits, extractionFailed])
+
   // Auto-trigger extraction — no manual "Extract palette" click required.
   // Runs once per distinct logo while there's no palette yet. A FAILED stage
   // is never auto-retried — that always needs an explicit Retry click (see
-  // the FAILED branch below) so a persistently-bad logo doesn't refire on
+  // the fallback banner below) so a persistently-bad logo doesn't refire on
   // every mount.
   const triggeredForLogoRef = useRef<string | null>(null)
   useEffect(() => {
-    if (!hasLogo || hasPalette || stage?.status === 'FAILED') return
+    if (!hasLogo || hasPalette || extractionFailed) return
     if (advance.isPending) return
     const logoId = brandKit?.logo_media_id ?? null
     if (triggeredForLogoRef.current === logoId) return
     triggeredForLogoRef.current = logoId
     advance.mutate('PALETTE')
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasLogo, hasPalette, brandKit?.logo_media_id, stage?.status])
+  }, [hasLogo, hasPalette, brandKit?.logo_media_id, extractionFailed])
 
   const isApproved = brandKit?.status === 'approved'
 
@@ -155,10 +175,12 @@ export function PaletteStage({ run }: { run: TemplateEngineRun }) {
   }
 
   function handleSubmit() {
-    if (!edits || !brandKit?.palette) return
+    if (!edits) return
     const palette: BrandKitPalette = {
-      schemaVersion: brandKit.palette.schemaVersion,
-      paletteConfidence: brandKit.palette.paletteConfidence,
+      schemaVersion: brandKit?.palette?.schemaVersion ?? 1,
+      // Random-fallback colours were never sampled from the logo — mark them
+      // low confidence rather than inheriting a stale value.
+      paletteConfidence: brandKit?.palette?.paletteConfidence ?? 'low',
       colors: edits,
     }
     patchPalette.mutate(palette, { onSuccess: goToNextStage })
@@ -208,38 +230,22 @@ export function PaletteStage({ run }: { run: TemplateEngineRun }) {
           </div>
         )}
 
-        {!hasPalette ? (
+        {!hasPalette && !(extractionFailed && edits) ? (
           <div className="space-y-3">
-            {stage?.status === 'FAILED' ? (
-              <>
-                <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
-                  <Palette className="h-4 w-4 shrink-0" />
-                  <span>Palette extraction failed for the current logo.</span>
-                </div>
-                <Button
-                  size="sm"
-                  disabled={retry.isPending}
-                  onClick={() => retry.mutate('PALETTE')}
-                >
-                  {retry.isPending ? 'Retrying…' : 'Retry extraction'}
-                </Button>
-              </>
-            ) : (
-              <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-                <Palette className="h-4 w-4 shrink-0" />
-                <span>
-                  {hasLogo
-                    ? // Replacing the logo on Intake resets the brand kit to draft and clears the
-                      // previously-extracted palette server-side (brand-kit/service.js uploadLogo) —
-                      // this stage's DAG status can still read DONE from an earlier logo, but
-                      // StageShell's own Run button disables once a stage is DONE. So this stage
-                      // auto-triggers its own extraction instead of relying on StageShell's Run
-                      // button, to stay working after a logo replace.
-                      'Extracting palette from your logo…'
-                    : 'Upload a logo on the Overview stage first — extraction needs one.'}
-                </span>
-              </div>
-            )}
+            <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+              <Palette className="h-4 w-4 shrink-0" />
+              <span>
+                {hasLogo
+                  ? // Replacing the logo on Intake resets the brand kit to draft and clears the
+                    // previously-extracted palette server-side (brand-kit/service.js uploadLogo) —
+                    // this stage's DAG status can still read DONE from an earlier logo, but
+                    // StageShell's own Run button disables once a stage is DONE. So this stage
+                    // auto-triggers its own extraction instead of relying on StageShell's Run
+                    // button, to stay working after a logo replace.
+                    'Extracting palette from your logo…'
+                  : 'Upload a logo on the Overview stage first — extraction needs one.'}
+              </span>
+            </div>
           </div>
         ) : (
           <>
@@ -247,6 +253,25 @@ export function PaletteStage({ run }: { run: TemplateEngineRun }) {
               <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
                 This brand kit is already approved — reopen it from the Brand Approval stage to edit
                 the palette.
+              </div>
+            )}
+
+            {!hasPalette && (
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+                <span>
+                  Automatic extraction failed for this logo — showing random starter colours
+                  instead. Edit them, use &quot;Pick from logo&quot;, or retry extraction.
+                </span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={retry.isPending}
+                  onClick={() => retry.mutate('PALETTE')}
+                  className="shrink-0"
+                >
+                  {retry.isPending ? 'Retrying…' : 'Retry extraction'}
+                </Button>
               </div>
             )}
 
