@@ -146,35 +146,12 @@ export function PaletteStage({ run }: { run: TemplateEngineRun }) {
       stage={stage ?? null}
       hideRunButton
     >
-      {!hasPalette ? (
-        <div className="space-y-3">
-          <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-            <Palette className="h-4 w-4 shrink-0" />
-            <span>
-              {hasLogo
-                ? // Replacing the logo on Intake resets the brand kit to draft and clears the
-                  // previously-extracted palette server-side (brand-kit/service.js uploadLogo) —
-                  // this stage's DAG status can still read DONE from an earlier logo, but
-                  // StageShell's own Run button disables once a stage is DONE. So this stage
-                  // owns its own trigger instead of relying on StageShell's, to stay clickable
-                  // after a logo replace.
-                  'Palette not yet extracted for the current logo. Extract it to continue.'
-                : 'Upload a logo on the Overview stage first — extraction needs one.'}
-            </span>
-          </div>
-          <Button
-            size="sm"
-            disabled={!hasLogo || advance.isPending || retry.isPending}
-            onClick={() =>
-              stage?.status === 'FAILED' ? retry.mutate('PALETTE') : advance.mutate('PALETTE')
-            }
-          >
-            {advance.isPending || retry.isPending ? 'Extracting…' : 'Extract palette'}
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-4 w-full">
-          {/* Logo reference — click while "Pick from logo" is active to sample a pixel */}
+      <div className="space-y-4 w-full">
+        {/* "Your logo" — always visible once a logo exists, independent of
+            extraction status, so the user can see what will be (or was)
+            sampled before/after clicking Extract. Click while "Pick from
+            logo" is active (post-extraction only) to sample a pixel. */}
+        {hasLogo && (
           <div className="rounded-lg border bg-card px-6 py-6 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium">Your logo</h3>
@@ -197,97 +174,129 @@ export function PaletteStage({ run }: { run: TemplateEngineRun }) {
               <p className="text-xs text-muted-foreground max-w-sm">
                 {pickingRole
                   ? `Click anywhere on the logo to sample a colour for ${ROLES.find((r) => r.role === pickingRole)?.label}.`
-                  : 'The four colours below were sampled from this logo. To grab an exact colour, click "Pick from logo" on any group, then click anywhere on the logo.'}
+                  : hasPalette
+                    ? 'The four colours below were sampled from this logo. To grab an exact colour, click "Pick from logo" on any group, then click anywhere on the logo.'
+                    : 'This image is what palette extraction samples pixels from to build your colour groups.'}
               </p>
             </div>
             <canvas ref={canvasRef} className="hidden" />
           </div>
+        )}
 
-          {isApproved && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
-              This brand kit is already approved — reopen it from the Brand Approval stage to edit
-              the palette.
+        {!hasPalette ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+              <Palette className="h-4 w-4 shrink-0" />
+              <span>
+                {hasLogo
+                  ? // Replacing the logo on Intake resets the brand kit to draft and clears the
+                    // previously-extracted palette server-side (brand-kit/service.js uploadLogo) —
+                    // this stage's DAG status can still read DONE from an earlier logo, but
+                    // StageShell's own Run button disables once a stage is DONE. So this stage
+                    // owns its own trigger instead of relying on StageShell's, to stay clickable
+                    // after a logo replace.
+                    'Palette not yet extracted for the current logo. Extract it to continue.'
+                  : 'Upload a logo on the Overview stage first — extraction needs one.'}
+              </span>
             </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-4">
-            {edits &&
-              ROLES.map(({ role, label }) => {
-                const color = edits[role]
-                return (
-                  <div key={role} className="rounded-lg border bg-card px-6 py-6 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="h-3 w-3 rounded-sm border"
-                          style={{ backgroundColor: color.hex }}
-                        />
-                        <h3 className="text-sm font-medium">{label}</h3>
-                      </div>
-                      <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-mono font-medium text-muted-foreground">
-                        {color.hex.toUpperCase()}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="h-9 w-9 shrink-0 rounded-md border"
-                        style={{ backgroundColor: color.hex }}
-                      />
-                      <Input
-                        value={color.hex}
-                        disabled={isApproved}
-                        onChange={(e) => updateHex(role, e.target.value)}
-                        className="font-mono"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={isApproved || !hasLogo}
-                        onClick={() => startPicking(role)}
-                        className="shrink-0 gap-1.5"
-                      >
-                        <Pipette className="h-3.5 w-3.5" />
-                        Pick from logo
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Base colour — editing it regenerates the ramp below.
-                    </p>
-
-                    <div className="flex flex-wrap gap-2">
-                      {RAMP_STEPS.map((step) => (
-                        <div key={step} className="flex flex-col items-center gap-1">
-                          <span
-                            className="h-10 w-10 rounded border"
-                            style={{ backgroundColor: color.ramp[step] }}
-                          />
-                          <span className="text-[10px] text-muted-foreground">{step}</span>
-                          <span className="text-[10px] font-mono text-muted-foreground">
-                            {color.ramp[step]}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )
-              })}
-          </div>
-
-          <div className="rounded-lg border bg-card px-6 py-6 flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-medium">Submit palette</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Saves your edits and moves on to Brand Inference.
-              </p>
-            </div>
-            <Button onClick={handleSubmit} disabled={isApproved || patchPalette.isPending}>
-              {patchPalette.isPending ? 'Saving…' : 'Submit palette'}
+            <Button
+              size="sm"
+              disabled={!hasLogo || advance.isPending || retry.isPending}
+              onClick={() =>
+                stage?.status === 'FAILED' ? retry.mutate('PALETTE') : advance.mutate('PALETTE')
+              }
+            >
+              {advance.isPending || retry.isPending ? 'Extracting…' : 'Extract palette'}
             </Button>
           </div>
-        </div>
-      )}
+        ) : (
+          <>
+            {isApproved && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+                This brand kit is already approved — reopen it from the Brand Approval stage to edit
+                the palette.
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              {edits &&
+                ROLES.map(({ role, label }) => {
+                  const color = edits[role]
+                  return (
+                    <div key={role} className="rounded-lg border bg-card px-6 py-6 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="h-3 w-3 rounded-sm border"
+                            style={{ backgroundColor: color.hex }}
+                          />
+                          <h3 className="text-sm font-medium">{label}</h3>
+                        </div>
+                        <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-mono font-medium text-muted-foreground">
+                          {color.hex.toUpperCase()}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="h-9 w-9 shrink-0 rounded-md border"
+                          style={{ backgroundColor: color.hex }}
+                        />
+                        <Input
+                          value={color.hex}
+                          disabled={isApproved}
+                          onChange={(e) => updateHex(role, e.target.value)}
+                          className="font-mono"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={isApproved || !hasLogo}
+                          onClick={() => startPicking(role)}
+                          className="shrink-0 gap-1.5"
+                        >
+                          <Pipette className="h-3.5 w-3.5" />
+                          Pick from logo
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Base colour — editing it regenerates the ramp below.
+                      </p>
+
+                      <div className="flex flex-wrap gap-2">
+                        {RAMP_STEPS.map((step) => (
+                          <div key={step} className="flex flex-col items-center gap-1">
+                            <span
+                              className="h-10 w-10 rounded border"
+                              style={{ backgroundColor: color.ramp[step] }}
+                            />
+                            <span className="text-[10px] text-muted-foreground">{step}</span>
+                            <span className="text-[10px] font-mono text-muted-foreground">
+                              {color.ramp[step]}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+            </div>
+
+            <div className="rounded-lg border bg-card px-6 py-6 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium">Submit palette</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Saves your edits and moves on to Brand Inference.
+                </p>
+              </div>
+              <Button onClick={handleSubmit} disabled={isApproved || patchPalette.isPending}>
+                {patchPalette.isPending ? 'Saving…' : 'Submit palette'}
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
     </StageShell>
   )
 }

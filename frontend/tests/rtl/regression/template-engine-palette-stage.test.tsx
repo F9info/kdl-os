@@ -141,6 +141,20 @@ describe('PaletteStage — re-extraction after a logo replace (stage stuck at st
     expect(mockAdvanceMutate).toHaveBeenCalledWith('PALETTE')
   })
 
+  it('shows the "Your logo" reference card even before extraction has run', async () => {
+    mockUseBrandKit.mockReturnValue({
+      data: { ...BRAND_KIT, palette: null, status: 'draft' },
+      isLoading: false,
+    })
+    renderWithQC(<PaletteStage run={makeRun()} />)
+
+    expect(screen.getByText('Your logo')).toBeInTheDocument()
+    expect(await screen.findByAltText('Brand logo')).toHaveAttribute(
+      'src',
+      'https://minio.test/logo.png'
+    )
+  })
+
   it('disables the trigger when no logo has been uploaded yet', () => {
     mockUseBrandKit.mockReturnValue({
       data: { ...BRAND_KIT, palette: null, logo_media_id: null },
