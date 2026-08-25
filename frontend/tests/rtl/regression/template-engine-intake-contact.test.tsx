@@ -102,17 +102,15 @@ const { FIELDS } = vi.hoisted(() => ({
 vi.mock('@/hooks/useTemplateEngine', () => ({
   useAdvanceStage: () => ({ mutate: vi.fn(), isPending: false }),
   useRetryStage: () => ({ mutate: vi.fn(), isPending: false }),
-  useBrandKit: () => ({ data: { logo_media_id: null, status: 'draft' }, isLoading: false }),
+  useBrandKit: () => ({ data: { logo_media_id: 'media-1', status: 'draft' }, isLoading: false }),
   useUploadLogo: () => ({ mutate: vi.fn(), isPending: false }),
 }))
 
 vi.mock('@/lib/axios', () => ({
   default: {
-    get: vi
-      .fn()
-      .mockResolvedValue({
-        data: { data: { type: { id: 'type-1', name: 'Brand Profile' }, fields: FIELDS } },
-      }),
+    get: vi.fn().mockResolvedValue({
+      data: { data: { type: { id: 'type-1', name: 'Brand Profile' }, fields: FIELDS } },
+    }),
     post: vi.fn().mockResolvedValue({ data: { data: { fields: FIELDS } } }),
   },
 }))
@@ -175,24 +173,25 @@ describe('IntakeStage — Logo & Contact Details (standalone Application Setting
       expect(await screen.findByLabelText(label)).toBeInTheDocument()
     }
     // Two "Logo file" labels would be ambiguous — assert Studio's own upload button instead.
-    expect(screen.getByRole('button', { name: /upload logo/i })).toBeInTheDocument()
+    // hasLogo is true in this fixture, so the button reads "Replace file".
+    expect(screen.getByRole('button', { name: /replace file/i })).toBeInTheDocument()
   })
 
-  it('Submit is disabled until company name is filled', async () => {
+  it('Next is disabled until company name is filled', async () => {
     renderWithQC(<IntakeStage run={makeRun()} />)
     await screen.findByLabelText('Company name')
 
-    expect(screen.getByRole('button', { name: /submit/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /next/i })).toBeDisabled()
   })
 
-  it('submits via POST /setting-fields/values with the Brand Profile type_id, excluding the logo field', async () => {
+  it('clicking Next saves via POST /setting-fields/values with the Brand Profile type_id, excluding the logo field', async () => {
     const api = (await import('@/lib/axios')).default
     renderWithQC(<IntakeStage run={makeRun()} />)
 
     fireEvent.change(await screen.findByLabelText('Company name'), {
       target: { value: 'Aster Foundation' },
     })
-    fireEvent.click(screen.getByRole('button', { name: /submit/i }))
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
 
     await waitFor(() =>
       expect(api.post).toHaveBeenCalledWith(
