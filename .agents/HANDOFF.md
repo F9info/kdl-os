@@ -1,3 +1,17 @@
+## 2026-08-25 — KDL-558 row 1 step 4: Studio stepper — left sidebar → top horizontal tabs (CEO)
+
+Pure layout change, no data/logic touched. `StudioStepper.tsx`: `nav` wrapper
+`flex flex-col` → `flex flex-row gap-1 overflow-x-auto` (scrolls horizontally if the 9 stage labels
+don't fit); each `StepItem` button: `w-full` → `shrink-0 whitespace-nowrap`, dropped the `flex-1`
+label span (was stretching to fill vertical-list width, wrong in a horizontal row) and the `ml-auto`
+error-code badge positioning (not needed once items aren't full-width). `projects/[projectId]/layout.tsx`:
+replaced the `flex h-full gap-0` sidebar-plus-main split (`<aside className="w-56 ... border-r">`)
+with a `flex h-full flex-col` stack — stepper now a full-width `border-b` top bar, stage content
+below it. No test coverage existed for this markup (confirmed via grep) — full RTL suite (168/168) +
+type-check + lint still green as the regression check.
+
+---
+
 ## 2026-08-25 — KDL-558 row 1 step 3: kill Studio project-picker, wire Overview to the standalone fields (CEO)
 
 **User-confirmed scope** (asked before touching nav): "remove all this" = kill the project-picker

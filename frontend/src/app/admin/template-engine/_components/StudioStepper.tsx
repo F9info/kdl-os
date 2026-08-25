@@ -22,7 +22,7 @@ export function StudioStepper({ run, projectId, activeSlug }: StudioStepperProps
   const stageMap = Object.fromEntries(run.stages.map((s) => [s.stage, s]))
 
   return (
-    <nav aria-label="Studio stages" className="flex flex-col gap-0.5">
+    <nav aria-label="Studio stages" className="flex flex-row gap-1 overflow-x-auto">
       {DAG_STAGES.map((def, idx) => {
         const stageRow = stageMap[def.stage]
         const status = stageRow?.status ?? 'PENDING'
@@ -102,7 +102,7 @@ function StepItem({ label, index, displayState, isActive, errorCode, onClick }: 
       onClick={onClick}
       aria-current={isActive ? 'step' : undefined}
       className={cn(
-        'group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors',
+        'group flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm transition-colors',
         isActive && 'bg-primary/10 text-primary font-medium',
         !isActive && isClickable && 'hover:bg-muted text-foreground',
         !isActive && !isClickable && 'text-muted-foreground cursor-not-allowed opacity-60'
@@ -124,9 +124,9 @@ function StepItem({ label, index, displayState, isActive, errorCode, onClick }: 
       >
         {icon ?? index}
       </span>
-      <span className="flex-1 truncate">{label}</span>
+      <span>{label}</span>
       {displayState === 'needs_attention' && errorCode && (
-        <span className="ml-auto shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+        <span className="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900 dark:text-amber-300">
           {errorCode}
         </span>
       )}

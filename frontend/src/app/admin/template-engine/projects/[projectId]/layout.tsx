@@ -15,13 +15,13 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
   const run = runs?.[0] ?? null
 
   return (
-    <div className="flex h-full gap-0">
-      {/* Stepper sidebar */}
-      <aside
-        className="w-56 shrink-0 border-r bg-background/50 px-2 py-4 hidden md:block"
+    <div className="flex h-full flex-col">
+      {/* Stepper top bar */}
+      <div
+        className="shrink-0 border-b bg-background/50 px-4 py-3"
         aria-label="Studio stage navigation"
       >
-        <div className="mb-4 flex items-center gap-2 px-3">
+        <div className="mb-2 flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-primary" />
           <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Studio
@@ -29,17 +29,15 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
         </div>
 
         {isLoading ? (
-          <div className="px-3">
-            <LoadingSpinner />
-          </div>
+          <LoadingSpinner />
         ) : run ? (
           <StudioStepper run={run} projectId={projectId} activeSlug={activeSlug} />
         ) : (
-          <div className="px-3 text-xs text-muted-foreground">
+          <div className="text-xs text-muted-foreground">
             No active run. Start a run from the Studio landing page.
           </div>
         )}
-      </aside>
+      </div>
 
       {/* Stage content */}
       <main id="main-content" className="flex-1 overflow-auto p-6">
