@@ -122,7 +122,7 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
       runDisabled={!hasLogo && stage?.status !== 'FAILED'}
     >
       <div className="grid gap-4 w-full">
-        <div className="rounded-lg border bg-card p-4 space-y-4">
+        <div className="rounded-lg border bg-card px-6 py-6 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium">Logo &amp; Contact Details</h3>
             {brandKit?.status && (
