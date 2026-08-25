@@ -63,15 +63,16 @@ const BRAND_KIT: BrandKit = {
   approved_at: null,
 }
 
-const { mockPatchMutate, mockAdvanceMutate, mockUseBrandKit } = vi.hoisted(() => ({
+const { mockPatchMutate, mockAdvanceMutate, mockRetryMutate, mockUseBrandKit } = vi.hoisted(() => ({
   mockPatchMutate: vi.fn(),
   mockAdvanceMutate: vi.fn(),
+  mockRetryMutate: vi.fn(),
   mockUseBrandKit: vi.fn(),
 }))
 
 vi.mock('@/hooks/useTemplateEngine', () => ({
   useAdvanceStage: () => ({ mutate: mockAdvanceMutate, isPending: false }),
-  useRetryStage: () => ({ mutate: vi.fn(), isPending: false }),
+  useRetryStage: () => ({ mutate: mockRetryMutate, isPending: false }),
   useBrandKit: mockUseBrandKit,
   usePatchBrandKit: () => ({ mutate: mockPatchMutate, isPending: false }),
 }))
@@ -121,24 +122,20 @@ beforeEach(() => {
 })
 
 describe('PaletteStage — re-extraction after a logo replace (stage stuck at stale DONE)', () => {
-  it('shows an "Extract palette" trigger — not StageShell\'s disabled DONE button — when palette is null but the DAG stage still reads DONE from a prior logo', () => {
+  it('auto-triggers extraction — no manual click needed — when palette is null but the DAG stage still reads DONE from a prior logo', () => {
     // Reproduces the reported bug: uploading a new logo resets brand-kit's
     // palette to null server-side (brand-kit/service.js uploadLogo), but the
     // PALETTE DAG stage row is untouched and still says DONE from the old
     // logo's extraction. StageShell's own button disables at status===DONE,
-    // so PaletteStage must own its own trigger instead of relying on it.
+    // so PaletteStage auto-triggers its own extraction instead of relying on it.
     mockUseBrandKit.mockReturnValue({
       data: { ...BRAND_KIT, palette: null, status: 'draft' },
       isLoading: false,
     })
     renderWithQC(<PaletteStage run={makeRun()} />) // run's PALETTE stage.status is 'DONE'
 
-    const button = screen.getByRole('button', { name: /extract palette/i })
-    expect(button).toBeInTheDocument()
-    expect(button).not.toBeDisabled()
-
-    fireEvent.click(button)
     expect(mockAdvanceMutate).toHaveBeenCalledWith('PALETTE')
+    expect(screen.getByText(/extracting palette/i)).toBeInTheDocument()
   })
 
   it('shows the "Your logo" reference card even before extraction has run', async () => {
@@ -155,14 +152,32 @@ describe('PaletteStage — re-extraction after a logo replace (stage stuck at st
     )
   })
 
-  it('disables the trigger when no logo has been uploaded yet', () => {
+  it('does not auto-trigger extraction when no logo has been uploaded yet', () => {
     mockUseBrandKit.mockReturnValue({
       data: { ...BRAND_KIT, palette: null, logo_media_id: null },
       isLoading: false,
     })
     renderWithQC(<PaletteStage run={makeRun()} />)
 
-    expect(screen.getByRole('button', { name: /extract palette/i })).toBeDisabled()
+    expect(mockAdvanceMutate).not.toHaveBeenCalled()
+    expect(screen.getByText(/upload a logo/i)).toBeInTheDocument()
+  })
+
+  it('shows a Retry button instead of auto-triggering again when the stage already failed', () => {
+    mockUseBrandKit.mockReturnValue({
+      data: { ...BRAND_KIT, palette: null, status: 'draft' },
+      isLoading: false,
+    })
+    const run = makeRun()
+    run.stages[0]!.status = 'FAILED'
+    renderWithQC(<PaletteStage run={run} />)
+
+    expect(mockAdvanceMutate).not.toHaveBeenCalled()
+    const button = screen.getByRole('button', { name: /retry extraction/i })
+    expect(button).toBeInTheDocument()
+
+    fireEvent.click(button)
+    expect(mockRetryMutate).toHaveBeenCalledWith('PALETTE')
   })
 })
 
@@ -190,10 +205,10 @@ describe('PaletteStage — editable colour groups', () => {
     expect(screen.getByText('#1A73E8')).toBeInTheDocument()
   })
 
-  it('clicking Submit palette saves via usePatchBrandKit and navigates to Brand Inference', async () => {
+  it('clicking Next saves via usePatchBrandKit and navigates to Brand Inference', async () => {
     renderWithQC(<PaletteStage run={makeRun()} />)
 
-    fireEvent.click(screen.getByRole('button', { name: /submit palette/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^next$/i }))
 
     await waitFor(() => expect(mockPatchMutate).toHaveBeenCalled())
     const call = mockPatchMutate.mock.calls[0]!
