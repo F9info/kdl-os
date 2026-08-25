@@ -19,6 +19,8 @@ import {
   approveSchema,
   getTokensSchema,
   renderGuidelinesSchema,
+  getContactFieldsSchema,
+  saveContactFieldsSchema,
 } from './schema.js';
 import {
   getKitHandler,
@@ -30,6 +32,8 @@ import {
   reopenHandler,
   getTokensHandler,
   renderGuidelinesHandler,
+  getContactFieldsHandler,
+  saveContactFieldsHandler,
 } from './controller.js';
 
 const router = Router();
@@ -50,6 +54,16 @@ router.get(
   authenticate, requirePermission('brand-kit', 'view'),
   validate(getTokensSchema),
   getTokensHandler,
+);
+
+// KDL-558 roadmap row 1: Intake stage "Logo & Contact Details" form.
+// Stored via Application Settings (Type/SettingField), not new BrandKit
+// columns — see contact-fields.js header comment.
+router.get(
+  '/:projectId/contact',
+  authenticate, requirePermission('brand-kit', 'view'),
+  validate(getContactFieldsSchema),
+  getContactFieldsHandler,
 );
 
 // ── Write ────────────────────────────────────────────────────────────────────
@@ -104,6 +118,13 @@ router.post(
   authenticate, requirePermission('brand-kit', 'render'),
   validate(renderGuidelinesSchema),
   renderGuidelinesHandler,
+);
+
+router.put(
+  '/:projectId/contact',
+  authenticate, requirePermission('brand-kit', 'edit'),
+  validate(saveContactFieldsSchema),
+  saveContactFieldsHandler,
 );
 
 export default router;

@@ -112,6 +112,13 @@ Recent per-issue detail is in the rolling changelog below; full history in
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+- **2026-08-25 — KDL-558 row 1**: Studio's INTAKE stage gets a real "Logo & Contact Details" form
+  (company name, primary/secondary email, primary/secondary phone, address1/2), backed by the
+  Application Settings engine (`owner_module: 'brand-kit'`) instead of a new BrandKit migration.
+  `collateral`'s `resolveBrandKit()` now actually populates `company.email/phone/addressLines` for
+  print layouts (previously always empty). See `.agents/TEMPLATE_ENGINE_HTML_INTEGRATION.md` for the
+  full multi-session roadmap (9 rows) this is row 1 of.
+
 ## 2026-08-24 — KDL-630: theme-engine lock scoped to active run — PR pending (Backend Coder)
 
 `theme-engine/service.js` guard changed from module-status to active-run check; approval driver passes `{ lockedByModule }` to bypass guard and re-acquire locks. Run completion in `template-engine/service.js` now clears locks. New `POST /api/theme-engine/locks/release` takeover endpoint. Backfill migration clears 4094 stale locked rows from dev DB. 1230 tests green.

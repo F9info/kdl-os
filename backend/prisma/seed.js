@@ -5,6 +5,7 @@ import { resolveSeedAdminCredentials } from './seed-credentials.js';
 import { seedUserManagement } from './seeders/user-management.seed.js';
 import { seedCoreModules } from './seeders/modules.seed.js';
 import { seedBrandKit } from './seeders/brand-kit.seed.js';
+import { seedBrandProfileFields } from './seeders/brand-profile-fields.seed.js';
 import { seedProjects } from '../src/modules/projects/seed.js';
 
 async function main() {
@@ -40,6 +41,7 @@ async function main() {
   await seedProjects(prisma);
   await seedUserManagement(prisma);
   await seedBrandKit(prisma);
+  await seedBrandProfileFields(prisma);
 }
 
 main()

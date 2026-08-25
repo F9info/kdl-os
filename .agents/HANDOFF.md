@@ -1,3 +1,111 @@
+## 2026-08-25 — KDL-558 row 1 step 4: Studio stepper — left sidebar → top horizontal tabs (CEO)
+
+Pure layout change, no data/logic touched. `StudioStepper.tsx`: `nav` wrapper
+`flex flex-col` → `flex flex-row gap-1 overflow-x-auto` (scrolls horizontally if the 9 stage labels
+don't fit); each `StepItem` button: `w-full` → `shrink-0 whitespace-nowrap`, dropped the `flex-1`
+label span (was stretching to fill vertical-list width, wrong in a horizontal row) and the `ml-auto`
+error-code badge positioning (not needed once items aren't full-width). `projects/[projectId]/layout.tsx`:
+replaced the `flex h-full gap-0` sidebar-plus-main split (`<aside className="w-56 ... border-r">`)
+with a `flex h-full flex-col` stack — stepper now a full-width `border-b` top bar, stage content
+below it. No test coverage existed for this markup (confirmed via grep) — full RTL suite (168/168) +
+type-check + lint still green as the regression check.
+
+---
+
+## 2026-08-25 — KDL-558 row 1 step 3: kill Studio project-picker, wire Overview to the standalone fields (CEO)
+
+**User-confirmed scope** (asked before touching nav): "remove all this" = kill the project-picker
+landing page entirely, `/admin/template-engine` goes straight to the default project's flow. Multi-
+project support stays in the backend/DAG, just not surfaced as a picker on first load.
+
+**What was done:**
+- `frontend/src/app/admin/template-engine/page.tsx` rewritten — no more "Studio guides your brand
+  identity through a 9-stage pipeline" text / "Mode A — Active" badge / project-card list. It now
+  resolves the default project (`is_default` flag, falls back to the first project) and
+  `router.replace`s straight into `/admin/template-engine/projects/{id}` — which already had its own
+  auto-redirect-to-first-incomplete-stage logic (`projects/[projectId]/page.tsx`, pre-existing, unchanged),
+  so this reuses existing infra rather than duplicating redirect logic.
+- `IntakeStage.tsx` — title "Intake" → "Overview", description now "Upload your logo and enter your
+  contact details, then submit to unlock Brand System." (matches the user's mockup). The "Logo &
+  Contact Details" card now shows brand-kit's live status pill (draft/extracted/inferred/approved).
+- **Contact fields now render via the REAL shared `FieldControl` component**
+  (`app/admin/settings/_components/FieldControl.tsx` — the same one `/admin/settings/view/[slug]`
+  uses), fetching `GET /setting-fields/by-type/brand-profile` and saving via
+  `POST /setting-fields/values` — i.e. actually "using application settings" now, not a bespoke form
+  bound to the per-project hidden store from two steps ago. Logo upload deliberately stays on
+  brand-kit's own endpoint (real sanitization + OKLCH palette extraction depends on it) even though a
+  generic "Logo file" field also exists in the standalone catalogue — the two are intentionally not
+  the same upload path.
+- Removed now-dead `useBrandContactFields`/`useSaveBrandContactFields` hooks from
+  `useTemplateEngine.ts` (superseded by the generic setting-fields query/mutation used directly in
+  `IntakeStage.tsx`).
+- Rewrote `template-engine-intake-contact.test.tsx` against the new data source; fixed one now-stale
+  assertion in `template-engine-studio.test.tsx` (`getByText('Intake')` → `'Overview'`).
+- Full suites green: backend 1257/1257 (untouched by this step, re-run to confirm), frontend 168/168,
+  type-check + lint clean.
+
+**Left alone, still orphaned (flagging again, not removed without instruction):** the per-project
+`backend/src/modules/brand-kit/contact-fields.js` + its `/contact` routes + the `collateral`
+`resolveBrandKit()` wiring from the first attempt are now **fully unused** by the frontend (nothing
+calls `/api/brand-kit/:projectId/contact` anymore). They still work, just dead. Options for next time
+this comes up: (a) delete them outright, or (b) repoint `resolveBrandKit()`'s company lookup at the
+new standalone `brand-profile-*` fields (global values) instead of deleting the per-project
+plumbing. Not deciding this without being told.
+
+---
+
+## 2026-08-25 — KDL-558 row 1 correction: standalone seeder instead of per-project hidden fields (CEO)
+
+**User correction on the prior entry below** ("Not like this"): the per-project, `owner_module`-hidden
+`contact-fields.js` approach (dynamic Type/SettingField instantiation per project, values in
+theme-engine's `SettingValue` table) was over-engineered relative to what was actually asked. What the
+user wants, step by step, starting with this step only:
+
+- The 8 fields (Logo file, Company name, Primary/Secondary email, Primary/Secondary phone,
+  Address 1/2) should be **standalone** (`owner_module: null`) — visible and editable through the
+  normal `/admin/settings/fields`, `/admin/settings/types`, `/admin/settings/categories` screens,
+  exactly like the pre-existing "Theme Settings → Site Details → Logo/Site Name" example rows (those
+  were created by hand through the admin UI — confirmed via `git grep`, no seed script produced them).
+  Not hidden per-project internal state.
+- Delivered as an **idempotent seeder** ("if already created, use it; if not, create it") — new
+  `backend/prisma/seeders/brand-profile-fields.seed.js`, mirroring `brand-kit.seed.js`'s exact
+  upsert-by-slug pattern but WITHOUT `owner_module` (deliberately opposite of that file's hiding
+  mechanism). Wired into `prisma/seed.js`'s `main()`.
+- Ran it against the live dev DB (`kdl_db` on :5443) directly — verified all 8 rows created under a new
+  `Type` "Brand Profile" (slug `brand-profile`) → `Category` "Logo & Contact Details"
+  (slug `brand-profile.logo-contact`), then re-ran to confirm idempotency (still 8 rows, no dupes).
+
+**Not touched in this step** (explicitly scoped narrow, per the user's "will tell one by one"): the
+previous `contact-fields.js` / `IntakeStage.tsx` / collateral wiring from the entry below is left as-is
+for now — not reverted, not wired to this new seeder yet. Expect a later step to reconcile these two
+(the per-project approach may end up replaced by this standalone one, or the standalone fields may
+become the *schema* while a later mechanism handles *per-project values* — undecided, wait for
+instruction rather than assuming).
+
+**Branch note:** this and the row-1 entry below live on `feat/kdl-558-brand-intake-contact-fields`
+(not master). The user made an unrelated commit on this same branch directly (pre-existing
+`.agents/BRAND_KIT_ARCH.md` / `ai-services/scripts/brand-inference-ab.*` / doc tweaks, commit
+`66b54208 "new md files crated"`) then switched back to `master` themselves — noted here only so a
+future session isn't confused by that commit's presence; it's unrelated to KDL-558.
+
+---
+
+## 2026-08-25 — KDL-558 row 1: Intake stage "Logo & Contact Details" form (CEO)
+
+**Roadmap:** `.agents/TEMPLATE_ENGINE_HTML_INTEGRATION.md` row 1 of 9 (page-by-page port of the new `templateEngine 2.html` prototype into `/admin/template-engine`).
+
+**What was done:**
+- `BrandKit` has zero contact-detail columns (only logo/palette/typography/tone). User directive: don't add a migration for these — reuse the existing Application Settings engine (`/admin/settings/fields`) the same way theme-engine already scopes per-platform values.
+- New `backend/src/modules/brand-kit/contact-fields.js` — 7-field catalogue (company_name, primary/secondary email, primary/secondary phone, address1/2). One `Type` + one `SettingField` per (project, field key) is find-or-created on demand, tagged `owner_module: 'brand-kit'` (invisible to the generic `/admin/settings/*` screens and sidebar nav, per `.agents/THEME_ENGINE_ARCH.md`'s established mechanism). Values live in theme-engine's own `SettingValue` table (not `SettingField.value`, which the generic engine's own write path owns) — zero schema migration.
+- `backend/src/modules/brand-kit/{routes,controller,schema}.js` — new `GET/PUT /api/brand-kit/:projectId/contact`.
+- `backend/src/modules/collateral/service.js` `resolveBrandKit()` — now populates `company.email/phone/addressLines` from these fields (previously only `displayName`/`legalName` from `project.name`; print layouts for visiting card/letterhead already read `company.email/phone/addressLines` but they were always empty — real functional gap closed, not just cosmetic). Falls back to `project.name` when no contact fields saved yet (existing KDL-583 test behavior preserved), and is best-effort (try/catch) so a lookup failure never blocks a render.
+- Frontend: `IntakeStage.tsx` rewritten — real "Logo & Contact Details" form (2-col grid matching the prototype's Overview screen) replacing the two static placeholder lines ("Company name — collected from brand-kit intake" was never true; no such storage existed). New hooks `useBrandContactFields`/`useSaveBrandContactFields` in `useTemplateEngine.ts`.
+- Tests: `brand-kit/contact-fields.test.js` (5), `collateral/company-info.test.js` (3, isolated from `collateral.test.js` so mocking `contact-fields.js` can't affect its existing assertions), `template-engine-intake-contact.test.tsx` (3 RTL). Full suites green: backend 1257/1257, frontend 167/167 regression + type-check + lint clean.
+
+**Next:** Row 2 of the roadmap (Color Palette stage audit) — see tracking file for the full row-by-row plan and status.
+
+---
+
 ## 2026-08-24 — KDL-630: theme-engine lock scoped to active run — PR pending (Backend Coder)
 
 **Issue:** KDL-630 (P0 root cause — all 4094 fields permanently read-only)

@@ -40,6 +40,47 @@ Top level: `backend/` (Express + Prisma), `frontend/` (Next.js), `ai-services/`,
 
 ---
 
+## Common Commands
+
+Each workspace (`backend/`, `frontend/`, `ai-services/`) has its own `package.json` — there is no root-level script runner. `backend` and `ai-services` use `npm`; `frontend` uses `pnpm`.
+
+```bash
+# Backend (npm)
+cd backend
+npm run dev                 # nodemon src/index.js
+npm test                    # vitest run — needs JWT_SECRET / JWT_REFRESH_SECRET (32+ chars) in env
+npx vitest run path/to/file.test.js          # single test file
+npx vitest run path/to/file.test.js -t "name"  # single test by name
+npm run db:migrate          # prisma migrate dev
+npm run db:seed             # prisma/seed.js
+npm run db:studio           # prisma studio
+npm run module:create -- --slug=blog --name="Blog"   # scaffold a new module
+
+# Frontend (pnpm)
+cd frontend
+pnpm dev                    # next dev --port 3000
+pnpm build
+pnpm lint                   # next lint (includes a11y rules)
+pnpm type-check             # tsc --noEmit
+pnpm format:check           # prettier --check .
+pnpm test                   # vitest run
+pnpm test path/to/file.test.tsx              # single test file
+pnpm e2e                    # playwright test (needs a running backend + Postgres/Redis)
+pnpm e2e e2e/smoke.spec.ts  # single e2e spec
+
+# AI services (npm)
+cd ai-services
+npm run dev                 # node --watch src/index.js
+npm test                    # vitest run — needs JWT_SECRET in env
+npx vitest run path/to/file.test.js          # single test file
+```
+
+Neither `backend` nor `ai-services` has a lint script — only `frontend` does.
+
+Full CI-mirroring sequence (lockfile guard, audits, lint/typecheck/build/test per workspace) is in [`docs/CI_LOCAL_VERIFICATION.md`](docs/CI_LOCAL_VERIFICATION.md) — use it when GitHub Actions is down and a PR needs local verification.
+
+---
+
 ## Coding Conventions (non-negotiable)
 
 - ES Modules (`import/export`) throughout backend — no CommonJS
