@@ -122,7 +122,11 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
       runDisabled={!hasLogo && stage?.status !== 'FAILED'}
     >
       <div className="grid gap-4 w-full">
-        <div className="rounded-lg border bg-card px-6 py-6 space-y-4">
+        <div className="rounded-lg border bg-card px-6 py-6 space-y-4 [&_.th-input]:!px-4 [&_.th-input]:!py-2.5">
+          {/* [&_.th-input] overrides theme-engine's Forms-pane padding token
+              scoped to just this card, per user request not to touch the
+              token itself (its computed value was too tight — text sat ~4px
+              from the input border instead of a comfortable ~12-16px). */}
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium">Logo &amp; Contact Details</h3>
             {brandKit?.status && (
