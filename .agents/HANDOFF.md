@@ -1,3 +1,39 @@
+## 2026-08-25 — KDL-558 row 1 correction: standalone seeder instead of per-project hidden fields (CEO)
+
+**User correction on the prior entry below** ("Not like this"): the per-project, `owner_module`-hidden
+`contact-fields.js` approach (dynamic Type/SettingField instantiation per project, values in
+theme-engine's `SettingValue` table) was over-engineered relative to what was actually asked. What the
+user wants, step by step, starting with this step only:
+
+- The 8 fields (Logo file, Company name, Primary/Secondary email, Primary/Secondary phone,
+  Address 1/2) should be **standalone** (`owner_module: null`) — visible and editable through the
+  normal `/admin/settings/fields`, `/admin/settings/types`, `/admin/settings/categories` screens,
+  exactly like the pre-existing "Theme Settings → Site Details → Logo/Site Name" example rows (those
+  were created by hand through the admin UI — confirmed via `git grep`, no seed script produced them).
+  Not hidden per-project internal state.
+- Delivered as an **idempotent seeder** ("if already created, use it; if not, create it") — new
+  `backend/prisma/seeders/brand-profile-fields.seed.js`, mirroring `brand-kit.seed.js`'s exact
+  upsert-by-slug pattern but WITHOUT `owner_module` (deliberately opposite of that file's hiding
+  mechanism). Wired into `prisma/seed.js`'s `main()`.
+- Ran it against the live dev DB (`kdl_db` on :5443) directly — verified all 8 rows created under a new
+  `Type` "Brand Profile" (slug `brand-profile`) → `Category` "Logo & Contact Details"
+  (slug `brand-profile.logo-contact`), then re-ran to confirm idempotency (still 8 rows, no dupes).
+
+**Not touched in this step** (explicitly scoped narrow, per the user's "will tell one by one"): the
+previous `contact-fields.js` / `IntakeStage.tsx` / collateral wiring from the entry below is left as-is
+for now — not reverted, not wired to this new seeder yet. Expect a later step to reconcile these two
+(the per-project approach may end up replaced by this standalone one, or the standalone fields may
+become the *schema* while a later mechanism handles *per-project values* — undecided, wait for
+instruction rather than assuming).
+
+**Branch note:** this and the row-1 entry below live on `feat/kdl-558-brand-intake-contact-fields`
+(not master). The user made an unrelated commit on this same branch directly (pre-existing
+`.agents/BRAND_KIT_ARCH.md` / `ai-services/scripts/brand-inference-ab.*` / doc tweaks, commit
+`66b54208 "new md files crated"`) then switched back to `master` themselves — noted here only so a
+future session isn't confused by that commit's presence; it's unrelated to KDL-558.
+
+---
+
 ## 2026-08-25 — KDL-558 row 1: Intake stage "Logo & Contact Details" form (CEO)
 
 **Roadmap:** `.agents/TEMPLATE_ENGINE_HTML_INTEGRATION.md` row 1 of 9 (page-by-page port of the new `templateEngine 2.html` prototype into `/admin/template-engine`).

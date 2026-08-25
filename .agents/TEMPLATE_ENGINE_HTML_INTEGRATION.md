@@ -28,18 +28,23 @@ module yet — never invent a new Prisma migration where the generic engine alre
 
 Sequencing: DAG order applies — `1 → 2 → 3 → (4a/5/7/8 as one thread, 4b as a parallel thread) → 6 → 9`.
 
-## Row 1 — done (2026-08-25)
+## Row 1 — in progress, step 1 of N done (2026-08-25)
 
-Built: `backend/src/modules/brand-kit/contact-fields.js` (7-field catalogue: company_name,
-primary/secondary email, primary/secondary phone, address1/2 — stored via Application Settings,
-`owner_module: 'brand-kit'`, values in theme-engine's `SettingValue` table, zero migration),
-`GET/PUT /api/brand-kit/:projectId/contact`, rewrote `IntakeStage.tsx` with the real form, wired
-`collateral`'s `resolveBrandKit()` to populate `company.email/phone/addressLines` (previously always
-empty despite print layouts already reading them). Full detail: `.agents/HANDOFF.md`, entry dated
-2026-08-25.
+First attempt (per-project, `owner_module`-hidden fields wired straight into `IntakeStage.tsx` +
+collateral) was corrected by the user — see `.agents/HANDOFF.md`'s "KDL-558 row 1 correction" entry.
+Proceeding step by step from here per explicit instruction; do not assume the next step without being
+told.
 
-Deliberately NOT touched: brand-kit's own logo upload flow (already real, has sanitization/retention
-logic — routing it through the generic engine would be a regression, not an improvement).
+**Step 1 (done):** standalone (`owner_module: null`) Application Settings fields, visible in the
+generic `/admin/settings/*` screens, created via idempotent seeder
+`backend/prisma/seeders/brand-profile-fields.seed.js` — Type "Brand Profile" (`brand-profile`) →
+Category "Logo & Contact Details" (`brand-profile.logo-contact`) → 8 fields (Logo file + 7 contact
+fields). Seeded on the live dev DB and verified idempotent.
+
+**Not yet decided:** how/whether these standalone fields connect to Studio's INTAKE stage UI, and
+whether the earlier per-project `contact-fields.js` work stays, gets removed, or gets repurposed
+(e.g. standalone fields as schema template, a separate mechanism for per-project values). Wait for
+the next instruction.
 
 ## Row 2 — next up
 
