@@ -144,23 +144,33 @@ export function PaletteStage({ run }: { run: TemplateEngineRun }) {
       title="Palette Extraction"
       description="Deterministic colour extraction from the uploaded logo — dominant colours, OKLCH ramps, and contrast ratios. No AI involved; this is algorithmic."
       stage={stage ?? null}
-      onRun={
-        !hasPalette
-          ? stage?.status === 'FAILED'
-            ? () => retry.mutate('PALETTE')
-            : () => advance.mutate('PALETTE')
-          : undefined
-      }
-      hideRunButton={hasPalette}
-      isRunning={advance.isPending || retry.isPending}
+      hideRunButton
     >
       {!hasPalette ? (
-        <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-          <Palette className="h-4 w-4 shrink-0" />
-          <span>
-            Palette not yet extracted. Run this stage after Intake is complete and a logo is
-            uploaded.
-          </span>
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+            <Palette className="h-4 w-4 shrink-0" />
+            <span>
+              {hasLogo
+                ? // Replacing the logo on Intake resets the brand kit to draft and clears the
+                  // previously-extracted palette server-side (brand-kit/service.js uploadLogo) —
+                  // this stage's DAG status can still read DONE from an earlier logo, but
+                  // StageShell's own Run button disables once a stage is DONE. So this stage
+                  // owns its own trigger instead of relying on StageShell's, to stay clickable
+                  // after a logo replace.
+                  'Palette not yet extracted for the current logo. Extract it to continue.'
+                : 'Upload a logo on the Overview stage first — extraction needs one.'}
+            </span>
+          </div>
+          <Button
+            size="sm"
+            disabled={!hasLogo || advance.isPending || retry.isPending}
+            onClick={() =>
+              stage?.status === 'FAILED' ? retry.mutate('PALETTE') : advance.mutate('PALETTE')
+            }
+          >
+            {advance.isPending || retry.isPending ? 'Extracting…' : 'Extract palette'}
+          </Button>
         </div>
       ) : (
         <div className="space-y-4 w-full">
