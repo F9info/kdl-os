@@ -97,12 +97,13 @@ export interface BrandKitPalette {
   paletteConfidence: 'high' | 'medium' | 'low'
 }
 
-// Backend brand-kit/tokens.js reads typography.heading.family / .body.family /
-// .scaleRatio as single values (one font per role, not a list) — the design
-// prototype's "pick one or more" checkbox wording doesn't reflect a real
-// multi-value field, so the Studio UI treats these as an exclusive choice.
+// Backend brand-kit/tokens.js only ever reads typography.heading.family /
+// .body.family / .scaleRatio as single values, so `family` (the live CSS
+// token) is always the first entry of `families` — the full multi-select
+// list the Studio UI lets you pick, kept for reference/future use.
 export interface TypographyRole {
   family: string
+  families?: string[]
 }
 export interface BrandKitTypography {
   heading: TypographyRole | null
