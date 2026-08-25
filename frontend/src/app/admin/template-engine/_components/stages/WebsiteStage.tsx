@@ -148,27 +148,35 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
   )
 }
 
-// Backend brand-kit/tokens.js reads typography.heading.family / .body.family
-// as single values, not a list — despite the prototype's "pick one or more"
-// checkbox wording, only one font per role is ever actually consumed. Tiles
-// behave as an exclusive choice (selecting one deselects the rest) rather
-// than a true multi-select, to stay honest about what gets saved.
+// True multi-select, matching the prototype's "pick one or more" tiles.
+// Backend brand-kit/tokens.js only ever reads a single typography.heading
+// .family / .body.family though, so on save the first selected font becomes
+// `family` (the live CSS token) and the full selection is kept as `families`
+// for reference — see BrandKitTypography.
 function WebAppTypographyStep({
   typography,
   isSaving,
   onNext,
 }: {
-  typography: { heading: { family: string } | null; body: { family: string } | null } | null
+  typography: {
+    heading: { family: string; families?: string[] } | null
+    body: { family: string; families?: string[] } | null
+  } | null
   isSaving: boolean
-  onNext: (typography: { heading: { family: string }; body: { family: string } }) => void
+  onNext: (typography: {
+    heading: { family: string; families: string[] }
+    body: { family: string; families: string[] }
+  }) => void
 }) {
-  const [heading, setHeading] = useState(typography?.heading?.family || HEADING_FONTS[0]!)
-  const [body, setBody] = useState(typography?.body?.family || BODY_FONTS[0]!)
+  const [heading, setHeading] = useState<string[]>(() =>
+    seedSelection(typography?.heading, HEADING_FONTS)
+  )
+  const [body, setBody] = useState<string[]>(() => seedSelection(typography?.body, BODY_FONTS))
   const [headingOptions, setHeadingOptions] = useState<string[]>(() =>
-    dedupePrepend(HEADING_FONTS, typography?.heading?.family)
+    dedupePrependAll(HEADING_FONTS, typography?.heading?.families ?? [])
   )
   const [bodyOptions, setBodyOptions] = useState<string[]>(() =>
-    dedupePrepend(BODY_FONTS, typography?.body?.family)
+    dedupePrependAll(BODY_FONTS, typography?.body?.families ?? [])
   )
 
   return (
@@ -187,15 +195,15 @@ function WebAppTypographyStep({
         label="Heading"
         options={headingOptions}
         selected={heading}
-        onSelect={setHeading}
+        onToggle={(name) => setHeading((prev) => toggleSelection(prev, name))}
         onAddGoogleFont={(name) => {
           setHeadingOptions((prev) => dedupePrepend(prev, name))
-          setHeading(name)
+          setHeading((prev) => (prev.includes(name) ? prev : [...prev, name]))
         }}
         onUpload={(name, url) => {
           loadCustomFontFace(name, url)
           setHeadingOptions((prev) => dedupePrepend(prev, name))
-          setHeading(name)
+          setHeading((prev) => (prev.includes(name) ? prev : [...prev, name]))
         }}
       />
 
@@ -203,22 +211,27 @@ function WebAppTypographyStep({
         label="Body"
         options={bodyOptions}
         selected={body}
-        onSelect={setBody}
+        onToggle={(name) => setBody((prev) => toggleSelection(prev, name))}
         onAddGoogleFont={(name) => {
           setBodyOptions((prev) => dedupePrepend(prev, name))
-          setBody(name)
+          setBody((prev) => (prev.includes(name) ? prev : [...prev, name]))
         }}
         onUpload={(name, url) => {
           loadCustomFontFace(name, url)
           setBodyOptions((prev) => dedupePrepend(prev, name))
-          setBody(name)
+          setBody((prev) => (prev.includes(name) ? prev : [...prev, name]))
         }}
       />
 
       <div className="flex justify-end">
         <Button
-          onClick={() => onNext({ heading: { family: heading }, body: { family: body } })}
-          disabled={isSaving}
+          onClick={() =>
+            onNext({
+              heading: { family: heading[0]!, families: heading },
+              body: { family: body[0]!, families: body },
+            })
+          }
+          disabled={isSaving || heading.length === 0 || body.length === 0}
         >
           {isSaving ? 'Saving…' : 'Next'}
           <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
@@ -228,9 +241,31 @@ function WebAppTypographyStep({
   )
 }
 
+function seedSelection(
+  role: { family: string; families?: string[] } | null | undefined,
+  fallback: string[]
+): string[] {
+  if (role?.families?.length) return role.families
+  if (role?.family) return [role.family]
+  return [fallback[0]!]
+}
+
+// A tile can never be unchecked down to zero — at least one font per role
+// must stay selected so Next always has something to save.
+function toggleSelection(selected: string[], name: string): string[] {
+  if (selected.includes(name)) {
+    return selected.length > 1 ? selected.filter((n) => n !== name) : selected
+  }
+  return [...selected, name]
+}
+
 function dedupePrepend(options: string[], name: string | undefined | null): string[] {
   if (!name || options.includes(name)) return options
   return [name, ...options]
+}
+
+function dedupePrependAll(options: string[], names: string[]): string[] {
+  return names.reduceRight((acc, name) => dedupePrepend(acc, name), options)
 }
 
 interface CustomFontRow {
@@ -242,14 +277,14 @@ function FontRoleSection({
   label,
   options,
   selected,
-  onSelect,
+  onToggle,
   onAddGoogleFont,
   onUpload,
 }: {
   label: string
   options: string[]
-  selected: string
-  onSelect: (name: string) => void
+  selected: string[]
+  onToggle: (name: string) => void
   onAddGoogleFont: (name: string) => void
   onUpload: (name: string, url: string) => void
 }) {
@@ -270,14 +305,16 @@ function FontRoleSection({
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-medium text-muted-foreground">{label} — pick one (1 selected)</p>
+      <p className="text-xs font-medium text-muted-foreground">
+        {label} — pick one or more ({selected.length} selected)
+      </p>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {options.map((name) => (
           <FontTile
             key={name}
             name={name}
-            selected={name === selected}
-            onSelect={() => onSelect(name)}
+            selected={selected.includes(name)}
+            onSelect={() => onToggle(name)}
           />
         ))}
       </div>

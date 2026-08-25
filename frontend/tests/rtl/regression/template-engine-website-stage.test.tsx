@@ -118,7 +118,10 @@ describe('WebsiteStage — Web app Typography step (KDL-558)', () => {
 
     await waitFor(() => expect(mockPatchTypography).toHaveBeenCalled())
     expect(mockPatchTypography).toHaveBeenCalledWith(
-      { heading: { family: 'Poppins' }, body: { family: 'Inter' } },
+      {
+        heading: { family: 'Poppins', families: ['Poppins'] },
+        body: { family: 'Inter', families: ['Inter'] },
+      },
       expect.objectContaining({ onSuccess: expect.any(Function) })
     )
 
@@ -128,7 +131,7 @@ describe('WebsiteStage — Web app Typography step (KDL-558)', () => {
     expect(screen.getByText(/no pages assembled yet/i)).toBeInTheDocument()
   })
 
-  it('selecting a different heading font is exclusive (only one checked at a time)', () => {
+  it('is a true multi-select — picking another heading font keeps the first one checked too', () => {
     renderWithQC(<WebsiteStage run={makeRun()} />)
     fireEvent.click(screen.getByText('Web app'))
 
@@ -136,8 +139,22 @@ describe('WebsiteStage — Web app Typography step (KDL-558)', () => {
 
     const poppinsTile = screen.getByText('Poppins').closest('button')!
     const manropeTile = screen.getByText('Manrope').closest('button')!
-    expect(poppinsTile.querySelector('input[type="checkbox"]')).not.toBeChecked()
+    expect(poppinsTile.querySelector('input[type="checkbox"]')).toBeChecked()
     expect(manropeTile.querySelector('input[type="checkbox"]')).toBeChecked()
+    expect(screen.getByText('Heading — pick one or more (2 selected)')).toBeInTheDocument()
+  })
+
+  it('never lets the last selected font in a role be unchecked', () => {
+    renderWithQC(<WebsiteStage run={makeRun()} />)
+    fireEvent.click(screen.getByText('Web app'))
+
+    // Poppins is the only heading font selected by default — clicking it
+    // again must not drop the selection to zero.
+    fireEvent.click(screen.getByText('Poppins'))
+
+    const poppinsTile = screen.getByText('Poppins').closest('button')!
+    expect(poppinsTile.querySelector('input[type="checkbox"]')).toBeChecked()
+    expect(screen.getByText('Heading — pick one or more (1 selected)')).toBeInTheDocument()
   })
 
   it('adding a custom Google Font name selects it immediately', () => {
