@@ -1,7 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { ArrowLeft, ArrowRight, Globe, ExternalLink, Upload as UploadIcon } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  Globe,
+  ExternalLink,
+  Plus,
+  Upload as UploadIcon,
+  X,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { MediaPicker } from '@/components/shared/MediaPicker'
@@ -224,6 +232,11 @@ function dedupePrepend(options: string[], name: string | undefined | null): stri
   return [name, ...options]
 }
 
+interface CustomFontRow {
+  id: number
+  value: string
+}
+
 function FontRoleSection({
   label,
   options,
@@ -239,8 +252,20 @@ function FontRoleSection({
   onAddGoogleFont: (name: string) => void
   onUpload: (name: string, url: string) => void
 }) {
-  const [customName, setCustomName] = useState('')
-  const [pickerOpen, setPickerOpen] = useState(false)
+  const [rows, setRows] = useState<CustomFontRow[]>([{ id: 0, value: '' }])
+  const nextRowId = useRef(1)
+  const [pickerRowId, setPickerRowId] = useState<number | null>(null)
+
+  function updateRow(id: number, value: string) {
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, value } : r)))
+  }
+
+  function commitRow(id: number) {
+    const name = rows.find((r) => r.id === id)?.value.trim()
+    if (!name) return
+    onAddGoogleFont(name)
+    updateRow(id, '')
+  }
 
   return (
     <div className="space-y-2">
@@ -255,36 +280,57 @@ function FontRoleSection({
           />
         ))}
       </div>
-      <div className="flex items-center gap-2">
-        <Input
-          placeholder="Google Font name (e.g. Roboto)"
-          value={customName}
-          onChange={(e) => setCustomName(e.target.value)}
-          className="font-mono text-sm"
-        />
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            const name = customName.trim()
-            if (!name) return
-            onAddGoogleFont(name)
-            setCustomName('')
-          }}
-        >
-          Add
-        </Button>
-        <Button type="button" variant="outline" size="sm" onClick={() => setPickerOpen(true)}>
-          <UploadIcon className="mr-1.5 h-3.5 w-3.5" />
-          Upload
-        </Button>
+
+      <div className="space-y-2">
+        {rows.map((row) => (
+          <div key={row.id} className="flex items-center gap-2">
+            <Input
+              placeholder="Google Font name (e.g. Roboto)"
+              value={row.value}
+              onChange={(e) => updateRow(row.id, e.target.value)}
+              className="font-mono text-sm"
+            />
+            <Button type="button" variant="outline" size="sm" onClick={() => commitRow(row.id)}>
+              Add
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setPickerRowId(row.id)}
+            >
+              <UploadIcon className="mr-1.5 h-3.5 w-3.5" />
+              Upload
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              aria-label="Remove font row"
+              onClick={() => setRows((prev) => prev.filter((r) => r.id !== row.id))}
+              className="shrink-0 px-2"
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        ))}
       </div>
 
-      {pickerOpen && (
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => setRows((prev) => [...prev, { id: nextRowId.current++, value: '' }])}
+        className="gap-1.5"
+      >
+        <Plus className="h-3.5 w-3.5" />
+        Add row
+      </Button>
+
+      {pickerRowId !== null && (
         <MediaPicker
           open
-          onClose={() => setPickerOpen(false)}
+          onClose={() => setPickerRowId(null)}
           onSelect={(media: Media[]) => {
             const m = media[0]
             if (m?.url) {
@@ -295,7 +341,7 @@ function FontRoleSection({
               ).replace(/\.[^.]+$/, '')
               onUpload(derived, m.url)
             }
-            setPickerOpen(false)
+            setPickerRowId(null)
           }}
         />
       )}
