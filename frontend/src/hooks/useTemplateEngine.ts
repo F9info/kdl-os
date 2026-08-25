@@ -7,6 +7,7 @@ import type {
   DagStage,
   ExportManifest,
   BrandKit,
+  BrandKitPalette,
 } from '@/types/template-engine.types'
 import { stageEnumToSlug } from '@/types/template-engine.types'
 import { toast } from '@/hooks/use-toast'
@@ -123,6 +124,26 @@ export function useUploadLogo(projectId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['brand-kit', projectId] })
       toast({ title: 'Logo uploaded' })
+    },
+    onError: (err) => {
+      toast({ title: extractErrorCode(err), variant: 'destructive' })
+    },
+  })
+}
+
+// PATCH /brand-kit/:projectId only recomputes nothing server-side — the
+// caller (PaletteStage) sends a fully-formed BrandKitPalette (colors + ramps
+// regenerated client-side via lib/oklch-ramp). 409 APPROVED_IMMUTABLE if the
+// kit is already approved (must reopen first).
+export function usePatchBrandKit(projectId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (palette: BrandKitPalette) =>
+      api
+        .patch<{ success: boolean; data: BrandKit }>(`/brand-kit/${projectId}`, { palette })
+        .then((r) => r.data.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['brand-kit', projectId] })
     },
     onError: (err) => {
       toast({ title: extractErrorCode(err), variant: 'destructive' })
