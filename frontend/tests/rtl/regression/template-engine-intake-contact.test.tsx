@@ -109,7 +109,10 @@ const { mockUseBrandKit } = vi.hoisted(() => ({
 }))
 
 vi.mock('@/hooks/useTemplateEngine', () => ({
-  useAdvanceStage: () => ({ mutate: vi.fn(), isPending: false }),
+  useAdvanceStage: () => ({
+    mutate: (_stage: string, opts?: { onSuccess?: () => void }) => opts?.onSuccess?.(),
+    isPending: false,
+  }),
   useRetryStage: () => ({ mutate: vi.fn(), isPending: false }),
   useBrandKit: mockUseBrandKit,
   useUploadLogo: () => ({ mutate: vi.fn(), isPending: false }),
@@ -263,5 +266,19 @@ describe('IntakeStage — Logo & Contact Details (standalone Application Setting
     const call = (api.post as ReturnType<typeof vi.fn>).mock.calls[0]
     const body = call?.[1] as { values: Array<{ id: string }> }
     expect(body.values.some((v) => v.id === 'f-logo')).toBe(false)
+  })
+
+  it('navigates to the Palette stage once the stage actually advances', async () => {
+    const { mockPush } = await import('../../__mocks__/next-navigation')
+    renderWithQC(<IntakeStage run={makeRun()} />)
+
+    fireEvent.change(await screen.findByLabelText(/^Company name/), {
+      target: { value: 'Aster Foundation' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+
+    await waitFor(() =>
+      expect(mockPush).toHaveBeenCalledWith('/admin/template-engine/projects/proj-1/palette')
+    )
   })
 })
