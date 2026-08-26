@@ -38,10 +38,13 @@ export const advanceStageSchema = z.object({
     runId: z.string().min(1),
     stage: stageSlugEnum,
   }),
-  // approval stage may carry brandKitVersion on the accept call
+  // approval stage may carry brandKitVersion on the accept call;
+  // website stage may carry templatePack (KDL-558) to pick which Puck
+  // pack (general/medical/construction) seeds the assembled pages.
   body: z
     .object({
       brandKitVersion: z.number().int().positive().optional(),
+      templatePack: z.enum(['general', 'medical', 'construction']).optional(),
     })
     .optional(),
 });

@@ -92,6 +92,9 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
     { pageIds?: string[]; pageKeyToId?: Record<string, string> } | null | undefined
   const pages = Object.entries(outputRef?.pageKeyToId ?? {})
   const pageCount = outputRef?.pageIds?.length ?? pages.length
+  // The Templates step's pick — read fresh each render (cheap sync
+  // localStorage read) so Run always sends whatever's currently selected.
+  const templatePack = readLocal(`${uiStateKey}:template`, 'general')
 
   function openWebApp() {
     setOpenBrand('webapp')
@@ -106,7 +109,9 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
       hideHeader
       hideRunButton={openBrand === null || webAppStep !== 'assemble'}
       onRun={
-        stage?.status === 'FAILED' ? () => retry.mutate('WEBSITE') : () => advance.mutate('WEBSITE')
+        stage?.status === 'FAILED'
+          ? () => retry.mutate('WEBSITE')
+          : () => advance.mutate({ stage: 'WEBSITE', body: { templatePack } })
       }
       onSkip={() => skip.mutate('WEBSITE')}
       isRunning={advance.isPending || retry.isPending}
