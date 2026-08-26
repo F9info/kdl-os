@@ -24,11 +24,36 @@ type GeneralProps = {
   Columns: { gap: 'sm' | 'md' | 'lg'; left: any; right: any }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Section: { background: 'none' | 'muted' | 'accent'; padding: 'sm' | 'md' | 'lg'; content: any }
+  NavBar: { brand: string; links: string; ctaLabel: string; ctaHref: string }
+  StatsStrip: { stats: string }
+  FeatureCards: { sectionTitle: string; sectionSubtitle: string; cards: string }
+  Footer: { brand: string; tagline: string; links: string; copyright: string }
 }
 
 const typedCategories: NonNullable<Config<GeneralProps>['categories']> = {
-  layout: { title: 'Layout', components: ['Section', 'Columns', 'Spacer'] },
-  content: { title: 'Content', components: ['Hero', 'Heading', 'Text', 'Button', 'Image'] },
+  layout: { title: 'Layout', components: ['Section', 'Columns', 'Spacer', 'NavBar', 'Footer'] },
+  content: {
+    title: 'Content',
+    components: ['Hero', 'Heading', 'Text', 'Button', 'Image', 'StatsStrip', 'FeatureCards'],
+  },
+}
+
+// ─── Shared helpers (mirrors the pipe-delimited-line pattern the medical/
+// construction packs use for repeatable rows) ────────────────────────────
+function parseLine<T>(raw: string, parser: (line: string) => T | null): T[] {
+  return raw
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map(parser)
+    .filter((v): v is T => v !== null)
+}
+
+function parsePipeLines(raw: string, fieldCount: number): string[][] {
+  return parseLine(raw, (line) => {
+    const parts = line.split('|').map((p) => p.trim())
+    return parts.length >= fieldCount ? parts : null
+  })
 }
 
 const typedComponents: Config<GeneralProps>['components'] = {
@@ -271,6 +296,155 @@ const typedComponents: Config<GeneralProps>['components'] = {
         </div>
       </section>
     ),
+  },
+  NavBar: {
+    label: 'Nav Bar',
+    fields: {
+      brand: { type: 'text' },
+      links: { type: 'textarea' },
+      ctaLabel: { type: 'text' },
+      ctaHref: { type: 'text' },
+    },
+    defaultProps: {
+      brand: 'Your Brand',
+      links: ['Home|#', 'About|#', 'Contact|#'].join('\n'),
+      ctaLabel: 'Get Started',
+      ctaHref: '#',
+    },
+    render: ({ brand, links, ctaLabel, ctaHref }) => {
+      const rows = parsePipeLines(links, 2)
+      return (
+        <header className="flex items-center justify-between gap-6 border-b border-slate-200 px-6 py-4">
+          <span className="text-lg font-bold text-slate-900">{brand}</span>
+          <nav className="hidden md:flex items-center gap-6">
+            {rows.map(([label, href], i) => (
+              <a
+                key={i}
+                href={href}
+                className="text-sm font-medium text-slate-700 hover:text-blue-600"
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
+          {ctaLabel ? (
+            <a
+              href={ctaHref}
+              className="inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition"
+            >
+              {ctaLabel}
+            </a>
+          ) : null}
+        </header>
+      )
+    },
+  },
+  StatsStrip: {
+    label: 'Stats Strip',
+    fields: { stats: { type: 'textarea' } },
+    defaultProps: {
+      stats: [
+        '25+|Years of experience',
+        '15K+|Happy customers',
+        '50+|Team members',
+        '30+|Projects delivered',
+      ].join('\n'),
+    },
+    render: ({ stats }) => {
+      const rows = parsePipeLines(stats, 2)
+      return (
+        <div className="grid grid-cols-2 gap-6 px-6 py-12 md:grid-cols-4">
+          {rows.map(([value, label], i) => (
+            <div key={i} className="text-center">
+              <div className="text-3xl font-bold text-slate-900">{value}</div>
+              <div className="mt-1 text-sm text-slate-500">{label}</div>
+            </div>
+          ))}
+        </div>
+      )
+    },
+  },
+  FeatureCards: {
+    label: 'Feature Cards',
+    fields: {
+      sectionTitle: { type: 'text' },
+      sectionSubtitle: { type: 'textarea' },
+      cards: { type: 'textarea' },
+    },
+    defaultProps: {
+      sectionTitle: 'What we offer',
+      sectionSubtitle: 'Everything you need, built for reliability and speed.',
+      cards: [
+        '⚡ | Fast | Ships responsive pages to every device in minutes.',
+        '🔧 | Flexible | Compose pages from reusable, editable blocks.',
+        '🔒 | Reliable | Built on infrastructure that scales with you.',
+      ].join('\n'),
+    },
+    render: ({ sectionTitle, sectionSubtitle, cards }) => {
+      const rows = parsePipeLines(cards, 3)
+      return (
+        <section className="px-6 py-12 md:py-20">
+          <div className="mx-auto max-w-5xl">
+            <div className="mb-10 text-center">
+              <h2 className="text-2xl font-bold text-slate-900 md:text-3xl">{sectionTitle}</h2>
+              {sectionSubtitle ? (
+                <p className="mx-auto mt-3 max-w-2xl text-slate-500">{sectionSubtitle}</p>
+              ) : null}
+            </div>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+              {rows.map(([icon, title, desc], i) => (
+                <div
+                  key={i}
+                  className="flex flex-col gap-2 rounded-xl border border-slate-200 p-6 transition hover:shadow-md"
+                >
+                  <span className="text-3xl">{icon}</span>
+                  <h3 className="font-semibold text-slate-900">{title}</h3>
+                  <p className="text-sm text-slate-500">{desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+  Footer: {
+    label: 'Footer',
+    fields: {
+      brand: { type: 'text' },
+      tagline: { type: 'text' },
+      links: { type: 'textarea' },
+      copyright: { type: 'text' },
+    },
+    defaultProps: {
+      brand: 'Your Brand',
+      tagline: 'Building something great.',
+      links: ['Home|#', 'About|#', 'Contact|#'].join('\n'),
+      copyright: `© ${new Date().getFullYear()} Your Brand. All rights reserved.`,
+    },
+    render: ({ brand, tagline, links, copyright }) => {
+      const rows = parsePipeLines(links, 2)
+      return (
+        <footer className="bg-slate-900 px-6 py-10 text-slate-300">
+          <div className="mx-auto flex max-w-5xl flex-wrap items-start justify-between gap-6">
+            <div>
+              <div className="text-lg font-bold text-white">{brand}</div>
+              <p className="mt-1 text-sm text-slate-400">{tagline}</p>
+            </div>
+            <nav className="flex gap-6">
+              {rows.map(([label, href], i) => (
+                <a key={i} href={href} className="text-sm hover:text-white">
+                  {label}
+                </a>
+              ))}
+            </nav>
+          </div>
+          <div className="mx-auto mt-8 max-w-5xl border-t border-slate-800 pt-6 text-xs text-slate-500">
+            {copyright}
+          </div>
+        </footer>
+      )
+    },
   },
 }
 
