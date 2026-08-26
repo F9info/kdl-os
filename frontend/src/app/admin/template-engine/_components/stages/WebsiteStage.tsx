@@ -46,9 +46,9 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
   const { data: brandKit } = useBrandKit(run.projectId)
   const patchTypography = usePatchTypography(run.projectId)
   const [openBrand, setOpenBrand] = useState<(typeof BRAND_CARDS)[number]['key'] | null>(null)
-  const [webAppStep, setWebAppStep] = useState<'typography' | 'fontSettings' | 'assemble'>(
-    'typography'
-  )
+  const [webAppStep, setWebAppStep] = useState<
+    'typography' | 'fontSettings' | 'navigation' | 'assemble'
+  >('typography')
   // Snapshot of what Typography's Next just saved — read straight from the
   // mutation result instead of waiting on brandKit's invalidate-refetch, so
   // Font settings' family options are correct on the very next render.
@@ -101,7 +101,7 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
         </div>
       ) : (
         <div className="space-y-3">
-          {webAppStep !== 'fontSettings' && (
+          {webAppStep !== 'fontSettings' && webAppStep !== 'navigation' && (
             <Button
               type="button"
               variant="ghost"
@@ -131,6 +131,11 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
             <FontSettingsStep
               typography={savedTypography ?? brandKit?.typography ?? null}
               onBack={() => setWebAppStep('typography')}
+              onNext={() => setWebAppStep('navigation')}
+            />
+          ) : webAppStep === 'navigation' ? (
+            <NavigationStep
+              onBack={() => setWebAppStep('fontSettings')}
               onNext={() => setWebAppStep('assemble')}
             />
           ) : pageCount > 0 ? (
@@ -846,6 +851,148 @@ function FontSettingsStep({
             ))}
           </div>
         </div>
+      </div>
+    </div>
+  )
+}
+
+// Mirrors the design prototype's Navigation step page suggestions.
+const SUGGESTED_PAGES = [
+  'Home',
+  'About',
+  'Services',
+  'Service detail',
+  'Products',
+  'Product detail',
+  'Pricing',
+  'Portfolio',
+  'Portfolio detail',
+  'Blog',
+  'Blog detail',
+  'Team',
+  'Team member',
+  'Careers',
+  'Job detail',
+  'Gallery',
+  'Testimonials',
+  'Contact',
+  'FAQ',
+  'Privacy Policy',
+  'Terms',
+  'Admin panel',
+  'Settings',
+]
+
+function NavigationStep({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
+  const [selected, setSelected] = useState<string[]>([])
+  const [customName, setCustomName] = useState('')
+  const extras = selected.filter((n) => !SUGGESTED_PAGES.includes(n))
+
+  function togglePage(name: string) {
+    setSelected((prev) => (prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]))
+  }
+
+  function addCustomPage() {
+    const name = customName.trim()
+    if (!name || selected.includes(name)) return
+    setSelected((prev) => [...prev, name])
+    setCustomName('')
+  }
+
+  return (
+    <div className="space-y-3">
+      <Button type="button" variant="ghost" size="sm" onClick={onBack} className="gap-1.5 px-2">
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Back to type scale
+      </Button>
+
+      <div>
+        <h3 className="text-base font-semibold">Web app · Navigation</h3>
+        <p className="text-sm text-muted-foreground">
+          Choose the pages this platform&apos;s navigation should include, or add your own.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[3fr_2fr]">
+        <div className="rounded-lg border bg-card p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold">Pages</span>
+            <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+              {selected.length} selected
+            </span>
+          </div>
+          <p className="text-xs font-medium text-muted-foreground">Common pages — tap to add</p>
+          <div className="flex flex-wrap gap-2">
+            {[...SUGGESTED_PAGES, ...extras].map((name) => {
+              const on = selected.includes(name)
+              return (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => togglePage(name)}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors',
+                    on ? 'border-primary bg-primary/10 text-primary' : 'hover:bg-accent'
+                  )}
+                >
+                  <span className="text-[11px]">{on ? '✓' : '+'}</span>
+                  {name}
+                </button>
+              )
+            })}
+          </div>
+          <div className="flex items-center gap-2 pt-2">
+            <Input
+              placeholder="Add a custom page (e.g. Case studies)"
+              value={customName}
+              onChange={(e) => setCustomName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && addCustomPage()}
+            />
+            <Button type="button" onClick={addCustomPage}>
+              Add
+            </Button>
+          </div>
+        </div>
+
+        <div className="rounded-lg border bg-card p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold">Selected navigation</span>
+            <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+              Live
+            </span>
+          </div>
+          {selected.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {selected.map((name) => (
+                <span
+                  key={name}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-primary py-1.5 pl-3 pr-1.5 text-xs font-semibold text-primary-foreground"
+                >
+                  {name}
+                  <button
+                    type="button"
+                    aria-label={`Remove ${name}`}
+                    onClick={() => togglePage(name)}
+                    className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-white/25 leading-none"
+                  >
+                    ✕
+                  </button>
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              No pages yet — pick from the list or add your own.
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <Button type="button" onClick={onNext}>
+          Next
+          <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+        </Button>
       </div>
     </div>
   )
