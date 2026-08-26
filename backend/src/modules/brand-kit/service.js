@@ -29,6 +29,7 @@ import { BRAND_INFERENCE_COST, COLLATERAL_EXPORT_COST } from './costs.js';
 import { withCreditHold } from '../credits/service.js';
 import { aiServicesConfigured, requestBrandInference } from './ai-client.js';
 import { buildGuidelinesPdf } from './guidelines.js';
+import { setGlobalLogo } from '../setting-fields/service.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -185,6 +186,13 @@ export const uploadLogo = async (projectId, file, userId) => {
     where: { id: mediaRecord.id },
     data: { owner_module: OWNER_MODULE },
   });
+
+  // Global admin sidebar/dashboard logo now follows the active project's
+  // brand-kit logo — see setGlobalLogo(). This writes to setting-fields
+  // (the standalone Application Settings system), not theme-engine, so
+  // D-BK-6 ("never write to theme-engine") doesn't apply; best-effort so a
+  // setting-fields hiccup never blocks the logo upload itself.
+  await setGlobalLogo(mediaRecord.path).catch(() => {});
 
   // 6. Render 1024 px raster PNG for palette extraction and PDF embedding (§1.3)
   let rasterMediaId = null;
