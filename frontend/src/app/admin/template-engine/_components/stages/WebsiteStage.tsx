@@ -196,8 +196,8 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
                   <h3 className="text-base font-semibold">Web app · Pages</h3>
                   <p className="text-sm text-muted-foreground">
                     {pageCount} page{pageCount !== 1 ? 's' : ''} assembled in the page-builder
-                    engine. Direct editing is disabled while Studio is active — open a page to
-                    preview it.
+                    engine. Open a page to edit it, or view all pages to step through and edit every
+                    page in one place.
                   </p>
                 </div>
                 <Button size="sm" asChild>
