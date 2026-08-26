@@ -30,7 +30,11 @@ import {
 } from '../../collateral/service.js';
 
 import { createPage, getPage } from '../../page-builder/service.js';
-import { seedWebsitePageData } from './website-seed-content.js';
+import {
+  seedWebsitePageData,
+  seedMedicalPageData,
+  seedConstructionPageData,
+} from './website-seed-content.js';
 
 import { prisma } from '../../../config/database.js';
 
@@ -223,16 +227,25 @@ const WEBSITE_SEED_PAGES = [
   { key: 'contact', title: 'Contact' },
 ];
 
+// KDL-558 task 4/5 — the Web app Templates step's pack choice (general/
+// medical/construction), sent as advance's optional `templatePack` body
+// field, picks which seeder builds each page's starter content.
+const SEEDER_BY_PACK = {
+  general: seedWebsitePageData,
+  medical: seedMedicalPageData,
+  construction: seedConstructionPageData,
+};
+
 /**
  * website — seeds pages from Puck component packs via page-builder, with
- * real default content from the "general" pack (seedWebsitePageData) so a
- * fresh page isn't a blank canvas.
+ * real default content (seedWebsitePageData/seedMedicalPageData/
+ * seedConstructionPageData) so a fresh page isn't a blank canvas.
  * Crash recovery: recorded pageKeyToId is checked on re-run; existing pages are reused.
- * Industry-based pack selection (medical/construction vs. general) wired
- * when brand-kit strategy field lands — see website-seed-content.js.
  */
 const websiteDriver = {
-  async execute({ run, stageRecord, userId }) {
+  async execute({ run, stageRecord, userId, templatePack }) {
+    const seed = SEEDER_BY_PACK[templatePack] ?? seedWebsitePageData;
+
     // Crash recovery (TEMPLATE_ENGINE_ARCH §4.1): reuse pages from a prior attempt.
     const priorMap = stageRecord?.outputRef?.pageKeyToId ?? {};
     const pageKeyToId = {};
@@ -246,7 +259,7 @@ const websiteDriver = {
       }
 
       const page = existing ?? await createPage(
-        { title, slug: `te-${run.id}-${key}`, data: seedWebsitePageData(key, title) },
+        { title, slug: `te-${run.id}-${key}`, data: seed(key, title) },
         userId,
       );
 

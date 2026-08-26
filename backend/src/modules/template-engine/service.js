@@ -206,7 +206,7 @@ export async function skipStage(runId, stageSlug, userId, projectId) {
 //   409 STAGE_INTERRUPTED  — orphaned RUNNING stage recovered; re-advance to retry
 //   503 UPSTREAM_NOT_BUILT — driver threw (Phase 1, always)
 //   <driver code>          — any other named error from the driver
-export async function advanceStage(runId, stageSlug, userId, projectId) {
+export async function advanceStage(runId, stageSlug, userId, projectId, options = {}) {
   const run = await getRun(runId, projectId); // throws 404 on mismatch
 
   const stageEnum = STAGE_SLUG_TO_ENUM[stageSlug];
@@ -250,6 +250,7 @@ export async function advanceStage(runId, stageSlug, userId, projectId) {
       stageRecord,
       userId,
       projectId,
+      templatePack: options.templatePack,
     });
 
     updated = await prisma.templateEngineStage.update({

@@ -83,7 +83,9 @@ export const advanceStage = async (req, res, next) => {
       }
     }
 
-    const stageRecord = await service.advanceStage(runId, stage, req.user.id, projectId);
+    const stageRecord = await service.advanceStage(runId, stage, req.user.id, projectId, {
+      templatePack: req.validated.body?.templatePack,
+    });
 
     writeActivityAsync({
       actor: req.user.id,

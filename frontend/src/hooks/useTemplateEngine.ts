@@ -76,19 +76,27 @@ export function useCreateRun() {
   })
 }
 
+// Most callers just need `mutate('STAGE')`; the WEBSITE stage also needs to
+// send its Templates-step pack choice, so a `{ stage, body }` form is
+// accepted too — a bare DagStage stays the common case everywhere else.
+type AdvanceStagePayload = DagStage | { stage: DagStage; body?: Record<string, unknown> }
+
 export function useAdvanceStage(runId: string, projectId: string) {
   const qc = useQueryClient()
   return useMutation({
     // Advance/retry/skip return the mutated stage record, not the run —
     // invalidate both run caches so the UI refetches the fresh run.
-    mutationFn: (stage: DagStage) =>
-      api
+    mutationFn: (payload: AdvanceStagePayload) => {
+      const { stage, body } =
+        typeof payload === 'string' ? { stage: payload, body: undefined } : payload
+      return api
         .post<{ success: boolean; data: TemplateEngineStage }>(
           `${BASE}/runs/${runId}/stages/${stageEnumToSlug(stage)}/advance`,
-          undefined,
+          body,
           projectScope(projectId)
         )
-        .then((r) => r.data.data),
+        .then((r) => r.data.data)
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: runKey(runId) })
       qc.invalidateQueries({ queryKey: runsKey(projectId) })
