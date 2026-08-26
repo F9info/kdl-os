@@ -695,13 +695,27 @@ function FontSettingsStep({
   onBack: () => void
   onNext: () => void
 }) {
-  const fontOptions = [
-    ...new Set([...(typography?.heading?.families ?? []), ...(typography?.body?.families ?? [])]),
-  ]
-  const defaultFamily = typography?.heading?.family ?? fontOptions[0] ?? 'Inter'
+  const headingOptions = typography?.heading?.families?.length
+    ? [...new Set(typography.heading.families)]
+    : typography?.heading?.family
+      ? [typography.heading.family]
+      : ['Inter']
+  const bodyOptions = typography?.body?.families?.length
+    ? [...new Set(typography.body.families)]
+    : typography?.body?.family
+      ? [typography.body.family]
+      : ['Inter']
+  // H1–H6 only ever offer the fonts picked for Heading in Typography; every
+  // other role (body, nav, button, ...) only offers the fonts picked for Body.
+  const optionsForKind = (kind: TypeScaleKind) =>
+    kind === 'heading' ? headingOptions : bodyOptions
+  const fontOptions = [...new Set([...headingOptions, ...bodyOptions])]
 
   const [rows, setRows] = useState<TypeScaleRow[]>(() =>
-    DEFAULT_TYPE_SCALE.map((r) => ({ ...r, family: defaultFamily }))
+    DEFAULT_TYPE_SCALE.map((r) => ({
+      ...r,
+      family: r.kind === 'heading' ? headingOptions[0]! : bodyOptions[0]!,
+    }))
   )
 
   useEffect(() => {
@@ -765,7 +779,7 @@ function FontSettingsStep({
                         onChange={(e) => updateRow(i, { family: e.target.value })}
                         className={selectClass()}
                       >
-                        {[...new Set([...fontOptions, r.family])].map((name) => (
+                        {[...new Set([...optionsForKind(r.kind), r.family])].map((name) => (
                           <option key={name} value={name}>
                             {name}
                           </option>
