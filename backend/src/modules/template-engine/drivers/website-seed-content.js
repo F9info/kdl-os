@@ -267,3 +267,159 @@ export function seedMedicalPageData(pageKey, pageTitle) {
   ];
   return { root: { props: { title: pageTitle } }, content, zones: {} };
 }
+
+// ─── Construction pack seeder (KDL-558 task 3/5) ─────────────────────────
+//
+// Not wired to the Templates step yet (task 4). Same approach as the
+// medical seeder: general pack's NavBar/Footer for chrome, real
+// ConstructionX components for the body, each using that component's own
+// defaultProps verbatim (frontend/src/app/admin/page-builder/packs/
+// construction/index.tsx).
+
+const CONSTRUCTION_HERO_BY_KEY = {
+  home: {
+    headline: 'Building Your Vision, On Time & On Budget',
+    subheadline:
+      'Award-winning general contractor serving residential and commercial clients across the region. Licensed, insured, and safety-certified.',
+    ctaLabel: 'Get a Free Quote',
+    ctaHref: '#quote',
+    secondaryLabel: 'View Our Projects',
+    secondaryHref: '#projects',
+    backgroundImage: 'https://placehold.co/1600x800/1e293b/ffffff?text=Construction+Site',
+    overlay: true,
+  },
+  about: {
+    headline: 'About Our Company',
+    subheadline: 'Decades of building experience, one crew you can trust from groundbreak to handover.',
+    ctaLabel: '',
+    ctaHref: '#',
+    secondaryLabel: '',
+    secondaryHref: '#',
+    backgroundImage: 'https://placehold.co/1600x800/1e293b/ffffff?text=Our+Team',
+    overlay: true,
+  },
+  contact: {
+    headline: 'Get a Free Quote',
+    subheadline: 'Tell us about your project and our estimators will get back to you within 48 hours.',
+    ctaLabel: '',
+    ctaHref: '#',
+    secondaryLabel: '',
+    secondaryHref: '#',
+    backgroundImage: 'https://placehold.co/1600x800/1e293b/ffffff?text=Contact+Us',
+    overlay: true,
+  },
+};
+
+const CONSTRUCTION_SERVICES_GRID = {
+  sectionTitle: 'Our Services',
+  sectionSubtitle: 'From foundations to finishes — we handle every phase of your construction project.',
+  service1Title: 'New Construction',
+  service1Description:
+    'Ground-up residential and commercial builds to your specifications and local codes.',
+  service2Title: 'Renovations & Remodeling',
+  service2Description:
+    'Transform existing spaces with structural updates, expansions, and interior upgrades.',
+  service3Title: 'Roofing & Waterproofing',
+  service3Description:
+    'Durable roofing installations, repairs, and waterproofing systems for all climates.',
+  service4Title: 'Concrete & Foundations',
+  service4Description: 'Footings, slabs, retaining walls, and structural concrete poured to spec.',
+  service5Title: 'Electrical & MEP',
+  service5Description:
+    'Full mechanical, electrical, and plumbing coordination with licensed subcontractors.',
+  service6Title: 'Project Management',
+  service6Description:
+    'End-to-end oversight, scheduling, procurement, and quality control on every site.',
+  padding: 'md',
+  background: 'white',
+};
+
+const CONSTRUCTION_STATS_STRIP = {
+  stat1Value: '25+',
+  stat1Label: 'Years in Business',
+  stat2Value: '850+',
+  stat2Label: 'Projects Completed',
+  stat3Value: '₹500 Cr+',
+  stat3Label: 'Work Executed',
+  stat4Value: '98%',
+  stat4Label: 'Client Satisfaction',
+  background: 'dark',
+  padding: 'md',
+};
+
+const CONSTRUCTION_QUOTE_CTA = {
+  headline: 'Ready to Start Your Project?',
+  subtext:
+    'Get a detailed, no-obligation quote within 48 hours. Our estimators will assess your site and deliver a comprehensive scope of work.',
+  ctaLabel: 'Request a Free Quote',
+  ctaHref: '#contact',
+  phoneNumber: '+91-98765-43210',
+  phoneLabel: 'Or call us directly',
+  background: 'dark',
+};
+
+const CONSTRUCTION_TEAM_CREW = {
+  sectionTitle: 'Meet Our Team',
+  sectionSubtitle: 'Experienced professionals committed to delivering quality on every project.',
+  member1Name: 'Ramesh Kapoor',
+  member1Role: 'Director & Project Head',
+  member1Image: 'https://placehold.co/400x400/475569/ffffff?text=RK',
+  member2Name: 'Sunita Joshi',
+  member2Role: 'Senior Site Engineer',
+  member2Image: 'https://placehold.co/400x400/334155/ffffff?text=SJ',
+  member3Name: 'Arun Mehta',
+  member3Role: 'Safety & Compliance Officer',
+  member3Image: 'https://placehold.co/400x400/1e293b/ffffff?text=AM',
+  member4Name: 'Priya Nair',
+  member4Role: 'Estimation & Contracts',
+  member4Image: 'https://placehold.co/400x400/0f172a/ffffff?text=PN',
+  padding: 'md',
+  background: 'white',
+};
+
+const CONSTRUCTION_TESTIMONIALS = {
+  sectionTitle: 'What Our Clients Say',
+  quote1Text:
+    'The team delivered our 12-unit residential complex three weeks ahead of schedule, without a single quality defect. Exceptional work.',
+  quote1Author: 'Venkat Reddy',
+  quote1Company: 'Reddy Builders Pvt Ltd',
+  quote2Text:
+    'Their safety record across our 18-month infrastructure project was impeccable. Zero LTIs. We will work with them again.',
+  quote2Author: 'Anita Sharma',
+  quote2Company: 'National Highways Authority (Vendor)',
+  quote3Text:
+    'Transparent budgeting and weekly reporting made it easy to track progress. No surprises. Highly recommended.',
+  quote3Author: 'Mohan Das',
+  quote3Company: 'Das Commercial Properties',
+  padding: 'md',
+  background: 'white',
+};
+
+const CONSTRUCTION_MIDDLE_BY_KEY = {
+  home: (pageKey) => [
+    block(pageKey, 'ConstructionServicesGrid', CONSTRUCTION_SERVICES_GRID),
+    block(pageKey, 'ConstructionStatsStrip', CONSTRUCTION_STATS_STRIP),
+    block(pageKey, 'ConstructionQuoteCTA', CONSTRUCTION_QUOTE_CTA),
+    block(pageKey, 'ConstructionTestimonials', CONSTRUCTION_TESTIMONIALS),
+  ],
+  about: (pageKey) => [
+    block(pageKey, 'ConstructionTeamCrew', CONSTRUCTION_TEAM_CREW),
+    block(pageKey, 'ConstructionStatsStrip', CONSTRUCTION_STATS_STRIP),
+  ],
+  contact: (pageKey) => [block(pageKey, 'ConstructionQuoteCTA', CONSTRUCTION_QUOTE_CTA)],
+};
+
+export function seedConstructionPageData(pageKey, pageTitle) {
+  const buildMiddle = CONSTRUCTION_MIDDLE_BY_KEY[pageKey] ?? CONSTRUCTION_MIDDLE_BY_KEY.home;
+  const content = [
+    block(pageKey, 'NavBar', NAV_BAR),
+    block(
+      pageKey,
+      'ConstructionHero',
+      CONSTRUCTION_HERO_BY_KEY[pageKey] ?? CONSTRUCTION_HERO_BY_KEY.home
+    ),
+    ...buildMiddle(pageKey),
+    block(pageKey, 'Footer', FOOTER),
+  ];
+  return { root: { props: { title: pageTitle } }, content, zones: {} };
+}
