@@ -1,4 +1,5 @@
 import type { Config } from '@puckeditor/core'
+import { Phone, Clock, MapPin, Mail, Facebook, Twitter, Linkedin } from 'lucide-react'
 import type { ComponentPack } from '../types'
 
 type MedicalProps = {
@@ -56,6 +57,29 @@ type MedicalProps = {
     sectionTitle: string
     sectionSubtitle: string
     items: string
+  }
+  MedicalTopNav: {
+    welcomeText: string
+    phone: string
+    hours: string
+    brand: string
+    navLinks: string
+    ctaLabel: string
+    ctaHref: string
+  }
+  MedicalHeroSplit: {
+    eyebrow: string
+    headingLine1: string
+    headingLine2: string
+    subtext: string
+    primaryLabel: string
+    primaryHref: string
+    secondaryLabel: string
+    secondaryHref: string
+    image: string
+  }
+  MedicalContactInfoCards: {
+    cells: string
   }
 }
 
@@ -609,6 +633,219 @@ const MedicalFAQ: Config<MedicalProps>['components']['MedicalFAQ'] = {
   },
 }
 
+// ─── MedicalTopNav ───────────────────────────────────────────────────────────
+// Exact-match port of the design reference's medHeader() — a dark contact
+// topbar (welcome text + phone/hours + social) over a sticky white nav
+// (brand + links + Appointment button). navLinks format: "Label|Href" lines.
+
+const MedicalTopNav: Config<MedicalProps>['components']['MedicalTopNav'] = {
+  label: 'Top Nav (topbar + sticky nav)',
+  fields: {
+    welcomeText: { type: 'text' },
+    phone: { type: 'text' },
+    hours: { type: 'text' },
+    brand: { type: 'text' },
+    navLinks: { type: 'textarea' },
+    ctaLabel: { type: 'text' },
+    ctaHref: { type: 'text' },
+  },
+  defaultProps: {
+    welcomeText: 'Welcome — Your Health, Our Priority!',
+    phone: '(123) 456 7890',
+    hours: 'Mon–Sat: 8:00–18:00',
+    brand: 'Your Brand',
+    navLinks: [
+      'Home|#',
+      'About|#',
+      'Services|#',
+      'Service detail|#',
+      'Products|#',
+      'Product detail|#',
+      'Pricing|#',
+      'Portfolio|#',
+    ].join('\n'),
+    ctaLabel: 'Appointment',
+    ctaHref: '#appointment',
+  },
+  render: ({ welcomeText, phone, hours, brand, navLinks, ctaLabel, ctaHref }) => {
+    const links = parsePipeLines(navLinks, 2)
+    return (
+      <div>
+        <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-900 px-6 py-2 text-xs text-white">
+          <span>{welcomeText}</span>
+          <div className="flex flex-wrap items-center gap-4">
+            {phone ? (
+              <span className="inline-flex items-center gap-1.5 opacity-90">
+                <Phone size={12} /> {phone}
+              </span>
+            ) : null}
+            {hours ? (
+              <span className="inline-flex items-center gap-1.5 opacity-90">
+                <Clock size={12} /> {hours}
+              </span>
+            ) : null}
+            <span className="flex gap-2">
+              {[Facebook, Twitter, Linkedin].map((Icon, i) => (
+                <span key={i} className="grid h-6 w-6 place-items-center rounded-full bg-white/20">
+                  <Icon size={11} />
+                </span>
+              ))}
+            </span>
+          </div>
+        </div>
+        <div className="sticky top-0 z-10 border-b border-slate-100 bg-white px-6 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <span className="text-lg font-bold text-slate-900">{brand}</span>
+            <nav className="flex flex-1 flex-wrap justify-center gap-6">
+              {links.map(([label, href], i) => (
+                <a key={i} href={href} className="text-sm font-medium text-slate-700">
+                  {label}
+                </a>
+              ))}
+            </nav>
+            {ctaLabel ? (
+              <a
+                href={ctaHref}
+                className="inline-flex rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white"
+              >
+                {ctaLabel}
+              </a>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    )
+  },
+}
+
+// ─── MedicalHeroSplit ────────────────────────────────────────────────────────
+// Exact-match port of medHome()'s hero — two-line heading, lead paragraph,
+// dual CTAs, image right.
+
+const MedicalHeroSplit: Config<MedicalProps>['components']['MedicalHeroSplit'] = {
+  label: 'Hero (split, two-line heading)',
+  fields: {
+    eyebrow: { type: 'text' },
+    headingLine1: { type: 'text' },
+    headingLine2: { type: 'text' },
+    subtext: { type: 'textarea' },
+    primaryLabel: { type: 'text' },
+    primaryHref: { type: 'text' },
+    secondaryLabel: { type: 'text' },
+    secondaryHref: { type: 'text' },
+    image: { type: 'text' },
+  },
+  defaultProps: {
+    eyebrow: 'Welcome to our clinic',
+    headingLine1: 'Your Health',
+    headingLine2: 'Our Priority',
+    subtext: "We provide the best medical services for you and your family's health.",
+    primaryLabel: 'Our Services',
+    primaryHref: '#services',
+    secondaryLabel: 'Contact Us',
+    secondaryHref: '#contact',
+    image: 'https://placehold.co/900x800',
+  },
+  render: ({
+    eyebrow,
+    headingLine1,
+    headingLine2,
+    subtext,
+    primaryLabel,
+    primaryHref,
+    secondaryLabel,
+    secondaryHref,
+    image,
+  }) => (
+    <section className="bg-slate-50 px-6 py-16">
+      <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 md:grid-cols-2">
+        <div>
+          {eyebrow ? (
+            <div className="text-xs font-bold uppercase tracking-wide text-slate-900">
+              {eyebrow}
+            </div>
+          ) : null}
+          <h1 className="mt-3 mb-3 text-4xl font-extrabold tracking-tight text-slate-900 md:text-5xl">
+            {headingLine1}
+            <br />
+            {headingLine2}
+          </h1>
+          <p className="mb-6 max-w-md text-slate-600">{subtext}</p>
+          <div className="flex flex-wrap gap-3">
+            {primaryLabel ? (
+              <a
+                href={primaryHref}
+                className="inline-flex rounded-lg bg-slate-900 px-6 py-3 font-semibold text-white"
+              >
+                {primaryLabel}
+              </a>
+            ) : null}
+            {secondaryLabel ? (
+              <a
+                href={secondaryHref}
+                className="inline-flex rounded-lg border-2 border-slate-900 px-6 py-3 font-semibold text-slate-900"
+              >
+                {secondaryLabel}
+              </a>
+            ) : null}
+          </div>
+        </div>
+        <div className="min-h-[360px] overflow-hidden rounded-2xl">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={image} alt="" className="h-full w-full object-cover" />
+        </div>
+      </div>
+    </section>
+  ),
+}
+
+// ─── MedicalContactInfoCards ─────────────────────────────────────────────────
+// Exact-match port of medHome()'s overlapping white info-card row.
+// cells format: "icon|Title|Subtitle" — icon in phone|clock|location|email.
+
+const INFO_ICONS = { phone: Phone, clock: Clock, location: MapPin, email: Mail } as const
+
+const MedicalContactInfoCards: Config<MedicalProps>['components']['MedicalContactInfoCards'] = {
+  label: 'Contact Info Cards',
+  fields: {
+    cells: { type: 'textarea' },
+  },
+  defaultProps: {
+    cells: [
+      'phone|Emergency Case|(123) 456 7890',
+      'clock|Opening Hours|Mon–Sat: 8:00–18:00',
+      'location|Location|123 Medical Street, NY',
+      'email|Email Us|info@yourbrand.com',
+    ].join('\n'),
+  },
+  render: ({ cells }) => {
+    const rows = parsePipeLines(cells, 3)
+    return (
+      <div className="relative z-[3] -mt-10 px-6">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 rounded-2xl bg-white shadow-xl sm:grid-cols-2 md:grid-cols-4">
+          {rows.map(([icon, title, subtitle], i) => {
+            const Icon = INFO_ICONS[icon as keyof typeof INFO_ICONS] ?? Phone
+            return (
+              <div
+                key={i}
+                className={`flex items-center gap-3 p-6 ${i < rows.length - 1 ? 'md:border-r md:border-slate-100' : ''}`}
+              >
+                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-slate-900/10 text-slate-900">
+                  <Icon size={20} />
+                </div>
+                <div>
+                  <div className="font-semibold text-slate-900">{title}</div>
+                  <div className="text-sm text-slate-500">{subtitle}</div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  },
+}
+
 // ─── Pack assembly ────────────────────────────────────────────────────────────
 
 const typedComponents: Config<MedicalProps>['components'] = {
@@ -621,6 +858,9 @@ const typedComponents: Config<MedicalProps>['components'] = {
   MedicalInsuranceStrip,
   MedicalContactHours,
   MedicalFAQ,
+  MedicalTopNav,
+  MedicalHeroSplit,
+  MedicalContactInfoCards,
 }
 
 export const medical: ComponentPack = {
@@ -628,6 +868,10 @@ export const medical: ComponentPack = {
   label: 'Medical',
   components: typedComponents as NonNullable<Config['components']>,
   categories: {
+    'medical-nav-hero': {
+      title: 'Medical › Clinic template (nav, hero, info)',
+      components: ['MedicalTopNav', 'MedicalHeroSplit', 'MedicalContactInfoCards'],
+    },
     'medical-hero': { title: 'Medical › Hero', components: ['MedicalHero'] },
     'medical-services': {
       title: 'Medical › Services & Departments',
