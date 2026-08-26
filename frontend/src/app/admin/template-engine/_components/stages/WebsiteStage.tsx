@@ -187,7 +187,7 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
                     preview it.
                   </p>
                 </div>
-                <Button variant="outline" size="sm" asChild>
+                <Button size="sm" asChild>
                   <a href="/admin/page-builder" target="_blank" rel="noreferrer">
                     <ExternalLink className="mr-2 h-3.5 w-3.5" />
                     View all pages
@@ -203,7 +203,7 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
                         Page
                       </span>
                       <b className="text-sm">{key.charAt(0).toUpperCase() + key.slice(1)}</b>
-                      <Button variant="outline" size="sm" asChild className="mt-auto w-fit">
+                      <Button size="sm" asChild className="mt-auto w-fit">
                         <a href={`/admin/page-builder/${id}`} target="_blank" rel="noreferrer">
                           <ExternalLink className="mr-2 h-3.5 w-3.5" />
                           Open page
