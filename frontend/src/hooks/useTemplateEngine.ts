@@ -137,6 +137,10 @@ export function useUploadLogo(projectId: string) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['brand-kit', projectId] })
+      // The admin sidebar/dashboard logo now follows this project's brand-kit
+      // logo (backend writes straight into the same SettingField on upload) —
+      // refetch it immediately instead of waiting for a page reload.
+      qc.invalidateQueries({ queryKey: ['app-logo'] })
       toast({ title: 'Logo uploaded' })
     },
     onError: (err) => {
