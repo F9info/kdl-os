@@ -53,9 +53,7 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
 
   function openWebApp() {
     setOpenBrand('webapp')
-    // A prior visit's Next click already saved typography — skip straight to
-    // the assemble view instead of re-showing a step that's already done.
-    setWebAppStep(brandKit?.typography ? 'assemble' : 'typography')
+    setWebAppStep('typography')
   }
 
   return (
