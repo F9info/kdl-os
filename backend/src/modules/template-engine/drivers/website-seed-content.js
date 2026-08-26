@@ -13,14 +13,13 @@
  * when reading back persisted `data.content`, so a partial props object
  * would render with missing/blank fields instead of falling back.
  *
- * Deliberately NOT industry-specific (no per-project medical/construction
- * pack selection, despite those richer packs already existing): the
- * industry a project was created with is never persisted anywhere
- * retrievable at WEBSITE-stage time (see the driver's own "Industry-based
- * pack selection wired when brand-kit strategy field lands" note) — real
- * per-industry seeding needs that field added first. Copy here stays
- * generic/brand-neutral so it's honest for any project, not just one
- * industry.
+ * Home's nav/hero/info-cards now use the medical pack's clinic-styled
+ * components (see headerBlocks() below) — an exact-structure port of the
+ * design reference's medHeader()/medHome(), requested directly rather than
+ * gated behind industry detection. About/Contact still use the general
+ * pack's NavBar/Hero. There is still no per-project industry picker (the
+ * Templates step that offered one was removed) — this is simply what
+ * every project's Home page looks like now.
  */
 
 function block(pageKey, type, props) {
@@ -59,6 +58,45 @@ const FEATURE_CARDS = {
     '⚡ | Fast | Ships responsive pages to every device in minutes.',
     '🔧 | Flexible | Compose pages from reusable, editable blocks.',
     '🔒 | Reliable | Built on infrastructure that scales with you.',
+  ].join('\n'),
+};
+
+// Home page's nav/hero/info-cards — an exact-structure port of the design
+// reference's medHeader()/medHome() (KDL-558, "add this page first"). Uses
+// the medical pack's MedicalTopNav/MedicalHeroSplit/MedicalContactInfoCards
+// components (Puck merges every pack into one flat registry, so mixing
+// general + medical component types on one page is fine) since the
+// Templates picker was removed — this is now the only seed path, so it's
+// what "View all pages" always shows for Home. About/Contact still use the
+// general pack's NavBar/Hero for now — next step per the same request.
+const TOPNAV = {
+  welcomeText: 'Welcome — Your Health, Our Priority!',
+  phone: '(123) 456 7890',
+  hours: 'Mon–Sat: 8:00–18:00',
+  brand: 'Your Brand',
+  navLinks: NAV_LINKS,
+  ctaLabel: 'Appointment',
+  ctaHref: '#appointment',
+};
+
+const HOME_HERO = {
+  eyebrow: 'Welcome to our clinic',
+  headingLine1: 'Your Health',
+  headingLine2: 'Our Priority',
+  subtext: "We provide the best medical services for you and your family's health.",
+  primaryLabel: 'Our Services',
+  primaryHref: '#services',
+  secondaryLabel: 'Contact Us',
+  secondaryHref: '#contact',
+  image: 'https://placehold.co/900x800',
+};
+
+const CONTACT_INFO_CARDS = {
+  cells: [
+    'phone|Emergency Case|(123) 456 7890',
+    'clock|Opening Hours|Mon–Sat: 8:00–18:00',
+    'location|Location|123 Medical Street, NY',
+    'email|Email Us|info@yourbrand.com',
   ].join('\n'),
 };
 
@@ -128,14 +166,23 @@ const MIDDLE_BLOCKS_BY_KEY = {
   ],
 };
 
-export function seedWebsitePageData(pageKey, pageTitle) {
-  const buildMiddle = MIDDLE_BLOCKS_BY_KEY[pageKey] ?? MIDDLE_BLOCKS_BY_KEY.home;
-  const content = [
+function headerBlocks(pageKey) {
+  if (pageKey === 'home') {
+    return [
+      block(pageKey, 'MedicalTopNav', TOPNAV),
+      block(pageKey, 'MedicalHeroSplit', HOME_HERO),
+      block(pageKey, 'MedicalContactInfoCards', CONTACT_INFO_CARDS),
+    ];
+  }
+  return [
     block(pageKey, 'NavBar', NAV_BAR),
     block(pageKey, 'Hero', HERO_BY_KEY[pageKey] ?? HERO_BY_KEY.home),
-    ...buildMiddle(pageKey),
-    block(pageKey, 'Footer', FOOTER),
   ];
+}
+
+export function seedWebsitePageData(pageKey, pageTitle) {
+  const buildMiddle = MIDDLE_BLOCKS_BY_KEY[pageKey] ?? MIDDLE_BLOCKS_BY_KEY.home;
+  const content = [...headerBlocks(pageKey), ...buildMiddle(pageKey), block(pageKey, 'Footer', FOOTER)];
   return { root: { props: { title: pageTitle } }, content, zones: {} };
 }
 
