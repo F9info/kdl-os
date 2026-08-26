@@ -77,7 +77,7 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
         .openBrand
   )
   const [webAppStep, setWebAppStep] = useState<
-    'typography' | 'fontSettings' | 'navigation' | 'assemble'
+    'typography' | 'fontSettings' | 'navigation' | 'templates' | 'assemble'
   >(() => readLocal(uiStateKey, { webAppStep: 'typography' as const }).webAppStep)
   // Snapshot of what Typography's Next just saved — read straight from the
   // mutation result instead of waiting on brandKit's invalidate-refetch, so
@@ -137,18 +137,20 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
         </div>
       ) : (
         <div className="space-y-3">
-          {webAppStep !== 'fontSettings' && webAppStep !== 'navigation' && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setOpenBrand(null)}
-              className="gap-1.5 px-2"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Back to Brands
-            </Button>
-          )}
+          {webAppStep !== 'fontSettings' &&
+            webAppStep !== 'navigation' &&
+            webAppStep !== 'templates' && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setOpenBrand(null)}
+                className="gap-1.5 px-2"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Back to Brands
+              </Button>
+            )}
 
           {webAppStep === 'typography' ? (
             <WebAppTypographyStep
@@ -174,6 +176,12 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
             <NavigationStep
               projectId={run.projectId}
               onBack={() => setWebAppStep('fontSettings')}
+              onNext={() => setWebAppStep('templates')}
+            />
+          ) : webAppStep === 'templates' ? (
+            <TemplatesStep
+              projectId={run.projectId}
+              onBack={() => setWebAppStep('navigation')}
               onNext={() => setWebAppStep('assemble')}
             />
           ) : pageCount > 0 ? (
@@ -1072,6 +1080,98 @@ function NavigationStep({
             </p>
           )}
         </div>
+      </div>
+
+      <div className="flex justify-end">
+        <Button type="button" onClick={onNext}>
+          Next
+          <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// The real Puck packs this choice maps to — general/medical/construction —
+// already exist (frontend/src/app/admin/page-builder/packs/). Picking one
+// here decides which pack's components seed the assembled pages.
+const TEMPLATE_PACKS = [
+  {
+    key: 'general',
+    name: 'General',
+    description:
+      'Clean, universal layout — nav, hero, stats, feature cards. Works for any business.',
+  },
+  {
+    key: 'medical',
+    name: 'Medical',
+    description: 'Clinic/healthcare-styled layout — services, doctor profiles, appointment CTA.',
+  },
+  {
+    key: 'construction',
+    name: 'Construction',
+    description:
+      'Builder/contractor-styled layout — project gallery, crew, safety record, quote CTA.',
+  },
+] as const
+
+export type WebsiteTemplatePack = (typeof TEMPLATE_PACKS)[number]['key']
+
+function TemplatesStep({
+  projectId,
+  onBack,
+  onNext,
+}: {
+  projectId: string
+  onBack: () => void
+  onNext: () => void
+}) {
+  const storageKey = `te-website-ui:${projectId}:template`
+  const [selected, setSelected] = useState<WebsiteTemplatePack>(() =>
+    readLocal(storageKey, 'general' as WebsiteTemplatePack)
+  )
+
+  useEffect(() => {
+    writeLocal(storageKey, selected)
+  }, [storageKey, selected])
+
+  return (
+    <div className="space-y-3">
+      <Button type="button" variant="ghost" size="sm" onClick={onBack} className="gap-1.5 px-2">
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Back to Navigation
+      </Button>
+
+      <div>
+        <h3 className="text-base font-semibold">Web app · Home page template</h3>
+        <p className="text-sm text-muted-foreground">
+          Pick a page style. Your assembled pages will be built from this pack&apos;s blocks.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {TEMPLATE_PACKS.map((pack) => (
+          <button
+            key={pack.key}
+            type="button"
+            onClick={() => setSelected(pack.key)}
+            className={cn(
+              'rounded-lg border p-4 text-left transition-colors',
+              selected === pack.key ? 'border-primary ring-1 ring-primary' : 'hover:bg-accent'
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <input
+                type="radio"
+                checked={selected === pack.key}
+                readOnly
+                className="pointer-events-none"
+              />
+              <span className="text-sm font-semibold">{pack.name}</span>
+            </div>
+            <p className="mt-1.5 text-xs text-muted-foreground">{pack.description}</p>
+          </button>
+        ))}
       </div>
 
       <div className="flex justify-end">
