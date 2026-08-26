@@ -189,7 +189,7 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
                 </div>
                 <Button size="sm" asChild>
                   <a
-                    href={`/admin/page-builder/site?ids=${pages.map(([, id]) => id).join(',')}`}
+                    href={`/admin/template-engine/site?ids=${pages.map(([, id]) => id).join(',')}`}
                     target="_blank"
                     rel="noreferrer"
                   >
