@@ -255,9 +255,19 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
           ))}
           {FULL_WIDTH_SLUGS.map((slug) => fieldRow(slug))}
 
-          <Button size="sm" onClick={handleNext} disabled={isBusy}>
-            {isBusy ? 'Saving…' : 'Next'}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => saveMutation.mutate()}
+              disabled={isBusy}
+            >
+              {saveMutation.isPending ? 'Saving…' : 'Save'}
+            </Button>
+            <Button size="sm" onClick={handleNext} disabled={isBusy}>
+              {isBusy ? 'Saving…' : 'Next'}
+            </Button>
+          </div>
         </div>
       </div>
     </StageShell>
