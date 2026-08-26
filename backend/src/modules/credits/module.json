@@ -1,0 +1,16 @@
+{
+  "slug": "credits",
+  "name": "Credits",
+  "version": "1.0.0",
+  "description": "Per-project internal metering ledger — hold lifecycle, ledger, reconciliation.",
+  "core": false,
+  "visibleInCatalog": false,
+  "apiPrefix": "/api/credits",
+  "permissions": [
+    "credits"
+  ],
+  "nav": [],
+  "dependsOn": [],
+  "queues": [],
+  "env": []
+}

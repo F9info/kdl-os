@@ -1,0 +1,60 @@
+// Brand-Kit module schema (KDL-482, Phase 1).
+// projectId is a plain String (no FK) until KDL-449 ships the Project table.
+// D-BK-5: logo_original_* fields track the non-servable retained original bytes
+//   (stored directly in object storage, not via the media table so they are never
+//   routed or served). Hard-deleted after logo_original_expires_at.
+
+enum BrandKitStatus {
+  draft
+  extracted
+  inferred
+  approved
+
+  @@map("brand_kit_status")
+}
+
+model BrandKit {
+  id           String        @id @default(uuid())
+  project_id   String        @unique // one kit per project for v1 (OQ-E: future /kits/:kitId additive)
+  status       BrandKitStatus @default(draft)
+
+  // Sanitized logo stored through the media module (servable)
+  logo_media_id        String?
+  // Server-rendered 1024 px PNG raster derived from the sanitized logo
+  logo_raster_media_id String?
+
+  // D-BK-5: original upload bytes retained non-servably in object storage for
+  // sanitizer-regression diagnosis. Never routed, never rendered, never in PDF.
+  logo_original_path       String?   // MinIO object key — no serving URL
+  logo_original_expires_at DateTime? // 90 days from upload; hard-deleted after this
+
+  // §2 OKLCH palette output
+  palette        Json?
+  // §3 contrast report
+  contrast_report Json?
+
+  // §4 AI inference outputs (populated by Phase 2 — KDL-483)
+  typography       Json?
+  tone             Json?
+  inference_source String? // "ai" | "fallback"
+  fallback_reason  String? // F-code from §4.4
+
+  // Fields manually overridden by the user before approval
+  overridden_fields String[] @default([])
+
+  // Approval gate: all contrastReport.adjustments[] must be acknowledged
+  acknowledged_contrast_adjustments Boolean @default(false)
+
+  // pdf-lib guidelines PDF (populated post-approval — out of scope Phase 1)
+  guidelines_pdf_media_id String?
+
+  schema_version Int      @default(1)
+  approved_at    DateTime?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  @@index([project_id])
+  @@index([status])
+  @@index([logo_original_expires_at])
+  @@map("brand_kits")
+}

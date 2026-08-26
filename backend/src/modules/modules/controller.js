@@ -9,6 +9,10 @@ import {
   patchModuleSettings,
 } from './service.js';
 
+function hasEditPermission(req) {
+  return req.userPermissions?.bypass || (req.userPermissions?.permissions ?? []).includes('modules:edit');
+}
+
 export const getModules = async (req, res, next) => {
   try {
     const modules = await listModules();
@@ -29,20 +33,26 @@ export const getEnabledModules = async (req, res, next) => {
 
 export const postInstall = async (req, res, next) => {
   try {
-    const mod = await installModule(req.params.slug, req.user?.id);
-    successResponse(res, { module: mod }, 201);
+    const resolveConflicts = req.validated?.body?.resolveConflicts ?? false;
+    // Mode switch disables modules, so modules:edit is required in addition to modules:add
+    if (resolveConflicts && !hasEditPermission(req)) {
+      return errorResponse(res, 'Module mode switch requires modules:edit permission', 403);
+    }
+    const { installedDependencies, ...module } = await installModule(req.params.slug, req.user?.id, { resolveConflicts });
+    successResponse(res, { module, installedDependencies }, 201);
   } catch (err) {
-    if (err.status) return errorResponse(res, err.message, err.status);
+    if (err.status) return errorResponse(res, err.message, err.status, err.details ?? null);
     next(err);
   }
 };
 
 export const postEnable = async (req, res, next) => {
   try {
-    const mod = await enableModule(req.params.slug, req.user?.id);
+    const resolveConflicts = req.validated?.body?.resolveConflicts ?? false;
+    const mod = await enableModule(req.params.slug, req.user?.id, { resolveConflicts });
     successResponse(res, { module: mod });
   } catch (err) {
-    if (err.status) return errorResponse(res, err.message, err.status);
+    if (err.status) return errorResponse(res, err.message, err.status, err.details ?? null);
     next(err);
   }
 };

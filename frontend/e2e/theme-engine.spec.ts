@@ -1,0 +1,393 @@
+/**
+ * KDL-178 C2 E2E gate — Theme Engine module (independent grader spec).
+ *
+ * Gate 1: edit a Web App color in the admin UI → Save → GET /tokens?platform=webapp
+ *         reflects the new value in BOTH css and json.
+ * Gate 2: disable the theme-engine module → routes 404 → re-enable →
+ *         schema + tokens byte-identical to the pre-disable snapshot
+ *         (cascade-clean round-trip; row-orphan SQL check runs outside this spec).
+ *
+ * Prerequisites: full stack running (frontend :3001, backend :4000), images
+ * built from the gate branch, theme-engine seeded + module ENABLED.
+ * Run:
+ *   cd frontend && E2E_BASE_URL=http://localhost:3001 pnpm e2e e2e/theme-engine.spec.ts
+ */
+import { test, expect, request, type APIRequestContext } from '@playwright/test'
+import { ADMIN } from './helpers/credentials'
+
+const API_URL = process.env.E2E_API_URL ?? 'http://localhost:4000/api'
+const NEW_COLOR = '#0b1c2d'
+
+let api: APIRequestContext
+let adminToken: string
+
+// Target field discovered from the real seeded schema in beforeAll.
+let targetPaneId: string
+let targetTypeCuid: string
+let targetFieldId: string
+let targetFieldSlug: string
+let targetOriginalValue: string
+let expectedCssVar: string
+
+const authHeaders = () => ({ Authorization: `Bearer ${adminToken}` })
+
+async function getModuleStatus(): Promise<string | null> {
+  const res = await api.get(`${API_URL}/modules`, { headers: authHeaders() })
+  if (!res.ok()) return null
+  const modules: Array<{ slug: string; status: string }> = (await res.json()).data?.modules ?? []
+  return modules.find((m) => m.slug === 'theme-engine')?.status ?? null
+}
+
+async function ensureEnabled() {
+  const status = await getModuleStatus()
+  if (status === 'ENABLED') return
+  if (status === 'AVAILABLE' || status === null) {
+    const r = await api.post(`${API_URL}/modules/theme-engine/install`, {
+      headers: authHeaders(),
+    })
+    expect(r.ok(), `install failed: ${await r.text()}`).toBeTruthy()
+  }
+  const r = await api.post(`${API_URL}/modules/theme-engine/enable`, { headers: authHeaders() })
+  expect(r.ok(), `enable failed: ${await r.text()}`).toBeTruthy()
+}
+
+async function fetchSchema(platform: string) {
+  const res = await api.get(`${API_URL}/theme-engine/schema?platform=${platform}`, {
+    headers: authHeaders(),
+  })
+  expect(res.ok(), `schema ${platform} failed: ${res.status()}`).toBeTruthy()
+  return (await res.json()).data
+}
+
+async function fetchTokens(platform: string, expectOk = true) {
+  const res = await api.get(`${API_URL}/theme-engine/tokens?platform=${platform}`)
+  if (!expectOk) return res
+  expect(res.ok(), `tokens ${platform} failed: ${res.status()}`).toBeTruthy()
+  return (await res.json()).data
+}
+
+// slug {platform}.{rest...} → css var --{rest joined by _, non-alnum → _}
+function cssVarFromSlug(slug: string): string {
+  return (
+    '--' +
+    slug
+      .split('.')
+      .slice(1)
+      .map((s) => s.replace(/[^a-z0-9]/gi, '_').toLowerCase())
+      .join('_')
+  )
+}
+
+async function loginUi(page: import('@playwright/test').Page) {
+  await page.goto('/login')
+  await page.getByPlaceholder('admin@kdl.com').fill(ADMIN.email)
+  await page.getByPlaceholder('••••••••').fill(ADMIN.password)
+  await page.getByRole('button', { name: 'Sign in' }).click()
+  await expect(page).toHaveURL(/\/admin\/dashboard/)
+}
+
+test.describe.configure({ mode: 'serial' })
+
+test.beforeAll(async () => {
+  api = await request.newContext()
+  const login = await api.post(`${API_URL}/auth/login`, {
+    data: { email: ADMIN.email, password: ADMIN.password },
+  })
+  expect(login.ok(), 'seeded super admin must be able to log in').toBeTruthy()
+  adminToken = (await login.json()).data.accessToken
+  await ensureEnabled()
+
+  // Pick a real color field from the webapp schema: prefer an untagged group
+  // (always visible regardless of theme/device toggles).
+  const schemaData = await fetchSchema('webapp')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const panes: any[] = schemaData.schema ?? schemaData
+  expect(
+    Array.isArray(panes),
+    `schema payload not an array: ${JSON.stringify(schemaData).slice(0, 200)}`
+  ).toBeTruthy()
+  outer: for (const pane of panes) {
+    for (const group of pane.groups ?? []) {
+      if (group.tag) continue
+      for (const field of group.fields ?? []) {
+        if (field.input_type === 'color') {
+          targetPaneId = pane.id
+          targetTypeCuid = pane.type_id
+          targetFieldId = field.id
+          targetFieldSlug = field.slug
+          targetOriginalValue = field.effective_value ?? field.value
+          break outer
+        }
+      }
+    }
+  }
+  expect(targetFieldId, 'no untagged color field found in webapp schema').toBeTruthy()
+  expectedCssVar = cssVarFromSlug(targetFieldSlug)
+  expect(targetOriginalValue).not.toBe(NEW_COLOR)
+})
+
+test.afterAll(async () => {
+  // Restore the edited field to its original value via the API (real Type cuid).
+  if (targetTypeCuid && targetFieldId && targetOriginalValue) {
+    await api.post(`${API_URL}/theme-engine/values`, {
+      headers: authHeaders(),
+      data: {
+        platform: 'webapp',
+        type_id: targetTypeCuid,
+        values: [{ field_id: targetFieldId, value: targetOriginalValue }],
+      },
+    })
+  }
+  await ensureEnabled()
+  await api.dispose()
+})
+
+test('Gate 1 — admin UI edit → Save → /tokens reflects new value (css + json)', async ({
+  page,
+}) => {
+  await loginUi(page)
+  await page.goto('/admin/theme-engine')
+
+  // Step 1: platform-picker landing screen — pick Webapp to enter the editor.
+  await page.getByTestId('landing-card-webapp').click()
+  await page.getByTestId('landing-subcard-webapp-frontend').click()
+
+  // Pane sidebar must render from the REAL API payload.
+  await expect(
+    page.getByTestId(`pane-btn-${targetPaneId}`),
+    'pane sidebar did not render from the real /schema payload'
+  ).toBeVisible({ timeout: 15_000 })
+  await page.getByTestId(`pane-btn-${targetPaneId}`).click()
+
+  const fieldRow = page.getByTestId(`field-row-${targetFieldId}`)
+  await expect(fieldRow, `field row ${targetFieldSlug} not rendered`).toBeVisible({
+    timeout: 10_000,
+  })
+
+  const colorInput = fieldRow.locator('input[type="color"]')
+  await expect(colorInput).toBeVisible()
+  await colorInput.fill(NEW_COLOR)
+  await colorInput.dispatchEvent('change')
+
+  const saveBtn = page.getByTestId('btn-save')
+  await expect(saveBtn, 'Save did not enable after edit (dirty tracking broken)').toBeEnabled()
+
+  const [saveResponse] = await Promise.all([
+    page.waitForResponse(
+      (r) => r.url().includes('/theme-engine/values') && r.request().method() === 'POST'
+    ),
+    saveBtn.click(),
+  ])
+  expect(
+    saveResponse.status(),
+    `POST /values returned ${saveResponse.status()}: ${await saveResponse.text()}`
+  ).toBe(200)
+
+  // Round-trip: public tokens endpoint must reflect the new value in css AND json.
+  const tokens = await fetchTokens('webapp')
+  expect(tokens.css, `css missing ${expectedCssVar}: ${NEW_COLOR}`).toContain(
+    `${expectedCssVar}: ${NEW_COLOR}`
+  )
+  expect(JSON.stringify(tokens.json)).toContain(NEW_COLOR)
+})
+
+test('Gate 2 — disable → routes 404 → re-enable → schema/tokens identical, cascade-clean', async ({
+  page,
+}) => {
+  // Pre-disable snapshot across all 4 platforms + tokens.
+  const platforms = ['webapp', 'tv', 'android', 'ios']
+  const schemaBefore: Record<string, string> = {}
+  for (const p of platforms) schemaBefore[p] = JSON.stringify(await fetchSchema(p))
+  const tokensBefore = JSON.stringify(await fetchTokens('webapp'))
+
+  // Disable.
+  const dis = await api.post(`${API_URL}/modules/theme-engine/disable`, {
+    headers: authHeaders(),
+  })
+  expect(dis.ok(), `disable failed: ${await dis.text()}`).toBeTruthy()
+
+  // All module routes must 404 while disabled — including the public tokens route.
+  const schemaRes = await api.get(`${API_URL}/theme-engine/schema?platform=webapp`, {
+    headers: authHeaders(),
+  })
+  expect(schemaRes.status(), 'schema must 404 while disabled').toBe(404)
+  const tokensRes = await fetchTokens('webapp', false)
+  expect(tokensRes.status(), 'public tokens must 404 while disabled').toBe(404)
+
+  // UI: module page must not render the landing screen while disabled.
+  await loginUi(page)
+  await page.goto('/admin/theme-engine')
+  await expect(page.getByTestId('theme-engine-landing')).not.toBeVisible({ timeout: 10_000 })
+
+  // Re-enable.
+  const en = await api.post(`${API_URL}/modules/theme-engine/enable`, { headers: authHeaders() })
+  expect(en.ok(), `enable failed: ${await en.text()}`).toBeTruthy()
+
+  // Round-trip clean: schema and tokens byte-identical — nothing orphaned, nothing lost.
+  for (const p of platforms) {
+    expect(JSON.stringify(await fetchSchema(p)), `schema ${p} changed across disable/enable`).toBe(
+      schemaBefore[p]
+    )
+  }
+  expect(JSON.stringify(await fetchTokens('webapp')), 'tokens changed across disable/enable').toBe(
+    tokensBefore
+  )
+
+  // UI back.
+  await page.goto('/admin/theme-engine')
+  await page.getByTestId('landing-card-webapp').click()
+  await page.getByTestId('landing-subcard-webapp-frontend').click()
+  await expect(page.getByTestId('theme-engine-page')).toBeVisible({ timeout: 15_000 })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// KDL-631: blanket pointer-events-none removed — platform navigation must work
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Returns true when no ancestor of `locator` carries pointer-events:none or the CSS class pointer-events-none. */
+async function noPointerBlockingAncestor(
+  locator: import('@playwright/test').Locator
+): Promise<boolean> {
+  return locator.evaluate((el) => {
+    let node: Element | null = el.parentElement
+    while (node) {
+      const style = window.getComputedStyle(node)
+      if (style.pointerEvents === 'none') return false
+      node = node.parentElement
+    }
+    return true
+  })
+}
+
+test.describe('KDL-631 — platform navigation clickable with template-engine enabled', () => {
+  test.describe.configure({ mode: 'serial' })
+
+  test.beforeAll(async () => {
+    // Re-use the `api` / `adminToken` established in the outer beforeAll.
+    await ensureEnabled()
+  })
+
+  test('platform cards have no pointer-events-none ancestor (blanket wrapper gone)', async ({
+    page,
+  }) => {
+    await loginUi(page)
+    await page.goto('/admin/theme-engine')
+    await expect(page.getByTestId('theme-engine-landing')).toBeVisible({ timeout: 10_000 })
+
+    const webappCard = page.getByTestId('landing-card-webapp')
+    await expect(webappCard).toBeVisible()
+
+    const clean = await noPointerBlockingAncestor(webappCard)
+    expect(clean, 'An ancestor of the Webapp card carries pointer-events:none').toBe(true)
+  })
+
+  const PLATFORMS: { cardId: string; subCardId: string; label: string }[] = [
+    {
+      cardId: 'landing-card-webapp',
+      subCardId: 'landing-subcard-webapp-frontend',
+      label: 'Webapp',
+    },
+    { cardId: 'landing-card-tv', subCardId: 'landing-subcard-tv-app', label: 'TV' },
+    {
+      cardId: 'landing-card-android',
+      subCardId: 'landing-subcard-android-app',
+      label: 'Android Native',
+    },
+    { cardId: 'landing-card-ios', subCardId: 'landing-subcard-ios-app', label: 'iOS Native' },
+  ]
+
+  for (const { cardId, subCardId, label } of PLATFORMS) {
+    test(`${label} — card click → sub-section → editor renders with ≥1 editable input`, async ({
+      page,
+    }) => {
+      await loginUi(page)
+      // Clear localStorage so we always start from the landing screen.
+      await page.goto('/admin/theme-engine')
+      await page.evaluate(() => {
+        localStorage.removeItem('te_top_platform')
+        localStorage.removeItem('te_sub_label')
+        localStorage.removeItem('te_entered')
+        localStorage.removeItem('th_platform')
+        localStorage.removeItem('te_pane')
+      })
+      await page.reload()
+
+      await expect(page.getByTestId('theme-engine-landing')).toBeVisible({ timeout: 10_000 })
+
+      await page.getByTestId(cardId).click()
+      await expect(page.getByTestId('theme-engine-sublanding')).toBeVisible({ timeout: 8_000 })
+
+      await page.getByTestId(subCardId).click()
+      await expect(page.getByTestId('theme-engine-page')).toBeVisible({ timeout: 15_000 })
+
+      // At least one input or button inside the field area (editor loaded real schema).
+      const fieldInputs = page.locator(
+        '[data-testid^="field-row-"] input, [data-testid^="field-row-"] select, [data-testid^="field-row-"] button'
+      )
+      await expect(fieldInputs.first()).toBeVisible({ timeout: 15_000 })
+      const count = await fieldInputs.count()
+      expect(count, `${label} editor rendered 0 editable inputs`).toBeGreaterThan(0)
+    })
+  }
+
+  test('Webapp — edit one color, save, reload, value persisted', async ({ page }) => {
+    const EDIT_COLOR = '#1a2b3c'
+
+    await loginUi(page)
+    await page.goto('/admin/theme-engine')
+    await page.evaluate(() => {
+      localStorage.removeItem('te_top_platform')
+      localStorage.removeItem('te_sub_label')
+      localStorage.removeItem('te_entered')
+      localStorage.removeItem('th_platform')
+      localStorage.removeItem('te_pane')
+    })
+    await page.reload()
+
+    await expect(page.getByTestId('theme-engine-landing')).toBeVisible({ timeout: 10_000 })
+    await page.getByTestId('landing-card-webapp').click()
+    await page.getByTestId('landing-subcard-webapp-frontend').click()
+    await expect(page.getByTestId('theme-engine-page')).toBeVisible({ timeout: 15_000 })
+
+    // Wait for the pane sidebar to load from the real API.
+    await expect(page.getByTestId(`pane-btn-${targetPaneId}`)).toBeVisible({ timeout: 15_000 })
+    await page.getByTestId(`pane-btn-${targetPaneId}`).click()
+
+    const fieldRow = page.getByTestId(`field-row-${targetFieldId}`)
+    await expect(fieldRow).toBeVisible({ timeout: 10_000 })
+
+    const colorInput = fieldRow.locator('input[type="color"]')
+    await expect(colorInput).toBeVisible()
+    await colorInput.fill(EDIT_COLOR)
+    await colorInput.dispatchEvent('change')
+
+    const saveBtn = page.getByTestId('btn-save')
+    await expect(saveBtn).toBeEnabled()
+
+    const [saveResponse] = await Promise.all([
+      page.waitForResponse(
+        (r) => r.url().includes('/theme-engine/values') && r.request().method() === 'POST'
+      ),
+      saveBtn.click(),
+    ])
+    expect(saveResponse.status(), `POST /values returned ${saveResponse.status()}`).toBe(200)
+
+    // Reload and assert value persisted.
+    await page.reload()
+    await expect(page.getByTestId('theme-engine-page')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByTestId(`pane-btn-${targetPaneId}`)).toBeVisible({ timeout: 15_000 })
+    await page.getByTestId(`pane-btn-${targetPaneId}`).click()
+
+    const reloadedRow = page.getByTestId(`field-row-${targetFieldId}`)
+    await expect(reloadedRow).toBeVisible({ timeout: 10_000 })
+    const reloadedInput = reloadedRow.locator('input[type="color"]')
+    await expect(reloadedInput).toHaveValue(EDIT_COLOR)
+
+    // Restore original value.
+    await reloadedInput.fill(targetOriginalValue)
+    await reloadedInput.dispatchEvent('change')
+    const restoreBtn = page.getByTestId('btn-save')
+    await expect(restoreBtn).toBeEnabled()
+    await restoreBtn.click()
+  })
+})

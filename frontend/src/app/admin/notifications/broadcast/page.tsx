@@ -129,7 +129,7 @@ export default function BroadcastPage() {
   return (
     <ModuleGuard slug="notifications">
       <PermissionGuard permission="notifications:publish">
-        <div className="p-6 max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto">
           <PageHeader title="Send Broadcast" />
 
           <div className="mt-6 space-y-6">

@@ -14,6 +14,7 @@
 **All boxes must be checked before requesting review.**
 
 - [ ] This branch is rebased on top of current `master` (run `git fetch && git rebase origin/master` if not)
+- [ ] CI is not needed for this PR (docs/prose only) → add `[skip ci]` to the commit message or squash commit title
 - [ ] PR touches **one concern only** — split if it mixes feature + refactor + lockfile
 - [ ] Lockfile changes are in **at most one workspace** (frontend _or_ backend _or_ ai-services — never all three in one PR)
 - [ ] If lockfile was updated: ran `pnpm install --frozen-lockfile` / `npm ci` locally and CI is clean

@@ -1,0 +1,20 @@
+{
+  "slug": "brand-kit",
+  "name": "Brand Kit",
+  "version": "1.0.0",
+  "description": "Logo intake, OKLCH palette extraction, WCAG AA contrast report, and theme-token hand-off for Template Engine Mode A",
+  "core": false,
+  "visibleInCatalog": false,
+  "apiPrefix": "/api/brand-kit",
+  "permissions": [
+    {
+      "name": "brand-kit",
+      "actions": ["view", "edit", "approve", "render"]
+    }
+  ],
+  "nav": [],
+  "dependsOn": ["theme-engine"],
+  "conflictsWith": [],
+  "queues": [],
+  "env": []
+}

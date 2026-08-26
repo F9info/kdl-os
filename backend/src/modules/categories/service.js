@@ -7,7 +7,7 @@ const SORTABLE = ['name', 'created_at', 'is_active'];
 const CATEGORY_INCLUDE = { type: { select: { id: true, name: true } } };
 
 // The generic admin API manages only standalone rows (owner_module = null).
-// Module-owned rows (e.g. template-engine) must never be mutated or deleted here,
+// Module-owned rows (e.g. theme-engine) must never be mutated or deleted here,
 // and generic writes may only reference standalone types.
 const WRITABLE = { owner_module: null };
 

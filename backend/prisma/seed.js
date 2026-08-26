@@ -4,6 +4,9 @@ import { prisma } from '../src/config/database.js';
 import { resolveSeedAdminCredentials } from './seed-credentials.js';
 import { seedUserManagement } from './seeders/user-management.seed.js';
 import { seedCoreModules } from './seeders/modules.seed.js';
+import { seedBrandKit } from './seeders/brand-kit.seed.js';
+import { seedBrandProfileFields } from './seeders/brand-profile-fields.seed.js';
+import { seedProjects } from '../src/modules/projects/seed.js';
 
 async function main() {
   const { email, password, generated } = resolveSeedAdminCredentials();
@@ -35,7 +38,10 @@ async function main() {
   // Core modules (incl. media's manifest-driven permissions) must be
   // registered before seedUserManagement so its Admin-role grant can see them.
   await seedCoreModules(prisma);
+  await seedProjects(prisma);
   await seedUserManagement(prisma);
+  await seedBrandKit(prisma);
+  await seedBrandProfileFields(prisma);
 }
 
 main()

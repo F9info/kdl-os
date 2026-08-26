@@ -44,6 +44,10 @@ docker compose up --build
 cd backend && npx prisma migrate dev && node prisma/seed.js
 ```
 
+# cd backend - node scripts/reset-admin-password.js --password 'Admin@123456'
+
+# npm run db:migrate and npm run db:seed
+
 ---
 
 ## Service URLs
@@ -90,6 +94,8 @@ Production overrides: `restart: always`, `NODE_ENV: production`, no host ports e
 | [docs/SETUP.md](docs/SETUP.md) | Full developer onboarding — local dev, Docker, migrations, troubleshooting |
 | [docs/API_REFERENCE.md](docs/API_REFERENCE.md) | All API endpoints with request/response examples |
 | [docs/ENV_REFERENCE.md](docs/ENV_REFERENCE.md) | All environment variables with descriptions |
+| [docs/ADMIN_ACCESS.md](docs/ADMIN_ACCESS.md) | Admin login — what the seeded password is, forced first-login change, lockout recovery |
+| [STATUS.md](STATUS.md) | **What is done vs pending** — generated rollup of module build state, template-engine drivers, true PR merge state, blocked issues |
 
 ---
 
@@ -103,6 +109,10 @@ Production overrides: `restart: always`, `NODE_ENV: production`, no host ports e
 | 4 | Frontend — Auth Pages, Admin Panel | ✅ Complete |
 | 5 | AI Services — Orchestrator, RAG, Agents, Brains | ✅ Complete |
 | 6 | Final Documentation | ✅ Complete |
+
+This table covers v1 only and does not track work since. For current build state — per-module,
+per-stage, and per-PR — see [STATUS.md](STATUS.md), which is generated from the code rather
+than hand-maintained.
 
 ---
 

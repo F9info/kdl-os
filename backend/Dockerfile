@@ -72,7 +72,13 @@ COPY --from=builder --chown=nodeuser:nodejs /app/src ./src
 COPY --from=builder --chown=nodeuser:nodejs /app/prisma ./prisma
 COPY --chown=nodeuser:nodejs package.json ./
 COPY --chown=nodeuser:nodejs prisma.config.ts ./
+# Ship scripts/ so maintenance ops (reset-admin-password.js, backfills) can run
+# via `docker exec` without a separate `docker cp` step.
+COPY --chown=nodeuser:nodejs scripts ./scripts
 USER nodeuser
 EXPOSE 4000
 # INTENTIONAL BREAK for KDL-404 smoke-fail proof — backend always exits 1
 CMD ["sh", "-c", "echo 'DELIBERATE BREAK: proving smoke job fails' && exit 1"]
+# migrate deploy applies pending SQL migrations (including data-only backfills) before
+# the server starts; db push was silently skipping the migrations/ folder.
+CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy && node src/index.js"]

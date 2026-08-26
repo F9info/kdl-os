@@ -2,14 +2,15 @@
   "slug": "template-engine",
   "name": "Template Engine",
   "version": "1.0.0",
-  "description": "Multi-platform design-system / theming engine",
+  "description": "9-stage DAG orchestrator — drives brand-kit, theme-engine, page-builder, collateral, and credits via their public APIs (Mode A / Studio). No rendering logic lives here.",
   "core": false,
   "apiPrefix": "/api/template-engine",
-  "permissions": ["template-engine"],
+  "permissions": [{ "name": "template-engine", "actions": ["view", "run", "approve", "export"] }],
   "nav": [
-    { "label": "Template Engine", "path": "/admin/template-engine", "icon": "Palette", "permission": "template-engine:view" }
+    { "label": "Template Engine", "path": "/admin/template-engine", "icon": "Sparkles", "permission": "template-engine:view" }
   ],
-  "dependsOn": [],
+  "dependsOn": ["projects", "theme-engine", "theme-engine-ui", "page-builder", "page-builder-ui", "brand-kit", "collateral", "credits"],
+  "conflictsWith": [],
   "queues": [],
   "env": []
 }

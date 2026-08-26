@@ -10,6 +10,78 @@ import { resolvePermissionEntry, permissionModuleLabel } from '../../shared/modu
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MODULES_DIR = join(__dirname, '..');
 
+/**
+ * Compute which ENABLED modules currently block `slug` from being enabled.
+ * Checks both directions: own manifest's conflictsWith AND other manifests
+ * that list this slug. Pure function — DB results must be supplied.
+ */
+function computeBlockingConflicts(slug, manifest, allEnabledModules) {
+  const enabledBySlug = new Map(allEnabledModules.map((m) => [m.slug, m]));
+  const blockers = new Map();
+
+  // Direction 1: this manifest lists a currently-enabled slug as a conflict
+  for (const blocker of manifest.conflictsWith ?? []) {
+    if (enabledBySlug.has(blocker)) {
+      const bf = loadedManifests.get(blocker);
+      const dbMod = enabledBySlug.get(blocker);
+      blockers.set(blocker, { slug: blocker, name: bf?.name ?? dbMod?.name ?? blocker, status: 'ENABLED' });
+    }
+  }
+
+  // Direction 2: another enabled manifest lists this slug as a conflict
+  for (const [mSlug, mf] of loadedManifests) {
+    if (mSlug === slug) continue;
+    if ((mf.conflictsWith ?? []).includes(slug) && enabledBySlug.has(mSlug)) {
+      blockers.set(mSlug, { slug: mSlug, name: mf.name ?? mSlug, status: 'ENABLED' });
+    }
+  }
+
+  return [...blockers.values()];
+}
+
+function throwConflictError(slug, blockingConflicts) {
+  const names = blockingConflicts.map((c) => `"${c.slug}"`).join(', ');
+  const err = new Error(`Cannot enable "${slug}": conflicts with active modules: ${names}`);
+  err.status = 409;
+  err.details = {
+    code: 'MODULE_CONFLICT',
+    conflicts: blockingConflicts.map((c) => ({ slug: c.slug, name: c.name })),
+  };
+  throw err;
+}
+
+/**
+ * Validate that each conflict slug can safely be disabled in a mode switch.
+ * Guards mirror disableModule: refuse if core, refuse if a non-switching
+ * ENABLED module depends on it.
+ */
+function validateModeSwitchGuards(blockingConflicts, allEnabledModules) {
+  const conflictSlugs = new Set(blockingConflicts.map((c) => c.slug));
+
+  for (const conflict of blockingConflicts) {
+    const conflictMod = allEnabledModules.find((m) => m.slug === conflict.slug);
+
+    if (conflictMod?.is_core) {
+      const err = new Error(`Cannot disable core module "${conflict.slug}" as part of mode switch`);
+      err.status = 409;
+      throw err;
+    }
+
+    const dependents = allEnabledModules.filter((m) => {
+      if (conflictSlugs.has(m.slug)) return false;
+      const mf = loadedManifests.get(m.slug);
+      return mf?.dependsOn?.includes(conflict.slug);
+    });
+
+    if (dependents.length > 0) {
+      const names = dependents.map((m) => m.slug).join(', ');
+      const err = new Error(`Cannot disable "${conflict.slug}" as part of mode switch: modules [${names}] depend on it`);
+      err.status = 409;
+      throw err;
+    }
+  }
+}
+
 function checkEnvVars(manifest) {
   const missing = (manifest.env ?? []).filter((key) => !process.env[key]);
   if (missing.length > 0) {
@@ -67,7 +139,16 @@ async function deregisterPermissions(manifest, tx = prisma) {
 
 // ── Public lifecycle operations ──────────────────────────────────────────────
 
-export async function installModule(slug, actorId) {
+// DFS topological sort — returns slugs in dependency-first install order.
+// Throws 404 for unknown slugs, 409 for cycles.
+function buildInstallOrder(slug, order = [], visiting = new Set(), done = new Set()) {
+  if (done.has(slug)) return order;
+  if (visiting.has(slug)) {
+    const err = new Error(`Circular dependency detected involving "${slug}"`);
+    err.status = 409;
+    throw err;
+  }
+
   const manifest = loadedManifests.get(slug);
   if (!manifest) {
     const err = new Error(`Module "${slug}" not found`);
@@ -75,21 +156,26 @@ export async function installModule(slug, actorId) {
     throw err;
   }
 
-  const existing = await prisma.module.findUnique({ where: { slug } });
-  if (existing) {
-    const err = new Error(`Module "${slug}" is already installed`);
-    err.status = 409;
-    throw err;
-  }
-
-  // Check dependsOn modules are available (at least INSTALLED)
+  visiting.add(slug);
   for (const dep of manifest.dependsOn ?? []) {
-    const depMod = await prisma.module.findUnique({ where: { slug: dep } });
-    if (!depMod) {
-      const err = new Error(`Dependency "${dep}" is not installed`);
-      err.status = 409;
-      throw err;
-    }
+    buildInstallOrder(dep, order, visiting, done);
+  }
+  visiting.delete(slug);
+  done.add(slug);
+  order.push(slug);
+  return order;
+}
+
+// Install exactly one module. Caller must ensure deps are already installed.
+async function _installSingle(slug, actorId, { resolveConflicts = false } = {}) {
+  const manifest = loadedManifests.get(slug);
+
+  const allEnabled = await prisma.module.findMany({ where: { status: 'ENABLED' } });
+  const blockingConflicts = computeBlockingConflicts(slug, manifest, allEnabled);
+
+  if (blockingConflicts.length > 0) {
+    if (!resolveConflicts) throwConflictError(slug, blockingConflicts);
+    validateModeSwitchGuards(blockingConflicts, allEnabled);
   }
 
   checkEnvVars(manifest);
@@ -115,6 +201,11 @@ export async function installModule(slug, actorId) {
   try {
     mod = await prisma.$transaction(
       async (tx) => {
+        // When resolving conflicts atomically, disable blockers first
+        for (const conflict of blockingConflicts) {
+          await tx.module.update({ where: { slug: conflict.slug }, data: { status: 'DISABLED' } });
+        }
+
         await registerPermissions(manifest, tx);
 
         // Seed runs on the transaction client so a failed install leaves no
@@ -144,19 +235,143 @@ export async function installModule(slug, actorId) {
     throw err;
   }
 
-  writeActivityAsync({
-    actor: actorId,
-    module: 'user-management/modules',
-    action: 'installed',
-    subject_type: 'Module',
-    subject_id: mod.id,
-    description: `Module "${slug}" installed`,
-  });
+  await invalidateModuleCache(slug);
+  for (const conflict of blockingConflicts) {
+    await invalidateModuleCache(conflict.slug);
+  }
+
+  if (blockingConflicts.length > 0) {
+    writeActivityAsync({
+      actor: actorId,
+      module: 'user-management/modules',
+      action: 'mode_switched',
+      subject_type: 'Module',
+      subject_id: mod.id,
+      description: `Mode switched: "${slug}" installed, disabled [${blockingConflicts.map((c) => c.slug).join(', ')}]`,
+    });
+  } else {
+    writeActivityAsync({
+      actor: actorId,
+      module: 'user-management/modules',
+      action: 'installed',
+      subject_type: 'Module',
+      subject_id: mod.id,
+      description: `Module "${slug}" installed`,
+    });
+  }
 
   return mod;
 }
 
-export async function enableModule(slug, actorId) {
+export async function installModule(slug, actorId, { resolveConflicts = false } = {}) {
+  // Build full transitive install order (throws 404 for unknown slugs, 409 on cycle)
+  const installOrder = buildInstallOrder(slug);
+
+  // Preserve existing 409 if the target itself is already installed. Checked
+  // per-slug (not a batch findMany) so each dep's own install state is read
+  // fresh right before we decide whether to install it — a batch check taken
+  // once up front raced with `_installSingle`'s effects and, for a module that
+  // depends on something already installed, re-created that dependency's row
+  // (P2002 double-create — KDL-568).
+  if (await prisma.module.findUnique({ where: { slug } })) {
+    const err = new Error(`Module "${slug}" is already installed`);
+    err.status = 409;
+    throw err;
+  }
+
+  // Auto-install every missing dep in topological order (target is last element)
+  const installedDependencies = [];
+  for (const depSlug of installOrder.slice(0, -1)) {
+    const existingDep = await prisma.module.findUnique({ where: { slug: depSlug } });
+    if (existingDep) continue;
+    await _installSingle(depSlug, actorId, { resolveConflicts });
+    installedDependencies.push(depSlug);
+  }
+
+  // Install the target itself
+  const mod = await _installSingle(slug, actorId, { resolveConflicts });
+
+  // Return shape stays the bare module (KDL-542 contract) — installedDependencies
+  // rides along as a side-channel field rather than nesting the module under
+  // `.module`, which silently broke every existing caller/test expecting the
+  // bare object.
+  return { ...mod, installedDependencies };
+}
+
+// Private helper: enable exactly one module, assuming all its deps are already
+// ENABLED. Idempotent — returns the module record unchanged when already ENABLED,
+// so the cascade loop in enableModule() can call it unconditionally (KDL-619).
+async function _enableSingle(slug, actorId, { resolveConflicts = false } = {}) {
+  const mod = await prisma.module.findUnique({ where: { slug } });
+  if (!mod) {
+    const err = new Error(`Module "${slug}" not found`);
+    err.status = 404;
+    throw err;
+  }
+
+  // Idempotent: already ENABLED → nothing to do
+  if (mod.status === 'ENABLED') return mod;
+
+  const manifest = loadedManifests.get(slug);
+  if (!manifest) {
+    const err = new Error(`Manifest for "${slug}" is not loaded`);
+    err.status = 500;
+    throw err;
+  }
+
+  // Fetch all currently-enabled modules once for conflict detection and guard checks
+  const allEnabled = await prisma.module.findMany({ where: { status: 'ENABLED' } });
+  const blockingConflicts = computeBlockingConflicts(slug, manifest, allEnabled);
+
+  if (blockingConflicts.length > 0) {
+    if (!resolveConflicts) throwConflictError(slug, blockingConflicts);
+    validateModeSwitchGuards(blockingConflicts, allEnabled);
+  }
+
+  let updated;
+  if (blockingConflicts.length > 0) {
+    updated = await prisma.$transaction(async (tx) => {
+      for (const conflict of blockingConflicts) {
+        await tx.module.update({ where: { slug: conflict.slug }, data: { status: 'DISABLED' } });
+      }
+      return tx.module.update({ where: { slug }, data: { status: 'ENABLED', enabled_at: new Date() } });
+    });
+
+    await invalidateModuleCache(slug);
+    for (const conflict of blockingConflicts) {
+      await invalidateModuleCache(conflict.slug);
+    }
+
+    writeActivityAsync({
+      actor: actorId,
+      module: 'user-management/modules',
+      action: 'mode_switched',
+      subject_type: 'Module',
+      subject_id: mod.id,
+      description: `Mode switched: "${slug}" enabled, disabled [${blockingConflicts.map((c) => c.slug).join(', ')}]`,
+    });
+  } else {
+    updated = await prisma.module.update({
+      where: { slug },
+      data: { status: 'ENABLED', enabled_at: new Date() },
+    });
+
+    await invalidateModuleCache(slug);
+
+    writeActivityAsync({
+      actor: actorId,
+      module: 'user-management/modules',
+      action: 'enabled',
+      subject_type: 'Module',
+      subject_id: mod.id,
+      description: `Module "${slug}" enabled`,
+    });
+  }
+
+  return updated;
+}
+
+export async function enableModule(slug, actorId, { resolveConflicts = false } = {}) {
   const mod = await prisma.module.findUnique({ where: { slug } });
   if (!mod) {
     const err = new Error(`Module "${slug}" not found`);
@@ -171,32 +386,31 @@ export async function enableModule(slug, actorId) {
   }
 
   const manifest = loadedManifests.get(slug);
-  for (const dep of manifest?.dependsOn ?? []) {
-    const depMod = await prisma.module.findUnique({ where: { slug: dep } });
-    if (depMod?.status !== 'ENABLED') {
-      const err = new Error(`Dependency "${dep}" must be ENABLED before enabling "${slug}"`);
-      err.status = 409;
-      throw err;
-    }
+  if (!manifest) {
+    const err = new Error(`Manifest for "${slug}" is not loaded — cannot verify dependencies before enabling`);
+    err.status = 500;
+    throw err;
   }
 
-  const updated = await prisma.module.update({
-    where: { slug },
-    data: { status: 'ENABLED', enabled_at: new Date() },
-  });
+  // KDL-619: Cascade — auto-install and/or enable every transitive dependency
+  // in topological (dependency-first) order before enabling the target.
+  // Previously this block threw 409 if any dep was not already ENABLED; now it
+  // silently installs missing deps and enables any dep that is INSTALLED/DISABLED.
+  const depOrder = buildInstallOrder(slug).slice(0, -1);
+  for (const depSlug of depOrder) {
+    const depMod = await prisma.module.findUnique({ where: { slug: depSlug } });
+    if (!depMod) {
+      // Dep is not in DB at all — install it first (status → INSTALLED).
+      // buildInstallOrder() guarantees depSlug appears before any slug that
+      // depends on it, so its own deps are already installed by this point.
+      await _installSingle(depSlug, actorId, { resolveConflicts });
+    }
+    // Enable the dep if not already ENABLED (_enableSingle is idempotent).
+    await _enableSingle(depSlug, actorId, { resolveConflicts });
+  }
 
-  await invalidateModuleCache(slug);
-
-  writeActivityAsync({
-    actor: actorId,
-    module: 'user-management/modules',
-    action: 'enabled',
-    subject_type: 'Module',
-    subject_id: mod.id,
-    description: `Module "${slug}" enabled`,
-  });
-
-  return updated;
+  // All transitive deps are now ENABLED — enable the target itself.
+  return _enableSingle(slug, actorId, { resolveConflicts });
 }
 
 export async function disableModule(slug, actorId) {
@@ -266,8 +480,8 @@ export async function uninstallModule(slug, actorId) {
     throw err;
   }
 
-  if (mod.status !== 'DISABLED') {
-    const err = new Error(`Module "${slug}" must be DISABLED before uninstalling`);
+  if (mod.status === 'ENABLED') {
+    const err = new Error(`Module "${slug}" must be disabled before uninstalling`);
     err.status = 409;
     throw err;
   }
@@ -337,30 +551,37 @@ export async function listModules() {
   const dbModules = await prisma.module.findMany({ orderBy: { name: 'asc' } });
   const dbBySlug = new Map(dbModules.map((m) => [m.slug, m]));
 
+  const enabledModules = dbModules.filter((m) => m.status === 'ENABLED');
+
   // Merge manifest-only (AVAILABLE) with DB rows
   const results = [];
 
   for (const [slug, manifest] of loadedManifests) {
     const dbMod = dbBySlug.get(slug);
+    const conflicts = computeBlockingConflicts(slug, manifest, enabledModules);
+
     results.push({
       slug,
       name: manifest.name,
       description: manifest.description ?? null,
       version: manifest.version,
       core: manifest.core ?? false,
+      visibleInCatalog: manifest.visibleInCatalog !== false,
       apiPrefix: manifest.apiPrefix,
       icon: manifest.nav?.[0]?.icon ?? null,
       status: dbMod?.status ?? 'AVAILABLE',
       installed_at: dbMod?.installed_at ?? null,
       enabled_at: dbMod?.enabled_at ?? null,
       settings: dbMod?.settings ?? null,
+      conflictsWith: manifest.conflictsWith ?? [],
+      conflicts,
     });
   }
 
   // Also include DB rows whose manifest is no longer on disk (orphaned)
   for (const [slug, dbMod] of dbBySlug) {
     if (!loadedManifests.has(slug)) {
-      results.push({ ...dbMod, status: dbMod.status, _orphaned: true });
+      results.push({ ...dbMod, status: dbMod.status, _orphaned: true, conflictsWith: [], conflicts: [] });
     }
   }
 
@@ -369,13 +590,15 @@ export async function listModules() {
 
 export async function listEnabledModules() {
   const dbModules = await prisma.module.findMany({ where: { status: 'ENABLED' } });
+  const enabledSlugs = new Set(dbModules.map((m) => m.slug));
   return dbModules.map((m) => {
     const manifest = loadedManifests.get(m.slug);
+    const navSuppressed = (manifest?.navSuppressedByPeer ?? []).some((peer) => enabledSlugs.has(peer));
     return {
       slug: m.slug,
       name: m.name,
       core: manifest?.core ?? false,
-      nav: manifest?.nav ?? [],
+      nav: navSuppressed ? [] : (manifest?.nav ?? []),
     };
   });
 }

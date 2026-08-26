@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import './config/env-preflight.js';
 import path from 'node:path';
 import fs from 'node:fs';
 import express from 'express';
@@ -19,6 +20,7 @@ import { startProcessingWorker, closeProcessingWorker } from './modules/media/pr
 import { integrationsWorker } from './modules/integrations/integrations.worker.js';
 import { notificationsWorker, notificationsRetentionWorker, startRetentionJob } from './modules/notifications/notifications.worker.js';
 import { startExpiryJob } from './modules/media/media.expiry.worker.js';
+import { startBrandKitExpiryJob } from './modules/brand-kit/brand-kit.queue.js';
 
 import authRoutes from './modules/auth/routes.js';
 import userRoutes from './modules/users/routes.js';
@@ -33,8 +35,11 @@ import permissionRoutes from './modules/user-management/permissions/routes.js';
 import activityLogRoutes from './modules/user-management/activity/routes.js';
 import moduleRoutes from './modules/modules/routes.js';
 import storageSettingsRoutes from './modules/storage-settings/routes.js';
+import themeEngineRoutes from './modules/theme-engine/routes.js';
+import pageBuilderRoutes from './modules/page-builder/routes.js';
+import projectRoutes from './modules/projects/routes.js';
 import { verifyLocalPresignToken } from './shared/services/storage/drivers/local.driver.js';
-import { loadModules } from './shared/modules/module-loader.js';
+import { loadModules, checkDependencyIntegrity } from './shared/modules/module-loader.js';
 
 const app = express();
 const PORT = process.env.APP_PORT || 4000;
@@ -119,13 +124,38 @@ app.use('/api/storage/local', (req, res) => {
   res.sendFile(resolved);
 });
 
+app.use('/api/theme-engine', themeEngineRoutes);
+app.use('/api/page-builder', pageBuilderRoutes);
+app.use('/api/projects', projectRoutes);
+
 // Mount plugin modules (those with module.json + routes.js) behind moduleGate
 await loadModules(app);
+
+// KDL-593: detect dependency drift — ENABLED modules whose deps are not ENABLED.
+// Logs loudly; never auto-enables dependencies.
+{
+  const enabledMods = await prisma.module.findMany({ where: { status: 'ENABLED' }, select: { slug: true } });
+  const violations = checkDependencyIntegrity(enabledMods.map((m) => m.slug));
+  if (violations.length > 0) {
+    for (const { module, disabledDep } of violations) {
+      logger.error(
+        `module-integrity: ENABLED module "${module}" has non-ENABLED dependency "${disabledDep}". ` +
+        `Routes for "${disabledDep}" are unmounted — calls will 404 at runtime. ` +
+        `Fix: enable "${disabledDep}" first, or disable "${module}".`
+      );
+    }
+    logger.error(
+      `module-integrity: ${violations.length} dependency violation(s) detected. ` +
+      `This is likely stale data from a manifest change. Check the Module admin panel.`
+    );
+  }
+}
 
 // Start background jobs
 startProcessingWorker();
 startRetentionJob().catch((err) => logger.error(`Retention job init failed: ${err.message}`));
 startExpiryJob().catch((err) => logger.error(`Expiry job init failed: ${err.message}`));
+startBrandKitExpiryJob().catch((err) => logger.error(`Brand-kit expiry job init failed: ${err.message}`));
 
 // ─── Public share routes (no auth) ───────────────────────────────────────────
 // These live outside /api so they are not subject to the API rate limiter.

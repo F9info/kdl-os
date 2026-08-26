@@ -17,6 +17,7 @@ import {
   Box,
   FileText,
   LayoutGrid,
+  AlertTriangle,
 } from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
@@ -31,7 +32,14 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import type { Module, ModuleStatus } from '@/types/models.types'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import type { Module, ModuleStatus, ModuleConflict } from '@/types/models.types'
 
 const MODULE_ICON_MAP: Record<string, React.ElementType> = {
   Image,
@@ -80,15 +88,41 @@ interface ConfirmState {
   action: Action
 }
 
+interface SwitchDialogState {
+  open: boolean
+  slug: string
+  moduleName: string
+  action: 'install' | 'enable'
+  conflicts: ModuleConflict[]
+}
+
 interface SettingsState {
   open: boolean
   slug: string
   value: string
 }
 
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string
+      code?: string
+      details?: { conflicts?: ModuleConflict[] }
+    }
+  }
+  message: string
+}
+
 export default function ModulesPage() {
   const queryClient = useQueryClient()
   const [confirm, setConfirm] = useState<ConfirmState>({ open: false, slug: '', action: 'enable' })
+  const [switchDialog, setSwitchDialog] = useState<SwitchDialogState>({
+    open: false,
+    slug: '',
+    moduleName: '',
+    action: 'enable',
+    conflicts: [],
+  })
   const [settingsDialog, setSettingsDialog] = useState<SettingsState>({
     open: false,
     slug: '',
@@ -96,6 +130,7 @@ export default function ModulesPage() {
   })
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
+  const [showInternal, setShowInternal] = useState(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ['modules'],
@@ -104,26 +139,62 @@ export default function ModulesPage() {
   })
 
   const mutation = useMutation({
-    mutationFn: ({ slug, action }: { slug: string; action: Action }) => {
-      if (action === 'install') return api.post(`/modules/${slug}/install`)
-      if (action === 'enable') return api.post(`/modules/${slug}/enable`)
+    mutationFn: ({
+      slug,
+      action,
+      resolveConflicts,
+    }: {
+      slug: string
+      action: Action
+      resolveConflicts?: boolean
+    }) => {
+      const body = resolveConflicts ? { resolveConflicts: true } : undefined
+      if (action === 'install') return api.post(`/modules/${slug}/install`, body)
+      if (action === 'enable') return api.post(`/modules/${slug}/enable`, body)
       return api.post(`/modules/${slug}/disable`)
     },
-    onSuccess: (_, { action, slug }) => {
+    onSuccess: (_, { action, slug, resolveConflicts }) => {
       const labels: Record<Action, string> = {
         install: 'installed',
         enable: 'enabled',
         disable: 'disabled',
       }
-      toast({
-        title: `Module ${labels[action]}`,
-        description: `"${slug}" was ${labels[action]} successfully.`,
-      })
+      if (resolveConflicts) {
+        toast({
+          title: 'Mode switched',
+          description: `Switched to "${slug}" — conflicting modules were disabled.`,
+        })
+      } else {
+        toast({
+          title: `Module ${labels[action]}`,
+          description: `"${slug}" was ${labels[action]} successfully.`,
+        })
+      }
       queryClient.invalidateQueries({ queryKey: ['modules'] })
       queryClient.invalidateQueries({ queryKey: ['modules-enabled'] })
     },
-    onError: (err: { response?: { data?: { message?: string } }; message: string }) => {
-      const msg = err.response?.data?.message ?? err.message
+    onError: (
+      err: ApiError,
+      variables: { slug: string; action: Action; resolveConflicts?: boolean }
+    ) => {
+      const data = err.response?.data
+      if (
+        data?.code === 'MODULE_CONFLICT' &&
+        data.details?.conflicts &&
+        data.details.conflicts.length > 0
+      ) {
+        const cachedModules = queryClient.getQueryData<Module[]>(['modules'])
+        const mod = cachedModules?.find((m) => m.slug === variables.slug)
+        setSwitchDialog({
+          open: true,
+          slug: variables.slug,
+          moduleName: mod?.name ?? variables.slug,
+          action: variables.action as 'install' | 'enable',
+          conflicts: data.details.conflicts,
+        })
+        return
+      }
+      const msg = data?.message ?? err.message
       toast({ title: 'Error', description: msg, variant: 'destructive' })
     },
   })
@@ -136,7 +207,7 @@ export default function ModulesPage() {
       queryClient.invalidateQueries({ queryKey: ['modules'] })
       setSettingsDialog((s) => ({ ...s, open: false }))
     },
-    onError: (err: { response?: { data?: { message?: string } }; message: string }) => {
+    onError: (err: ApiError) => {
       const msg = err.response?.data?.message ?? err.message
       toast({ title: 'Error', description: msg, variant: 'destructive' })
     },
@@ -165,8 +236,18 @@ export default function ModulesPage() {
     settingsMutation.mutate({ slug: settingsDialog.slug, settings: parsed })
   }
 
-  function openConfirm(slug: string, action: Action) {
-    setConfirm({ open: true, slug, action })
+  function handleActionClick(mod: Module, action: Action) {
+    if (action !== 'disable' && mod.conflicts && mod.conflicts.length > 0) {
+      setSwitchDialog({
+        open: true,
+        slug: mod.slug,
+        moduleName: mod.name,
+        action: action as 'install' | 'enable',
+        conflicts: mod.conflicts,
+      })
+      return
+    }
+    setConfirm({ open: true, slug: mod.slug, action })
   }
 
   function closeConfirm() {
@@ -178,23 +259,42 @@ export default function ModulesPage() {
     closeConfirm()
   }
 
+  function closeSwitchDialog() {
+    setSwitchDialog((s) => ({ ...s, open: false }))
+  }
+
+  function handleSwitchConfirm() {
+    mutation.mutate({
+      slug: switchDialog.slug,
+      action: switchDialog.action,
+      resolveConflicts: true,
+    })
+    closeSwitchDialog()
+  }
+
   const modules = useMemo(() => data ?? [], [data])
+
+  /** Catalog-visible modules: hides internal-only deps unless showInternal is on. */
+  const catalogModules = useMemo(
+    () => modules.filter((mod) => showInternal || mod.visibleInCatalog !== false),
+    [modules, showInternal]
+  )
 
   const statusCounts = useMemo(() => {
     const counts: Record<StatusFilter, number> = {
-      ALL: modules.length,
+      ALL: catalogModules.length,
       AVAILABLE: 0,
       INSTALLED: 0,
       ENABLED: 0,
       DISABLED: 0,
     }
-    for (const mod of modules) counts[mod.status] += 1
+    for (const mod of catalogModules) counts[mod.status] += 1
     return counts
-  }, [modules])
+  }, [catalogModules])
 
   const filteredModules = useMemo(() => {
     const query = search.trim().toLowerCase()
-    return modules.filter((mod) => {
+    return catalogModules.filter((mod) => {
       if (statusFilter !== 'ALL' && mod.status !== statusFilter) return false
       if (!query) return true
       return (
@@ -203,7 +303,7 @@ export default function ModulesPage() {
         (mod.description ?? '').toLowerCase().includes(query)
       )
     })
-  }, [modules, search, statusFilter])
+  }, [catalogModules, search, statusFilter])
 
   const filterChips: Array<{ key: StatusFilter; label: string }> = [
     { key: 'ALL', label: 'All' },
@@ -235,7 +335,7 @@ export default function ModulesPage() {
 
   return (
     <PermissionGuard permission="modules:view">
-      <div className="p-6">
+      <div>
         <PageHeader
           title="Modules"
           action={
@@ -277,13 +377,30 @@ export default function ModulesPage() {
                 <span className="ml-1 tabular-nums opacity-70">{statusCounts[chip.key]}</span>
               </button>
             ))}
+
+            {/* Separator */}
+            <span className="self-center border-l border-input h-4 mx-0.5" aria-hidden="true" />
+
+            <button
+              type="button"
+              onClick={() => setShowInternal((v) => !v)}
+              aria-pressed={showInternal}
+              className={cn(
+                'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                showInternal
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-input bg-background text-muted-foreground hover:bg-muted'
+              )}
+            >
+              Show internal
+            </button>
           </div>
         </div>
 
         {isLoading && (
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="rounded-lg border bg-white p-5">
+              <div key={i} className="rounded-lg border bg-card p-5">
                 <div className="flex items-center gap-3">
                   <Skeleton className="h-10 w-10 rounded-md" />
                   <Skeleton className="h-4 w-2/3" />
@@ -298,80 +415,97 @@ export default function ModulesPage() {
 
         {!isLoading && filteredModules.length === 0 && (
           <div className="mt-16 flex flex-col items-center gap-2 text-center text-muted-foreground">
-            <Package className="h-8 w-8 text-gray-300" />
-            <p className="font-medium text-gray-700">No modules match</p>
+            <Package className="h-8 w-8 text-muted-foreground/40" />
+            <p className="font-medium text-foreground">No modules match</p>
             <p className="text-sm">Try a different search term or clear the status filter.</p>
           </div>
         )}
 
         {!isLoading && filteredModules.length > 0 && (
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredModules.map((mod) => (
-              <div
-                key={mod.slug}
-                className="flex h-full flex-col gap-3 rounded-lg border bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <ModuleIcon icon={mod.icon} />
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="truncate font-medium text-gray-900">{mod.name}</span>
-                        {mod.core && (
-                          <Lock
-                            className="h-3.5 w-3.5 shrink-0 text-gray-400"
-                            aria-label="Core module — cannot be disabled"
-                          />
-                        )}
+            {filteredModules.map((mod) => {
+              const hasActiveConflicts = !!(mod.conflicts && mod.conflicts.length > 0)
+              const isNotActive = mod.status !== 'ENABLED'
+              return (
+                <div
+                  key={mod.slug}
+                  className="flex h-full flex-col gap-3 rounded-lg border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <ModuleIcon icon={mod.icon} />
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="truncate font-medium text-foreground">{mod.name}</span>
+                          {mod.core && (
+                            <Lock
+                              className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+                              aria-label="Core module — cannot be disabled"
+                            />
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">v{mod.version}</p>
                       </div>
-                      <p className="text-xs text-gray-400">v{mod.version}</p>
                     </div>
+                    <StatusBadgeModule status={mod.status} />
                   </div>
-                  <StatusBadgeModule status={mod.status} />
-                </div>
 
-                <p className="line-clamp-2 flex-1 text-sm text-gray-500">
-                  {mod.description ?? '—'}
-                </p>
+                  <p className="line-clamp-2 flex-1 text-sm text-muted-foreground">
+                    {mod.description ?? '—'}
+                  </p>
 
-                <div className="flex flex-wrap items-center gap-2 border-t pt-3">
-                  {!mod.core && mod.status === 'AVAILABLE' && (
-                    <Button size="sm" onClick={() => openConfirm(mod.slug, 'install')}>
-                      <CheckCircle className="mr-1 h-4 w-4" />
-                      Install
-                    </Button>
+                  {hasActiveConflicts && isNotActive && (
+                    <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                      <AlertTriangle
+                        className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500"
+                        aria-hidden="true"
+                      />
+                      <span>
+                        {'Requires disabling: '}
+                        {mod.conflicts!.map((c) => c.name).join(', ')}
+                      </span>
+                    </p>
                   )}
-                  {!mod.core && mod.status === 'INSTALLED' && (
-                    <Button size="sm" onClick={() => openConfirm(mod.slug, 'enable')}>
-                      <CheckCircle className="mr-1 h-4 w-4" />
-                      Enable
-                    </Button>
-                  )}
-                  {!mod.core && mod.status === 'ENABLED' && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openConfirm(mod.slug, 'disable')}
-                    >
-                      <XCircle className="mr-1 h-4 w-4" />
-                      Disable
-                    </Button>
-                  )}
-                  {!mod.core && mod.status === 'DISABLED' && (
-                    <Button size="sm" onClick={() => openConfirm(mod.slug, 'enable')}>
-                      <CheckCircle className="mr-1 h-4 w-4" />
-                      Enable
-                    </Button>
-                  )}
-                  {mod.status !== 'AVAILABLE' && (
-                    <Button size="sm" variant="ghost" onClick={() => openSettings(mod)}>
-                      <Settings className="mr-1 h-4 w-4" />
-                      Settings
-                    </Button>
-                  )}
+
+                  <div className="flex flex-wrap items-center gap-2 border-t pt-3">
+                    {!mod.core && mod.status === 'AVAILABLE' && (
+                      <Button size="sm" onClick={() => handleActionClick(mod, 'install')}>
+                        <CheckCircle className="mr-1 h-4 w-4" />
+                        Install
+                      </Button>
+                    )}
+                    {!mod.core && mod.status === 'INSTALLED' && (
+                      <Button size="sm" onClick={() => handleActionClick(mod, 'enable')}>
+                        <CheckCircle className="mr-1 h-4 w-4" />
+                        Enable
+                      </Button>
+                    )}
+                    {!mod.core && mod.status === 'ENABLED' && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleActionClick(mod, 'disable')}
+                      >
+                        <XCircle className="mr-1 h-4 w-4" />
+                        Disable
+                      </Button>
+                    )}
+                    {!mod.core && mod.status === 'DISABLED' && (
+                      <Button size="sm" onClick={() => handleActionClick(mod, 'enable')}>
+                        <CheckCircle className="mr-1 h-4 w-4" />
+                        Enable
+                      </Button>
+                    )}
+                    {mod.status !== 'AVAILABLE' && (
+                      <Button size="sm" variant="ghost" onClick={() => openSettings(mod)}>
+                        <Settings className="mr-1 h-4 w-4" />
+                        Settings
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
 
@@ -385,6 +519,41 @@ export default function ModulesPage() {
           isLoading={mutation.isPending}
           variant={confirm.action === 'disable' ? 'destructive' : 'warning'}
         />
+
+        <Dialog open={switchDialog.open} onOpenChange={(o) => !o && closeSwitchDialog()}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Switch to {switchDialog.moduleName}?</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 py-2 text-sm text-muted-foreground">
+              <p>
+                The following {switchDialog.conflicts.length === 1 ? 'module' : 'modules'} will be
+                disabled:
+              </p>
+              <ul className="list-disc space-y-1 pl-5">
+                {switchDialog.conflicts.map((c) => (
+                  <li key={c.slug} className="text-foreground">
+                    {c.name}
+                  </li>
+                ))}
+              </ul>
+              <p>
+                This is <strong className="text-foreground">non-destructive</strong> — no data is
+                deleted. Disabling{' '}
+                <strong className="text-foreground">{switchDialog.moduleName}</strong> later
+                restores the other modules with their values intact.
+              </p>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={closeSwitchDialog} disabled={mutation.isPending}>
+                Cancel
+              </Button>
+              <Button onClick={handleSwitchConfirm} disabled={mutation.isPending}>
+                {switchDialog.action === 'install' ? 'Install & switch' : 'Enable & switch'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <Modal
           open={settingsDialog.open}

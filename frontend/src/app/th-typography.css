@@ -1,0 +1,1560 @@
+/*
+ * Module 15 Theme Engine — Typography consumption (KDL-211).
+ *
+ * The runtime provider (ThemeEngineProvider) injects the compiled
+ * `webapp_admin` tokens into <style id="te-tokens">: one flat set of
+ * `--typography_{device}_typography_scale_typography_scale_{row}_{prop}`
+ * custom properties per device sub-tab (desktop, laptop_h/v, tablet_h/v,
+ * mobile_h/v — see PLATFORMS in backend theme-engine/schema/index.js).
+ *
+ * This file is the responsive half of that contract: it re-points ONE set of
+ * semantic `--th-typo-*` aliases at the right device's tokens per viewport
+ * breakpoint (+ orientation for the _v variants), then maps h1-h6 / p / li /
+ * small / nav onto the aliases. The var() fallbacks mirror the seeded
+ * defaults so the app renders correctly before the provider's first fetch.
+ *
+ * Element rules here are intentionally low-specificity (bare element
+ * selectors, loaded before Tailwind utilities win by class specificity):
+ * component-level `text-*` / `font-*` utilities still override on purpose
+ * (e.g. shadcn CardTitle, dense media tool panels).
+ */
+
+:root {
+  --th-typo-h1-size: var(
+    --typography_desktop_typography_scale_typography_scale_h1_title_size,
+    32px
+  );
+  --th-typo-h1-family: var(
+    --typography_desktop_typography_scale_typography_scale_h1_title_family,
+    var(--font-sora, Sora)
+  );
+  --th-typo-h1-weight: var(
+    --typography_desktop_typography_scale_typography_scale_h1_title_weight,
+    700
+  );
+  --th-typo-h1-line-height: var(
+    --typography_desktop_typography_scale_typography_scale_h1_title_line_height,
+    1.5
+  );
+  --th-typo-h1-letter-spacing: var(
+    --typography_desktop_typography_scale_typography_scale_h1_title_letter_spacing,
+    0px
+  );
+  --th-typo-h2-size: var(--typography_desktop_typography_scale_typography_scale_h2_size, 26px);
+  --th-typo-h2-family: var(
+    --typography_desktop_typography_scale_typography_scale_h2_family,
+    var(--font-sora, Sora)
+  );
+  --th-typo-h2-weight: var(--typography_desktop_typography_scale_typography_scale_h2_weight, 700);
+  --th-typo-h2-line-height: var(
+    --typography_desktop_typography_scale_typography_scale_h2_line_height,
+    1.5
+  );
+  --th-typo-h2-letter-spacing: var(
+    --typography_desktop_typography_scale_typography_scale_h2_letter_spacing,
+    0px
+  );
+  --th-typo-h3-size: var(--typography_desktop_typography_scale_typography_scale_h3_size, 22px);
+  --th-typo-h3-family: var(
+    --typography_desktop_typography_scale_typography_scale_h3_family,
+    var(--font-sora, Sora)
+  );
+  --th-typo-h3-weight: var(--typography_desktop_typography_scale_typography_scale_h3_weight, 600);
+  --th-typo-h3-line-height: var(
+    --typography_desktop_typography_scale_typography_scale_h3_line_height,
+    1.5
+  );
+  --th-typo-h3-letter-spacing: var(
+    --typography_desktop_typography_scale_typography_scale_h3_letter_spacing,
+    0px
+  );
+  --th-typo-h4-size: var(--typography_desktop_typography_scale_typography_scale_h4_size, 18px);
+  --th-typo-h4-family: var(
+    --typography_desktop_typography_scale_typography_scale_h4_family,
+    Poppins
+  );
+  --th-typo-h4-weight: var(--typography_desktop_typography_scale_typography_scale_h4_weight, 600);
+  --th-typo-h4-line-height: var(
+    --typography_desktop_typography_scale_typography_scale_h4_line_height,
+    1.5
+  );
+  --th-typo-h4-letter-spacing: var(
+    --typography_desktop_typography_scale_typography_scale_h4_letter_spacing,
+    0px
+  );
+  --th-typo-h5-size: var(--typography_desktop_typography_scale_typography_scale_h5_size, 16px);
+  --th-typo-h5-family: var(
+    --typography_desktop_typography_scale_typography_scale_h5_family,
+    Poppins
+  );
+  --th-typo-h5-weight: var(--typography_desktop_typography_scale_typography_scale_h5_weight, 500);
+  --th-typo-h5-line-height: var(
+    --typography_desktop_typography_scale_typography_scale_h5_line_height,
+    1.5
+  );
+  --th-typo-h5-letter-spacing: var(
+    --typography_desktop_typography_scale_typography_scale_h5_letter_spacing,
+    0px
+  );
+  --th-typo-h6-size: var(--typography_desktop_typography_scale_typography_scale_h6_size, 14px);
+  --th-typo-h6-family: var(
+    --typography_desktop_typography_scale_typography_scale_h6_family,
+    Poppins
+  );
+  --th-typo-h6-weight: var(--typography_desktop_typography_scale_typography_scale_h6_weight, 500);
+  --th-typo-h6-line-height: var(
+    --typography_desktop_typography_scale_typography_scale_h6_line_height,
+    1.5
+  );
+  --th-typo-h6-letter-spacing: var(
+    --typography_desktop_typography_scale_typography_scale_h6_letter_spacing,
+    0px
+  );
+  --th-typo-paragraph-size: var(
+    --typography_desktop_typography_scale_typography_scale_paragraph_size,
+    14px
+  );
+  --th-typo-paragraph-family: var(
+    --typography_desktop_typography_scale_typography_scale_paragraph_family,
+    Inter
+  );
+  --th-typo-paragraph-weight: var(
+    --typography_desktop_typography_scale_typography_scale_paragraph_weight,
+    400
+  );
+  --th-typo-paragraph-line-height: var(
+    --typography_desktop_typography_scale_typography_scale_paragraph_line_height,
+    1.5
+  );
+  --th-typo-paragraph-letter-spacing: var(
+    --typography_desktop_typography_scale_typography_scale_paragraph_letter_spacing,
+    0px
+  );
+  --th-typo-body-size: var(--typography_desktop_typography_scale_typography_scale_body_size, 14px);
+  --th-typo-body-family: var(
+    --typography_desktop_typography_scale_typography_scale_body_family,
+    Inter
+  );
+  --th-typo-body-weight: var(
+    --typography_desktop_typography_scale_typography_scale_body_weight,
+    400
+  );
+  --th-typo-body-line-height: var(
+    --typography_desktop_typography_scale_typography_scale_body_line_height,
+    1.5
+  );
+  --th-typo-body-letter-spacing: var(
+    --typography_desktop_typography_scale_typography_scale_body_letter_spacing,
+    0px
+  );
+  --th-typo-list-size: var(
+    --typography_desktop_typography_scale_typography_scale_list_li_size,
+    14px
+  );
+  --th-typo-list-family: var(
+    --typography_desktop_typography_scale_typography_scale_list_li_family,
+    Inter
+  );
+  --th-typo-list-weight: var(
+    --typography_desktop_typography_scale_typography_scale_list_li_weight,
+    400
+  );
+  --th-typo-list-line-height: var(
+    --typography_desktop_typography_scale_typography_scale_list_li_line_height,
+    1.5
+  );
+  --th-typo-list-letter-spacing: var(
+    --typography_desktop_typography_scale_typography_scale_list_li_letter_spacing,
+    0px
+  );
+  --th-typo-small-size: var(
+    --typography_desktop_typography_scale_typography_scale_small_text_size,
+    12px
+  );
+  --th-typo-small-family: var(
+    --typography_desktop_typography_scale_typography_scale_small_text_family,
+    Inter
+  );
+  --th-typo-small-weight: var(
+    --typography_desktop_typography_scale_typography_scale_small_text_weight,
+    400
+  );
+  --th-typo-small-line-height: var(
+    --typography_desktop_typography_scale_typography_scale_small_text_line_height,
+    1.5
+  );
+  --th-typo-small-letter-spacing: var(
+    --typography_desktop_typography_scale_typography_scale_small_text_letter_spacing,
+    0px
+  );
+  --th-typo-nav-size: var(
+    --typography_desktop_typography_scale_typography_scale_navigation_size,
+    14px
+  );
+  --th-typo-nav-family: var(
+    --typography_desktop_typography_scale_typography_scale_navigation_family,
+    Inter
+  );
+  --th-typo-nav-weight: var(
+    --typography_desktop_typography_scale_typography_scale_navigation_weight,
+    400
+  );
+  --th-typo-nav-line-height: var(
+    --typography_desktop_typography_scale_typography_scale_navigation_line_height,
+    1.5
+  );
+  --th-typo-nav-letter-spacing: var(
+    --typography_desktop_typography_scale_typography_scale_navigation_letter_spacing,
+    0px
+  );
+}
+
+@media (max-width: 1439px) {
+  :root {
+    --th-typo-h1-size: var(
+      --typography_laptop_h_typography_scale_typography_scale_h1_title_size,
+      30px
+    );
+    --th-typo-h1-family: var(
+      --typography_laptop_h_typography_scale_typography_scale_h1_title_family,
+      var(--font-sora, Sora)
+    );
+    --th-typo-h1-weight: var(
+      --typography_laptop_h_typography_scale_typography_scale_h1_title_weight,
+      700
+    );
+    --th-typo-h1-line-height: var(
+      --typography_laptop_h_typography_scale_typography_scale_h1_title_line_height,
+      1.5
+    );
+    --th-typo-h1-letter-spacing: var(
+      --typography_laptop_h_typography_scale_typography_scale_h1_title_letter_spacing,
+      0px
+    );
+    --th-typo-h2-size: var(--typography_laptop_h_typography_scale_typography_scale_h2_size, 24px);
+    --th-typo-h2-family: var(
+      --typography_laptop_h_typography_scale_typography_scale_h2_family,
+      var(--font-sora, Sora)
+    );
+    --th-typo-h2-weight: var(
+      --typography_laptop_h_typography_scale_typography_scale_h2_weight,
+      700
+    );
+    --th-typo-h2-line-height: var(
+      --typography_laptop_h_typography_scale_typography_scale_h2_line_height,
+      1.5
+    );
+    --th-typo-h2-letter-spacing: var(
+      --typography_laptop_h_typography_scale_typography_scale_h2_letter_spacing,
+      0px
+    );
+    --th-typo-h3-size: var(--typography_laptop_h_typography_scale_typography_scale_h3_size, 20px);
+    --th-typo-h3-family: var(
+      --typography_laptop_h_typography_scale_typography_scale_h3_family,
+      var(--font-sora, Sora)
+    );
+    --th-typo-h3-weight: var(
+      --typography_laptop_h_typography_scale_typography_scale_h3_weight,
+      600
+    );
+    --th-typo-h3-line-height: var(
+      --typography_laptop_h_typography_scale_typography_scale_h3_line_height,
+      1.5
+    );
+    --th-typo-h3-letter-spacing: var(
+      --typography_laptop_h_typography_scale_typography_scale_h3_letter_spacing,
+      0px
+    );
+    --th-typo-h4-size: var(--typography_laptop_h_typography_scale_typography_scale_h4_size, 17px);
+    --th-typo-h4-family: var(
+      --typography_laptop_h_typography_scale_typography_scale_h4_family,
+      Poppins
+    );
+    --th-typo-h4-weight: var(
+      --typography_laptop_h_typography_scale_typography_scale_h4_weight,
+      600
+    );
+    --th-typo-h4-line-height: var(
+      --typography_laptop_h_typography_scale_typography_scale_h4_line_height,
+      1.5
+    );
+    --th-typo-h4-letter-spacing: var(
+      --typography_laptop_h_typography_scale_typography_scale_h4_letter_spacing,
+      0px
+    );
+    --th-typo-h5-size: var(--typography_laptop_h_typography_scale_typography_scale_h5_size, 15px);
+    --th-typo-h5-family: var(
+      --typography_laptop_h_typography_scale_typography_scale_h5_family,
+      Poppins
+    );
+    --th-typo-h5-weight: var(
+      --typography_laptop_h_typography_scale_typography_scale_h5_weight,
+      500
+    );
+    --th-typo-h5-line-height: var(
+      --typography_laptop_h_typography_scale_typography_scale_h5_line_height,
+      1.5
+    );
+    --th-typo-h5-letter-spacing: var(
+      --typography_laptop_h_typography_scale_typography_scale_h5_letter_spacing,
+      0px
+    );
+    --th-typo-h6-size: var(--typography_laptop_h_typography_scale_typography_scale_h6_size, 13px);
+    --th-typo-h6-family: var(
+      --typography_laptop_h_typography_scale_typography_scale_h6_family,
+      Poppins
+    );
+    --th-typo-h6-weight: var(
+      --typography_laptop_h_typography_scale_typography_scale_h6_weight,
+      500
+    );
+    --th-typo-h6-line-height: var(
+      --typography_laptop_h_typography_scale_typography_scale_h6_line_height,
+      1.5
+    );
+    --th-typo-h6-letter-spacing: var(
+      --typography_laptop_h_typography_scale_typography_scale_h6_letter_spacing,
+      0px
+    );
+    --th-typo-paragraph-size: var(
+      --typography_laptop_h_typography_scale_typography_scale_paragraph_size,
+      14px
+    );
+    --th-typo-paragraph-family: var(
+      --typography_laptop_h_typography_scale_typography_scale_paragraph_family,
+      Inter
+    );
+    --th-typo-paragraph-weight: var(
+      --typography_laptop_h_typography_scale_typography_scale_paragraph_weight,
+      400
+    );
+    --th-typo-paragraph-line-height: var(
+      --typography_laptop_h_typography_scale_typography_scale_paragraph_line_height,
+      1.5
+    );
+    --th-typo-paragraph-letter-spacing: var(
+      --typography_laptop_h_typography_scale_typography_scale_paragraph_letter_spacing,
+      0px
+    );
+    --th-typo-body-size: var(
+      --typography_laptop_h_typography_scale_typography_scale_body_size,
+      14px
+    );
+    --th-typo-body-family: var(
+      --typography_laptop_h_typography_scale_typography_scale_body_family,
+      Inter
+    );
+    --th-typo-body-weight: var(
+      --typography_laptop_h_typography_scale_typography_scale_body_weight,
+      400
+    );
+    --th-typo-body-line-height: var(
+      --typography_laptop_h_typography_scale_typography_scale_body_line_height,
+      1.5
+    );
+    --th-typo-body-letter-spacing: var(
+      --typography_laptop_h_typography_scale_typography_scale_body_letter_spacing,
+      0px
+    );
+    --th-typo-list-size: var(
+      --typography_laptop_h_typography_scale_typography_scale_list_li_size,
+      14px
+    );
+    --th-typo-list-family: var(
+      --typography_laptop_h_typography_scale_typography_scale_list_li_family,
+      Inter
+    );
+    --th-typo-list-weight: var(
+      --typography_laptop_h_typography_scale_typography_scale_list_li_weight,
+      400
+    );
+    --th-typo-list-line-height: var(
+      --typography_laptop_h_typography_scale_typography_scale_list_li_line_height,
+      1.5
+    );
+    --th-typo-list-letter-spacing: var(
+      --typography_laptop_h_typography_scale_typography_scale_list_li_letter_spacing,
+      0px
+    );
+    --th-typo-small-size: var(
+      --typography_laptop_h_typography_scale_typography_scale_small_text_size,
+      12px
+    );
+    --th-typo-small-family: var(
+      --typography_laptop_h_typography_scale_typography_scale_small_text_family,
+      Inter
+    );
+    --th-typo-small-weight: var(
+      --typography_laptop_h_typography_scale_typography_scale_small_text_weight,
+      400
+    );
+    --th-typo-small-line-height: var(
+      --typography_laptop_h_typography_scale_typography_scale_small_text_line_height,
+      1.5
+    );
+    --th-typo-small-letter-spacing: var(
+      --typography_laptop_h_typography_scale_typography_scale_small_text_letter_spacing,
+      0px
+    );
+    --th-typo-nav-size: var(
+      --typography_laptop_h_typography_scale_typography_scale_navigation_size,
+      13px
+    );
+    --th-typo-nav-family: var(
+      --typography_laptop_h_typography_scale_typography_scale_navigation_family,
+      Inter
+    );
+    --th-typo-nav-weight: var(
+      --typography_laptop_h_typography_scale_typography_scale_navigation_weight,
+      400
+    );
+    --th-typo-nav-line-height: var(
+      --typography_laptop_h_typography_scale_typography_scale_navigation_line_height,
+      1.5
+    );
+    --th-typo-nav-letter-spacing: var(
+      --typography_laptop_h_typography_scale_typography_scale_navigation_letter_spacing,
+      0px
+    );
+  }
+}
+
+@media (max-width: 1439px) and (orientation: portrait) {
+  :root {
+    --th-typo-h1-size: var(
+      --typography_laptop_v_typography_scale_typography_scale_h1_title_size,
+      30px
+    );
+    --th-typo-h1-family: var(
+      --typography_laptop_v_typography_scale_typography_scale_h1_title_family,
+      var(--font-sora, Sora)
+    );
+    --th-typo-h1-weight: var(
+      --typography_laptop_v_typography_scale_typography_scale_h1_title_weight,
+      700
+    );
+    --th-typo-h1-line-height: var(
+      --typography_laptop_v_typography_scale_typography_scale_h1_title_line_height,
+      1.5
+    );
+    --th-typo-h1-letter-spacing: var(
+      --typography_laptop_v_typography_scale_typography_scale_h1_title_letter_spacing,
+      0px
+    );
+    --th-typo-h2-size: var(--typography_laptop_v_typography_scale_typography_scale_h2_size, 24px);
+    --th-typo-h2-family: var(
+      --typography_laptop_v_typography_scale_typography_scale_h2_family,
+      var(--font-sora, Sora)
+    );
+    --th-typo-h2-weight: var(
+      --typography_laptop_v_typography_scale_typography_scale_h2_weight,
+      700
+    );
+    --th-typo-h2-line-height: var(
+      --typography_laptop_v_typography_scale_typography_scale_h2_line_height,
+      1.5
+    );
+    --th-typo-h2-letter-spacing: var(
+      --typography_laptop_v_typography_scale_typography_scale_h2_letter_spacing,
+      0px
+    );
+    --th-typo-h3-size: var(--typography_laptop_v_typography_scale_typography_scale_h3_size, 20px);
+    --th-typo-h3-family: var(
+      --typography_laptop_v_typography_scale_typography_scale_h3_family,
+      var(--font-sora, Sora)
+    );
+    --th-typo-h3-weight: var(
+      --typography_laptop_v_typography_scale_typography_scale_h3_weight,
+      600
+    );
+    --th-typo-h3-line-height: var(
+      --typography_laptop_v_typography_scale_typography_scale_h3_line_height,
+      1.5
+    );
+    --th-typo-h3-letter-spacing: var(
+      --typography_laptop_v_typography_scale_typography_scale_h3_letter_spacing,
+      0px
+    );
+    --th-typo-h4-size: var(--typography_laptop_v_typography_scale_typography_scale_h4_size, 17px);
+    --th-typo-h4-family: var(
+      --typography_laptop_v_typography_scale_typography_scale_h4_family,
+      Poppins
+    );
+    --th-typo-h4-weight: var(
+      --typography_laptop_v_typography_scale_typography_scale_h4_weight,
+      600
+    );
+    --th-typo-h4-line-height: var(
+      --typography_laptop_v_typography_scale_typography_scale_h4_line_height,
+      1.5
+    );
+    --th-typo-h4-letter-spacing: var(
+      --typography_laptop_v_typography_scale_typography_scale_h4_letter_spacing,
+      0px
+    );
+    --th-typo-h5-size: var(--typography_laptop_v_typography_scale_typography_scale_h5_size, 15px);
+    --th-typo-h5-family: var(
+      --typography_laptop_v_typography_scale_typography_scale_h5_family,
+      Poppins
+    );
+    --th-typo-h5-weight: var(
+      --typography_laptop_v_typography_scale_typography_scale_h5_weight,
+      500
+    );
+    --th-typo-h5-line-height: var(
+      --typography_laptop_v_typography_scale_typography_scale_h5_line_height,
+      1.5
+    );
+    --th-typo-h5-letter-spacing: var(
+      --typography_laptop_v_typography_scale_typography_scale_h5_letter_spacing,
+      0px
+    );
+    --th-typo-h6-size: var(--typography_laptop_v_typography_scale_typography_scale_h6_size, 13px);
+    --th-typo-h6-family: var(
+      --typography_laptop_v_typography_scale_typography_scale_h6_family,
+      Poppins
+    );
+    --th-typo-h6-weight: var(
+      --typography_laptop_v_typography_scale_typography_scale_h6_weight,
+      500
+    );
+    --th-typo-h6-line-height: var(
+      --typography_laptop_v_typography_scale_typography_scale_h6_line_height,
+      1.5
+    );
+    --th-typo-h6-letter-spacing: var(
+      --typography_laptop_v_typography_scale_typography_scale_h6_letter_spacing,
+      0px
+    );
+    --th-typo-paragraph-size: var(
+      --typography_laptop_v_typography_scale_typography_scale_paragraph_size,
+      14px
+    );
+    --th-typo-paragraph-family: var(
+      --typography_laptop_v_typography_scale_typography_scale_paragraph_family,
+      Inter
+    );
+    --th-typo-paragraph-weight: var(
+      --typography_laptop_v_typography_scale_typography_scale_paragraph_weight,
+      400
+    );
+    --th-typo-paragraph-line-height: var(
+      --typography_laptop_v_typography_scale_typography_scale_paragraph_line_height,
+      1.5
+    );
+    --th-typo-paragraph-letter-spacing: var(
+      --typography_laptop_v_typography_scale_typography_scale_paragraph_letter_spacing,
+      0px
+    );
+    --th-typo-body-size: var(
+      --typography_laptop_v_typography_scale_typography_scale_body_size,
+      14px
+    );
+    --th-typo-body-family: var(
+      --typography_laptop_v_typography_scale_typography_scale_body_family,
+      Inter
+    );
+    --th-typo-body-weight: var(
+      --typography_laptop_v_typography_scale_typography_scale_body_weight,
+      400
+    );
+    --th-typo-body-line-height: var(
+      --typography_laptop_v_typography_scale_typography_scale_body_line_height,
+      1.5
+    );
+    --th-typo-body-letter-spacing: var(
+      --typography_laptop_v_typography_scale_typography_scale_body_letter_spacing,
+      0px
+    );
+    --th-typo-list-size: var(
+      --typography_laptop_v_typography_scale_typography_scale_list_li_size,
+      14px
+    );
+    --th-typo-list-family: var(
+      --typography_laptop_v_typography_scale_typography_scale_list_li_family,
+      Inter
+    );
+    --th-typo-list-weight: var(
+      --typography_laptop_v_typography_scale_typography_scale_list_li_weight,
+      400
+    );
+    --th-typo-list-line-height: var(
+      --typography_laptop_v_typography_scale_typography_scale_list_li_line_height,
+      1.5
+    );
+    --th-typo-list-letter-spacing: var(
+      --typography_laptop_v_typography_scale_typography_scale_list_li_letter_spacing,
+      0px
+    );
+    --th-typo-small-size: var(
+      --typography_laptop_v_typography_scale_typography_scale_small_text_size,
+      12px
+    );
+    --th-typo-small-family: var(
+      --typography_laptop_v_typography_scale_typography_scale_small_text_family,
+      Inter
+    );
+    --th-typo-small-weight: var(
+      --typography_laptop_v_typography_scale_typography_scale_small_text_weight,
+      400
+    );
+    --th-typo-small-line-height: var(
+      --typography_laptop_v_typography_scale_typography_scale_small_text_line_height,
+      1.5
+    );
+    --th-typo-small-letter-spacing: var(
+      --typography_laptop_v_typography_scale_typography_scale_small_text_letter_spacing,
+      0px
+    );
+    --th-typo-nav-size: var(
+      --typography_laptop_v_typography_scale_typography_scale_navigation_size,
+      13px
+    );
+    --th-typo-nav-family: var(
+      --typography_laptop_v_typography_scale_typography_scale_navigation_family,
+      Inter
+    );
+    --th-typo-nav-weight: var(
+      --typography_laptop_v_typography_scale_typography_scale_navigation_weight,
+      400
+    );
+    --th-typo-nav-line-height: var(
+      --typography_laptop_v_typography_scale_typography_scale_navigation_line_height,
+      1.5
+    );
+    --th-typo-nav-letter-spacing: var(
+      --typography_laptop_v_typography_scale_typography_scale_navigation_letter_spacing,
+      0px
+    );
+  }
+}
+
+@media (max-width: 1023px) {
+  :root {
+    --th-typo-h1-size: var(
+      --typography_tablet_h_typography_scale_typography_scale_h1_title_size,
+      28px
+    );
+    --th-typo-h1-family: var(
+      --typography_tablet_h_typography_scale_typography_scale_h1_title_family,
+      var(--font-sora, Sora)
+    );
+    --th-typo-h1-weight: var(
+      --typography_tablet_h_typography_scale_typography_scale_h1_title_weight,
+      700
+    );
+    --th-typo-h1-line-height: var(
+      --typography_tablet_h_typography_scale_typography_scale_h1_title_line_height,
+      1.45
+    );
+    --th-typo-h1-letter-spacing: var(
+      --typography_tablet_h_typography_scale_typography_scale_h1_title_letter_spacing,
+      0px
+    );
+    --th-typo-h2-size: var(--typography_tablet_h_typography_scale_typography_scale_h2_size, 23px);
+    --th-typo-h2-family: var(
+      --typography_tablet_h_typography_scale_typography_scale_h2_family,
+      var(--font-sora, Sora)
+    );
+    --th-typo-h2-weight: var(
+      --typography_tablet_h_typography_scale_typography_scale_h2_weight,
+      700
+    );
+    --th-typo-h2-line-height: var(
+      --typography_tablet_h_typography_scale_typography_scale_h2_line_height,
+      1.45
+    );
+    --th-typo-h2-letter-spacing: var(
+      --typography_tablet_h_typography_scale_typography_scale_h2_letter_spacing,
+      0px
+    );
+    --th-typo-h3-size: var(--typography_tablet_h_typography_scale_typography_scale_h3_size, 19px);
+    --th-typo-h3-family: var(
+      --typography_tablet_h_typography_scale_typography_scale_h3_family,
+      var(--font-sora, Sora)
+    );
+    --th-typo-h3-weight: var(
+      --typography_tablet_h_typography_scale_typography_scale_h3_weight,
+      600
+    );
+    --th-typo-h3-line-height: var(
+      --typography_tablet_h_typography_scale_typography_scale_h3_line_height,
+      1.45
+    );
+    --th-typo-h3-letter-spacing: var(
+      --typography_tablet_h_typography_scale_typography_scale_h3_letter_spacing,
+      0px
+    );
+    --th-typo-h4-size: var(--typography_tablet_h_typography_scale_typography_scale_h4_size, 16px);
+    --th-typo-h4-family: var(
+      --typography_tablet_h_typography_scale_typography_scale_h4_family,
+      Poppins
+    );
+    --th-typo-h4-weight: var(
+      --typography_tablet_h_typography_scale_typography_scale_h4_weight,
+      600
+    );
+    --th-typo-h4-line-height: var(
+      --typography_tablet_h_typography_scale_typography_scale_h4_line_height,
+      1.45
+    );
+    --th-typo-h4-letter-spacing: var(
+      --typography_tablet_h_typography_scale_typography_scale_h4_letter_spacing,
+      0px
+    );
+    --th-typo-h5-size: var(--typography_tablet_h_typography_scale_typography_scale_h5_size, 14px);
+    --th-typo-h5-family: var(
+      --typography_tablet_h_typography_scale_typography_scale_h5_family,
+      Poppins
+    );
+    --th-typo-h5-weight: var(
+      --typography_tablet_h_typography_scale_typography_scale_h5_weight,
+      500
+    );
+    --th-typo-h5-line-height: var(
+      --typography_tablet_h_typography_scale_typography_scale_h5_line_height,
+      1.45
+    );
+    --th-typo-h5-letter-spacing: var(
+      --typography_tablet_h_typography_scale_typography_scale_h5_letter_spacing,
+      0px
+    );
+    --th-typo-h6-size: var(--typography_tablet_h_typography_scale_typography_scale_h6_size, 13px);
+    --th-typo-h6-family: var(
+      --typography_tablet_h_typography_scale_typography_scale_h6_family,
+      Poppins
+    );
+    --th-typo-h6-weight: var(
+      --typography_tablet_h_typography_scale_typography_scale_h6_weight,
+      500
+    );
+    --th-typo-h6-line-height: var(
+      --typography_tablet_h_typography_scale_typography_scale_h6_line_height,
+      1.45
+    );
+    --th-typo-h6-letter-spacing: var(
+      --typography_tablet_h_typography_scale_typography_scale_h6_letter_spacing,
+      0px
+    );
+    --th-typo-paragraph-size: var(
+      --typography_tablet_h_typography_scale_typography_scale_paragraph_size,
+      13px
+    );
+    --th-typo-paragraph-family: var(
+      --typography_tablet_h_typography_scale_typography_scale_paragraph_family,
+      Inter
+    );
+    --th-typo-paragraph-weight: var(
+      --typography_tablet_h_typography_scale_typography_scale_paragraph_weight,
+      400
+    );
+    --th-typo-paragraph-line-height: var(
+      --typography_tablet_h_typography_scale_typography_scale_paragraph_line_height,
+      1.45
+    );
+    --th-typo-paragraph-letter-spacing: var(
+      --typography_tablet_h_typography_scale_typography_scale_paragraph_letter_spacing,
+      0px
+    );
+    --th-typo-body-size: var(
+      --typography_tablet_h_typography_scale_typography_scale_body_size,
+      13px
+    );
+    --th-typo-body-family: var(
+      --typography_tablet_h_typography_scale_typography_scale_body_family,
+      Inter
+    );
+    --th-typo-body-weight: var(
+      --typography_tablet_h_typography_scale_typography_scale_body_weight,
+      400
+    );
+    --th-typo-body-line-height: var(
+      --typography_tablet_h_typography_scale_typography_scale_body_line_height,
+      1.45
+    );
+    --th-typo-body-letter-spacing: var(
+      --typography_tablet_h_typography_scale_typography_scale_body_letter_spacing,
+      0px
+    );
+    --th-typo-list-size: var(
+      --typography_tablet_h_typography_scale_typography_scale_list_li_size,
+      13px
+    );
+    --th-typo-list-family: var(
+      --typography_tablet_h_typography_scale_typography_scale_list_li_family,
+      Inter
+    );
+    --th-typo-list-weight: var(
+      --typography_tablet_h_typography_scale_typography_scale_list_li_weight,
+      400
+    );
+    --th-typo-list-line-height: var(
+      --typography_tablet_h_typography_scale_typography_scale_list_li_line_height,
+      1.45
+    );
+    --th-typo-list-letter-spacing: var(
+      --typography_tablet_h_typography_scale_typography_scale_list_li_letter_spacing,
+      0px
+    );
+    --th-typo-small-size: var(
+      --typography_tablet_h_typography_scale_typography_scale_small_text_size,
+      11px
+    );
+    --th-typo-small-family: var(
+      --typography_tablet_h_typography_scale_typography_scale_small_text_family,
+      Inter
+    );
+    --th-typo-small-weight: var(
+      --typography_tablet_h_typography_scale_typography_scale_small_text_weight,
+      400
+    );
+    --th-typo-small-line-height: var(
+      --typography_tablet_h_typography_scale_typography_scale_small_text_line_height,
+      1.45
+    );
+    --th-typo-small-letter-spacing: var(
+      --typography_tablet_h_typography_scale_typography_scale_small_text_letter_spacing,
+      0px
+    );
+    --th-typo-nav-size: var(
+      --typography_tablet_h_typography_scale_typography_scale_navigation_size,
+      13px
+    );
+    --th-typo-nav-family: var(
+      --typography_tablet_h_typography_scale_typography_scale_navigation_family,
+      Inter
+    );
+    --th-typo-nav-weight: var(
+      --typography_tablet_h_typography_scale_typography_scale_navigation_weight,
+      400
+    );
+    --th-typo-nav-line-height: var(
+      --typography_tablet_h_typography_scale_typography_scale_navigation_line_height,
+      1.45
+    );
+    --th-typo-nav-letter-spacing: var(
+      --typography_tablet_h_typography_scale_typography_scale_navigation_letter_spacing,
+      0px
+    );
+  }
+}
+
+@media (max-width: 1023px) and (orientation: portrait) {
+  :root {
+    --th-typo-h1-size: var(
+      --typography_tablet_v_typography_scale_typography_scale_h1_title_size,
+      28px
+    );
+    --th-typo-h1-family: var(
+      --typography_tablet_v_typography_scale_typography_scale_h1_title_family,
+      var(--font-sora, Sora)
+    );
+    --th-typo-h1-weight: var(
+      --typography_tablet_v_typography_scale_typography_scale_h1_title_weight,
+      700
+    );
+    --th-typo-h1-line-height: var(
+      --typography_tablet_v_typography_scale_typography_scale_h1_title_line_height,
+      1.45
+    );
+    --th-typo-h1-letter-spacing: var(
+      --typography_tablet_v_typography_scale_typography_scale_h1_title_letter_spacing,
+      0px
+    );
+    --th-typo-h2-size: var(--typography_tablet_v_typography_scale_typography_scale_h2_size, 23px);
+    --th-typo-h2-family: var(
+      --typography_tablet_v_typography_scale_typography_scale_h2_family,
+      var(--font-sora, Sora)
+    );
+    --th-typo-h2-weight: var(
+      --typography_tablet_v_typography_scale_typography_scale_h2_weight,
+      700
+    );
+    --th-typo-h2-line-height: var(
+      --typography_tablet_v_typography_scale_typography_scale_h2_line_height,
+      1.45
+    );
+    --th-typo-h2-letter-spacing: var(
+      --typography_tablet_v_typography_scale_typography_scale_h2_letter_spacing,
+      0px
+    );
+    --th-typo-h3-size: var(--typography_tablet_v_typography_scale_typography_scale_h3_size, 19px);
+    --th-typo-h3-family: var(
+      --typography_tablet_v_typography_scale_typography_scale_h3_family,
+      var(--font-sora, Sora)
+    );
+    --th-typo-h3-weight: var(
+      --typography_tablet_v_typography_scale_typography_scale_h3_weight,
+      600
+    );
+    --th-typo-h3-line-height: var(
+      --typography_tablet_v_typography_scale_typography_scale_h3_line_height,
+      1.45
+    );
+    --th-typo-h3-letter-spacing: var(
+      --typography_tablet_v_typography_scale_typography_scale_h3_letter_spacing,
+      0px
+    );
+    --th-typo-h4-size: var(--typography_tablet_v_typography_scale_typography_scale_h4_size, 16px);
+    --th-typo-h4-family: var(
+      --typography_tablet_v_typography_scale_typography_scale_h4_family,
+      Poppins
+    );
+    --th-typo-h4-weight: var(
+      --typography_tablet_v_typography_scale_typography_scale_h4_weight,
+      600
+    );
+    --th-typo-h4-line-height: var(
+      --typography_tablet_v_typography_scale_typography_scale_h4_line_height,
+      1.45
+    );
+    --th-typo-h4-letter-spacing: var(
+      --typography_tablet_v_typography_scale_typography_scale_h4_letter_spacing,
+      0px
+    );
+    --th-typo-h5-size: var(--typography_tablet_v_typography_scale_typography_scale_h5_size, 14px);
+    --th-typo-h5-family: var(
+      --typography_tablet_v_typography_scale_typography_scale_h5_family,
+      Poppins
+    );
+    --th-typo-h5-weight: var(
+      --typography_tablet_v_typography_scale_typography_scale_h5_weight,
+      500
+    );
+    --th-typo-h5-line-height: var(
+      --typography_tablet_v_typography_scale_typography_scale_h5_line_height,
+      1.45
+    );
+    --th-typo-h5-letter-spacing: var(
+      --typography_tablet_v_typography_scale_typography_scale_h5_letter_spacing,
+      0px
+    );
+    --th-typo-h6-size: var(--typography_tablet_v_typography_scale_typography_scale_h6_size, 13px);
+    --th-typo-h6-family: var(
+      --typography_tablet_v_typography_scale_typography_scale_h6_family,
+      Poppins
+    );
+    --th-typo-h6-weight: var(
+      --typography_tablet_v_typography_scale_typography_scale_h6_weight,
+      500
+    );
+    --th-typo-h6-line-height: var(
+      --typography_tablet_v_typography_scale_typography_scale_h6_line_height,
+      1.45
+    );
+    --th-typo-h6-letter-spacing: var(
+      --typography_tablet_v_typography_scale_typography_scale_h6_letter_spacing,
+      0px
+    );
+    --th-typo-paragraph-size: var(
+      --typography_tablet_v_typography_scale_typography_scale_paragraph_size,
+      13px
+    );
+    --th-typo-paragraph-family: var(
+      --typography_tablet_v_typography_scale_typography_scale_paragraph_family,
+      Inter
+    );
+    --th-typo-paragraph-weight: var(
+      --typography_tablet_v_typography_scale_typography_scale_paragraph_weight,
+      400
+    );
+    --th-typo-paragraph-line-height: var(
+      --typography_tablet_v_typography_scale_typography_scale_paragraph_line_height,
+      1.45
+    );
+    --th-typo-paragraph-letter-spacing: var(
+      --typography_tablet_v_typography_scale_typography_scale_paragraph_letter_spacing,
+      0px
+    );
+    --th-typo-body-size: var(
+      --typography_tablet_v_typography_scale_typography_scale_body_size,
+      13px
+    );
+    --th-typo-body-family: var(
+      --typography_tablet_v_typography_scale_typography_scale_body_family,
+      Inter
+    );
+    --th-typo-body-weight: var(
+      --typography_tablet_v_typography_scale_typography_scale_body_weight,
+      400
+    );
+    --th-typo-body-line-height: var(
+      --typography_tablet_v_typography_scale_typography_scale_body_line_height,
+      1.45
+    );
+    --th-typo-body-letter-spacing: var(
+      --typography_tablet_v_typography_scale_typography_scale_body_letter_spacing,
+      0px
+    );
+    --th-typo-list-size: var(
+      --typography_tablet_v_typography_scale_typography_scale_list_li_size,
+      13px
+    );
+    --th-typo-list-family: var(
+      --typography_tablet_v_typography_scale_typography_scale_list_li_family,
+      Inter
+    );
+    --th-typo-list-weight: var(
+      --typography_tablet_v_typography_scale_typography_scale_list_li_weight,
+      400
+    );
+    --th-typo-list-line-height: var(
+      --typography_tablet_v_typography_scale_typography_scale_list_li_line_height,
+      1.45
+    );
+    --th-typo-list-letter-spacing: var(
+      --typography_tablet_v_typography_scale_typography_scale_list_li_letter_spacing,
+      0px
+    );
+    --th-typo-small-size: var(
+      --typography_tablet_v_typography_scale_typography_scale_small_text_size,
+      11px
+    );
+    --th-typo-small-family: var(
+      --typography_tablet_v_typography_scale_typography_scale_small_text_family,
+      Inter
+    );
+    --th-typo-small-weight: var(
+      --typography_tablet_v_typography_scale_typography_scale_small_text_weight,
+      400
+    );
+    --th-typo-small-line-height: var(
+      --typography_tablet_v_typography_scale_typography_scale_small_text_line_height,
+      1.45
+    );
+    --th-typo-small-letter-spacing: var(
+      --typography_tablet_v_typography_scale_typography_scale_small_text_letter_spacing,
+      0px
+    );
+    --th-typo-nav-size: var(
+      --typography_tablet_v_typography_scale_typography_scale_navigation_size,
+      13px
+    );
+    --th-typo-nav-family: var(
+      --typography_tablet_v_typography_scale_typography_scale_navigation_family,
+      Inter
+    );
+    --th-typo-nav-weight: var(
+      --typography_tablet_v_typography_scale_typography_scale_navigation_weight,
+      400
+    );
+    --th-typo-nav-line-height: var(
+      --typography_tablet_v_typography_scale_typography_scale_navigation_line_height,
+      1.45
+    );
+    --th-typo-nav-letter-spacing: var(
+      --typography_tablet_v_typography_scale_typography_scale_navigation_letter_spacing,
+      0px
+    );
+  }
+}
+
+@media (max-width: 767px) {
+  :root {
+    --th-typo-h1-size: var(
+      --typography_mobile_h_typography_scale_typography_scale_h1_title_size,
+      24px
+    );
+    --th-typo-h1-family: var(
+      --typography_mobile_h_typography_scale_typography_scale_h1_title_family,
+      var(--font-sora, Sora)
+    );
+    --th-typo-h1-weight: var(
+      --typography_mobile_h_typography_scale_typography_scale_h1_title_weight,
+      700
+    );
+    --th-typo-h1-line-height: var(
+      --typography_mobile_h_typography_scale_typography_scale_h1_title_line_height,
+      1.4
+    );
+    --th-typo-h1-letter-spacing: var(
+      --typography_mobile_h_typography_scale_typography_scale_h1_title_letter_spacing,
+      0px
+    );
+    --th-typo-h2-size: var(--typography_mobile_h_typography_scale_typography_scale_h2_size, 20px);
+    --th-typo-h2-family: var(
+      --typography_mobile_h_typography_scale_typography_scale_h2_family,
+      var(--font-sora, Sora)
+    );
+    --th-typo-h2-weight: var(
+      --typography_mobile_h_typography_scale_typography_scale_h2_weight,
+      700
+    );
+    --th-typo-h2-line-height: var(
+      --typography_mobile_h_typography_scale_typography_scale_h2_line_height,
+      1.4
+    );
+    --th-typo-h2-letter-spacing: var(
+      --typography_mobile_h_typography_scale_typography_scale_h2_letter_spacing,
+      0px
+    );
+    --th-typo-h3-size: var(--typography_mobile_h_typography_scale_typography_scale_h3_size, 18px);
+    --th-typo-h3-family: var(
+      --typography_mobile_h_typography_scale_typography_scale_h3_family,
+      var(--font-sora, Sora)
+    );
+    --th-typo-h3-weight: var(
+      --typography_mobile_h_typography_scale_typography_scale_h3_weight,
+      600
+    );
+    --th-typo-h3-line-height: var(
+      --typography_mobile_h_typography_scale_typography_scale_h3_line_height,
+      1.4
+    );
+    --th-typo-h3-letter-spacing: var(
+      --typography_mobile_h_typography_scale_typography_scale_h3_letter_spacing,
+      0px
+    );
+    --th-typo-h4-size: var(--typography_mobile_h_typography_scale_typography_scale_h4_size, 15px);
+    --th-typo-h4-family: var(
+      --typography_mobile_h_typography_scale_typography_scale_h4_family,
+      Poppins
+    );
+    --th-typo-h4-weight: var(
+      --typography_mobile_h_typography_scale_typography_scale_h4_weight,
+      600
+    );
+    --th-typo-h4-line-height: var(
+      --typography_mobile_h_typography_scale_typography_scale_h4_line_height,
+      1.4
+    );
+    --th-typo-h4-letter-spacing: var(
+      --typography_mobile_h_typography_scale_typography_scale_h4_letter_spacing,
+      0px
+    );
+    --th-typo-h5-size: var(--typography_mobile_h_typography_scale_typography_scale_h5_size, 13px);
+    --th-typo-h5-family: var(
+      --typography_mobile_h_typography_scale_typography_scale_h5_family,
+      Poppins
+    );
+    --th-typo-h5-weight: var(
+      --typography_mobile_h_typography_scale_typography_scale_h5_weight,
+      500
+    );
+    --th-typo-h5-line-height: var(
+      --typography_mobile_h_typography_scale_typography_scale_h5_line_height,
+      1.4
+    );
+    --th-typo-h5-letter-spacing: var(
+      --typography_mobile_h_typography_scale_typography_scale_h5_letter_spacing,
+      0px
+    );
+    --th-typo-h6-size: var(--typography_mobile_h_typography_scale_typography_scale_h6_size, 12px);
+    --th-typo-h6-family: var(
+      --typography_mobile_h_typography_scale_typography_scale_h6_family,
+      Poppins
+    );
+    --th-typo-h6-weight: var(
+      --typography_mobile_h_typography_scale_typography_scale_h6_weight,
+      500
+    );
+    --th-typo-h6-line-height: var(
+      --typography_mobile_h_typography_scale_typography_scale_h6_line_height,
+      1.4
+    );
+    --th-typo-h6-letter-spacing: var(
+      --typography_mobile_h_typography_scale_typography_scale_h6_letter_spacing,
+      0px
+    );
+    --th-typo-paragraph-size: var(
+      --typography_mobile_h_typography_scale_typography_scale_paragraph_size,
+      13px
+    );
+    --th-typo-paragraph-family: var(
+      --typography_mobile_h_typography_scale_typography_scale_paragraph_family,
+      Inter
+    );
+    --th-typo-paragraph-weight: var(
+      --typography_mobile_h_typography_scale_typography_scale_paragraph_weight,
+      400
+    );
+    --th-typo-paragraph-line-height: var(
+      --typography_mobile_h_typography_scale_typography_scale_paragraph_line_height,
+      1.4
+    );
+    --th-typo-paragraph-letter-spacing: var(
+      --typography_mobile_h_typography_scale_typography_scale_paragraph_letter_spacing,
+      0px
+    );
+    --th-typo-body-size: var(
+      --typography_mobile_h_typography_scale_typography_scale_body_size,
+      13px
+    );
+    --th-typo-body-family: var(
+      --typography_mobile_h_typography_scale_typography_scale_body_family,
+      Inter
+    );
+    --th-typo-body-weight: var(
+      --typography_mobile_h_typography_scale_typography_scale_body_weight,
+      400
+    );
+    --th-typo-body-line-height: var(
+      --typography_mobile_h_typography_scale_typography_scale_body_line_height,
+      1.4
+    );
+    --th-typo-body-letter-spacing: var(
+      --typography_mobile_h_typography_scale_typography_scale_body_letter_spacing,
+      0px
+    );
+    --th-typo-list-size: var(
+      --typography_mobile_h_typography_scale_typography_scale_list_li_size,
+      13px
+    );
+    --th-typo-list-family: var(
+      --typography_mobile_h_typography_scale_typography_scale_list_li_family,
+      Inter
+    );
+    --th-typo-list-weight: var(
+      --typography_mobile_h_typography_scale_typography_scale_list_li_weight,
+      400
+    );
+    --th-typo-list-line-height: var(
+      --typography_mobile_h_typography_scale_typography_scale_list_li_line_height,
+      1.4
+    );
+    --th-typo-list-letter-spacing: var(
+      --typography_mobile_h_typography_scale_typography_scale_list_li_letter_spacing,
+      0px
+    );
+    --th-typo-small-size: var(
+      --typography_mobile_h_typography_scale_typography_scale_small_text_size,
+      11px
+    );
+    --th-typo-small-family: var(
+      --typography_mobile_h_typography_scale_typography_scale_small_text_family,
+      Inter
+    );
+    --th-typo-small-weight: var(
+      --typography_mobile_h_typography_scale_typography_scale_small_text_weight,
+      400
+    );
+    --th-typo-small-line-height: var(
+      --typography_mobile_h_typography_scale_typography_scale_small_text_line_height,
+      1.4
+    );
+    --th-typo-small-letter-spacing: var(
+      --typography_mobile_h_typography_scale_typography_scale_small_text_letter_spacing,
+      0px
+    );
+    --th-typo-nav-size: var(
+      --typography_mobile_h_typography_scale_typography_scale_navigation_size,
+      13px
+    );
+    --th-typo-nav-family: var(
+      --typography_mobile_h_typography_scale_typography_scale_navigation_family,
+      Inter
+    );
+    --th-typo-nav-weight: var(
+      --typography_mobile_h_typography_scale_typography_scale_navigation_weight,
+      400
+    );
+    --th-typo-nav-line-height: var(
+      --typography_mobile_h_typography_scale_typography_scale_navigation_line_height,
+      1.4
+    );
+    --th-typo-nav-letter-spacing: var(
+      --typography_mobile_h_typography_scale_typography_scale_navigation_letter_spacing,
+      0px
+    );
+  }
+}
+
+@media (max-width: 767px) and (orientation: portrait) {
+  :root {
+    --th-typo-h1-size: var(
+      --typography_mobile_v_typography_scale_typography_scale_h1_title_size,
+      24px
+    );
+    --th-typo-h1-family: var(
+      --typography_mobile_v_typography_scale_typography_scale_h1_title_family,
+      var(--font-sora, Sora)
+    );
+    --th-typo-h1-weight: var(
+      --typography_mobile_v_typography_scale_typography_scale_h1_title_weight,
+      700
+    );
+    --th-typo-h1-line-height: var(
+      --typography_mobile_v_typography_scale_typography_scale_h1_title_line_height,
+      1.4
+    );
+    --th-typo-h1-letter-spacing: var(
+      --typography_mobile_v_typography_scale_typography_scale_h1_title_letter_spacing,
+      0px
+    );
+    --th-typo-h2-size: var(--typography_mobile_v_typography_scale_typography_scale_h2_size, 20px);
+    --th-typo-h2-family: var(
+      --typography_mobile_v_typography_scale_typography_scale_h2_family,
+      var(--font-sora, Sora)
+    );
+    --th-typo-h2-weight: var(
+      --typography_mobile_v_typography_scale_typography_scale_h2_weight,
+      700
+    );
+    --th-typo-h2-line-height: var(
+      --typography_mobile_v_typography_scale_typography_scale_h2_line_height,
+      1.4
+    );
+    --th-typo-h2-letter-spacing: var(
+      --typography_mobile_v_typography_scale_typography_scale_h2_letter_spacing,
+      0px
+    );
+    --th-typo-h3-size: var(--typography_mobile_v_typography_scale_typography_scale_h3_size, 18px);
+    --th-typo-h3-family: var(
+      --typography_mobile_v_typography_scale_typography_scale_h3_family,
+      var(--font-sora, Sora)
+    );
+    --th-typo-h3-weight: var(
+      --typography_mobile_v_typography_scale_typography_scale_h3_weight,
+      600
+    );
+    --th-typo-h3-line-height: var(
+      --typography_mobile_v_typography_scale_typography_scale_h3_line_height,
+      1.4
+    );
+    --th-typo-h3-letter-spacing: var(
+      --typography_mobile_v_typography_scale_typography_scale_h3_letter_spacing,
+      0px
+    );
+    --th-typo-h4-size: var(--typography_mobile_v_typography_scale_typography_scale_h4_size, 15px);
+    --th-typo-h4-family: var(
+      --typography_mobile_v_typography_scale_typography_scale_h4_family,
+      Poppins
+    );
+    --th-typo-h4-weight: var(
+      --typography_mobile_v_typography_scale_typography_scale_h4_weight,
+      600
+    );
+    --th-typo-h4-line-height: var(
+      --typography_mobile_v_typography_scale_typography_scale_h4_line_height,
+      1.4
+    );
+    --th-typo-h4-letter-spacing: var(
+      --typography_mobile_v_typography_scale_typography_scale_h4_letter_spacing,
+      0px
+    );
+    --th-typo-h5-size: var(--typography_mobile_v_typography_scale_typography_scale_h5_size, 13px);
+    --th-typo-h5-family: var(
+      --typography_mobile_v_typography_scale_typography_scale_h5_family,
+      Poppins
+    );
+    --th-typo-h5-weight: var(
+      --typography_mobile_v_typography_scale_typography_scale_h5_weight,
+      500
+    );
+    --th-typo-h5-line-height: var(
+      --typography_mobile_v_typography_scale_typography_scale_h5_line_height,
+      1.4
+    );
+    --th-typo-h5-letter-spacing: var(
+      --typography_mobile_v_typography_scale_typography_scale_h5_letter_spacing,
+      0px
+    );
+    --th-typo-h6-size: var(--typography_mobile_v_typography_scale_typography_scale_h6_size, 12px);
+    --th-typo-h6-family: var(
+      --typography_mobile_v_typography_scale_typography_scale_h6_family,
+      Poppins
+    );
+    --th-typo-h6-weight: var(
+      --typography_mobile_v_typography_scale_typography_scale_h6_weight,
+      500
+    );
+    --th-typo-h6-line-height: var(
+      --typography_mobile_v_typography_scale_typography_scale_h6_line_height,
+      1.4
+    );
+    --th-typo-h6-letter-spacing: var(
+      --typography_mobile_v_typography_scale_typography_scale_h6_letter_spacing,
+      0px
+    );
+    --th-typo-paragraph-size: var(
+      --typography_mobile_v_typography_scale_typography_scale_paragraph_size,
+      13px
+    );
+    --th-typo-paragraph-family: var(
+      --typography_mobile_v_typography_scale_typography_scale_paragraph_family,
+      Inter
+    );
+    --th-typo-paragraph-weight: var(
+      --typography_mobile_v_typography_scale_typography_scale_paragraph_weight,
+      400
+    );
+    --th-typo-paragraph-line-height: var(
+      --typography_mobile_v_typography_scale_typography_scale_paragraph_line_height,
+      1.4
+    );
+    --th-typo-paragraph-letter-spacing: var(
+      --typography_mobile_v_typography_scale_typography_scale_paragraph_letter_spacing,
+      0px
+    );
+    --th-typo-body-size: var(
+      --typography_mobile_v_typography_scale_typography_scale_body_size,
+      13px
+    );
+    --th-typo-body-family: var(
+      --typography_mobile_v_typography_scale_typography_scale_body_family,
+      Inter
+    );
+    --th-typo-body-weight: var(
+      --typography_mobile_v_typography_scale_typography_scale_body_weight,
+      400
+    );
+    --th-typo-body-line-height: var(
+      --typography_mobile_v_typography_scale_typography_scale_body_line_height,
+      1.4
+    );
+    --th-typo-body-letter-spacing: var(
+      --typography_mobile_v_typography_scale_typography_scale_body_letter_spacing,
+      0px
+    );
+    --th-typo-list-size: var(
+      --typography_mobile_v_typography_scale_typography_scale_list_li_size,
+      13px
+    );
+    --th-typo-list-family: var(
+      --typography_mobile_v_typography_scale_typography_scale_list_li_family,
+      Inter
+    );
+    --th-typo-list-weight: var(
+      --typography_mobile_v_typography_scale_typography_scale_list_li_weight,
+      400
+    );
+    --th-typo-list-line-height: var(
+      --typography_mobile_v_typography_scale_typography_scale_list_li_line_height,
+      1.4
+    );
+    --th-typo-list-letter-spacing: var(
+      --typography_mobile_v_typography_scale_typography_scale_list_li_letter_spacing,
+      0px
+    );
+    --th-typo-small-size: var(
+      --typography_mobile_v_typography_scale_typography_scale_small_text_size,
+      11px
+    );
+    --th-typo-small-family: var(
+      --typography_mobile_v_typography_scale_typography_scale_small_text_family,
+      Inter
+    );
+    --th-typo-small-weight: var(
+      --typography_mobile_v_typography_scale_typography_scale_small_text_weight,
+      400
+    );
+    --th-typo-small-line-height: var(
+      --typography_mobile_v_typography_scale_typography_scale_small_text_line_height,
+      1.4
+    );
+    --th-typo-small-letter-spacing: var(
+      --typography_mobile_v_typography_scale_typography_scale_small_text_letter_spacing,
+      0px
+    );
+    --th-typo-nav-size: var(
+      --typography_mobile_v_typography_scale_typography_scale_navigation_size,
+      13px
+    );
+    --th-typo-nav-family: var(
+      --typography_mobile_v_typography_scale_typography_scale_navigation_family,
+      Inter
+    );
+    --th-typo-nav-weight: var(
+      --typography_mobile_v_typography_scale_typography_scale_navigation_weight,
+      400
+    );
+    --th-typo-nav-line-height: var(
+      --typography_mobile_v_typography_scale_typography_scale_navigation_line_height,
+      1.4
+    );
+    --th-typo-nav-letter-spacing: var(
+      --typography_mobile_v_typography_scale_typography_scale_navigation_letter_spacing,
+      0px
+    );
+  }
+}
+
+/* ── Element mapping ─────────────────────────────────────────────────────── */
+
+h1 {
+  font-size: var(--th-typo-h1-size);
+  font-family: var(--th-typo-h1-family), ui-sans-serif, system-ui, sans-serif;
+  font-weight: var(--th-typo-h1-weight);
+  line-height: var(--th-typo-h1-line-height);
+  letter-spacing: var(--th-typo-h1-letter-spacing);
+}
+
+h2 {
+  font-size: var(--th-typo-h2-size);
+  font-family: var(--th-typo-h2-family), ui-sans-serif, system-ui, sans-serif;
+  font-weight: var(--th-typo-h2-weight);
+  line-height: var(--th-typo-h2-line-height);
+  letter-spacing: var(--th-typo-h2-letter-spacing);
+}
+
+h3 {
+  font-size: var(--th-typo-h3-size);
+  font-family: var(--th-typo-h3-family), ui-sans-serif, system-ui, sans-serif;
+  font-weight: var(--th-typo-h3-weight);
+  line-height: var(--th-typo-h3-line-height);
+  letter-spacing: var(--th-typo-h3-letter-spacing);
+}
+
+h4 {
+  font-size: var(--th-typo-h4-size);
+  font-family: var(--th-typo-h4-family), ui-sans-serif, system-ui, sans-serif;
+  font-weight: var(--th-typo-h4-weight);
+  line-height: var(--th-typo-h4-line-height);
+  letter-spacing: var(--th-typo-h4-letter-spacing);
+}
+
+h5 {
+  font-size: var(--th-typo-h5-size);
+  font-family: var(--th-typo-h5-family), ui-sans-serif, system-ui, sans-serif;
+  font-weight: var(--th-typo-h5-weight);
+  line-height: var(--th-typo-h5-line-height);
+  letter-spacing: var(--th-typo-h5-letter-spacing);
+}
+
+h6 {
+  font-size: var(--th-typo-h6-size);
+  font-family: var(--th-typo-h6-family), ui-sans-serif, system-ui, sans-serif;
+  font-weight: var(--th-typo-h6-weight);
+  line-height: var(--th-typo-h6-line-height);
+  letter-spacing: var(--th-typo-h6-letter-spacing);
+}
+
+p {
+  font-size: var(--th-typo-paragraph-size);
+  font-family: var(--th-typo-paragraph-family), ui-sans-serif, system-ui, sans-serif;
+  font-weight: var(--th-typo-paragraph-weight);
+  line-height: var(--th-typo-paragraph-line-height);
+  letter-spacing: var(--th-typo-paragraph-letter-spacing);
+}
+
+li {
+  font-size: var(--th-typo-list-size);
+  font-family: var(--th-typo-list-family), ui-sans-serif, system-ui, sans-serif;
+  font-weight: var(--th-typo-list-weight);
+  line-height: var(--th-typo-list-line-height);
+  letter-spacing: var(--th-typo-list-letter-spacing);
+}
+
+small {
+  font-size: var(--th-typo-small-size);
+  font-family: var(--th-typo-small-family), ui-sans-serif, system-ui, sans-serif;
+  font-weight: var(--th-typo-small-weight);
+  line-height: var(--th-typo-small-line-height);
+  letter-spacing: var(--th-typo-small-letter-spacing);
+}
+
+/* Body text (size/line-height only here — the font-family is applied as an
+   inline style on <body> in app/layout.tsx so it beats next/font's generated
+   class, which outranks any element selector). */
+body {
+  font-size: var(--th-typo-body-size);
+  line-height: var(--th-typo-body-line-height);
+}
+
+/* Navigation font — sidebar + any <nav> (breadcrumbs inherit family; nav item
+   font-size utilities were removed from AdminSidebar so the token applies). */
+nav {
+  font-size: var(--th-typo-nav-size);
+  font-family: var(--th-typo-nav-family), ui-sans-serif, system-ui, sans-serif;
+  font-weight: var(--th-typo-nav-weight);
+}

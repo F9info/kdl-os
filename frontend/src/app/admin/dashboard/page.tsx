@@ -6,7 +6,7 @@ import api from '@/lib/axios'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { DataTable } from '@/components/shared/DataTable'
 import { StatusBadge } from '@/components/shared/StatusBadge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatDate } from '@/lib/utils'
 import type { User } from '@/types/models.types'
@@ -23,7 +23,7 @@ function StatsCard({ title, value, icon: Icon, isLoading }: StatsCardProps) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <p className="text-sm font-medium text-muted-foreground">{title}</p>
         <Icon className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
@@ -111,9 +111,9 @@ export default function DashboardPage() {
     <div>
       <PageHeader title="Dashboard" />
 
-      {/* Gap between stat cards follows Template Engine Layout > Card Spacing
-          via te-card-grid (te-layout.css); gap-4 was the old static value. */}
-      <div className="te-card-grid grid md:grid-cols-2 lg:grid-cols-4">
+      {/* Gap between stat cards follows Theme Engine Layout > Card Spacing
+          via th-card-grid (te-layout.css); gap-4 was the old static value. */}
+      <div className="th-card-grid grid md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="Total Users"
           value={usersData?.pagination.total ?? 0}

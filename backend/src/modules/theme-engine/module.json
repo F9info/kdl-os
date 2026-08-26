@@ -1,0 +1,15 @@
+{
+  "slug": "theme-engine",
+  "name": "Theme Engine",
+  "version": "1.0.0",
+  "description": "Design-system token compiler — always-on engine layer",
+  "core": true,
+  "visibleInCatalog": false,
+  "apiPrefix": "/api/theme-engine",
+  "permissions": ["theme-engine"],
+  "nav": [],
+  "dependsOn": [],
+  "conflictsWith": [],
+  "queues": [],
+  "env": []
+}

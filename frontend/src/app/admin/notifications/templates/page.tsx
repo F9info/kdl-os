@@ -197,7 +197,7 @@ export default function NotificationTemplatesPage() {
   return (
     <ModuleGuard slug="notifications">
       <PermissionGuard permission="notifications:view">
-        <div className="p-6">
+        <div>
           <PageHeader
             title="Notification Templates"
             action={
@@ -234,7 +234,7 @@ export default function NotificationTemplatesPage() {
                       <td className="p-3 text-muted-foreground">{t.category?.name}</td>
                       <td className="p-3">
                         <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${t.is_active ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'}`}
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${t.is_active ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-muted text-muted-foreground'}`}
                         >
                           {t.is_active ? 'Active' : 'Inactive'}
                         </span>

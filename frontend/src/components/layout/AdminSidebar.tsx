@@ -26,6 +26,8 @@ import {
   Sparkles,
   CloudUpload,
   HardDrive,
+  Palette,
+  LayoutTemplate,
 } from 'lucide-react'
 import { useUiStore } from '@/stores/ui.store'
 import { useIsMobile } from '@/hooks/useIsMobile'
@@ -48,6 +50,9 @@ const MODULE_ICON_MAP: Record<string, React.ElementType> = {
   Shield,
   Users,
   Cog,
+  Palette,
+  LayoutTemplate,
+  Sparkles,
 }
 
 // Slug of the setting field that holds the app logo (set under any Type).
@@ -243,11 +248,11 @@ export function AdminSidebar() {
         )}
         // Desktop: expanded width from TE sidebar-width token (KDL-209 contract).
         // Mobile: same token drives drawer width; never uses icon-rail (w-16) on mobile.
-        style={isMobile || sidebarOpen ? { width: 'var(--te-layout-sidebar-width)' } : undefined}
+        style={isMobile || sidebarOpen ? { width: 'var(--th-layout-sidebar-width)' } : undefined}
       >
-        {/* te-header keeps the logo row the same height as the TopBar when
+        {/* th-header keeps the logo row the same height as the TopBar when
           Layout > Header Height changes. */}
-        <div className="te-header flex items-center border-b px-4">
+        <div className="th-header flex items-center border-b px-4">
           {logoUrl ? (
             // Expanded: logo_image class sizes the logo from the Template
             // Engine's Images pane. Collapsed: the 64px rail is fixed chrome, so

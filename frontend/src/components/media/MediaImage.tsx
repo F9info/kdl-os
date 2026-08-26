@@ -9,7 +9,7 @@ interface MediaImageProps {
   alt?: string
   width?: number
   height?: number
-  /** Template Engine Images-pane class; rendered size obeys those tokens. */
+  /** Theme Engine Images-pane class; rendered size obeys those tokens. */
   size?: AppImageSize
 }
 

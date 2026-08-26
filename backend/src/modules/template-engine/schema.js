@@ -1,74 +1,54 @@
 import { z } from 'zod';
-import { PLATFORMS as PLATFORM_DEFS } from './schema/index.js';
 
-// Derived from the real PLATFORMS list, not hand-duplicated — a platform id
-// added there (e.g. webapp_admin) is instantly valid here too.
-const PLATFORM_IDS = PLATFORM_DEFS.map((p) => p.id);
-const platformEnum = z.enum(PLATFORM_IDS);
+// Canonical stage slugs per TEMPLATE_ENGINE_ARCH.md §3.
+export const DAG_STAGE_SLUGS = [
+  'intake',
+  'palette',
+  'inference',
+  'approval',
+  'guidelines',
+  'collateral',
+  'website',
+  'preflight',
+  'export',
+];
 
-const ALL_DEVICE_IDS = [...new Set(PLATFORM_DEFS.flatMap((p) => p.devices.map((d) => d.id)))];
-const deviceEnum = z.enum([...ALL_DEVICE_IDS, 'all']).optional();
+const stageSlugEnum = z.enum(DAG_STAGE_SLUGS);
 
-export const getSchemaQuerySchema = z.object({
+export const createRunBodySchema = z.object({
+  body: z.object({
+    projectId: z.string().min(1),
+  }),
+});
+
+export const listRunsQuerySchema = z.object({
   query: z.object({
-    platform: platformEnum,
+    projectId: z.string().min(1),
   }),
 });
 
-export const getValuesQuerySchema = z.object({
-  query: z.object({
-    platform: platformEnum,
-    type: z.string().min(1),
+export const runParamSchema = z.object({
+  params: z.object({
+    runId: z.string().min(1),
   }),
 });
 
-const valueEntrySchema = z.object({
-  field_id: z.string().optional(),
-  slug: z.string().optional(),
-  value: z.string(),
-}).refine((v) => v.field_id || v.slug, { message: 'field_id or slug is required' });
-
-export const postValuesBodySchema = z.object({
-  body: z.object({
-    platform: platformEnum,
-    type_id: z.string().min(1),
-    values: z.array(valueEntrySchema).min(1),
+export const advanceStageSchema = z.object({
+  params: z.object({
+    runId: z.string().min(1),
+    stage: stageSlugEnum,
   }),
-});
-
-export const postResetBodySchema = z.object({
-  body: z.object({
-    platform: platformEnum,
-    type_id: z.string().min(1),
-  }),
-});
-
-export const postActiveThemeBodySchema = z.object({
-  body: z.object({
-    platform: platformEnum,
-    theme: z.enum(['dark', 'light', 'system']),
-  }),
-});
-
-export const getTokensQuerySchema = z.object({
-  query: z
+  // approval stage may carry brandKitVersion on the accept call
+  body: z
     .object({
-      platform: platformEnum,
-      theme: z.enum(['dark', 'light', 'focus']).optional(),
-      device: deviceEnum,
+      brandKitVersion: z.number().int().positive().optional(),
     })
-    .superRefine((q, ctx) => {
-      // A device id must belong to the requested platform — a cross-platform
-      // pair compiles nothing useful and caches under a key that per-platform
-      // invalidation never deletes.
-      if (!q.device || q.device === 'all') return;
-      const plat = PLATFORM_DEFS.find((p) => p.id === q.platform);
-      if (!plat?.devices.some((d) => d.id === q.device)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['device'],
-          message: `device "${q.device}" does not belong to platform "${q.platform}"`,
-        });
-      }
-    }),
+    .optional(),
+});
+
+export const stageRecoveryParamSchema = z.object({
+  params: z.object({
+    runId: z.string().min(1),
+    stage: stageSlugEnum,
+  }),
 });

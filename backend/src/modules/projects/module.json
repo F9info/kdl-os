@@ -1,0 +1,16 @@
+{
+  "slug": "projects",
+  "name": "Projects",
+  "version": "1.0.0",
+  "description": "Project management — Studio hard-depends on this module to scope template-engine runs.",
+  "core": true,
+  "visibleInCatalog": false,
+  "apiPrefix": "/api/projects",
+  "permissions": [
+    { "name": "projects", "actions": ["view", "create", "update", "delete"] }
+  ],
+  "nav": [],
+  "dependsOn": [],
+  "queues": [],
+  "env": []
+}

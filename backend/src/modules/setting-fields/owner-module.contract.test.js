@@ -44,8 +44,8 @@ describe('listFields — owner_module filter', () => {
   });
 
   it('scopes to the requested module when ?ownerModule is given', async () => {
-    await service.listFields({ ownerModule: 'template-engine' });
-    expect(prisma.settingField.findMany.mock.calls[0][0].where.owner_module).toBe('template-engine');
+    await service.listFields({ ownerModule: 'theme-engine' });
+    expect(prisma.settingField.findMany.mock.calls[0][0].where.owner_module).toBe('theme-engine');
   });
 });
 

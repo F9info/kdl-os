@@ -10,18 +10,28 @@ export interface ModuleNavItem {
   permission?: string
 }
 
+export interface ModuleConflict {
+  slug: string
+  name: string
+  status: ModuleStatus
+}
+
 export interface Module {
   slug: string
   name: string
   description: string | null
   version: string
   core: boolean
+  /** False when the manifest explicitly marks this as an internal-only dependency (e.g. projects, brand-kit, collateral, credits). Absent/undefined is treated as true. */
+  visibleInCatalog?: boolean
   apiPrefix: string
   icon: string | null
   status: ModuleStatus
   installed_at: string | null
   enabled_at: string | null
   settings: Record<string, unknown> | null
+  conflictsWith?: string[]
+  conflicts?: ModuleConflict[]
 }
 
 export interface EnabledModule {

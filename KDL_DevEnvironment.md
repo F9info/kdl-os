@@ -242,23 +242,34 @@ kdl-starter-kit/
 
 ## Part H — Docker Services
 
-| Service | Image | Port | Purpose |
-|---------|-------|------|---------|
-| postgres | postgres:15 | 5432 | Primary database |
-| redis | redis:7-alpine | 6379 | Cache + BullMQ |
-| backend | ./backend | 4000 | Express API |
-| frontend | ./frontend | 3000 | Next.js app |
-| minio | minio/minio | 9000 / 9001 | Object storage |
-| meilisearch | getmeili/meilisearch:v1.7 | 7700 | Full-text search |
-| chromadb | chromadb/chroma | 8000 | Vector database |
-| ai-services | ./ai-services | 5000 | Brain router + LangChain |
-| nginx | nginx:alpine | 80 | Reverse proxy |
+Host ports below come from `docker-compose.yml` and must match `.env`. The containers listen on
+their own internal port; the **host port** is what you hit from your machine.
 
-> All 9 services run inside Docker. Claude and OpenRouter are cloud APIs — no local model container needed.
+| Service | Image | Container port | **Host port** | Purpose |
+|---------|-------|----------------|---------------|---------|
+| postgres | postgres:15 | 5432 | **5433** | Primary database |
+| redis | redis:7-alpine | 6379 | **6380** | Cache + BullMQ |
+| backend | ./backend | 4000 | **4000** | Express API |
+| frontend | ./frontend | 3000 | **3001** | Next.js app |
+| minio | minio/minio | 9000 / 9001 | **9002 / 9003** | Object storage |
+| meilisearch | getmeili/meilisearch:v1.7 | 7700 | **7700** | Full-text search |
+| chromadb | chromadb/chroma | 8000 | **8000** | Vector database |
+| ai-services | ./ai-services | 5000 | **5001** | Brain router + LangChain |
+| nginx | nginx:alpine | 80 | **80** | Reverse proxy |
+
+> All 9 services run inside Docker. Claude is accessed via the Paperclip subscription — no local model container needed.
+
+> **Port note:** the host ports (5433, 6380, 3001, 9002 …) are defined in `docker-compose.yml` and referenced in your `.env` DATABASE_URL / REDIS_URL. Do not use bare defaults like 5432/6379/3000 when connecting from the host.
 
 ---
 
 ## Part K — Environment Variables
+
+> **Source of truth:** `.env.example` in the repo root. This section mirrors it. If these diverge, `.env.example` wins.
+>
+> **Setup:** `cp .env.example .env` then fill in secrets. The backend env-preflight reports **all** missing required vars at once on startup.
+>
+> **Port note:** DATABASE_URL uses host port 5433; REDIS_URL uses host port 6380. These match what `docker-compose.yml` maps to the host. The frontend runs on host port 3001, backend on 4000.
 
 ```bash
 # ── Core ─────────────────────────────────────────────
@@ -267,42 +278,53 @@ APP_PORT=4000
 FRONTEND_URL=http://localhost:3000
 BACKEND_URL=http://localhost:4000
 AI_SERVICES_URL=http://localhost:5000
-JWT_SECRET=change_this_min_32_chars
+# JWT_SECRET and JWT_REFRESH_SECRET must be different, ≥32 bytes, non-placeholder
+JWT_SECRET=change_this_min_64_chars
+JWT_REFRESH_SECRET=change_this_min_64_chars_refresh_different
 JWT_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_IN=7d
 CORS_ORIGIN=http://localhost:3000
 
 # ── Database ─────────────────────────────────────────
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/kdl_db
+# Host port 5433 (compose maps container 5432 → host 5433)
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=change_this_postgres_password
+POSTGRES_DB=kdl_db
+DATABASE_URL=postgresql://postgres:change_this_postgres_password@localhost:5433/kdl_db
 
 # ── Redis ────────────────────────────────────────────
-REDIS_URL=redis://localhost:6379
+# Host port 6380 (compose maps container 6379 → host 6380)
+# REDIS_PASSWORD is also required by docker-compose redis --requirepass interpolation
+REDIS_PASSWORD=change_this_redis_password
+REDIS_URL=redis://:change_this_redis_password@localhost:6380
 
-# ── AI Brains ─────────────────────────────────────────
-ANTHROPIC_API_KEY=sk-ant-your-key          # Main brain (Claude — via subscription in Paperclip)
-OPENROUTER_API_KEY=your-openrouter-key     # Budget brain (OpenRouter — model-agnostic)
-
-# OpenRouter config
+# ── AI Brain ─────────────────────────────────────────
+# Main brain — Claude via Paperclip subscription (no key needed locally)
+ANTHROPIC_API_KEY=via_paperclip_subscription
+OPENROUTER_API_KEY=your_openrouter_api_key
 OPENROUTER_DEFAULT_MODEL=moonshot-ai/moonshot-v1-32k
-OPENROUTER_DAILY_BUDGET=2.00               # USD — adjust based on your daily limit
+OPENROUTER_DAILY_BUDGET=2.00
 
 # ── Voice ────────────────────────────────────────────
-OPENAI_API_KEY=sk-your-key                 # For Whisper only
+OPENAI_API_KEY=sk-your-whisper-key-here
 
 # ── ChromaDB ─────────────────────────────────────────
 CHROMADB_URL=http://localhost:8000
 
 # ── Storage (MinIO) ───────────────────────────────────
+MINIO_ROOT_USER=change_this_minio_user
+MINIO_ROOT_PASSWORD=change_this_minio_password
 MINIO_ENDPOINT=localhost
 MINIO_PORT=9000
 MINIO_USE_SSL=false
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin
+MINIO_ACCESS_KEY=change_this_minio_user
+MINIO_SECRET_KEY=change_this_minio_password
 MINIO_BUCKET=kdl-media
 
-# ── Search ───────────────────────────────────────────
+# ── Search (MeiliSearch) ──────────────────────────────
 MEILISEARCH_HOST=http://localhost:7700
-MEILISEARCH_API_KEY=masterKey
+MEILI_MASTER_KEY=change_this_meili_master_key
+MEILISEARCH_API_KEY=scoped-admin-key
 
 # ── Payments ─────────────────────────────────────────
 STRIPE_SECRET_KEY=sk_test_your_key
@@ -313,7 +335,7 @@ RAZORPAY_KEY_SECRET=your_razorpay_secret
 # ── Email ────────────────────────────────────────────
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=your@email.com
+SMTP_USER=your@gmail.com
 SMTP_PASS=your_app_password
 SMTP_FROM=KDL Starter Kit <noreply@kdl.com>
 
@@ -323,6 +345,10 @@ VAULT_TOKEN=dev-root-token
 
 # ── Observability ─────────────────────────────────────
 SENTRY_DSN=your_sentry_dsn
+
+# ── Encryption ───────────────────────────────────────
+# Generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+APP_ENCRYPTION_KEY=REPLACE_BEFORE_DEPLOY_run_node_e_console.log_require_crypto_randomBytes_32_toString_hex
 ```
 
 ---

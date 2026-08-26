@@ -1,0 +1,15 @@
+{
+  "slug": "collateral",
+  "name": "Collateral",
+  "version": "1.0.0",
+  "description": "Print-ready collateral render engine — visiting card, letterhead, t-shirt, ID card (COLLATERAL_SPEC.md §2).",
+  "core": false,
+  "visibleInCatalog": false,
+  "apiPrefix": "/api/collateral",
+  "permissions": [{ "name": "collateral", "actions": ["view", "edit", "render", "delete"] }],
+  "nav": [],
+  "dependsOn": ["brand-kit"],
+  "conflictsWith": [],
+  "queues": [],
+  "env": []
+}

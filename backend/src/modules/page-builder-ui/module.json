@@ -1,0 +1,16 @@
+{
+  "slug": "page-builder-ui",
+  "name": "Page Builder UI",
+  "version": "1.0.0",
+  "description": "Admin nav and screens for Page Builder — toggleable",
+  "core": false,
+  "apiPrefix": "/api/page-builder-ui",
+  "permissions": [],
+  "nav": [
+    { "label": "Page Builder", "path": "/admin/page-builder", "icon": "LayoutTemplate", "permission": "page-builder:view" }
+  ],
+  "dependsOn": ["page-builder"],
+  "conflictsWith": [],
+  "queues": [],
+  "env": []
+}

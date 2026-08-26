@@ -1,0 +1,166 @@
+{
+  "rulesVersion": "v1",
+  "description": "Offline fallback inference rules for POST /api/ai/brand-inference (KDL-471 §4.4). First-match over lowercased industry keyword stems; the __default__ entry is mandatory. Typography resolves through the same pairing whitelist as the AI path (font-pairings.json). Tone content mirrors backend/src/modules/brand-kit/data/inference-rules.json v1 so both fallback layers agree. Strategy copy is template interpolation ({companyName}, {industry}, {hueName}) — honest boilerplate, clearly badged via source: 'fallback', never pretending to be inference. Built from first principles; the 5,561-line prototype does not exist (OQ-A CLOSED by CEO ruling on KDL-451, 2026-08-18).",
+  "rules": [
+    {
+      "match": ["technology", "tech", "software", "saas", "it", "digital", "ai", "ml", "data"],
+      "pairingId": "inter",
+      "scaleRatio": 1.25,
+      "tone": {
+        "voice": "Clear, precise, and forward-looking — communicates complexity with confidence and avoids jargon.",
+        "adjectives": ["innovative", "reliable", "precise", "efficient", "scalable"],
+        "dos": ["Use active voice", "Lead with outcomes", "Quantify where possible", "Be concise"],
+        "donts": ["Avoid buzzwords", "Don't overpromise", "Avoid passive constructions", "Don't use unexplained acronyms"]
+      },
+      "strategyTemplate": {
+        "positioning": "{companyName} builds dependable {industry} products that turn complex problems into clear, measurable outcomes. The brand leads with capability and proof rather than hype, anchored by a confident {hueName} palette.",
+        "audienceNotes": "Primary audiences are technical evaluators and business decision-makers who value reliability, transparent documentation, and evidence of scale. Speak to their need to reduce risk while moving fast.",
+        "elevatorPitch": "{companyName} delivers {industry} solutions that are precise, scalable, and built to earn trust from the first interaction."
+      }
+    },
+    {
+      "match": ["healthcare", "health", "medical", "pharma", "hospital", "clinic", "wellness"],
+      "pairingId": "source-serif-source-sans",
+      "scaleRatio": 1.2,
+      "tone": {
+        "voice": "Empathetic, trustworthy, and evidence-based — speaks to patients and professionals alike.",
+        "adjectives": ["compassionate", "trusted", "precise", "caring", "expert"],
+        "dos": ["Use inclusive language", "Cite evidence", "Prioritise clarity", "Lead with patient benefit"],
+        "donts": ["Avoid alarmist language", "Don't trivialise conditions", "Avoid unexplained medical jargon", "Don't make unqualified health claims"]
+      },
+      "strategyTemplate": {
+        "positioning": "{companyName} provides {industry} services grounded in evidence and delivered with genuine care. The brand pairs clinical credibility with human warmth, reflected in a calm {hueName} palette.",
+        "audienceNotes": "Audiences span patients, families, and healthcare professionals. Patients need reassurance and plain language; professionals need rigour and evidence. Every message should be readable by both without condescending to either.",
+        "elevatorPitch": "{companyName} combines clinical expertise with genuine compassion, making quality {industry} care feel accessible and trustworthy."
+      }
+    },
+    {
+      "match": ["finance", "fintech", "banking", "insurance", "investment", "wealth", "accounting"],
+      "pairingId": "playfair-lato",
+      "scaleRatio": 1.25,
+      "tone": {
+        "voice": "Authoritative, transparent, and measured — projects stability and expertise without arrogance.",
+        "adjectives": ["trustworthy", "secure", "transparent", "strategic", "proven"],
+        "dos": ["Use precise figures", "Acknowledge risk", "Be transparent about fees", "Lead with trust signals"],
+        "donts": ["Avoid speculation", "Don't use slang", "Don't downplay risk", "Avoid hype"]
+      },
+      "strategyTemplate": {
+        "positioning": "{companyName} offers {industry} expertise built on transparency and a proven track record. The brand projects stability and discretion, with a considered {hueName} palette signalling established confidence.",
+        "audienceNotes": "Audiences are clients entrusting significant assets or decisions. They respond to precision, candour about risk, and visible expertise — and are repelled by hype, vagueness, or pressure tactics.",
+        "elevatorPitch": "{companyName} brings clarity and proven judgement to {industry}, so clients can act with confidence."
+      }
+    },
+    {
+      "match": ["education", "edtech", "training", "learning", "school", "university", "tutoring"],
+      "pairingId": "nunito",
+      "scaleRatio": 1.25,
+      "tone": {
+        "voice": "Encouraging, accessible, and curious — makes learning feel achievable and exciting.",
+        "adjectives": ["inspiring", "accessible", "curious", "supportive", "engaging"],
+        "dos": ["Use second person", "Celebrate progress", "Simplify without condescending", "Use positive framing"],
+        "donts": ["Avoid gatekeeping language", "Don't be prescriptive", "Avoid passive voice", "Don't use academic jargon unnecessarily"]
+      },
+      "strategyTemplate": {
+        "positioning": "{companyName} makes {industry} feel achievable and genuinely exciting, meeting learners where they are and celebrating every step forward. A friendly {hueName} palette keeps the brand warm and unintimidating.",
+        "audienceNotes": "Learners and the people who support them — students, parents, educators. They need encouragement without condescension, clear paths to progress, and proof that effort pays off.",
+        "elevatorPitch": "{companyName} turns {industry} into a journey people actually want to be on — supportive, clear, and rewarding."
+      }
+    },
+    {
+      "match": ["retail", "ecommerce", "fashion", "lifestyle", "consumer", "fmcg", "grocery"],
+      "pairingId": "raleway",
+      "scaleRatio": 1.333,
+      "tone": {
+        "voice": "Vibrant, relatable, and aspirational — makes customers feel good about their choices.",
+        "adjectives": ["fresh", "bold", "approachable", "stylish", "value-driven"],
+        "dos": ["Lead with benefits", "Use sensory language", "Be conversational", "Celebrate the customer"],
+        "donts": ["Avoid corporate speak", "Don't bury the offer", "Avoid complex sentences", "Don't be exclusive"]
+      },
+      "strategyTemplate": {
+        "positioning": "{companyName} brings style and substance to {industry}, making every purchase feel like a good decision. The brand is vibrant and customer-first, with an expressive {hueName} palette that stands out on any shelf or screen.",
+        "audienceNotes": "Everyday customers who want quality without pretension. They respond to warmth, clear value, and brands that celebrate them rather than the product. Keep sentences short and benefits up front.",
+        "elevatorPitch": "{companyName} makes {industry} feel fresh, personal, and worth coming back for."
+      }
+    },
+    {
+      "match": ["food", "restaurant", "hospitality", "catering", "beverage", "cafe"],
+      "pairingId": "merriweather-open-sans",
+      "scaleRatio": 1.25,
+      "tone": {
+        "voice": "Warm, indulgent, and genuine — makes people hungry and welcome.",
+        "adjectives": ["warm", "authentic", "indulgent", "welcoming", "handcrafted"],
+        "dos": ["Use sensory descriptors", "Tell the story of ingredients", "Be personal", "Evoke atmosphere"],
+        "donts": ["Avoid cold or clinical language", "Don't over-qualify", "Avoid corporate formats", "Don't be generic"]
+      },
+      "strategyTemplate": {
+        "positioning": "{companyName} serves {industry} experiences built on genuine craft and a warm welcome. The brand tells the story behind what it makes, with an inviting {hueName} palette that feels as good as it tastes.",
+        "audienceNotes": "Guests choosing where to spend a meal, a celebration, or a quiet moment. They respond to sensory detail, authenticity, and hosts who clearly care. Atmosphere sells before the menu does.",
+        "elevatorPitch": "{companyName} makes every {industry} moment feel personal, generous, and worth savouring."
+      }
+    },
+    {
+      "match": ["construction", "real estate", "property", "infrastructure", "engineering"],
+      "pairingId": "roboto-condensed-roboto",
+      "scaleRatio": 1.2,
+      "tone": {
+        "voice": "Solid, expert, and delivery-focused — lets quality and track record speak.",
+        "adjectives": ["dependable", "expert", "durable", "delivery-focused", "professional"],
+        "dos": ["Lead with track record", "Quantify scale and timeline", "Use industry-standard terminology correctly", "Be direct"],
+        "donts": ["Avoid empty superlatives", "Don't understate risk", "Avoid jargon for non-specialist audiences", "Don't use passive voice for outcomes"]
+      },
+      "strategyTemplate": {
+        "positioning": "{companyName} delivers {industry} projects on time and built to last, letting a documented track record do the talking. A grounded {hueName} palette reinforces solidity and professional confidence.",
+        "audienceNotes": "Clients and partners making high-stakes, long-horizon commitments. They want evidence of delivery, straight answers about scope and risk, and a partner who communicates in concrete terms.",
+        "elevatorPitch": "{companyName} builds {industry} outcomes you can stand on: quantified, on schedule, and made to endure."
+      }
+    },
+    {
+      "match": ["legal", "law", "compliance", "consulting", "advisory", "professional services"],
+      "pairingId": "eb-garamond-source-sans",
+      "scaleRatio": 1.2,
+      "tone": {
+        "voice": "Precise, authoritative, and confidential — every word chosen with care.",
+        "adjectives": ["authoritative", "discreet", "precise", "strategic", "principled"],
+        "dos": ["Define terms on first use", "Acknowledge complexity", "Use structured arguments", "Project confidence"],
+        "donts": ["Avoid vague promises", "Don't use informal register", "Avoid excessive hedging", "Don't trivialise legal risk"]
+      },
+      "strategyTemplate": {
+        "positioning": "{companyName} provides {industry} counsel where every word is chosen with care and every recommendation is defensible. The brand signals discretion and rigour, with a restrained {hueName} palette to match.",
+        "audienceNotes": "Clients navigating consequential, often confidential matters. They value structured thinking, candour about complexity, and advisers who project calm authority without overpromising.",
+        "elevatorPitch": "{companyName} brings precision and principled judgement to {industry}, protecting what matters most to clients."
+      }
+    },
+    {
+      "match": ["ngo", "nonprofit", "charity", "social", "impact", "community", "development"],
+      "pairingId": "nunito-lato",
+      "scaleRatio": 1.25,
+      "tone": {
+        "voice": "Purposeful, human, and urgent — connects the cause to the reader's values.",
+        "adjectives": ["purposeful", "compassionate", "transparent", "community-driven", "hopeful"],
+        "dos": ["Lead with impact", "Use real stories", "Be transparent about outcomes", "Speak to shared values"],
+        "donts": ["Avoid poverty porn tropes", "Don't create saviour narratives", "Avoid bureaucratic language", "Don't guilt-trip"]
+      },
+      "strategyTemplate": {
+        "positioning": "{companyName} advances {industry} work that puts people and communities first, pairing urgency with hope. The brand leads with real impact and transparent outcomes, carried by a purposeful {hueName} palette.",
+        "audienceNotes": "Supporters, volunteers, and the communities served. Donors need transparent evidence of impact; communities need dignity and agency in how they are represented. Shared values are the bridge.",
+        "elevatorPitch": "{companyName} turns shared values into measurable {industry} impact — with the community, never just for it."
+      }
+    },
+    {
+      "match": ["__default__"],
+      "pairingId": "inter",
+      "scaleRatio": 1.25,
+      "tone": {
+        "voice": "Professional, clear, and approachable — communicates value with confidence.",
+        "adjectives": ["professional", "reliable", "clear", "friendly", "credible"],
+        "dos": ["Be direct", "Lead with benefits", "Use active voice", "Speak to the customer's goal"],
+        "donts": ["Avoid jargon", "Don't be generic", "Avoid passive voice", "Don't bury the key message"]
+      },
+      "strategyTemplate": {
+        "positioning": "{companyName} delivers {industry} services with a focus on clarity, reliability, and results customers can see. The brand is professional without being distant, supported by a balanced {hueName} palette.",
+        "audienceNotes": "Customers who want a competent, straightforward partner. They respond to plain language, visible proof of quality, and a brand that respects their time by getting to the point.",
+        "elevatorPitch": "{companyName} makes {industry} simple: clear communication, dependable delivery, and results that speak for themselves."
+      }
+    }
+  ]
+}

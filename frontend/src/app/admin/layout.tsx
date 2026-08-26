@@ -56,5 +56,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return null
   }
 
-  return <AdminShell>{children}</AdminShell>
+  return (
+    <>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-4 focus:left-4 focus:px-4 focus:py-2 focus:bg-primary focus:text-white focus:rounded"
+      >
+        Skip to main content
+      </a>
+      <AdminShell>{children}</AdminShell>
+    </>
+  )
 }

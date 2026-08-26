@@ -1,0 +1,74 @@
+// Credits module — per-project internal metering ledger.
+// Spec: .agents/arch/CREDITS_ARCH.md (KDL-476 / KDL-504).
+// All amounts are BigInt µc (1 credit = 1_000_000 µc).
+
+enum CreditEntryType {
+  GRANT
+  RESERVE
+  SETTLE
+  RELEASE
+  EXPIRE
+  ADJUST
+}
+
+enum CreditHoldStatus {
+  PENDING
+  SETTLED
+  RELEASED
+  EXPIRED
+}
+
+model CreditBalance {
+  id         String   @id @default(cuid())
+  project_id String   @unique
+  balance_mc BigInt   @default(0)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  project Project @relation(fields: [project_id], references: [id], onDelete: Restrict)
+
+  @@map("credit_balances")
+}
+
+model CreditHold {
+  id              String           @id @default(cuid())
+  project_id      String
+  amount_mc       BigInt
+  status          CreditHoldStatus @default(PENDING)
+  source          String
+  idempotency_key String           @unique
+  expires_at      DateTime
+  resolved_at     DateTime?
+  actor_id        String?
+  created_at      DateTime         @default(now())
+  updated_at      DateTime         @updatedAt
+
+  project Project              @relation(fields: [project_id], references: [id], onDelete: Restrict)
+  entries CreditLedgerEntry[]
+
+  @@index([project_id, status])
+  @@index([status, expires_at])
+  @@map("credit_holds")
+}
+
+model CreditLedgerEntry {
+  id               String          @id @default(cuid())
+  project_id       String
+  entry_type       CreditEntryType
+  amount_mc        BigInt
+  balance_after_mc BigInt
+  hold_id          String?
+  source           String
+  reason           String?
+  idempotency_key  String?         @unique
+  actor_id         String?
+  metadata         Json?
+  created_at       DateTime        @default(now())
+
+  project Project     @relation(fields: [project_id], references: [id], onDelete: Restrict)
+  hold    CreditHold? @relation(fields: [hold_id], references: [id], onDelete: Restrict)
+
+  @@index([project_id, created_at])
+  @@index([hold_id])
+  @@map("credit_ledger_entries")
+}

@@ -3,23 +3,23 @@ import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
-// Radius/font/height/padding/variant chrome come from the Template Engine
-// Buttons pane via the te-btn* classes (te-components.css, KDL-213). Primary
+// Radius/font/height/padding/variant chrome come from the Theme Engine
+// Buttons pane via the th-btn* classes (te-components.css, KDL-213). Primary
 // keeps `bg-primary` so the branding Primary Color still recolors it.
 const buttonVariants = cva(
-  'te-btn inline-flex items-center justify-center whitespace-nowrap ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  'th-btn inline-flex items-center justify-center whitespace-nowrap ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
-        default: 'te-btn-primary bg-primary text-primary-foreground',
+        default: 'th-btn-primary bg-primary text-primary-foreground',
         destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
-        outline: 'te-btn-outline',
-        secondary: 'te-btn-secondary',
+        outline: 'th-btn-outline',
+        secondary: 'th-btn-secondary',
         ghost: 'hover:bg-accent hover:text-accent-foreground',
         link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {
-        default: 'te-btn-size-default',
+        default: 'th-btn-size-default',
         sm: 'h-9 px-3 text-sm',
         lg: 'h-11 px-8 text-sm',
         icon: 'h-10 w-10',

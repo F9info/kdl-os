@@ -40,6 +40,47 @@ Top level: `backend/` (Express + Prisma), `frontend/` (Next.js), `ai-services/`,
 
 ---
 
+## Common Commands
+
+Each workspace (`backend/`, `frontend/`, `ai-services/`) has its own `package.json` — there is no root-level script runner. `backend` and `ai-services` use `npm`; `frontend` uses `pnpm`.
+
+```bash
+# Backend (npm)
+cd backend
+npm run dev                 # nodemon src/index.js
+npm test                    # vitest run — needs JWT_SECRET / JWT_REFRESH_SECRET (32+ chars) in env
+npx vitest run path/to/file.test.js          # single test file
+npx vitest run path/to/file.test.js -t "name"  # single test by name
+npm run db:migrate          # prisma migrate dev
+npm run db:seed             # prisma/seed.js
+npm run db:studio           # prisma studio
+npm run module:create -- --slug=blog --name="Blog"   # scaffold a new module
+
+# Frontend (pnpm)
+cd frontend
+pnpm dev                    # next dev --port 3000
+pnpm build
+pnpm lint                   # next lint (includes a11y rules)
+pnpm type-check             # tsc --noEmit
+pnpm format:check           # prettier --check .
+pnpm test                   # vitest run
+pnpm test path/to/file.test.tsx              # single test file
+pnpm e2e                    # playwright test (needs a running backend + Postgres/Redis)
+pnpm e2e e2e/smoke.spec.ts  # single e2e spec
+
+# AI services (npm)
+cd ai-services
+npm run dev                 # node --watch src/index.js
+npm test                    # vitest run — needs JWT_SECRET in env
+npx vitest run path/to/file.test.js          # single test file
+```
+
+Neither `backend` nor `ai-services` has a lint script — only `frontend` does.
+
+Full CI-mirroring sequence (lockfile guard, audits, lint/typecheck/build/test per workspace) is in [`docs/CI_LOCAL_VERIFICATION.md`](docs/CI_LOCAL_VERIFICATION.md) — use it when GitHub Actions is down and a PR needs local verification.
+
+---
+
 ## Coding Conventions (non-negotiable)
 
 - ES Modules (`import/export`) throughout backend — no CommonJS
@@ -137,13 +178,14 @@ All agents run on the **Claude Code adapter (Claude subscription)** via the Pape
 
 1. Read `CLAUDE.md` (this file)
 2. Read `.agents/HANDOFF.md` — a **rolling window of only the most recent entries**; read `.agents/HANDOFF_ARCHIVE.md` ONLY if you need older context
-3. Read `STATUS.md` — rolling window of recent entries only; older history in `.agents/STATUS_ARCHIVE.md`
+3. Read `STATUS.md` — the **generated rollup** at the top answers "what is done vs pending" (module build state, template-engine driver reality, true PR merge state, blocked issues + unblock owners); below it is a rolling window of recent entries, with older history in `.agents/STATUS_ARCHIVE.md`
 4. Read `.agents/CONTEXT.md`
 5. Read `ai-services/src/memory/lessons.md` if it exists
 6. Do the work
 7. Run tests / linters — never self-assess, use exit codes
 8. **Prepend** your new entry to the top of `.agents/HANDOFF.md`; keep the window to ~8 entries (move older ones into `.agents/HANDOFF_ARCHIVE.md`)
-9. **Prepend** to `STATUS.md`; keep the window trimmed (older entries → `.agents/STATUS_ARCHIVE.md`)
+9. **Prepend** your entry under the `## Rolling changelog` heading in `STATUS.md` — **not** at the top of the file, which is a generated block. Keep the window trimmed (older entries → `.agents/STATUS_ARCHIVE.md`)
+10. Run `node scripts/status-rollup.mjs` if you changed a module's build state, a template-engine driver, or a blocked issue's owner. It rewrites only the region between the `BEGIN/END GENERATED ROLLUP` markers and leaves the changelog untouched. Curate unblock owners in `.agents/unblock-owners.json` when the board carries no `unblockDescriptor`
 
 ---
 
@@ -156,6 +198,7 @@ Full rules in [`docs/MERGE_DISCIPLINE.md`](docs/MERGE_DISCIPLINE.md). Summary:
 3. **One workspace lockfile per PR** — a PR may touch `frontend/pnpm-lock.yaml` OR `backend/package-lock.json` OR `ai-services/package-lock.json`, never more than one.
 4. **Dependabot owns lockfiles** — never manually modify a lockfile in a Dependabot PR. Merge them Mondays.
 5. **Pin policy** — pin only when there is a confirmed bug/CVE and no upstream fix. Document the reason and removal trigger in the PR. Never pin the same package twice across workspaces.
+6. **NEVER push directly to master** — all code lands via `gh pr merge` or the GitHub UI. Direct pushes cause GitHub to close open PRs with `mergedAt=null`, corrupting the audit trail. If CI is broken org-wide, mark the issue blocked — do not bypass the PR workflow. (Retired workaround: the 2026-08 billing-outage direct-push path. See §7 of [`docs/MERGE_DISCIPLINE.md`](docs/MERGE_DISCIPLINE.md).)
 
 ---
 

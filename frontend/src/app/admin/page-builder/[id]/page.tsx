@@ -1,13 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Puck, type Data } from '@puckeditor/core'
 import '@puckeditor/core/puck.css'
 import { ArrowLeft, ExternalLink } from 'lucide-react'
 import { ModuleGuard } from '@/components/shared/ModuleGuard'
+import { toast } from '@/hooks/use-toast'
 import { config } from '../puck.config'
-import { getPage, savePage, type PageRecord } from '../store'
+import { getPage, savePage } from '../store'
 
 /**
  * Visual page editor. Renders Puck with:
@@ -15,26 +16,46 @@ import { getPage, savePage, type PageRecord } from '../store'
  *  - built-in viewport switcher (mobile / tablet / desktop) for on-canvas
  *    responsive preview across all devices
  *  - iframe disabled so the host app's Tailwind styles apply inside the canvas
+ *  - persistence wired to the backend builder_pages table (KDL-448)
  */
 export default function PageBuilderEditor() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
-  const [page, setPage] = useState<PageRecord | null>(null)
-  const [notFound, setNotFound] = useState(false)
+  const qc = useQueryClient()
 
-  useEffect(() => {
-    const p = getPage(params.id)
-    if (p) setPage(p)
-    else setNotFound(true)
-  }, [params.id])
+  const {
+    data: page,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ['page-builder-page', params.id],
+    queryFn: () => getPage(params.id),
+  })
 
-  if (notFound) {
+  const saveMutation = useMutation({
+    mutationFn: (data: Data) => savePage(params.id, data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['page-builder-pages'] })
+      void qc.invalidateQueries({ queryKey: ['page-builder-page', params.id] })
+      toast({ title: 'Published', description: 'Page saved and published.' })
+    },
+    onError: () =>
+      toast({
+        title: 'Save failed',
+        description: 'Could not save the page.',
+        variant: 'destructive',
+      }),
+  })
+
+  if (isLoading) return <div className="p-8 text-muted-foreground">Loading editor…</div>
+
+  if (isError || !page) {
     return (
       <div className="p-8">
-        <p className="text-slate-600">Page not found.</p>
+        <p className="text-muted-foreground">Page not found.</p>
         <button
           onClick={() => router.push('/admin/page-builder')}
-          className="mt-3 text-blue-600 underline"
+          className="mt-3 text-primary underline"
         >
           Back to pages
         </button>
@@ -42,11 +63,9 @@ export default function PageBuilderEditor() {
     )
   }
 
-  if (!page) return <div className="p-8 text-slate-500">Loading editor…</div>
-
   return (
     <ModuleGuard slug="page-builder">
-      <div className="h-[calc(100vh-0px)]">
+      <div className="h-[calc(100vh-var(--th-layout-header-height))]">
         <Puck
           config={config}
           data={page.data}
@@ -59,7 +78,7 @@ export default function PageBuilderEditor() {
           headerTitle={page.title}
           headerPath={`/p/${page.slug}`}
           onPublish={(data: Data) => {
-            savePage(page.id, data)
+            saveMutation.mutate(data)
             window.open(`/p/${page.slug}`, '_blank')
           }}
           overrides={{
@@ -69,7 +88,7 @@ export default function PageBuilderEditor() {
                   href={`/p/${page.slug}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
+                  className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm text-foreground hover:bg-muted"
                 >
                   <ExternalLink size={15} /> View
                 </a>
@@ -80,7 +99,7 @@ export default function PageBuilderEditor() {
         />
         <button
           onClick={() => router.push('/admin/page-builder')}
-          className="fixed bottom-4 left-4 z-50 inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-4 py-2 text-sm text-white shadow-lg hover:bg-slate-700"
+          className="fixed bottom-4 left-4 z-50 inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-sm text-background shadow-lg hover:bg-foreground/80"
         >
           <ArrowLeft size={15} /> Pages
         </button>

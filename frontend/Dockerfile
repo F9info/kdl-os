@@ -15,8 +15,13 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # rewrites proxy /api to the backend over the internal Docker network.
 ARG NEXT_PUBLIC_API_URL=/api
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_IMAGE_HOSTS=http:localhost:9000
+ENV NEXT_PUBLIC_IMAGE_HOSTS=$NEXT_PUBLIC_IMAGE_HOSTS
 ARG BACKEND_INTERNAL_URL=http://backend:4000
 ENV BACKEND_INTERNAL_URL=$BACKEND_INTERNAL_URL
+# next build's default V8 heap limit OOMs on this app's size inside the build
+# container regardless of host memory available — raise it explicitly.
+ENV NODE_OPTIONS=--max-old-space-size=4096
 RUN pnpm build
 
 FROM node:22-alpine AS runner

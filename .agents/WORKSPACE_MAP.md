@@ -22,12 +22,12 @@ One-read orientation for agents. Purpose: avoid re-discovering the repo every ru
 
 ## Backend modules (`backend/src/modules/`)
 
-`auth` · `users` · `settings` · `media` (DAM) · `user-management/{roles,permissions,activity,shared}` · `template-engine` · `page-builder` (WIP, Puck)
+`auth` · `users` · `settings` · `media` (DAM) · `user-management/{roles,permissions,activity,shared}` · `theme-engine` · `page-builder` (WIP, Puck)
 Pattern: `routes → controller → service → Prisma`. Prisma client singleton: `config/database.js`. Responses: `utils/response.js`. Per-module Prisma schema: `backend/prisma/schema/<slug>.prisma`. Module manifest: `module.json`. Scaffold: `npm run module:create -- --slug=x --name="X"`.
 
 ## Frontend key dirs (`frontend/src/`)
 
-`app/(auth)/` login·register·forgot-password · `app/admin/` dashboard·users·settings·media·template-engine·page-builder · `components/{layout,shared,media}` · `stores/{auth,ui}.store.ts` · `lib/{axios,queryClient}.ts` · `hooks/`. Rules: API via `lib/axios.ts`; auth in `auth.store.ts`; reads `useQuery`, writes `useMutation`.
+`app/(auth)/` login·register·forgot-password · `app/admin/` dashboard·users·settings·media·theme-engine·page-builder · `components/{layout,shared,media}` · `stores/{auth,ui}.store.ts` · `lib/{axios,queryClient}.ts` · `hooks/`. Rules: API via `lib/axios.ts`; auth in `auth.store.ts`; reads `useQuery`, writes `useMutation`.
 
 ## Services & ports (host)
 
@@ -35,7 +35,7 @@ Pattern: `routes → controller → service → Prisma`. Prisma client singleton
 |---------|------|-------|
 | PostgreSQL | 5433 | `DATABASE_URL`; container-internal `postgres:5432` |
 | Redis | 6380 | `REDIS_URL`; container-internal `redis:6379` |
-| MinIO | 9000 | object storage; access via `storage.service.js` only |
+| MinIO | 9002 | object storage (host port; container-internal 9000); presigned URLs use `localhost:9002`; access via `storage.service.js` only |
 | MeiliSearch | 7700 | search |
 | ChromaDB | 8000 | vector store (ai-services) |
 | ai-services | 5000 | `/api/ai/chat`, `/embed`, `/transcribe` (501) |
@@ -45,6 +45,6 @@ Pattern: `routes → controller → service → Prisma`. Prisma client singleton
 
 - Add a module → `backend/src/modules/` + `prisma/schema/<slug>.prisma` + `frontend/src/app/admin/<slug>/` (see CLAUDE.md "How to add a module").
 - Permissions/RBAC → `user-management/` + `middleware/permission.js` (`requirePermission`).
-- Theming/settings → `template-engine/` + `settings/` (SettingValue, token resolver).
+- Theming/settings → `theme-engine/` + `settings/` (SettingValue, token resolver).
 - Coding conventions & pitfalls → `CLAUDE.md` + `.agents/LESSONS.md`.
 - Module specs → `.agents/<MODULE>_ARCH.md` (each has a "Read Scope" table — use it instead of whole-file reads).

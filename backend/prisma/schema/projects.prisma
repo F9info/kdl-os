@@ -1,0 +1,40 @@
+// Projects module — minimal stub.
+// Full tenancy scoping per PROJECTS_ARCH.md lands in the projects build.
+// credits.prisma FKs project_id to this table; do not rename or retype id.
+
+model Project {
+  id         String    @id @default(cuid())
+  name       String
+  slug       String    @unique
+  is_default Boolean   @default(false)
+  // Explicit visibility flag replacing the null-created_by org-shared convention (KDL-635).
+  // Seeded Default Project has is_shared=true; new user-created projects default to false.
+  is_shared  Boolean   @default(false)
+  created_by String?
+  deleted_at DateTime?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  credit_balance CreditBalance?
+  credit_holds   CreditHold[]
+  credit_ledger  CreditLedgerEntry[]
+  members        ProjectMember[]
+
+  @@map("projects")
+}
+
+// Join table: one row per (project, user) pair with an explicit role.
+// Roles: "owner" (granted to creator on project creation) | "member" (collaborator).
+// is_shared=true projects bypass this table and allow all authenticated users.
+model ProjectMember {
+  id         String   @id @default(cuid())
+  project_id String
+  user_id    String
+  role       String   @default("member")
+  created_at DateTime @default(now())
+
+  project    Project  @relation(fields: [project_id], references: [id])
+
+  @@unique([project_id, user_id])
+  @@map("project_members")
+}

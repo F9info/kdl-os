@@ -36,8 +36,8 @@ describe('listCategories — owner_module filter', () => {
   });
 
   it('scopes to the requested module when ?ownerModule is given', async () => {
-    await service.listCategories({ ownerModule: 'template-engine' });
-    expect(prisma.category.findMany.mock.calls[0][0].where.owner_module).toBe('template-engine');
+    await service.listCategories({ ownerModule: 'theme-engine' });
+    expect(prisma.category.findMany.mock.calls[0][0].where.owner_module).toBe('theme-engine');
   });
 });
 

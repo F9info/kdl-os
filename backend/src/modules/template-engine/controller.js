@@ -3,110 +3,165 @@ import { writeActivityAsync, getClientIp } from '../user-management/shared/activ
 import { resolvePermissions } from '../user-management/shared/permission-resolver.js';
 import * as service from './service.js';
 
-export const getSchema = async (req, res, next) => {
-  try {
-    const { platform } = req.validated.query;
-    const tree = await service.getSchemaTree(platform);
-    if (!tree) return errorResponse(res, 'Platform not found', 404);
-    const activeTheme = await service.getActiveTheme(platform);
-    return successResponse(res, { platform, schema: tree, activeTheme });
-  } catch (err) {
-    next(err);
-  }
-};
+// Project scope (req.projectId) is injected by the requireProject shared middleware
+// (backend/src/middleware/project.js) on every route that reads X-Project-Id — see
+// routes.js.  That middleware validates project existence (404) and caller access (403)
+// against the projects module before this controller runs.
 
-export const postActiveTheme = async (req, res, next) => {
+export const createRun = async (req, res, next) => {
   try {
-    const { platform, theme } = req.validated.body;
-    const result = await service.setActiveTheme(platform, theme);
-    if (result.errors) return errorResponse(res, 'Validation failed', 422, { fieldErrors: {}, formErrors: result.errors });
+    const projectId = req.projectId;
+    const run = await service.createRun(projectId, req.user.id);
     writeActivityAsync({
-      actor: req.user?.id,
+      actor: req.user.id,
       module: 'template-engine',
-      action: 'active_theme_saved',
-      description: `Set active theme=${theme} for platform=${platform}`,
-      properties: { platform, theme },
+      action: 'run_created',
+      subject_type: 'TemplateEngineRun',
+      subject_id: run.id,
+      description: `Created template engine run for project ${projectId}`,
+      properties: { projectId },
       ip_address: getClientIp(req),
     });
-    return successResponse(res, result);
+    return successResponse(res, run, 201);
   } catch (err) {
     next(err);
   }
 };
 
-export const getValues = async (req, res, next) => {
+export const listRuns = async (req, res, next) => {
   try {
-    const { platform, type } = req.validated.query;
-    const values = await service.getValues(platform, type);
-    if (values.errors) return errorResponse(res, 'Validation failed', 422, { fieldErrors: {}, formErrors: values.errors });
-    return successResponse(res, { platform, type_id: type, values });
+    const projectId = req.projectId;
+    const runs = await service.listRuns(projectId);
+    return successResponse(res, runs);
   } catch (err) {
     next(err);
   }
 };
 
-export const postValues = async (req, res, next) => {
+export const getRun = async (req, res, next) => {
   try {
-    const { platform, type_id, values } = req.validated.body;
-    const result = await service.upsertValues(platform, type_id, values, req.user?.id);
-    if (result.errors) return errorResponse(res, 'Validation failed', 422, { fieldErrors: {}, formErrors: result.errors });
-    writeActivityAsync({
-      actor: req.user?.id,
-      module: 'template-engine',
-      action: 'values_saved',
-      description: `Saved ${result.saved} template engine values for platform=${platform} type=${type_id}`,
-      properties: { platform, type_id, count: result.saved },
-      ip_address: getClientIp(req),
-    });
-    return successResponse(res, result);
+    const run = await service.getRun(req.validated.params.runId, req.projectId);
+    return successResponse(res, run);
   } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
     next(err);
   }
 };
 
-export const postReset = async (req, res, next) => {
+// Crash-recovery: flip RUNNING → FAILED(INTERRUPTED) for a run.
+export const resumeRun = async (req, res, next) => {
   try {
-    const { platform, type_id } = req.validated.body;
-    const result = await service.resetValues(platform, type_id);
-    if (result.errors) return errorResponse(res, 'Validation failed', 422, { fieldErrors: {}, formErrors: result.errors });
-    writeActivityAsync({
-      actor: req.user?.id,
-      module: 'template-engine',
-      action: 'values_reset',
-      description: `Reset template engine values for platform=${platform} type=${type_id}`,
-      properties: { platform, type_id },
-      ip_address: getClientIp(req),
-    });
-    return successResponse(res, result);
+    await service.getRun(req.validated.params.runId, req.projectId); // 404 guard
+    const count = await service.markInterruptedStages(req.validated.params.runId);
+    return successResponse(res, { interrupted: count });
   } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
     next(err);
   }
 };
 
-export const getTokens = async (req, res, next) => {
+// Stage advance. The approval stage requires :approve; the export stage requires :export (§9).
+// All other gated stages require only :run (enforced at router level).
+export const advanceStage = async (req, res, next) => {
   try {
-    const { platform, theme, device } = req.validated.query;
+    const { runId, stage } = req.validated.params;
+    const projectId = req.projectId;
 
-    // Public access check: when tokens_public is off, the flag gates EVERYONE —
-    // anonymous callers get 401 and authenticated callers need template-engine:view.
-    const isPublic = await service.isTokensPublic();
-    if (!isPublic) {
-      if (!req.user) return errorResponse(res, 'Unauthorized', 401);
-      const perms = await resolvePermissions(req.user.id);
-      if (!perms.bypass && !perms.permissions.includes('template-engine:view')) {
-        return errorResponse(res, 'Forbidden', 403);
+    // approval stage requires the extra :approve permission (§9).
+    if (stage === 'approval') {
+      const perms = req.userPermissions ?? (await resolvePermissions(req.user.id));
+      if (!perms.bypass && !perms.permissions.includes('template-engine:approve')) {
+        return errorResponse(res, 'Forbidden — template-engine:approve required for the approval stage', 403);
       }
     }
 
-    const tokens = await service.compileTokens(platform, theme, device);
-    // If caller wants CSS (via Accept: text/css or ?format=css), serve raw CSS
-    const format = req.query.format;
-    if (format === 'css' || req.headers.accept?.includes('text/css')) {
-      res.setHeader('Content-Type', 'text/css; charset=utf-8');
-      return res.status(200).send(tokens.css);
+    // export stage requires :export permission (§3 row 9, §9).
+    if (stage === 'export') {
+      const perms = req.userPermissions ?? (await resolvePermissions(req.user.id));
+      if (!perms.bypass && !perms.permissions.includes('template-engine:export')) {
+        return errorResponse(res, 'Forbidden — template-engine:export required for the export stage', 403);
+      }
     }
-    return successResponse(res, tokens);
+
+    const stageRecord = await service.advanceStage(runId, stage, req.user.id, projectId);
+
+    writeActivityAsync({
+      actor: req.user.id,
+      module: 'template-engine',
+      action: 'stage_advanced',
+      subject_type: 'TemplateEngineStage',
+      subject_id: stageRecord.id,
+      description: `Advanced stage ${stage} → ${stageRecord.status}`,
+      properties: { runId, stage, status: stageRecord.status, errorCode: stageRecord.errorCode },
+      ip_address: getClientIp(req),
+    });
+
+    return successResponse(res, stageRecord);
   } catch (err) {
+    if (err.status === 409) {
+      return errorResponse(res, err.message, 409, {
+        code: err.code,
+        blockingReason: err.blockingReason ?? null,
+      });
+    }
+    if (err.status === 503) {
+      return errorResponse(res, err.code ?? 'UPSTREAM_NOT_BUILT', 503, { code: err.code });
+    }
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+export const getExport = async (req, res, next) => {
+  try {
+    const manifest = await service.getExportManifest(req.validated.params.runId, req.projectId);
+    return successResponse(res, manifest);
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status, { code: err.code });
+    next(err);
+  }
+};
+
+export const retryStage = async (req, res, next) => {
+  try {
+    const { runId, stage } = req.validated.params;
+    const stageRecord = await service.retryStage(runId, stage, req.user.id, req.projectId);
+    writeActivityAsync({
+      actor: req.user.id,
+      module: 'template-engine',
+      action: 'stage_retried',
+      subject_type: 'TemplateEngineStage',
+      subject_id: stageRecord.id,
+      description: `Retried stage ${stage} → PENDING`,
+      properties: { runId, stage },
+      ip_address: getClientIp(req),
+    });
+    return successResponse(res, stageRecord);
+  } catch (err) {
+    if (err.status === 409) return errorResponse(res, err.message, 409, { code: err.code });
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+export const skipStage = async (req, res, next) => {
+  try {
+    const { runId, stage } = req.validated.params;
+    const stageRecord = await service.skipStage(runId, stage, req.user.id, req.projectId);
+    writeActivityAsync({
+      actor: req.user.id,
+      module: 'template-engine',
+      action: 'stage_skipped',
+      subject_type: 'TemplateEngineStage',
+      subject_id: stageRecord.id,
+      description: `Skipped stage ${stage} → SKIPPED`,
+      properties: { runId, stage },
+      ip_address: getClientIp(req),
+    });
+    return successResponse(res, stageRecord);
+  } catch (err) {
+    if (err.status === 409) return errorResponse(res, err.message, 409, { code: err.code });
+    if (err.status) return errorResponse(res, err.message, err.status);
     next(err);
   }
 };

@@ -1,0 +1,61 @@
+// Template Engine orchestrator — run/stage persistence.
+// Ref: TEMPLATE_ENGINE_ARCH.md §4.
+
+enum RunStatus {
+  IN_PROGRESS
+  AWAITING_APPROVAL
+  COMPLETED
+  FAILED
+}
+
+enum DagStage {
+  INTAKE
+  PALETTE
+  INFERENCE
+  APPROVAL
+  GUIDELINES
+  COLLATERAL
+  WEBSITE
+  PREFLIGHT
+  EXPORT
+}
+
+enum StageStatus {
+  PENDING
+  RUNNING
+  AWAITING_INPUT
+  DONE
+  FAILED
+  SKIPPED
+}
+
+model TemplateEngineRun {
+  id              String    @id @default(cuid())
+  projectId       String
+  status          RunStatus @default(IN_PROGRESS)
+  brandKitVersion Int?
+  createdBy       String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  stages TemplateEngineStage[]
+
+  @@index([projectId])
+  @@map("template_engine_runs")
+}
+
+model TemplateEngineStage {
+  id          String      @id @default(cuid())
+  runId       String
+  run         TemplateEngineRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  stage       DagStage
+  status      StageStatus @default(PENDING)
+  errorCode   String?
+  outputRef   Json?
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  @@unique([runId, stage])
+  @@index([runId])
+  @@map("template_engine_stages")
+}

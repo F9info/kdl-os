@@ -46,7 +46,7 @@ export default function NotificationsPage() {
 
   return (
     <ModuleGuard slug="notifications">
-      <div className="p-6 max-w-3xl mx-auto">
+      <div className="max-w-3xl mx-auto">
         <PageHeader
           title="Notifications"
           action={

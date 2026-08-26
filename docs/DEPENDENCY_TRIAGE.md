@@ -90,6 +90,29 @@ Always leave a code comment or PR description explaining the override and link t
 
 ---
 
+## Active security waivers (WAIVERS registry)
+
+Waivers apply to advisories with **no upstream patched version** (`first_patched_version = null`)
+whose vulnerable code path is **not reachable in production**. Each waiver lives in two places:
+the gating set in `.github/workflows/dependency-audit.yml` (frontend "Fail on High/Critical" step)
+and this registry. Dependabot alerts for waived advisories are dismissed as `tolerable_risk`
+with a comment linking the tracking issue.
+
+**Rules:**
+- Every waiver has a justification, a tracking issue, and a **review-by date** (max 90 days out).
+- At each weekly audit (KDL-433 routine), check whether upstream shipped a fix
+  (`gh api repos/F9info/kdl-os/dependabot/alerts -q '.[].security_vulnerability.first_patched_version'`).
+  The moment a `first_patched_version` appears, open a fast-follow bump issue and remove the waiver.
+- A waiver past its review-by date fails the posture review — refresh or remove it.
+
+| GHSA | Package | Severity | Justification | Issue | Added | Review by |
+|------|---------|----------|---------------|-------|-------|-----------|
+| GHSA-w3rx-r6r6-pgpr | image-size@1.2.1 | HIGH | Dev/build-only: sole dependent is `@storybook/nextjs` (frontend devDependency); Storybook is not shipped. ICNS-parser DoS requires feeding an attacker-controlled malformed image to a dev-time build — no production exposure. No patched version exists (vuln range `<= 2.0.2`). | KDL-460 | 2026-08-17 | 2026-11-17 |
+| GHSA-5p2g-fcmc-qvqq | image-size@1.2.1 | HIGH | Same package/path as above; JXL/HEIF-parser DoS, dev/build-only, no patched version. | KDL-460 | 2026-08-17 | 2026-11-17 |
+| GHSA-848j-6mx2-7j84 | elliptic@6.6.1 | LOW | Dev-only transitive: `browserify-sign`/`create-ecdh` ← `crypto-browserify` ← `node-polyfill-webpack-plugin` ← `@storybook/nextjs` (devDependency). Not on any production crypto path. No patched version (vuln range `<= 6.6.1`). LOW does not gate CI; listed for tracking. | KDL-460 | 2026-08-17 | 2026-11-17 |
+
+---
+
 ## Manual audit (on demand)
 
 ```bash
