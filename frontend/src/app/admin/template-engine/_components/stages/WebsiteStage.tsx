@@ -188,7 +188,11 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
                   </p>
                 </div>
                 <Button size="sm" asChild>
-                  <a href="/admin/page-builder" target="_blank" rel="noreferrer">
+                  <a
+                    href={`/admin/page-builder/site?ids=${pages.map(([, id]) => id).join(',')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     <ExternalLink className="mr-2 h-3.5 w-3.5" />
                     View all pages
                   </a>
