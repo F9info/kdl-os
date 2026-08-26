@@ -27,7 +27,16 @@ export default function TypeSettingsPage() {
         .then((r) => r.data.data as { type: Type; fields: SettingField[] }),
   })
 
-  const fields = useMemo(() => data?.fields ?? [], [data])
+  // theme-settings' `logo` field is now managed exclusively by brand-kit's
+  // per-project logo upload (template-engine intake) — see uploadLogo() in
+  // backend/src/modules/brand-kit/service.js, which writes straight into
+  // this same SettingField row via setGlobalLogo(). Hidden here (not
+  // deleted) so the admin sidebar's `getValueBySlug('logo')` read keeps
+  // working; only the manual-edit UI goes away.
+  const fields = useMemo(
+    () => (data?.fields ?? []).filter((f) => !(slug === 'theme-settings' && f.slug === 'logo')),
+    [data, slug]
+  )
 
   // Local editable state keyed by field id.
   const [form, setForm] = useState<Record<string, FieldState>>({})

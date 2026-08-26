@@ -159,6 +159,16 @@ export const getValueBySlug = async (slug) => {
   return withDisplayValue(field);
 };
 
+// Brand-kit (template-engine intake logo upload) writes straight into the
+// global `logo` field so the admin sidebar/dashboard immediately reflect
+// the active project's logo — see uploadLogo() in
+// backend/src/modules/brand-kit/service.js. `path` is a raw storage object
+// path (Media.path), same format this field already stores for a manual
+// Theme Settings upload. Silently no-ops if the field doesn't exist.
+export const setGlobalLogo = async (path) => {
+  await prisma.settingField.updateMany({ where: { slug: 'logo' }, data: { value: path } });
+};
+
 // Upload a file for a setting field and return its object path + presigned URL.
 export const uploadSettingFile = async (file) => {
   const ext = file.originalname.split('.').pop().toLowerCase();
