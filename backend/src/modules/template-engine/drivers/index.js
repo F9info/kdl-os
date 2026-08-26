@@ -30,6 +30,7 @@ import {
 } from '../../collateral/service.js';
 
 import { createPage, getPage } from '../../page-builder/service.js';
+import { seedWebsitePageData } from './website-seed-content.js';
 
 import { prisma } from '../../../config/database.js';
 
@@ -223,9 +224,12 @@ const WEBSITE_SEED_PAGES = [
 ];
 
 /**
- * website — seeds pages from Puck component packs via page-builder.
+ * website — seeds pages from Puck component packs via page-builder, with
+ * real default content from the "general" pack (seedWebsitePageData) so a
+ * fresh page isn't a blank canvas.
  * Crash recovery: recorded pageKeyToId is checked on re-run; existing pages are reused.
- * Industry-based pack selection wired when brand-kit strategy field lands.
+ * Industry-based pack selection (medical/construction vs. general) wired
+ * when brand-kit strategy field lands — see website-seed-content.js.
  */
 const websiteDriver = {
   async execute({ run, stageRecord, userId }) {
@@ -242,7 +246,7 @@ const websiteDriver = {
       }
 
       const page = existing ?? await createPage(
-        { title, slug: `te-${run.id}-${key}`, data: null },
+        { title, slug: `te-${run.id}-${key}`, data: seedWebsitePageData(key, title) },
         userId,
       );
 
