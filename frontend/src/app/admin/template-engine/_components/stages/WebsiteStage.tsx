@@ -38,6 +38,31 @@ const BRAND_CARDS = [{ key: 'webapp', name: 'Web app' }] as const
 const HEADING_FONTS = ['Poppins', 'Inter', 'Manrope', 'Space Grotesk']
 const BODY_FONTS = ['Inter', 'Roboto', 'Open Sans', 'Work Sans']
 
+// Web app step progress (which step you're on, type-scale edits, nav page
+// picks) is session-local — none of it round-trips through the brand kit —
+// so a refresh used to drop you back at the Brands grid mid-flow. Persisting
+// it to localStorage, scoped per project, keeps you on the same step/edits
+// across a refresh without adding backend/schema work for state that's
+// still just in-progress UI, not saved brand data.
+function readLocal<T>(key: string, fallback: T): T {
+  if (typeof window === 'undefined') return fallback
+  try {
+    const raw = window.localStorage.getItem(key)
+    return raw ? (JSON.parse(raw) as T) : fallback
+  } catch {
+    return fallback
+  }
+}
+
+function writeLocal(key: string, value: unknown) {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value))
+  } catch {
+    // best-effort — a private window or full storage shouldn't break the UI
+  }
+}
+
 export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'WEBSITE')
   const advance = useAdvanceStage(run.id, run.projectId)
@@ -45,17 +70,28 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
   const skip = useSkipStage(run.id, run.projectId)
   const { data: brandKit } = useBrandKit(run.projectId)
   const patchTypography = usePatchTypography(run.projectId)
-  const [openBrand, setOpenBrand] = useState<(typeof BRAND_CARDS)[number]['key'] | null>(null)
+  const uiStateKey = `te-website-ui:${run.projectId}`
+  const [openBrand, setOpenBrand] = useState<(typeof BRAND_CARDS)[number]['key'] | null>(
+    () =>
+      readLocal(uiStateKey, { openBrand: null as (typeof BRAND_CARDS)[number]['key'] | null })
+        .openBrand
+  )
   const [webAppStep, setWebAppStep] = useState<
     'typography' | 'fontSettings' | 'navigation' | 'assemble'
-  >('typography')
+  >(() => readLocal(uiStateKey, { webAppStep: 'typography' as const }).webAppStep)
   // Snapshot of what Typography's Next just saved — read straight from the
   // mutation result instead of waiting on brandKit's invalidate-refetch, so
   // Font settings' family options are correct on the very next render.
   const [savedTypography, setSavedTypography] = useState<BrandKitTypography | null>(null)
 
-  const outputRef = stage?.outputRef as { pageIds?: Record<string, string> } | null | undefined
-  const pageCount = outputRef?.pageIds ? Object.keys(outputRef.pageIds).length : 0
+  useEffect(() => {
+    writeLocal(uiStateKey, { openBrand, webAppStep })
+  }, [uiStateKey, openBrand, webAppStep])
+
+  const outputRef = stage?.outputRef as
+    { pageIds?: string[]; pageKeyToId?: Record<string, string> } | null | undefined
+  const pages = Object.entries(outputRef?.pageKeyToId ?? {})
+  const pageCount = outputRef?.pageIds?.length ?? pages.length
 
   function openWebApp() {
     setOpenBrand('webapp')
@@ -129,31 +165,54 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
             />
           ) : webAppStep === 'fontSettings' ? (
             <FontSettingsStep
+              projectId={run.projectId}
               typography={savedTypography ?? brandKit?.typography ?? null}
               onBack={() => setWebAppStep('typography')}
               onNext={() => setWebAppStep('navigation')}
             />
           ) : webAppStep === 'navigation' ? (
             <NavigationStep
+              projectId={run.projectId}
               onBack={() => setWebAppStep('fontSettings')}
               onNext={() => setWebAppStep('assemble')}
             />
           ) : pageCount > 0 ? (
-            <div className="rounded-lg border bg-card p-4 space-y-2">
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <Globe className="h-4 w-4 text-primary" />
-                {pageCount} page{pageCount !== 1 ? 's' : ''} assembled
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-semibold">Web app · Pages</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {pageCount} page{pageCount !== 1 ? 's' : ''} assembled in the page-builder
+                    engine. Direct editing is disabled while Studio is active — open a page to
+                    preview it.
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" asChild>
+                  <a href="/admin/page-builder" target="_blank" rel="noreferrer">
+                    <ExternalLink className="mr-2 h-3.5 w-3.5" />
+                    View all pages
+                  </a>
+                </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Pages are live in the page-builder engine. Direct editing is disabled while Studio
-                is active — use the page-builder screen to preview.
-              </p>
-              <Button variant="outline" size="sm" asChild>
-                <a href="/admin/page-builder" target="_blank" rel="noreferrer">
-                  <ExternalLink className="mr-2 h-3.5 w-3.5" />
-                  Preview in page builder
-                </a>
-              </Button>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {pages.map(([key, id]) => (
+                  <div key={id} className="overflow-hidden rounded-lg border bg-card">
+                    <div className="h-1.5 bg-gradient-to-r from-primary to-secondary" />
+                    <div className="flex min-h-[110px] flex-col gap-2 p-4">
+                      <span className="w-fit rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                        Page
+                      </span>
+                      <b className="text-sm">{key.charAt(0).toUpperCase() + key.slice(1)}</b>
+                      <Button variant="outline" size="sm" asChild className="mt-auto w-fit">
+                        <a href={`/admin/page-builder/${id}`} target="_blank" rel="noreferrer">
+                          <ExternalLink className="mr-2 h-3.5 w-3.5" />
+                          Open page
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
             <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
@@ -689,10 +748,12 @@ function TypeScaleSpecimen({ r }: { r: TypeScaleRow }) {
 }
 
 function FontSettingsStep({
+  projectId,
   typography,
   onBack,
   onNext,
 }: {
+  projectId: string
   typography: {
     heading: { family: string; families?: string[] } | null
     body: { family: string; families?: string[] } | null
@@ -700,6 +761,7 @@ function FontSettingsStep({
   onBack: () => void
   onNext: () => void
 }) {
+  const storageKey = `te-website-ui:${projectId}:typeScale`
   const headingOptions = typography?.heading?.families?.length
     ? [...new Set(typography.heading.families)]
     : typography?.heading?.family
@@ -717,10 +779,13 @@ function FontSettingsStep({
   const fontOptions = [...new Set([...headingOptions, ...bodyOptions])]
 
   const [rows, setRows] = useState<TypeScaleRow[]>(() =>
-    DEFAULT_TYPE_SCALE.map((r) => ({
-      ...r,
-      family: r.kind === 'heading' ? headingOptions[0]! : bodyOptions[0]!,
-    }))
+    readLocal(
+      storageKey,
+      DEFAULT_TYPE_SCALE.map((r) => ({
+        ...r,
+        family: r.kind === 'heading' ? headingOptions[0]! : bodyOptions[0]!,
+      }))
+    )
   )
 
   useEffect(() => {
@@ -728,6 +793,10 @@ function FontSettingsStep({
     // Only re-run when the set of selectable fonts actually changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fontOptions.join('|')])
+
+  useEffect(() => {
+    writeLocal(storageKey, rows)
+  }, [storageKey, rows])
 
   function updateRow(i: number, patch: Partial<TypeScaleRow>) {
     setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)))
@@ -883,10 +952,23 @@ const SUGGESTED_PAGES = [
   'Settings',
 ]
 
-function NavigationStep({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
-  const [selected, setSelected] = useState<string[]>([])
+function NavigationStep({
+  projectId,
+  onBack,
+  onNext,
+}: {
+  projectId: string
+  onBack: () => void
+  onNext: () => void
+}) {
+  const storageKey = `te-website-ui:${projectId}:navigation`
+  const [selected, setSelected] = useState<string[]>(() => readLocal(storageKey, [] as string[]))
   const [customName, setCustomName] = useState('')
   const extras = selected.filter((n) => !SUGGESTED_PAGES.includes(n))
+
+  useEffect(() => {
+    writeLocal(storageKey, selected)
+  }, [storageKey, selected])
 
   function togglePage(name: string) {
     setSelected((prev) => (prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]))
