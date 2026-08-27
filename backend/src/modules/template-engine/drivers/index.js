@@ -19,6 +19,7 @@ import {
   getTokens,
   renderGuidelines,
 } from '../../brand-kit/service.js';
+import { getCompanyInfo } from '../../brand-kit/contact-fields.js';
 
 import { upsertValues } from '../../theme-engine/service.js';
 
@@ -29,6 +30,8 @@ import {
   renderAsset,
 } from '../../collateral/service.js';
 
+import { getMediaById } from '../../media/service.js';
+
 import { createPage, getPage } from '../../page-builder/service.js';
 import {
   seedWebsitePageData,
@@ -37,6 +40,45 @@ import {
 } from './website-seed-content.js';
 
 import { prisma } from '../../../config/database.js';
+
+// Best-effort — a fresh project with no approved brand kit yet still gets
+// pages seeded, just with the generic "Your Brand" copy/colors the seed
+// content functions already default to.
+async function resolveWebsiteBrand(projectId, userId) {
+  let kit = null;
+  try {
+    kit = await getKit(projectId);
+  } catch {
+    // no brand kit yet
+  }
+
+  let companyName = null;
+  try {
+    companyName = (await getCompanyInfo(projectId)).company_name;
+  } catch {
+    // contact fields not filled in yet
+  }
+
+  let logoUrl = null;
+  if (kit?.logo_media_id) {
+    try {
+      const media = await getMediaById(kit.logo_media_id, userId, { bypass: true });
+      logoUrl = media?.url ?? null;
+    } catch {
+      // logo not servable yet (pending scan, etc.)
+    }
+  }
+
+  const colors = kit?.palette?.colors ?? {};
+  return {
+    companyName,
+    logoUrl,
+    primaryHex: colors.primary?.hex ?? null,
+    secondaryHex: colors.secondary?.hex ?? null,
+    headingFont: kit?.typography?.heading?.family ?? null,
+    bodyFont: kit?.typography?.body?.family ?? null,
+  };
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -245,6 +287,7 @@ const SEEDER_BY_PACK = {
 const websiteDriver = {
   async execute({ run, stageRecord, userId, templatePack }) {
     const seed = SEEDER_BY_PACK[templatePack] ?? seedWebsitePageData;
+    const brand = await resolveWebsiteBrand(run.projectId, userId);
 
     // Crash recovery (TEMPLATE_ENGINE_ARCH §4.1): reuse pages from a prior attempt.
     const priorMap = stageRecord?.outputRef?.pageKeyToId ?? {};
@@ -259,7 +302,7 @@ const websiteDriver = {
       }
 
       const page = existing ?? await createPage(
-        { title, slug: `te-${run.id}-${key}`, data: seed(key, title) },
+        { title, slug: `te-${run.id}-${key}`, data: seed(key, title, brand) },
         userId,
       );
 

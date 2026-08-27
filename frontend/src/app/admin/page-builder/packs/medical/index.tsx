@@ -1,6 +1,7 @@
 import type { Config } from '@puckeditor/core'
 import { Phone, Clock, MapPin, Mail, Facebook, Twitter, Linkedin } from 'lucide-react'
 import type { ComponentPack } from '../types'
+import { variantField } from '../variant-field'
 
 type MedicalProps = {
   MedicalHero: {
@@ -59,15 +60,19 @@ type MedicalProps = {
     items: string
   }
   MedicalTopNav: {
+    variant: '1' | '2' | '3' | '4'
     welcomeText: string
     phone: string
     hours: string
     brand: string
+    logoUrl: string
     navLinks: string
     ctaLabel: string
     ctaHref: string
+    primaryColor: string
   }
   MedicalHeroSplit: {
+    variant: '1' | '2' | '3' | '4'
     eyebrow: string
     headingLine1: string
     headingLine2: string
@@ -77,6 +82,7 @@ type MedicalProps = {
     secondaryLabel: string
     secondaryHref: string
     image: string
+    primaryColor: string
   }
   MedicalContactInfoCards: {
     cells: string
@@ -638,22 +644,73 @@ const MedicalFAQ: Config<MedicalProps>['components']['MedicalFAQ'] = {
 // topbar (welcome text + phone/hours + social) over a sticky white nav
 // (brand + links + Appointment button). navLinks format: "Label|Href" lines.
 
+const TOPNAV_VARIANT_LABELS: Record<string, string> = {
+  '1': 'Topbar + sticky nav',
+  '2': 'Single row, dark',
+  '3': 'Centered, stacked',
+  '4': 'Minimal',
+}
+function TopNavVariantThumb({ variant }: { variant: string }) {
+  if (variant === '2')
+    return (
+      <div className="flex h-16 w-full items-center justify-between overflow-hidden rounded-md border border-slate-200 bg-slate-900 p-2">
+        <div className="h-1.5 w-10 rounded bg-white/80" />
+        <div className="flex gap-1.5">
+          <div className="h-1 w-5 rounded bg-white/50" />
+          <div className="h-1 w-5 rounded bg-white/50" />
+        </div>
+        <div className="h-2.5 w-8 rounded bg-white" />
+      </div>
+    )
+  if (variant === '3')
+    return (
+      <div className="flex h-16 w-full flex-col items-center justify-center gap-1 overflow-hidden rounded-md border border-slate-200 bg-white p-2">
+        <div className="h-1.5 w-16 rounded bg-slate-700" />
+        <div className="flex gap-1.5">
+          <div className="h-1 w-6 rounded bg-slate-400/60" />
+          <div className="h-1 w-6 rounded bg-slate-400/60" />
+        </div>
+      </div>
+    )
+  if (variant === '4')
+    return (
+      <div className="flex h-16 w-full items-center justify-between overflow-hidden rounded-md border border-slate-200 bg-white p-2">
+        <div className="h-1.5 w-10 rounded bg-slate-700" />
+        <div className="h-2.5 w-10 rounded bg-slate-900" />
+      </div>
+    )
+  return (
+    <div className="flex h-16 w-full flex-col overflow-hidden rounded-md border border-slate-200">
+      <div className="h-4 w-full bg-slate-900" />
+      <div className="flex flex-1 items-center justify-between bg-white p-2">
+        <div className="h-1.5 w-8 rounded bg-slate-700" />
+        <div className="h-2 w-6 rounded bg-slate-900" />
+      </div>
+    </div>
+  )
+}
+
 const MedicalTopNav: Config<MedicalProps>['components']['MedicalTopNav'] = {
   label: 'Top Nav (topbar + sticky nav)',
   fields: {
+    variant: variantField(TOPNAV_VARIANT_LABELS, TopNavVariantThumb),
     welcomeText: { type: 'text' },
     phone: { type: 'text' },
     hours: { type: 'text' },
     brand: { type: 'text' },
+    logoUrl: { type: 'text' },
     navLinks: { type: 'textarea' },
     ctaLabel: { type: 'text' },
     ctaHref: { type: 'text' },
+    primaryColor: { type: 'text' },
   },
   defaultProps: {
+    variant: '1',
     welcomeText: 'Welcome — Your Health, Our Priority!',
     phone: '(123) 456 7890',
     hours: 'Mon–Sat: 8:00–18:00',
     brand: 'Your Brand',
+    logoUrl: '',
     navLinks: [
       'Home|#',
       'About|#',
@@ -666,9 +723,91 @@ const MedicalTopNav: Config<MedicalProps>['components']['MedicalTopNav'] = {
     ].join('\n'),
     ctaLabel: 'Appointment',
     ctaHref: '#appointment',
+    primaryColor: '',
   },
-  render: ({ welcomeText, phone, hours, brand, navLinks, ctaLabel, ctaHref }) => {
+  render: ({
+    variant,
+    welcomeText,
+    phone,
+    hours,
+    brand,
+    logoUrl,
+    navLinks,
+    ctaLabel,
+    ctaHref,
+    primaryColor,
+  }) => {
     const links = parsePipeLines(navLinks, 2)
+    const logo = logoUrl ? (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={logoUrl} alt={brand} className="h-8 w-8 rounded object-contain" />
+    ) : null
+    const cta = ctaLabel ? (
+      <a
+        href={ctaHref}
+        style={primaryColor ? { backgroundColor: primaryColor } : undefined}
+        className="inline-flex rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white"
+      >
+        {ctaLabel}
+      </a>
+    ) : null
+
+    if (variant === '2') {
+      return (
+        <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-900 px-6 py-4">
+          <span className="flex items-center gap-2 text-lg font-bold text-white">
+            {logo}
+            {brand}
+          </span>
+          <nav className="flex flex-wrap items-center gap-6">
+            {links.map(([label, href], i) => (
+              <a
+                key={i}
+                href={href}
+                className="text-sm font-medium text-slate-300 hover:text-white"
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
+          {cta}
+        </div>
+      )
+    }
+    if (variant === '3') {
+      return (
+        <div className="flex flex-col items-center gap-3 border-b border-slate-100 bg-white px-6 py-5">
+          <span className="flex items-center gap-2 text-lg font-bold text-slate-900">
+            {logo}
+            {brand}
+          </span>
+          <nav className="flex flex-wrap items-center justify-center gap-6">
+            {links.map(([label, href], i) => (
+              <a key={i} href={href} className="text-sm font-medium text-slate-700">
+                {label}
+              </a>
+            ))}
+            {cta}
+          </nav>
+        </div>
+      )
+    }
+    if (variant === '4') {
+      return (
+        <div className="flex items-center justify-between gap-4 border-b border-slate-100 bg-white px-6 py-4">
+          <span className="flex items-center gap-2 text-lg font-bold text-slate-900">
+            {logo}
+            {brand}
+          </span>
+          {phone ? (
+            <span className="hidden items-center gap-1.5 text-sm text-slate-600 sm:inline-flex">
+              <Phone size={14} /> {phone}
+            </span>
+          ) : null}
+          {cta}
+        </div>
+      )
+    }
     return (
       <div>
         <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-900 px-6 py-2 text-xs text-white">
@@ -695,7 +834,10 @@ const MedicalTopNav: Config<MedicalProps>['components']['MedicalTopNav'] = {
         </div>
         <div className="sticky top-0 z-10 border-b border-slate-100 bg-white px-6 py-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <span className="text-lg font-bold text-slate-900">{brand}</span>
+            <span className="flex items-center gap-2 text-lg font-bold text-slate-900">
+              {logo}
+              {brand}
+            </span>
             <nav className="flex flex-1 flex-wrap justify-center gap-6">
               {links.map(([label, href], i) => (
                 <a key={i} href={href} className="text-sm font-medium text-slate-700">
@@ -703,14 +845,7 @@ const MedicalTopNav: Config<MedicalProps>['components']['MedicalTopNav'] = {
                 </a>
               ))}
             </nav>
-            {ctaLabel ? (
-              <a
-                href={ctaHref}
-                className="inline-flex rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white"
-              >
-                {ctaLabel}
-              </a>
-            ) : null}
+            {cta}
           </div>
         </div>
       </div>
@@ -722,9 +857,231 @@ const MedicalTopNav: Config<MedicalProps>['components']['MedicalTopNav'] = {
 // Exact-match port of medHome()'s hero — two-line heading, lead paragraph,
 // dual CTAs, image right.
 
+// Four layout styles ported from the design prototype's ggHeroSlider —
+// "fullleft" / "split-light" / "split-navy" / "center-full" — as a Puck
+// `variant` field instead of a live slider (the prototype's thumbnail picker
+// showed a real scaled render of each; the carousel/rotation behavior itself
+// is a separate feature from "pick a layout", so it's not ported here).
+type HeroVariantProps = {
+  eyebrow: string
+  headingLine1: string
+  headingLine2: string
+  subtext: string
+  primaryLabel: string
+  primaryHref: string
+  secondaryLabel: string
+  secondaryHref: string
+  image: string
+  primaryColor: string
+}
+
+function heroCtas(
+  { primaryLabel, primaryHref, secondaryLabel, secondaryHref, primaryColor }: HeroVariantProps,
+  secondaryLight: boolean
+) {
+  return (
+    <div className="flex flex-wrap gap-3">
+      {primaryLabel ? (
+        <a
+          href={primaryHref}
+          style={primaryColor ? { backgroundColor: primaryColor } : undefined}
+          className="inline-flex rounded-lg bg-slate-900 px-6 py-3 font-semibold text-white"
+        >
+          {primaryLabel}
+        </a>
+      ) : null}
+      {secondaryLabel ? (
+        <a
+          href={secondaryHref}
+          style={primaryColor ? { borderColor: primaryColor, color: primaryColor } : undefined}
+          className={
+            secondaryLight
+              ? 'inline-flex rounded-lg border-2 border-white px-6 py-3 font-semibold text-white'
+              : 'inline-flex rounded-lg border-2 border-slate-900 px-6 py-3 font-semibold text-slate-900'
+          }
+        >
+          {secondaryLabel}
+        </a>
+      ) : null}
+    </div>
+  )
+}
+
+function heroVariantBody(variant: string, p: HeroVariantProps) {
+  const heading = (
+    <>
+      {p.headingLine1}
+      <br />
+      {p.headingLine2}
+    </>
+  )
+
+  // 1 — fullleft: background image, left-aligned text over a dark gradient.
+  if (variant === '1') {
+    return (
+      <section className="relative min-h-[420px] overflow-hidden px-6 py-16 md:min-h-[480px]">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={p.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/60 to-transparent" />
+        <div className="relative mx-auto flex h-full max-w-6xl items-center">
+          <div className="max-w-lg">
+            {p.eyebrow ? (
+              <div className="text-xs font-bold uppercase tracking-wide text-white/80">
+                {p.eyebrow}
+              </div>
+            ) : null}
+            <h1 className="mt-3 mb-3 text-4xl font-extrabold tracking-tight text-white md:text-5xl">
+              {heading}
+            </h1>
+            <p className="mb-6 max-w-md text-slate-200">{p.subtext}</p>
+            {heroCtas(p, true)}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  // 3 — split-navy: same split layout as 2, dark background, white text.
+  if (variant === '3') {
+    return (
+      <section className="bg-slate-900 px-6 py-16">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 md:grid-cols-2">
+          <div>
+            {p.eyebrow ? (
+              <div className="text-xs font-bold uppercase tracking-wide text-white/70">
+                {p.eyebrow}
+              </div>
+            ) : null}
+            <h1 className="mt-3 mb-3 text-4xl font-extrabold tracking-tight text-white md:text-5xl">
+              {heading}
+            </h1>
+            <p className="mb-6 max-w-md text-slate-300">{p.subtext}</p>
+            {heroCtas(p, true)}
+          </div>
+          <div className="min-h-[360px] overflow-hidden rounded-2xl">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={p.image} alt="" className="h-full w-full object-cover" />
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  // 4 — center-full: full-bleed background image, dark overlay, centered text.
+  if (variant === '4') {
+    return (
+      <section className="relative min-h-[420px] overflow-hidden px-6 py-16 text-center md:min-h-[480px]">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={p.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 to-slate-950/90" />
+        <div className="relative mx-auto flex h-full max-w-2xl flex-col items-center justify-center">
+          {p.eyebrow ? (
+            <div className="text-xs font-bold uppercase tracking-wide text-white/80">
+              {p.eyebrow}
+            </div>
+          ) : null}
+          <h1 className="mt-3 mb-3 text-4xl font-extrabold tracking-tight text-white md:text-5xl">
+            {heading}
+          </h1>
+          <p className="mb-6 text-slate-200">{p.subtext}</p>
+          <div className="flex justify-center">{heroCtas(p, true)}</div>
+        </div>
+      </section>
+    )
+  }
+
+  // 2 (default) — split-light: light background, text left, image right.
+  return (
+    <section className="bg-slate-50 px-6 py-16">
+      <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 md:grid-cols-2">
+        <div>
+          {p.eyebrow ? (
+            <div className="text-xs font-bold uppercase tracking-wide text-slate-900">
+              {p.eyebrow}
+            </div>
+          ) : null}
+          <h1 className="mt-3 mb-3 text-4xl font-extrabold tracking-tight text-slate-900 md:text-5xl">
+            {heading}
+          </h1>
+          <p className="mb-6 max-w-md text-slate-600">{p.subtext}</p>
+          {heroCtas(p, false)}
+        </div>
+        <div className="min-h-[360px] overflow-hidden rounded-2xl">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={p.image} alt="" className="h-full w-full object-cover" />
+        </div>
+      </div>
+    </section>
+  )
+}
+
+const HERO_VARIANT_LABELS: Record<string, string> = {
+  '1': 'Full-bleed, left text',
+  '2': 'Split, light',
+  '3': 'Split, dark',
+  '4': 'Full-bleed, centered',
+}
+
+// Layout sketches (not live content previews) — abstract rectangles showing
+// each variant's structure, cheap to build and enough to tell them apart.
+function HeroVariantThumb({ variant }: { variant: string }) {
+  const dark = variant === '3' || variant === '1' || variant === '4'
+  const base = (
+    <div
+      className={`h-full w-full rounded ${dark ? 'bg-slate-700' : 'bg-slate-100'}`}
+      style={{ position: 'relative' }}
+    >
+      {variant === '2' || variant === '3' ? (
+        <div className="flex h-full w-full gap-1 p-1.5">
+          <div className="flex flex-1 flex-col justify-center gap-1">
+            <div className={`h-1.5 w-3/4 rounded ${dark ? 'bg-white/70' : 'bg-slate-900/70'}`} />
+            <div className={`h-1.5 w-2/3 rounded ${dark ? 'bg-white/50' : 'bg-slate-900/50'}`} />
+            <div className={`mt-1 h-2 w-8 rounded ${dark ? 'bg-white' : 'bg-slate-900'}`} />
+          </div>
+          <div className="flex-1 rounded bg-slate-400/60" />
+        </div>
+      ) : (
+        <div className="flex h-full w-full flex-col items-center justify-center gap-1 p-1.5">
+          <div className="h-1.5 w-2/3 rounded bg-white/80" />
+          <div className="h-1.5 w-1/2 rounded bg-white/60" />
+          <div className="mt-1 h-2 w-8 rounded bg-white" />
+        </div>
+      )}
+    </div>
+  )
+  return (
+    <div className="h-16 w-full overflow-hidden rounded-md border border-slate-200">{base}</div>
+  )
+}
+
 const MedicalHeroSplit: Config<MedicalProps>['components']['MedicalHeroSplit'] = {
   label: 'Hero (split, two-line heading)',
   fields: {
+    variant: {
+      type: 'custom',
+      render: ({ value, onChange }) => (
+        <div className="grid grid-cols-2 gap-2">
+          {(['1', '2', '3', '4'] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => onChange(v)}
+              className="rounded-md text-left"
+              style={{
+                outline: value === v ? '2px solid #2563eb' : '1px solid transparent',
+                outlineOffset: 2,
+              }}
+            >
+              <HeroVariantThumb variant={v} />
+              <div className="mt-1 text-xs font-medium">
+                Design {v} — {HERO_VARIANT_LABELS[v]}
+                {value === v ? ' · In use' : ''}
+              </div>
+            </button>
+          ))}
+        </div>
+      ),
+    },
     eyebrow: { type: 'text' },
     headingLine1: { type: 'text' },
     headingLine2: { type: 'text' },
@@ -734,8 +1091,10 @@ const MedicalHeroSplit: Config<MedicalProps>['components']['MedicalHeroSplit'] =
     secondaryLabel: { type: 'text' },
     secondaryHref: { type: 'text' },
     image: { type: 'text' },
+    primaryColor: { type: 'text' },
   },
   defaultProps: {
+    variant: '2',
     eyebrow: 'Welcome to our clinic',
     headingLine1: 'Your Health',
     headingLine2: 'Our Priority',
@@ -745,58 +1104,9 @@ const MedicalHeroSplit: Config<MedicalProps>['components']['MedicalHeroSplit'] =
     secondaryLabel: 'Contact Us',
     secondaryHref: '#contact',
     image: 'https://placehold.co/900x800',
+    primaryColor: '',
   },
-  render: ({
-    eyebrow,
-    headingLine1,
-    headingLine2,
-    subtext,
-    primaryLabel,
-    primaryHref,
-    secondaryLabel,
-    secondaryHref,
-    image,
-  }) => (
-    <section className="bg-slate-50 px-6 py-16">
-      <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 md:grid-cols-2">
-        <div>
-          {eyebrow ? (
-            <div className="text-xs font-bold uppercase tracking-wide text-slate-900">
-              {eyebrow}
-            </div>
-          ) : null}
-          <h1 className="mt-3 mb-3 text-4xl font-extrabold tracking-tight text-slate-900 md:text-5xl">
-            {headingLine1}
-            <br />
-            {headingLine2}
-          </h1>
-          <p className="mb-6 max-w-md text-slate-600">{subtext}</p>
-          <div className="flex flex-wrap gap-3">
-            {primaryLabel ? (
-              <a
-                href={primaryHref}
-                className="inline-flex rounded-lg bg-slate-900 px-6 py-3 font-semibold text-white"
-              >
-                {primaryLabel}
-              </a>
-            ) : null}
-            {secondaryLabel ? (
-              <a
-                href={secondaryHref}
-                className="inline-flex rounded-lg border-2 border-slate-900 px-6 py-3 font-semibold text-slate-900"
-              >
-                {secondaryLabel}
-              </a>
-            ) : null}
-          </div>
-        </div>
-        <div className="min-h-[360px] overflow-hidden rounded-2xl">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={image} alt="" className="h-full w-full object-cover" />
-        </div>
-      </div>
-    </section>
-  ),
+  render: (props) => heroVariantBody(props.variant, props),
 }
 
 // ─── MedicalContactInfoCards ─────────────────────────────────────────────────

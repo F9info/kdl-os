@@ -6,6 +6,7 @@ import {
   ArrowRight,
   Globe,
   ExternalLink,
+  Pencil,
   Plus,
   Upload as UploadIcon,
   X,
@@ -183,13 +184,13 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
                   <h3 className="text-base font-semibold">Web app · Pages</h3>
                   <p className="text-sm text-muted-foreground">
                     {pageCount} page{pageCount !== 1 ? 's' : ''} assembled in the page-builder
-                    engine. Open a page to edit it, or view all pages to step through and edit every
-                    page in one place.
+                    engine. Open a page to edit it, or view all pages to step through the whole
+                    site.
                   </p>
                 </div>
                 <Button size="sm" asChild>
                   <a
-                    href={`/admin/template-engine/site?ids=${pages.map(([, id]) => id).join(',')}`}
+                    href={`/admin/template-engine/site?ids=${pages.map(([, id]) => id).join(',')}&projectId=${run.projectId}`}
                     target="_blank"
                     rel="noreferrer"
                   >
@@ -208,9 +209,13 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
                       </span>
                       <b className="text-sm">{key.charAt(0).toUpperCase() + key.slice(1)}</b>
                       <Button size="sm" asChild className="mt-auto w-fit">
-                        <a href={`/admin/page-builder/${id}`} target="_blank" rel="noreferrer">
-                          <ExternalLink className="mr-2 h-3.5 w-3.5" />
-                          Open page
+                        <a
+                          href={`/admin/template-engine/edit/${id}?projectId=${run.projectId}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <Pencil className="mr-2 h-3.5 w-3.5" />
+                          Edit
                         </a>
                       </Button>
                     </div>

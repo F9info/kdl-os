@@ -26,32 +26,50 @@ function block(pageKey, type, props) {
   return { type, props: { id: `${pageKey}-${type}`, ...props } };
 }
 
+// Inline SVG data URI — no network call, so it always renders regardless of
+// CSP img-src or internet access, unlike the placehold.co URLs this replaced.
+function dummyImage(w, h, label) {
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">` +
+    `<rect width="100%" height="100%" fill="#e2e8f0"/>` +
+    `<text x="50%" y="50%" font-family="sans-serif" font-size="${Math.round(Math.min(w, h) / 10)}" ` +
+    `fill="#64748b" text-anchor="middle" dominant-baseline="middle">${label || `${w}×${h}`}</text>` +
+    `</svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
 const NAV_LINKS = ['Home|#', 'About|#', 'Contact|#'].join('\n');
 
-const NAV_BAR = {
-  brand: 'Your Brand',
-  links: NAV_LINKS,
-  ctaLabel: 'Get Started',
-  ctaHref: '#',
-};
+// Brand kit fields (logo, company name, extracted primary colour) are
+// optional — a fresh project with no approved brand kit yet still seeds
+// pages, falling back to the generic "Your Brand" copy/colors below.
+function navBarProps(brand = {}) {
+  return {
+    variant: '1',
+    brand: brand.companyName || 'Your Brand',
+    logoUrl: brand.logoUrl || '',
+    links: NAV_LINKS,
+    ctaLabel: 'Get Started',
+    ctaHref: '#',
+    primaryColor: brand.primaryHex || '',
+  };
+}
 
-const FOOTER = {
-  brand: 'Your Brand',
-  tagline: 'Building something great.',
-  links: NAV_LINKS,
-  copyright: `© ${new Date().getFullYear()} Your Brand. All rights reserved.`,
-};
-
-const STATS = {
-  stats: [
-    '25+|Years of experience',
-    '15K+|Happy customers',
-    '50+|Team members',
-    '30+|Projects delivered',
-  ].join('\n'),
-};
+function footerProps(brand = {}) {
+  const name = brand.companyName || 'Your Brand';
+  const lastUpdated = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  return {
+    variant: '1',
+    brand: name,
+    logoUrl: brand.logoUrl || '',
+    tagline: 'Building something great.',
+    links: NAV_LINKS,
+    copyright: `© ${new Date().getFullYear()} ${name}. All rights reserved. · Last updated ${lastUpdated}`,
+  };
+}
 
 const FEATURE_CARDS = {
+  variant: '1',
   sectionTitle: 'What we offer',
   sectionSubtitle: 'Everything you need, built for reliability and speed.',
   cards: [
@@ -69,120 +87,110 @@ const FEATURE_CARDS = {
 // Templates picker was removed — this is now the only seed path, so it's
 // what "View all pages" always shows for Home. About/Contact still use the
 // general pack's NavBar/Hero for now — next step per the same request.
-const TOPNAV = {
-  welcomeText: 'Welcome — Your Health, Our Priority!',
-  phone: '(123) 456 7890',
-  hours: 'Mon–Sat: 8:00–18:00',
-  brand: 'Your Brand',
-  navLinks: NAV_LINKS,
-  ctaLabel: 'Appointment',
-  ctaHref: '#appointment',
-};
+function topNavProps(brand = {}) {
+  return {
+    variant: '1',
+    welcomeText: 'Welcome — Your Health, Our Priority!',
+    phone: '(123) 456 7890',
+    hours: 'Mon–Sat: 8:00–18:00',
+    brand: brand.companyName || 'Your Brand',
+    logoUrl: brand.logoUrl || '',
+    navLinks: NAV_LINKS,
+    ctaLabel: 'Appointment',
+    ctaHref: '#appointment',
+    primaryColor: brand.primaryHex || '',
+  };
+}
 
-const HOME_HERO = {
-  eyebrow: 'Welcome to our clinic',
-  headingLine1: 'Your Health',
-  headingLine2: 'Our Priority',
-  subtext: "We provide the best medical services for you and your family's health.",
-  primaryLabel: 'Our Services',
-  primaryHref: '#services',
-  secondaryLabel: 'Contact Us',
-  secondaryHref: '#contact',
-  image: 'https://placehold.co/900x800',
-};
-
-const CONTACT_INFO_CARDS = {
-  cells: [
-    'phone|Emergency Case|(123) 456 7890',
-    'clock|Opening Hours|Mon–Sat: 8:00–18:00',
-    'location|Location|123 Medical Street, NY',
-    'email|Email Us|info@yourbrand.com',
-  ].join('\n'),
-};
+function homeHeroProps(brand = {}) {
+  return {
+    variant: '2',
+    eyebrow: 'Welcome to our clinic',
+    headingLine1: 'Your Health',
+    headingLine2: 'Our Priority',
+    subtext: "We provide the best medical services for you and your family's health.",
+    primaryLabel: 'Our Services',
+    primaryHref: '#services',
+    secondaryLabel: 'Contact Us',
+    secondaryHref: '#contact',
+    image: dummyImage(900, 800),
+    primaryColor: brand.primaryHex || '',
+  };
+}
 
 const HERO_BY_KEY = {
   home: {
+    variant: '1',
     title: 'Build faster with KDL',
     subtitle: 'A flexible, modern page builder that ships responsive pages to every device.',
     ctaLabel: 'Get started',
     ctaHref: '#',
     align: 'center',
+    image: dummyImage(900, 700),
+    primaryColor: '',
   },
   about: {
+    variant: '1',
     title: 'About us',
     subtitle: 'We build tools that help teams ship faster, together.',
     ctaLabel: '',
     ctaHref: '#',
     align: 'left',
+    image: dummyImage(900, 700),
+    primaryColor: '',
   },
   contact: {
+    variant: '1',
     title: 'Get in touch',
     subtitle: "We'd love to hear from you — reach out any time.",
     ctaLabel: '',
     ctaHref: '#',
     align: 'left',
+    image: dummyImage(900, 700),
+    primaryColor: '',
   },
 };
 
-const MIDDLE_BLOCKS_BY_KEY = {
-  home: (pageKey) => [
-    block(pageKey, 'StatsStrip', STATS),
-    block(pageKey, 'FeatureCards', FEATURE_CARDS),
-    block(pageKey, 'Spacer', { size: 'lg' }),
-    block(pageKey, 'Heading', { text: 'Ready to get started?', level: '2', align: 'center' }),
-    block(pageKey, 'Spacer', { size: 'sm' }),
-    block(pageKey, 'Button', { label: 'Get started', href: '#', variant: 'primary' }),
-    block(pageKey, 'Spacer', { size: 'lg' }),
-  ],
-  about: (pageKey) => [
+// Every page normalizes to exactly 4 blocks — nav, hero, one content block,
+// footer — matching the design prototype's leaner per-page structure.
+const MIDDLE_BLOCK_BY_KEY = {
+  home: (pageKey) => block(pageKey, 'FeatureCards', FEATURE_CARDS),
+  about: (pageKey) =>
     block(pageKey, 'Text', {
+      variant: '1',
       text: 'We started with a simple idea: building a website should not require writing code. Today our platform powers pages for teams of every size.',
       align: 'left',
       muted: false,
     }),
-    block(pageKey, 'Spacer', { size: 'md' }),
-    block(pageKey, 'Image', {
-      src: 'https://placehold.co/1200x600',
-      alt: 'Our team',
-      rounded: true,
-    }),
-    block(pageKey, 'Spacer', { size: 'lg' }),
-    block(pageKey, 'StatsStrip', STATS),
-    block(pageKey, 'Spacer', { size: 'lg' }),
-  ],
-  contact: (pageKey) => [
+  contact: (pageKey) =>
     block(pageKey, 'Text', {
+      variant: '1',
       text: 'Have a question or want a demo? Send us a message and our team will get back to you within one business day.',
       align: 'left',
       muted: false,
     }),
-    block(pageKey, 'Spacer', { size: 'md' }),
-    block(pageKey, 'Button', {
-      label: 'Email us',
-      href: 'mailto:hello@example.com',
-      variant: 'primary',
-    }),
-    block(pageKey, 'Spacer', { size: 'lg' }),
-  ],
 };
 
-function headerBlocks(pageKey) {
+function headerBlocks(pageKey, brand) {
   if (pageKey === 'home') {
     return [
-      block(pageKey, 'MedicalTopNav', TOPNAV),
-      block(pageKey, 'MedicalHeroSplit', HOME_HERO),
-      block(pageKey, 'MedicalContactInfoCards', CONTACT_INFO_CARDS),
+      block(pageKey, 'MedicalTopNav', topNavProps(brand)),
+      block(pageKey, 'MedicalHeroSplit', homeHeroProps(brand)),
     ];
   }
   return [
-    block(pageKey, 'NavBar', NAV_BAR),
+    block(pageKey, 'NavBar', navBarProps(brand)),
     block(pageKey, 'Hero', HERO_BY_KEY[pageKey] ?? HERO_BY_KEY.home),
   ];
 }
 
-export function seedWebsitePageData(pageKey, pageTitle) {
-  const buildMiddle = MIDDLE_BLOCKS_BY_KEY[pageKey] ?? MIDDLE_BLOCKS_BY_KEY.home;
-  const content = [...headerBlocks(pageKey), ...buildMiddle(pageKey), block(pageKey, 'Footer', FOOTER)];
+export function seedWebsitePageData(pageKey, pageTitle, brand = {}) {
+  const buildMiddle = MIDDLE_BLOCK_BY_KEY[pageKey] ?? MIDDLE_BLOCK_BY_KEY.home;
+  const content = [
+    ...headerBlocks(pageKey, brand),
+    buildMiddle(pageKey),
+    block(pageKey, 'Footer', footerProps(brand)),
+  ];
   return { root: { props: { title: pageTitle } }, content, zones: {} };
 }
 
@@ -243,10 +251,10 @@ const MEDICAL_DOCTOR_PROFILES = {
   sectionTitle: 'Meet Our Specialists',
   sectionSubtitle: 'Experienced, board-certified doctors dedicated to your care.',
   doctors: [
-    'Dr. Priya Sharma | MD, DM | Cardiologist | https://placehold.co/400x400',
-    'Dr. Rahul Mehta | MS, DNB | Orthopaedic Surgeon | https://placehold.co/400x400',
-    'Dr. Ananya Patel | MBBS, MD | Neurologist | https://placehold.co/400x400',
-    'Dr. Sunita Rao | MS, FMAS | Gynaecologist | https://placehold.co/400x400',
+    `Dr. Priya Sharma | MD, DM | Cardiologist | ${dummyImage(400, 400)}`,
+    `Dr. Rahul Mehta | MS, DNB | Orthopaedic Surgeon | ${dummyImage(400, 400)}`,
+    `Dr. Ananya Patel | MBBS, MD | Neurologist | ${dummyImage(400, 400)}`,
+    `Dr. Sunita Rao | MS, FMAS | Gynaecologist | ${dummyImage(400, 400)}`,
   ].join('\n'),
 };
 
@@ -304,13 +312,13 @@ const MEDICAL_MIDDLE_BY_KEY = {
   ],
 };
 
-export function seedMedicalPageData(pageKey, pageTitle) {
+export function seedMedicalPageData(pageKey, pageTitle, brand = {}) {
   const buildMiddle = MEDICAL_MIDDLE_BY_KEY[pageKey] ?? MEDICAL_MIDDLE_BY_KEY.home;
   const content = [
-    block(pageKey, 'NavBar', NAV_BAR),
+    block(pageKey, 'NavBar', navBarProps(brand)),
     block(pageKey, 'MedicalHero', MEDICAL_HERO_BY_KEY[pageKey] ?? MEDICAL_HERO_BY_KEY.home),
     ...buildMiddle(pageKey),
-    block(pageKey, 'Footer', FOOTER),
+    block(pageKey, 'Footer', footerProps(brand)),
   ];
   return { root: { props: { title: pageTitle } }, content, zones: {} };
 }
@@ -332,7 +340,7 @@ const CONSTRUCTION_HERO_BY_KEY = {
     ctaHref: '#quote',
     secondaryLabel: 'View Our Projects',
     secondaryHref: '#projects',
-    backgroundImage: 'https://placehold.co/1600x800/1e293b/ffffff?text=Construction+Site',
+    backgroundImage: dummyImage(1600, 800, 'Construction Site'),
     overlay: true,
   },
   about: {
@@ -342,7 +350,7 @@ const CONSTRUCTION_HERO_BY_KEY = {
     ctaHref: '#',
     secondaryLabel: '',
     secondaryHref: '#',
-    backgroundImage: 'https://placehold.co/1600x800/1e293b/ffffff?text=Our+Team',
+    backgroundImage: dummyImage(1600, 800, 'Our Team'),
     overlay: true,
   },
   contact: {
@@ -352,7 +360,7 @@ const CONSTRUCTION_HERO_BY_KEY = {
     ctaHref: '#',
     secondaryLabel: '',
     secondaryHref: '#',
-    backgroundImage: 'https://placehold.co/1600x800/1e293b/ffffff?text=Contact+Us',
+    backgroundImage: dummyImage(1600, 800, 'Contact Us'),
     overlay: true,
   },
 };
@@ -410,16 +418,16 @@ const CONSTRUCTION_TEAM_CREW = {
   sectionSubtitle: 'Experienced professionals committed to delivering quality on every project.',
   member1Name: 'Ramesh Kapoor',
   member1Role: 'Director & Project Head',
-  member1Image: 'https://placehold.co/400x400/475569/ffffff?text=RK',
+  member1Image: dummyImage(400, 400, 'RK'),
   member2Name: 'Sunita Joshi',
   member2Role: 'Senior Site Engineer',
-  member2Image: 'https://placehold.co/400x400/334155/ffffff?text=SJ',
+  member2Image: dummyImage(400, 400, 'SJ'),
   member3Name: 'Arun Mehta',
   member3Role: 'Safety & Compliance Officer',
-  member3Image: 'https://placehold.co/400x400/1e293b/ffffff?text=AM',
+  member3Image: dummyImage(400, 400, 'AM'),
   member4Name: 'Priya Nair',
   member4Role: 'Estimation & Contracts',
-  member4Image: 'https://placehold.co/400x400/0f172a/ffffff?text=PN',
+  member4Image: dummyImage(400, 400, 'PN'),
   padding: 'md',
   background: 'white',
 };
@@ -456,17 +464,17 @@ const CONSTRUCTION_MIDDLE_BY_KEY = {
   contact: (pageKey) => [block(pageKey, 'ConstructionQuoteCTA', CONSTRUCTION_QUOTE_CTA)],
 };
 
-export function seedConstructionPageData(pageKey, pageTitle) {
+export function seedConstructionPageData(pageKey, pageTitle, brand = {}) {
   const buildMiddle = CONSTRUCTION_MIDDLE_BY_KEY[pageKey] ?? CONSTRUCTION_MIDDLE_BY_KEY.home;
   const content = [
-    block(pageKey, 'NavBar', NAV_BAR),
+    block(pageKey, 'NavBar', navBarProps(brand)),
     block(
       pageKey,
       'ConstructionHero',
       CONSTRUCTION_HERO_BY_KEY[pageKey] ?? CONSTRUCTION_HERO_BY_KEY.home
     ),
     ...buildMiddle(pageKey),
-    block(pageKey, 'Footer', FOOTER),
+    block(pageKey, 'Footer', footerProps(brand)),
   ];
   return { root: { props: { title: pageTitle } }, content, zones: {} };
 }
