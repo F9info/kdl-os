@@ -12,6 +12,8 @@ const wrap = 'mx-auto max-w-6xl px-4 md:px-8'
 
 type ConstructionProps = {
   ConstructionHeader: {
+    variant: '1' | '2' | '3' | '4'
+    visible: boolean
     brand: string
     logoUrl: string
     links: string
@@ -19,6 +21,7 @@ type ConstructionProps = {
     loginHref: string
     ctaLabel: string
     ctaHref: string
+    phoneNumber: string
     primaryColor: string
   }
   ConstructionTopBar: {
@@ -1144,6 +1147,22 @@ const typedComponents: Config<ConstructionProps>['components'] = {
   ConstructionHeader: {
     label: 'Construction Header',
     fields: {
+      variant: {
+        type: 'select',
+        options: [
+          { label: 'Design 1 — Classic (logo, centered nav, Login + CTA)', value: '1' },
+          { label: 'Design 2 — Centered logo, split nav', value: '2' },
+          { label: 'Design 3 — Phone + CTA emphasis', value: '3' },
+          { label: 'Design 4 — Dark premium', value: '4' },
+        ],
+      },
+      visible: {
+        type: 'radio',
+        options: [
+          { label: 'Show', value: true },
+          { label: 'Hide', value: false },
+        ],
+      },
       brand: { type: 'text' },
       logoUrl: { type: 'text' },
       links: { type: 'textarea' },
@@ -1151,9 +1170,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       loginHref: { type: 'text' },
       ctaLabel: { type: 'text' },
       ctaHref: { type: 'text' },
+      phoneNumber: { type: 'text' },
       primaryColor: { type: 'text' },
     },
     defaultProps: {
+      variant: '1',
+      visible: true,
       brand: 'Your Brand',
       logoUrl: '',
       links: 'Home|#\nAbout|#\nProducts|#\nServices|#\nSectors|#\nContact|#',
@@ -1161,9 +1183,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       loginHref: '#login',
       ctaLabel: 'Get a Quote',
       ctaHref: '#quote',
+      phoneNumber: '+91 98765 43210',
       primaryColor: '',
     },
     render: function ConstructionHeaderRender({
+      variant,
+      visible,
       brand,
       logoUrl,
       links,
@@ -1171,6 +1196,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       loginHref,
       ctaLabel,
       ctaHref,
+      phoneNumber,
       primaryColor,
     }) {
       const [mobileOpen, setMobileOpen] = useState(false)
@@ -1179,6 +1205,247 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         .map((line) => line.split('|'))
         .filter(([label]) => label)
       const ctaStyle = primaryColor ? { backgroundColor: primaryColor } : undefined
+
+      const mobilePanel = mobileOpen && typeof document !== 'undefined' && (
+        <>
+          {createPortal(
+            <div className="fixed inset-0 z-50 bg-white flex flex-col p-6 md:hidden">
+              <div className="flex items-center justify-between mb-8">
+                <span className="font-bold text-slate-900">{brand}</span>
+                <button
+                  type="button"
+                  aria-label="Close menu"
+                  onClick={() => setMobileOpen(false)}
+                  className="p-2 -mr-2 text-slate-700"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <nav className="flex flex-col gap-5 mb-8">
+                {navItems.map(([label, href], i) => (
+                  <a
+                    key={i}
+                    href={href || '#'}
+                    onClick={() => setMobileOpen(false)}
+                    className="text-lg font-medium text-slate-900"
+                  >
+                    {label}
+                  </a>
+                ))}
+              </nav>
+              <div className="flex flex-col gap-3 mt-auto">
+                {loginLabel && (
+                  <a
+                    href={loginHref}
+                    className="inline-flex items-center justify-center rounded-lg border-2 border-slate-300 px-4 py-3 text-sm font-semibold text-slate-900"
+                  >
+                    {loginLabel}
+                  </a>
+                )}
+                {ctaLabel && (
+                  <a
+                    href={ctaHref}
+                    style={ctaStyle}
+                    className="inline-flex items-center justify-center rounded-lg bg-orange-500 px-4 py-3 text-sm font-semibold text-white"
+                  >
+                    {ctaLabel}
+                  </a>
+                )}
+              </div>
+            </div>,
+            document.body
+          )}
+        </>
+      )
+
+      const hamburgerBtn = (colorClass: string) => (
+        <button
+          type="button"
+          aria-label="Toggle menu"
+          onClick={() => setMobileOpen(true)}
+          className={`md:hidden p-2 -mr-2 ${colorClass}`}
+        >
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      )
+
+      if (!visible) return <></>
+
+      if (variant === '2') {
+        const half = Math.ceil(navItems.length / 2)
+        const leftLinks = navItems.slice(0, half)
+        const rightLinks = navItems.slice(half)
+        return (
+          <>
+            <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-100 text-slate-900">
+              <div className={`${wrap} flex items-center justify-between h-16`}>
+                <a href="#" className="flex items-center gap-2 font-bold md:hidden">
+                  {logoUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={logoUrl} alt={brand} className="h-8 w-auto" />
+                  )}
+                  <span>{brand}</span>
+                </a>
+                <div className="hidden md:grid md:flex-1 md:grid-cols-[1fr_auto_1fr] md:items-center md:gap-6">
+                  <nav className="flex items-center justify-end gap-6">
+                    {leftLinks.map(([label, href], i) => (
+                      <a
+                        key={i}
+                        href={href || '#'}
+                        className="text-sm font-medium text-slate-700 hover:text-orange-500 transition"
+                      >
+                        {label}
+                      </a>
+                    ))}
+                  </nav>
+                  <a href="#" className="flex items-center gap-2 font-bold justify-self-center">
+                    {logoUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={logoUrl} alt={brand} className="h-8 w-auto" />
+                    )}
+                    <span>{brand}</span>
+                  </a>
+                  <div className="flex items-center justify-end gap-6">
+                    {rightLinks.map(([label, href], i) => (
+                      <a
+                        key={i}
+                        href={href || '#'}
+                        className="text-sm font-medium text-slate-700 hover:text-orange-500 transition"
+                      >
+                        {label}
+                      </a>
+                    ))}
+                    {ctaLabel && (
+                      <a
+                        href={ctaHref}
+                        style={ctaStyle}
+                        className="inline-flex items-center rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 transition"
+                      >
+                        {ctaLabel}
+                      </a>
+                    )}
+                  </div>
+                </div>
+                {hamburgerBtn('text-slate-700')}
+              </div>
+            </header>
+            {mobilePanel}
+          </>
+        )
+      }
+
+      if (variant === '3') {
+        return (
+          <>
+            <header className="sticky top-0 z-40 bg-white border-b-2 border-orange-500">
+              <div className={`${wrap} flex items-center justify-between h-16`}>
+                <div className="flex items-center gap-10">
+                  <a href="#" className="flex items-center gap-2 font-bold text-slate-900">
+                    {logoUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={logoUrl} alt={brand} className="h-8 w-auto" />
+                    )}
+                    <span>{brand}</span>
+                  </a>
+                  <nav className="hidden md:flex items-center gap-6">
+                    {navItems.map(([label, href], i) => (
+                      <a
+                        key={i}
+                        href={href || '#'}
+                        className="text-sm font-medium text-slate-700 hover:text-orange-500 transition"
+                      >
+                        {label}
+                      </a>
+                    ))}
+                  </nav>
+                </div>
+                <div className="hidden md:flex items-center gap-5">
+                  {phoneNumber && (
+                    <a
+                      href={`tel:${phoneNumber}`}
+                      className="flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-orange-600 transition"
+                    >
+                      <PhoneIcon />
+                      {phoneNumber}
+                    </a>
+                  )}
+                  {ctaLabel && (
+                    <a
+                      href={ctaHref}
+                      style={ctaStyle}
+                      className="inline-flex items-center rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 transition"
+                    >
+                      {ctaLabel}
+                    </a>
+                  )}
+                </div>
+                {hamburgerBtn('text-slate-700')}
+              </div>
+            </header>
+            {mobilePanel}
+          </>
+        )
+      }
+
+      if (variant === '4') {
+        return (
+          <>
+            <header className="sticky top-0 z-40 bg-slate-900 border-b border-slate-800 text-white">
+              <div className={`${wrap} flex items-center justify-between h-16`}>
+                <a href="#" className="flex items-center gap-2 font-bold">
+                  {logoUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={logoUrl} alt={brand} className="h-8 w-auto" />
+                  )}
+                  <span>{brand}</span>
+                </a>
+                <nav className="hidden md:flex items-center gap-7">
+                  {navItems.map(([label, href], i) => (
+                    <a
+                      key={i}
+                      href={href || '#'}
+                      className="text-xs font-semibold uppercase tracking-wide text-slate-300 hover:text-orange-400 transition"
+                    >
+                      {label}
+                    </a>
+                  ))}
+                </nav>
+                <div className="hidden md:flex items-center">
+                  {ctaLabel && (
+                    <a
+                      href={ctaHref}
+                      style={ctaStyle}
+                      className="inline-flex items-center rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-orange-400 transition"
+                    >
+                      {ctaLabel}
+                    </a>
+                  )}
+                </div>
+                {hamburgerBtn('text-white')}
+              </div>
+            </header>
+            {mobilePanel}
+          </>
+        )
+      }
+
+      // Design 1 (default) — classic
       return (
         <>
           <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-100">
@@ -1220,81 +1487,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   </a>
                 )}
               </div>
-              <button
-                type="button"
-                aria-label="Toggle menu"
-                onClick={() => setMobileOpen(true)}
-                className="md:hidden p-2 -mr-2 text-slate-700"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
+              {hamburgerBtn('text-slate-700')}
             </div>
           </header>
-          {mobileOpen &&
-            typeof document !== 'undefined' &&
-            createPortal(
-              <div className="fixed inset-0 z-50 bg-white flex flex-col p-6 md:hidden">
-                <div className="flex items-center justify-between mb-8">
-                  <span className="font-bold text-slate-900">{brand}</span>
-                  <button
-                    type="button"
-                    aria-label="Close menu"
-                    onClick={() => setMobileOpen(false)}
-                    className="p-2 -mr-2 text-slate-700"
-                  >
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <nav className="flex flex-col gap-5 mb-8">
-                  {navItems.map(([label, href], i) => (
-                    <a
-                      key={i}
-                      href={href || '#'}
-                      onClick={() => setMobileOpen(false)}
-                      className="text-lg font-medium text-slate-900"
-                    >
-                      {label}
-                    </a>
-                  ))}
-                </nav>
-                <div className="flex flex-col gap-3 mt-auto">
-                  {loginLabel && (
-                    <a
-                      href={loginHref}
-                      className="inline-flex items-center justify-center rounded-lg border-2 border-slate-300 px-4 py-3 text-sm font-semibold text-slate-900"
-                    >
-                      {loginLabel}
-                    </a>
-                  )}
-                  {ctaLabel && (
-                    <a
-                      href={ctaHref}
-                      style={ctaStyle}
-                      className="inline-flex items-center justify-center rounded-lg bg-orange-500 px-4 py-3 text-sm font-semibold text-white"
-                    >
-                      {ctaLabel}
-                    </a>
-                  )}
-                </div>
-              </div>,
-              document.body
-            )}
+          {mobilePanel}
         </>
       )
     },
@@ -4193,5 +4389,6 @@ export const construction: ComponentPack = {
   categories: typedCategories,
   variants: {
     ConstructionTopBar: ['1', '2', '3', '4'],
+    ConstructionHeader: ['1', '2', '3', '4'],
   },
 }
