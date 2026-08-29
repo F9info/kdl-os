@@ -95,6 +95,16 @@ function previewProps(comp: PuckComponentConfig, variant: string | null) {
   return props
 }
 
+// Short, bar-shaped components (sticky headers, top bars) render to only a
+// sliver of the default 210px preview box — leaving most of the card (and,
+// on hover, the dark "Insert" gradient overlay, which is sized to the whole
+// card) as dead empty space. Give these a shorter preview box instead.
+const COMPACT_PREVIEW_HEIGHT: Record<string, number> = {
+  ConstructionHeader: 90,
+  ConstructionTopBar: 90,
+}
+const DEFAULT_PREVIEW_HEIGHT = 210
+
 function BlockCard({
   componentKey,
   variant,
@@ -112,6 +122,7 @@ function BlockCard({
   const comp = (config.components as Record<string, PuckComponentConfig>)[componentKey]
   if (!comp?.render) return null
   const props = previewProps(comp, variant)
+  const previewHeight = COMPACT_PREVIEW_HEIGHT[componentKey] ?? DEFAULT_PREVIEW_HEIGHT
 
   return (
     <div
@@ -119,13 +130,16 @@ function BlockCard({
       tabIndex={0}
       onClick={() => onInsert(componentKey, variant)}
       onKeyDown={(e) => e.key === 'Enter' && onInsert(componentKey, variant)}
-      className="group relative cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md"
+      className="group relative self-start cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md"
     >
       <span className="absolute right-2.5 top-2.5 z-[2] rounded-md bg-slate-900 px-2.5 py-1 text-[11px] font-extrabold text-white">
         {comp.label ?? componentKey}
         {total > 1 ? ` · ${index + 1}` : ''}
       </span>
-      <div className="h-[210px] overflow-hidden bg-white pointer-events-none">
+      <div
+        style={{ height: previewHeight }}
+        className="overflow-hidden bg-white pointer-events-none"
+      >
         <div style={{ width: 1200, transform: 'scale(0.35)', transformOrigin: 'top left' }}>
           {comp.render(props)}
         </div>
