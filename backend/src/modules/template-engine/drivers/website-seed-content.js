@@ -53,7 +53,13 @@ function navLinksFor(pages) {
   return pages.map(({ title }) => `${title}|#`).join('\n');
 }
 
-const NAV_LINK_PROP_BY_BLOCK_TYPE = { NavBar: 'links', Footer: 'links', MedicalTopNav: 'navLinks' };
+const NAV_LINK_PROP_BY_BLOCK_TYPE = {
+  NavBar: 'links',
+  Footer: 'links',
+  MedicalTopNav: 'navLinks',
+  ConstructionHeader: 'links',
+  ConstructionFooter: 'links',
+};
 
 // A page found via crash recovery (existing pageKeyToId entry, or an
 // orphaned page reused by slug — see drivers/index.js) is reused AS-IS,
@@ -480,70 +486,85 @@ export function seedMedicalPageData(pageKey, pageTitle, brand = {}, pages) {
   return { root: { props: { title: pageTitle } }, content, zones: {} };
 }
 
-// ─── Construction pack seeder (KDL-558 task 3/5) ─────────────────────────
+// ─── Construction pack seeder (KDL-558 task 3/5, homepage KDL-558 step N) ──
 //
-// Not wired to the Templates step yet (task 4). Same approach as the
-// medical seeder: general pack's NavBar/Footer for chrome, real
-// ConstructionX components for the body, each using that component's own
-// defaultProps verbatim (frontend/src/app/admin/page-builder/packs/
-// construction/index.tsx).
+// Not wired to the Templates step yet. Home gets a full, real homepage
+// (16 blocks) built from the construction pack's own components. About/
+// Contact/generic pages keep the same lean NavBar + ConstructionHero +
+// one section + Footer shape they always had — only Home's content
+// changed here.
 
 const CONSTRUCTION_HERO_BY_KEY = {
-  home: {
-    headline: 'Building Your Vision, On Time & On Budget',
-    subheadline:
-      'Award-winning general contractor serving residential and commercial clients across the region. Licensed, insured, and safety-certified.',
-    ctaLabel: 'Get a Free Quote',
-    ctaHref: '#quote',
-    secondaryLabel: 'View Our Projects',
-    secondaryHref: '#projects',
-    backgroundImage: dummyImage(1600, 800, 'Construction Site'),
-    overlay: true,
-  },
   about: {
+    badgeText: '',
     headline: 'About Our Company',
-    subheadline: 'Decades of building experience, one crew you can trust from groundbreak to handover.',
+    highlightWord: '',
+    subheadline:
+      'Decades of building experience, one crew you can trust from groundbreak to handover.',
     ctaLabel: '',
     ctaHref: '#',
     secondaryLabel: '',
     secondaryHref: '#',
-    backgroundImage: dummyImage(1600, 800, 'Our Team'),
-    overlay: true,
+    avatar1: '',
+    avatar2: '',
+    avatar3: '',
+    trustText: '',
+    slide1Image: dummyImage(900, 700, 'Our Team'),
+    slide1Tag: '',
+    slide1Title: '',
+    slide1Subtitle: '',
+    slide2Image: '',
+    slide2Tag: '',
+    slide2Title: '',
+    slide2Subtitle: '',
+    slide3Image: '',
+    slide3Tag: '',
+    slide3Title: '',
+    slide3Subtitle: '',
+    slide4Image: '',
+    slide4Tag: '',
+    slide4Title: '',
+    slide4Subtitle: '',
+    slide5Image: '',
+    slide5Tag: '',
+    slide5Title: '',
+    slide5Subtitle: '',
   },
   contact: {
+    badgeText: '',
     headline: 'Get a Free Quote',
-    subheadline: 'Tell us about your project and our estimators will get back to you within 48 hours.',
+    highlightWord: '',
+    subheadline:
+      'Tell us about your project and our estimators will get back to you within 48 hours.',
     ctaLabel: '',
     ctaHref: '#',
     secondaryLabel: '',
     secondaryHref: '#',
-    backgroundImage: dummyImage(1600, 800, 'Contact Us'),
-    overlay: true,
+    avatar1: '',
+    avatar2: '',
+    avatar3: '',
+    trustText: '',
+    slide1Image: dummyImage(900, 700, 'Contact Us'),
+    slide1Tag: '',
+    slide1Title: '',
+    slide1Subtitle: '',
+    slide2Image: '',
+    slide2Tag: '',
+    slide2Title: '',
+    slide2Subtitle: '',
+    slide3Image: '',
+    slide3Tag: '',
+    slide3Title: '',
+    slide3Subtitle: '',
+    slide4Image: '',
+    slide4Tag: '',
+    slide4Title: '',
+    slide4Subtitle: '',
+    slide5Image: '',
+    slide5Tag: '',
+    slide5Title: '',
+    slide5Subtitle: '',
   },
-};
-
-const CONSTRUCTION_SERVICES_GRID = {
-  sectionTitle: 'Our Services',
-  sectionSubtitle: 'From foundations to finishes — we handle every phase of your construction project.',
-  service1Title: 'New Construction',
-  service1Description:
-    'Ground-up residential and commercial builds to your specifications and local codes.',
-  service2Title: 'Renovations & Remodeling',
-  service2Description:
-    'Transform existing spaces with structural updates, expansions, and interior upgrades.',
-  service3Title: 'Roofing & Waterproofing',
-  service3Description:
-    'Durable roofing installations, repairs, and waterproofing systems for all climates.',
-  service4Title: 'Concrete & Foundations',
-  service4Description: 'Footings, slabs, retaining walls, and structural concrete poured to spec.',
-  service5Title: 'Electrical & MEP',
-  service5Description:
-    'Full mechanical, electrical, and plumbing coordination with licensed subcontractors.',
-  service6Title: 'Project Management',
-  service6Description:
-    'End-to-end oversight, scheduling, procurement, and quality control on every site.',
-  padding: 'md',
-  background: 'white',
 };
 
 const CONSTRUCTION_STATS_STRIP = {
@@ -595,25 +616,22 @@ const CONSTRUCTION_TESTIMONIALS = {
     'The team delivered our 12-unit residential complex three weeks ahead of schedule, without a single quality defect. Exceptional work.',
   quote1Author: 'Venkat Reddy',
   quote1Company: 'Reddy Builders Pvt Ltd',
+  quote1Initials: 'VR',
   quote2Text:
     'Their safety record across our 18-month infrastructure project was impeccable. Zero LTIs. We will work with them again.',
   quote2Author: 'Anita Sharma',
   quote2Company: 'National Highways Authority (Vendor)',
+  quote2Initials: 'AS',
   quote3Text:
     'Transparent budgeting and weekly reporting made it easy to track progress. No surprises. Highly recommended.',
   quote3Author: 'Mohan Das',
   quote3Company: 'Das Commercial Properties',
+  quote3Initials: 'MD',
   padding: 'md',
   background: 'white',
 };
 
 const CONSTRUCTION_MIDDLE_BY_KEY = {
-  home: (pageKey) => [
-    block(pageKey, 'ConstructionServicesGrid', CONSTRUCTION_SERVICES_GRID),
-    block(pageKey, 'ConstructionStatsStrip', CONSTRUCTION_STATS_STRIP),
-    block(pageKey, 'ConstructionQuoteCTA', CONSTRUCTION_QUOTE_CTA),
-    block(pageKey, 'ConstructionTestimonials', CONSTRUCTION_TESTIMONIALS),
-  ],
   about: (pageKey) => [
     block(pageKey, 'ConstructionTeamCrew', CONSTRUCTION_TEAM_CREW),
     block(pageKey, 'ConstructionStatsStrip', CONSTRUCTION_STATS_STRIP),
@@ -624,18 +642,418 @@ const CONSTRUCTION_MIDDLE_BY_KEY = {
 // Same reasoning as genericHero()/genericMedicalHero() above.
 function genericConstructionHero(pageTitle) {
   return {
+    badgeText: '',
     headline: pageTitle,
+    highlightWord: '',
     subheadline: `Learn more about ${pageTitle.toLowerCase()}.`,
     ctaLabel: '',
     ctaHref: '#',
     secondaryLabel: '',
     secondaryHref: '#',
-    backgroundImage: dummyImage(1600, 800, pageTitle),
-    overlay: true,
+    avatar1: '',
+    avatar2: '',
+    avatar3: '',
+    trustText: '',
+    slide1Image: dummyImage(900, 700, pageTitle),
+    slide1Tag: '',
+    slide1Title: '',
+    slide1Subtitle: '',
+    slide2Image: '',
+    slide2Tag: '',
+    slide2Title: '',
+    slide2Subtitle: '',
+    slide3Image: '',
+    slide3Tag: '',
+    slide3Title: '',
+    slide3Subtitle: '',
+    slide4Image: '',
+    slide4Tag: '',
+    slide4Title: '',
+    slide4Subtitle: '',
+    slide5Image: '',
+    slide5Tag: '',
+    slide5Title: '',
+    slide5Subtitle: '',
   };
 }
 
+// ─── Home page: full construction homepage (KDL-558) ────────────────────
+
+const CONSTRUCTION_HERO_HOME = {
+  badgeText: 'Trusted General Contractor',
+  headline: 'Building Your Vision, On Time & On Budget',
+  highlightWord: 'Vision',
+  subheadline:
+    'Award-winning general contractor serving residential and commercial clients across the region. Licensed, insured, and safety-certified.',
+  ctaLabel: 'Get a Free Quote',
+  ctaHref: '#quote',
+  secondaryLabel: 'See Our Work',
+  secondaryHref: '#projects',
+  avatar1: dummyImage(80, 80, 'C1'),
+  avatar2: dummyImage(80, 80, 'C2'),
+  avatar3: dummyImage(80, 80, 'C3'),
+  trustText: '500+ clients trust us',
+  slide1Image: dummyImage(900, 700, 'Project One'),
+  slide1Tag: 'Residential',
+  slide1Title: 'Riverside Villas',
+  slide1Subtitle: 'A 24-unit residential development delivered ahead of schedule.',
+  slide2Image: dummyImage(900, 700, 'Project Two'),
+  slide2Tag: 'Commercial',
+  slide2Title: 'Tech Park Phase 2',
+  slide2Subtitle: 'A 6-storey commercial office park with LEED-aligned design.',
+  slide3Image: dummyImage(900, 700, 'Project Three'),
+  slide3Tag: 'Infrastructure',
+  slide3Title: 'Highway Bridge Rehab',
+  slide3Subtitle: 'Structural rehabilitation completed with zero traffic disruption.',
+  slide4Image: dummyImage(900, 700, 'Project Four'),
+  slide4Tag: 'Institutional',
+  slide4Title: 'School Expansion Wing',
+  slide4Subtitle: 'A new academic wing built during active term time.',
+  slide5Image: dummyImage(900, 700, 'Project Five'),
+  slide5Tag: 'Industrial',
+  slide5Title: 'Industrial Warehouse',
+  slide5Subtitle: 'A 90,000 sq ft warehouse and logistics facility.',
+};
+
+const CONSTRUCTION_OFFERINGS_ROWS = {
+  sectionTitle: 'Our Core Offerings',
+  sectionSubtitle: 'Everything you need from a single, accountable contractor.',
+  offering1NumberTag: '01',
+  offering1Image: dummyImage(700, 500, 'Offering One'),
+  offering1Heading: 'Structural Construction',
+  offering1Description: 'End-to-end structural builds engineered to code, from footings to rooftop.',
+  offering1BrandNames: 'Brand One · Brand Two',
+  offering1Href: '#',
+  offering2NumberTag: '02',
+  offering2Image: dummyImage(700, 500, 'Offering Two'),
+  offering2Heading: 'MEP & Systems Integration',
+  offering2Description: 'Mechanical, electrical, and plumbing systems coordinated under one schedule.',
+  offering2BrandNames: 'Brand Three · Brand Four',
+  offering2Href: '#',
+  offering3NumberTag: '03',
+  offering3Image: dummyImage(700, 500, 'Offering Three'),
+  offering3Heading: 'Finishing & Interiors',
+  offering3Description: 'Precision finishing work that turns a shell into a move-in-ready space.',
+  offering3BrandNames: 'Brand Five · Brand Six',
+  offering3Href: '#',
+  padding: 'md',
+  background: 'white',
+};
+
+const CONSTRUCTION_ABOUT_SPLIT = {
+  eyebrow: 'About Us',
+  heading: 'Two Decades of Building With Integrity',
+  paragraph:
+    'We are a full-service general contractor delivering residential, commercial, and infrastructure projects. Our in-house engineering and project management teams keep every job transparent, on schedule, and within budget.',
+  photo: dummyImage(700, 800, 'Our Team'),
+  badgeNumber: '15+',
+  badgeLabel: 'Years Experience',
+  check1Text: 'Licensed & fully insured',
+  check2Text: 'In-house engineering team',
+  check3Text: 'Transparent weekly reporting',
+  brochureLabel: 'Download Brochure',
+  brochureHref: '#',
+  padding: 'md',
+  background: 'white',
+};
+
+const CONSTRUCTION_PROCESS_TIMELINE = {
+  sectionTitle: 'How We Work',
+  sectionSubtitle: 'A structured, transparent process from consultation to project handover.',
+  step1Title: 'Initial Consultation',
+  step1Description:
+    'We listen to your vision, review the site, and understand your budget and timeline constraints.',
+  step2Title: 'Detailed Estimation',
+  step2Description:
+    'Our estimators produce a line-item BOQ with material specifications, labour rates, and contingencies.',
+  step3Title: 'Contract & Mobilisation',
+  step3Description:
+    'We finalise scope, sign a fixed-price contract, obtain permits, and mobilise crew and machinery.',
+  step4Title: 'Construction & Oversight',
+  step4Description:
+    'Daily site management, weekly client progress reports, and third-party quality audits throughout execution.',
+  step5Title: 'Handover & Warranty',
+  step5Description:
+    'Final snag clearance, documentation handover, and a 12-month defect liability period for your peace of mind.',
+  padding: 'md',
+  background: 'white',
+};
+
+const CONSTRUCTION_SECTORS_GRID = {
+  sectionTitle: 'Sectors We Serve',
+  sectionSubtitle: 'Specialised delivery across every major construction vertical.',
+  project1Title: 'Sector One',
+  project1Category: 'Residential',
+  project1Image: dummyImage(600, 450, 'Sector One'),
+  project1NumberTag: '01',
+  project1Description: 'Placeholder description for this sector.',
+  project1Href: '#sector-1',
+  project2Title: 'Sector Two',
+  project2Category: 'Commercial',
+  project2Image: dummyImage(600, 450, 'Sector Two'),
+  project2NumberTag: '02',
+  project2Description: 'Placeholder description for this sector.',
+  project2Href: '#sector-2',
+  project3Title: 'Sector Three',
+  project3Category: 'Infrastructure',
+  project3Image: dummyImage(600, 450, 'Sector Three'),
+  project3NumberTag: '03',
+  project3Description: 'Placeholder description for this sector.',
+  project3Href: '#sector-3',
+  project4Title: 'Sector Four',
+  project4Category: 'Institutional',
+  project4Image: dummyImage(600, 450, 'Sector Four'),
+  project4NumberTag: '04',
+  project4Description: 'Placeholder description for this sector.',
+  project4Href: '#sector-4',
+  project5Title: 'Sector Five',
+  project5Category: 'Industrial',
+  project5Image: dummyImage(600, 450, 'Sector Five'),
+  project5NumberTag: '05',
+  project5Description: 'Placeholder description for this sector.',
+  project5Href: '#sector-5',
+  project6Title: 'Sector Six',
+  project6Category: 'Specialist',
+  project6Image: dummyImage(600, 450, 'Sector Six'),
+  project6NumberTag: '06',
+  project6Description: 'Placeholder description for this sector.',
+  project6Href: '#sector-6',
+  project7Title: 'Sector Seven',
+  project7Category: 'Hospitality',
+  project7Image: dummyImage(600, 450, 'Sector Seven'),
+  project7NumberTag: '07',
+  project7Description: 'Placeholder description for this sector.',
+  project7Href: '#sector-7',
+  project8Title: 'Sector Eight',
+  project8Category: 'Retail',
+  project8Image: dummyImage(600, 450, 'Sector Eight'),
+  project8NumberTag: '08',
+  project8Description: 'Placeholder description for this sector.',
+  project8Href: '#sector-8',
+  padding: 'md',
+};
+
+const CONSTRUCTION_FEATURED_PROJECT = {
+  sectionTitle: 'Featured Project',
+  image: dummyImage(900, 650, 'Featured Project'),
+  paragraph:
+    'A ground-up commercial build delivered across 14 months — from site mobilisation to final handover — with zero schedule slippage.',
+  scope1Icon: 'hardhat',
+  scope1Label: 'Site Development',
+  scope2Icon: 'shield',
+  scope2Label: 'Safety Compliance',
+  scope3Icon: 'star',
+  scope3Label: 'Quality Assurance',
+  scope4Icon: 'hardhat',
+  scope4Label: 'MEP Coordination',
+  linkLabel: 'View Case Study',
+  linkHref: '#',
+  ctaLabel: 'Start Your Project',
+  ctaHref: '#quote',
+  padding: 'md',
+  background: 'muted',
+};
+
+const CONSTRUCTION_PRODUCTS_SHOWCASE = {
+  sectionTitle: 'Our Products',
+  sectionSubtitle: 'Sourced and supplied through our vetted vendor network.',
+  category1Label: 'Category One',
+  category2Label: 'Category Two',
+  category3Label: 'Category Three',
+  category4Label: 'Category Four',
+  product1Category: 'Category One',
+  product1Icon: 'hardhat',
+  product1Title: 'Product One',
+  product1Description: 'Placeholder product description for this listing.',
+  product2Category: 'Category One',
+  product2Icon: 'shield',
+  product2Title: 'Product Two',
+  product2Description: 'Placeholder product description for this listing.',
+  product3Category: 'Category Two',
+  product3Icon: 'star',
+  product3Title: 'Product Three',
+  product3Description: 'Placeholder product description for this listing.',
+  product4Category: 'Category Two',
+  product4Icon: 'hardhat',
+  product4Title: 'Product Four',
+  product4Description: 'Placeholder product description for this listing.',
+  product5Category: 'Category Three',
+  product5Icon: 'shield',
+  product5Title: 'Product Five',
+  product5Description: 'Placeholder product description for this listing.',
+  product6Category: 'Category Three',
+  product6Icon: 'star',
+  product6Title: 'Product Six',
+  product6Description: 'Placeholder product description for this listing.',
+  product7Category: 'Category Four',
+  product7Icon: 'hardhat',
+  product7Title: 'Product Seven',
+  product7Description: 'Placeholder product description for this listing.',
+  product8Category: 'Category Four',
+  product8Icon: 'shield',
+  product8Title: 'Product Eight',
+  product8Description: 'Placeholder product description for this listing.',
+  padding: 'md',
+  background: 'white',
+};
+
+const CONSTRUCTION_WHY_CHOOSE_US = {
+  sectionTitle: 'Why Choose Us',
+  sectionSubtitle:
+    'We combine deep technical expertise with a relentless focus on timelines, budget, and safety.',
+  point1Title: 'Fixed-Price Contracts',
+  point1Description: 'No surprises. We absorb cost overruns within scope — your budget stays intact.',
+  point2Title: 'Licensed & Insured',
+  point2Description:
+    'Fully licensed by PWD, CPWD-empanelled, and covered under comprehensive workmen compensation.',
+  point3Title: 'On-Time Delivery',
+  point3Description:
+    '93% of our projects are delivered on or before the agreed schedule over the last 5 years.',
+  point4Title: '24/7 Site Supervision',
+  point4Description:
+    'Dedicated engineers on-site daily. Real-time reporting via our project management portal.',
+  ctaLabel: 'Start a Conversation',
+  ctaHref: '#contact',
+  padding: 'md',
+  background: 'white',
+};
+
+const CONSTRUCTION_CLIENTS_GRID = {
+  sectionTitle: 'Trusted By',
+  sectionSubtitle: 'A selection of clients we have partnered with.',
+  client1Logo: dummyImage(200, 100, 'Client 1'),
+  client1Name: 'Client 1',
+  client2Logo: dummyImage(200, 100, 'Client 2'),
+  client2Name: 'Client 2',
+  client3Logo: dummyImage(200, 100, 'Client 3'),
+  client3Name: 'Client 3',
+  client4Logo: dummyImage(200, 100, 'Client 4'),
+  client4Name: 'Client 4',
+  client5Logo: dummyImage(200, 100, 'Client 5'),
+  client5Name: 'Client 5',
+  client6Logo: dummyImage(200, 100, 'Client 6'),
+  client6Name: 'Client 6',
+  client7Logo: dummyImage(200, 100, 'Client 7'),
+  client7Name: 'Client 7',
+  client8Logo: dummyImage(200, 100, 'Client 8'),
+  client8Name: 'Client 8',
+  client9Logo: dummyImage(200, 100, 'Client 9'),
+  client9Name: 'Client 9',
+  client10Logo: dummyImage(200, 100, 'Client 10'),
+  client10Name: 'Client 10',
+  client11Logo: dummyImage(200, 100, 'Client 11'),
+  client11Name: 'Client 11',
+  client12Logo: dummyImage(200, 100, 'Client 12'),
+  client12Name: 'Client 12',
+  padding: 'md',
+  background: 'white',
+};
+
+const CONSTRUCTION_LEAD_FORM_FAQ = {
+  sectionTitle: 'Frequently Asked Questions',
+  faq1Question: 'How long does a typical project take?',
+  faq1Answer: 'Timelines vary by scope — a detailed schedule is provided after site assessment.',
+  faq2Question: 'Do you provide fixed-price contracts?',
+  faq2Answer: 'Yes, most projects are quoted and contracted on a fixed-price basis.',
+  faq3Question: 'Are you licensed and insured?',
+  faq3Answer: 'Yes, we are fully licensed and carry comprehensive insurance cover.',
+  faq4Question: 'Can I see your past work?',
+  faq4Answer: 'Yes — see the Sectors and Featured Project sections above, or request our portfolio.',
+  faq5Question: 'Do you handle permits and approvals?',
+  faq5Answer: 'Yes, permit acquisition is coordinated as part of our project management scope.',
+  faq6Question: 'What areas do you serve?',
+  faq6Answer: 'We currently serve residential and commercial clients across the region.',
+  formHeading: 'Get a Free Quote',
+  formSubtext: 'Tell us about your project and our team will get back to you within 48 hours.',
+  padding: 'md',
+  background: 'white',
+};
+
+const CONSTRUCTION_FLOATING_ACTIONS = {
+  whatsappHref: 'https://wa.me/919876543210',
+};
+
+function constructionHeaderProps(brand = {}, pages) {
+  return {
+    brand: brand.companyName || 'Your Brand',
+    logoUrl: brand.logoUrl || '',
+    links: navLinksFor(pages),
+    loginLabel: 'Login',
+    loginHref: '#login',
+    ctaLabel: 'Get a Quote',
+    ctaHref: '#quote',
+    primaryColor: brand.primaryHex || '',
+  };
+}
+
+function constructionTaglineStripProps(brand = {}) {
+  return {
+    logoUrl: brand.logoUrl || '',
+    brand: brand.companyName || 'Your Brand',
+    tagline: 'Building with integrity, delivering with precision.',
+  };
+}
+
+function constructionFooterProps(brand = {}, pages) {
+  const name = brand.companyName || 'Your Brand';
+  const lastUpdated = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  return {
+    logoUrl: brand.logoUrl || '',
+    brand: name,
+    tagline: 'Building with integrity, delivering with precision.',
+    social1Label: 'f',
+    social1Href: '#',
+    social2Label: 'in',
+    social2Href: '#',
+    social3Label: 'ig',
+    social3Href: '#',
+    social4Label: 'x',
+    social4Href: '#',
+    newsletterPlaceholder: 'Your email address',
+    newsletterButtonLabel: 'Subscribe',
+    companyLinksTitle: 'Company',
+    links: navLinksFor(pages),
+    contactTitle: 'Contact',
+    contactPhone: '+91-98765-43210',
+    contactEmail: `info@${name.toLowerCase().replace(/\s+/g, '')}.com`,
+    contactAddress: '123 Business Avenue\nCity, State 000000',
+    showroomTitle: 'Showroom',
+    showroomAddress: '456 Showroom Road\nCity, State 000000',
+    qrImage: dummyImage(160, 160, 'QR Code'),
+    qrCaption: 'Scan for directions',
+    copyright: `© ${new Date().getFullYear()} ${name}. All rights reserved. · Last updated ${lastUpdated}`,
+  };
+}
+
+function constructionHomeContent(pageKey, brand, pages) {
+  return [
+    block(pageKey, 'ConstructionHeader', constructionHeaderProps(brand, pages)),
+    block(pageKey, 'ConstructionHero', CONSTRUCTION_HERO_HOME),
+    block(pageKey, 'ConstructionStatsStrip', CONSTRUCTION_STATS_STRIP),
+    block(pageKey, 'ConstructionOfferingsRows', CONSTRUCTION_OFFERINGS_ROWS),
+    block(pageKey, 'ConstructionAboutSplit', CONSTRUCTION_ABOUT_SPLIT),
+    block(pageKey, 'ConstructionProcessTimeline', CONSTRUCTION_PROCESS_TIMELINE),
+    block(pageKey, 'ConstructionProjectGallery', CONSTRUCTION_SECTORS_GRID),
+    block(pageKey, 'ConstructionFeaturedProject', CONSTRUCTION_FEATURED_PROJECT),
+    block(pageKey, 'ConstructionProductsShowcase', CONSTRUCTION_PRODUCTS_SHOWCASE),
+    block(pageKey, 'ConstructionWhyChooseUs', CONSTRUCTION_WHY_CHOOSE_US),
+    block(pageKey, 'ConstructionClientsGrid', CONSTRUCTION_CLIENTS_GRID),
+    block(pageKey, 'ConstructionTestimonials', CONSTRUCTION_TESTIMONIALS),
+    block(pageKey, 'ConstructionLeadFormFAQ', CONSTRUCTION_LEAD_FORM_FAQ),
+    block(pageKey, 'ConstructionTaglineStrip', constructionTaglineStripProps(brand)),
+    block(pageKey, 'ConstructionFooter', constructionFooterProps(brand, pages)),
+    block(pageKey, 'ConstructionFloatingActions', CONSTRUCTION_FLOATING_ACTIONS),
+  ];
+}
+
 export function seedConstructionPageData(pageKey, pageTitle, brand = {}, pages) {
+  if (pageKey === 'home') {
+    return {
+      root: { props: { title: pageTitle } },
+      content: constructionHomeContent(pageKey, brand, pages),
+      zones: {},
+    };
+  }
   const buildMiddle = CONSTRUCTION_MIDDLE_BY_KEY[pageKey];
   const content = [
     block(pageKey, 'NavBar', navBarProps(brand, pages)),

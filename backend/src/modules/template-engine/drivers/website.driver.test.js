@@ -622,3 +622,104 @@ describe('guidelines driver', () => {
     expect(result.outputRef).toEqual(priorRef);
   });
 });
+
+describe('website driver — construction pack seeding (KDL-558 homepage)', () => {
+  it('seeds Home with the full construction homepage block sequence when templatePack is construction', async () => {
+    createPage.mockResolvedValueOnce({ id: 'page-home' });
+
+    await getDriver('website').execute({
+      run: makeRun(),
+      stageRecord: makeStageRecord(),
+      userId: 'user-1',
+      projectId: 'proj-A',
+      templatePack: 'construction',
+      navigationPages: ['Home'],
+    });
+
+    const call = createPage.mock.calls[0][0];
+    const types = call.data.content.map((b) => b.type);
+    expect(types).toEqual([
+      'ConstructionHeader',
+      'ConstructionHero',
+      'ConstructionStatsStrip',
+      'ConstructionOfferingsRows',
+      'ConstructionAboutSplit',
+      'ConstructionProcessTimeline',
+      'ConstructionProjectGallery',
+      'ConstructionFeaturedProject',
+      'ConstructionProductsShowcase',
+      'ConstructionWhyChooseUs',
+      'ConstructionClientsGrid',
+      'ConstructionTestimonials',
+      'ConstructionLeadFormFAQ',
+      'ConstructionTaglineStrip',
+      'ConstructionFooter',
+      'ConstructionFloatingActions',
+    ]);
+  });
+
+  it('Sectors grid ships 8 items with number tags and hrefs', async () => {
+    createPage.mockResolvedValueOnce({ id: 'page-home' });
+
+    await getDriver('website').execute({
+      run: makeRun(),
+      stageRecord: makeStageRecord(),
+      userId: 'user-1',
+      projectId: 'proj-A',
+      templatePack: 'construction',
+      navigationPages: ['Home'],
+    });
+
+    const call = createPage.mock.calls[0][0];
+    const sectors = call.data.content.find((b) => b.type === 'ConstructionProjectGallery');
+    expect(sectors.props.project8Title).toBe('Sector Eight');
+    expect(sectors.props.project1NumberTag).toBe('01');
+    expect(sectors.props.project1Href).toBe('#sector-1');
+  });
+
+  it('Header and Footer nav links reflect the real selected page set, not a hardcoded default', async () => {
+    createPage
+      .mockResolvedValueOnce({ id: 'page-home' })
+      .mockResolvedValueOnce({ id: 'page-services' });
+
+    await getDriver('website').execute({
+      run: makeRun(),
+      stageRecord: makeStageRecord(),
+      userId: 'user-1',
+      projectId: 'proj-A',
+      templatePack: 'construction',
+      navigationPages: ['Home', 'Services'],
+    });
+
+    const expectedLinks = 'Home|#\nServices|#';
+    const homeCall = createPage.mock.calls[0][0];
+    const header = homeCall.data.content.find((b) => b.type === 'ConstructionHeader');
+    const footer = homeCall.data.content.find((b) => b.type === 'ConstructionFooter');
+    expect(header.props.links).toBe(expectedLinks);
+    expect(footer.props.links).toBe(expectedLinks);
+  });
+
+  it('non-home construction pages still use the plain NavBar/ConstructionHero/Footer path with the new hero shape', async () => {
+    createPage
+      .mockResolvedValueOnce({ id: 'page-home' })
+      .mockResolvedValueOnce({ id: 'page-about' });
+
+    await getDriver('website').execute({
+      run: makeRun(),
+      stageRecord: makeStageRecord(),
+      userId: 'user-1',
+      projectId: 'proj-A',
+      templatePack: 'construction',
+      navigationPages: ['Home', 'About'],
+    });
+
+    const aboutCall = createPage.mock.calls[1][0];
+    const navBar = aboutCall.data.content.find((b) => b.type === 'NavBar');
+    const hero = aboutCall.data.content.find((b) => b.type === 'ConstructionHero');
+    expect(navBar).toBeTruthy();
+    expect(hero.props.headline).toBe('About Our Company');
+    // New shape's slide1Image must be populated so ConstructionHero's
+    // slider never renders empty on non-home pages after the shape change.
+    expect(hero.props.slide1Image).toBeTruthy();
+  });
+});
