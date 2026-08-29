@@ -54,7 +54,13 @@ export function renderComposedBlock(
           const def = ATOM_BY_TYPE[atom.type]
           if (!def) return null
           const node = def.Render(atom)
-          if (!interactive) return <div key={atom.id}>{node}</div>
+          const hideMobileCls = atom.hideMobile ? 'hidden md:block' : ''
+          if (!interactive)
+            return (
+              <div key={atom.id} className={hideMobileCls}>
+                {node}
+              </div>
+            )
           const selected = opts?.selectedId === atom.id
           return (
             <div
@@ -68,7 +74,7 @@ export function renderComposedBlock(
               onKeyDown={(e) => {
                 if (e.key === 'Enter') opts?.onSelectAtom?.(atom.id)
               }}
-              className={`cursor-pointer rounded-md outline outline-2 transition ${
+              className={`cursor-pointer rounded-md outline outline-2 transition ${hideMobileCls} ${
                 selected ? 'outline-blue-600' : 'outline-transparent hover:outline-blue-300'
               }`}
             >

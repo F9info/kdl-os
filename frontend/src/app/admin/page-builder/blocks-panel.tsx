@@ -165,10 +165,12 @@ function ThemeTab() {
 export function BlocksPanel({
   children,
   itemSelector,
+  projectId,
 }: {
   children: React.ReactNode
   /** Puck's `ItemSelector` isn't publicly exported — only truthiness matters here. */
   itemSelector?: unknown
+  projectId?: string
 }) {
   const [tab, setTab] = useState<'blocks' | 'style' | 'theme'>('blocks')
   const [modalCategory, setModalCategory] = useState<string | null>(null)
@@ -219,7 +221,11 @@ export function BlocksPanel({
         {tab === 'theme' && <ThemeTab />}
       </div>
       {modalCategory ? (
-        <InsertBlockModal initialCategory={modalCategory} onClose={() => setModalCategory(null)} />
+        <InsertBlockModal
+          initialCategory={modalCategory}
+          projectId={projectId}
+          onClose={() => setModalCategory(null)}
+        />
       ) : null}
       {editingInstance && selectedItem ? (
         <BlockComposer

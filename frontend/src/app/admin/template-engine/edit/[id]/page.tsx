@@ -128,7 +128,9 @@ export default function TemplateEngineEditPage() {
               </>
             ),
             fields: ({ children, itemSelector }) => (
-              <BlocksPanel itemSelector={itemSelector}>{children}</BlocksPanel>
+              <BlocksPanel itemSelector={itemSelector} projectId={projectId ?? undefined}>
+                {children}
+              </BlocksPanel>
             ),
           }}
         />
