@@ -35,7 +35,12 @@ export function CaptureDialog({ folderId, onUploaded, onClose }: CaptureDialogPr
       <div className="bg-background rounded-lg shadow-xl p-6 w-[560px] max-w-[95vw] max-h-[85vh] overflow-y-auto space-y-4">
         <div className="flex justify-between items-center">
           <h3 className="font-semibold text-lg">Capture media</h3>
-          <button type="button" title="Close" onClick={onClose}>
+          <button
+            type="button"
+            title="Close"
+            onClick={onClose}
+            className="rounded-sm text-muted-foreground opacity-70 transition-opacity hover:opacity-100 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
