@@ -452,10 +452,42 @@ describe('website driver — navigationPages (KDL bug: Navigation-step selection
       expect.objectContaining({ slug: 'te-run-1-about' }),
       'user-1',
     );
+    expect(updatePage).not.toHaveBeenCalled();
     expect(result.outputRef.pageKeyToId).toMatchObject({
       home: 'orphaned-home-page',
       about: 'page-about',
     });
+  });
+
+  it('resurrects a soft-deleted page instead of crashing on its still-reserved slug (KDL bug repro)', async () => {
+    // slug is globally @unique with no soft-delete awareness — a user who
+    // deletes a page via page-builder then later re-selects that same page
+    // name in Navigation would otherwise hit the exact same unique-
+    // constraint crash the orphan-recovery fix addressed, just via
+    // deliberate deletion instead of a partial-failure orphan.
+    getPageBySlug.mockResolvedValueOnce({
+      id: 'deleted-blog-page',
+      deleted_at: '2026-08-01T00:00:00Z',
+      data: { content: [{ type: 'NavBar', props: { links: 'Home|#' } }] },
+    });
+    updatePage.mockResolvedValueOnce({ id: 'deleted-blog-page' });
+
+    const result = await getDriver('website').execute({
+      run: makeRun(),
+      stageRecord: makeStageRecord(),
+      userId: 'user-1',
+      projectId: 'proj-A',
+      navigationPages: ['Blog'],
+    });
+
+    expect(createPage).not.toHaveBeenCalled();
+    expect(updatePage).toHaveBeenCalledTimes(1);
+    const [updatedId, patch] = updatePage.mock.calls[0];
+    expect(updatedId).toBe('deleted-blog-page');
+    expect(patch.deleted_at).toBeNull();
+    // Nav also needed patching (stale 'Home|#' vs. this run's actual single page).
+    expect(patch.data.content[0].props.links).toBe('Blog|#');
+    expect(result.outputRef.pageKeyToId).toMatchObject({ blog: 'deleted-blog-page' });
   });
 
   it('falls back to the default Home/About/Contact set when navigationPages is empty', async () => {

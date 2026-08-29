@@ -351,8 +351,15 @@ const websiteDriver = {
       // navigationPages changes across runs, so patch just those blocks.
       let page;
       if (existing) {
+        const patch = {};
+        // getPageBySlug matches soft-deleted rows too (slug stays reserved
+        // forever otherwise) — reusing a deleted page means resurrecting it,
+        // since leaving it deleted would point outputRef at an invisible,
+        // inaccessible row everywhere else in the app.
+        if (existing.deleted_at != null) patch.deleted_at = null;
         const patchedData = patchNavLinks(existing.data, seedPages);
-        page = patchedData ? await updatePage(existing.id, { data: patchedData }, userId) : existing;
+        if (patchedData) patch.data = patchedData;
+        page = Object.keys(patch).length > 0 ? await updatePage(existing.id, patch, userId) : existing;
       } else {
         page = await createPage(
           { title, slug, data: seed(key, title, brand, seedPages) },

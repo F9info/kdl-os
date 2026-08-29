@@ -13,8 +13,13 @@ export const getPage = async (id) => {
   return prisma.builderPage.findFirst({ where: { id, deleted_at: null } });
 };
 
+// Deliberately matches soft-deleted rows too — `slug` is globally @unique
+// with no soft-delete awareness, so a deleted page's slug is reserved
+// forever; the only caller (template-engine's website driver, crash/orphan
+// recovery) needs to find and resurrect whatever row already holds a given
+// deterministic slug rather than crash trying to create a duplicate.
 export const getPageBySlug = async (slug) => {
-  return prisma.builderPage.findFirst({ where: { slug, deleted_at: null } });
+  return prisma.builderPage.findFirst({ where: { slug } });
 };
 
 export const getPublishedBySlug = async (slug) => {
