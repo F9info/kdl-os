@@ -400,7 +400,11 @@
    `border-width: 0` reset silently zeroed it, even though the LAYERED rule
    in the th-components block above already sets a full `border` shorthand.
    Only border-width needs unlayering here: color/style from that layered
-   rule already render correctly once width is non-zero. */
+   rule already render correctly once width is non-zero.
+   ponytail: hardcoded 1px (unlike .th-input's var-driven width above) since
+   no --buttons_outline_button_border caller ever sets a non-1px value today
+   (grep-verified) — if one starts customizing outline border width, switch
+   this to the same calc(var(...) * 1px) pattern .th-input uses. */
 .th-btn-outline {
   border-width: 1px;
 }
