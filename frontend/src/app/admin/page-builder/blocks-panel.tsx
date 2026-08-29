@@ -188,13 +188,14 @@ export function BlocksPanel({
   const tabBtn = (key: typeof tab, label: string, Icon: typeof Plus) => (
     <button
       onClick={() => setTab(key)}
-      className="flex flex-1 items-center justify-center gap-1 py-2 text-[11px] font-bold"
+      className="flex flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[9px] font-bold"
       style={{
         color: tab === key ? '#fff' : OD.muted,
         borderBottom: `2px solid ${tab === key ? TAB_ACCENT[key] : 'transparent'}`,
       }}
     >
-      <Icon size={12} color={tab === key ? TAB_ACCENT[key] : OD.muted} /> {label}
+      <Icon size={12} color={tab === key ? TAB_ACCENT[key] : OD.muted} />
+      {label}
     </button>
   )
 

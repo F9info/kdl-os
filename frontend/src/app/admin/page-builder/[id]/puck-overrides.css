@@ -6,8 +6,8 @@
  * font sizes (14-21px) ate too much of the canvas — flatten both down.
  */
 :root {
-  --puck-user-sidebar-left-width: 170px;
-  --puck-user-sidebar-right-width: 170px;
+  --puck-user-sidebar-left-width: 150px;
+  --puck-user-sidebar-right-width: 150px;
   --puck-font-size-xxs-unitless: 12;
   --puck-font-size-xs-unitless: 13;
   --puck-font-size-s-unitless: 15;
