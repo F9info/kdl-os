@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Upload, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { MediaPicker } from '@/components/shared/MediaPicker'
 import { cn } from '@/lib/utils'
 import type { Media } from '@/types/media.types'
@@ -35,12 +36,12 @@ export function BrandingFileControl({
 
   return (
     <span className="inline-flex items-center gap-2">
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="sm"
         onClick={() => setOpen(true)}
-        className={cn(
-          'inline-flex items-center gap-2 rounded border border-border bg-muted px-2 py-1.5 text-sm transition-colors hover:border-primary'
-        )}
+        className="gap-2"
         title="Choose file"
       >
         {hasValue && looksLikeImage(value) ? (
@@ -54,18 +55,20 @@ export function BrandingFileControl({
         <span className={cn('max-w-[200px] truncate', !hasValue && 'text-muted-foreground')}>
           {hasValue ? fileName(value) : 'Choose file…'}
         </span>
-      </button>
+      </Button>
 
       {hasValue && (
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => onChange('')}
-          className="inline-flex items-center gap-1 rounded border border-border px-2 py-1 text-xs text-muted-foreground transition-colors hover:border-destructive hover:text-destructive"
+          className="gap-1 text-muted-foreground hover:text-destructive"
           title="Remove file"
         >
           <X className="h-3 w-3" />
           Remove
-        </button>
+        </Button>
       )}
 
       {open && (
