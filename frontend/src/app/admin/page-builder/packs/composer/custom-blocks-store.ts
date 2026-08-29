@@ -47,13 +47,32 @@ function toRecord(raw: {
   }
 }
 
+// projectId omitted -> lists across every project (the legacy Page Builder
+// editor has no project context; see backend's requireProjectIfPresent).
 export async function listCustomBlocks(
-  projectId: string,
+  projectId: string | undefined,
   categoryKey: string
 ): Promise<CustomBlockRecord[]> {
-  const res = await api.get('/custom-blocks', { params: { projectId, category: categoryKey } })
+  const res = await api.get('/custom-blocks', {
+    params: { ...(projectId ? { projectId } : {}), category: categoryKey },
+  })
   const items = res.data.data.items ?? []
   return items.map(toRecord)
+}
+
+// Resolves the org-wide default project's id — new custom blocks save here
+// when no project context is available (the legacy Page Builder editor's
+// "Create new" flow). `GET /projects` orders is_default first, and that
+// project is seeded with is_shared=true, so every authenticated user
+// already has implicit access to it via requireProject's is_shared check.
+// Looked up by the `is_default` flag rather than a hardcoded id, since the
+// project's cuid differs per environment/seed run.
+export async function getDefaultProjectId(): Promise<string> {
+  const res = await api.get('/projects')
+  const items: { id: string; is_default: boolean }[] = res.data.data ?? []
+  const found = items.find((p) => p.is_default) ?? items[0]
+  if (!found) throw new Error('No default project found')
+  return found.id
 }
 
 export async function createCustomBlock(input: {

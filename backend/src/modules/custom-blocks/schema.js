@@ -33,7 +33,9 @@ export const createCustomBlockSchema = z.object({
 
 export const listCustomBlocksQuerySchema = z.object({
   query: z.object({
-    projectId: z.string().min(1),
+    // Omitted by callers with no project context (e.g. the legacy Page
+    // Builder editor) — listCustomBlocks then lists across every project.
+    projectId: z.string().min(1).optional(),
     category: z.string().min(1),
   }),
 });

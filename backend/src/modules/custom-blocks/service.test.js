@@ -34,6 +34,18 @@ describe('listCustomBlocks', () => {
       })
     );
   });
+
+  it('omits the project_id filter when projectId is undefined (list across every project)', async () => {
+    mockPrisma.customBlockTemplate.findMany.mockResolvedValue([]);
+    await service.listCustomBlocks(undefined, 'hero');
+    expect(mockPrisma.customBlockTemplate.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { category_key: 'hero', deleted_at: null },
+      })
+    );
+    const { where } = mockPrisma.customBlockTemplate.findMany.mock.calls[0][0];
+    expect(where).not.toHaveProperty('project_id');
+  });
 });
 
 describe('createCustomBlock', () => {

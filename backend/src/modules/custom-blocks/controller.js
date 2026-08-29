@@ -8,6 +8,9 @@ import * as service from './service.js';
 export const getAll = async (req, res, next) => {
   try {
     const { category } = req.validated.query;
+    // req.projectId is only set when a projectId was given (see
+    // requireProjectIfPresent in routes.js) — undefined lists across every
+    // project, for callers with no project context.
     const items = await service.listCustomBlocks(req.projectId, category);
     successResponse(res, { items });
   } catch (err) {

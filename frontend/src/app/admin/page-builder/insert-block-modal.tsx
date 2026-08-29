@@ -6,7 +6,11 @@ import type { AppState, Config } from '@puckeditor/core'
 import { Plus, Search, X } from 'lucide-react'
 import { blockVariants } from './puck.config'
 import { BlockComposer } from './packs/composer/BlockComposer'
-import { listCustomBlocks, type CustomBlockRecord } from './packs/composer/custom-blocks-store'
+import {
+  listCustomBlocks,
+  getDefaultProjectId,
+  type CustomBlockRecord,
+} from './packs/composer/custom-blocks-store'
 import { renderComposedBlock } from './packs/composer/render-composed-block'
 
 /**
@@ -158,13 +162,29 @@ export function InsertBlockModal({
   const q = query.trim().toLowerCase()
   const [customBlocks, setCustomBlocks] = useState<CustomBlockRecord[]>([])
   const [composerOpen, setComposerOpen] = useState<{ editing?: CustomBlockRecord } | null>(null)
+  // Save target for a block created with no project context (legacy Page
+  // Builder) — resolved on demand rather than eagerly, since most opens of
+  // this modal never touch "Create new".
+  const [createProjectId, setCreateProjectId] = useState<string | null>(null)
+
+  async function openComposer() {
+    if (projectId) {
+      setComposerOpen({})
+      return
+    }
+    const id = createProjectId ?? (await getDefaultProjectId())
+    setCreateProjectId(id)
+    setComposerOpen({})
+  }
 
   useEffect(() => {
-    if (!projectId || !activeCat || q) {
+    if (!activeCat || q) {
       setCustomBlocks([])
       return
     }
     let cancelled = false
+    // projectId undefined (legacy Page Builder, no project context) lists
+    // custom blocks across every project.
     listCustomBlocks(projectId, activeCat).then((items) => {
       if (!cancelled) setCustomBlocks(items)
     })
@@ -275,7 +295,7 @@ export function InsertBlockModal({
                 />
               ))
             )}
-            {!q && projectId
+            {!q
               ? customBlocks.map((block) => (
                   <div
                     key={block.id}
@@ -302,9 +322,9 @@ export function InsertBlockModal({
                   </div>
                 ))
               : null}
-            {!q && projectId ? (
+            {!q ? (
               <button
-                onClick={() => setComposerOpen({})}
+                onClick={openComposer}
                 className="flex min-h-[210px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 text-blue-600 hover:border-blue-400 hover:bg-blue-50"
               >
                 <Plus size={22} />
@@ -314,9 +334,9 @@ export function InsertBlockModal({
           </div>
         </div>
       </div>
-      {composerOpen && projectId ? (
+      {composerOpen ? (
         <BlockComposer
-          projectId={projectId}
+          projectId={projectId ?? createProjectId ?? ''}
           categoryKey={activeCat}
           editing={composerOpen.editing}
           onClose={() => setComposerOpen(null)}

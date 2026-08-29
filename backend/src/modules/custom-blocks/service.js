@@ -3,9 +3,15 @@ import { writeActivityAsync } from '../user-management/shared/activity-logger.js
 
 const NOT_FOUND = () => Object.assign(new Error('Custom block not found'), { status: 404 });
 
+// projectId undefined -> list across every project (legacy Page Builder has
+// no project context; see requireProjectIfPresent in routes.js).
 export const listCustomBlocks = async (projectId, categoryKey) => {
   return prisma.customBlockTemplate.findMany({
-    where: { project_id: projectId, category_key: categoryKey, deleted_at: null },
+    where: {
+      ...(projectId ? { project_id: projectId } : {}),
+      category_key: categoryKey,
+      deleted_at: null,
+    },
     orderBy: { created_at: 'asc' },
   });
 };
