@@ -163,7 +163,7 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
         </div>
       ) : (
         <div className="space-y-3">
-          {webAppStep !== 'fontSettings' && webAppStep !== 'navigation' && (
+          {webAppStep === 'typography' ? (
             <Button
               type="button"
               variant="ghost"
@@ -174,7 +174,21 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
               <ArrowLeft className="h-3.5 w-3.5" />
               Back to Brands
             </Button>
-          )}
+          ) : webAppStep === 'assemble' ? (
+            // The Pages grid is downstream of the page selection made in
+            // Navigation — "back" here should let a user revise that
+            // selection, not exit the whole Web app flow back to Brands.
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setWebAppStep('navigation')}
+              className="gap-1.5 px-2"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Back to Navigation
+            </Button>
+          ) : null}
 
           {webAppStep === 'typography' ? (
             <WebAppTypographyStep
