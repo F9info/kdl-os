@@ -84,8 +84,8 @@ function imageRender(atom: ComposerAtom) {
   const src = String(atom.src ?? 'https://placehold.co/1200x600')
   const alt = String(atom.alt ?? '')
   const rounded = Boolean(atom.rounded)
-
   return (
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={src}
       alt={alt}
