@@ -25,7 +25,23 @@ const root: Config['root'] = {
   ),
 }
 
-export const config = composePacks(root, [general, construction, medical, composer])
+const composed = composePacks(root, [general, construction, medical, composer])
+
+// Temporary: "Insert a block" picker pared down to one category while
+// building the construction homepage section-by-section — every other
+// category (Layout, Content, Construction — Sections/CTA & Stats/Homepage,
+// Clinic template, Hero, Services & Departments, Team, Patient, Calls to
+// Action, ...) is hidden app-wide, for every pack and every page. This does
+// NOT remove any component — `composed.components` is untouched, so every
+// already-seeded page (medical, general, construction) still renders fine.
+// It only shrinks what's browsable/searchable in the picker. Revert by
+// restoring `categories: composed.categories` below once done.
+export const config: Config = {
+  ...composed,
+  categories: {
+    'header-top': { title: 'header-top', components: ['ConstructionHeader'] },
+  },
+}
 
 /**
  * Component key -> ordered `variant` values, merged from every pack. Powers
