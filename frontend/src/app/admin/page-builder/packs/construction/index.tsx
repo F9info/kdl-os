@@ -21,6 +21,44 @@ type ConstructionProps = {
     ctaHref: string
     primaryColor: string
   }
+  ConstructionTopBar: {
+    variant: '1' | '2' | '3' | '4'
+    visible: boolean
+    d1Address: string
+    d1Phone: string
+    d1Email: string
+    d1Link1Label: string
+    d1Link1Href: string
+    d1Link2Label: string
+    d1Link2Href: string
+    d1Link3Label: string
+    d1Link3Href: string
+    d1Social1Href: string
+    d1Social2Href: string
+    d1Social3Href: string
+    d1Social4Href: string
+    d2Item1Text: string
+    d2Item2Text: string
+    d2Item3Text: string
+    d2TrackLabel: string
+    d2TrackHref: string
+    d2Language: string
+    d3Tagline: string
+    d3Phone: string
+    d3Email: string
+    d3CtaLabel: string
+    d3CtaHref: string
+    d4Tagline: string
+    d4Social1Href: string
+    d4Social2Href: string
+    d4Social3Href: string
+    d4Social4Href: string
+    d4HelpLabel: string
+    d4HelpHref: string
+    d4FaqLabel: string
+    d4FaqHref: string
+    d4Language: string
+  }
   ConstructionHero: {
     badgeText: string
     headline: string
@@ -476,6 +514,205 @@ function StarIcon() {
   )
 }
 
+function PinIcon() {
+  return (
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"
+      />
+      <circle cx="12" cy="9.5" r="2.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function PhoneIcon() {
+  return (
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4 5c0-.6.4-1 1-1h2.6c.5 0 .9.3 1 .8l.9 3.5c.1.4 0 .9-.3 1.2L7.8 10.9a12 12 0 0 0 5.3 5.3l1.4-1.4c.3-.3.8-.4 1.2-.3l3.5.9c.5.1.8.5.8 1V19c0 .6-.4 1-1 1h-1C10.6 20 4 13.4 4 6V5z"
+      />
+    </svg>
+  )
+}
+
+function MailIcon() {
+  return (
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <rect
+        x="3"
+        y="5"
+        width="18"
+        height="14"
+        rx="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 7l9 6 9-6" />
+    </svg>
+  )
+}
+
+function GiftIcon() {
+  return (
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <rect x="3" y="9" width="18" height="4" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M5 13h14v7a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-7zM12 9v12"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 9c-2 0-3.5-1.2-3.5-3S10 3 12 5c2-2 3.5-.8 3.5 1S14 9 12 9z"
+      />
+    </svg>
+  )
+}
+
+function HeadsetIcon() {
+  return (
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 13v-1a8 8 0 0 1 16 0v1" />
+      <rect
+        x="3"
+        y="13"
+        width="4"
+        height="6"
+        rx="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <rect
+        x="17"
+        y="13"
+        width="4"
+        height="6"
+        rx="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19 19v1a2 2 0 0 1-2 2h-3" />
+    </svg>
+  )
+}
+
+function GlobeIcon() {
+  return (
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 12h18M12 3c2.5 2.5 4 6 4 9s-1.5 6.5-4 9c-2.5-2.5-4-6-4-9s1.5-6.5 4-9z"
+      />
+    </svg>
+  )
+}
+
+function FacebookIcon() {
+  return (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M13.5 22v-8.4h2.8l.4-3.3h-3.2V8.1c0-1 .3-1.6 1.7-1.6h1.6V3.5c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.5H7.3v3.3h2.8V22h3.4z" />
+    </svg>
+  )
+}
+
+function LinkedInIcon() {
+  return (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3.5 9.5h3V20h-3V9.5zM9.5 9.5h2.9v1.4h.04c.4-.75 1.4-1.55 2.9-1.55 3.1 0 3.66 2 3.66 4.7V20h-3v-4.9c0-1.17-.02-2.68-1.63-2.68-1.64 0-1.9 1.28-1.9 2.6V20h-3V9.5z" />
+    </svg>
+  )
+}
+
+function InstagramIcon() {
+  return (
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <rect
+        x="3"
+        y="3"
+        width="18"
+        height="18"
+        rx="5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="12" cy="12" r="4" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+function XIcon() {
+  return (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M18.9 3H22l-7.6 8.7L23 21h-6.9l-5.4-6.6L4.5 21H1.4l8.1-9.3L1 3h7l4.9 6.1L18.9 3zm-1.2 16.1h1.7L7.4 4.8H5.6l12.1 14.3z" />
+    </svg>
+  )
+}
+
+function YoutubeIcon() {
+  return (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M22 12s0-3.2-.4-4.7c-.2-.9-.9-1.6-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.5c-.9.2-1.6.9-1.8 1.8C2 8.8 2 12 2 12s0 3.2.4 4.7c.2.9.9 1.6 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.5c.9-.2 1.6-.9 1.8-1.8.4-1.5.4-4.7.4-4.7zM10 15V9l5.2 3-5.2 3z" />
+    </svg>
+  )
+}
+
 type IconKey = 'hardhat' | 'shield' | 'star'
 
 const ICON_BY_KEY: Record<IconKey, () => JSX.Element> = {
@@ -519,6 +756,383 @@ function useScrollReveal<T extends HTMLElement>() {
 // ── components ────────────────────────────────────────────────────────────────
 
 const typedComponents: Config<ConstructionProps>['components'] = {
+  // Top bar — 4 selectable designs (Insert-a-block picker shows one card per
+  // design, same "Design 1-4" convention as e.g. general pack's Hero).
+  ConstructionTopBar: {
+    label: 'Top Bar',
+    fields: {
+      variant: {
+        type: 'select',
+        options: [
+          { label: 'Design 1 — Contact + links + socials', value: '1' },
+          { label: 'Design 2 — Promo strip', value: '2' },
+          { label: 'Design 3 — Tagline + CTA button', value: '3' },
+          { label: 'Design 4 — Follow us + tagline + help', value: '4' },
+        ],
+      },
+      visible: {
+        type: 'radio',
+        options: [
+          { label: 'Show', value: true },
+          { label: 'Hide', value: false },
+        ],
+      },
+      d1Address: { type: 'text' },
+      d1Phone: { type: 'text' },
+      d1Email: { type: 'text' },
+      d1Link1Label: { type: 'text' },
+      d1Link1Href: { type: 'text' },
+      d1Link2Label: { type: 'text' },
+      d1Link2Href: { type: 'text' },
+      d1Link3Label: { type: 'text' },
+      d1Link3Href: { type: 'text' },
+      d1Social1Href: { type: 'text' },
+      d1Social2Href: { type: 'text' },
+      d1Social3Href: { type: 'text' },
+      d1Social4Href: { type: 'text' },
+      d2Item1Text: { type: 'text' },
+      d2Item2Text: { type: 'text' },
+      d2Item3Text: { type: 'text' },
+      d2TrackLabel: { type: 'text' },
+      d2TrackHref: { type: 'text' },
+      d2Language: { type: 'text' },
+      d3Tagline: { type: 'text' },
+      d3Phone: { type: 'text' },
+      d3Email: { type: 'text' },
+      d3CtaLabel: { type: 'text' },
+      d3CtaHref: { type: 'text' },
+      d4Tagline: { type: 'text' },
+      d4Social1Href: { type: 'text' },
+      d4Social2Href: { type: 'text' },
+      d4Social3Href: { type: 'text' },
+      d4Social4Href: { type: 'text' },
+      d4HelpLabel: { type: 'text' },
+      d4HelpHref: { type: 'text' },
+      d4FaqLabel: { type: 'text' },
+      d4FaqHref: { type: 'text' },
+      d4Language: { type: 'text' },
+    },
+    defaultProps: {
+      variant: '1',
+      visible: true,
+      d1Address: '123 Business Street, Mumbai, India',
+      d1Phone: '+91 98765 43210',
+      d1Email: 'hello@yourdomain.com',
+      d1Link1Label: 'About Us',
+      d1Link1Href: '#about',
+      d1Link2Label: 'Careers',
+      d1Link2Href: '#careers',
+      d1Link3Label: 'Support',
+      d1Link3Href: '#support',
+      d1Social1Href: '#',
+      d1Social2Href: '#',
+      d1Social3Href: '#',
+      d1Social4Href: '#',
+      d2Item1Text: 'Free Shipping on Orders Over ₹999',
+      d2Item2Text: 'Secure Payments Guaranteed',
+      d2Item3Text: '24/7 Customer Support',
+      d2TrackLabel: 'Track Order',
+      d2TrackHref: '#track',
+      d2Language: 'EN',
+      d3Tagline: 'We help businesses grow digitally.',
+      d3Phone: '+91 98765 43210',
+      d3Email: 'hello@yourdomain.com',
+      d3CtaLabel: 'Book a Free Consultation',
+      d3CtaHref: '#consultation',
+      d4Tagline: 'Building ideas. Delivering results.',
+      d4Social1Href: '#',
+      d4Social2Href: '#',
+      d4Social3Href: '#',
+      d4Social4Href: '#',
+      d4HelpLabel: 'Help Center',
+      d4HelpHref: '#help',
+      d4FaqLabel: 'FAQs',
+      d4FaqHref: '#faqs',
+      d4Language: 'English (IN)',
+    },
+    render: function ConstructionTopBarRender({
+      variant,
+      visible,
+      d1Address,
+      d1Phone,
+      d1Email,
+      d1Link1Label,
+      d1Link1Href,
+      d1Link2Label,
+      d1Link2Href,
+      d1Link3Label,
+      d1Link3Href,
+      d1Social1Href,
+      d1Social2Href,
+      d1Social3Href,
+      d1Social4Href,
+      d2Item1Text,
+      d2Item2Text,
+      d2Item3Text,
+      d2TrackLabel,
+      d2TrackHref,
+      d2Language,
+      d3Tagline,
+      d3Phone,
+      d3Email,
+      d3CtaLabel,
+      d3CtaHref,
+      d4Tagline,
+      d4Social1Href,
+      d4Social2Href,
+      d4Social3Href,
+      d4Social4Href,
+      d4HelpLabel,
+      d4HelpHref,
+      d4FaqLabel,
+      d4FaqHref,
+      d4Language,
+    }) {
+      if (!visible) return <></>
+
+      if (variant === '2') {
+        return (
+          <div className="bg-white border-b border-slate-100">
+            <div
+              className={`${wrap} flex flex-wrap items-center justify-center gap-x-6 gap-y-2 py-2.5 text-sm text-slate-600 divide-x divide-slate-200`}
+            >
+              <span className="flex items-center gap-2 pr-6 first:pl-0">
+                <GiftIcon />
+                {d2Item1Text}
+              </span>
+              <span className="flex items-center gap-2 px-6">
+                <CheckShieldIcon />
+                {d2Item2Text}
+              </span>
+              <span className="flex items-center gap-2 px-6">
+                <HeadsetIcon />
+                {d2Item3Text}
+              </span>
+              {d2TrackLabel && (
+                <a href={d2TrackHref} className="px-6 hover:text-orange-600 transition">
+                  {d2TrackLabel}
+                </a>
+              )}
+              {d2Language && (
+                <span className="flex items-center gap-1 pl-6">
+                  {d2Language}
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+                  </svg>
+                </span>
+              )}
+            </div>
+          </div>
+        )
+      }
+
+      if (variant === '3') {
+        return (
+          <div className="bg-white border-b border-slate-100">
+            <div
+              className={`${wrap} flex flex-wrap items-center justify-between gap-4 py-3 text-sm text-slate-600`}
+            >
+              {d3Tagline && <p className="font-medium text-slate-900">{d3Tagline}</p>}
+              <div className="flex items-center gap-4 divide-x divide-slate-200">
+                {d3Phone && (
+                  <span className="flex items-center gap-2 pr-4">
+                    <PhoneIcon />
+                    {d3Phone}
+                  </span>
+                )}
+                {d3Email && (
+                  <span className="flex items-center gap-2 pl-4">
+                    <MailIcon />
+                    {d3Email}
+                  </span>
+                )}
+              </div>
+              {d3CtaLabel && (
+                <a
+                  href={d3CtaHref}
+                  className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition"
+                >
+                  {d3CtaLabel}
+                  <span aria-hidden="true">→</span>
+                </a>
+              )}
+            </div>
+          </div>
+        )
+      }
+
+      if (variant === '4') {
+        return (
+          <div className="bg-white border-b border-slate-100">
+            <div
+              className={`${wrap} flex flex-wrap items-center justify-between gap-4 py-3 text-sm text-slate-600`}
+            >
+              <div className="flex items-center gap-3">
+                <span className="font-medium text-slate-900">Follow Us:</span>
+                <div className="flex items-center gap-3">
+                  {d4Social1Href && (
+                    <a
+                      href={d4Social1Href}
+                      aria-label="Facebook"
+                      className="hover:text-orange-600 transition"
+                    >
+                      <FacebookIcon />
+                    </a>
+                  )}
+                  {d4Social2Href && (
+                    <a
+                      href={d4Social2Href}
+                      aria-label="LinkedIn"
+                      className="hover:text-orange-600 transition"
+                    >
+                      <LinkedInIcon />
+                    </a>
+                  )}
+                  {d4Social3Href && (
+                    <a
+                      href={d4Social3Href}
+                      aria-label="Instagram"
+                      className="hover:text-orange-600 transition"
+                    >
+                      <InstagramIcon />
+                    </a>
+                  )}
+                  {d4Social4Href && (
+                    <a
+                      href={d4Social4Href}
+                      aria-label="YouTube"
+                      className="hover:text-orange-600 transition"
+                    >
+                      <YoutubeIcon />
+                    </a>
+                  )}
+                </div>
+              </div>
+              {d4Tagline && <p>{d4Tagline}</p>}
+              <div className="flex items-center gap-4">
+                {d4HelpLabel && (
+                  <a href={d4HelpHref} className="hover:text-orange-600 transition">
+                    {d4HelpLabel}
+                  </a>
+                )}
+                {d4FaqLabel && (
+                  <a
+                    href={d4FaqHref}
+                    className="border-l border-slate-200 pl-4 hover:text-orange-600 transition"
+                  >
+                    {d4FaqLabel}
+                  </a>
+                )}
+                {d4Language && (
+                  <span className="flex items-center gap-1">
+                    <GlobeIcon />
+                    {d4Language}
+                    <svg
+                      className="w-3.5 h-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+                    </svg>
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      // Design 1 (default)
+      return (
+        <div className="bg-white border-b border-slate-100">
+          <div
+            className={`${wrap} flex flex-wrap items-center justify-between gap-4 py-3 text-sm text-slate-600`}
+          >
+            <div className="flex items-center gap-4 divide-x divide-slate-200">
+              {d1Address && (
+                <span className="flex items-center gap-2 pr-4 first:pl-0">
+                  <PinIcon />
+                  {d1Address}
+                </span>
+              )}
+              {d1Phone && (
+                <span className="flex items-center gap-2 px-4">
+                  <PhoneIcon />
+                  {d1Phone}
+                </span>
+              )}
+              {d1Email && (
+                <span className="flex items-center gap-2 pl-4">
+                  <MailIcon />
+                  {d1Email}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-5">
+              {[
+                { label: d1Link1Label, href: d1Link1Href },
+                { label: d1Link2Label, href: d1Link2Href },
+                { label: d1Link3Label, href: d1Link3Href },
+              ]
+                .filter((l) => l.label)
+                .map((l, i) => (
+                  <a key={i} href={l.href} className="hover:text-orange-600 transition">
+                    {l.label}
+                  </a>
+                ))}
+              <div className="flex items-center gap-3 border-l border-slate-200 pl-5">
+                {d1Social1Href && (
+                  <a
+                    href={d1Social1Href}
+                    aria-label="Facebook"
+                    className="hover:text-orange-600 transition"
+                  >
+                    <FacebookIcon />
+                  </a>
+                )}
+                {d1Social2Href && (
+                  <a
+                    href={d1Social2Href}
+                    aria-label="LinkedIn"
+                    className="hover:text-orange-600 transition"
+                  >
+                    <LinkedInIcon />
+                  </a>
+                )}
+                {d1Social3Href && (
+                  <a
+                    href={d1Social3Href}
+                    aria-label="Instagram"
+                    className="hover:text-orange-600 transition"
+                  >
+                    <InstagramIcon />
+                  </a>
+                )}
+                {d1Social4Href && (
+                  <a
+                    href={d1Social4Href}
+                    aria-label="X"
+                    className="hover:text-orange-600 transition"
+                  >
+                    <XIcon />
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    },
+  },
+
   // 0. Sticky header
   ConstructionHeader: {
     label: 'Construction Header',
@@ -3570,4 +4184,7 @@ export const construction: ComponentPack = {
   label: 'Construction',
   components: typedComponents as NonNullable<Config['components']>,
   categories: typedCategories,
+  variants: {
+    ConstructionTopBar: ['1', '2', '3', '4'],
+  },
 }
