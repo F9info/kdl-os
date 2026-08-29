@@ -61,9 +61,9 @@ function BlocksTab({ onOpenCategory }: { onOpenCategory: (categoryKey: string) =
     : null
 
   return (
-    <div style={{ background: OD.panel, color: '#e5e7eb' }} className="rounded-b-xl p-3.5">
+    <div style={{ background: OD.panel, color: '#e5e7eb' }} className="rounded-b-xl p-2.5">
       <div
-        className="mb-3 rounded-lg p-2.5 text-[11.5px]"
+        className="mb-2 rounded-lg p-2 text-[10px]"
         style={
           selectedLabel
             ? { background: '#38bdf81a', border: '1px solid #38bdf855', color: '#bfe6fb' }
@@ -82,23 +82,23 @@ function BlocksTab({ onOpenCategory }: { onOpenCategory: (categoryKey: string) =
       </div>
 
       <div
-        className="mb-2.5 text-[11px] font-extrabold uppercase tracking-wide"
+        className="mb-1.5 text-[9.5px] font-extrabold uppercase tracking-wide"
         style={{ color: OD.muted }}
       >
         Blocks
       </div>
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-2 gap-1.5">
         {categories.map(([key, cat]) => {
           const Icon = categoryIcon(cat.title ?? key)
           return (
             <button
               key={key}
               onClick={() => onOpenCategory(key)}
-              className="flex flex-col items-center gap-2 rounded-lg py-4 px-1.5"
+              className="flex flex-col items-center gap-1 rounded-lg py-2.5 px-1"
               style={{ background: OD.tile, border: `1px solid ${OD.tileBd}`, color: '#c7ccd3' }}
             >
-              <Icon size={22} color={TAB_ACCENT.blocks} strokeWidth={1.75} />
-              <span className="text-center text-[11.5px] font-semibold leading-tight">
+              <Icon size={16} color={TAB_ACCENT.blocks} strokeWidth={1.75} />
+              <span className="text-center text-[10px] font-semibold leading-tight">
                 {cat.title ?? key}
               </span>
             </button>
@@ -107,21 +107,21 @@ function BlocksTab({ onOpenCategory }: { onOpenCategory: (categoryKey: string) =
       </div>
 
       <div
-        className="mb-2.5 mt-4 text-[11px] font-extrabold uppercase tracking-wide"
+        className="mb-1.5 mt-3 text-[9.5px] font-extrabold uppercase tracking-wide"
         style={{ color: OD.muted }}
       >
         Inner Content
       </div>
-      <div className="grid grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-3 gap-1.5">
         {INNER_CONTENT.filter(({ key }) => config.components[key]).map(({ key, icon: Icon }) => (
           <button
             key={key}
             onClick={() => insertBlockComponent(dispatch, config, appState.data.content, key, null)}
-            className="flex flex-col items-center gap-2 rounded-lg py-4 px-1.5"
+            className="flex flex-col items-center gap-1 rounded-lg py-2.5 px-1"
             style={{ background: OD.tile, border: `1px solid ${OD.tileBd}`, color: '#c7ccd3' }}
           >
-            <Icon size={20} color={TAB_ACCENT.blocks} strokeWidth={1.75} />
-            <span className="text-center text-[11.5px] font-semibold leading-tight">
+            <Icon size={15} color={TAB_ACCENT.blocks} strokeWidth={1.75} />
+            <span className="text-center text-[10px] font-semibold leading-tight">
               {(config.components as Record<string, { label?: string }>)[key]?.label ?? key}
             </span>
           </button>
@@ -135,15 +135,15 @@ function ThemeTab() {
   return (
     <div
       style={{ background: OD.panel, color: '#e5e7eb' }}
-      className="rounded-b-xl p-6 text-center text-[13.5px] leading-relaxed"
+      className="rounded-b-xl p-4 text-center text-[11px] leading-relaxed"
     >
-      <Settings size={22} color={OD.muted} className="mx-auto mb-3" />
+      <Settings size={18} color={OD.muted} className="mx-auto mb-2" />
       <p style={{ color: OD.muted }}>
         Site-wide colours, typography and button styles live in Theme Engine.
       </p>
       <a
         href="/admin/theme-engine"
-        className="mt-3 inline-block rounded-md px-3 py-1.5 text-[12.5px] font-semibold"
+        className="mt-2 inline-block rounded-md px-2.5 py-1.5 text-[10.5px] font-semibold"
         style={{ background: TAB_ACCENT.theme, color: '#1a1c12' }}
       >
         Open Theme Engine →
@@ -188,13 +188,13 @@ export function BlocksPanel({
   const tabBtn = (key: typeof tab, label: string, Icon: typeof Plus) => (
     <button
       onClick={() => setTab(key)}
-      className="flex flex-1 items-center justify-center gap-1.5 py-3 text-[13px] font-bold"
+      className="flex flex-1 items-center justify-center gap-1 py-2 text-[11px] font-bold"
       style={{
         color: tab === key ? '#fff' : OD.muted,
         borderBottom: `2px solid ${tab === key ? TAB_ACCENT[key] : 'transparent'}`,
       }}
     >
-      <Icon size={14} color={tab === key ? TAB_ACCENT[key] : OD.muted} /> {label}
+      <Icon size={12} color={tab === key ? TAB_ACCENT[key] : OD.muted} /> {label}
     </button>
   )
 
