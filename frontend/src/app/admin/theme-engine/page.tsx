@@ -6,6 +6,7 @@ import { Search, Save, RotateCcw, Lock } from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import { ModuleGuard } from '@/components/shared/ModuleGuard'
 import { refreshThemeEngineTokens } from '@/components/providers/ThemeEngineProvider'
 import { DeviceShell } from './previews/DeviceShell'
@@ -1251,24 +1252,27 @@ function ThemeEngineInner() {
               {activePaneIsDirty || activeThemeIsDirty ? 'Unsaved changes' : 'All changes saved'}
             </span>
             <div className="flex gap-2">
-              <button
+              <Button
                 data-testid="btn-reset"
+                variant="outline"
+                size="sm"
                 onClick={() => resetMutation.mutate({ paneId: activePane, platform })}
                 disabled={isResetting || !activePane}
-                className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary disabled:opacity-50"
+                className="gap-1.5"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 Reset
-              </button>
-              <button
+              </Button>
+              <Button
                 data-testid="btn-save"
+                size="sm"
                 onClick={handleSave}
                 disabled={isSaving || !activePane || (!activePaneIsDirty && !activeThemeIsDirty)}
-                className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+                className="gap-1.5"
               >
                 <Save className="h-3.5 w-3.5" />
                 {isSaving ? 'Saving…' : 'Save'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
