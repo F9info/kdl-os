@@ -104,7 +104,7 @@ export function WorkflowBadge({
           <Button
             size="sm"
             variant="ghost"
-            className="h-6 w-6 p-0"
+            className="h-7 w-7 p-0"
             onClick={() => setDropdownOpen((v) => !v)}
             title="Workflow actions"
           >
