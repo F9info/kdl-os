@@ -1,0 +1,27 @@
+// Custom Block Composer module schema (Phase 1).
+// A CustomBlockTemplate is a saved, reusable "config" for the generic
+// CustomComposedBlock Puck component — project-scoped, never shared across
+// projects.
+
+enum CustomBlockStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model CustomBlockTemplate {
+  id           String            @id @default(cuid())
+  project_id   String
+  category_key String
+  name         String
+  description  String?
+  status       CustomBlockStatus @default(DRAFT)
+  is_default   Boolean           @default(false)
+  config       Json
+  created_by   String?
+  deleted_at   DateTime?
+  created_at   DateTime          @default(now())
+  updated_at   DateTime          @updatedAt
+
+  @@index([project_id, category_key])
+  @@map("custom_block_templates")
+}
