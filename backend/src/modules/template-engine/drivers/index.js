@@ -40,6 +40,7 @@ import {
 } from './website-seed-content.js';
 
 import { prisma } from '../../../config/database.js';
+import { slugify } from '../../../shared/utils/slug.js';
 
 // Best-effort — a fresh project with no approved brand kit yet still gets
 // pages seeded, just with the generic "Your Brand" copy/colors the seed
@@ -262,12 +263,33 @@ const collateralDriver = {
   },
 };
 
-// Standard pages seeded per run. Slugs are run-scoped to prevent cross-run collisions.
+// Default pages seeded when the run carries no Navigation-step selection
+// (older runs, or any caller that skips that step). Slugs are run-scoped to
+// prevent cross-run collisions.
 const WEBSITE_SEED_PAGES = [
   { key: 'home',    title: 'Home' },
   { key: 'about',   title: 'About' },
   { key: 'contact', title: 'Contact' },
 ];
+
+// The Navigation step (frontend WebsiteStage.tsx) lets a user pick any of
+// ~20 page names — turn that list into the same { key, title } shape
+// WEBSITE_SEED_PAGES uses, deriving each page's key from its title so pages
+// stay stable across a crash-recovery re-run of the same stage. Falls back
+// to the default 3-page set when the caller sends no selection at all.
+function resolveSeedPages(navigationPages) {
+  if (!Array.isArray(navigationPages) || navigationPages.length === 0) {
+    return WEBSITE_SEED_PAGES;
+  }
+  const keyCounts = new Map();
+  return navigationPages.map((title) => {
+    const base = slugify(title) || 'page';
+    const count = (keyCounts.get(base) ?? 0) + 1;
+    keyCounts.set(base, count);
+    const key = count === 1 ? base : `${base}-${count}`;
+    return { key, title };
+  });
+}
 
 // KDL-558 task 4/5 — the Web app Templates step's pack choice (general/
 // medical/construction), sent as advance's optional `templatePack` body
@@ -285,16 +307,23 @@ const SEEDER_BY_PACK = {
  * Crash recovery: recorded pageKeyToId is checked on re-run; existing pages are reused.
  */
 const websiteDriver = {
-  async execute({ run, stageRecord, userId, templatePack }) {
+  async execute({ run, stageRecord, userId, templatePack, navigationPages }) {
     const seed = SEEDER_BY_PACK[templatePack] ?? seedWebsitePageData;
     const brand = await resolveWebsiteBrand(run.projectId, userId);
 
     // Crash recovery (TEMPLATE_ENGINE_ARCH §4.1): reuse pages from a prior attempt.
     const priorMap = stageRecord?.outputRef?.pageKeyToId ?? {};
     const pageKeyToId = {};
+    // The frontend's page grid displays this real title — before
+    // navigationPages existed every key WAS its title lowercased ('home' ->
+    // 'Home'), so no one noticed the grid was deriving a label from the key
+    // instead of storing the actual title anywhere. Multi-word/acronym
+    // titles ('Service detail', 'FAQ') expose that: slugified back they'd
+    // render 'Service-detail'/'Faq', not the title the user actually typed.
+    const pageKeyToTitle = {};
     const pageIds = [];
 
-    for (const { key, title } of WEBSITE_SEED_PAGES) {
+    for (const { key, title } of resolveSeedPages(navigationPages)) {
       const priorId = priorMap[key];
       let existing = null;
       if (priorId) {
@@ -307,6 +336,7 @@ const websiteDriver = {
       );
 
       pageKeyToId[key] = page.id;
+      pageKeyToTitle[key] = title;
       pageIds.push(page.id);
     }
 
@@ -314,6 +344,7 @@ const websiteDriver = {
       outputRef: {
         pageIds,
         pageKeyToId,
+        pageKeyToTitle,
         seededAt: new Date().toISOString(),
       },
     };

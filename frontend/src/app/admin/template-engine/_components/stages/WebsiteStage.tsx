@@ -90,9 +90,21 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
   }, [uiStateKey, openBrand, webAppStep])
 
   const outputRef = stage?.outputRef as
-    { pageIds?: string[]; pageKeyToId?: Record<string, string> } | null | undefined
+    | {
+        pageIds?: string[]
+        pageKeyToId?: Record<string, string>
+        pageKeyToTitle?: Record<string, string>
+      }
+    | null
+    | undefined
   const pages = Object.entries(outputRef?.pageKeyToId ?? {})
   const pageCount = outputRef?.pageIds?.length ?? pages.length
+  // Older runs (before navigationPages existed) have no pageKeyToTitle —
+  // every key was its title lowercased then, so capitalizing the key alone
+  // still matches ('home' -> 'Home').
+  function pageLabel(key: string) {
+    return outputRef?.pageKeyToTitle?.[key] ?? key.charAt(0).toUpperCase() + key.slice(1)
+  }
 
   function openWebApp() {
     setOpenBrand('webapp')
@@ -107,7 +119,20 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
       hideHeader
       hideRunButton={openBrand === null || webAppStep !== 'assemble'}
       onRun={
-        stage?.status === 'FAILED' ? () => retry.mutate('WEBSITE') : () => advance.mutate('WEBSITE')
+        stage?.status === 'FAILED'
+          ? () => retry.mutate('WEBSITE')
+          : () => {
+              // Navigation step writes its selection straight to localStorage
+              // (no API call of its own) — read it here, the one place that
+              // actually triggers page generation, so "Run" builds the pages
+              // the user picked instead of always the default Home/About/
+              // Contact set.
+              const navigationPages = readLocal<string[]>(
+                `te-website-ui:${run.projectId}:navigation`,
+                []
+              )
+              advance.mutate({ stage: 'WEBSITE', body: { navigationPages } })
+            }
       }
       onSkip={() => skip.mutate('WEBSITE')}
       isRunning={advance.isPending || retry.isPending}
@@ -207,7 +232,7 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
                       <span className="w-fit rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
                         Page
                       </span>
-                      <b className="text-sm">{key.charAt(0).toUpperCase() + key.slice(1)}</b>
+                      <b className="text-sm">{pageLabel(key)}</b>
                       <Button size="sm" asChild className="mt-auto w-fit">
                         <a
                           href={`/admin/template-engine/edit/${id}?projectId=${run.projectId}`}

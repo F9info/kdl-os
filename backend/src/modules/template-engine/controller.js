@@ -85,6 +85,7 @@ export const advanceStage = async (req, res, next) => {
 
     const stageRecord = await service.advanceStage(runId, stage, req.user.id, projectId, {
       templatePack: req.validated.body?.templatePack,
+      navigationPages: req.validated.body?.navigationPages,
     });
 
     writeActivityAsync({

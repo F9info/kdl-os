@@ -309,6 +309,85 @@ describe('website driver — happy path', () => {
   });
 });
 
+describe('website driver — navigationPages (KDL bug: Navigation-step selection was ignored)', () => {
+  it('creates one page per selected navigation page, not just the default 3', async () => {
+    createPage
+      .mockResolvedValueOnce({ id: 'page-home' })
+      .mockResolvedValueOnce({ id: 'page-about' })
+      .mockResolvedValueOnce({ id: 'page-services' })
+      .mockResolvedValueOnce({ id: 'page-service-detail' })
+      .mockResolvedValueOnce({ id: 'page-contact' })
+      .mockResolvedValueOnce({ id: 'page-faq' });
+
+    const navigationPages = ['Home', 'About', 'Services', 'Service detail', 'Contact', 'FAQ'];
+
+    const result = await getDriver('website').execute({
+      run: makeRun(),
+      stageRecord: makeStageRecord(),
+      userId: 'user-1',
+      projectId: 'proj-A',
+      navigationPages,
+    });
+
+    expect(createPage).toHaveBeenCalledTimes(6);
+    expect(result.outputRef.pageIds).toHaveLength(6);
+    expect(result.outputRef.pageKeyToId).toMatchObject({
+      home: 'page-home',
+      about: 'page-about',
+      services: 'page-services',
+      'service-detail': 'page-service-detail',
+      contact: 'page-contact',
+      faq: 'page-faq',
+    });
+    // The frontend's page grid displays pageKeyToTitle's value verbatim —
+    // it must keep the user's real title ('Service detail', 'FAQ'), not
+    // something re-derived from the slugified key ('Service-detail', 'Faq').
+    expect(result.outputRef.pageKeyToTitle).toMatchObject({
+      home: 'Home',
+      about: 'About',
+      services: 'Services',
+      'service-detail': 'Service detail',
+      contact: 'Contact',
+      faq: 'FAQ',
+    });
+  });
+
+  it('derives each page key by slugifying its title', async () => {
+    createPage.mockResolvedValueOnce({ id: 'page-1' });
+
+    await getDriver('website').execute({
+      run: makeRun(),
+      stageRecord: makeStageRecord(),
+      userId: 'user-1',
+      projectId: 'proj-A',
+      navigationPages: ['Portfolio detail'],
+    });
+
+    expect(createPage).toHaveBeenCalledWith(
+      expect.objectContaining({ slug: 'te-run-1-portfolio-detail' }),
+      'user-1',
+    );
+  });
+
+  it('falls back to the default Home/About/Contact set when navigationPages is empty', async () => {
+    createPage
+      .mockResolvedValueOnce({ id: 'page-home' })
+      .mockResolvedValueOnce({ id: 'page-about' })
+      .mockResolvedValueOnce({ id: 'page-contact' });
+
+    const result = await getDriver('website').execute({
+      run: makeRun(),
+      stageRecord: makeStageRecord(),
+      userId: 'user-1',
+      projectId: 'proj-A',
+      navigationPages: [],
+    });
+
+    expect(createPage).toHaveBeenCalledTimes(3);
+    expect(result.outputRef.pageKeyToId).toMatchObject({ home: 'page-home', about: 'page-about', contact: 'page-contact' });
+  });
+});
+
 describe('website driver — crash recovery (§4.1)', () => {
   it('reuses existing pages when priorMap pageIds still exist', async () => {
     const priorMap = { home: 'page-home', about: 'page-about', contact: 'page-contact' };

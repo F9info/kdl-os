@@ -40,11 +40,15 @@ export const advanceStageSchema = z.object({
   }),
   // approval stage may carry brandKitVersion on the accept call;
   // website stage may carry templatePack (KDL-558) to pick which Puck
-  // pack (general/medical/construction) seeds the assembled pages.
+  // pack (general/medical/construction) seeds the assembled pages, and
+  // navigationPages — the page names chosen in the Navigation step — to
+  // pick WHICH pages get created (falls back to the default Home/About/
+  // Contact set when omitted).
   body: z
     .object({
       brandKitVersion: z.number().int().positive().optional(),
       templatePack: z.enum(['general', 'medical', 'construction']).optional(),
+      navigationPages: z.array(z.string().min(1)).optional(),
     })
     .optional(),
 });
