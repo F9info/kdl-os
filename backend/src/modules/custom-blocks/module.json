@@ -1,0 +1,15 @@
+{
+  "slug": "custom-blocks",
+  "name": "Custom Blocks",
+  "version": "1.0.0",
+  "description": "Project-scoped reusable custom block templates for the page builder",
+  "core": true,
+  "visibleInCatalog": false,
+  "apiPrefix": "/api/custom-blocks",
+  "permissions": [],
+  "nav": [],
+  "dependsOn": ["page-builder"],
+  "conflictsWith": [],
+  "queues": [],
+  "env": []
+}

@@ -37,6 +37,7 @@ import moduleRoutes from './modules/modules/routes.js';
 import storageSettingsRoutes from './modules/storage-settings/routes.js';
 import themeEngineRoutes from './modules/theme-engine/routes.js';
 import pageBuilderRoutes from './modules/page-builder/routes.js';
+import customBlocksRoutes from './modules/custom-blocks/routes.js';
 import projectRoutes from './modules/projects/routes.js';
 import { verifyLocalPresignToken } from './shared/services/storage/drivers/local.driver.js';
 import { loadModules, checkDependencyIntegrity } from './shared/modules/module-loader.js';
@@ -126,6 +127,7 @@ app.use('/api/storage/local', (req, res) => {
 
 app.use('/api/theme-engine', themeEngineRoutes);
 app.use('/api/page-builder', pageBuilderRoutes);
+app.use('/api/custom-blocks', customBlocksRoutes);
 app.use('/api/projects', projectRoutes);
 
 // Mount plugin modules (those with module.json + routes.js) behind moduleGate
