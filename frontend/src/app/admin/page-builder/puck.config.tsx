@@ -1,6 +1,7 @@
 import type { Config, Data } from '@puckeditor/core'
 import type { ReactNode } from 'react'
 import { composePacks } from './packs/compose'
+import { composer } from './packs/composer'
 import { construction } from './packs/construction'
 import { general } from './packs/general'
 import { medical } from './packs/medical'
@@ -24,7 +25,7 @@ const root: Config['root'] = {
   ),
 }
 
-export const config = composePacks(root, [general, construction, medical])
+export const config = composePacks(root, [general, construction, medical, composer])
 
 /**
  * Component key -> ordered `variant` values, merged from every pack. Powers
