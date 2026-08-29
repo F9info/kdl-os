@@ -6,10 +6,27 @@
  * font sizes (14-21px) ate too much of the canvas — flatten both down.
  */
 :root {
-  --puck-user-sidebar-left-width: 210px;
-  --puck-user-sidebar-right-width: 210px;
+  --puck-user-sidebar-left-width: 170px;
+  --puck-user-sidebar-right-width: 170px;
   --puck-font-size-xxs-unitless: 12;
   --puck-font-size-xs-unitless: 13;
   --puck-font-size-s-unitless: 15;
   --puck-font-size-m-unitless: 17;
+
+  /* Outline (LayerTree) panel — has its own dedicated override points,
+     separate from the field font-size scale above. */
+  --puck-outline-font-size: 11px;
+  --puck-outline-icon-size: 12px;
+  --puck-outline-action-size: 12px;
+  --puck-outline-space-indent: 8px;
+
+  /* Base spacing scale — drives row padding/gaps across both sidebars. */
+  --puck-space-1: 3px;
+  --puck-space-2: 6px;
+  --puck-space-3: 9px;
+  --puck-space-4: 12px;
+  --puck-space-5: 18px;
+  --puck-icon-size-xs: 12px;
+  --puck-icon-size-s: 14px;
+  --puck-icon-size-m: 16px;
 }
