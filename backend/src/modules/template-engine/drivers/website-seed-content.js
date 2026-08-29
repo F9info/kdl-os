@@ -40,17 +40,20 @@ function dummyImage(w, h, label) {
 
 const DEFAULT_NAV_LINKS = ['Home|#', 'About|#', 'Contact|#'].join('\n');
 
-// `pages` is the full { key, title } list this run is assembling (see
-// resolveSeedPages in drivers/index.js) — every seeded page's nav/footer
-// links to every OTHER seeded page, not just a hardcoded Home/About/Contact.
-// Falls back to the 3-link default when called with no page list (keeps
-// working for any caller that predates navigationPages). Href stays the `#`
-// placeholder convention Home already used: "View all pages"
-// (template-engine/site/page.tsx) navigates by matching a clicked link's
-// TEXT against page titles, not by following the href.
+// `pages` is the full { key, title, slug } list this run is assembling (see
+// resolveSeedPages + the `te-${run.id}-${key}` slug in drivers/index.js) —
+// every seeded page's nav/footer links to every OTHER seeded page's real
+// `/p/{slug}` URL, not just a hardcoded Home/About/Contact with dead `#`
+// hrefs. Falls back to `#` only when called with no slug (the 3-link
+// DEFAULT_NAV_LINKS below, or any caller that predates this). The Template
+// Engine's own "View all pages" preview (template-engine/site/page.tsx)
+// still intercepts clicks via preventDefault() and matches by link TEXT
+// against page titles, so a real href here doesn't change that behaviour —
+// it only matters on the actual public /p/[slug] route, which has no such
+// interception and needs a real href to navigate anywhere at all.
 function navLinksFor(pages) {
   if (!Array.isArray(pages) || pages.length === 0) return DEFAULT_NAV_LINKS;
-  return pages.map(({ title }) => `${title}|#`).join('\n');
+  return pages.map(({ title, slug }) => `${title}|${slug ? `/p/${slug}` : '#'}`).join('\n');
 }
 
 const NAV_LINK_PROP_BY_BLOCK_TYPE = {

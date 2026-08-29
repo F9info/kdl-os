@@ -388,7 +388,7 @@ describe('website driver — navigationPages (KDL bug: Navigation-step selection
       navigationPages: ['Home', 'About', 'FAQ'],
     });
 
-    const expectedLinks = 'Home|#\nAbout|#\nFAQ|#';
+    const expectedLinks = 'Home|/p/te-run-1-home\nAbout|/p/te-run-1-about\nFAQ|/p/te-run-1-faq';
 
     // Home uses MedicalTopNav (navLinks prop) — see headerBlocks().
     const homeCall = createPage.mock.calls[0][0];
@@ -486,7 +486,7 @@ describe('website driver — navigationPages (KDL bug: Navigation-step selection
     expect(updatedId).toBe('deleted-blog-page');
     expect(patch.deleted_at).toBeNull();
     // Nav also needed patching (stale 'Home|#' vs. this run's actual single page).
-    expect(patch.data.content[0].props.links).toBe('Blog|#');
+    expect(patch.data.content[0].props.links).toBe('Blog|/p/te-run-1-blog');
     expect(result.outputRef.pageKeyToId).toMatchObject({ blog: 'deleted-blog-page' });
   });
 
@@ -554,7 +554,7 @@ describe('website driver — crash recovery (§4.1)', () => {
     const [updatedId, patch] = updatePage.mock.calls[0];
     expect(updatedId).toBe('page-home');
     const patchedNav = patch.data.content.find((b) => b.type === 'MedicalTopNav');
-    expect(patchedNav.props.navLinks).toBe('Home|#\nBlog|#');
+    expect(patchedNav.props.navLinks).toBe('Home|/p/te-run-1-home\nBlog|/p/te-run-1-blog');
     // The hand-edited brand name and the unrelated content block survive untouched.
     expect(patchedNav.props.brand).toBe('Custom edited brand');
     expect(patch.data.content.find((b) => b.type === 'FeatureCards').props.sectionTitle).toBe(
@@ -564,7 +564,7 @@ describe('website driver — crash recovery (§4.1)', () => {
   });
 
   it('does not call updatePage when a reused page\'s nav links already match (no pointless write)', async () => {
-    const upToDateContent = [{ type: 'NavBar', props: { links: 'Home|#' } }];
+    const upToDateContent = [{ type: 'NavBar', props: { links: 'Home|/p/te-run-1-home' } }];
     getPage.mockResolvedValueOnce({ id: 'page-home', data: { content: upToDateContent } });
 
     await getDriver('website').execute({
@@ -691,7 +691,7 @@ describe('website driver — construction pack seeding (KDL-558 homepage)', () =
       navigationPages: ['Home', 'Services'],
     });
 
-    const expectedLinks = 'Home|#\nServices|#';
+    const expectedLinks = 'Home|/p/te-run-1-home\nServices|/p/te-run-1-services';
     const homeCall = createPage.mock.calls[0][0];
     const header = homeCall.data.content.find((b) => b.type === 'ConstructionHeader');
     const footer = homeCall.data.content.find((b) => b.type === 'ConstructionFooter');

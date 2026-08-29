@@ -323,10 +323,16 @@ const websiteDriver = {
     // render 'Service-detail'/'Faq', not the title the user actually typed.
     const pageKeyToTitle = {};
     const pageIds = [];
-    const seedPages = resolveSeedPages(navigationPages);
+    // Real hrefs (not '#') so nav/footer links actually navigate on the
+    // public /p/[slug] route — slugs are deterministic per run+key, so this
+    // can be computed upfront, before any page actually exists yet.
+    const seedPages = resolveSeedPages(navigationPages).map(({ key, title }) => ({
+      key,
+      title,
+      slug: `te-${run.id}-${key}`,
+    }));
 
-    for (const { key, title } of seedPages) {
-      const slug = `te-${run.id}-${key}`;
+    for (const { key, title, slug } of seedPages) {
       const priorId = priorMap[key];
       let existing = null;
       if (priorId) {
