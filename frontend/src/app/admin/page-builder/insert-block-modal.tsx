@@ -100,10 +100,10 @@ function previewProps(comp: PuckComponentConfig, variant: string | null) {
 // on hover, the dark "Insert" gradient overlay, which is sized to the whole
 // card) as dead empty space. Give these a shorter preview box instead.
 const COMPACT_PREVIEW_HEIGHT: Record<string, number> = {
-  ConstructionHeader: 90,
-  ConstructionTopBar: 90,
+  ConstructionHeader: 110,
+  ConstructionTopBar: 110,
 }
-const DEFAULT_PREVIEW_HEIGHT = 210
+const DEFAULT_PREVIEW_HEIGHT = 320
 
 function BlockCard({
   componentKey,
@@ -140,7 +140,7 @@ function BlockCard({
         style={{ height: previewHeight }}
         className="overflow-hidden bg-white pointer-events-none"
       >
-        <div style={{ width: 1200, transform: 'scale(0.35)', transformOrigin: 'top left' }}>
+        <div style={{ width: 1200, transform: 'scale(0.55)', transformOrigin: 'top left' }}>
           {comp.render(props)}
         </div>
       </div>
@@ -294,9 +294,9 @@ export function InsertBlockModal({
               </button>
             ))}
           </div>
-          <div className="grid flex-1 auto-rows-min grid-cols-2 gap-4.5 overflow-auto bg-slate-50 p-4.5">
+          <div className="grid flex-1 auto-rows-min grid-cols-1 gap-4.5 overflow-auto bg-slate-50 p-4.5">
             {cards.length === 0 ? (
-              <div className="col-span-2 p-5 text-sm text-slate-400">No blocks match.</div>
+              <div className="p-5 text-sm text-slate-400">No blocks match.</div>
             ) : (
               cards.map(({ key, variant, index, total }) => (
                 <BlockCard
@@ -322,11 +322,11 @@ export function InsertBlockModal({
                     <span className="absolute right-2.5 top-2.5 z-[2] rounded-md bg-emerald-700 px-2.5 py-1 text-[11px] font-extrabold text-white">
                       {block.name}
                     </span>
-                    <div className="h-[210px] overflow-hidden bg-white pointer-events-none">
+                    <div className="h-[320px] overflow-hidden bg-white pointer-events-none">
                       <div
                         style={{
                           width: 1200,
-                          transform: 'scale(0.35)',
+                          transform: 'scale(0.55)',
                           transformOrigin: 'top left',
                         }}
                       >
