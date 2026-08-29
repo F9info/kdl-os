@@ -178,6 +178,8 @@ export function BlockComposer({
               config.atoms.map((atom) => (
                 <div
                   key={atom.id}
+                  role="button"
+                  tabIndex={0}
                   draggable
                   onDragStart={(e) => e.dataTransfer.setData('text/plain', atom.id)}
                   onDragOver={(e) => e.preventDefault()}
@@ -188,6 +190,12 @@ export function BlockComposer({
                   onClick={() => {
                     setSelectedId(atom.id)
                     setRightTab('content')
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      setSelectedId(atom.id)
+                      setRightTab('content')
+                    }
                   }}
                   className={`flex cursor-pointer items-center gap-2 rounded-md border px-2 py-1.5 text-xs ${
                     selectedId === atom.id ? 'border-blue-600 bg-blue-50' : 'border-slate-200'
@@ -237,7 +245,7 @@ export function BlockComposer({
             className="mx-auto w-full overflow-hidden rounded-lg bg-white shadow-md transition-[max-width]"
             style={{ maxWidth: VIEWPORT_WIDTH[viewport] }}
           >
-            <div onClick={() => setSelectedId(null)}>
+            <div role="presentation" onClick={() => setSelectedId(null)}>
               {renderComposedBlock(config, {
                 interactive: true,
                 selectedId,
@@ -271,7 +279,136 @@ export function BlockComposer({
               </button>
             ))}
           </div>
-          <div className="p-4">{/* Right panel body added in Task 10 */}</div>
+          <div className="p-4">
+            {rightTab === 'content' ? (
+              selectedAtom ? (
+                (() => {
+                  const def = ATOM_CATALOGUE.find((a) => a.type === selectedAtom.type)
+                  if (!def) return null
+                  return (
+                    <def.Field
+                      atom={selectedAtom}
+                      onChange={(patch) => patchAtom(selectedAtom.id, patch)}
+                    />
+                  )
+                })()
+              ) : (
+                <p className="text-center text-xs text-slate-400">
+                  Pick an element from Layers, or add one from the palette.
+                </p>
+              )
+            ) : null}
+
+            {rightTab === 'layout' ? (
+              <div className="flex flex-col gap-3.5">
+                <div>
+                  <span className="mb-1.5 block text-xs font-semibold text-slate-600">
+                    Container
+                  </span>
+                  <div className="flex gap-1.5">
+                    {(['full', 'boxed'] as const).map((v) => (
+                      <button
+                        key={v}
+                        onClick={() =>
+                          setConfig((c) => ({ ...c, settings: { ...c.settings, container: v } }))
+                        }
+                        className={`rounded-md border px-2.5 py-1.5 text-xs font-semibold capitalize ${
+                          config.settings.container === v
+                            ? 'border-blue-600 bg-blue-50 text-blue-700'
+                            : 'border-slate-200 text-slate-600'
+                        }`}
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <span className="mb-1.5 block text-xs font-semibold text-slate-600">Padding</span>
+                  <div className="flex gap-1.5">
+                    {(['sm', 'md', 'lg'] as const).map((v) => (
+                      <button
+                        key={v}
+                        onClick={() =>
+                          setConfig((c) => ({ ...c, settings: { ...c.settings, padding: v } }))
+                        }
+                        className={`rounded-md border px-2.5 py-1.5 text-xs font-semibold uppercase ${
+                          config.settings.padding === v
+                            ? 'border-blue-600 bg-blue-50 text-blue-700'
+                            : 'border-slate-200 text-slate-600'
+                        }`}
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <span className="mb-1.5 block text-xs font-semibold text-slate-600">Align</span>
+                  <div className="flex gap-1.5">
+                    {(['left', 'center', 'right'] as const).map((v) => (
+                      <button
+                        key={v}
+                        onClick={() =>
+                          setConfig((c) => ({ ...c, settings: { ...c.settings, align: v } }))
+                        }
+                        className={`rounded-md border px-2.5 py-1.5 text-xs font-semibold capitalize ${
+                          config.settings.align === v
+                            ? 'border-blue-600 bg-blue-50 text-blue-700'
+                            : 'border-slate-200 text-slate-600'
+                        }`}
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {rightTab === 'style' ? (
+              <div>
+                <span className="mb-1.5 block text-xs font-semibold text-slate-600">
+                  Background
+                </span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={config.settings.bg || '#ffffff'}
+                    onChange={(e) =>
+                      setConfig((c) => ({ ...c, settings: { ...c.settings, bg: e.target.value } }))
+                    }
+                    className="h-9 w-14 cursor-pointer rounded-md border border-slate-200"
+                  />
+                  <button
+                    onClick={() =>
+                      setConfig((c) => ({ ...c, settings: { ...c.settings, bg: '' } }))
+                    }
+                    className="text-xs font-semibold text-slate-500 hover:text-slate-800"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {rightTab === 'responsive' ? (
+              selectedAtom ? (
+                <label className="flex items-center justify-between text-sm">
+                  <span className="font-medium text-slate-700">Hide on mobile</span>
+                  <input
+                    type="checkbox"
+                    checked={!!selectedAtom.hideMobile}
+                    onChange={(e) => patchAtom(selectedAtom.id, { hideMobile: e.target.checked })}
+                  />
+                </label>
+              ) : (
+                <p className="text-center text-xs text-slate-400">
+                  Pick an element from Layers to set its mobile visibility.
+                </p>
+              )
+            ) : null}
+          </div>
         </div>
       </div>
     </div>
