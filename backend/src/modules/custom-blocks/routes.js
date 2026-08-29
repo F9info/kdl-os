@@ -3,6 +3,8 @@ import { authenticate } from '../../middleware/auth.js';
 import { requirePermission } from '../../middleware/permission.js';
 import { requireProject } from '../../middleware/project.js';
 import { validate } from '../../middleware/validate.js';
+import { listAccessibleProjectIds } from '../projects/service.js';
+import { resolvePermissions } from '../user-management/shared/permission-resolver.js';
 import {
   createCustomBlockSchema,
   listCustomBlocksQuerySchema,
@@ -22,19 +24,30 @@ const router = Router();
 
 router.use(authenticate);
 
-// No project context to check when projectId is omitted (the legacy Page
-// Builder editor has no project concept) — listing then spans every
-// project, gated only by the page-builder 'view' permission above.
-function requireProjectIfPresent(req, res, next) {
-  if (!req.validated.query.projectId) return next();
-  return requireProject('query')(req, res, next);
+// The legacy Page Builder editor has no project context, so it omits
+// projectId — but the list must still never cross tenant boundaries.
+// When projectId IS given, behave exactly like every other route
+// (requireProject validates access to that one project). When it's
+// omitted, resolve every project this caller can actually access (same
+// is_shared/owner/member rule requireProject checks per-project — or every
+// project for a super-admin) and scope the query to that set instead of
+// removing scoping entirely.
+async function scopeProjectForList(req, res, next) {
+  if (req.validated.query.projectId) return requireProject('query')(req, res, next);
+  try {
+    const perms = req.userPermissions ?? (await resolvePermissions(req.user?.id));
+    req.accessibleProjectIds = perms.bypass ? null : await listAccessibleProjectIds(req.user?.id);
+    next();
+  } catch (err) {
+    next(err);
+  }
 }
 
 router.get(
   '/',
   requirePermission('page-builder', 'view'),
   validate(listCustomBlocksQuerySchema),
-  requireProjectIfPresent,
+  scopeProjectForList,
   getAll
 );
 router.post(

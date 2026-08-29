@@ -3,12 +3,24 @@ import { writeActivityAsync } from '../user-management/shared/activity-logger.js
 
 const NOT_FOUND = () => Object.assign(new Error('Custom block not found'), { status: 404 });
 
-// projectId undefined -> list across every project (legacy Page Builder has
-// no project context; see requireProjectIfPresent in routes.js).
 export const listCustomBlocks = async (projectId, categoryKey) => {
   return prisma.customBlockTemplate.findMany({
+    where: { project_id: projectId, category_key: categoryKey, deleted_at: null },
+    orderBy: { created_at: 'asc' },
+  });
+};
+
+// No single project to scope by (legacy Page Builder has no project
+// context) — scopes to every project the caller can access instead of
+// removing scoping entirely, so one tenant's blocks are never listed for
+// another. `projectIds: null` means "no restriction" (super-admin bypass,
+// set by scopeProjectForList in routes.js); an empty array correctly
+// yields zero rows rather than skipping the filter.
+export const listCustomBlocksForAccessibleProjects = async (projectIds, categoryKey) => {
+  if (Array.isArray(projectIds) && projectIds.length === 0) return [];
+  return prisma.customBlockTemplate.findMany({
     where: {
-      ...(projectId ? { project_id: projectId } : {}),
+      ...(projectIds ? { project_id: { in: projectIds } } : {}),
       category_key: categoryKey,
       deleted_at: null,
     },

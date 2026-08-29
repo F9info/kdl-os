@@ -35,9 +35,34 @@ describe('listCustomBlocks', () => {
     );
   });
 
-  it('omits the project_id filter when projectId is undefined (list across every project)', async () => {
+});
+
+describe('listCustomBlocksForAccessibleProjects', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('scopes to the given project id set + category_key, excludes soft-deleted', async () => {
     mockPrisma.customBlockTemplate.findMany.mockResolvedValue([]);
-    await service.listCustomBlocks(undefined, 'hero');
+    await service.listCustomBlocksForAccessibleProjects(['proj-1', 'proj-2'], 'hero');
+    expect(mockPrisma.customBlockTemplate.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          project_id: { in: ['proj-1', 'proj-2'] },
+          category_key: 'hero',
+          deleted_at: null,
+        },
+      })
+    );
+  });
+
+  it('returns an empty list without querying when the accessible set is empty', async () => {
+    const result = await service.listCustomBlocksForAccessibleProjects([], 'hero');
+    expect(result).toEqual([]);
+    expect(mockPrisma.customBlockTemplate.findMany).not.toHaveBeenCalled();
+  });
+
+  it('omits the project_id filter only for null (super-admin bypass, no restriction)', async () => {
+    mockPrisma.customBlockTemplate.findMany.mockResolvedValue([]);
+    await service.listCustomBlocksForAccessibleProjects(null, 'hero');
     expect(mockPrisma.customBlockTemplate.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { category_key: 'hero', deleted_at: null },

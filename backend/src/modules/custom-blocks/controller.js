@@ -8,10 +8,13 @@ import * as service from './service.js';
 export const getAll = async (req, res, next) => {
   try {
     const { category } = req.validated.query;
-    // req.projectId is only set when a projectId was given (see
-    // requireProjectIfPresent in routes.js) — undefined lists across every
-    // project, for callers with no project context.
-    const items = await service.listCustomBlocks(req.projectId, category);
+    // req.projectId is set when a projectId was given (scoped to exactly
+    // that project). Otherwise scopeProjectForList (routes.js) set
+    // req.accessibleProjectIds: an array of every project this caller can
+    // access, or null for a super-admin (no restriction).
+    const items = req.projectId
+      ? await service.listCustomBlocks(req.projectId, category)
+      : await service.listCustomBlocksForAccessibleProjects(req.accessibleProjectIds, category);
     successResponse(res, { items });
   } catch (err) {
     next(err);

@@ -47,6 +47,21 @@ export async function getProject(id) {
   return project;
 }
 
+// Ids of every project a user can access — same rule requireProject enforces
+// per-project (is_shared OR owner OR member), just for "all projects I can
+// see" instead of "can I see this one". Used where a caller has no single
+// active project to scope by but must still never see another tenant's data.
+export async function listAccessibleProjectIds(userId) {
+  const projects = await prisma.project.findMany({
+    where: {
+      deleted_at: null,
+      OR: [{ is_shared: true }, { created_by: userId }, { members: { some: { user_id: userId } } }],
+    },
+    select: { id: true },
+  });
+  return projects.map((p) => p.id);
+}
+
 // Returns only the fields needed for access-control checks.
 // Used by the requireProject shared middleware; not intended for API responses.
 export async function getProjectForAccessCheck(id) {
