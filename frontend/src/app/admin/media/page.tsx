@@ -564,7 +564,7 @@ function UploadZone({
   return (
     <div
       className={cn(
-        'border-2 border-dashed rounded-lg px-4 py-2 text-center transition-colors cursor-pointer flex items-center gap-2',
+        'h-9 border-2 border-dashed rounded-lg px-3 text-center transition-colors cursor-pointer flex items-center gap-2',
         drag ? 'border-primary bg-primary/5' : 'border-muted-foreground/30 hover:border-primary/50',
         disabled && 'opacity-50 cursor-not-allowed'
       )}
@@ -1843,36 +1843,42 @@ export default function MediaPage() {
                   </>
                 )}
                 {can('media:folders') && (
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => setCreateFolderOpen(true)}
-                    className="flex items-center gap-1 px-3 h-9 text-sm rounded border hover:bg-accent transition-colors"
+                    className="gap-1"
                     title="New folder"
                   >
                     <Folder className="h-4 w-4" /> Folder
-                  </button>
+                  </Button>
                 )}
                 {/* D8: cloud import + capture entry points */}
                 {can('media:cloud-import') && (
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => setCloudImportOpen(true)}
-                    className="flex items-center gap-1 px-3 h-9 text-sm rounded border hover:bg-accent transition-colors"
+                    className="gap-1"
                     title="Import from cloud"
                   >
                     <Cloud className="h-4 w-4" /> Cloud
-                  </button>
+                  </Button>
                 )}
                 {can('media:capture') && (
                   <>
-                    <button
+                    <Button
                       type="button"
+                      variant="outline"
+                      size="sm"
                       onClick={() => setCaptureOpen(true)}
-                      className="flex items-center gap-1 px-3 h-9 text-sm rounded border hover:bg-accent transition-colors"
+                      className="gap-1"
                       title="Capture media"
                     >
                       <Camera className="h-4 w-4" /> Capture
-                    </button>
+                    </Button>
                     <WebcamCaptureButton
                       onCapture={(file) => uploadMutation.mutate([file])}
                       disabled={uploadMutation.isPending}

@@ -234,18 +234,17 @@ export function WebcamCaptureButton({ onCapture, disabled }: CaptureButtonProps)
   const { open, openModal, close } = useModalOpen()
   return (
     <>
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="sm"
         disabled={disabled}
         onClick={openModal}
-        className={cn(
-          'flex items-center gap-1 px-3 h-9 text-sm rounded border hover:bg-accent transition-colors',
-          disabled && 'opacity-50 cursor-not-allowed'
-        )}
+        className="gap-1"
         title="Record from webcam"
       >
         <Video className="h-4 w-4" /> Webcam
-      </button>
+      </Button>
       <CaptureModal
         open={open}
         onClose={close}
@@ -269,18 +268,17 @@ export function ScreenCaptureButton({ onCapture, disabled }: CaptureButtonProps)
   const { open, openModal, close } = useModalOpen()
   return (
     <>
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="sm"
         disabled={disabled}
         onClick={openModal}
-        className={cn(
-          'flex items-center gap-1 px-3 h-9 text-sm rounded border hover:bg-accent transition-colors',
-          disabled && 'opacity-50 cursor-not-allowed'
-        )}
+        className="gap-1"
         title="Record screen"
       >
         <Monitor className="h-4 w-4" /> Screen
-      </button>
+      </Button>
       <CaptureModal
         open={open}
         onClose={close}
@@ -304,18 +302,17 @@ export function VoiceRecorderButton({ onCapture, disabled }: CaptureButtonProps)
   const { open, openModal, close } = useModalOpen()
   return (
     <>
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="sm"
         disabled={disabled}
         onClick={openModal}
-        className={cn(
-          'flex items-center gap-1 px-3 h-9 text-sm rounded border hover:bg-accent transition-colors',
-          disabled && 'opacity-50 cursor-not-allowed'
-        )}
+        className="gap-1"
         title="Record voice"
       >
         <Mic className="h-4 w-4" /> Voice
-      </button>
+      </Button>
       <CaptureModal
         open={open}
         onClose={close}

@@ -912,18 +912,17 @@ export function FolderUploadButton({ onFiles, disabled }: FolderUploadButtonProp
 
   return (
     <>
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="sm"
         disabled={disabled}
         onClick={() => inputRef.current?.click()}
-        className={cn(
-          'flex items-center gap-1 px-3 h-9 text-sm rounded border hover:bg-accent transition-colors',
-          disabled && 'opacity-50 cursor-not-allowed'
-        )}
+        className="gap-1"
         title="Upload folder"
       >
         <FolderIcon className="h-4 w-4" /> Upload Folder
-      </button>
+      </Button>
       <input
         ref={inputRef}
         type="file"
