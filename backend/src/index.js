@@ -67,7 +67,15 @@ app.use(express.urlencoded({ extended: true }));
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: process.env.NODE_ENV === 'production' ? 100 : 1000,
+  // Dev bumped 1000 -> 50000: all traffic through the Next.js rewrite proxy
+  // (what both a real browser session AND Playwright-driven verification use)
+  // shares ONE bucket keyed by the proxy's source IP — not per browser tab or
+  // per test run — so a single long dev session doing live editor use plus
+  // repeated automated verification runs was exhausting even 5000/15min and
+  // 429ing real Publish/save requests, not just automated retries. There's
+  // no real attacker to rate-limit against on a local dev stack, so this is
+  // effectively "off" in dev. Production's 100 is unaffected.
+  max: process.env.NODE_ENV === 'production' ? 100 : 50000,
   standardHeaders: true,
   legacyHeaders: false,
 });
