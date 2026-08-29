@@ -891,30 +891,37 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       if (!visible) return <></>
 
       if (variant === '2') {
+        // Plain border-l per item (not the divide-x utility) — divide-x's
+        // sibling selector looks fine in one row, but stretches/misaligns
+        // once flex-wrap actually wraps a narrow topbar onto a second line.
+        const itemBorder = 'border-l border-slate-200 pl-6 first:border-l-0 first:pl-0'
         return (
           <div className="bg-white border-b border-slate-100">
             <div
-              className={`${wrap} flex flex-wrap items-center justify-center gap-x-6 gap-y-2 py-2.5 text-sm text-slate-600 divide-x divide-slate-200`}
+              className={`${wrap} flex flex-wrap items-center justify-center gap-x-0 gap-y-2 py-2.5 text-sm text-slate-600`}
             >
-              <span className="flex items-center gap-2 pr-6 first:pl-0">
+              <span className={`flex items-center gap-2 pr-6 ${itemBorder}`}>
                 <GiftIcon />
                 {d2Item1Text}
               </span>
-              <span className="flex items-center gap-2 px-6">
+              <span className={`flex items-center gap-2 pr-6 ${itemBorder}`}>
                 <CheckShieldIcon />
                 {d2Item2Text}
               </span>
-              <span className="flex items-center gap-2 px-6">
+              <span className={`flex items-center gap-2 pr-6 ${itemBorder}`}>
                 <HeadsetIcon />
                 {d2Item3Text}
               </span>
               {d2TrackLabel && (
-                <a href={d2TrackHref} className="px-6 hover:text-orange-600 transition">
+                <a
+                  href={d2TrackHref}
+                  className={`pr-6 hover:text-orange-600 transition ${itemBorder}`}
+                >
                   {d2TrackLabel}
                 </a>
               )}
               {d2Language && (
-                <span className="flex items-center gap-1 pl-6">
+                <span className={`flex items-center gap-1 ${itemBorder}`}>
                   {d2Language}
                   <svg
                     className="w-3.5 h-3.5"

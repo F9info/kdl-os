@@ -1,0 +1,15 @@
+/*
+ * Puck's own theme exposes `--puck-user-sidebar-*` and `--puck-font-size-*-unitless`
+ * as the documented override points (see @puckeditor/core/dist/index.css —
+ * `--puck-sidebar-left-width: var(--puck-user-sidebar-left-width, var(--puck-sidebar-width))`).
+ * Default sidebar width scales up to 320px on wide screens and default field/label
+ * font sizes (14-21px) ate too much of the canvas — flatten both down.
+ */
+:root {
+  --puck-user-sidebar-left-width: 210px;
+  --puck-user-sidebar-right-width: 210px;
+  --puck-font-size-xxs-unitless: 12;
+  --puck-font-size-xs-unitless: 13;
+  --puck-font-size-s-unitless: 15;
+  --puck-font-size-m-unitless: 17;
+}
