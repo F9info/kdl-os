@@ -53,6 +53,34 @@ function navLinksFor(pages) {
   return pages.map(({ title }) => `${title}|#`).join('\n');
 }
 
+const NAV_LINK_PROP_BY_BLOCK_TYPE = { NavBar: 'links', Footer: 'links', MedicalTopNav: 'navLinks' };
+
+// A page found via crash recovery (existing pageKeyToId entry, or an
+// orphaned page reused by slug — see drivers/index.js) is reused AS-IS,
+// never re-seeded — otherwise any edits the user made in the page-builder
+// editor would be silently wiped every time the stage re-runs. But that
+// means its nav/footer links, once written, never changed even when a
+// LATER run picked a totally different page set: only genuinely NEW pages
+// in that run got the current links, so newly-created pages linked
+// correctly while old reused ones (almost always 'home') kept showing
+// whatever page set existed when they were first created. Surgically
+// patch just the nav-carrying blocks' link prop to the current page set,
+// leaving every other block on the page untouched. Returns null when
+// nothing actually needs to change (avoids a pointless write + activity-log
+// entry on a re-run with the same selection).
+export function patchNavLinks(data, pages) {
+  if (!data?.content) return null;
+  const links = navLinksFor(pages);
+  let changed = false;
+  const content = data.content.map((block) => {
+    const propName = NAV_LINK_PROP_BY_BLOCK_TYPE[block.type];
+    if (!propName || block.props?.[propName] === links) return block;
+    changed = true;
+    return { ...block, props: { ...block.props, [propName]: links } };
+  });
+  return changed ? { ...data, content } : null;
+}
+
 // Brand kit fields (logo, company name, extracted primary colour) are
 // optional — a fresh project with no approved brand kit yet still seeds
 // pages, falling back to the generic "Your Brand" copy/colors below.

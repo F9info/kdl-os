@@ -32,11 +32,12 @@ import {
 
 import { getMediaById } from '../../media/service.js';
 
-import { createPage, getPage, getPageBySlug } from '../../page-builder/service.js';
+import { createPage, updatePage, getPage, getPageBySlug } from '../../page-builder/service.js';
 import {
   seedWebsitePageData,
   seedMedicalPageData,
   seedConstructionPageData,
+  patchNavLinks,
 } from './website-seed-content.js';
 
 import { prisma } from '../../../config/database.js';
@@ -343,11 +344,21 @@ const websiteDriver = {
 
       // Every page's own nav/footer links to every OTHER page in this same
       // run (seedPages) — not just Home/About/Contact — so "View all pages"
-      // can actually step through everything just assembled.
-      const page = existing ?? await createPage(
-        { title, slug, data: seed(key, title, brand, seedPages) },
-        userId,
-      );
+      // can actually step through everything just assembled. A reused
+      // existing page (this key already had a page before this run) is
+      // never re-seeded wholesale — that would wipe any edits made in the
+      // page-builder editor — but its nav/footer links DO need to track
+      // navigationPages changes across runs, so patch just those blocks.
+      let page;
+      if (existing) {
+        const patchedData = patchNavLinks(existing.data, seedPages);
+        page = patchedData ? await updatePage(existing.id, { data: patchedData }, userId) : existing;
+      } else {
+        page = await createPage(
+          { title, slug, data: seed(key, title, brand, seedPages) },
+          userId,
+        );
+      }
 
       pageKeyToId[key] = page.id;
       pageKeyToTitle[key] = title;

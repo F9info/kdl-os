@@ -30,6 +30,7 @@ vi.mock('../../collateral/service.js', () => ({
 
 vi.mock('../../page-builder/service.js', () => ({
   createPage:    vi.fn(),
+  updatePage:    vi.fn(),
   getPage:       vi.fn(),
   // Defaults to "no orphaned page with this slug" so every existing test
   // (which doesn't care about the orphan-recovery path) keeps working
@@ -63,7 +64,7 @@ import {
   renderAsset,
 } from '../../collateral/service.js';
 
-import { createPage, getPage, getPageBySlug } from '../../page-builder/service.js';
+import { createPage, updatePage, getPage, getPageBySlug } from '../../page-builder/service.js';
 
 import { prisma } from '../../../config/database.js';
 
@@ -470,6 +471,57 @@ describe('website driver — crash recovery (§4.1)', () => {
 
     expect(createPage).not.toHaveBeenCalled();
     expect(result.outputRef.pageIds).toEqual(['page-home', 'page-about', 'page-contact']);
+  });
+
+  it('patches a reused page\'s nav links to the current selection without touching the rest of its content (KDL bug repro)', async () => {
+    // 'home' already exists from a much earlier run whose page set was just
+    // Home/About/Contact — its stored NavBar still says so. This run picks
+    // a different, larger set; 'home' must be reused (not re-seeded, or a
+    // user's manual edits to it would be destroyed) but its nav must catch up.
+    const staleContent = [
+      { type: 'MedicalTopNav', props: { navLinks: 'Home|#\nAbout|#\nContact|#', brand: 'Custom edited brand' } },
+      { type: 'FeatureCards', props: { sectionTitle: 'A user hand-edited this section' } },
+    ];
+    const priorMap = { home: 'page-home' };
+    getPage.mockResolvedValueOnce({ id: 'page-home', data: { content: staleContent } });
+    updatePage.mockResolvedValueOnce({ id: 'page-home' });
+    createPage.mockResolvedValueOnce({ id: 'page-blog' });
+
+    const result = await getDriver('website').execute({
+      run: makeRun(),
+      stageRecord: makeStageRecord({ pageKeyToId: priorMap }),
+      userId: 'user-1',
+      projectId: 'proj-A',
+      navigationPages: ['Home', 'Blog'],
+    });
+
+    expect(updatePage).toHaveBeenCalledTimes(1);
+    const [updatedId, patch] = updatePage.mock.calls[0];
+    expect(updatedId).toBe('page-home');
+    const patchedNav = patch.data.content.find((b) => b.type === 'MedicalTopNav');
+    expect(patchedNav.props.navLinks).toBe('Home|#\nBlog|#');
+    // The hand-edited brand name and the unrelated content block survive untouched.
+    expect(patchedNav.props.brand).toBe('Custom edited brand');
+    expect(patch.data.content.find((b) => b.type === 'FeatureCards').props.sectionTitle).toBe(
+      'A user hand-edited this section',
+    );
+    expect(result.outputRef.pageKeyToId).toMatchObject({ home: 'page-home', blog: 'page-blog' });
+  });
+
+  it('does not call updatePage when a reused page\'s nav links already match (no pointless write)', async () => {
+    const upToDateContent = [{ type: 'NavBar', props: { links: 'Home|#' } }];
+    getPage.mockResolvedValueOnce({ id: 'page-home', data: { content: upToDateContent } });
+
+    await getDriver('website').execute({
+      run: makeRun(),
+      stageRecord: makeStageRecord({ pageKeyToId: { home: 'page-home' } }),
+      userId: 'user-1',
+      projectId: 'proj-A',
+      navigationPages: ['Home'],
+    });
+
+    expect(updatePage).not.toHaveBeenCalled();
+    expect(createPage).not.toHaveBeenCalled();
   });
 });
 
