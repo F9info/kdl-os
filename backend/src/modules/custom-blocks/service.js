@@ -1,6 +1,8 @@
 import { prisma } from '../../config/database.js';
 import { writeActivityAsync } from '../user-management/shared/activity-logger.js';
 
+const NOT_FOUND = () => Object.assign(new Error('Custom block not found'), { status: 404 });
+
 export const listCustomBlocks = async (projectId, categoryKey) => {
   return prisma.customBlockTemplate.findMany({
     where: { project_id: projectId, category_key: categoryKey, deleted_at: null },
@@ -8,8 +10,10 @@ export const listCustomBlocks = async (projectId, categoryKey) => {
   });
 };
 
-export const getCustomBlock = async (id) => {
-  return prisma.customBlockTemplate.findFirst({ where: { id, deleted_at: null } });
+export const getCustomBlock = async (id, projectId) => {
+  return prisma.customBlockTemplate.findFirst({
+    where: { id, project_id: projectId, deleted_at: null },
+  });
 };
 
 export const createCustomBlock = async (data, actorId) => {
@@ -35,13 +39,23 @@ export const createCustomBlock = async (data, actorId) => {
   return block;
 };
 
-export const updateCustomBlock = async (id, patch, actorId) => {
+// `projectId` here is the caller's already-access-checked project (from the
+// requireProject middleware) — scoping the update by both id AND project_id
+// means an id belonging to a different project simply matches zero rows
+// (Prisma throws P2025, caught by the caller as a 404) instead of silently
+// mutating another project's data (KDL security review finding).
+export const updateCustomBlock = async (id, projectId, patch, actorId) => {
   const data = {};
   if (patch.name !== undefined) data.name = patch.name;
   if (patch.description !== undefined) data.description = patch.description;
   if (patch.status !== undefined) data.status = patch.status;
   if (patch.config !== undefined) data.config = patch.config;
-  const block = await prisma.customBlockTemplate.update({ where: { id }, data });
+  const { count } = await prisma.customBlockTemplate.updateMany({
+    where: { id, project_id: projectId, deleted_at: null },
+    data,
+  });
+  if (count === 0) throw NOT_FOUND();
+  const block = await prisma.customBlockTemplate.findFirst({ where: { id } });
   writeActivityAsync({
     actor: actorId,
     module: 'custom-blocks',
@@ -53,9 +67,11 @@ export const updateCustomBlock = async (id, patch, actorId) => {
   return block;
 };
 
-export const duplicateCustomBlock = async (id, actorId) => {
-  const src = await prisma.customBlockTemplate.findFirst({ where: { id, deleted_at: null } });
-  if (!src) throw Object.assign(new Error('Custom block not found'), { status: 404 });
+export const duplicateCustomBlock = async (id, projectId, actorId) => {
+  const src = await prisma.customBlockTemplate.findFirst({
+    where: { id, project_id: projectId, deleted_at: null },
+  });
+  if (!src) throw NOT_FOUND();
   const copy = await prisma.customBlockTemplate.create({
     data: {
       project_id: src.project_id,
@@ -79,9 +95,11 @@ export const duplicateCustomBlock = async (id, actorId) => {
   return copy;
 };
 
-export const setDefaultCustomBlock = async (id, actorId) => {
-  const block = await prisma.customBlockTemplate.findFirst({ where: { id, deleted_at: null } });
-  if (!block) throw Object.assign(new Error('Custom block not found'), { status: 404 });
+export const setDefaultCustomBlock = async (id, projectId, actorId) => {
+  const block = await prisma.customBlockTemplate.findFirst({
+    where: { id, project_id: projectId, deleted_at: null },
+  });
+  if (!block) throw NOT_FOUND();
   await prisma.customBlockTemplate.updateMany({
     where: { project_id: block.project_id, category_key: block.category_key, is_default: true },
     data: { is_default: false },
@@ -101,18 +119,18 @@ export const setDefaultCustomBlock = async (id, actorId) => {
   return updated;
 };
 
-export const deleteCustomBlock = async (id, actorId) => {
-  const block = await prisma.customBlockTemplate.update({
-    where: { id },
+export const deleteCustomBlock = async (id, projectId, actorId) => {
+  const { count } = await prisma.customBlockTemplate.updateMany({
+    where: { id, project_id: projectId, deleted_at: null },
     data: { deleted_at: new Date() },
   });
+  if (count === 0) throw NOT_FOUND();
   writeActivityAsync({
     actor: actorId,
     module: 'custom-blocks',
     action: 'deleted',
     subject_type: 'CustomBlockTemplate',
     subject_id: id,
-    description: `Custom block "${block.name}" deleted`,
+    description: `Custom block deleted`,
   });
-  return block;
 };

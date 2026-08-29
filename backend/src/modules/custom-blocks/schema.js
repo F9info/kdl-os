@@ -8,7 +8,7 @@ const configSchema = z
   })
   .passthrough();
 
-export const createCustomBlockSchema = z.object({
+export const createCustomBlockBodySchema = z.object({
   projectId: z.string().min(1),
   categoryKey: z.string().min(1),
   name: z.string().min(1).max(200),
@@ -17,9 +17,34 @@ export const createCustomBlockSchema = z.object({
   config: configSchema,
 });
 
-export const updateCustomBlockSchema = z.object({
+export const updateCustomBlockBodySchema = z.object({
   name: z.string().min(1).max(200).optional(),
   description: z.string().max(1000).optional(),
   status: z.enum(['DRAFT', 'PUBLISHED']).optional(),
   config: configSchema.optional(),
+});
+
+// Wrapped shapes for the shared `validate(schema)` middleware, which parses
+// `{body, query, params}` together — see backend/src/middleware/validate.js.
+
+export const createCustomBlockSchema = z.object({
+  body: createCustomBlockBodySchema,
+});
+
+export const listCustomBlocksQuerySchema = z.object({
+  query: z.object({
+    projectId: z.string().min(1),
+    category: z.string().min(1),
+  }),
+});
+
+export const customBlockIdParamSchema = z.object({
+  params: z.object({
+    id: z.string().min(1),
+  }),
+});
+
+export const updateCustomBlockSchema = z.object({
+  body: updateCustomBlockBodySchema,
+  params: z.object({ id: z.string().min(1) }),
 });

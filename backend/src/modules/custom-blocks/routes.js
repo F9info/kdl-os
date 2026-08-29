@@ -1,6 +1,14 @@
 import { Router } from 'express';
 import { authenticate } from '../../middleware/auth.js';
 import { requirePermission } from '../../middleware/permission.js';
+import { requireProject } from '../../middleware/project.js';
+import { validate } from '../../middleware/validate.js';
+import {
+  createCustomBlockSchema,
+  listCustomBlocksQuerySchema,
+  customBlockIdParamSchema,
+  updateCustomBlockSchema,
+} from './schema.js';
 import {
   getAll,
   postCreate,
@@ -12,21 +20,49 @@ import {
 
 const router = Router();
 
-router.get('/', authenticate, requirePermission('page-builder', 'view'), getAll);
-router.post('/', authenticate, requirePermission('page-builder', 'add'), postCreate);
-router.put('/:id', authenticate, requirePermission('page-builder', 'edit'), putUpdate);
+router.use(authenticate);
+
+router.get(
+  '/',
+  requirePermission('page-builder', 'view'),
+  validate(listCustomBlocksQuerySchema),
+  requireProject('query'),
+  getAll
+);
+router.post(
+  '/',
+  requirePermission('page-builder', 'add'),
+  validate(createCustomBlockSchema),
+  requireProject('body'),
+  postCreate
+);
+router.put(
+  '/:id',
+  requirePermission('page-builder', 'edit'),
+  validate(updateCustomBlockSchema),
+  requireProject(),
+  putUpdate
+);
 router.post(
   '/:id/duplicate',
-  authenticate,
   requirePermission('page-builder', 'add'),
+  validate(customBlockIdParamSchema),
+  requireProject(),
   postDuplicate
 );
 router.post(
   '/:id/set-default',
-  authenticate,
   requirePermission('page-builder', 'edit'),
+  validate(customBlockIdParamSchema),
+  requireProject(),
   postSetDefault
 );
-router.delete('/:id', authenticate, requirePermission('page-builder', 'delete'), remove);
+router.delete(
+  '/:id',
+  requirePermission('page-builder', 'delete'),
+  validate(customBlockIdParamSchema),
+  requireProject(),
+  remove
+);
 
 export default router;

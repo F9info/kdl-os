@@ -1,14 +1,14 @@
 import { successResponse, errorResponse } from '../../shared/utils/response.js';
-import { createCustomBlockSchema, updateCustomBlockSchema } from './schema.js';
 import * as service from './service.js';
+
+// Project scope (req.projectId) is injected by the shared requireProject
+// middleware — it has already verified the caller has access to that
+// project (see backend/src/middleware/project.js).
 
 export const getAll = async (req, res, next) => {
   try {
-    const { projectId, category } = req.query;
-    if (!projectId || !category) {
-      return errorResponse(res, 'projectId and category query params are required', 400);
-    }
-    const items = await service.listCustomBlocks(String(projectId), String(category));
+    const { category } = req.validated.query;
+    const items = await service.listCustomBlocks(req.projectId, category);
     successResponse(res, { items });
   } catch (err) {
     next(err);
@@ -17,8 +17,7 @@ export const getAll = async (req, res, next) => {
 
 export const postCreate = async (req, res, next) => {
   try {
-    const data = createCustomBlockSchema.parse(req.body);
-    const block = await service.createCustomBlock(data, req.user?.id);
+    const block = await service.createCustomBlock(req.validated.body, req.user?.id);
     successResponse(res, { block }, 201);
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);
@@ -28,8 +27,12 @@ export const postCreate = async (req, res, next) => {
 
 export const putUpdate = async (req, res, next) => {
   try {
-    const patch = updateCustomBlockSchema.parse(req.body);
-    const block = await service.updateCustomBlock(req.params.id, patch, req.user?.id);
+    const block = await service.updateCustomBlock(
+      req.validated.params.id,
+      req.projectId,
+      req.validated.body,
+      req.user?.id
+    );
     successResponse(res, { block });
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);
@@ -39,7 +42,11 @@ export const putUpdate = async (req, res, next) => {
 
 export const postDuplicate = async (req, res, next) => {
   try {
-    const block = await service.duplicateCustomBlock(req.params.id, req.user?.id);
+    const block = await service.duplicateCustomBlock(
+      req.validated.params.id,
+      req.projectId,
+      req.user?.id
+    );
     successResponse(res, { block }, 201);
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);
@@ -49,7 +56,11 @@ export const postDuplicate = async (req, res, next) => {
 
 export const postSetDefault = async (req, res, next) => {
   try {
-    const block = await service.setDefaultCustomBlock(req.params.id, req.user?.id);
+    const block = await service.setDefaultCustomBlock(
+      req.validated.params.id,
+      req.projectId,
+      req.user?.id
+    );
     successResponse(res, { block });
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);
@@ -59,7 +70,7 @@ export const postSetDefault = async (req, res, next) => {
 
 export const remove = async (req, res, next) => {
   try {
-    await service.deleteCustomBlock(req.params.id, req.user?.id);
+    await service.deleteCustomBlock(req.validated.params.id, req.projectId, req.user?.id);
     successResponse(res, { ok: true });
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);

@@ -59,13 +59,41 @@ describe('createCustomBlock', () => {
   });
 });
 
+describe('updateCustomBlock', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('scopes the update by id + project_id, 404s when 0 rows match (cross-project id)', async () => {
+    mockPrisma.customBlockTemplate.updateMany.mockResolvedValue({ count: 0 });
+    await expect(
+      service.updateCustomBlock('cb-1', 'proj-1', { name: 'New name' }, 'user-1')
+    ).rejects.toMatchObject({ status: 404 });
+    expect(mockPrisma.customBlockTemplate.updateMany).toHaveBeenCalledWith({
+      where: { id: 'cb-1', project_id: 'proj-1', deleted_at: null },
+      data: { name: 'New name' },
+    });
+    expect(mockPrisma.customBlockTemplate.findFirst).not.toHaveBeenCalled();
+  });
+
+  it('applies the patch when the id belongs to the caller-authorized project', async () => {
+    mockPrisma.customBlockTemplate.updateMany.mockResolvedValue({ count: 1 });
+    mockPrisma.customBlockTemplate.findFirst.mockResolvedValue({ id: 'cb-1', name: 'New name' });
+
+    const result = await service.updateCustomBlock('cb-1', 'proj-1', { name: 'New name' }, 'user-1');
+
+    expect(result.name).toBe('New name');
+  });
+});
+
 describe('duplicateCustomBlock', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('throws a 404 error when the source block does not exist', async () => {
+  it('throws a 404 when the source id does not belong to the caller-authorized project', async () => {
     mockPrisma.customBlockTemplate.findFirst.mockResolvedValue(null);
-    await expect(service.duplicateCustomBlock('missing', 'user-1')).rejects.toMatchObject({
+    await expect(service.duplicateCustomBlock('missing', 'proj-1', 'user-1')).rejects.toMatchObject({
       status: 404,
+    });
+    expect(mockPrisma.customBlockTemplate.findFirst).toHaveBeenCalledWith({
+      where: { id: 'missing', project_id: 'proj-1', deleted_at: null },
     });
   });
 
@@ -80,7 +108,7 @@ describe('duplicateCustomBlock', () => {
     });
     mockPrisma.customBlockTemplate.create.mockResolvedValue({ id: 'cb-2', name: 'My Hero Copy' });
 
-    await service.duplicateCustomBlock('cb-1', 'user-1');
+    await service.duplicateCustomBlock('cb-1', 'proj-1', 'user-1');
 
     expect(mockPrisma.customBlockTemplate.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
@@ -99,6 +127,14 @@ describe('duplicateCustomBlock', () => {
 describe('setDefaultCustomBlock', () => {
   beforeEach(() => vi.clearAllMocks());
 
+  it('404s when the id does not belong to the caller-authorized project', async () => {
+    mockPrisma.customBlockTemplate.findFirst.mockResolvedValue(null);
+    await expect(service.setDefaultCustomBlock('cb-1', 'proj-1', 'user-1')).rejects.toMatchObject({
+      status: 404,
+    });
+    expect(mockPrisma.customBlockTemplate.updateMany).not.toHaveBeenCalled();
+  });
+
   it('clears is_default on siblings in the same project+category before setting it', async () => {
     mockPrisma.customBlockTemplate.findFirst.mockResolvedValue({
       id: 'cb-1',
@@ -108,8 +144,11 @@ describe('setDefaultCustomBlock', () => {
     mockPrisma.customBlockTemplate.updateMany.mockResolvedValue({ count: 2 });
     mockPrisma.customBlockTemplate.update.mockResolvedValue({ id: 'cb-1', is_default: true });
 
-    await service.setDefaultCustomBlock('cb-1', 'user-1');
+    await service.setDefaultCustomBlock('cb-1', 'proj-1', 'user-1');
 
+    expect(mockPrisma.customBlockTemplate.findFirst).toHaveBeenCalledWith({
+      where: { id: 'cb-1', project_id: 'proj-1', deleted_at: null },
+    });
     expect(mockPrisma.customBlockTemplate.updateMany).toHaveBeenCalledWith({
       where: { project_id: 'proj-1', category_key: 'hero', is_default: true },
       data: { is_default: false },
@@ -124,11 +163,18 @@ describe('setDefaultCustomBlock', () => {
 describe('deleteCustomBlock', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('soft-deletes by setting deleted_at', async () => {
-    mockPrisma.customBlockTemplate.update.mockResolvedValue({ id: 'cb-1', name: 'My Hero' });
-    await service.deleteCustomBlock('cb-1', 'user-1');
-    expect(mockPrisma.customBlockTemplate.update).toHaveBeenCalledWith({
-      where: { id: 'cb-1' },
+  it('404s when the id does not belong to the caller-authorized project', async () => {
+    mockPrisma.customBlockTemplate.updateMany.mockResolvedValue({ count: 0 });
+    await expect(service.deleteCustomBlock('cb-1', 'proj-1', 'user-1')).rejects.toMatchObject({
+      status: 404,
+    });
+  });
+
+  it('soft-deletes by setting deleted_at, scoped by id + project_id', async () => {
+    mockPrisma.customBlockTemplate.updateMany.mockResolvedValue({ count: 1 });
+    await service.deleteCustomBlock('cb-1', 'proj-1', 'user-1');
+    expect(mockPrisma.customBlockTemplate.updateMany).toHaveBeenCalledWith({
+      where: { id: 'cb-1', project_id: 'proj-1', deleted_at: null },
       data: { deleted_at: expect.any(Date) },
     });
   });
