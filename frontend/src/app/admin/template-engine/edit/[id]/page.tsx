@@ -3,11 +3,13 @@
 import Link from 'next/link'
 import { useParams, useSearchParams } from 'next/navigation'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Puck, type Data } from '@puckeditor/core'
+import { Puck, blocksPlugin, type Data } from '@puckeditor/core'
 import '@puckeditor/core/puck.css'
 import { ArrowLeft } from 'lucide-react'
 import { ModuleGuard } from '@/components/shared/ModuleGuard'
 import { toast } from '@/hooks/use-toast'
+import { BlocksPanel } from '../../../page-builder/blocks-panel'
+import { InsertBlockButton } from '../../../page-builder/insert-block-modal'
 import { config } from '../../../page-builder/puck.config'
 import { getPage, savePage } from '../../../page-builder/store'
 
@@ -70,10 +72,39 @@ export default function TemplateEngineEditPage() {
 
   return (
     <ModuleGuard slug="template-engine">
-      <div className="h-screen">
+      <div className="te-outline-right h-screen [&_[class*=PuckLayout-nav]]:hidden">
+        {/* Puck hardwires Outline to grid-area "left" / Fields to "right" — no
+            public prop for this. Swap by moving the area tokens to the
+            opposite physical column (and the matching width var with them)
+            instead of forcing grid-area on the content, so each sidebar's
+            resize handle (sibling-selector-bound to the same area name)
+            still tracks its panel. Known gap: the desktop "outline only,
+            fields hidden" state isn't in puck.css at all (falls back to
+            both-hidden) so there's nothing to mirror for it. */}
+        <style>{`
+          .te-outline-right [class*="PuckLayout-inner_"] {
+            --puck-pluginbar-width: 0px !important;
+          }
+          .te-outline-right [class*="SidebarSection-heading_"] [class*="Heading_"] {
+            font-size: 13px !important;
+          }
+          @media (min-width: 638px) {
+            .te-outline-right [class*="PuckLayout-inner_"] {
+              grid-template-areas: "header header header header" "sidenav right editor left" !important;
+            }
+            .te-outline-right [class*="PuckLayout--rightSideBarVisible_"] [class*="PuckLayout-inner_"] {
+              grid-template-columns: var(--puck-pluginbar-width) var(--puck-sidebar-right-width) var(--puck-frame-width) 0 !important;
+            }
+            .te-outline-right [class*="PuckLayout--leftSideBarVisible_"][class*="PuckLayout--rightSideBarVisible_"] [class*="PuckLayout-inner_"] {
+              grid-template-columns: var(--puck-pluginbar-width) var(--puck-sidebar-right-width) var(--puck-frame-width) var(--puck-sidebar-left-width) !important;
+            }
+          }
+        `}</style>
         <Puck
           config={config}
           data={page.data}
+          plugins={[blocksPlugin()]}
+          ui={{ leftSideBarWidth: 280 }}
           iframe={{ enabled: false }}
           viewports={[
             { width: 390, label: 'Mobile' },
@@ -92,8 +123,12 @@ export default function TemplateEngineEditPage() {
                 >
                   <ArrowLeft size={15} /> Back
                 </Link>
+                <InsertBlockButton />
                 {children}
               </>
+            ),
+            fields: ({ children, itemSelector }) => (
+              <BlocksPanel itemSelector={itemSelector}>{children}</BlocksPanel>
             ),
           }}
         />

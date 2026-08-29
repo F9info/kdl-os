@@ -7,6 +7,8 @@ import '@puckeditor/core/puck.css'
 import { ArrowLeft, ExternalLink } from 'lucide-react'
 import { ModuleGuard } from '@/components/shared/ModuleGuard'
 import { toast } from '@/hooks/use-toast'
+import { BlocksPanel } from '../blocks-panel'
+import { InsertBlockButton } from '../insert-block-modal'
 import { config } from '../puck.config'
 import { getPage, savePage } from '../store'
 
@@ -92,8 +94,12 @@ export default function PageBuilderEditor() {
                 >
                   <ExternalLink size={15} /> View
                 </a>
+                <InsertBlockButton />
                 {children}
               </>
+            ),
+            fields: ({ children, itemSelector }) => (
+              <BlocksPanel itemSelector={itemSelector}>{children}</BlocksPanel>
             ),
           }}
         />

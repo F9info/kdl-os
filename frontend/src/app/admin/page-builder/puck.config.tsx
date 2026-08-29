@@ -26,6 +26,16 @@ const root: Config['root'] = {
 
 export const config = composePacks(root, [general, construction, medical])
 
+/**
+ * Component key -> ordered `variant` values, merged from every pack. Powers
+ * the "Insert a block" modal's per-variant preview cards.
+ */
+export const blockVariants: Record<string, string[]> = {
+  ...general.variants,
+  ...construction.variants,
+  ...medical.variants,
+}
+
 export const emptyData: Data = {
   root: { props: { title: 'Untitled page' } },
   content: [],
