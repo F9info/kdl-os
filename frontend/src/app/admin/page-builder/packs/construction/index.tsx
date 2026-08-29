@@ -1,5 +1,6 @@
 import type { Config } from '@puckeditor/core'
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import type { ComponentPack } from '../types'
 
 // ── shared helpers ────────────────────────────────────────────────────────────
@@ -558,100 +559,32 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         .filter(([label]) => label)
       const ctaStyle = primaryColor ? { backgroundColor: primaryColor } : undefined
       return (
-        <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-100">
-          <div className={`${wrap} flex items-center justify-between h-16`}>
-            <a href="#" className="flex items-center gap-2 font-bold text-slate-900">
-              {logoUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={logoUrl} alt={brand} className="h-8 w-auto" />
-              )}
-              <span>{brand}</span>
-            </a>
-            <nav className="hidden md:flex items-center gap-7">
-              {navItems.map(([label, href], i) => (
-                <a
-                  key={i}
-                  href={href || '#'}
-                  className="text-sm font-medium text-slate-700 hover:text-orange-500 transition"
-                >
-                  {label}
-                </a>
-              ))}
-            </nav>
-            <div className="hidden md:flex items-center gap-3">
-              {loginLabel && (
-                <a
-                  href={loginHref}
-                  className="inline-flex items-center rounded-lg border-2 border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50 transition"
-                >
-                  {loginLabel}
-                </a>
-              )}
-              {ctaLabel && (
-                <a
-                  href={ctaHref}
-                  style={ctaStyle}
-                  className="inline-flex items-center rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 transition"
-                >
-                  {ctaLabel}
-                </a>
-              )}
-            </div>
-            <button
-              type="button"
-              aria-label="Toggle menu"
-              onClick={() => setMobileOpen(true)}
-              className="md:hidden p-2 -mr-2 text-slate-700"
-            >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-          </div>
-          {mobileOpen && (
-            <div className="fixed inset-0 z-50 bg-white flex flex-col p-6 md:hidden">
-              <div className="flex items-center justify-between mb-8">
-                <span className="font-bold text-slate-900">{brand}</span>
-                <button
-                  type="button"
-                  aria-label="Close menu"
-                  onClick={() => setMobileOpen(false)}
-                  className="p-2 -mr-2 text-slate-700"
-                >
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <nav className="flex flex-col gap-5 mb-8">
+        <>
+          <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-100">
+            <div className={`${wrap} flex items-center justify-between h-16`}>
+              <a href="#" className="flex items-center gap-2 font-bold text-slate-900">
+                {logoUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={logoUrl} alt={brand} className="h-8 w-auto" />
+                )}
+                <span>{brand}</span>
+              </a>
+              <nav className="hidden md:flex items-center gap-7">
                 {navItems.map(([label, href], i) => (
                   <a
                     key={i}
                     href={href || '#'}
-                    onClick={() => setMobileOpen(false)}
-                    className="text-lg font-medium text-slate-900"
+                    className="text-sm font-medium text-slate-700 hover:text-orange-500 transition"
                   >
                     {label}
                   </a>
                 ))}
               </nav>
-              <div className="flex flex-col gap-3 mt-auto">
+              <div className="hidden md:flex items-center gap-3">
                 {loginLabel && (
                   <a
                     href={loginHref}
-                    className="inline-flex items-center justify-center rounded-lg border-2 border-slate-300 px-4 py-3 text-sm font-semibold text-slate-900"
+                    className="inline-flex items-center rounded-lg border-2 border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50 transition"
                   >
                     {loginLabel}
                   </a>
@@ -660,15 +593,88 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   <a
                     href={ctaHref}
                     style={ctaStyle}
-                    className="inline-flex items-center justify-center rounded-lg bg-orange-500 px-4 py-3 text-sm font-semibold text-white"
+                    className="inline-flex items-center rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 transition"
                   >
                     {ctaLabel}
                   </a>
                 )}
               </div>
+              <button
+                type="button"
+                aria-label="Toggle menu"
+                onClick={() => setMobileOpen(true)}
+                className="md:hidden p-2 -mr-2 text-slate-700"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
             </div>
-          )}
-        </header>
+          </header>
+          {mobileOpen &&
+            typeof document !== 'undefined' &&
+            createPortal(
+              <div className="fixed inset-0 z-50 bg-white flex flex-col p-6 md:hidden">
+                <div className="flex items-center justify-between mb-8">
+                  <span className="font-bold text-slate-900">{brand}</span>
+                  <button
+                    type="button"
+                    aria-label="Close menu"
+                    onClick={() => setMobileOpen(false)}
+                    className="p-2 -mr-2 text-slate-700"
+                  >
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <nav className="flex flex-col gap-5 mb-8">
+                  {navItems.map(([label, href], i) => (
+                    <a
+                      key={i}
+                      href={href || '#'}
+                      onClick={() => setMobileOpen(false)}
+                      className="text-lg font-medium text-slate-900"
+                    >
+                      {label}
+                    </a>
+                  ))}
+                </nav>
+                <div className="flex flex-col gap-3 mt-auto">
+                  {loginLabel && (
+                    <a
+                      href={loginHref}
+                      className="inline-flex items-center justify-center rounded-lg border-2 border-slate-300 px-4 py-3 text-sm font-semibold text-slate-900"
+                    >
+                      {loginLabel}
+                    </a>
+                  )}
+                  {ctaLabel && (
+                    <a
+                      href={ctaHref}
+                      style={ctaStyle}
+                      className="inline-flex items-center justify-center rounded-lg bg-orange-500 px-4 py-3 text-sm font-semibold text-white"
+                    >
+                      {ctaLabel}
+                    </a>
+                  )}
+                </div>
+              </div>,
+              document.body
+            )}
+        </>
       )
     },
   },
