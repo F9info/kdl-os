@@ -151,24 +151,42 @@ const HERO_BY_KEY = {
   },
 };
 
-// Every page normalizes to exactly 4 blocks — nav, hero, one content block,
-// footer — matching the design prototype's leaner per-page structure.
+// About/Contact normalize to exactly 4 blocks — nav, hero, one content
+// block, footer — matching the design prototype's leaner per-page
+// structure. Home is deliberately richer: every real Medical* section gets
+// used at least once here so each one's 4 designs (variant '1'-'4') are
+// actually reachable somewhere, not just defined in code — each section
+// below is pinned to a different variant for visual variety. Static pick
+// for now (per explicit instruction); revisit once there's a real "best
+// design per section" signal instead of a hand-picked default.
 const MIDDLE_BLOCK_BY_KEY = {
-  home: (pageKey) => block(pageKey, 'FeatureCards', FEATURE_CARDS),
-  about: (pageKey) =>
+  home: (pageKey) => [
+    block(pageKey, 'FeatureCards', FEATURE_CARDS),
+    block(pageKey, 'MedicalServicesList', MEDICAL_SERVICES_LIST),
+    block(pageKey, 'MedicalDepartmentCards', MEDICAL_DEPARTMENT_CARDS),
+    block(pageKey, 'MedicalDoctorProfiles', MEDICAL_DOCTOR_PROFILES),
+    block(pageKey, 'MedicalPatientTestimonials', MEDICAL_PATIENT_TESTIMONIALS),
+    block(pageKey, 'MedicalInsuranceStrip', MEDICAL_INSURANCE_STRIP),
+    block(pageKey, 'MedicalAppointmentCTA', MEDICAL_APPOINTMENT_CTA),
+    block(pageKey, 'MedicalContactHours', MEDICAL_CONTACT_HOURS),
+    block(pageKey, 'MedicalFAQ', MEDICAL_FAQ),
+  ],
+  about: (pageKey) => [
     block(pageKey, 'Text', {
       variant: '1',
       text: 'We started with a simple idea: building a website should not require writing code. Today our platform powers pages for teams of every size.',
       align: 'left',
       muted: false,
     }),
-  contact: (pageKey) =>
+  ],
+  contact: (pageKey) => [
     block(pageKey, 'Text', {
       variant: '1',
       text: 'Have a question or want a demo? Send us a message and our team will get back to you within one business day.',
       align: 'left',
       muted: false,
     }),
+  ],
 };
 
 function headerBlocks(pageKey, brand) {
@@ -188,7 +206,7 @@ export function seedWebsitePageData(pageKey, pageTitle, brand = {}) {
   const buildMiddle = MIDDLE_BLOCK_BY_KEY[pageKey] ?? MIDDLE_BLOCK_BY_KEY.home;
   const content = [
     ...headerBlocks(pageKey, brand),
-    buildMiddle(pageKey),
+    ...buildMiddle(pageKey),
     block(pageKey, 'Footer', footerProps(brand)),
   ];
   return { root: { props: { title: pageTitle } }, content, zones: {} };
@@ -235,6 +253,7 @@ const MEDICAL_HERO_BY_KEY = {
 };
 
 const MEDICAL_SERVICES_LIST = {
+  variant: '1',
   sectionTitle: 'Our Services',
   sectionSubtitle: 'Comprehensive healthcare solutions tailored to your needs.',
   services: [
@@ -247,7 +266,22 @@ const MEDICAL_SERVICES_LIST = {
   ].join('\n'),
 };
 
+const MEDICAL_DEPARTMENT_CARDS = {
+  variant: '2',
+  sectionTitle: 'Our Departments',
+  sectionSubtitle: 'State-of-the-art facilities across all major medical disciplines.',
+  departments: [
+    '❤️ | Cardiac Sciences | Advanced heart care & cath lab | #cardiac',
+    '🧠 | Neurosciences | Stroke, epilepsy & spine | #neuro',
+    '👶 | Paediatrics | Child health from birth | #paediatrics',
+    '🩻 | Radiology | MRI, CT & interventional imaging | #radiology',
+    '🔬 | Pathology | Lab diagnostics & blood tests | #pathology',
+    '🏃 | Physiotherapy | Rehabilitation & sports medicine | #physio',
+  ].join('\n'),
+};
+
 const MEDICAL_DOCTOR_PROFILES = {
+  variant: '3',
   sectionTitle: 'Meet Our Specialists',
   sectionSubtitle: 'Experienced, board-certified doctors dedicated to your care.',
   doctors: [
@@ -258,7 +292,34 @@ const MEDICAL_DOCTOR_PROFILES = {
   ].join('\n'),
 };
 
+const MEDICAL_INSURANCE_STRIP = {
+  variant: '3',
+  heading: 'We Accept All Major Insurers',
+  logos: [
+    `${dummyImage(120, 48, 'Star Health')} | Star Health`,
+    `${dummyImage(120, 48, 'HDFC Ergo')} | HDFC Ergo`,
+    `${dummyImage(120, 48, 'Bajaj Allianz')} | Bajaj Allianz`,
+    `${dummyImage(120, 48, 'New India')} | New India Assurance`,
+    `${dummyImage(120, 48, 'Care Health')} | Care Health`,
+  ].join('\n'),
+  note: "Don't see your insurer? Call us and we'll help.",
+};
+
+const MEDICAL_FAQ = {
+  variant: '1',
+  sectionTitle: 'Frequently Asked Questions',
+  sectionSubtitle: 'Answers to common questions about our services and procedures.',
+  items: [
+    'How do I book an appointment? | You can book online through our website or call our helpline.',
+    'Do you accept walk-in patients? | Yes, walk-ins are welcome but appointments are prioritised.',
+    'Is cashless insurance available? | We are empanelled with 30+ insurers for cashless treatment.',
+    'What are the visiting hours? | General visiting hours are 10 AM – 12 PM and 4 PM – 7 PM.',
+    'Are second opinions available? | Yes, our specialists are happy to provide second opinions.',
+  ].join('\n'),
+};
+
 const MEDICAL_APPOINTMENT_CTA = {
+  variant: '2',
   headline: 'Ready to See a Doctor?',
   subtext: 'Book online in minutes or call us to speak with our care team.',
   primaryLabel: 'Book Appointment Online',
@@ -269,6 +330,7 @@ const MEDICAL_APPOINTMENT_CTA = {
 };
 
 const MEDICAL_PATIENT_TESTIMONIALS = {
+  variant: '3',
   sectionTitle: 'What Our Patients Say',
   sectionSubtitle: "Real stories from people we've helped on their healing journey.",
   testimonials: [
@@ -280,6 +342,7 @@ const MEDICAL_PATIENT_TESTIMONIALS = {
 };
 
 const MEDICAL_CONTACT_HOURS = {
+  variant: '3',
   sectionTitle: 'Contact Us',
   address: '42, Healthcare Avenue\nMedical District, Bangalore – 560001\nKarnataka, India',
   phone: '+91 80 4567 8900',
