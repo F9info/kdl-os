@@ -717,9 +717,10 @@ describe('website driver — construction pack seeding (KDL-558 homepage)', () =
     const navBar = aboutCall.data.content.find((b) => b.type === 'NavBar');
     const hero = aboutCall.data.content.find((b) => b.type === 'ConstructionHero');
     expect(navBar).toBeTruthy();
-    expect(hero.props.headline).toBe('About Our Company');
-    // New shape's slide1Image must be populated so ConstructionHero's
+    expect(hero.props.variant).toBe('2');
+    expect(hero.props.d2Headline).toBe('About Our Company');
+    // New shape's d2Slide1Image must be populated so ConstructionHero's
     // slider never renders empty on non-home pages after the shape change.
-    expect(hero.props.slide1Image).toBeTruthy();
+    expect(hero.props.d2Slide1Image).toBeTruthy();
   });
 });

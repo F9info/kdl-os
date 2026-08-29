@@ -63,38 +63,80 @@ type ConstructionProps = {
     d4Language: string
   }
   ConstructionHero: {
-    badgeText: string
-    headline: string
-    highlightWord: string
-    subheadline: string
-    ctaLabel: string
-    ctaHref: string
-    secondaryLabel: string
-    secondaryHref: string
-    avatar1: string
-    avatar2: string
-    avatar3: string
-    trustText: string
-    slide1Image: string
-    slide1Tag: string
-    slide1Title: string
-    slide1Subtitle: string
-    slide2Image: string
-    slide2Tag: string
-    slide2Title: string
-    slide2Subtitle: string
-    slide3Image: string
-    slide3Tag: string
-    slide3Title: string
-    slide3Subtitle: string
-    slide4Image: string
-    slide4Tag: string
-    slide4Title: string
-    slide4Subtitle: string
-    slide5Image: string
-    slide5Tag: string
-    slide5Title: string
-    slide5Subtitle: string
+    variant: '1' | '2' | '3' | '4'
+    visible: boolean
+    d1Slide1Image: string
+    d1Slide1Badge: string
+    d1Slide1Headline: string
+    d1Slide1Subheadline: string
+    d1Slide1CtaLabel: string
+    d1Slide1CtaHref: string
+    d1Slide2Image: string
+    d1Slide2Badge: string
+    d1Slide2Headline: string
+    d1Slide2Subheadline: string
+    d1Slide2CtaLabel: string
+    d1Slide2CtaHref: string
+    d1Slide3Image: string
+    d1Slide3Badge: string
+    d1Slide3Headline: string
+    d1Slide3Subheadline: string
+    d1Slide3CtaLabel: string
+    d1Slide3CtaHref: string
+    d2BadgeText: string
+    d2Headline: string
+    d2HighlightWord: string
+    d2Subheadline: string
+    d2CtaLabel: string
+    d2CtaHref: string
+    d2SecondaryLabel: string
+    d2SecondaryHref: string
+    d2Avatar1: string
+    d2Avatar2: string
+    d2Avatar3: string
+    d2TrustText: string
+    d2Slide1Image: string
+    d2Slide1Tag: string
+    d2Slide1Title: string
+    d2Slide1Subtitle: string
+    d2Slide2Image: string
+    d2Slide2Tag: string
+    d2Slide2Title: string
+    d2Slide2Subtitle: string
+    d2Slide3Image: string
+    d2Slide3Tag: string
+    d2Slide3Title: string
+    d2Slide3Subtitle: string
+    d3Eyebrow: string
+    d3Headline: string
+    d3Subheadline: string
+    d3CtaLabel: string
+    d3CtaHref: string
+    d3Slide1Image: string
+    d3Slide1Quote: string
+    d3Slide1Author: string
+    d3Slide1Role: string
+    d3Slide2Image: string
+    d3Slide2Quote: string
+    d3Slide2Author: string
+    d3Slide2Role: string
+    d3Slide3Image: string
+    d3Slide3Quote: string
+    d3Slide3Author: string
+    d3Slide3Role: string
+    d4Headline: string
+    d4Subheadline: string
+    d4CtaLabel: string
+    d4CtaHref: string
+    d4Slide1Icon: IconKey
+    d4Slide1Title: string
+    d4Slide1Description: string
+    d4Slide2Icon: IconKey
+    d4Slide2Title: string
+    d4Slide2Description: string
+    d4Slide3Icon: IconKey
+    d4Slide3Title: string
+    d4Slide3Description: string
   }
   ConstructionServicesGrid: {
     sectionTitle: string
@@ -1496,156 +1538,682 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     },
   },
 
-  // 1. Hero section
+  // 1. Hero section — 4 selectable designs, each a real 3-slide slider
   ConstructionHero: {
     label: 'Construction Hero',
     fields: {
-      badgeText: { type: 'text' },
-      headline: { type: 'text' },
-      highlightWord: { type: 'text' },
-      subheadline: { type: 'textarea' },
-      ctaLabel: { type: 'text' },
-      ctaHref: { type: 'text' },
-      secondaryLabel: { type: 'text' },
-      secondaryHref: { type: 'text' },
-      avatar1: { type: 'text' },
-      avatar2: { type: 'text' },
-      avatar3: { type: 'text' },
-      trustText: { type: 'text' },
-      slide1Image: { type: 'text' },
-      slide1Tag: { type: 'text' },
-      slide1Title: { type: 'text' },
-      slide1Subtitle: { type: 'textarea' },
-      slide2Image: { type: 'text' },
-      slide2Tag: { type: 'text' },
-      slide2Title: { type: 'text' },
-      slide2Subtitle: { type: 'textarea' },
-      slide3Image: { type: 'text' },
-      slide3Tag: { type: 'text' },
-      slide3Title: { type: 'text' },
-      slide3Subtitle: { type: 'textarea' },
-      slide4Image: { type: 'text' },
-      slide4Tag: { type: 'text' },
-      slide4Title: { type: 'text' },
-      slide4Subtitle: { type: 'textarea' },
-      slide5Image: { type: 'text' },
-      slide5Tag: { type: 'text' },
-      slide5Title: { type: 'text' },
-      slide5Subtitle: { type: 'textarea' },
+      variant: {
+        type: 'select',
+        options: [
+          { label: 'Design 1 — Full-bleed photo slider', value: '1' },
+          { label: 'Design 2 — Split with slider card', value: '2' },
+          { label: 'Design 3 — Centered rotating quote', value: '3' },
+          { label: 'Design 4 — Fixed headline + feature slider', value: '4' },
+        ],
+      },
+      visible: {
+        type: 'radio',
+        options: [
+          { label: 'Show', value: true },
+          { label: 'Hide', value: false },
+        ],
+      },
+      d1Slide1Image: { type: 'text' },
+      d1Slide1Badge: { type: 'text' },
+      d1Slide1Headline: { type: 'text' },
+      d1Slide1Subheadline: { type: 'textarea' },
+      d1Slide1CtaLabel: { type: 'text' },
+      d1Slide1CtaHref: { type: 'text' },
+      d1Slide2Image: { type: 'text' },
+      d1Slide2Badge: { type: 'text' },
+      d1Slide2Headline: { type: 'text' },
+      d1Slide2Subheadline: { type: 'textarea' },
+      d1Slide2CtaLabel: { type: 'text' },
+      d1Slide2CtaHref: { type: 'text' },
+      d1Slide3Image: { type: 'text' },
+      d1Slide3Badge: { type: 'text' },
+      d1Slide3Headline: { type: 'text' },
+      d1Slide3Subheadline: { type: 'textarea' },
+      d1Slide3CtaLabel: { type: 'text' },
+      d1Slide3CtaHref: { type: 'text' },
+      d2BadgeText: { type: 'text' },
+      d2Headline: { type: 'text' },
+      d2HighlightWord: { type: 'text' },
+      d2Subheadline: { type: 'textarea' },
+      d2CtaLabel: { type: 'text' },
+      d2CtaHref: { type: 'text' },
+      d2SecondaryLabel: { type: 'text' },
+      d2SecondaryHref: { type: 'text' },
+      d2Avatar1: { type: 'text' },
+      d2Avatar2: { type: 'text' },
+      d2Avatar3: { type: 'text' },
+      d2TrustText: { type: 'text' },
+      d2Slide1Image: { type: 'text' },
+      d2Slide1Tag: { type: 'text' },
+      d2Slide1Title: { type: 'text' },
+      d2Slide1Subtitle: { type: 'textarea' },
+      d2Slide2Image: { type: 'text' },
+      d2Slide2Tag: { type: 'text' },
+      d2Slide2Title: { type: 'text' },
+      d2Slide2Subtitle: { type: 'textarea' },
+      d2Slide3Image: { type: 'text' },
+      d2Slide3Tag: { type: 'text' },
+      d2Slide3Title: { type: 'text' },
+      d2Slide3Subtitle: { type: 'textarea' },
+      d3Eyebrow: { type: 'text' },
+      d3Headline: { type: 'text' },
+      d3Subheadline: { type: 'textarea' },
+      d3CtaLabel: { type: 'text' },
+      d3CtaHref: { type: 'text' },
+      d3Slide1Image: { type: 'text' },
+      d3Slide1Quote: { type: 'textarea' },
+      d3Slide1Author: { type: 'text' },
+      d3Slide1Role: { type: 'text' },
+      d3Slide2Image: { type: 'text' },
+      d3Slide2Quote: { type: 'textarea' },
+      d3Slide2Author: { type: 'text' },
+      d3Slide2Role: { type: 'text' },
+      d3Slide3Image: { type: 'text' },
+      d3Slide3Quote: { type: 'textarea' },
+      d3Slide3Author: { type: 'text' },
+      d3Slide3Role: { type: 'text' },
+      d4Headline: { type: 'text' },
+      d4Subheadline: { type: 'textarea' },
+      d4CtaLabel: { type: 'text' },
+      d4CtaHref: { type: 'text' },
+      d4Slide1Icon: {
+        type: 'select',
+        options: [
+          { label: 'Hard Hat', value: 'hardhat' },
+          { label: 'Shield', value: 'shield' },
+          { label: 'Star', value: 'star' },
+        ],
+      },
+      d4Slide1Title: { type: 'text' },
+      d4Slide1Description: { type: 'textarea' },
+      d4Slide2Icon: {
+        type: 'select',
+        options: [
+          { label: 'Hard Hat', value: 'hardhat' },
+          { label: 'Shield', value: 'shield' },
+          { label: 'Star', value: 'star' },
+        ],
+      },
+      d4Slide2Title: { type: 'text' },
+      d4Slide2Description: { type: 'textarea' },
+      d4Slide3Icon: {
+        type: 'select',
+        options: [
+          { label: 'Hard Hat', value: 'hardhat' },
+          { label: 'Shield', value: 'shield' },
+          { label: 'Star', value: 'star' },
+        ],
+      },
+      d4Slide3Title: { type: 'text' },
+      d4Slide3Description: { type: 'textarea' },
     },
     defaultProps: {
-      badgeText: 'Trusted General Contractor',
-      headline: 'Building Your Vision, On Time & On Budget',
-      highlightWord: 'Vision',
-      subheadline:
+      variant: '1',
+      visible: true,
+      d1Slide1Image: 'https://placehold.co/1600x900/1e293b/ffffff?text=Project+One',
+      d1Slide1Badge: 'Residential',
+      d1Slide1Headline: 'Building Homes That Last Generations',
+      d1Slide1Subheadline:
+        'Premium residential construction backed by two decades of craftsmanship.',
+      d1Slide1CtaLabel: 'Get a Free Quote',
+      d1Slide1CtaHref: '#quote',
+      d1Slide2Image: 'https://placehold.co/1600x900/334155/ffffff?text=Project+Two',
+      d1Slide2Badge: 'Commercial',
+      d1Slide2Headline: 'Commercial Spaces Built On Schedule',
+      d1Slide2Subheadline:
+        'From office parks to retail complexes, delivered on time and on budget.',
+      d1Slide2CtaLabel: 'See Our Work',
+      d1Slide2CtaHref: '#projects',
+      d1Slide3Image: 'https://placehold.co/1600x900/0f172a/ffffff?text=Project+Three',
+      d1Slide3Badge: 'Infrastructure',
+      d1Slide3Headline: 'Infrastructure That Moves Communities Forward',
+      d1Slide3Subheadline:
+        'Roads, bridges, and public works engineered to the highest safety standard.',
+      d1Slide3CtaLabel: 'Start Your Project',
+      d1Slide3CtaHref: '#quote',
+      d2BadgeText: 'Trusted General Contractor',
+      d2Headline: 'Building Your Vision, On Time & On Budget',
+      d2HighlightWord: 'Vision',
+      d2Subheadline:
         'Award-winning general contractor serving residential and commercial clients across the region. Licensed, insured, and safety-certified.',
-      ctaLabel: 'Get a Free Quote',
-      ctaHref: '#quote',
-      secondaryLabel: 'See Our Work',
-      secondaryHref: '#projects',
-      avatar1: 'https://placehold.co/80x80/475569/ffffff?text=C1',
-      avatar2: 'https://placehold.co/80x80/334155/ffffff?text=C2',
-      avatar3: 'https://placehold.co/80x80/1e293b/ffffff?text=C3',
-      trustText: '500+ clients trust us',
-      slide1Image: 'https://placehold.co/900x700/475569/ffffff?text=Project+One',
-      slide1Tag: 'Residential',
-      slide1Title: 'Riverside Villas',
-      slide1Subtitle: 'A 24-unit residential development delivered ahead of schedule.',
-      slide2Image: 'https://placehold.co/900x700/334155/ffffff?text=Project+Two',
-      slide2Tag: 'Commercial',
-      slide2Title: 'Tech Park Phase 2',
-      slide2Subtitle: 'A 6-storey commercial office park with LEED-aligned design.',
-      slide3Image: 'https://placehold.co/900x700/1e293b/ffffff?text=Project+Three',
-      slide3Tag: 'Infrastructure',
-      slide3Title: 'Highway Bridge Rehab',
-      slide3Subtitle: 'Structural rehabilitation completed with zero traffic disruption.',
-      slide4Image: 'https://placehold.co/900x700/0f172a/ffffff?text=Project+Four',
-      slide4Tag: 'Institutional',
-      slide4Title: 'School Expansion Wing',
-      slide4Subtitle: 'A new academic wing built during active term time.',
-      slide5Image: 'https://placehold.co/900x700/14532d/ffffff?text=Project+Five',
-      slide5Tag: 'Industrial',
-      slide5Title: 'Industrial Warehouse',
-      slide5Subtitle: 'A 90,000 sq ft warehouse and logistics facility.',
+      d2CtaLabel: 'Get a Free Quote',
+      d2CtaHref: '#quote',
+      d2SecondaryLabel: 'See Our Work',
+      d2SecondaryHref: '#projects',
+      d2Avatar1: 'https://placehold.co/80x80/475569/ffffff?text=C1',
+      d2Avatar2: 'https://placehold.co/80x80/334155/ffffff?text=C2',
+      d2Avatar3: 'https://placehold.co/80x80/1e293b/ffffff?text=C3',
+      d2TrustText: '500+ clients trust us',
+      d2Slide1Image: 'https://placehold.co/900x700/475569/ffffff?text=Project+One',
+      d2Slide1Tag: 'Residential',
+      d2Slide1Title: 'Riverside Villas',
+      d2Slide1Subtitle: 'A 24-unit residential development delivered ahead of schedule.',
+      d2Slide2Image: 'https://placehold.co/900x700/334155/ffffff?text=Project+Two',
+      d2Slide2Tag: 'Commercial',
+      d2Slide2Title: 'Tech Park Phase 2',
+      d2Slide2Subtitle: 'A 6-storey commercial office park with LEED-aligned design.',
+      d2Slide3Image: 'https://placehold.co/900x700/1e293b/ffffff?text=Project+Three',
+      d2Slide3Tag: 'Infrastructure',
+      d2Slide3Title: 'Highway Bridge Rehab',
+      d2Slide3Subtitle: 'Structural rehabilitation completed with zero traffic disruption.',
+      d3Eyebrow: 'Why Contractors Choose Us',
+      d3Headline: 'Precision-Built. Delivered On Time.',
+      d3Subheadline: 'A track record our clients are proud to put their name behind.',
+      d3CtaLabel: 'Request a Consultation',
+      d3CtaHref: '#quote',
+      d3Slide1Image: 'https://placehold.co/200x200/475569/ffffff?text=RK',
+      d3Slide1Quote:
+        'They delivered our headquarters three weeks ahead of schedule without a single defect.',
+      d3Slide1Author: 'Ramesh Kapoor',
+      d3Slide1Role: 'Director, Kapoor Industries',
+      d3Slide2Image: 'https://placehold.co/200x200/334155/ffffff?text=AS',
+      d3Slide2Quote:
+        'Transparent budgeting and weekly reporting made this the easiest build we have managed.',
+      d3Slide2Author: 'Anita Sharma',
+      d3Slide2Role: 'COO, Sharma Retail Group',
+      d3Slide3Image: 'https://placehold.co/200x200/1e293b/ffffff?text=MD',
+      d3Slide3Quote:
+        'Safety-first culture and zero incidents across an 18-month infrastructure project.',
+      d3Slide3Author: 'Mohan Das',
+      d3Slide3Role: 'Project Sponsor, NHA',
+      d4Headline: 'One Contractor. Every Capability.',
+      d4Subheadline: 'A single accountable team across design, build, and handover.',
+      d4CtaLabel: 'Start Your Project',
+      d4CtaHref: '#quote',
+      d4Slide1Icon: 'hardhat',
+      d4Slide1Title: 'Structural Construction',
+      d4Slide1Description:
+        'End-to-end structural builds engineered to code, from footings to rooftop.',
+      d4Slide2Icon: 'shield',
+      d4Slide2Title: 'Safety & Compliance',
+      d4Slide2Description: 'Zero-harm culture with third-party audits on every active site.',
+      d4Slide3Icon: 'star',
+      d4Slide3Title: 'Quality Assurance',
+      d4Slide3Description:
+        'Rigorous quality checks at every milestone, backed by a defect-free warranty.',
     },
     render: function ConstructionHeroRender({
-      badgeText,
-      headline,
-      highlightWord,
-      subheadline,
-      ctaLabel,
-      ctaHref,
-      secondaryLabel,
-      secondaryHref,
-      avatar1,
-      avatar2,
-      avatar3,
-      trustText,
-      slide1Image,
-      slide1Tag,
-      slide1Title,
-      slide1Subtitle,
-      slide2Image,
-      slide2Tag,
-      slide2Title,
-      slide2Subtitle,
-      slide3Image,
-      slide3Tag,
-      slide3Title,
-      slide3Subtitle,
-      slide4Image,
-      slide4Tag,
-      slide4Title,
-      slide4Subtitle,
-      slide5Image,
-      slide5Tag,
-      slide5Title,
-      slide5Subtitle,
+      variant,
+      visible,
+      d1Slide1Image,
+      d1Slide1Badge,
+      d1Slide1Headline,
+      d1Slide1Subheadline,
+      d1Slide1CtaLabel,
+      d1Slide1CtaHref,
+      d1Slide2Image,
+      d1Slide2Badge,
+      d1Slide2Headline,
+      d1Slide2Subheadline,
+      d1Slide2CtaLabel,
+      d1Slide2CtaHref,
+      d1Slide3Image,
+      d1Slide3Badge,
+      d1Slide3Headline,
+      d1Slide3Subheadline,
+      d1Slide3CtaLabel,
+      d1Slide3CtaHref,
+      d2BadgeText,
+      d2Headline,
+      d2HighlightWord,
+      d2Subheadline,
+      d2CtaLabel,
+      d2CtaHref,
+      d2SecondaryLabel,
+      d2SecondaryHref,
+      d2Avatar1,
+      d2Avatar2,
+      d2Avatar3,
+      d2TrustText,
+      d2Slide1Image,
+      d2Slide1Tag,
+      d2Slide1Title,
+      d2Slide1Subtitle,
+      d2Slide2Image,
+      d2Slide2Tag,
+      d2Slide2Title,
+      d2Slide2Subtitle,
+      d2Slide3Image,
+      d2Slide3Tag,
+      d2Slide3Title,
+      d2Slide3Subtitle,
+      d3Eyebrow,
+      d3Headline,
+      d3Subheadline,
+      d3CtaLabel,
+      d3CtaHref,
+      d3Slide1Image,
+      d3Slide1Quote,
+      d3Slide1Author,
+      d3Slide1Role,
+      d3Slide2Image,
+      d3Slide2Quote,
+      d3Slide2Author,
+      d3Slide2Role,
+      d3Slide3Image,
+      d3Slide3Quote,
+      d3Slide3Author,
+      d3Slide3Role,
+      d4Headline,
+      d4Subheadline,
+      d4CtaLabel,
+      d4CtaHref,
+      d4Slide1Icon,
+      d4Slide1Title,
+      d4Slide1Description,
+      d4Slide2Icon,
+      d4Slide2Title,
+      d4Slide2Description,
+      d4Slide3Icon,
+      d4Slide3Title,
+      d4Slide3Description,
     }) {
       const [activeSlide, setActiveSlide] = useState(0)
-      const slides = [
-        { image: slide1Image, tag: slide1Tag, title: slide1Title, subtitle: slide1Subtitle },
-        { image: slide2Image, tag: slide2Tag, title: slide2Title, subtitle: slide2Subtitle },
-        { image: slide3Image, tag: slide3Tag, title: slide3Title, subtitle: slide3Subtitle },
-        { image: slide4Image, tag: slide4Tag, title: slide4Title, subtitle: slide4Subtitle },
-        { image: slide5Image, tag: slide5Tag, title: slide5Title, subtitle: slide5Subtitle },
+      if (!visible) return <></>
+
+      if (variant === '1') {
+        const slides = [
+          {
+            image: d1Slide1Image,
+            badge: d1Slide1Badge,
+            headline: d1Slide1Headline,
+            subheadline: d1Slide1Subheadline,
+            ctaLabel: d1Slide1CtaLabel,
+            ctaHref: d1Slide1CtaHref,
+          },
+          {
+            image: d1Slide2Image,
+            badge: d1Slide2Badge,
+            headline: d1Slide2Headline,
+            subheadline: d1Slide2Subheadline,
+            ctaLabel: d1Slide2CtaLabel,
+            ctaHref: d1Slide2CtaHref,
+          },
+          {
+            image: d1Slide3Image,
+            badge: d1Slide3Badge,
+            headline: d1Slide3Headline,
+            subheadline: d1Slide3Subheadline,
+            ctaLabel: d1Slide3CtaLabel,
+            ctaHref: d1Slide3CtaHref,
+          },
+        ].filter((s) => s.image)
+        const total = slides.length
+        const idx = Math.min(activeSlide, Math.max(total - 1, 0))
+        return (
+          <section className="relative h-[560px] md:h-[640px] overflow-hidden bg-slate-900">
+            {slides.map((s, i) => (
+              <div
+                key={i}
+                className="absolute inset-0 transition-opacity duration-700 ease-in-out"
+                style={{ opacity: i === idx ? 1 : 0, pointerEvents: i === idx ? 'auto' : 'none' }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={s.image}
+                  alt={s.headline}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/85 via-slate-900/40 to-slate-900/10" />
+                <div
+                  className={`${wrap} relative z-10 h-full flex flex-col justify-center max-w-2xl`}
+                >
+                  {s.badge && (
+                    <span className="inline-flex w-fit items-center rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold text-white mb-5">
+                      {s.badge}
+                    </span>
+                  )}
+                  <h1 className="text-3xl md:text-5xl font-extrabold text-white leading-tight tracking-tight mb-4">
+                    {s.headline}
+                  </h1>
+                  <p className="text-slate-200 text-base md:text-lg mb-7 max-w-lg">
+                    {s.subheadline}
+                  </p>
+                  {s.ctaLabel && (
+                    <a
+                      href={s.ctaHref}
+                      className="inline-flex w-fit items-center rounded-lg bg-orange-500 px-7 py-3.5 text-white font-semibold hover:bg-orange-600 transition text-base"
+                    >
+                      {s.ctaLabel}
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
+            {total > 1 && (
+              <>
+                <button
+                  type="button"
+                  aria-label="Previous slide"
+                  onClick={() => setActiveSlide((i) => (i - 1 + total) % total)}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/15 text-white flex items-center justify-center hover:bg-white/25 transition backdrop-blur"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2.2}
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  aria-label="Next slide"
+                  onClick={() => setActiveSlide((i) => (i + 1) % total)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/15 text-white flex items-center justify-center hover:bg-white/25 transition backdrop-blur"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2.2}
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
+                  </svg>
+                </button>
+                <div className="absolute bottom-6 left-0 right-0 z-20 flex justify-center gap-2">
+                  {slides.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      aria-label={`Show slide ${i + 1}`}
+                      onClick={() => setActiveSlide(i)}
+                      className={`h-2 rounded-full transition-all ${
+                        i === idx ? 'w-7 bg-orange-500' : 'w-2 bg-white/50'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </section>
+        )
+      }
+
+      if (variant === '3') {
+        const slides = [
+          {
+            image: d3Slide1Image,
+            quote: d3Slide1Quote,
+            author: d3Slide1Author,
+            role: d3Slide1Role,
+          },
+          {
+            image: d3Slide2Image,
+            quote: d3Slide2Quote,
+            author: d3Slide2Author,
+            role: d3Slide2Role,
+          },
+          {
+            image: d3Slide3Image,
+            quote: d3Slide3Quote,
+            author: d3Slide3Author,
+            role: d3Slide3Role,
+          },
+        ].filter((s) => s.quote)
+        const total = slides.length
+        const idx = Math.min(activeSlide, Math.max(total - 1, 0))
+        const slide = slides[idx]
+        return (
+          <section className="bg-slate-50 py-16 md:py-24">
+            <div className={`${wrap} text-center`}>
+              {d3Eyebrow && (
+                <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-3">
+                  {d3Eyebrow}
+                </p>
+              )}
+              <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight mb-4 max-w-3xl mx-auto">
+                {d3Headline}
+              </h1>
+              <p className="text-slate-600 text-base md:text-lg mb-10 max-w-xl mx-auto">
+                {d3Subheadline}
+              </p>
+              {d3CtaLabel && (
+                <a
+                  href={d3CtaHref}
+                  className="inline-flex items-center rounded-lg bg-orange-500 px-7 py-3.5 text-white font-semibold hover:bg-orange-600 transition text-base mb-12"
+                >
+                  {d3CtaLabel}
+                </a>
+              )}
+              {slide && (
+                <div className="relative max-w-2xl mx-auto rounded-2xl bg-white border border-slate-200 shadow-sm p-8 md:p-10">
+                  <div className="flex flex-col items-center gap-4">
+                    {slide.image && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={slide.image}
+                        alt={slide.author}
+                        className="w-16 h-16 rounded-full object-cover"
+                      />
+                    )}
+                    <p className="text-slate-700 text-lg leading-relaxed">
+                      &#8220;{slide.quote}&#8221;
+                    </p>
+                    <div>
+                      <p className="font-semibold text-slate-900">{slide.author}</p>
+                      <p className="text-sm text-slate-500">{slide.role}</p>
+                    </div>
+                  </div>
+                  {total > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        aria-label="Previous"
+                        onClick={() => setActiveSlide((i) => (i - 1 + total) % total)}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-slate-50 text-slate-700 flex items-center justify-center hover:bg-slate-100 transition"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={2.2}
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Next"
+                        onClick={() => setActiveSlide((i) => (i + 1) % total)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-slate-50 text-slate-700 flex items-center justify-center hover:bg-slate-100 transition"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={2.2}
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
+                        </svg>
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+              {total > 1 && (
+                <div className="flex justify-center gap-2 mt-6">
+                  {slides.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      aria-label={`Show slide ${i + 1}`}
+                      onClick={() => setActiveSlide(i)}
+                      className={`h-2 rounded-full transition-all ${
+                        i === idx ? 'w-6 bg-orange-500' : 'w-2 bg-slate-300'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        )
+      }
+
+      if (variant === '4') {
+        const slides = [
+          { icon: d4Slide1Icon, title: d4Slide1Title, description: d4Slide1Description },
+          { icon: d4Slide2Icon, title: d4Slide2Title, description: d4Slide2Description },
+          { icon: d4Slide3Icon, title: d4Slide3Title, description: d4Slide3Description },
+        ].filter((s) => s.title)
+        const total = slides.length
+        const idx = Math.min(activeSlide, Math.max(total - 1, 0))
+        const slide = slides[idx]
+        const Icon = slide ? (ICON_BY_KEY[slide.icon] ?? HardHatIcon) : HardHatIcon
+        return (
+          <section className="bg-white py-16 md:py-24 border-b border-slate-100">
+            <div className={`${wrap} text-center`}>
+              <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight mb-4 max-w-3xl mx-auto">
+                {d4Headline}
+              </h1>
+              <p className="text-slate-600 text-base md:text-lg mb-4 max-w-xl mx-auto">
+                {d4Subheadline}
+              </p>
+              {d4CtaLabel && (
+                <a
+                  href={d4CtaHref}
+                  className="inline-flex items-center rounded-lg bg-orange-500 px-7 py-3.5 text-white font-semibold hover:bg-orange-600 transition text-base mb-12"
+                >
+                  {d4CtaLabel}
+                </a>
+              )}
+              {slide && (
+                <div className="relative max-w-md mx-auto">
+                  <div className="rounded-2xl border border-slate-200 shadow-sm p-8 hover:shadow-md transition">
+                    <div className="text-orange-500 mb-4 flex justify-center [&>svg]:w-9 [&>svg]:h-9">
+                      <Icon />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900 mb-2">{slide.title}</h3>
+                    <p className="text-slate-600 text-sm leading-relaxed">{slide.description}</p>
+                  </div>
+                  {total > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        aria-label="Previous"
+                        onClick={() => setActiveSlide((i) => (i - 1 + total) % total)}
+                        className="absolute -left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white border border-slate-200 text-slate-700 flex items-center justify-center hover:bg-slate-50 transition shadow-sm"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={2.2}
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Next"
+                        onClick={() => setActiveSlide((i) => (i + 1) % total)}
+                        className="absolute -right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white border border-slate-200 text-slate-700 flex items-center justify-center hover:bg-slate-50 transition shadow-sm"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={2.2}
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
+                        </svg>
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+              {total > 1 && (
+                <div className="flex justify-center gap-2 mt-6">
+                  {slides.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      aria-label={`Show slide ${i + 1}`}
+                      onClick={() => setActiveSlide(i)}
+                      className={`h-2 rounded-full transition-all ${
+                        i === idx ? 'w-6 bg-orange-500' : 'w-2 bg-slate-300'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        )
+      }
+
+      // Design 2 (default) — split with slider card
+      const d2Slides = [
+        {
+          image: d2Slide1Image,
+          tag: d2Slide1Tag,
+          title: d2Slide1Title,
+          subtitle: d2Slide1Subtitle,
+        },
+        {
+          image: d2Slide2Image,
+          tag: d2Slide2Tag,
+          title: d2Slide2Title,
+          subtitle: d2Slide2Subtitle,
+        },
+        {
+          image: d2Slide3Image,
+          tag: d2Slide3Tag,
+          title: d2Slide3Title,
+          subtitle: d2Slide3Subtitle,
+        },
       ].filter((s) => s.image)
-      const slide = slides[Math.min(activeSlide, Math.max(slides.length - 1, 0))]
+      const d2Total = d2Slides.length
+      const d2Idx = Math.min(activeSlide, Math.max(d2Total - 1, 0))
+      const d2Slide = d2Slides[d2Idx]
       const headlineParts =
-        highlightWord && headline.includes(highlightWord)
-          ? headline.split(highlightWord)
-          : [headline, '']
-      const avatars = [avatar1, avatar2, avatar3].filter(Boolean)
+        d2HighlightWord && d2Headline.includes(d2HighlightWord)
+          ? d2Headline.split(d2HighlightWord)
+          : [d2Headline, '']
+      const avatars = [d2Avatar1, d2Avatar2, d2Avatar3].filter(Boolean)
       return (
         <section className="bg-white py-14 md:py-20">
           <div className={`${wrap} grid grid-cols-1 md:grid-cols-2 gap-10 items-center`}>
             <div>
-              {badgeText && (
+              {d2BadgeText && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 border border-orange-200 text-orange-600 text-xs font-semibold px-3 py-1 mb-5">
-                  {badgeText}
+                  {d2BadgeText}
                 </span>
               )}
               <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight mb-5">
                 {headlineParts[0]}
-                {highlightWord && <span className="text-orange-500">{highlightWord}</span>}
+                {d2HighlightWord && <span className="text-orange-500">{d2HighlightWord}</span>}
                 {headlineParts[1]}
               </h1>
-              <p className="text-slate-600 text-base md:text-lg mb-8 max-w-lg">{subheadline}</p>
+              <p className="text-slate-600 text-base md:text-lg mb-8 max-w-lg">{d2Subheadline}</p>
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                {ctaLabel && (
+                {d2CtaLabel && (
                   <a
-                    href={ctaHref}
+                    href={d2CtaHref}
                     className="inline-flex items-center justify-center rounded-lg bg-orange-500 px-7 py-3.5 text-white font-semibold hover:bg-orange-600 transition text-base"
                   >
-                    {ctaLabel}
+                    {d2CtaLabel}
                   </a>
                 )}
-                {secondaryLabel && (
+                {d2SecondaryLabel && (
                   <a
-                    href={secondaryHref}
+                    href={d2SecondaryHref}
                     className="inline-flex items-center justify-center rounded-lg border-2 border-slate-300 px-7 py-3.5 text-slate-900 font-semibold hover:bg-slate-50 transition text-base"
                   >
-                    {secondaryLabel}
+                    {d2SecondaryLabel}
                   </a>
                 )}
               </div>
@@ -1662,44 +2230,80 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       />
                     ))}
                   </div>
-                  {trustText && <p className="text-sm text-slate-600">{trustText}</p>}
+                  {d2TrustText && <p className="text-sm text-slate-600">{d2TrustText}</p>}
                 </div>
               )}
             </div>
             <div>
               <div className="relative rounded-2xl overflow-hidden aspect-[4/3] bg-slate-100">
-                {slide?.image && (
+                {d2Slide?.image && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={slide.image}
-                    alt={slide.title}
+                    src={d2Slide.image}
+                    alt={d2Slide.title}
                     className="absolute inset-0 w-full h-full object-cover"
                   />
                 )}
-                {slide && (slide.title || slide.subtitle) && (
+                {d2Slide && (d2Slide.title || d2Slide.subtitle) && (
                   <div className="absolute bottom-4 left-4 right-4 rounded-lg bg-white/90 backdrop-blur p-4">
-                    {slide.tag && (
+                    {d2Slide.tag && (
                       <span className="text-xs font-medium text-orange-600 uppercase tracking-wide">
-                        {slide.tag}
+                        {d2Slide.tag}
                       </span>
                     )}
-                    <p className="font-semibold text-slate-900">{slide.title}</p>
-                    {slide.subtitle && (
-                      <p className="text-xs text-slate-600 mt-0.5">{slide.subtitle}</p>
+                    <p className="font-semibold text-slate-900">{d2Slide.title}</p>
+                    {d2Slide.subtitle && (
+                      <p className="text-xs text-slate-600 mt-0.5">{d2Slide.subtitle}</p>
                     )}
                   </div>
                 )}
+                {d2Total > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      aria-label="Previous slide"
+                      onClick={() => setActiveSlide((i) => (i - 1 + d2Total) % d2Total)}
+                      className="absolute left-3 top-3 w-8 h-8 rounded-full bg-white/90 text-slate-900 flex items-center justify-center shadow hover:bg-white transition"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2.2}
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Next slide"
+                      onClick={() => setActiveSlide((i) => (i + 1) % d2Total)}
+                      className="absolute right-3 top-3 w-8 h-8 rounded-full bg-white/90 text-slate-900 flex items-center justify-center shadow hover:bg-white transition"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2.2}
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
+                      </svg>
+                    </button>
+                  </>
+                )}
               </div>
-              {slides.length > 1 && (
+              {d2Total > 1 && (
                 <div className="flex justify-center gap-2 mt-4">
-                  {slides.map((_, i) => (
+                  {d2Slides.map((_, i) => (
                     <button
                       key={i}
                       type="button"
                       aria-label={`Show slide ${i + 1}`}
                       onClick={() => setActiveSlide(i)}
-                      className={`w-2.5 h-2.5 rounded-full transition ${
-                        i === activeSlide ? 'bg-orange-500' : 'bg-slate-300'
+                      className={`h-2 rounded-full transition-all ${
+                        i === d2Idx ? 'w-6 bg-orange-500' : 'w-2 bg-slate-300'
                       }`}
                     />
                   ))}
@@ -4390,5 +4994,6 @@ export const construction: ComponentPack = {
   variants: {
     ConstructionTopBar: ['1', '2', '3', '4'],
     ConstructionHeader: ['1', '2', '3', '4'],
+    ConstructionHero: ['1', '2', '3', '4'],
   },
 }

@@ -109,6 +109,9 @@ export function insertBlockComponent(
 /** Categories whose blocks always belong at the very top of the page. */
 const TOP_OF_PAGE_CATEGORIES = new Set(['top-bar', 'header'])
 
+/** Component types a Hero insert should land right after, not at page's end. */
+const TOP_OF_PAGE_TYPES = new Set(['ConstructionTopBar', 'ConstructionHeader'])
+
 /** Placeholder for a `type: 'slot'` field's content when previewing outside
  *  Puck's own render pipeline — Puck normally swaps a slot's raw `[]` for a
  *  renderable component before calling `.render()`; skipping that step and
@@ -267,8 +270,17 @@ export function InsertBlockModal({
 
   function insertBlock(componentKey: string, variant: string | null) {
     // Top Bar / Header blocks belong above everything else on the page, not
-    // appended after whatever was built so far.
-    const destinationIndex = TOP_OF_PAGE_CATEGORIES.has(activeCat) ? 0 : undefined
+    // appended after whatever was built so far. Hero belongs right below any
+    // existing Top Bar/Header, not at the very bottom of an already-built page.
+    let destinationIndex: number | undefined
+    if (TOP_OF_PAGE_CATEGORIES.has(activeCat)) {
+      destinationIndex = 0
+    } else if (activeCat === 'hero') {
+      const content = appState.data.content ?? []
+      let i = 0
+      while (i < content.length && TOP_OF_PAGE_TYPES.has(content[i]?.type ?? '')) i++
+      destinationIndex = i
+    }
     insertBlockComponent(
       dispatch,
       config,

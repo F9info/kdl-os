@@ -41,6 +41,7 @@ export const config: Config = {
   categories: {
     'top-bar': { title: 'Top Bar', components: ['ConstructionTopBar'] },
     header: { title: 'Header', components: ['ConstructionHeader'] },
+    hero: { title: 'Hero', components: ['ConstructionHero'] },
   },
 }
 
