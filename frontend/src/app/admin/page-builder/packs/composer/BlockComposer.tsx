@@ -4,7 +4,11 @@ import { useState } from 'react'
 import { X, Eye, Tablet, Smartphone, Monitor } from 'lucide-react'
 import { ATOM_CATALOGUE, type ComposerAtom } from './atoms'
 import { atomCatalogueFor } from './catalogue-by-category'
-import { DEFAULT_SETTINGS, type ComposedBlockConfig } from './render-composed-block'
+import {
+  DEFAULT_SETTINGS,
+  renderComposedBlock,
+  type ComposedBlockConfig,
+} from './render-composed-block'
 import { createCustomBlock, updateCustomBlock, type CustomBlockRecord } from './custom-blocks-store'
 
 type Viewport = 'desktop' | 'tablet' | 'mobile'
@@ -233,7 +237,21 @@ export function BlockComposer({
             className="mx-auto w-full overflow-hidden rounded-lg bg-white shadow-md transition-[max-width]"
             style={{ maxWidth: VIEWPORT_WIDTH[viewport] }}
           >
-            {/* Canvas body added in Task 9 */}
+            <div onClick={() => setSelectedId(null)}>
+              {renderComposedBlock(config, {
+                interactive: true,
+                selectedId,
+                onSelectAtom: (id) => {
+                  setSelectedId(id)
+                  setRightTab('content')
+                },
+              })}
+              {config.atoms.length === 0 ? (
+                <p className="p-10 text-center text-sm text-slate-400">
+                  Add elements from the left panel to build this block.
+                </p>
+              ) : null}
+            </div>
           </div>
         </div>
 
