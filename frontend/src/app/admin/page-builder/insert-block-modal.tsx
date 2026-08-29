@@ -22,6 +22,40 @@ import { renderComposedBlock } from './packs/composer/render-composed-block'
  * props (here: `variant`) atomically. The insert is `recordHistory: false`
  * so the pair undoes as one step.
  */
+// Brand/nav fields these block types carry — reused across every design of
+// the same type. Fields not in this list still fall back to defaultProps.
+const BRAND_CARRIER_FIELDS: Record<string, string[]> = {
+  ConstructionHeader: [
+    'brand',
+    'logoUrl',
+    'links',
+    'loginLabel',
+    'loginHref',
+    'ctaLabel',
+    'ctaHref',
+    'primaryColor',
+  ],
+}
+
+/**
+ * A page's real logo/brand/nav links live on whichever nav-carrying block
+ * (e.g. ConstructionHeader) is already on the page — inserting a NEW
+ * instance of that same type (a different design, or a second one) should
+ * carry those over instead of falling back to the component's generic
+ * placeholder defaultProps ("Your Brand", no logo, generic links).
+ */
+function carryOverBrandProps(content: AppState['data']['content'], componentType: string) {
+  const fields = BRAND_CARRIER_FIELDS[componentType]
+  if (!fields) return {}
+  const existing = (content ?? []).find((block) => block.type === componentType)
+  if (!existing?.props) return {}
+  const carried: Record<string, unknown> = {}
+  for (const field of fields) {
+    if (existing.props[field] !== undefined) carried[field] = existing.props[field]
+  }
+  return carried
+}
+
 export function insertBlockComponent(
   dispatch: (action: Parameters<ReturnType<typeof usePuck>['dispatch']>[0]) => void,
   config: Config,
@@ -49,7 +83,12 @@ export function insertBlockComponent(
     destinationZone,
     data: {
       type: componentType,
-      props: { ...(comp.defaultProps ?? {}), ...(variant ? { variant } : {}), id },
+      props: {
+        ...(comp.defaultProps ?? {}),
+        ...carryOverBrandProps(content, componentType),
+        ...(variant ? { variant } : {}),
+        id,
+      },
     },
   })
 }
