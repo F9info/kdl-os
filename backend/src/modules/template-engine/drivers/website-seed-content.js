@@ -192,6 +192,27 @@ const HERO_BY_KEY = {
   },
 };
 
+// A Navigation-step page whose key isn't one of the 3 originally-hardcoded
+// ones (e.g. 'blog', 'team-member', anything the user typed as a custom
+// page) used to silently fall back to HOME's own hero verbatim — literally
+// "Build faster with KDL" on every such page, giving zero visual
+// difference between them. Reported as "when I click the pages are not
+// opened related pages": every non-home/about/contact page looked
+// identical, so navigating between them looked like nothing happened even
+// though it did. Uses the page's own real title instead.
+function genericHero(pageTitle) {
+  return {
+    variant: '1',
+    title: pageTitle,
+    subtitle: `Learn more about ${pageTitle.toLowerCase()}.`,
+    ctaLabel: '',
+    ctaHref: '#',
+    align: 'left',
+    image: dummyImage(900, 700),
+    primaryColor: '',
+  };
+}
+
 // About/Contact normalize to exactly 4 blocks — nav, hero, one content
 // block, footer — matching the design prototype's leaner per-page
 // structure. Home is deliberately richer: every real Medical* section gets
@@ -230,7 +251,23 @@ const MIDDLE_BLOCK_BY_KEY = {
   ],
 };
 
-function headerBlocks(pageKey, brand, pages) {
+// Same reasoning as genericHero() — reusing Home's entire medical-clinic
+// section list (department cards, doctor profiles, FAQ, ...) on an
+// unrelated page like 'team-member' is both thematically wrong AND still
+// visually identical across every such page. Mirrors About/Contact's
+// leaner one-block shape instead.
+function genericMiddle(pageKey, pageTitle) {
+  return [
+    block(pageKey, 'Text', {
+      variant: '1',
+      text: `This is the ${pageTitle} page. Replace this placeholder with real content in the page-builder editor.`,
+      align: 'left',
+      muted: false,
+    }),
+  ];
+}
+
+function headerBlocks(pageKey, brand, pages, pageTitle) {
   if (pageKey === 'home') {
     return [
       block(pageKey, 'MedicalTopNav', topNavProps(brand, pages)),
@@ -239,15 +276,15 @@ function headerBlocks(pageKey, brand, pages) {
   }
   return [
     block(pageKey, 'NavBar', navBarProps(brand, pages)),
-    block(pageKey, 'Hero', HERO_BY_KEY[pageKey] ?? HERO_BY_KEY.home),
+    block(pageKey, 'Hero', HERO_BY_KEY[pageKey] ?? genericHero(pageTitle)),
   ];
 }
 
 export function seedWebsitePageData(pageKey, pageTitle, brand = {}, pages) {
-  const buildMiddle = MIDDLE_BLOCK_BY_KEY[pageKey] ?? MIDDLE_BLOCK_BY_KEY.home;
+  const buildMiddle = MIDDLE_BLOCK_BY_KEY[pageKey];
   const content = [
-    ...headerBlocks(pageKey, brand, pages),
-    ...buildMiddle(pageKey),
+    ...headerBlocks(pageKey, brand, pages, pageTitle),
+    ...(buildMiddle ? buildMiddle(pageKey) : genericMiddle(pageKey, pageTitle)),
     block(pageKey, 'Footer', footerProps(brand, pages)),
   ];
   return { root: { props: { title: pageTitle } }, content, zones: {} };
@@ -416,12 +453,28 @@ const MEDICAL_MIDDLE_BY_KEY = {
   ],
 };
 
+// Same reasoning as genericHero()/genericMiddle() above — a page key
+// outside the originally-hardcoded set must not silently reuse Home's
+// hero/content verbatim (Not currently reachable via the live UI, which
+// never sends templatePack, but keeping this consistent avoids the same
+// landmine once template-pack selection is wired back up).
+function genericMedicalHero(pageTitle) {
+  return {
+    headline: pageTitle,
+    subheadline: `Learn more about ${pageTitle.toLowerCase()}.`,
+    ctaLabel: '',
+    ctaHref: '#',
+    badge: '',
+    align: 'left',
+  };
+}
+
 export function seedMedicalPageData(pageKey, pageTitle, brand = {}, pages) {
-  const buildMiddle = MEDICAL_MIDDLE_BY_KEY[pageKey] ?? MEDICAL_MIDDLE_BY_KEY.home;
+  const buildMiddle = MEDICAL_MIDDLE_BY_KEY[pageKey];
   const content = [
     block(pageKey, 'NavBar', navBarProps(brand, pages)),
-    block(pageKey, 'MedicalHero', MEDICAL_HERO_BY_KEY[pageKey] ?? MEDICAL_HERO_BY_KEY.home),
-    ...buildMiddle(pageKey),
+    block(pageKey, 'MedicalHero', MEDICAL_HERO_BY_KEY[pageKey] ?? genericMedicalHero(pageTitle)),
+    ...(buildMiddle ? buildMiddle(pageKey) : genericMiddle(pageKey, pageTitle)),
     block(pageKey, 'Footer', footerProps(brand, pages)),
   ];
   return { root: { props: { title: pageTitle } }, content, zones: {} };
@@ -568,16 +621,30 @@ const CONSTRUCTION_MIDDLE_BY_KEY = {
   contact: (pageKey) => [block(pageKey, 'ConstructionQuoteCTA', CONSTRUCTION_QUOTE_CTA)],
 };
 
+// Same reasoning as genericHero()/genericMedicalHero() above.
+function genericConstructionHero(pageTitle) {
+  return {
+    headline: pageTitle,
+    subheadline: `Learn more about ${pageTitle.toLowerCase()}.`,
+    ctaLabel: '',
+    ctaHref: '#',
+    secondaryLabel: '',
+    secondaryHref: '#',
+    backgroundImage: dummyImage(1600, 800, pageTitle),
+    overlay: true,
+  };
+}
+
 export function seedConstructionPageData(pageKey, pageTitle, brand = {}, pages) {
-  const buildMiddle = CONSTRUCTION_MIDDLE_BY_KEY[pageKey] ?? CONSTRUCTION_MIDDLE_BY_KEY.home;
+  const buildMiddle = CONSTRUCTION_MIDDLE_BY_KEY[pageKey];
   const content = [
     block(pageKey, 'NavBar', navBarProps(brand, pages)),
     block(
       pageKey,
       'ConstructionHero',
-      CONSTRUCTION_HERO_BY_KEY[pageKey] ?? CONSTRUCTION_HERO_BY_KEY.home
+      CONSTRUCTION_HERO_BY_KEY[pageKey] ?? genericConstructionHero(pageTitle)
     ),
-    ...buildMiddle(pageKey),
+    ...(buildMiddle ? buildMiddle(pageKey) : genericMiddle(pageKey, pageTitle)),
     block(pageKey, 'Footer', footerProps(brand, pages)),
   ];
   return { root: { props: { title: pageTitle } }, content, zones: {} };

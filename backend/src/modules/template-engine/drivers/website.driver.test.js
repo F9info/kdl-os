@@ -403,6 +403,29 @@ describe('website driver — navigationPages (KDL bug: Navigation-step selection
     expect(footer.props.links).toBe(expectedLinks);
   });
 
+  it('a page key outside home/about/contact gets its OWN hero/content, not Home\'s verbatim (KDL bug repro)', async () => {
+    // Reported live: every non-home/about/contact page ("Blog detail",
+    // "Team", "Team member", ...) rendered identical "Build faster with
+    // KDL" content, making it look like clicking between pages did
+    // nothing even though navigation itself worked.
+    createPage.mockResolvedValueOnce({ id: 'page-blog-detail' });
+
+    await getDriver('website').execute({
+      run: makeRun(),
+      stageRecord: makeStageRecord(),
+      userId: 'user-1',
+      projectId: 'proj-A',
+      navigationPages: ['Blog detail'],
+    });
+
+    const call = createPage.mock.calls[0][0];
+    const hero = call.data.content.find((b) => b.type === 'Hero');
+    const text = call.data.content.find((b) => b.type === 'Text');
+    expect(hero.props.title).toBe('Blog detail');
+    expect(hero.props.title).not.toBe('Build faster with KDL');
+    expect(text.props.text).toContain('Blog detail');
+  });
+
   it('reuses an orphaned page found by slug instead of crashing on a unique-constraint error (KDL bug repro)', async () => {
     // Simulates a prior advance attempt that created 'home' then threw on a
     // later key before the stage's outputRef was ever saved — 'home' is
