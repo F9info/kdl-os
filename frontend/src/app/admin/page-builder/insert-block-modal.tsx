@@ -1,10 +1,13 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { usePuck } from '@puckeditor/core'
 import type { AppState, Config } from '@puckeditor/core'
 import { Plus, Search, X } from 'lucide-react'
 import { blockVariants } from './puck.config'
+import { BlockComposer } from './packs/composer/BlockComposer'
+import { listCustomBlocks, type CustomBlockRecord } from './packs/composer/custom-blocks-store'
+import { renderComposedBlock } from './packs/composer/render-composed-block'
 
 /**
  * Inserts `componentType` (optionally pinned to one of its `blockVariants`
@@ -135,9 +138,11 @@ function BlockCard({
 export function InsertBlockModal({
   onClose,
   initialCategory,
+  projectId,
 }: {
   onClose: () => void
   initialCategory?: string
+  projectId?: string
 }) {
   const { appState, config, dispatch } = usePuck()
 
@@ -151,6 +156,22 @@ export function InsertBlockModal({
   const [activeCat, setActiveCat] = useState(initialCategory ?? categories[0]?.[0] ?? '')
   const [query, setQuery] = useState('')
   const q = query.trim().toLowerCase()
+  const [customBlocks, setCustomBlocks] = useState<CustomBlockRecord[]>([])
+  const [composerOpen, setComposerOpen] = useState<{ editing?: CustomBlockRecord } | null>(null)
+
+  useEffect(() => {
+    if (!projectId || !activeCat || q) {
+      setCustomBlocks([])
+      return
+    }
+    let cancelled = false
+    listCustomBlocks(projectId, activeCat).then((items) => {
+      if (!cancelled) setCustomBlocks(items)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [projectId, activeCat, q])
 
   const componentKeys = q
     ? categories
@@ -168,6 +189,27 @@ export function InsertBlockModal({
 
   function insertBlock(componentKey: string, variant: string | null) {
     insertBlockComponent(dispatch, config, appState.data.content, componentKey, variant)
+    onClose()
+  }
+
+  function insertCustomBlock(block: CustomBlockRecord) {
+    const id = `CustomComposedBlock-${crypto.randomUUID()}`
+    const destinationZone = 'root:default-zone'
+    const destinationIndex = appState.data.content?.length ?? 0
+    dispatch({
+      type: 'insert',
+      componentType: 'CustomComposedBlock',
+      destinationIndex,
+      destinationZone,
+      id,
+      recordHistory: false,
+    })
+    dispatch({
+      type: 'replace',
+      destinationIndex,
+      destinationZone,
+      data: { type: 'CustomComposedBlock', props: { config: block.config, id } },
+    })
     onClose()
   }
 
@@ -233,15 +275,63 @@ export function InsertBlockModal({
                 />
               ))
             )}
+            {!q && projectId
+              ? customBlocks.map((block) => (
+                  <div
+                    key={block.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => insertCustomBlock(block)}
+                    onKeyDown={(e) => e.key === 'Enter' && insertCustomBlock(block)}
+                    className="group relative cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md"
+                  >
+                    <span className="absolute right-2.5 top-2.5 z-[2] rounded-md bg-emerald-700 px-2.5 py-1 text-[11px] font-extrabold text-white">
+                      {block.name}
+                    </span>
+                    <div className="h-[210px] overflow-hidden bg-white pointer-events-none">
+                      <div
+                        style={{
+                          width: 1200,
+                          transform: 'scale(0.35)',
+                          transformOrigin: 'top left',
+                        }}
+                      >
+                        {renderComposedBlock(block.config)}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              : null}
+            {!q && projectId ? (
+              <button
+                onClick={() => setComposerOpen({})}
+                className="flex min-h-[210px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 text-blue-600 hover:border-blue-400 hover:bg-blue-50"
+              >
+                <Plus size={22} />
+                <span className="text-sm font-bold">Create new</span>
+              </button>
+            ) : null}
           </div>
         </div>
       </div>
+      {composerOpen && projectId ? (
+        <BlockComposer
+          projectId={projectId}
+          categoryKey={activeCat}
+          editing={composerOpen.editing}
+          onClose={() => setComposerOpen(null)}
+          onSaved={() => {
+            setComposerOpen(null)
+            listCustomBlocks(projectId, activeCat).then(setCustomBlocks)
+          }}
+        />
+      ) : null}
     </div>
   )
 }
 
 /** Header-bar trigger; mount inside Puck's `overrides.headerActions`. */
-export function InsertBlockButton() {
+export function InsertBlockButton({ projectId }: { projectId?: string }) {
   const [open, setOpen] = useState(false)
   return (
     <>
@@ -251,7 +341,7 @@ export function InsertBlockButton() {
       >
         <Plus size={15} /> Insert block
       </button>
-      {open ? <InsertBlockModal onClose={() => setOpen(false)} /> : null}
+      {open ? <InsertBlockModal onClose={() => setOpen(false)} projectId={projectId} /> : null}
     </>
   )
 }

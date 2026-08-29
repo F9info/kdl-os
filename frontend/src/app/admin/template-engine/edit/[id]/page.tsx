@@ -123,7 +123,7 @@ export default function TemplateEngineEditPage() {
                 >
                   <ArrowLeft size={15} /> Back
                 </Link>
-                <InsertBlockButton />
+                <InsertBlockButton projectId={projectId ?? undefined} />
                 {children}
               </>
             ),

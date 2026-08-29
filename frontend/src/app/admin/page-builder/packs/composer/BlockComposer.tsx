@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { X, Eye, Tablet, Smartphone, Monitor } from 'lucide-react'
 import { ATOM_CATALOGUE, type ComposerAtom } from './atoms'
 import { atomCatalogueFor } from './catalogue-by-category'
@@ -103,7 +104,12 @@ export function BlockComposer({
 
   const selectedAtom = config.atoms.find((a) => a.id === selectedId) ?? null
 
-  return (
+  // Portaled to <body>: Puck's own `_PuckLayout-inner` sets
+  // `position:relative; z-index:0`, which creates a stacking context that
+  // traps any `fixed` descendant below the admin shell's own sticky header
+  // regardless of z-index value — a full-bleed top bar (this component's)
+  // is the first UI in this app to actually collide with it pixel-wise.
+  return createPortal(
     <div className="fixed inset-0 z-[2100] flex flex-col bg-white">
       <div className="flex items-center gap-3 border-b border-slate-200 px-4 py-2.5">
         <button
@@ -411,6 +417,7 @@ export function BlockComposer({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
