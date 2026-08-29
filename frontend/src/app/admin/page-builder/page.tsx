@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Pencil, ExternalLink, Trash2, LayoutTemplate } from 'lucide-react'
 import { ModuleGuard } from '@/components/shared/ModuleGuard'
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -15,6 +16,7 @@ export default function PageBuilderList() {
   const router = useRouter()
   const qc = useQueryClient()
   const [title, setTitle] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null)
 
   const { data: pages = [], isLoading } = useQuery({
     queryKey: ['page-builder-pages'],
@@ -33,9 +35,14 @@ export default function PageBuilderList() {
 
   const deleteMutation = useMutation({
     mutationFn: deletePage,
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['page-builder-pages'] }),
-    onError: () =>
-      toast({ title: 'Error', description: 'Could not delete page.', variant: 'destructive' }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['page-builder-pages'] })
+      setDeleteTarget(null)
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Could not delete page.', variant: 'destructive' })
+      setDeleteTarget(null)
+    },
   })
 
   const onCreate = () => {
@@ -97,38 +104,42 @@ export default function PageBuilderList() {
                   </p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <a
-                    href={`/p/${p.slug}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    title="View"
-                    className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
-                  >
-                    <ExternalLink size={17} />
-                  </a>
-                  <button
+                  <Button variant="ghost" size="icon" asChild aria-label={`View ${p.title}`}>
+                    <a href={`/p/${p.slug}`} target="_blank" rel="noreferrer" title="View">
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => router.push(`/admin/page-builder/${p.id}`)}
-                    title="Edit"
-                    className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    aria-label={`Edit ${p.title}`}
                   >
-                    <Pencil size={17} />
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (confirm(`Delete "${p.title}"?`)) {
-                        deleteMutation.mutate(p.id)
-                      }
-                    }}
-                    title="Delete"
-                    className="rounded-md p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => setDeleteTarget({ id: p.id, title: p.title })}
+                    aria-label={`Delete ${p.title}`}
                   >
-                    <Trash2 size={17} />
-                  </button>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </li>
             ))}
           </ul>
         )}
+
+        <ConfirmDialog
+          open={deleteTarget !== null}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+          title="Delete page?"
+          description={deleteTarget ? `This will permanently delete "${deleteTarget.title}".` : ''}
+          isLoading={deleteMutation.isPending}
+        />
       </div>
     </ModuleGuard>
   )
