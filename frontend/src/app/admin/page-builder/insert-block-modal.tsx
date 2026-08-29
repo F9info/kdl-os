@@ -15,24 +15,26 @@ import { renderComposedBlock } from './packs/composer/render-composed-block'
 
 /**
  * Inserts `componentType` (optionally pinned to one of its `blockVariants`
- * designs) at the end of the root zone. Two dispatches because Puck's
- * `insert` action only ever applies a component's defaultProps; passing the
- * id we generate into a same-id `replace` right after is the supported way
- * to seed non-default props (here: `variant`) atomically. The insert is
- * `recordHistory: false` so the pair undoes as one step.
+ * designs) into the root zone — at `destinationIndex` if given, otherwise
+ * appended at the end. Two dispatches because Puck's `insert` action only
+ * ever applies a component's defaultProps; passing the id we generate into
+ * a same-id `replace` right after is the supported way to seed non-default
+ * props (here: `variant`) atomically. The insert is `recordHistory: false`
+ * so the pair undoes as one step.
  */
 export function insertBlockComponent(
   dispatch: (action: Parameters<ReturnType<typeof usePuck>['dispatch']>[0]) => void,
   config: Config,
   content: AppState['data']['content'],
   componentType: string,
-  variant: string | null
+  variant: string | null,
+  destinationIndex?: number
 ) {
   const comp = (config.components as Record<string, { defaultProps?: object }>)[componentType]
   if (!comp) return
   const id = `${componentType}-${crypto.randomUUID()}`
   const destinationZone = 'root:default-zone'
-  const destinationIndex = content?.length ?? 0
+  destinationIndex ??= content?.length ?? 0
   dispatch({
     type: 'insert',
     componentType,
@@ -222,7 +224,17 @@ export function InsertBlockModal({
   })
 
   function insertBlock(componentKey: string, variant: string | null) {
-    insertBlockComponent(dispatch, config, appState.data.content, componentKey, variant)
+    // header-top blocks (top bars, header) belong above everything else on
+    // the page, not appended after whatever was built so far.
+    const destinationIndex = activeCat === 'header-top' ? 0 : undefined
+    insertBlockComponent(
+      dispatch,
+      config,
+      appState.data.content,
+      componentKey,
+      variant,
+      destinationIndex
+    )
     onClose()
   }
 
