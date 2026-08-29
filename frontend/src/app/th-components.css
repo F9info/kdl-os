@@ -394,6 +394,17 @@
   border: solid var(--forms_full_border_colors_border_color, hsl(var(--input)));
   border-width: calc(var(--forms_full_border_settings_border_width, 1) * 1px);
 }
+
+/* .th-btn-outline's border-width was missed when the border-geometry rules
+   above were unlayered (KDL-213 follow-up) — Tailwind preflight's unlayered
+   `border-width: 0` reset silently zeroed it, even though the LAYERED rule
+   in the th-components block above already sets a full `border` shorthand.
+   Only border-width needs unlayering here: color/style from that layered
+   rule already render correctly once width is non-zero. */
+.th-btn-outline {
+  border-width: 1px;
+}
+
 .th-input:focus-visible {
   border-color: var(
     --forms_full_border_colors_focus_color,
