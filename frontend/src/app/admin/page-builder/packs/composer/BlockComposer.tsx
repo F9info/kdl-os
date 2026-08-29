@@ -23,6 +23,7 @@ export function BlockComposer({
   projectId,
   categoryKey,
   editing,
+  skipPersist,
   onClose,
   onSaved,
 }: {
@@ -30,6 +31,14 @@ export function BlockComposer({
   categoryKey: string
   /** Present when reopening an existing custom block to edit it. */
   editing?: CustomBlockRecord
+  /**
+   * Skip the template-persistence API entirely and hand the composed config
+   * straight to `onSaved` — used when editing the config already sitting
+   * inside one page instance, where `editing.id` is that instance's Puck id
+   * (not a CustomBlockTemplate row), so a real PUT would 404 or, at best,
+   * silently rewrite the shared template instead of just this instance.
+   */
+  skipPersist?: boolean
   onClose: () => void
   onSaved: (block: CustomBlockRecord) => void
 }) {
@@ -93,6 +102,20 @@ export function BlockComposer({
   async function handleSave(status: 'DRAFT' | 'PUBLISHED') {
     setSaving(true)
     try {
+      if (skipPersist) {
+        onSaved({
+          id: editing?.id ?? '',
+          projectId,
+          categoryKey,
+          name,
+          description: editing?.description ?? null,
+          status,
+          isDefault: editing?.isDefault ?? false,
+          config,
+          updatedAt: new Date().toISOString(),
+        })
+        return
+      }
       const block = editing
         ? await updateCustomBlock(editing.id, projectId, { name, status, config })
         : await createCustomBlock({ projectId, categoryKey, name, status, config })

@@ -1,6 +1,5 @@
 'use client'
 
-import type { ComponentType } from 'react'
 import {
   Heading as HeadingIcon,
   Type,
@@ -85,7 +84,7 @@ function imageRender(atom: ComposerAtom) {
   const src = String(atom.src ?? 'https://placehold.co/1200x600')
   const alt = String(atom.alt ?? '')
   const rounded = Boolean(atom.rounded)
-  // eslint-disable-next-line @next/next/no-img-element
+
   return (
     <img
       src={src}
@@ -105,10 +104,9 @@ function spacerRender(atom: ComposerAtom) {
 const ICON_SIZE = { sm: 20, md: 32, lg: 48 } as const
 
 function iconRender(atom: ComposerAtom) {
-  const Icon = (atom.icon as ComponentType<{ size?: number; color?: string }>) ?? Star
   const size = (atom.size as keyof typeof ICON_SIZE) ?? 'md'
   const color = String(atom.color ?? '#2563eb')
-  return <Icon size={ICON_SIZE[size] ?? ICON_SIZE.md} color={color} />
+  return <Star size={ICON_SIZE[size] ?? ICON_SIZE.md} color={color} />
 }
 
 function TextInput({
@@ -304,7 +302,7 @@ export const ATOM_CATALOGUE: AtomDefinition[] = [
     type: 'icon',
     label: 'Icon',
     icon: Star,
-    defaultProps: { icon: Star, size: 'md', color: '#2563eb' },
+    defaultProps: { size: 'md', color: '#2563eb' },
     Render: iconRender,
     Field: ({ atom, onChange }) => (
       <div className="flex flex-col gap-3.5">

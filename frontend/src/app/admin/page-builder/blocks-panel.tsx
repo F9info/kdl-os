@@ -20,6 +20,8 @@ import {
   Square,
 } from 'lucide-react'
 import { InsertBlockModal, insertBlockComponent } from './insert-block-modal'
+import { BlockComposer } from './packs/composer/BlockComposer'
+import type { ComposedBlockConfig } from './packs/composer/render-composed-block'
 
 /** Odoo-style chrome colours, matched to the reference prototype. */
 const OD = { bg: '#1c1e24', panel: '#181b21', tile: '#23262e', tileBd: '#2d313a', muted: '#8b93a1' }
@@ -171,6 +173,9 @@ export function BlocksPanel({
   const [tab, setTab] = useState<'blocks' | 'style' | 'theme'>('blocks')
   const [modalCategory, setModalCategory] = useState<string | null>(null)
   const hadSelection = useRef(false)
+  const [editingInstance, setEditingInstance] = useState(false)
+  const { selectedItem, dispatch, getSelectorForId } = usePuck()
+  const isCustomBlock = selectedItem?.type === 'CustomComposedBlock'
 
   useEffect(() => {
     const nowSelected = !!itemSelector
@@ -200,11 +205,55 @@ export function BlocksPanel({
       </div>
       <div className="flex-1 overflow-auto">
         {tab === 'blocks' && <BlocksTab onOpenCategory={setModalCategory} />}
-        {tab === 'style' && <div className="bg-white">{children}</div>}
+        {tab === 'style' && isCustomBlock ? (
+          <div className="bg-white p-4">
+            <button
+              onClick={() => setEditingInstance(true)}
+              className="w-full rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white"
+            >
+              Edit in Composer
+            </button>
+          </div>
+        ) : null}
+        {tab === 'style' && !isCustomBlock && <div className="bg-white">{children}</div>}
         {tab === 'theme' && <ThemeTab />}
       </div>
       {modalCategory ? (
         <InsertBlockModal initialCategory={modalCategory} onClose={() => setModalCategory(null)} />
+      ) : null}
+      {editingInstance && selectedItem ? (
+        <BlockComposer
+          projectId=""
+          categoryKey={(selectedItem.props.config as ComposedBlockConfig).category}
+          skipPersist
+          editing={{
+            id: selectedItem.props.id as string,
+            projectId: '',
+            categoryKey: (selectedItem.props.config as ComposedBlockConfig).category,
+            name: 'This block',
+            description: null,
+            status: 'DRAFT',
+            isDefault: false,
+            config: selectedItem.props.config as ComposedBlockConfig,
+            updatedAt: '',
+          }}
+          onClose={() => setEditingInstance(false)}
+          onSaved={(block) => {
+            const selector = getSelectorForId(selectedItem.props.id as string)
+            if (selector) {
+              dispatch({
+                type: 'replace',
+                destinationIndex: selector.index,
+                destinationZone: selector.zone,
+                data: {
+                  type: 'CustomComposedBlock',
+                  props: { ...selectedItem.props, config: block.config },
+                },
+              })
+            }
+            setEditingInstance(false)
+          }}
+        />
       ) : null}
     </div>
   )
