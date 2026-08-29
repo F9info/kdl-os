@@ -1,0 +1,14 @@
+// Site Layout module schema.
+// One row per Project — the Header/Footer config shared across every
+// BuilderPage in that project (KDL: shared site layout).
+
+model SiteLayout {
+  id         String   @id @default(cuid())
+  project_id String   @unique
+  header     Json     @default("{}")
+  footer     Json     @default("{}")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("site_layouts")
+}
