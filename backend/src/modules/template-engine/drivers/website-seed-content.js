@@ -38,24 +38,37 @@ function dummyImage(w, h, label) {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
-const NAV_LINKS = ['Home|#', 'About|#', 'Contact|#'].join('\n');
+const DEFAULT_NAV_LINKS = ['Home|#', 'About|#', 'Contact|#'].join('\n');
+
+// `pages` is the full { key, title } list this run is assembling (see
+// resolveSeedPages in drivers/index.js) — every seeded page's nav/footer
+// links to every OTHER seeded page, not just a hardcoded Home/About/Contact.
+// Falls back to the 3-link default when called with no page list (keeps
+// working for any caller that predates navigationPages). Href stays the `#`
+// placeholder convention Home already used: "View all pages"
+// (template-engine/site/page.tsx) navigates by matching a clicked link's
+// TEXT against page titles, not by following the href.
+function navLinksFor(pages) {
+  if (!Array.isArray(pages) || pages.length === 0) return DEFAULT_NAV_LINKS;
+  return pages.map(({ title }) => `${title}|#`).join('\n');
+}
 
 // Brand kit fields (logo, company name, extracted primary colour) are
 // optional — a fresh project with no approved brand kit yet still seeds
 // pages, falling back to the generic "Your Brand" copy/colors below.
-function navBarProps(brand = {}) {
+function navBarProps(brand = {}, pages) {
   return {
     variant: '1',
     brand: brand.companyName || 'Your Brand',
     logoUrl: brand.logoUrl || '',
-    links: NAV_LINKS,
+    links: navLinksFor(pages),
     ctaLabel: 'Get Started',
     ctaHref: '#',
     primaryColor: brand.primaryHex || '',
   };
 }
 
-function footerProps(brand = {}) {
+function footerProps(brand = {}, pages) {
   const name = brand.companyName || 'Your Brand';
   const lastUpdated = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   return {
@@ -63,7 +76,7 @@ function footerProps(brand = {}) {
     brand: name,
     logoUrl: brand.logoUrl || '',
     tagline: 'Building something great.',
-    links: NAV_LINKS,
+    links: navLinksFor(pages),
     copyright: `© ${new Date().getFullYear()} ${name}. All rights reserved. · Last updated ${lastUpdated}`,
   };
 }
@@ -87,7 +100,7 @@ const FEATURE_CARDS = {
 // Templates picker was removed — this is now the only seed path, so it's
 // what "View all pages" always shows for Home. About/Contact still use the
 // general pack's NavBar/Hero for now — next step per the same request.
-function topNavProps(brand = {}) {
+function topNavProps(brand = {}, pages) {
   return {
     variant: '1',
     welcomeText: 'Welcome — Your Health, Our Priority!',
@@ -95,7 +108,7 @@ function topNavProps(brand = {}) {
     hours: 'Mon–Sat: 8:00–18:00',
     brand: brand.companyName || 'Your Brand',
     logoUrl: brand.logoUrl || '',
-    navLinks: NAV_LINKS,
+    navLinks: navLinksFor(pages),
     ctaLabel: 'Appointment',
     ctaHref: '#appointment',
     primaryColor: brand.primaryHex || '',
@@ -189,25 +202,25 @@ const MIDDLE_BLOCK_BY_KEY = {
   ],
 };
 
-function headerBlocks(pageKey, brand) {
+function headerBlocks(pageKey, brand, pages) {
   if (pageKey === 'home') {
     return [
-      block(pageKey, 'MedicalTopNav', topNavProps(brand)),
+      block(pageKey, 'MedicalTopNav', topNavProps(brand, pages)),
       block(pageKey, 'MedicalHeroSplit', homeHeroProps(brand)),
     ];
   }
   return [
-    block(pageKey, 'NavBar', navBarProps(brand)),
+    block(pageKey, 'NavBar', navBarProps(brand, pages)),
     block(pageKey, 'Hero', HERO_BY_KEY[pageKey] ?? HERO_BY_KEY.home),
   ];
 }
 
-export function seedWebsitePageData(pageKey, pageTitle, brand = {}) {
+export function seedWebsitePageData(pageKey, pageTitle, brand = {}, pages) {
   const buildMiddle = MIDDLE_BLOCK_BY_KEY[pageKey] ?? MIDDLE_BLOCK_BY_KEY.home;
   const content = [
-    ...headerBlocks(pageKey, brand),
+    ...headerBlocks(pageKey, brand, pages),
     ...buildMiddle(pageKey),
-    block(pageKey, 'Footer', footerProps(brand)),
+    block(pageKey, 'Footer', footerProps(brand, pages)),
   ];
   return { root: { props: { title: pageTitle } }, content, zones: {} };
 }
@@ -375,13 +388,13 @@ const MEDICAL_MIDDLE_BY_KEY = {
   ],
 };
 
-export function seedMedicalPageData(pageKey, pageTitle, brand = {}) {
+export function seedMedicalPageData(pageKey, pageTitle, brand = {}, pages) {
   const buildMiddle = MEDICAL_MIDDLE_BY_KEY[pageKey] ?? MEDICAL_MIDDLE_BY_KEY.home;
   const content = [
-    block(pageKey, 'NavBar', navBarProps(brand)),
+    block(pageKey, 'NavBar', navBarProps(brand, pages)),
     block(pageKey, 'MedicalHero', MEDICAL_HERO_BY_KEY[pageKey] ?? MEDICAL_HERO_BY_KEY.home),
     ...buildMiddle(pageKey),
-    block(pageKey, 'Footer', footerProps(brand)),
+    block(pageKey, 'Footer', footerProps(brand, pages)),
   ];
   return { root: { props: { title: pageTitle } }, content, zones: {} };
 }
@@ -527,17 +540,17 @@ const CONSTRUCTION_MIDDLE_BY_KEY = {
   contact: (pageKey) => [block(pageKey, 'ConstructionQuoteCTA', CONSTRUCTION_QUOTE_CTA)],
 };
 
-export function seedConstructionPageData(pageKey, pageTitle, brand = {}) {
+export function seedConstructionPageData(pageKey, pageTitle, brand = {}, pages) {
   const buildMiddle = CONSTRUCTION_MIDDLE_BY_KEY[pageKey] ?? CONSTRUCTION_MIDDLE_BY_KEY.home;
   const content = [
-    block(pageKey, 'NavBar', navBarProps(brand)),
+    block(pageKey, 'NavBar', navBarProps(brand, pages)),
     block(
       pageKey,
       'ConstructionHero',
       CONSTRUCTION_HERO_BY_KEY[pageKey] ?? CONSTRUCTION_HERO_BY_KEY.home
     ),
     ...buildMiddle(pageKey),
-    block(pageKey, 'Footer', footerProps(brand)),
+    block(pageKey, 'Footer', footerProps(brand, pages)),
   ];
   return { root: { props: { title: pageTitle } }, content, zones: {} };
 }

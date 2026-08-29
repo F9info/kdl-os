@@ -13,6 +13,10 @@ export const getPage = async (id) => {
   return prisma.builderPage.findFirst({ where: { id, deleted_at: null } });
 };
 
+export const getPageBySlug = async (slug) => {
+  return prisma.builderPage.findFirst({ where: { slug, deleted_at: null } });
+};
+
 export const getPublishedBySlug = async (slug) => {
   return prisma.builderPage.findFirst({
     where: { slug, status: 'PUBLISHED', deleted_at: null },

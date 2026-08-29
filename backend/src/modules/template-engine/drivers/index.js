@@ -32,7 +32,7 @@ import {
 
 import { getMediaById } from '../../media/service.js';
 
-import { createPage, getPage } from '../../page-builder/service.js';
+import { createPage, getPage, getPageBySlug } from '../../page-builder/service.js';
 import {
   seedWebsitePageData,
   seedMedicalPageData,
@@ -322,16 +322,30 @@ const websiteDriver = {
     // render 'Service-detail'/'Faq', not the title the user actually typed.
     const pageKeyToTitle = {};
     const pageIds = [];
+    const seedPages = resolveSeedPages(navigationPages);
 
-    for (const { key, title } of resolveSeedPages(navigationPages)) {
+    for (const { key, title } of seedPages) {
+      const slug = `te-${run.id}-${key}`;
       const priorId = priorMap[key];
       let existing = null;
       if (priorId) {
         existing = await getPage(priorId).catch(() => null);
       }
+      // Crash-recovery gap: if a PRIOR advance attempt created this exact
+      // page (slugs are deterministic per run+key) but then threw on a
+      // LATER key before the stage's outputRef was ever saved, this key
+      // vanishes from priorMap even though its slug is permanently taken —
+      // a blind createPage() would then unique-constraint-crash on every
+      // future retry, forever. Look it up by its own slug before creating.
+      if (!existing) {
+        existing = await getPageBySlug(slug).catch(() => null);
+      }
 
+      // Every page's own nav/footer links to every OTHER page in this same
+      // run (seedPages) — not just Home/About/Contact — so "View all pages"
+      // can actually step through everything just assembled.
       const page = existing ?? await createPage(
-        { title, slug: `te-${run.id}-${key}`, data: seed(key, title, brand) },
+        { title, slug, data: seed(key, title, brand, seedPages) },
         userId,
       );
 

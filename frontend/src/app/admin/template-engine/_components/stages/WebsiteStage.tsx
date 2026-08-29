@@ -111,6 +111,31 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
     setWebAppStep('typography')
   }
 
+  // Navigation writes its selection straight to localStorage (no API call
+  // of its own) — read it here, the one place that actually triggers page
+  // generation, so a run builds the pages the user picked instead of always
+  // the default Home/About/Contact set.
+  function runWebsiteAssembly() {
+    const navigationPages = readLocal<string[]>(`te-website-ui:${run.projectId}:navigation`, [])
+    advance.mutate({ stage: 'WEBSITE', body: { navigationPages } })
+  }
+
+  // Set right before Navigation's "Next" moves webAppStep to 'assemble' —
+  // clicking Next should itself (re)build the pages for whatever's
+  // currently selected, not just navigate to a screen with its own
+  // possibly-disabled Complete button (StageShell disables Run once
+  // status is DONE, which every re-run after the first hits). Guarded so a
+  // plain page reload or back-and-forth while already on 'assemble'
+  // doesn't re-trigger — generation is idempotent but not free.
+  const pendingRegenRef = useRef(false)
+  useEffect(() => {
+    if (webAppStep === 'assemble' && pendingRegenRef.current) {
+      pendingRegenRef.current = false
+      runWebsiteAssembly()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [webAppStep])
+
   return (
     <StageShell
       title="Website Assembly"
@@ -118,22 +143,7 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
       stage={stage ?? null}
       hideHeader
       hideRunButton={openBrand === null || webAppStep !== 'assemble'}
-      onRun={
-        stage?.status === 'FAILED'
-          ? () => retry.mutate('WEBSITE')
-          : () => {
-              // Navigation step writes its selection straight to localStorage
-              // (no API call of its own) — read it here, the one place that
-              // actually triggers page generation, so "Run" builds the pages
-              // the user picked instead of always the default Home/About/
-              // Contact set.
-              const navigationPages = readLocal<string[]>(
-                `te-website-ui:${run.projectId}:navigation`,
-                []
-              )
-              advance.mutate({ stage: 'WEBSITE', body: { navigationPages } })
-            }
-      }
+      onRun={stage?.status === 'FAILED' ? () => retry.mutate('WEBSITE') : runWebsiteAssembly}
       onSkip={() => skip.mutate('WEBSITE')}
       isRunning={advance.isPending || retry.isPending}
     >
@@ -214,7 +224,10 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
             <NavigationStep
               projectId={run.projectId}
               onBack={() => setWebAppStep('fontSettings')}
-              onNext={() => setWebAppStep('assemble')}
+              onNext={() => {
+                pendingRegenRef.current = true
+                setWebAppStep('assemble')
+              }}
             />
           ) : pageCount > 0 ? (
             <div className="space-y-3">
@@ -222,9 +235,9 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
                 <div>
                   <h3 className="text-base font-semibold">Web app · Pages</h3>
                   <p className="text-sm text-muted-foreground">
-                    {pageCount} page{pageCount !== 1 ? 's' : ''} assembled in the page-builder
-                    engine. Open a page to edit it, or view all pages to step through the whole
-                    site.
+                    {advance.isPending
+                      ? 'Updating pages for your latest selection…'
+                      : `${pageCount} page${pageCount !== 1 ? 's' : ''} assembled in the page-builder engine. Open a page to edit it, or view all pages to step through the whole site.`}
                   </p>
                 </div>
                 <Button size="sm" asChild>

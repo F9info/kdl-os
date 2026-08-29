@@ -29,8 +29,12 @@ vi.mock('../../collateral/service.js', () => ({
 }));
 
 vi.mock('../../page-builder/service.js', () => ({
-  createPage: vi.fn(),
-  getPage:    vi.fn(),
+  createPage:    vi.fn(),
+  getPage:       vi.fn(),
+  // Defaults to "no orphaned page with this slug" so every existing test
+  // (which doesn't care about the orphan-recovery path) keeps working
+  // unchanged; tests below override this per-case.
+  getPageBySlug: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock('../../../config/database.js', () => ({
@@ -59,7 +63,7 @@ import {
   renderAsset,
 } from '../../collateral/service.js';
 
-import { createPage, getPage } from '../../page-builder/service.js';
+import { createPage, getPage, getPageBySlug } from '../../page-builder/service.js';
 
 import { prisma } from '../../../config/database.js';
 
@@ -367,6 +371,67 @@ describe('website driver — navigationPages (KDL bug: Navigation-step selection
       expect.objectContaining({ slug: 'te-run-1-portfolio-detail' }),
       'user-1',
     );
+  });
+
+  it('every seeded page\'s nav links every OTHER selected page, not a hardcoded Home/About/Contact', async () => {
+    createPage
+      .mockResolvedValueOnce({ id: 'page-home' })
+      .mockResolvedValueOnce({ id: 'page-about' })
+      .mockResolvedValueOnce({ id: 'page-faq' });
+
+    await getDriver('website').execute({
+      run: makeRun(),
+      stageRecord: makeStageRecord(),
+      userId: 'user-1',
+      projectId: 'proj-A',
+      navigationPages: ['Home', 'About', 'FAQ'],
+    });
+
+    const expectedLinks = 'Home|#\nAbout|#\nFAQ|#';
+
+    // Home uses MedicalTopNav (navLinks prop) — see headerBlocks().
+    const homeCall = createPage.mock.calls[0][0];
+    const topNav = homeCall.data.content.find((b) => b.type === 'MedicalTopNav');
+    expect(topNav.props.navLinks).toBe(expectedLinks);
+
+    // Every other page uses NavBar (links prop) + Footer (links prop).
+    const aboutCall = createPage.mock.calls[1][0];
+    const navBar = aboutCall.data.content.find((b) => b.type === 'NavBar');
+    const footer = aboutCall.data.content.find((b) => b.type === 'Footer');
+    expect(navBar.props.links).toBe(expectedLinks);
+    expect(footer.props.links).toBe(expectedLinks);
+  });
+
+  it('reuses an orphaned page found by slug instead of crashing on a unique-constraint error (KDL bug repro)', async () => {
+    // Simulates a prior advance attempt that created 'home' then threw on a
+    // later key before the stage's outputRef was ever saved — 'home' is
+    // missing from priorMap (stageRecord below has none), but a page with
+    // its deterministic slug already exists. A blind createPage() would
+    // hit "Unique constraint failed on the fields: (slug)".
+    // mockResolvedValueOnce (not mockImplementation) so this override
+    // consumes itself after the 'home' lookup and doesn't leak into later
+    // tests — the module-level default (resolves null) covers 'about'.
+    getPageBySlug.mockResolvedValueOnce({ id: 'orphaned-home-page' });
+    createPage.mockResolvedValueOnce({ id: 'page-about' });
+
+    const result = await getDriver('website').execute({
+      run: makeRun(),
+      stageRecord: makeStageRecord(), // no priorMap — 'home' isn't recorded anywhere
+      userId: 'user-1',
+      projectId: 'proj-A',
+      navigationPages: ['Home', 'About'],
+    });
+
+    // 'home' reused the orphan (no createPage call for it); 'about' is genuinely new.
+    expect(createPage).toHaveBeenCalledTimes(1);
+    expect(createPage).toHaveBeenCalledWith(
+      expect.objectContaining({ slug: 'te-run-1-about' }),
+      'user-1',
+    );
+    expect(result.outputRef.pageKeyToId).toMatchObject({
+      home: 'orphaned-home-page',
+      about: 'page-about',
+    });
   });
 
   it('falls back to the default Home/About/Contact set when navigationPages is empty', async () => {
