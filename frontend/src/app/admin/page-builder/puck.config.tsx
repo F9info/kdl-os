@@ -39,7 +39,8 @@ const composed = composePacks(root, [general, construction, medical, composer])
 export const config: Config = {
   ...composed,
   categories: {
-    'header-top': { title: 'header-top', components: ['ConstructionTopBar', 'ConstructionHeader'] },
+    'top-bar': { title: 'Top Bar', components: ['ConstructionTopBar'] },
+    header: { title: 'Header', components: ['ConstructionHeader'] },
   },
 }
 

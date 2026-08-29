@@ -67,6 +67,9 @@ export function insertBlockComponent(
  * (here: `variant`) atomically. The insert is `recordHistory: false` so the
  * pair undoes as one step.
  */
+/** Categories whose blocks always belong at the very top of the page. */
+const TOP_OF_PAGE_CATEGORIES = new Set(['top-bar', 'header'])
+
 /** Placeholder for a `type: 'slot'` field's content when previewing outside
  *  Puck's own render pipeline — Puck normally swaps a slot's raw `[]` for a
  *  renderable component before calling `.render()`; skipping that step and
@@ -224,9 +227,9 @@ export function InsertBlockModal({
   })
 
   function insertBlock(componentKey: string, variant: string | null) {
-    // header-top blocks (top bars, header) belong above everything else on
-    // the page, not appended after whatever was built so far.
-    const destinationIndex = activeCat === 'header-top' ? 0 : undefined
+    // Top Bar / Header blocks belong above everything else on the page, not
+    // appended after whatever was built so far.
+    const destinationIndex = TOP_OF_PAGE_CATEGORIES.has(activeCat) ? 0 : undefined
     insertBlockComponent(
       dispatch,
       config,
