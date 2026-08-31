@@ -335,6 +335,26 @@
 .th-btn-size-default {
   padding: var(--buttons_button_sizes_padding, 0.5rem 1rem);
 }
+/*
+ * Pin native form-control chrome to the ACTIVE Theme Engine mode, not the
+ * OS/browser's raw `prefers-color-scheme`. `data-theme` (documentElement,
+ * ThemeEngineProvider.tsx) already resolves OS preference vs. the saved
+ * Active Theme once — without this, an unstyled native control (any plain
+ * <input> with no explicit bg/text classes, e.g. the Insert-a-block
+ * search box) falls back to the browser's own UA dark-mode chrome
+ * whenever the OS is dark, while inherited/explicit `color` stays keyed
+ * to the app's light palette — background goes dark, text stays near-
+ * black, text becomes unreadable. `color-scheme` inherits, so setting it
+ * once on <html> fixes every native control app-wide, portals included
+ * (a portalled node is still a DOM descendant of <html>).
+ */
+[data-theme='light'] {
+  color-scheme: light;
+}
+[data-theme='dark'] {
+  color-scheme: dark;
+}
+
 .th-input {
   padding: var(--forms_full_border_settings_padding, 0.5rem 0.75rem);
   /* Escape hatch for icon-prefixed inputs: unlayered, so a call-site inline

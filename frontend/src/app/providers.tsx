@@ -26,7 +26,21 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+        // next-themes writes its own `color-scheme` INLINE style on <html>
+        // by default (enableColorScheme defaults true) — inline styles beat
+        // any stylesheet rule outright, so it silently overrode Theme
+        // Engine's own `[data-theme] { color-scheme }` CSS (th-components.css),
+        // leaving native form controls (any plain <input> with no explicit
+        // bg/text classes) following raw OS dark preference instead of the
+        // app's actual active theme: dark chrome, near-black inherited text,
+        // unreadable. Theme Engine owns color-scheme now.
+        enableColorScheme={false}
+      >
         <ThemeEngineProvider>
           {children}
           <Toaster />
