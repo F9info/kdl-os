@@ -4,6 +4,10 @@
  * `--puck-sidebar-left-width: var(--puck-user-sidebar-left-width, var(--puck-sidebar-width))`).
  * Default sidebar width scales up to 320px on wide screens and default field/label
  * font sizes (14-21px) ate too much of the canvas — flatten both down.
+ *
+ * Shared by every Puck editor host (admin/page-builder/[id] AND
+ * template-engine/edit/[id] — same underlying editor, reached two different
+ * ways) so a page looks and behaves identically regardless of entry point.
  */
 :root {
   --puck-user-sidebar-left-width: 150px;

@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from 'next/navigation'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Puck, blocksPlugin, type Data } from '@puckeditor/core'
 import '@puckeditor/core/puck.css'
+import '../../../page-builder/puck-overrides.css'
 import { ArrowLeft } from 'lucide-react'
 import { ModuleGuard } from '@/components/shared/ModuleGuard'
 import { toast } from '@/hooks/use-toast'
@@ -104,7 +105,6 @@ export default function TemplateEngineEditPage() {
           config={config}
           data={page.data}
           plugins={[blocksPlugin()]}
-          ui={{ leftSideBarWidth: 280 }}
           iframe={{ enabled: false }}
           viewports={[
             { width: 390, label: 'Mobile' },
