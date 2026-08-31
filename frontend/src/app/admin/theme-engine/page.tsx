@@ -918,9 +918,9 @@ function ThemeEngineInner() {
 
   return (
     <div
-      className="-m-6 flex flex-col overflow-hidden bg-muted/30"
+      className="flex flex-col overflow-hidden bg-muted/30"
       data-testid="theme-engine-page"
-      style={{ height: 'calc(100dvh - 4rem)' }}
+      style={{ height: 'calc(100dvh - 4rem - 2 * var(--th-layout-page-padding, 1.5rem))' }}
     >
       {/* ── Title bar ────────────────────────────────────────────────────── */}
       <div className="flex flex-shrink-0 items-center gap-2 border-b bg-sidebar px-4 py-3">

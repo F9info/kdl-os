@@ -53,7 +53,7 @@ export default function PageBuilderList() {
 
   return (
     <ModuleGuard slug="page-builder">
-      <div className="max-w-5xl mx-auto">
+      <div>
         <PageHeader
           title="Page Builder"
           action={
