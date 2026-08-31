@@ -1,11 +1,11 @@
-// Example module schema
+// E2E Fixture module schema
 // Add Prisma models for this module here.
 // Each model must be in this file only — never mix with other modules.
 
-// model Example {
+// model E2eFixture {
 //   id         String   @id @default(cuid())
 //   created_at DateTime @default(now())
 //   updated_at DateTime @updatedAt
 //
-//   @@map("examples")
+//   @@map("e2e_fixtures")
 // }

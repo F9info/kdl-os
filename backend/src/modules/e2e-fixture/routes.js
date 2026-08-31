@@ -5,7 +5,7 @@ import { getAll, postCreate } from './controller.js';
 
 const router = Router();
 
-router.get('/', authenticate, requirePermission('example', 'view'), getAll);
-router.post('/', authenticate, requirePermission('example', 'add'), postCreate);
+router.get('/', authenticate, requirePermission('e2e-fixture', 'view'), getAll);
+router.post('/', authenticate, requirePermission('e2e-fixture', 'add'), postCreate);
 
 export default router;

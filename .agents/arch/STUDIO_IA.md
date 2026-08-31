@@ -49,7 +49,7 @@ Admin sidebar
 ├─ Modules           /admin/modules          Package           modules:view         core-static
 │
 ├─ [module-contributed — present iff that non-core module is ENABLED]
-│  ├─ Example           /admin/example           Package         example:view          example/module.json
+│  ├─ E2E Fixture       /admin/e2e-fixture       Package         e2e-fixture:view      e2e-fixture/module.json      (test-only, not installed by default)
 │  ├─ Integrations      /admin/integrations      Package         integrations:view     integrations/module.json
 │  ├─ Notifications     /admin/notifications     Package         notifications:view    notifications/module.json
 │  ├─ Page Builder      /admin/page-builder      LayoutTemplate  page-builder:view     page-builder-ui/module.json   (Mode B only)

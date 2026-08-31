@@ -1,7 +1,7 @@
 /**
  * MODULE_PLUGIN_ARCH Step 8 E2E gate — KDL-83
  *
- * Scenario: install example module → enable → nav item appears → page loads
+ * Scenario: install e2e-fixture module → enable → nav item appears → page loads
  *           → disable → nav gone + API 404.
  *
  * Prerequisites: full stack running (frontend :3001, backend :4000).
@@ -19,20 +19,20 @@ let adminToken: string
 
 const authHeaders = () => ({ Authorization: `Bearer ${adminToken}` })
 
-async function getExampleStatus(): Promise<string | null> {
+async function getFixtureStatus(): Promise<string | null> {
   const res = await api.get(`${API_URL}/modules`, { headers: authHeaders() })
   if (!res.ok()) return null
   const modules: Array<{ slug: string; status: string }> = (await res.json()).data?.modules ?? []
-  return modules.find((m) => m.slug === 'example')?.status ?? null
+  return modules.find((m) => m.slug === 'e2e-fixture')?.status ?? null
 }
 
-async function ensureExampleUninstalled() {
-  const status = await getExampleStatus()
+async function ensureFixtureUninstalled() {
+  const status = await getFixtureStatus()
   if (status === null || status === 'AVAILABLE') return
   if (status === 'ENABLED') {
-    await api.post(`${API_URL}/modules/example/disable`, { headers: authHeaders() })
+    await api.post(`${API_URL}/modules/e2e-fixture/disable`, { headers: authHeaders() })
   }
-  await api.delete(`${API_URL}/modules/example`, { headers: authHeaders() })
+  await api.delete(`${API_URL}/modules/e2e-fixture`, { headers: authHeaders() })
 }
 
 async function loginUi(page: import('@playwright/test').Page) {
@@ -52,26 +52,26 @@ test.beforeAll(async () => {
   })
   expect(login.ok(), 'seeded super admin must be able to log in').toBeTruthy()
   adminToken = (await login.json()).data.accessToken
-  await ensureExampleUninstalled()
+  await ensureFixtureUninstalled()
 })
 
 test.afterAll(async () => {
-  await ensureExampleUninstalled()
+  await ensureFixtureUninstalled()
   await api.dispose()
 })
 
-test('1. install example module — status becomes INSTALLED', async () => {
-  const res = await api.post(`${API_URL}/modules/example/install`, {
+test('1. install e2e-fixture module — status becomes INSTALLED', async () => {
+  const res = await api.post(`${API_URL}/modules/e2e-fixture/install`, {
     headers: authHeaders(),
   })
   expect(res.status(), await res.text()).toBe(201)
   const body = await res.json()
-  expect(body.data.module.slug).toBe('example')
+  expect(body.data.module.slug).toBe('e2e-fixture')
   expect(body.data.module.status).toBe('INSTALLED')
 })
 
-test('2. enable example module — status becomes ENABLED', async () => {
-  const res = await api.post(`${API_URL}/modules/example/enable`, {
+test('2. enable e2e-fixture module — status becomes ENABLED', async () => {
+  const res = await api.post(`${API_URL}/modules/e2e-fixture/enable`, {
     headers: authHeaders(),
   })
   expect(res.status(), await res.text()).toBe(200)
@@ -87,16 +87,16 @@ test('3. nav item appears and page loads after enable', async ({ page }) => {
   await loginUi(page)
   await modulesResponsePromise
 
-  // Sidebar must show the Example nav link.
-  await expect(page.getByRole('link', { name: 'Example' })).toBeVisible({ timeout: 10_000 })
+  // Sidebar must show the E2E Fixture nav link.
+  await expect(page.getByRole('link', { name: 'E2E Fixture' })).toBeVisible({ timeout: 10_000 })
 
   // Navigate to the page and confirm it renders correctly.
-  await page.goto('/admin/example')
-  await expect(page.getByRole('heading', { name: 'Example' })).toBeVisible()
+  await page.goto('/admin/e2e-fixture')
+  await expect(page.getByRole('heading', { name: 'E2E Fixture' })).toBeVisible()
 })
 
-test('4. disable example module — status becomes DISABLED', async () => {
-  const res = await api.post(`${API_URL}/modules/example/disable`, {
+test('4. disable e2e-fixture module — status becomes DISABLED', async () => {
+  const res = await api.post(`${API_URL}/modules/e2e-fixture/disable`, {
     headers: authHeaders(),
   })
   expect(res.status(), await res.text()).toBe(200)
@@ -112,9 +112,9 @@ test('5. nav item gone + API 404 after disable', async ({ page }) => {
   await modulesResponsePromise
   await page.waitForLoadState('networkidle')
 
-  await expect(page.getByRole('link', { name: 'Example' })).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'E2E Fixture' })).toHaveCount(0)
 
   // Module gate must return 404 for disabled module.
-  const apiRes = await api.get(`${API_URL}/example`, { headers: authHeaders() })
+  const apiRes = await api.get(`${API_URL}/e2e-fixture`, { headers: authHeaders() })
   expect(apiRes.status()).toBe(404)
 })

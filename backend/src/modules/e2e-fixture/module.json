@@ -1,0 +1,22 @@
+{
+  "slug": "e2e-fixture",
+  "name": "E2E Fixture",
+  "version": "1.0.0",
+  "description": "E2E Fixture module",
+  "core": false,
+  "apiPrefix": "/api/e2e-fixture",
+  "permissions": [
+    "e2e-fixture"
+  ],
+  "nav": [
+    {
+      "label": "E2E Fixture",
+      "path": "/admin/e2e-fixture",
+      "icon": "Package",
+      "permission": "e2e-fixture:view"
+    }
+  ],
+  "dependsOn": [],
+  "queues": [],
+  "env": []
+}

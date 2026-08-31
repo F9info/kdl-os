@@ -1,17 +1,17 @@
 import { prisma } from '../../config/database.js';
 import { writeActivityAsync } from '../user-management/shared/activity-logger.js';
 
-export const listExamples = async () => {
+export const listE2eFixtures = async () => {
   // TODO: implement
   return [];
 };
 
-export const createExample = async (data, actorId) => {
+export const createE2eFixture = async (data, actorId) => {
   // TODO: implement
   writeActivityAsync({
     actor: actorId,
-    module: 'user-management/example',
+    module: 'user-management/e2e-fixture',
     action: 'created',
-    description: `Example created`,
+    description: `E2E Fixture created`,
   });
 };

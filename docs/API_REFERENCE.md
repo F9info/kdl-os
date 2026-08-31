@@ -622,12 +622,12 @@ Returns all modules — those with a manifest on disk merged with installed DB r
   "data": {
     "modules": [
       {
-        "slug": "example",
-        "name": "Example",
-        "description": "Example module",
+        "slug": "e2e-fixture",
+        "name": "E2E Fixture",
+        "description": "E2E Fixture module",
         "version": "1.0.0",
         "core": false,
-        "apiPrefix": "/api/example",
+        "apiPrefix": "/api/e2e-fixture",
         "status": "ENABLED",
         "installed_at": "2026-07-06T10:00:00.000Z",
         "enabled_at": "2026-07-06T10:00:00.000Z",
@@ -655,10 +655,10 @@ Returns only `ENABLED` modules with their nav entries. Used by the frontend to b
   "data": {
     "modules": [
       {
-        "slug": "example",
-        "name": "Example",
+        "slug": "e2e-fixture",
+        "name": "E2E Fixture",
         "nav": [
-          { "label": "Example", "path": "/example", "icon": "Package", "permission": "example:view" }
+          { "label": "E2E Fixture", "path": "/e2e-fixture", "icon": "Package", "permission": "e2e-fixture:view" }
         ]
       }
     ]
@@ -681,8 +681,8 @@ Installs a module: validates env vars, registers permission modules (upsert), cr
   "data": {
     "module": {
       "id": "...",
-      "slug": "example",
-      "name": "Example",
+      "slug": "e2e-fixture",
+      "name": "E2E Fixture",
       "version": "1.0.0",
       "is_core": false,
       "status": "INSTALLED",
@@ -741,7 +741,7 @@ Uninstalls a module: deregisters its permission modules (blocked if any roles or
 
 **Response 200:**
 ```json
-{ "success": true, "data": { "message": "Module \"example\" uninstalled" } }
+{ "success": true, "data": { "message": "Module \"e2e-fixture\" uninstalled" } }
 ```
 
 **Error conditions:**
