@@ -2,11 +2,16 @@
 //
 // Creates the Type, Category, and SettingField rows for the prototype's
 // "Logo & Contact Details" screen as STANDALONE fields (owner_module: null) —
-// visible and editable through the normal admin UI, same as the existing
-// "Theme Settings" > "Site Details" > Logo/Site Name example rows at
-// /admin/settings/fields. This is deliberately NOT owner_module-scoped
-// (unlike brand-kit.seed.js's token fields) — the user wants these managed
-// through Application Settings directly, not hidden as an internal store.
+// editable through the generic setting-fields API, same mechanism as any
+// other Application Settings Type. NOT owner_module-scoped (unlike
+// brand-kit.seed.js's token fields) — the real editing surface is
+// template-engine's own Intake stage (IntakeStage.tsx, `GET/POST
+// /setting-fields/by-type/brand-profile`), which doesn't care about
+// owner_module or is_active. The Type itself is `is_active: false` so it
+// does NOT also show up as a redundant, easy-to-confuse-with-Brand-Kit
+// entry in the Application Settings sidebar (AdminSidebar.tsx lists only
+// `is_active: true` types) — direct navigation to
+// /admin/settings/view/brand-profile still works fine if ever needed.
 //
 // Idempotency: every write is an upsert keyed on slug. Re-running is a no-op.
 
@@ -25,8 +30,8 @@ export async function seedBrandProfileFields(prisma) {
   // 1. Upsert the standalone Type
   const type = await prisma.type.upsert({
     where: { slug: 'brand-profile' },
-    create: { slug: 'brand-profile', name: 'Brand Profile', is_active: true },
-    update: { name: 'Brand Profile', is_active: true },
+    create: { slug: 'brand-profile', name: 'Brand Profile', is_active: false },
+    update: { name: 'Brand Profile', is_active: false },
   });
 
   // 2. Upsert the grouping Category
