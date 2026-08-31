@@ -116,14 +116,25 @@ export default function TypeSettingsPage() {
             className="max-w-3xl space-y-6"
           >
             <div className="space-y-6 rounded-lg border bg-card p-6">
-              {fields.map((field) => (
-                <FieldControl
-                  key={field.id}
-                  field={field}
-                  state={form[field.id] ?? { value: '', alt_text: '' }}
-                  onChange={(patch) => updateField(field.id, patch)}
-                />
-              ))}
+              {fields.map((field, i) => {
+                const prevCategory = i > 0 ? fields[i - 1]?.category?.name : undefined
+                const showCategoryHeading = field.category && field.category.name !== prevCategory
+
+                return (
+                  <div key={field.id}>
+                    {showCategoryHeading && (
+                      <h3 className="mb-3 text-sm font-semibold text-muted-foreground">
+                        {field.category!.name}
+                      </h3>
+                    )}
+                    <FieldControl
+                      field={field}
+                      state={form[field.id] ?? { value: '', alt_text: '' }}
+                      onChange={(patch) => updateField(field.id, patch)}
+                    />
+                  </div>
+                )
+              })}
             </div>
 
             {saveMutation.error && <ErrorAlert error={saveMutation.error} />}

@@ -282,7 +282,7 @@ function ConnectionsStep({ onOpen }: { onOpen: (c: ImportConnection) => void }) 
                     p.configured ? `Connect ${label}` : `${label} is not configured on the server`
                   }
                 >
-                  <Plus className="h-3 w-3 mr-1" /> {label}
+                  <Plus className="h-3 w-3" /> {label}
                 </Button>
                 {!p.configured && (
                   <span className="text-[10px] text-muted-foreground">Not configured</span>
@@ -296,7 +296,7 @@ function ConnectionsStep({ onOpen }: { onOpen: (c: ImportConnection) => void }) 
             onClick={() => setCredForm(true)}
             title="Connect S3 or FTP"
           >
-            <Plus className="h-3 w-3 mr-1" /> S3 / FTP
+            <Plus className="h-3 w-3" /> S3 / FTP
           </Button>
         </div>
         {credForm && (

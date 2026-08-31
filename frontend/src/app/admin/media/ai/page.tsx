@@ -234,7 +234,7 @@ export default function MediaAiSettingsPage() {
           title="AI Providers"
           action={
             <Button size="sm" onClick={openCreate} disabled={featureDrivers.length === 0}>
-              <Plus className="h-4 w-4 mr-1" />
+              <Plus className="h-4 w-4" />
               Add Provider
             </Button>
           }
@@ -397,7 +397,7 @@ export default function MediaAiSettingsPage() {
                   className="mt-2"
                   onClick={() => setForm((f) => ({ ...f, replaceCredentials: true }))}
                 >
-                  <RotateCcw className="h-3.5 w-3.5 mr-1" />
+                  <RotateCcw className="h-3.5 w-3.5" />
                   Replace Credentials
                 </Button>
               </div>

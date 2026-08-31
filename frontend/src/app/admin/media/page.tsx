@@ -1926,7 +1926,7 @@ export default function MediaPage() {
                   <>
                     {can('media:folders') && (
                       <Button size="sm" variant="outline" onClick={() => setMoveOpen(true)}>
-                        <Move className="h-3.5 w-3.5 mr-1" />
+                        <Move className="h-3.5 w-3.5" />
                         Move
                       </Button>
                     )}
@@ -1937,7 +1937,7 @@ export default function MediaPage() {
                         onClick={() => bulkShareMutation.mutate()}
                         disabled={bulkShareMutation.isPending}
                       >
-                        <Share2 className="h-3.5 w-3.5 mr-1" />
+                        <Share2 className="h-3.5 w-3.5" />
                         Make shared
                       </Button>
                     )}
@@ -1947,7 +1947,7 @@ export default function MediaPage() {
                         variant="destructive"
                         onClick={() => setConfirmBulkDelete(true)}
                       >
-                        <Trash2 className="h-3.5 w-3.5 mr-1" />
+                        <Trash2 className="h-3.5 w-3.5" />
                         Delete
                       </Button>
                     )}
@@ -1960,7 +1960,7 @@ export default function MediaPage() {
                       onClick={() => restoreMutation.mutate()}
                       disabled={restoreMutation.isPending}
                     >
-                      <RefreshCcw className="h-3.5 w-3.5 mr-1" />
+                      <RefreshCcw className="h-3.5 w-3.5" />
                       Restore
                     </Button>
                   )
@@ -1983,7 +1983,7 @@ export default function MediaPage() {
                   onClick={() => setConfirmPurge(true)}
                   disabled={trashCount === 0}
                 >
-                  <AlertTriangle className="h-3.5 w-3.5 mr-1" />
+                  <AlertTriangle className="h-3.5 w-3.5" />
                   Purge all
                 </Button>
               )}

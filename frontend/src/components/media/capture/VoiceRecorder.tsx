@@ -186,11 +186,11 @@ export function VoiceRecorder({ folderId, onUploaded }: CaptureWidgetProps) {
       <div className="flex items-center gap-2">
         {recording ? (
           <Button size="sm" variant="destructive" onClick={stop}>
-            <Square className="h-4 w-4 mr-1" /> Stop recording
+            <Square className="h-4 w-4" /> Stop recording
           </Button>
         ) : (
           <Button size="sm" onClick={start} disabled={uploading}>
-            <Mic className="h-4 w-4 mr-1" /> Start voice recording
+            <Mic className="h-4 w-4" /> Start voice recording
           </Button>
         )}
         {uploading && <span className="text-sm text-muted-foreground">Uploading…</span>}

@@ -57,8 +57,6 @@ export function FieldControl({ field, state, onChange }: FieldControlProps) {
     )
   }
 
-  const hint = field.category ? `Category: ${field.category.name}` : undefined
-
   const control = () => {
     switch (input_type) {
       case 'textbox':
@@ -196,11 +194,7 @@ export function FieldControl({ field, state, onChange }: FieldControlProps) {
     }
   }
 
-  return (
-    <FormField label={field_name} hint={hint}>
-      {control()}
-    </FormField>
-  )
+  return <FormField label={field_name}>{control()}</FormField>
 }
 
 function SingleFileControl({ field, state, onChange }: FieldControlProps) {

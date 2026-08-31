@@ -64,7 +64,7 @@ export default function NotificationsPage() {
                 onClick={() => markAllRead.mutate()}
                 disabled={markAllRead.isPending}
               >
-                <CheckCheck className="h-4 w-4 mr-1" />
+                <CheckCheck className="h-4 w-4" />
                 Mark all read
               </Button>
             </div>

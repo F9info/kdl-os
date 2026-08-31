@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 // Buttons pane via the th-btn* classes (te-components.css, KDL-213). Primary
 // keeps `bg-primary` so the branding Primary Color still recolors it.
 const buttonVariants = cva(
-  'th-btn inline-flex items-center justify-center whitespace-nowrap ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  'th-btn inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {

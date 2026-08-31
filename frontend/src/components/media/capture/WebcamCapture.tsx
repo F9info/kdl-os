@@ -174,11 +174,11 @@ export function WebcamCapture({ folderId, onUploaded }: CaptureWidgetProps) {
       )}
       <div className="flex items-center gap-2">
         <Button size="sm" onClick={snapPhoto} disabled={!ready || uploading || recording}>
-          <Camera className="h-4 w-4 mr-1" /> Take photo
+          <Camera className="h-4 w-4" /> Take photo
         </Button>
         {recording ? (
           <Button size="sm" variant="destructive" onClick={stopRecording}>
-            <Square className="h-4 w-4 mr-1" /> Stop recording
+            <Square className="h-4 w-4" /> Stop recording
           </Button>
         ) : (
           <Button

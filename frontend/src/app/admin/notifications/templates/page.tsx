@@ -203,7 +203,7 @@ export default function NotificationTemplatesPage() {
             action={
               <PermissionGuard permission="notifications:add">
                 <Button size="sm" onClick={openCreate}>
-                  <Plus className="h-4 w-4 mr-1" />
+                  <Plus className="h-4 w-4" />
                   New Template
                 </Button>
               </PermissionGuard>

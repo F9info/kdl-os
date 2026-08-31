@@ -149,11 +149,11 @@ export function ScreenCapture({ folderId, onUploaded }: CaptureWidgetProps) {
       <div className="flex items-center gap-2">
         {recording ? (
           <Button size="sm" variant="destructive" onClick={stop}>
-            <Square className="h-4 w-4 mr-1" /> Stop recording
+            <Square className="h-4 w-4" /> Stop recording
           </Button>
         ) : (
           <Button size="sm" onClick={start} disabled={uploading}>
-            <MonitorUp className="h-4 w-4 mr-1" /> Start screen recording
+            <MonitorUp className="h-4 w-4" /> Start screen recording
           </Button>
         )}
         {recording && (

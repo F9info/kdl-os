@@ -4,7 +4,7 @@
 // editor, collections/favorites/recents views, chunked upload with progress + resume,
 // drag-drop folder upload, clipboard paste upload.
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, type CSSProperties } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   X,
@@ -187,7 +187,8 @@ export function SearchFacets({ onResults, onClear, semanticEnabled }: SearchFace
         <Input
           placeholder="Search media…"
           value={q}
-          className="pl-8 h-9"
+          className="h-9"
+          style={{ '--th-input-pl': '2.25rem' } as CSSProperties}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
         />

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type CSSProperties } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -362,7 +362,7 @@ export default function UsersPage() {
           title="Users"
           action={
             <Button onClick={() => setCreateOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4" />
               Add user
             </Button>
           }
@@ -375,7 +375,7 @@ export default function UsersPage() {
               placeholder="Search users..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
+              style={{ '--th-input-pl': '2.25rem' } as CSSProperties}
             />
           </div>
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as UserStatus | '')}>
@@ -516,14 +516,14 @@ export default function UsersPage() {
               </Select>
             </FormField>
 
-            <FormField label="Active">
+            <FormField label="Account enabled">
               <div className="flex items-center gap-2">
                 <Switch
                   checked={createIsActive}
                   onCheckedChange={(v) => createForm.setValue('is_active', v)}
                 />
                 <span className="text-sm text-muted-foreground">
-                  {createIsActive ? 'Active' : 'Inactive'}
+                  {createIsActive ? 'Enabled' : 'Disabled'}
                 </span>
               </div>
             </FormField>
@@ -648,14 +648,14 @@ export default function UsersPage() {
                 </Select>
               </FormField>
 
-              <FormField label="Active">
+              <FormField label="Account enabled">
                 <div className="flex items-center gap-2">
                   <Switch
                     checked={isActiveValue}
                     onCheckedChange={(v) => setValue('is_active', v)}
                   />
                   <span className="text-sm text-muted-foreground">
-                    {isActiveValue ? 'Active' : 'Inactive'}
+                    {isActiveValue ? 'Enabled' : 'Disabled'}
                   </span>
                 </div>
               </FormField>

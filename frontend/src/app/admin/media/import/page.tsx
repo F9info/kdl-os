@@ -366,7 +366,7 @@ function MediaImportContent() {
                 onClick={() => oauthMutation.mutate(p)}
                 disabled={oauthMutation.isPending}
               >
-                <Cloud className="h-4 w-4 mr-1" /> Connect
+                <Cloud className="h-4 w-4" /> Connect
               </Button>
             </div>
           ))}
@@ -405,7 +405,7 @@ function MediaImportContent() {
                   </div>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="sm" onClick={() => setBrowsing(c)}>
-                      <FolderOpen className="h-4 w-4 mr-1" /> Browse
+                      <FolderOpen className="h-4 w-4" /> Browse
                     </Button>
                     <Button
                       variant="ghost"

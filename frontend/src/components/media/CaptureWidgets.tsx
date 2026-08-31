@@ -208,7 +208,7 @@ function CaptureModal({
           {rec.state === 'starting' && <Button disabled>Starting…</Button>}
           {rec.state === 'recording' && (
             <Button variant="destructive" onClick={rec.stop}>
-              <Square className="h-4 w-4 mr-1" /> Stop
+              <Square className="h-4 w-4" /> Stop
             </Button>
           )}
           {rec.state === 'preview' && (
@@ -249,7 +249,7 @@ export function WebcamCaptureButton({ onCapture, disabled }: CaptureButtonProps)
         open={open}
         onClose={close}
         title="Record from webcam"
-        icon={<Video className="h-4 w-4 mr-1" />}
+        icon={<Video className="h-4 w-4" />}
         hasVideo
         isAudioOnly={false}
         onCapture={onCapture}
@@ -283,7 +283,7 @@ export function ScreenCaptureButton({ onCapture, disabled }: CaptureButtonProps)
         open={open}
         onClose={close}
         title="Record screen"
-        icon={<Monitor className="h-4 w-4 mr-1" />}
+        icon={<Monitor className="h-4 w-4" />}
         hasVideo
         isAudioOnly={false}
         onCapture={onCapture}
@@ -317,7 +317,7 @@ export function VoiceRecorderButton({ onCapture, disabled }: CaptureButtonProps)
         open={open}
         onClose={close}
         title="Record voice"
-        icon={<Mic className="h-4 w-4 mr-1" />}
+        icon={<Mic className="h-4 w-4" />}
         hasVideo={false}
         isAudioOnly
         onCapture={onCapture}

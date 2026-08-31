@@ -156,7 +156,7 @@ export default function RolesPage() {
           title="Roles"
           action={
             <Button onClick={() => setDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4" />
               Create role
             </Button>
           }

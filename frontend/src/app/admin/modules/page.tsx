@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Package,
@@ -355,7 +355,7 @@ export default function ModulesPage() {
               placeholder="Search modules…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-8"
+              style={{ '--th-input-pl': '2.25rem' } as CSSProperties}
               aria-label="Search modules"
             />
           </div>
@@ -435,8 +435,13 @@ export default function ModulesPage() {
                     <div className="flex min-w-0 items-center gap-3">
                       <ModuleIcon icon={mod.icon} />
                       <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="truncate font-medium text-foreground">{mod.name}</span>
+                        <div className="flex items-start gap-1.5">
+                          <span
+                            className="font-medium leading-snug text-foreground"
+                            title={mod.name}
+                          >
+                            {mod.name}
+                          </span>
                           {mod.core && (
                             <Lock
                               className="h-3.5 w-3.5 shrink-0 text-muted-foreground"

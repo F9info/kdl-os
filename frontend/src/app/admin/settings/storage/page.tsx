@@ -420,7 +420,7 @@ export default function StorageSettingsPage() {
                             className="mt-2"
                             onClick={() => setForm((f) => ({ ...f, replaceSecrets: true }))}
                           >
-                            <RotateCcw className="h-3.5 w-3.5 mr-1" />
+                            <RotateCcw className="h-3.5 w-3.5" />
                             Replace Credentials
                           </Button>
                         </PermissionGuard>
@@ -487,7 +487,7 @@ export default function StorageSettingsPage() {
                       onClick={handleTest}
                       disabled={testMutation.isPending}
                     >
-                      <FlaskConical className="h-4 w-4 mr-1.5" />
+                      <FlaskConical className="h-4 w-4" />
                       {testMutation.isPending ? 'Testing…' : 'Test Connection'}
                     </Button>
                   )}

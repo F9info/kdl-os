@@ -337,6 +337,11 @@
 }
 .th-input {
   padding: var(--forms_full_border_settings_padding, 0.5rem 0.75rem);
+  /* Escape hatch for icon-prefixed inputs: unlayered, so a call-site inline
+     style (higher specificity than any stylesheet rule) can set
+     --th-input-pl to clear the icon — a `pl-*` Tailwind class can't, it's
+     layered and always loses to this rule. */
+  padding-left: var(--th-input-pl, 0.75rem);
 }
 .th-card {
   /* Transparent keeps geometry identical across Flat/Elevated/Bordered. */
