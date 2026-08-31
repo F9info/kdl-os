@@ -87,18 +87,19 @@ function BlocksTab({ onOpenCategory }: { onOpenCategory: (categoryKey: string) =
       >
         Blocks
       </div>
-      <div className="grid grid-cols-2 gap-1.5">
+      <div className="flex flex-col gap-1.5">
         {categories.map(([key, cat]) => {
           const Icon = categoryIcon(cat.title ?? key)
           return (
             <button
               key={key}
               onClick={() => onOpenCategory(key)}
-              className="flex flex-col items-center gap-1 rounded-lg py-2.5 px-1"
+              title={cat.title ?? key}
+              className="flex items-center gap-2 rounded-lg px-2 py-2 text-left"
               style={{ background: OD.tile, border: `1px solid ${OD.tileBd}`, color: '#c7ccd3' }}
             >
-              <Icon size={16} color={TAB_ACCENT.blocks} strokeWidth={1.75} />
-              <span className="text-center text-[10px] font-semibold leading-tight">
+              <Icon size={16} color={TAB_ACCENT.blocks} strokeWidth={1.75} className="shrink-0" />
+              <span className="truncate text-[10.5px] font-semibold leading-tight">
                 {cat.title ?? key}
               </span>
             </button>

@@ -10,8 +10,8 @@
  * ways) so a page looks and behaves identically regardless of entry point.
  */
 :root {
-  --puck-user-sidebar-left-width: 150px;
-  --puck-user-sidebar-right-width: 150px;
+  --puck-user-sidebar-left-width: 190px;
+  --puck-user-sidebar-right-width: 190px;
   --puck-font-size-xxs-unitless: 12;
   --puck-font-size-xs-unitless: 13;
   --puck-font-size-s-unitless: 15;
@@ -33,4 +33,24 @@
   --puck-icon-size-xs: 12px;
   --puck-icon-size-s: 14px;
   --puck-icon-size-m: 16px;
+}
+
+/*
+ * Puck's own Outline (LayerTree) row sets `text-overflow: ellipsis` on
+ * `._Layer-name_*` but never `min-width: 0` on it or its flex parent
+ * `._Layer-title_*` — a flex item's default min-width is `auto`, so it
+ * refuses to shrink below its own text's intrinsic width and never
+ * triggers its own overflow/ellipsis. The overflow happens one level up
+ * instead, on `._Layer-title_*`'s plain `overflow-x: hidden` (no ellipsis
+ * of its own), producing a hard mid-word cut with no "…". Only visible at
+ * a narrow sidebar width like ours (150-190px) — Puck's default ~320px
+ * rarely overflows long labels at all. Class names carry a build-hashed
+ * suffix, so match by prefix instead of the exact generated name.
+ */
+[class*='Layer-title_'] {
+  min-width: 0;
+}
+[class*='Layer-name_'] {
+  min-width: 0;
+  flex: 1 1 auto;
 }
