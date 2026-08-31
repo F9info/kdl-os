@@ -8,6 +8,7 @@ import { seedBrandKit } from './seeders/brand-kit.seed.js';
 import { seedBrandProfileFields } from './seeders/brand-profile-fields.seed.js';
 import { seedProjects } from '../src/modules/projects/seed.js';
 import { seedThemeEngine } from '../src/modules/theme-engine/seed.js';
+import { seedCredits } from '../src/modules/credits/seed.js';
 
 async function main() {
   const { email, password, generated } = resolveSeedAdminCredentials();
@@ -44,6 +45,7 @@ async function main() {
   await seedBrandKit(prisma);
   await seedBrandProfileFields(prisma);
   await seedThemeEngine(prisma);
+  await seedCredits(prisma);
 }
 
 main()
