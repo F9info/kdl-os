@@ -2,8 +2,9 @@
   "slug": "e2e-fixture",
   "name": "E2E Fixture",
   "version": "1.0.0",
-  "description": "E2E Fixture module",
+  "description": "Disposable install/enable/disable target for the KDL-83 plugin-lifecycle E2E test (frontend/e2e/module-plugin.spec.ts) — not a real feature.",
   "core": false,
+  "visibleInCatalog": false,
   "apiPrefix": "/api/e2e-fixture",
   "permissions": [
     "e2e-fixture"
