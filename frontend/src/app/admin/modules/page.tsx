@@ -422,14 +422,14 @@ export default function ModulesPage() {
         )}
 
         {!isLoading && filteredModules.length > 0 && (
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="mt-6 flex flex-wrap gap-4">
             {filteredModules.map((mod) => {
               const hasActiveConflicts = !!(mod.conflicts && mod.conflicts.length > 0)
               const isNotActive = mod.status !== 'ENABLED'
               return (
                 <div
                   key={mod.slug}
-                  className="flex h-full flex-col gap-3 rounded-lg border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
+                  className="flex h-full min-w-[280px] max-w-[420px] flex-1 basis-[340px] flex-col gap-3 rounded-lg border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-3">
