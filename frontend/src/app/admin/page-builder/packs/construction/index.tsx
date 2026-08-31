@@ -4948,10 +4948,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
 // ── categories ─────────────────────────────────────────────────────────────────
 
 const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
-  'construction-hero': {
-    title: 'Construction — Hero',
-    components: ['ConstructionHeader', 'ConstructionHero'],
-  },
+  // ConstructionHeader and ConstructionHero each have their own top-level
+  // 'header'/'hero' category (see puck.config.tsx) so picking one shows just
+  // its own selectable designs — no separate listing needed here too.
   'construction-sections': {
     title: 'Construction — Sections',
     components: [
