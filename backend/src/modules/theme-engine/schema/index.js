@@ -256,9 +256,12 @@ const PLATFORMS=[
     {id:'laptop_h',label:'💻 Laptop ↔',from:'laptop'},{id:'laptop_v',label:'💻 Laptop ↕',from:'laptop'},
     {id:'tablet_h',label:'📱 Tablet ↔',from:'ipad'},{id:'tablet_v',label:'📱 Tablet ↕',from:'ipad'},
     {id:'mobile_h',label:'📲 Mobile ↔',from:'mobile'},{id:'mobile_v',label:'📲 Mobile ↕',from:'mobile'}]},
-  // Admin panel gets the same 11-pane BASE_TABS shape as the frontend site
-  // (no PANE_OVERRIDES/EXTRA_TABS entry needed — mirrors how 'webapp' itself
-  // has none and falls straight through to BASE_TABS verbatim).
+  // Admin panel gets the same 11-pane BASE_TABS shape as the frontend site,
+  // with one PANE_OVERRIDES patch (see below): BASE_TABS' Container Width
+  // (1320px/1140px/...) exists to cap marketing-page line length, which is
+  // actively wrong for a data-dense admin dashboard — on any monitor wider
+  // than sidebar+that cap, `.th-container`'s centering margin-inline:auto
+  // shows as large dead gutters either side of every admin page.
   {id:'webapp_admin',label:'🛠️ Webapp Admin',devices:[
     {id:'desktop',label:'🖥️ Desktop',from:'desktop'},
     {id:'laptop_h',label:'💻 Laptop ↔',from:'laptop'},{id:'laptop_v',label:'💻 Laptop ↕',from:'laptop'},
@@ -307,6 +310,14 @@ const scaleField=(f,s)=>{
    adds extra ones, `patch` overrides field defaults, `label`/`desc`/`modes`
    override pane chrome. */
 const PANE_OVERRIDES={
+webapp_admin:{
+  layout:{patch:{
+    'Container & Grid|desktop':{'Container Width':'Fluid (100%)'},
+    'Container & Grid|laptop':{'Container Width':'Fluid (100%)'},
+    'Container & Grid|ipad':{'Container Width':'Fluid (100%)'},
+    'Container & Grid|mobile':{'Container Width':'Fluid (100%)'},
+  }},
+},
 tv:{
   branding:{desc:'Dark theme focus — accent colors and surface colors'},
   typography:{desc:'Large text scaling and font styles for TV viewing distance'},
