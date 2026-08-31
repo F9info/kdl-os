@@ -2031,28 +2031,28 @@ export const medical: ComponentPack = {
   components: typedComponents as NonNullable<Config['components']>,
   categories: {
     'medical-nav-hero': {
-      title: 'Clinic template (nav, hero, info)',
+      title: 'Medical — Clinic Template',
       components: ['MedicalTopNav', 'MedicalHeroSplit', 'MedicalContactInfoCards'],
     },
-    'medical-hero': { title: 'Hero', components: ['MedicalHero'] },
+    'medical-hero': { title: 'Medical — Hero', components: ['MedicalHero'] },
     'medical-services': {
-      title: 'Services & Departments',
+      title: 'Medical — Services & Departments',
       components: ['MedicalServicesList', 'MedicalDepartmentCards'],
     },
     'medical-team': {
-      title: 'Team',
+      title: 'Medical — Team',
       components: ['MedicalDoctorProfiles'],
     },
     'medical-patient': {
-      title: 'Patient',
+      title: 'Medical — Patient',
       components: ['MedicalPatientTestimonials', 'MedicalFAQ'],
     },
     'medical-cta': {
-      title: 'Calls to Action',
+      title: 'Medical — Calls to Action',
       components: ['MedicalAppointmentCTA'],
     },
     'medical-info': {
-      title: 'Info',
+      title: 'Medical — Info',
       components: ['MedicalInsuranceStrip', 'MedicalContactHours'],
     },
   },

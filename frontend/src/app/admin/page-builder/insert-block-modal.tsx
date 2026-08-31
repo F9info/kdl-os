@@ -149,6 +149,13 @@ function previewProps(comp: PuckComponentConfig, variant: string | null) {
 const COMPACT_PREVIEW_HEIGHT: Record<string, number> = {
   ConstructionHeader: 110,
   ConstructionTopBar: 110,
+  // Layout primitives ship with empty slots (a "Content" placeholder is the
+  // only thing rendered) — same dead-space problem as the bar-shaped
+  // components above, just worse: default 320px next to ~30-50px of actual
+  // content.
+  Section: 110,
+  Columns: 110,
+  Spacer: 60,
 }
 const DEFAULT_PREVIEW_HEIGHT = 320
 
