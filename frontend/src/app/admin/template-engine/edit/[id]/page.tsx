@@ -73,31 +73,24 @@ export default function TemplateEngineEditPage() {
 
   return (
     <ModuleGuard slug="template-engine">
-      <div className="te-outline-right fixed inset-0 z-[100] [&_[class*=PuckLayout-nav]]:hidden">
-        {/* Puck hardwires Outline to grid-area "left" / Fields to "right" — no
-            public prop for this. Swap by moving the area tokens to the
-            opposite physical column (and the matching width var with them)
-            instead of forcing grid-area on the content, so each sidebar's
-            resize handle (sibling-selector-bound to the same area name)
-            still tracks its panel. Known gap: the desktop "outline only,
-            fields hidden" state isn't in puck.css at all (falls back to
-            both-hidden) so there's nothing to mirror for it. */}
+      <div className="te-fields-left fixed inset-0 z-[100] [&_[class*=PuckLayout-nav]]:hidden">
+        {/* No Outline panel — it only duplicated the Section tab's own
+            Reorder list. Puck hardwires Fields to grid-area "right" with no
+            public prop to move it — pin the "left" area (Outline's slot,
+            now empty since overrides.outline renders null) to 0 width so
+            Fields is the only real column, instead of leaving a dead
+            190px gap where Outline used to sit. */}
         <style>{`
-          .te-outline-right [class*="PuckLayout-inner_"] {
+          .te-fields-left [class*="PuckLayout-inner_"] {
             --puck-pluginbar-width: 0px !important;
           }
-          .te-outline-right [class*="SidebarSection-heading_"] [class*="Heading_"] {
+          .te-fields-left [class*="SidebarSection-heading_"] [class*="Heading_"] {
             font-size: 13px !important;
           }
           @media (min-width: 638px) {
-            .te-outline-right [class*="PuckLayout-inner_"] {
+            .te-fields-left [class*="PuckLayout-inner_"] {
               grid-template-areas: "header header header header" "sidenav right editor left" !important;
-            }
-            .te-outline-right [class*="PuckLayout--rightSideBarVisible_"] [class*="PuckLayout-inner_"] {
               grid-template-columns: var(--puck-pluginbar-width) var(--puck-sidebar-right-width) var(--puck-frame-width) 0 !important;
-            }
-            .te-outline-right [class*="PuckLayout--leftSideBarVisible_"][class*="PuckLayout--rightSideBarVisible_"] [class*="PuckLayout-inner_"] {
-              grid-template-columns: var(--puck-pluginbar-width) var(--puck-sidebar-right-width) var(--puck-frame-width) var(--puck-sidebar-left-width) !important;
             }
           }
         `}</style>
@@ -115,6 +108,7 @@ export default function TemplateEngineEditPage() {
           headerPath={`/p/${page.slug}`}
           onPublish={(data: Data) => saveMutation.mutate(data)}
           overrides={{
+            outline: () => <></>,
             headerActions: ({ children }) => (
               <>
                 <Link
