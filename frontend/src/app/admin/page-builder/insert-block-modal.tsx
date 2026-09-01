@@ -421,6 +421,109 @@ export function InsertBlockModal({
   )
 }
 
+/**
+ * Section-picker popup — the reference's `renderSectionPickerModal`: a small,
+ * single-category popup (just this section's own design cards + "Create
+ * new"), as opposed to InsertBlockModal's full category-sidebar + search
+ * browser. Opened from a Section-tab category card (blocks-panel.tsx).
+ */
+export function SectionPickerPopup({
+  categoryKey,
+  onClose,
+  projectId,
+}: {
+  categoryKey: string
+  onClose: () => void
+  projectId?: string
+}) {
+  const { appState, config, dispatch } = usePuck()
+  const router = useRouter()
+  const cat = (config.categories ?? {})[categoryKey]
+  const componentKeys = cat?.components ?? []
+
+  const cards = componentKeys.flatMap((key) => {
+    const variants = blockVariants[key] ?? [null]
+    return variants.map((variant, index) => ({ key, variant, index, total: variants.length }))
+  })
+
+  function insertBlock(componentKey: string, variant: string | null) {
+    let destinationIndex: number | undefined
+    if (TOP_OF_PAGE_CATEGORIES.has(categoryKey)) {
+      destinationIndex = 0
+    } else if (categoryKey === 'hero') {
+      const content = appState.data.content ?? []
+      let i = 0
+      while (i < content.length && TOP_OF_PAGE_TYPES.has(content[i]?.type ?? '')) i++
+      destinationIndex = i
+    }
+    insertBlockComponent(
+      dispatch,
+      config,
+      appState.data.content,
+      componentKey,
+      variant,
+      destinationIndex
+    )
+    onClose()
+  }
+
+  function openComposer() {
+    const params = new URLSearchParams({
+      category: categoryKey,
+      returnTo: window.location.pathname + window.location.search,
+    })
+    if (projectId) params.set('projectId', projectId)
+    router.push(`/admin/page-builder/section-builder?${params.toString()}`)
+  }
+
+  return (
+    <div
+      role="presentation"
+      className="fixed inset-0 z-[2000] grid place-items-center bg-slate-900/50 p-7"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onKeyDown={(e) => e.key === 'Escape' && onClose()}
+    >
+      <div className="flex max-h-[85vh] w-[min(760px,95vw)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div className="flex items-center gap-3.5 border-b border-slate-200 px-4.5 py-3.5">
+          <b className="text-base">{cat?.title ?? categoryKey}</b>
+          <span className="flex-1" />
+          <button
+            onClick={onClose}
+            className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+            aria-label="Close"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <div className="grid auto-rows-min grid-cols-2 gap-3.5 overflow-auto p-4.5">
+          {cards.length === 0 ? (
+            <div className="col-span-2 p-5 text-sm text-slate-400">No designs yet.</div>
+          ) : (
+            cards.map(({ key, variant, index, total }) => (
+              <BlockCard
+                key={`${key}-${variant ?? 'default'}`}
+                componentKey={key}
+                variant={variant}
+                index={index}
+                total={total}
+                onInsert={insertBlock}
+              />
+            ))
+          )}
+        </div>
+        <div className="border-t border-slate-200 p-4.5">
+          <button
+            onClick={openComposer}
+            className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-extrabold text-white hover:bg-blue-700"
+          >
+            + Create new
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /** Header-bar trigger; mount inside Puck's `overrides.headerActions`. */
 export function InsertBlockButton({ projectId }: { projectId?: string }) {
   const [open, setOpen] = useState(false)

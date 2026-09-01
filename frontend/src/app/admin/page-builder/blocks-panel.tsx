@@ -22,7 +22,7 @@ import {
   GripVertical,
   Trash2,
 } from 'lucide-react'
-import { InsertBlockModal, insertBlockComponent } from './insert-block-modal'
+import { SectionPickerPopup, insertBlockComponent } from './insert-block-modal'
 import { BlockComposer } from './packs/composer/BlockComposer'
 import type { ComposedBlockConfig } from './packs/composer/render-composed-block'
 
@@ -58,6 +58,11 @@ function BlocksTab({ onOpenCategory }: { onOpenCategory: (categoryKey: string) =
   const categories = Object.entries(config.categories ?? {}).filter(
     ([, cat]) => (cat.components?.length ?? 0) > 0
   )
+  // Reference behaviour: a category whose section is already on the page
+  // shows "Already added" and can't be re-opened — Top Header/Header/Hero
+  // Slider etc. are meant as one-per-page, matching editorBlocksPanel's
+  // `used = usedTypes.has(cfg.key)` gate in templateEnginesections.html.
+  const usedTypes = new Set((appState.data.content ?? []).map((b) => b.type))
   const selectedLabel = selectedItem
     ? ((config.components as Record<string, { label?: string }>)[selectedItem.type]?.label ??
       selectedItem.type)
@@ -94,13 +99,20 @@ function BlocksTab({ onOpenCategory }: { onOpenCategory: (categoryKey: string) =
         {categories.map(([key, cat]) => {
           const Icon = categoryIcon(cat.title ?? key)
           const label = cat.title ?? key
+          const used = (cat.components ?? []).some((compKey) => usedTypes.has(compKey))
           return (
             <button
               key={key}
-              onClick={() => onOpenCategory(key)}
+              onClick={() => !used && onOpenCategory(key)}
+              disabled={used}
               title={label}
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-left"
-              style={{ background: OD.tile, border: `1px solid ${OD.tileBd}`, color: '#c7ccd3' }}
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-left disabled:cursor-default"
+              style={{
+                background: used ? '#1c1e24' : OD.tile,
+                border: `1px solid ${OD.tileBd}`,
+                color: '#c7ccd3',
+                opacity: used ? 0.55 : 1,
+              }}
             >
               <Icon size={16} color={TAB_ACCENT.section} strokeWidth={1.75} className="shrink-0" />
               <span className="min-w-0 flex-1">
@@ -111,7 +123,7 @@ function BlocksTab({ onOpenCategory }: { onOpenCategory: (categoryKey: string) =
                   className="block truncate text-[10px] leading-tight"
                   style={{ color: OD.muted }}
                 >
-                  Choose a {label.toLowerCase()} design
+                  {used ? 'Already added' : `Choose a ${label.toLowerCase()} design`}
                 </span>
               </span>
             </button>
@@ -332,8 +344,8 @@ export function BlocksPanel({
         {tab === 'theme' && <ThemeTab />}
       </div>
       {modalCategory ? (
-        <InsertBlockModal
-          initialCategory={modalCategory}
+        <SectionPickerPopup
+          categoryKey={modalCategory}
           projectId={projectId}
           onClose={() => setModalCategory(null)}
         />
