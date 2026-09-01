@@ -73,7 +73,7 @@ export default function TemplateEngineEditPage() {
 
   return (
     <ModuleGuard slug="template-engine">
-      <div className="te-outline-right h-screen [&_[class*=PuckLayout-nav]]:hidden">
+      <div className="te-outline-right fixed inset-0 z-[100] [&_[class*=PuckLayout-nav]]:hidden">
         {/* Puck hardwires Outline to grid-area "left" / Fields to "right" — no
             public prop for this. Swap by moving the area tokens to the
             opposite physical column (and the matching width var with them)
