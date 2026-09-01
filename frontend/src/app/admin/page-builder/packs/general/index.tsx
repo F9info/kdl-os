@@ -61,12 +61,18 @@ type GeneralProps = {
   }
 }
 
+// Old 'layout'/'content' category cards are gone — Section/Columns/Spacer/
+// Heading/Text/Button/Image stay reachable via blocks-panel.tsx's "Inner
+// Content" quick-insert row. The remaining components join the 16-category
+// taxonomy from templateEnginesections.html: Hero owns 'welcome' outright;
+// NavBar/Footer/StatsStrip/FeatureCards fold into categories construction
+// already defines (compose.ts concatenates same-key category component
+// arrays across packs) so those pickers show more real design choices.
 const typedCategories: NonNullable<Config<GeneralProps>['categories']> = {
-  layout: { title: 'Layout', components: ['Section', 'Columns', 'Spacer', 'NavBar', 'Footer'] },
-  content: {
-    title: 'Content',
-    components: ['Hero', 'Heading', 'Text', 'Button', 'Image', 'StatsStrip', 'FeatureCards'],
-  },
+  welcome: { title: 'Welcome', components: ['Hero'] },
+  services: { title: 'Services', components: ['FeatureCards'] },
+  bottombar: { title: 'Footer', components: ['Footer'] },
+  counters: { title: 'Counters', components: ['StatsStrip'] },
 }
 
 // ─── Shared helpers (mirrors the pipe-delimited-line pattern the medical/
@@ -1021,4 +1027,15 @@ export const general: ComponentPack = {
   label: 'General',
   components: typedComponents as NonNullable<Config['components']>,
   categories: typedCategories,
+  // Hero/NavBar/FeatureCards/Footer each have 4 real render branches (see
+  // their `variant` field above) but were never registered here — the
+  // Insert-a-block modal's per-variant card grid reads this map directly
+  // (blockVariants[componentKey]), so without an entry here it silently
+  // fell back to a single, variant-less card despite 4 designs existing.
+  variants: {
+    Hero: ['1', '2', '3', '4'],
+    NavBar: ['1', '2', '3', '4'],
+    FeatureCards: ['1', '2', '3', '4'],
+    Footer: ['1', '2', '3', '4'],
+  },
 }

@@ -27,21 +27,20 @@ const root: Config['root'] = {
 
 const composed = composePacks(root, [general, construction, medical, composer])
 
-// Construction's header/top-bar/hero blocks each ship multiple selectable
-// designs (Insert-a-block picker: one card per design) — pulled into their
-// own top-level categories so picking one shows just its own designs,
-// instead of being buried inside the construction pack's own grouping.
-// Every other category from every pack (Layout, Content, Construction —
-// Sections/CTA & Stats/Homepage, Clinic template, Services & Departments,
-// Team, Patient, Calls to Action, ...) stays exactly as each pack defines
-// it — none of that was ever removed, only these 3 keys are added/renamed.
+// Top Header/Header/Hero Slider each ship multiple selectable designs
+// (Insert-a-block picker: one card per design) — pulled into their own
+// top-level categories, named to match the 16-category taxonomy from
+// templateEnginesections.html (topbar/navbar/heroslider), so picking one
+// shows just its own designs instead of being buried inside a pack's own
+// grouping. General's NavBar (its own 4 designs) joins Header here since
+// compose.ts only merges same-key categories that AREN'T overridden below.
 export const config: Config = {
   ...composed,
   categories: {
     ...composed.categories,
-    'top-bar': { title: 'Top Bar', components: ['ConstructionTopBar'] },
-    header: { title: 'Header', components: ['ConstructionHeader'] },
-    hero: { title: 'Hero', components: ['ConstructionHero'] },
+    'top-bar': { title: 'Top Header', components: ['ConstructionTopBar'] },
+    header: { title: 'Header', components: ['ConstructionHeader', 'NavBar'] },
+    hero: { title: 'Hero Slider', components: ['ConstructionHero'] },
   },
 }
 

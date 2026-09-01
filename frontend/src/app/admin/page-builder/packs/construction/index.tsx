@@ -508,6 +508,58 @@ type ConstructionProps = {
     qrCaption: string
     copyright: string
   }
+  ConstructionFounder: {
+    sectionTitle: string
+    photo: string
+    quoteText: string
+    founderName: string
+    founderTitle: string
+    padding: 'sm' | 'md' | 'lg'
+  }
+  ConstructionVideo: {
+    sectionTitle: string
+    sectionSubtitle: string
+    thumbnail: string
+    videoUrl: string
+    padding: 'sm' | 'md' | 'lg'
+  }
+  ConstructionBlogPosts: {
+    sectionTitle: string
+    post1Image: string
+    post1Category: string
+    post1Title: string
+    post1Date: string
+    post2Image: string
+    post2Category: string
+    post2Title: string
+    post2Date: string
+    post3Image: string
+    post3Category: string
+    post3Title: string
+    post3Date: string
+    padding: 'sm' | 'md' | 'lg'
+  }
+  ConstructionSocialMedia: {
+    sectionTitle: string
+    sectionSubtitle: string
+    facebookHandle: string
+    instagramHandle: string
+    linkedinHandle: string
+    twitterHandle: string
+    padding: 'sm' | 'md' | 'lg'
+  }
+  ConstructionFAQ: {
+    sectionTitle: string
+    faq1Question: string
+    faq1Answer: string
+    faq2Question: string
+    faq2Answer: string
+    faq3Question: string
+    faq3Answer: string
+    faq4Question: string
+    faq4Answer: string
+    padding: 'sm' | 'md' | 'lg'
+  }
 }
 
 // ── shared icon SVGs (inline, no external deps) ───────────────────────────────
@@ -4943,43 +4995,436 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       )
     },
   },
+
+  // ── Founder / CEO spotlight ────────────────────────────────────────────────
+  ConstructionFounder: {
+    label: 'Founder',
+    fields: {
+      sectionTitle: { type: 'text' },
+      photo: { type: 'text' },
+      quoteText: { type: 'textarea' },
+      founderName: { type: 'text' },
+      founderTitle: { type: 'text' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+    },
+    defaultProps: {
+      sectionTitle: 'From Our Founder',
+      photo: 'https://placehold.co/480x480',
+      quoteText:
+        'We started this company on one promise: build it right, on time, every time. Twenty years later, that promise still guides every project we take on.',
+      founderName: 'Ramesh Kumar',
+      founderTitle: 'Founder & Managing Director',
+      padding: 'md',
+    },
+    render: ({ sectionTitle, photo, quoteText, founderName, founderTitle, padding }) => (
+      <section className={`${padY[padding]} bg-white`}>
+        <div className={wrap}>
+          <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+            {sectionTitle}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-8 md:gap-12 items-center max-w-4xl mx-auto">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={photo}
+              alt={founderName}
+              className="w-full aspect-square object-cover rounded-2xl"
+            />
+            <div>
+              <svg
+                width="36"
+                height="28"
+                viewBox="0 0 36 28"
+                fill="none"
+                className="text-orange-300 mb-4"
+              >
+                <path
+                  d="M14.5 0C6.5 3 0 9.5 0 17.5 0 23.3 4.2 28 9.8 28c4.9 0 8.7-3.7 8.7-8.4 0-4.4-3.1-7.7-7.2-7.7-.6 0-1.2.1-1.7.2C10.6 7.4 13.4 4 17.5 1.8L14.5 0zm18 0c-8 3-14.5 9.5-14.5 17.5 0 5.8 4.2 10.5 9.8 10.5 4.9 0 8.7-3.7 8.7-8.4 0-4.4-3.1-7.7-7.2-7.7-.6 0-1.2.1-1.7.2C28.6 7.4 31.4 4 35.5 1.8L32.5 0z"
+                  fill="currentColor"
+                />
+              </svg>
+              <p className="text-lg md:text-xl text-slate-800 leading-relaxed mb-6">{quoteText}</p>
+              <p className="font-semibold text-slate-900">{founderName}</p>
+              <p className="text-sm text-slate-500">{founderTitle}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    ),
+  },
+
+  // ── Video showcase ─────────────────────────────────────────────────────────
+  ConstructionVideo: {
+    label: 'Video',
+    fields: {
+      sectionTitle: { type: 'text' },
+      sectionSubtitle: { type: 'textarea' },
+      thumbnail: { type: 'text' },
+      videoUrl: { type: 'text' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+    },
+    defaultProps: {
+      sectionTitle: 'See Us in Action',
+      sectionSubtitle: 'A walkthrough of our current build sites and how we work.',
+      thumbnail: 'https://placehold.co/1280x720',
+      videoUrl: '',
+      padding: 'md',
+    },
+    render: ({ sectionTitle, sectionSubtitle, thumbnail, padding }) => (
+      <section className={`${padY[padding]} bg-slate-50`}>
+        <div className={wrap}>
+          <div className="text-center mb-8">
+            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">{sectionTitle}</h2>
+            {sectionSubtitle && (
+              <p className="text-slate-600 max-w-2xl mx-auto">{sectionSubtitle}</p>
+            )}
+          </div>
+          <div className="relative max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-lg aspect-video bg-slate-900">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={thumbnail} alt="" className="w-full h-full object-cover opacity-80" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="w-20 h-20 rounded-full bg-white/95 flex items-center justify-center shadow-xl">
+                <svg width="26" height="30" viewBox="0 0 26 30" fill="none">
+                  <path d="M0 0L26 15L0 30V0Z" fill="#ea580c" />
+                </svg>
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+    ),
+  },
+
+  // ── Blog / news posts ───────────────────────────────────────────────────────
+  ConstructionBlogPosts: {
+    label: 'Blog Posts',
+    fields: {
+      sectionTitle: { type: 'text' },
+      post1Image: { type: 'text' },
+      post1Category: { type: 'text' },
+      post1Title: { type: 'text' },
+      post1Date: { type: 'text' },
+      post2Image: { type: 'text' },
+      post2Category: { type: 'text' },
+      post2Title: { type: 'text' },
+      post2Date: { type: 'text' },
+      post3Image: { type: 'text' },
+      post3Category: { type: 'text' },
+      post3Title: { type: 'text' },
+      post3Date: { type: 'text' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+    },
+    defaultProps: {
+      sectionTitle: 'Latest From the Site',
+      post1Image: 'https://placehold.co/480x300',
+      post1Category: 'Project Update',
+      post1Title: 'Riverside Villas reaches structural completion',
+      post1Date: 'Mar 12, 2026',
+      post2Image: 'https://placehold.co/480x300',
+      post2Category: 'Safety',
+      post2Title: 'How we hit 400 days without a lost-time incident',
+      post2Date: 'Feb 28, 2026',
+      post3Image: 'https://placehold.co/480x300',
+      post3Category: 'Company News',
+      post3Title: 'We are hiring: site engineers and project managers',
+      post3Date: 'Feb 10, 2026',
+      padding: 'md',
+    },
+    render: ({
+      sectionTitle,
+      post1Image,
+      post1Category,
+      post1Title,
+      post1Date,
+      post2Image,
+      post2Category,
+      post2Title,
+      post2Date,
+      post3Image,
+      post3Category,
+      post3Title,
+      post3Date,
+      padding,
+    }) => {
+      const posts = [
+        { image: post1Image, category: post1Category, title: post1Title, date: post1Date },
+        { image: post2Image, category: post2Category, title: post2Title, date: post2Date },
+        { image: post3Image, category: post3Category, title: post3Title, date: post3Date },
+      ]
+      return (
+        <section className={`${padY[padding]} bg-white`}>
+          <div className={wrap}>
+            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+              {sectionTitle}
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {posts.map((post, i) => (
+                <article
+                  key={i}
+                  className="rounded-xl overflow-hidden border border-slate-200 group"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={post.image}
+                    alt=""
+                    className="w-full aspect-[16/10] object-cover group-hover:scale-105 transition duration-300"
+                  />
+                  <div className="p-5">
+                    <span className="text-xs font-semibold text-orange-600 uppercase tracking-wide">
+                      {post.category}
+                    </span>
+                    <h3 className="text-base font-bold text-slate-900 mt-1.5 mb-2 leading-snug">
+                      {post.title}
+                    </h3>
+                    <p className="text-xs text-slate-500">{post.date}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // ── Social media strip ──────────────────────────────────────────────────────
+  ConstructionSocialMedia: {
+    label: 'Social Media',
+    fields: {
+      sectionTitle: { type: 'text' },
+      sectionSubtitle: { type: 'text' },
+      facebookHandle: { type: 'text' },
+      instagramHandle: { type: 'text' },
+      linkedinHandle: { type: 'text' },
+      twitterHandle: { type: 'text' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+    },
+    defaultProps: {
+      sectionTitle: 'Follow Our Progress',
+      sectionSubtitle: '@yourcompany',
+      facebookHandle: 'facebook.com/yourcompany',
+      instagramHandle: 'instagram.com/yourcompany',
+      linkedinHandle: 'linkedin.com/company/yourcompany',
+      twitterHandle: 'x.com/yourcompany',
+      padding: 'sm',
+    },
+    render: ({
+      sectionTitle,
+      sectionSubtitle,
+      facebookHandle,
+      instagramHandle,
+      linkedinHandle,
+      twitterHandle,
+      padding,
+    }) => {
+      const links = [
+        ['f', facebookHandle],
+        ['ig', instagramHandle],
+        ['in', linkedinHandle],
+        ['X', twitterHandle],
+      ].filter(([, href]) => href)
+      return (
+        <section className={`${padY[padding]} bg-slate-900`}>
+          <div className={`${wrap} flex flex-col sm:flex-row items-center justify-between gap-6`}>
+            <div>
+              <h2 className="text-xl md:text-2xl font-bold text-white">{sectionTitle}</h2>
+              {sectionSubtitle && <p className="text-sm text-white/50 mt-1">{sectionSubtitle}</p>}
+            </div>
+            <div className="flex gap-3">
+              {links.map(([label, href], i) => (
+                <a
+                  key={i}
+                  href={href ? `https://${href}` : '#'}
+                  className="w-11 h-11 rounded-full bg-white/10 hover:bg-orange-600 text-white flex items-center justify-center font-semibold text-sm transition"
+                >
+                  {label}
+                </a>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // ── Standalone FAQ accordion ────────────────────────────────────────────────
+  ConstructionFAQ: {
+    label: 'FAQ',
+    fields: {
+      sectionTitle: { type: 'text' },
+      faq1Question: { type: 'text' },
+      faq1Answer: { type: 'textarea' },
+      faq2Question: { type: 'text' },
+      faq2Answer: { type: 'textarea' },
+      faq3Question: { type: 'text' },
+      faq3Answer: { type: 'textarea' },
+      faq4Question: { type: 'text' },
+      faq4Answer: { type: 'textarea' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+    },
+    defaultProps: {
+      sectionTitle: 'Frequently Asked Questions',
+      faq1Question: 'How long does a typical project take?',
+      faq1Answer:
+        'Most residential projects run 4-8 months from groundbreaking to handover, depending on scope. We share a detailed schedule before work begins.',
+      faq2Question: 'Do you provide fixed-price contracts?',
+      faq2Answer: 'Yes, most projects are quoted and contracted on a fixed-price basis.',
+      faq3Question: 'Are you licensed and insured?',
+      faq3Answer: 'Yes, we are fully licensed and carry comprehensive insurance cover.',
+      faq4Question: 'Can I make changes once construction starts?',
+      faq4Answer:
+        'Minor changes are usually possible — we log every change order with its cost and schedule impact before proceeding.',
+      padding: 'md',
+    },
+    render: ({
+      sectionTitle,
+      faq1Question,
+      faq1Answer,
+      faq2Question,
+      faq2Answer,
+      faq3Question,
+      faq3Answer,
+      faq4Question,
+      faq4Answer,
+      padding,
+    }) => {
+      const items = [
+        { q: faq1Question, a: faq1Answer },
+        { q: faq2Question, a: faq2Answer },
+        { q: faq3Question, a: faq3Answer },
+        { q: faq4Question, a: faq4Answer },
+      ].filter((f) => f.q)
+      return (
+        <section className={`${padY[padding]} bg-white`}>
+          <div className={`${wrap} max-w-3xl`}>
+            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+              {sectionTitle}
+            </h2>
+            <div className="flex flex-col gap-3">
+              {items.map((item, i) => (
+                <details
+                  key={i}
+                  className="rounded-xl border border-slate-200 p-5 group"
+                  {...(i === 0 ? { open: true } : {})}
+                >
+                  <summary className="font-semibold text-slate-900 cursor-pointer list-none flex items-center justify-between gap-4">
+                    {item.q}
+                    <span className="text-orange-600 group-open:rotate-45 transition shrink-0">
+                      +
+                    </span>
+                  </summary>
+                  <p className="text-sm text-slate-600 leading-relaxed mt-3">{item.a}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
 }
 
 // ── categories ─────────────────────────────────────────────────────────────────
 
+// ConstructionTopBar/Header/Hero each get their own top-level 'topbar'/'header'/
+// 'heroslider' category (see puck.config.tsx) and General's Hero covers 'welcome'
+// — the remaining 12 category names below complete the 16-category taxonomy from
+// templateEnginesections.html. Every old 'construction-sections'/'construction-cta'/
+// 'construction-homepage' grouping is gone; each component now lives under its
+// section name, bundled with siblings where more than one fits so pickers have
+// real design choices instead of a single card.
 const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
-  // ConstructionHeader and ConstructionHero each have their own top-level
-  // 'header'/'hero' category (see puck.config.tsx) so picking one shows just
-  // its own selectable designs — no separate listing needed here too.
-  'construction-sections': {
-    title: 'Construction — Sections',
+  counters: {
+    title: 'Counters',
+    components: ['ConstructionStatsStrip', 'ConstructionSafetyRecord'],
+  },
+  founder: {
+    title: 'Founder',
+    components: ['ConstructionFounder', 'ConstructionAboutSplit'],
+  },
+  video: {
+    title: 'Video',
+    components: ['ConstructionVideo'],
+  },
+  blogpost: {
+    title: 'Blog Posts',
+    components: [
+      'ConstructionBlogPosts',
+      'ConstructionProjectGallery',
+      'ConstructionFeaturedProject',
+    ],
+  },
+  team: {
+    title: 'Team',
+    components: ['ConstructionTeamCrew', 'ConstructionCertificationsBadges'],
+  },
+  services: {
+    title: 'Services',
     components: [
       'ConstructionServicesGrid',
-      'ConstructionProjectGallery',
-      'ConstructionProcessTimeline',
-      'ConstructionWhyChooseUs',
-      'ConstructionTeamCrew',
-      'ConstructionCertificationsBadges',
-      'ConstructionTestimonials',
       'ConstructionOfferingsRows',
-      'ConstructionAboutSplit',
-      'ConstructionFeaturedProject',
       'ConstructionProductsShowcase',
-      'ConstructionClientsGrid',
+      'ConstructionWhyChooseUs',
+      'ConstructionProcessTimeline',
     ],
   },
-  'construction-cta': {
-    title: 'Construction — CTA & Stats',
-    components: ['ConstructionQuoteCTA', 'ConstructionStatsStrip', 'ConstructionSafetyRecord'],
+  faq: {
+    title: 'FAQ',
+    components: ['ConstructionFAQ'],
   },
-  'construction-homepage': {
-    title: 'Construction — Homepage',
-    components: [
-      'ConstructionLeadFormFAQ',
-      'ConstructionTaglineStrip',
-      'ConstructionFooter',
-      'ConstructionFloatingActions',
-    ],
+  testimonials: {
+    title: 'Testimonials',
+    components: ['ConstructionTestimonials', 'ConstructionClientsGrid'],
+  },
+  contact: {
+    title: 'Forms',
+    components: ['ConstructionLeadFormFAQ'],
+  },
+  cta: {
+    title: 'Call to Action',
+    components: ['ConstructionQuoteCTA', 'ConstructionTaglineStrip', 'ConstructionFloatingActions'],
+  },
+  bottombar: {
+    title: 'Footer',
+    components: ['ConstructionFooter'],
+  },
+  socialmedia: {
+    title: 'Social Media',
+    components: ['ConstructionSocialMedia'],
   },
 }
 

@@ -2029,33 +2029,12 @@ export const medical: ComponentPack = {
   key: 'medical',
   label: 'Medical',
   components: typedComponents as NonNullable<Config['components']>,
-  categories: {
-    'medical-nav-hero': {
-      title: 'Medical — Clinic Template',
-      components: ['MedicalTopNav', 'MedicalHeroSplit', 'MedicalContactInfoCards'],
-    },
-    'medical-hero': { title: 'Medical — Hero', components: ['MedicalHero'] },
-    'medical-services': {
-      title: 'Medical — Services & Departments',
-      components: ['MedicalServicesList', 'MedicalDepartmentCards'],
-    },
-    'medical-team': {
-      title: 'Medical — Team',
-      components: ['MedicalDoctorProfiles'],
-    },
-    'medical-patient': {
-      title: 'Medical — Patient',
-      components: ['MedicalPatientTestimonials', 'MedicalFAQ'],
-    },
-    'medical-cta': {
-      title: 'Medical — Calls to Action',
-      components: ['MedicalAppointmentCTA'],
-    },
-    'medical-info': {
-      title: 'Medical — Info',
-      components: ['MedicalInsuranceStrip', 'MedicalContactHours'],
-    },
-  },
+  // All 'Medical — *' category cards removed from the Insert-a-block picker —
+  // this pack's components stay registered (existing pages using them still
+  // render) but aren't offered as choices under the 16-category taxonomy
+  // from templateEnginesections.html, since their placeholder content
+  // (doctor names, clinic copy) doesn't fit a construction-company site.
+  categories: {},
   variants: {
     MedicalTopNav: ['1', '2', '3', '4'],
     MedicalHeroSplit: ['1', '2', '3', '4'],
