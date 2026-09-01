@@ -24,7 +24,15 @@ export default function SectionBuilderPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const category = searchParams.get('category') ?? ''
-  const returnTo = searchParams.get('returnTo') || '/admin/template-engine'
+  // Open-redirect guard: `returnTo` is caller-controlled (query param) and
+  // fed straight to router.push — must be a same-origin admin path, never
+  // an absolute/protocol-relative URL (`//evil.com`, `https://evil.com`)
+  // that a crafted link could use to bounce an admin off-site on close/save.
+  const rawReturnTo = searchParams.get('returnTo') ?? ''
+  const returnTo =
+    rawReturnTo.startsWith('/admin/') && !rawReturnTo.startsWith('//')
+      ? rawReturnTo
+      : '/admin/template-engine'
   const [projectId, setProjectId] = useState(searchParams.get('projectId') ?? '')
 
   useEffect(() => {
