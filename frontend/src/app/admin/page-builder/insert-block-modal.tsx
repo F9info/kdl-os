@@ -1,16 +1,12 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { usePuck } from '@puckeditor/core'
 import type { AppState, Config } from '@puckeditor/core'
 import { Plus, Search, X } from 'lucide-react'
 import { blockVariants } from './puck.config'
-import { BlockComposer } from './packs/composer/BlockComposer'
-import {
-  listCustomBlocks,
-  getDefaultProjectId,
-  type CustomBlockRecord,
-} from './packs/composer/custom-blocks-store'
+import { listCustomBlocks, type CustomBlockRecord } from './packs/composer/custom-blocks-store'
 import { renderComposedBlock } from './packs/composer/render-composed-block'
 
 /**
@@ -217,6 +213,7 @@ export function InsertBlockModal({
   projectId?: string
 }) {
   const { appState, config, dispatch } = usePuck()
+  const router = useRouter()
 
   const categories = useMemo(
     () =>
@@ -229,20 +226,19 @@ export function InsertBlockModal({
   const [query, setQuery] = useState('')
   const q = query.trim().toLowerCase()
   const [customBlocks, setCustomBlocks] = useState<CustomBlockRecord[]>([])
-  const [composerOpen, setComposerOpen] = useState<{ editing?: CustomBlockRecord } | null>(null)
-  // Save target for a block created with no project context (legacy Page
-  // Builder) — resolved on demand rather than eagerly, since most opens of
-  // this modal never touch "Create new".
-  const [createProjectId, setCreateProjectId] = useState<string | null>(null)
 
-  async function openComposer() {
-    if (projectId) {
-      setComposerOpen({})
-      return
-    }
-    const id = createProjectId ?? (await getDefaultProjectId())
-    setCreateProjectId(id)
-    setComposerOpen({})
+  // "Create new" leaves this modal (and this page) entirely for the real
+  // Section Builder screen — a full page, not another overlay stacked on
+  // top of this one. projectId is carried through transparently (falls back
+  // to the single default project when this modal has none in scope, e.g.
+  // opened with no project context); the operator never sees or picks it.
+  function openComposer() {
+    const params = new URLSearchParams({
+      category: activeCat,
+      returnTo: window.location.pathname + window.location.search,
+    })
+    if (projectId) params.set('projectId', projectId)
+    router.push(`/admin/page-builder/section-builder?${params.toString()}`)
   }
 
   useEffect(() => {
@@ -421,18 +417,6 @@ export function InsertBlockModal({
           </div>
         </div>
       </div>
-      {composerOpen ? (
-        <BlockComposer
-          projectId={projectId ?? createProjectId ?? ''}
-          categoryKey={activeCat}
-          editing={composerOpen.editing}
-          onClose={() => setComposerOpen(null)}
-          onSaved={() => {
-            setComposerOpen(null)
-            listCustomBlocks(projectId, activeCat).then(setCustomBlocks)
-          }}
-        />
-      ) : null}
     </div>
   )
 }
