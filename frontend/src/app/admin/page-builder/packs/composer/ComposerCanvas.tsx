@@ -1,29 +1,24 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Eye, Tablet, Smartphone, Monitor } from 'lucide-react'
-import { ATOM_CATALOGUE, type ComposerAtom } from './atoms'
+import { Trash2, GripVertical, ChevronUp, Eye } from 'lucide-react'
+import { ATOM_CATALOGUE, ATOM_GROUPS, ATOM_BY_TYPE, type ComposerAtom } from './atoms'
 import { atomCatalogueFor } from './catalogue-by-category'
-import {
-  DEFAULT_SETTINGS,
-  renderComposedBlock,
-  type ComposedBlockConfig,
-} from './render-composed-block'
+import { DEFAULT_SETTINGS, type ComposedBlockConfig } from './render-composed-block'
 import { createCustomBlock, updateCustomBlock, type CustomBlockRecord } from './custom-blocks-store'
-
-type Viewport = 'desktop' | 'tablet' | 'mobile'
-const VIEWPORT_WIDTH: Record<Viewport, number> = { desktop: 1180, tablet: 768, mobile: 390 }
 
 function newAtomId(type: string) {
   return `${type}-${crypto.randomUUID()}`
 }
 
 /**
- * The section-builder canvas itself: element palette, layers list, live
- * preview, and the content/layout/style/responsive settings panel. No
- * chrome of its own beyond the top bar — the caller decides how this is
- * presented (a full route page, or `BlockComposer`'s portal overlay for
- * in-place instance editing).
+ * The section-builder canvas: a grouped element palette, a live white canvas
+ * card on a dark backdrop, and a per-element Settings panel — deliberately
+ * matching the reference design (sectionBuilder.html) exactly: dark Odoo-ish
+ * chrome (#14161b/#181b21/#20232a), five palette groups (Basic, Branding &
+ * Navigation, Media, Content, Advanced), and a Settings panel that edits
+ * only the selected element (no section-wide layout/style tabs — the
+ * reference doesn't have them, so neither does this).
  */
 export function ComposerCanvas({
   projectId,
@@ -53,11 +48,14 @@ export function ComposerCanvas({
     editing?.config ?? { category: categoryKey, atoms: [], settings: DEFAULT_SETTINGS }
   )
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [viewport, setViewport] = useState<Viewport>('desktop')
-  const [rightTab, setRightTab] = useState<'content' | 'layout' | 'style' | 'responsive'>('content')
   const [saving, setSaving] = useState(false)
+  const [dragFromId, setDragFromId] = useState<string | null>(null)
 
   const palette = atomCatalogueFor(categoryKey)
+  const paletteByGroup = ATOM_GROUPS.map((group) => ({
+    group,
+    atoms: palette.filter((a) => a.group === group),
+  })).filter((g) => g.atoms.length > 0)
 
   function addAtom(type: string) {
     const def = ATOM_CATALOGUE.find((a) => a.type === type)
@@ -65,7 +63,6 @@ export function ComposerCanvas({
     const atom: ComposerAtom = { id: newAtomId(type), type, ...def.defaultProps }
     setConfig((c) => ({ ...c, atoms: [...c.atoms, atom] }))
     setSelectedId(atom.id)
-    setRightTab('content')
   }
 
   function patchAtom(id: string, patch: Record<string, unknown>) {
@@ -80,15 +77,12 @@ export function ComposerCanvas({
     if (selectedId === id) setSelectedId(null)
   }
 
-  function moveAtom(id: string, dir: -1 | 1) {
+  function moveAtomUp(id: string) {
     setConfig((c) => {
       const idx = c.atoms.findIndex((a) => a.id === id)
-      const next = idx + dir
-      if (idx < 0 || next < 0 || next >= c.atoms.length) return c
+      if (idx <= 0) return c
       const atoms = [...c.atoms]
-      // Bounds already checked above — indices are guaranteed valid here,
-      // `noUncheckedIndexedAccess` just can't see that through the guard.
-      ;[atoms[idx], atoms[next]] = [atoms[next]!, atoms[idx]!]
+      ;[atoms[idx - 1], atoms[idx]] = [atoms[idx]!, atoms[idx - 1]!]
       return { ...c, atoms }
     })
   }
@@ -132,313 +126,193 @@ export function ComposerCanvas({
   }
 
   const selectedAtom = config.atoms.find((a) => a.id === selectedId) ?? null
+  const selectedDef = selectedAtom ? ATOM_BY_TYPE[selectedAtom.type] : null
 
   return (
-    <div className="flex h-full flex-col bg-white">
-      <div className="flex items-center gap-3 border-b border-slate-200 px-4 py-2.5">
-        <button
-          onClick={onClose}
-          className="rounded-md p-2 text-slate-500 hover:bg-slate-100"
-          aria-label="Close"
-        >
-          <X size={18} />
-        </button>
+    <div className="flex h-full flex-col bg-[#14161b] text-[13.5px] text-[#e5e7eb]">
+      {/* Top bar */}
+      <div className="flex h-[52px] flex-none items-center gap-3.5 border-b border-[#2d313a] bg-[#181b21] px-4">
+        <span className="text-sm font-extrabold">◆ Section Builder</span>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="rounded-md border border-slate-200 px-3 py-1.5 text-sm font-semibold"
+          className="rounded-full border border-[#2d313a] bg-[#20232a] px-3 py-1 text-xs text-[#8b93a1] focus:text-[#e5e7eb]"
         />
         <span className="flex-1" />
-        <div className="flex gap-1 rounded-md bg-slate-100 p-1">
-          {(['desktop', 'tablet', 'mobile'] as Viewport[]).map((v) => {
-            const Icon = v === 'desktop' ? Monitor : v === 'tablet' ? Tablet : Smartphone
-            return (
-              <button
-                key={v}
-                onClick={() => setViewport(v)}
-                className={`rounded p-1.5 ${viewport === v ? 'bg-white shadow-sm' : 'text-slate-500'}`}
-                aria-label={v}
-              >
-                <Icon size={15} />
-              </button>
-            )
-          })}
-        </div>
         <button
-          disabled={saving}
+          onClick={onClose}
+          className="rounded-md border border-[#2d313a] bg-[#20232a] px-3.5 py-2 text-xs font-bold text-[#e5e7eb] hover:bg-[#282c34]"
+        >
+          Back
+        </button>
+        <button
+          disabled={saving || config.atoms.length === 0}
           onClick={() => handleSave('DRAFT')}
-          className="rounded-md border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-700 disabled:opacity-50"
+          className="rounded-md border border-[#2d313a] bg-[#20232a] px-3.5 py-2 text-xs font-bold text-[#e5e7eb] hover:bg-[#282c34] disabled:opacity-40"
         >
           Save draft
         </button>
         <button
-          disabled={saving}
+          disabled={saving || config.atoms.length === 0}
           onClick={() => handleSave('PUBLISHED')}
-          className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-md bg-[#38bdf8] px-3.5 py-2 text-xs font-extrabold text-[#052a3a] hover:brightness-105 disabled:opacity-40"
         >
-          <Eye size={14} /> Publish
+          <Eye size={13} /> Publish
         </button>
       </div>
 
-      <div className="grid flex-1 grid-cols-[240px_1fr_320px] overflow-hidden">
-        <div className="flex flex-col overflow-y-auto border-r border-slate-200 bg-white p-3">
-          <div className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">
-            Add elements
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left: grouped element palette */}
+        <div className="w-[230px] flex-none overflow-y-auto border-r border-[#2d313a] bg-[#181b21] p-3.5">
+          {paletteByGroup.map(({ group, atoms }) => (
+            <div key={group} className="mb-3.5">
+              <div className="mb-2 text-[10.5px] font-extrabold uppercase tracking-wide text-[#8b93a1]">
+                {group}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {atoms.map((atom) => (
+                  <button
+                    key={atom.type}
+                    onClick={() => addAtom(atom.type)}
+                    className="flex flex-col items-center gap-2 rounded-[10px] border border-[#2d313a] bg-[#20232a] py-3.5 text-[#8b93a1] hover:border-[#38bdf8] hover:text-[#e5e7eb]"
+                  >
+                    <atom.icon size={19} />
+                    <span className="text-[11px] font-bold leading-tight">{atom.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+          <div className="mb-2 text-[10.5px] font-extrabold uppercase tracking-wide text-[#8b93a1]">
+            Tip
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            {palette.map((atom) => (
-              <button
-                key={atom.type}
-                onClick={() => addAtom(atom.type)}
-                className="flex flex-col items-center gap-1.5 rounded-lg border border-slate-200 py-3 text-slate-600 hover:border-blue-400 hover:text-blue-600"
-              >
-                <atom.icon size={18} />
-                <span className="text-[11px] font-semibold">{atom.label}</span>
-              </button>
-            ))}
-          </div>
+          <p className="text-[11.5px] leading-relaxed text-[#8b93a1]">
+            Click an element to add it to the bottom. Use the drag handle on a canvas element to
+            reorder it.
+          </p>
+        </div>
 
-          <div className="mb-2 mt-5 text-xs font-bold uppercase tracking-wide text-slate-400">
-            Layers
-          </div>
-          <div className="flex flex-col gap-1.5">
+        {/* Center: canvas */}
+        <div className="flex flex-1 flex-col items-center overflow-auto bg-[#0e0f13] p-8">
+          <div className="w-full max-w-[900px] overflow-hidden rounded-xl bg-white text-slate-900 shadow-2xl">
             {config.atoms.length === 0 ? (
-              <p className="text-xs text-slate-400">No elements yet — add one above.</p>
+              <div className="px-8 py-24 text-center text-slate-400">
+                <div className="mb-2.5 text-4xl">▦</div>
+                Start building your section
+                <br />
+                <span className="text-xs">Add elements from the left panel.</span>
+              </div>
             ) : (
-              config.atoms.map((atom) => (
-                <div
-                  key={atom.id}
-                  role="button"
-                  tabIndex={0}
-                  draggable
-                  onDragStart={(e) => e.dataTransfer.setData('text/plain', atom.id)}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault()
-                    reorderAtoms(e.dataTransfer.getData('text/plain'), atom.id)
-                  }}
-                  onClick={() => {
-                    setSelectedId(atom.id)
-                    setRightTab('content')
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      setSelectedId(atom.id)
-                      setRightTab('content')
-                    }
-                  }}
-                  className={`flex cursor-pointer items-center gap-2 rounded-md border px-2 py-1.5 text-xs ${
-                    selectedId === atom.id ? 'border-blue-600 bg-blue-50' : 'border-slate-200'
-                  }`}
-                >
-                  <span className="flex-1 truncate font-medium">
-                    {ATOM_CATALOGUE.find((a) => a.type === atom.type)?.label ?? atom.type}
-                  </span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      moveAtom(atom.id, -1)
-                    }}
-                    className="text-slate-400 hover:text-slate-700"
-                    aria-label="Move up"
-                  >
-                    ↑
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      moveAtom(atom.id, 1)
-                    }}
-                    className="text-slate-400 hover:text-slate-700"
-                    aria-label="Move down"
-                  >
-                    ↓
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      removeAtom(atom.id)
-                    }}
-                    className="text-slate-400 hover:text-red-600"
-                    aria-label="Remove"
-                  >
-                    <X size={13} />
-                  </button>
-                </div>
-              ))
+              <div role="presentation" onClick={() => setSelectedId(null)}>
+                {config.atoms.map((atom) => {
+                  const def = ATOM_BY_TYPE[atom.type]
+                  if (!def) return null
+                  const selected = selectedId === atom.id
+                  const idx = config.atoms.findIndex((a) => a.id === atom.id)
+                  return (
+                    <div
+                      key={atom.id}
+                      role="button"
+                      tabIndex={0}
+                      draggable
+                      onDragStart={(e) => {
+                        setDragFromId(atom.id)
+                        e.dataTransfer.effectAllowed = 'move'
+                      }}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault()
+                        if (dragFromId) reorderAtoms(dragFromId, atom.id)
+                        setDragFromId(null)
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSelectedId(atom.id)
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.stopPropagation()
+                          setSelectedId(atom.id)
+                        }
+                      }}
+                      className={`group relative border-2 p-4 transition ${
+                        selected
+                          ? 'border-[#38bdf8]'
+                          : 'border-transparent hover:border-[#38bdf866]'
+                      }`}
+                    >
+                      <div
+                        className={`absolute right-1.5 top-1.5 z-10 flex gap-0.5 rounded-lg border border-slate-200 bg-white p-0.5 shadow-lg transition-opacity ${
+                          selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                        }`}
+                      >
+                        <span
+                          className="grid h-6 w-6 cursor-grab place-items-center rounded text-slate-500 hover:bg-slate-100"
+                          title="Drag to reorder"
+                        >
+                          <GripVertical size={13} />
+                        </span>
+                        {idx > 0 ? (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              moveAtomUp(atom.id)
+                            }}
+                            className="grid h-6 w-6 place-items-center rounded text-slate-500 hover:bg-slate-100"
+                            title="Move up"
+                          >
+                            <ChevronUp size={13} />
+                          </button>
+                        ) : null}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            removeAtom(atom.id)
+                          }}
+                          className="grid h-6 w-6 place-items-center rounded text-slate-500 hover:bg-red-50 hover:text-red-600"
+                          title="Delete"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                      {def.Render(atom)}
+                    </div>
+                  )
+                })}
+              </div>
             )}
           </div>
         </div>
 
-        <div className="flex flex-col overflow-auto bg-slate-100 p-6">
-          <div
-            className="mx-auto w-full overflow-hidden rounded-lg bg-white shadow-md transition-[max-width]"
-            style={{ maxWidth: VIEWPORT_WIDTH[viewport] }}
-          >
-            <div role="presentation" onClick={() => setSelectedId(null)}>
-              {renderComposedBlock(config, {
-                interactive: true,
-                selectedId,
-                onSelectAtom: (id) => {
-                  setSelectedId(id)
-                  setRightTab('content')
-                },
-              })}
-              {config.atoms.length === 0 ? (
-                <p className="p-10 text-center text-sm text-slate-400">
-                  Add elements from the left panel to build this block.
-                </p>
-              ) : null}
-            </div>
+        {/* Right: settings for the selected element only */}
+        <div className="w-[300px] flex-none overflow-y-auto border-l border-[#2d313a] bg-[#181b21] p-3.5">
+          <div className="mb-3 text-[10.5px] font-extrabold uppercase tracking-wide text-[#8b93a1]">
+            Settings
           </div>
-        </div>
-
-        <div className="flex flex-col overflow-y-auto border-l border-slate-200 bg-white">
-          <div className="flex border-b border-slate-200">
-            {(['content', 'layout', 'style', 'responsive'] as const).map((t) => (
-              <button
-                key={t}
-                onClick={() => setRightTab(t)}
-                className={`flex-1 border-b-2 px-2 py-2.5 text-xs font-bold capitalize ${
-                  rightTab === t
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-slate-500'
-                }`}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-          <div className="p-4">
-            {rightTab === 'content' ? (
-              selectedAtom ? (
-                (() => {
-                  const def = ATOM_CATALOGUE.find((a) => a.type === selectedAtom.type)
-                  if (!def) return null
-                  return (
-                    <def.Field
-                      atom={selectedAtom}
-                      onChange={(patch) => patchAtom(selectedAtom.id, patch)}
-                    />
-                  )
-                })()
-              ) : (
-                <p className="text-center text-xs text-slate-400">
-                  Pick an element from Layers, or add one from the palette.
-                </p>
-              )
-            ) : null}
-
-            {rightTab === 'layout' ? (
-              <div className="flex flex-col gap-3.5">
-                <div>
-                  <span className="mb-1.5 block text-xs font-semibold text-slate-600">
-                    Container
-                  </span>
-                  <div className="flex gap-1.5">
-                    {(['full', 'boxed'] as const).map((v) => (
-                      <button
-                        key={v}
-                        onClick={() =>
-                          setConfig((c) => ({ ...c, settings: { ...c.settings, container: v } }))
-                        }
-                        className={`rounded-md border px-2.5 py-1.5 text-xs font-semibold capitalize ${
-                          config.settings.container === v
-                            ? 'border-blue-600 bg-blue-50 text-blue-700'
-                            : 'border-slate-200 text-slate-600'
-                        }`}
-                      >
-                        {v}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <span className="mb-1.5 block text-xs font-semibold text-slate-600">Padding</span>
-                  <div className="flex gap-1.5">
-                    {(['sm', 'md', 'lg'] as const).map((v) => (
-                      <button
-                        key={v}
-                        onClick={() =>
-                          setConfig((c) => ({ ...c, settings: { ...c.settings, padding: v } }))
-                        }
-                        className={`rounded-md border px-2.5 py-1.5 text-xs font-semibold uppercase ${
-                          config.settings.padding === v
-                            ? 'border-blue-600 bg-blue-50 text-blue-700'
-                            : 'border-slate-200 text-slate-600'
-                        }`}
-                      >
-                        {v}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <span className="mb-1.5 block text-xs font-semibold text-slate-600">Align</span>
-                  <div className="flex gap-1.5">
-                    {(['left', 'center', 'right'] as const).map((v) => (
-                      <button
-                        key={v}
-                        onClick={() =>
-                          setConfig((c) => ({ ...c, settings: { ...c.settings, align: v } }))
-                        }
-                        className={`rounded-md border px-2.5 py-1.5 text-xs font-semibold capitalize ${
-                          config.settings.align === v
-                            ? 'border-blue-600 bg-blue-50 text-blue-700'
-                            : 'border-slate-200 text-slate-600'
-                        }`}
-                      >
-                        {v}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : null}
-
-            {rightTab === 'style' ? (
-              <div>
-                <span className="mb-1.5 block text-xs font-semibold text-slate-600">
-                  Background
+          {selectedAtom && selectedDef ? (
+            <>
+              <div className="mb-3.5 flex items-center gap-2 border-b border-[#2d313a] pb-3">
+                <selectedDef.icon size={14} className="text-[#8b93a1]" />
+                <span className="flex-1 text-xs font-bold uppercase tracking-wide text-[#e5e7eb]">
+                  {selectedDef.label}
                 </span>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={config.settings.bg || '#ffffff'}
-                    onChange={(e) =>
-                      setConfig((c) => ({ ...c, settings: { ...c.settings, bg: e.target.value } }))
-                    }
-                    className="h-9 w-14 cursor-pointer rounded-md border border-slate-200"
-                  />
-                  <button
-                    onClick={() =>
-                      setConfig((c) => ({ ...c, settings: { ...c.settings, bg: '' } }))
-                    }
-                    className="text-xs font-semibold text-slate-500 hover:text-slate-800"
-                  >
-                    Clear
-                  </button>
-                </div>
+                <button
+                  onClick={() => removeAtom(selectedAtom.id)}
+                  className="rounded-md border border-[#2d313a] px-2.5 py-1 text-[11px] font-bold text-[#e5e7eb] hover:bg-[#20232a]"
+                >
+                  Delete
+                </button>
               </div>
-            ) : null}
-
-            {rightTab === 'responsive' ? (
-              selectedAtom ? (
-                <label className="flex items-center justify-between text-sm">
-                  <span className="font-medium text-slate-700">Hide on mobile</span>
-                  <input
-                    type="checkbox"
-                    checked={!!selectedAtom.hideMobile}
-                    onChange={(e) => patchAtom(selectedAtom.id, { hideMobile: e.target.checked })}
-                  />
-                </label>
-              ) : (
-                <p className="text-center text-xs text-slate-400">
-                  Pick an element from Layers to set its mobile visibility.
-                </p>
-              )
-            ) : null}
-          </div>
+              <selectedDef.Field
+                atom={selectedAtom}
+                onChange={(patch) => patchAtom(selectedAtom.id, patch)}
+              />
+            </>
+          ) : (
+            <p className="text-center text-[12.5px] leading-relaxed text-[#8b93a1]">
+              Select an element on the canvas to edit its content, colours and spacing here.
+            </p>
+          )}
         </div>
       </div>
     </div>

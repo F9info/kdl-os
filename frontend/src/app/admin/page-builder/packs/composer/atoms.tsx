@@ -3,7 +3,7 @@
 import DOMPurify from 'dompurify'
 import {
   Heading as HeadingIcon,
-  Type,
+  Pilcrow,
   Image as ImageIcon,
   RectangleHorizontal,
   Minus,
@@ -35,9 +35,21 @@ export interface ComposerAtom {
   [prop: string]: unknown
 }
 
+/** Matches sectionBuilder.html's ELEMENT_GROUPS exactly — the left palette
+ *  renders one heading + tile grid per group, in this order. */
+export const ATOM_GROUPS = [
+  'Basic',
+  'Branding & Navigation',
+  'Media',
+  'Content',
+  'Advanced',
+] as const
+export type AtomGroup = (typeof ATOM_GROUPS)[number]
+
 export interface AtomDefinition {
   type: string
   label: string
+  group: AtomGroup
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   icon: React.ComponentType<any>
   defaultProps: Record<string, unknown>
@@ -116,14 +128,6 @@ const SPACER_SIZE = { sm: 'h-4', md: 'h-8', lg: 'h-16', xl: 'h-28' } as const
 function spacerRender(atom: ComposerAtom) {
   const size = (atom.size as keyof typeof SPACER_SIZE) ?? 'md'
   return <div className={SPACER_SIZE[size] ?? SPACER_SIZE.md} />
-}
-
-const ICON_SIZE = { sm: 20, md: 32, lg: 48 } as const
-
-function iconRender(atom: ComposerAtom) {
-  const size = (atom.size as keyof typeof ICON_SIZE) ?? 'md'
-  const color = String(atom.color ?? '#2563eb')
-  return <Star size={ICON_SIZE[size] ?? ICON_SIZE.md} color={color} />
 }
 
 function badgeRender(atom: ComposerAtom) {
@@ -418,11 +422,13 @@ function TextInput({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs font-semibold text-slate-600">{label}</span>
+      <span className="mb-1.5 block text-[10.5px] font-bold uppercase tracking-wide text-slate-400">
+        {label}
+      </span>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+        className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100"
       />
     </label>
   )
@@ -443,16 +449,23 @@ function TextareaInput({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs font-semibold text-slate-600">{label}</span>
+      <span className="mb-1.5 block text-[10.5px] font-bold uppercase tracking-wide text-slate-400">
+        {label}
+      </span>
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={rows}
-        className={`w-full rounded-md border border-slate-200 px-3 py-2 text-sm ${mono ? 'font-mono' : ''}`}
+        className={`w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 ${mono ? 'font-mono' : ''}`}
       />
     </label>
   )
 }
+
+/** Swatch-row color picker — matches sectionBuilder.html's colourPicker():
+ *  a row of preset swatches (brand primary/secondary + 3 neutrals) plus a
+ *  native colour input as the "anything else" escape hatch. */
+const SWATCH_PRESETS = ['#2563eb', '#f59e0b', '#0f172a', '#ffffff', '#e2e8f0']
 
 function ColorInput({
   label,
@@ -465,16 +478,32 @@ function ColorInput({
   fallback: string
   onChange: (v: string) => void
 }) {
+  const current = value || fallback
   return (
-    <label className="block">
-      <span className="mb-1.5 block text-xs font-semibold text-slate-600">{label}</span>
-      <input
-        type="color"
-        value={value || fallback}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-9 w-14 cursor-pointer rounded-md border border-slate-200"
-      />
-    </label>
+    <div>
+      <span className="mb-1.5 block text-[10.5px] font-bold uppercase tracking-wide text-slate-400">
+        {label}
+      </span>
+      <div className="flex flex-wrap items-center gap-2">
+        {SWATCH_PRESETS.map((c) => (
+          <button
+            key={c}
+            type="button"
+            onClick={() => onChange(c)}
+            title={c}
+            aria-label={`Use colour ${c}`}
+            style={{ backgroundColor: c }}
+            className={`h-6 w-6 rounded-md border-2 ${current === c ? 'border-blue-500' : 'border-slate-700'}`}
+          />
+        ))}
+        <input
+          type="color"
+          value={/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(current) ? current : fallback}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-7 w-8 cursor-pointer rounded border border-slate-700 bg-transparent p-0"
+        />
+      </div>
+    </div>
   )
 }
 
@@ -491,7 +520,9 @@ function ChipRow<T extends string>({
 }) {
   return (
     <div>
-      <span className="mb-1.5 block text-xs font-semibold text-slate-600">{label}</span>
+      <span className="mb-1.5 block text-[10.5px] font-bold uppercase tracking-wide text-slate-400">
+        {label}
+      </span>
       <div className="flex gap-1.5">
         {options.map((o) => (
           <button
@@ -500,8 +531,8 @@ function ChipRow<T extends string>({
             onClick={() => onChange(o.value)}
             className={`rounded-md border px-2.5 py-1.5 text-xs font-semibold ${
               value === o.value
-                ? 'border-blue-600 bg-blue-50 text-blue-700'
-                : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                ? 'border-blue-500 bg-blue-500/15 text-blue-300'
+                : 'border-slate-700 text-slate-300 hover:bg-slate-800'
             }`}
           >
             {o.label}
@@ -512,10 +543,14 @@ function ChipRow<T extends string>({
   )
 }
 
+// Catalogue order matches sectionBuilder.html's ELEMENT_TYPES exactly, group
+// by group: Basic, Branding & Navigation, Media, Content, Advanced.
 export const ATOM_CATALOGUE: AtomDefinition[] = [
+  // ── Basic ──────────────────────────────────────────────────────────────
   {
     type: 'heading',
     label: 'Heading',
+    group: 'Basic',
     icon: HeadingIcon,
     defaultProps: { text: 'Section heading', level: '2', align: 'left' },
     Render: headingRender,
@@ -551,8 +586,9 @@ export const ATOM_CATALOGUE: AtomDefinition[] = [
   },
   {
     type: 'text',
-    label: 'Text',
-    icon: Type,
+    label: 'Paragraph',
+    group: 'Basic',
+    icon: Pilcrow,
     defaultProps: { text: 'Write something compelling here.', align: 'left', muted: false },
     Render: textRender,
     Field: ({ atom, onChange }) => (
@@ -578,6 +614,7 @@ export const ATOM_CATALOGUE: AtomDefinition[] = [
   {
     type: 'button',
     label: 'Button',
+    group: 'Basic',
     icon: RectangleHorizontal,
     defaultProps: { label: 'Click me', href: '#', variant: 'primary' },
     Render: buttonRender,
@@ -606,79 +643,9 @@ export const ATOM_CATALOGUE: AtomDefinition[] = [
     ),
   },
   {
-    type: 'image',
-    label: 'Image',
-    icon: ImageIcon,
-    defaultProps: { src: 'https://placehold.co/1200x600', alt: '', rounded: true },
-    Render: imageRender,
-    Field: ({ atom, onChange }) => (
-      <div className="flex flex-col gap-3.5">
-        <TextInput
-          label="Image URL"
-          value={String(atom.src ?? '')}
-          onChange={(src) => onChange({ src })}
-        />
-        <TextInput
-          label="Alt text"
-          value={String(atom.alt ?? '')}
-          onChange={(alt) => onChange({ alt })}
-        />
-      </div>
-    ),
-  },
-  {
-    type: 'spacer',
-    label: 'Spacer',
-    icon: Minus,
-    defaultProps: { size: 'md' },
-    Render: spacerRender,
-    Field: ({ atom, onChange }) => (
-      <ChipRow
-        label="Size"
-        value={String(atom.size ?? 'md')}
-        options={[
-          { label: 'S', value: 'sm' },
-          { label: 'M', value: 'md' },
-          { label: 'L', value: 'lg' },
-          { label: 'XL', value: 'xl' },
-        ]}
-        onChange={(size) => onChange({ size })}
-      />
-    ),
-  },
-  {
-    type: 'icon',
-    label: 'Icon',
-    icon: Star,
-    defaultProps: { size: 'md', color: '#2563eb' },
-    Render: iconRender,
-    Field: ({ atom, onChange }) => (
-      <div className="flex flex-col gap-3.5">
-        <ChipRow
-          label="Size"
-          value={String(atom.size ?? 'md')}
-          options={[
-            { label: 'S', value: 'sm' },
-            { label: 'M', value: 'md' },
-            { label: 'L', value: 'lg' },
-          ]}
-          onChange={(size) => onChange({ size })}
-        />
-        <label className="block">
-          <span className="mb-1.5 block text-xs font-semibold text-slate-600">Color</span>
-          <input
-            type="color"
-            value={String(atom.color ?? '#2563eb')}
-            onChange={(e) => onChange({ color: e.target.value })}
-            className="h-9 w-14 cursor-pointer rounded-md border border-slate-200"
-          />
-        </label>
-      </div>
-    ),
-  },
-  {
     type: 'badge',
     label: 'Badge',
+    group: 'Basic',
     icon: Tag,
     defaultProps: { text: 'New', tone: 'primary' },
     Render: badgeRender,
@@ -705,14 +672,38 @@ export const ATOM_CATALOGUE: AtomDefinition[] = [
   {
     type: 'divider',
     label: 'Divider',
+    group: 'Basic',
     icon: SeparatorHorizontal,
     defaultProps: {},
     Render: dividerRender,
-    Field: () => <p className="text-xs text-slate-400">A plain horizontal rule — no settings.</p>,
+    Field: () => <p className="text-xs text-slate-500">A plain horizontal rule — no settings.</p>,
   },
+  {
+    type: 'spacer',
+    label: 'Spacer',
+    group: 'Basic',
+    icon: Minus,
+    defaultProps: { size: 'md' },
+    Render: spacerRender,
+    Field: ({ atom, onChange }) => (
+      <ChipRow
+        label="Size"
+        value={String(atom.size ?? 'md')}
+        options={[
+          { label: 'S', value: 'sm' },
+          { label: 'M', value: 'md' },
+          { label: 'L', value: 'lg' },
+          { label: 'XL', value: 'xl' },
+        ]}
+        onChange={(size) => onChange({ size })}
+      />
+    ),
+  },
+  // ── Branding & Navigation ─────────────────────────────────────────────
   {
     type: 'logo',
     label: 'Logo',
+    group: 'Branding & Navigation',
     icon: Sparkles,
     defaultProps: { src: '', text: 'Your Brand', size: 'md' },
     Render: logoRender,
@@ -744,6 +735,7 @@ export const ATOM_CATALOGUE: AtomDefinition[] = [
   {
     type: 'nav',
     label: 'Navigation',
+    group: 'Branding & Navigation',
     icon: MenuIcon,
     defaultProps: { items: 'Home, About, Services, Contact', align: 'center' },
     Render: navRender,
@@ -771,6 +763,7 @@ export const ATOM_CATALOGUE: AtomDefinition[] = [
   {
     type: 'social',
     label: 'Social Icons',
+    group: 'Branding & Navigation',
     icon: Share2,
     defaultProps: { items: 'f, ig, x, in', color: '#2563eb' },
     Render: socialRender,
@@ -790,9 +783,33 @@ export const ATOM_CATALOGUE: AtomDefinition[] = [
       </div>
     ),
   },
+  // ── Media ────────────────────────────────────────────────────────────
+  {
+    type: 'image',
+    label: 'Image',
+    group: 'Media',
+    icon: ImageIcon,
+    defaultProps: { src: 'https://placehold.co/1200x600', alt: '', rounded: true },
+    Render: imageRender,
+    Field: ({ atom, onChange }) => (
+      <div className="flex flex-col gap-3.5">
+        <TextInput
+          label="Image URL"
+          value={String(atom.src ?? '')}
+          onChange={(src) => onChange({ src })}
+        />
+        <TextInput
+          label="Alt text"
+          value={String(atom.alt ?? '')}
+          onChange={(alt) => onChange({ alt })}
+        />
+      </div>
+    ),
+  },
   {
     type: 'video',
     label: 'Video',
+    group: 'Media',
     icon: VideoIcon,
     defaultProps: { thumb: '', height: 320 },
     Render: videoRender,
@@ -804,20 +821,24 @@ export const ATOM_CATALOGUE: AtomDefinition[] = [
           onChange={(thumb) => onChange({ thumb })}
         />
         <label className="block">
-          <span className="mb-1.5 block text-xs font-semibold text-slate-600">Height (px)</span>
+          <span className="mb-1.5 block text-[10.5px] font-bold uppercase tracking-wide text-slate-400">
+            Height (px)
+          </span>
           <input
             type="number"
             value={Number(atom.height ?? 320)}
             onChange={(e) => onChange({ height: Math.max(0, Number(e.target.value) || 0) })}
-            className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+            className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100"
           />
         </label>
       </div>
     ),
   },
+  // ── Content ──────────────────────────────────────────────────────────
   {
     type: 'icontext',
     label: 'Icon + Text',
+    group: 'Content',
     icon: Zap,
     defaultProps: { icon: '★', text: 'A short highlight', color: '#2563eb' },
     Render: icontextRender,
@@ -845,6 +866,7 @@ export const ATOM_CATALOGUE: AtomDefinition[] = [
   {
     type: 'columns',
     label: '2 Columns',
+    group: 'Content',
     icon: Columns,
     defaultProps: { left: 'First column text.', right: 'Second column text.' },
     Render: columnsRender,
@@ -866,6 +888,7 @@ export const ATOM_CATALOGUE: AtomDefinition[] = [
   {
     type: 'grid',
     label: 'Grid',
+    group: 'Content',
     icon: LayoutGrid,
     defaultProps: {
       cols: 3,
@@ -908,6 +931,7 @@ export const ATOM_CATALOGUE: AtomDefinition[] = [
   {
     type: 'list',
     label: 'List',
+    group: 'Content',
     icon: ListIcon,
     defaultProps: { items: 'First point\nSecond point\nThird point' },
     Render: listRender,
@@ -923,6 +947,7 @@ export const ATOM_CATALOGUE: AtomDefinition[] = [
   {
     type: 'card',
     label: 'Card',
+    group: 'Content',
     icon: Square,
     defaultProps: {
       icon: '★',
@@ -960,6 +985,7 @@ export const ATOM_CATALOGUE: AtomDefinition[] = [
   {
     type: 'quote',
     label: 'Quote',
+    group: 'Content',
     icon: QuoteIcon,
     defaultProps: { text: 'A memorable quote goes here.', author: 'Someone, Somewhere' },
     Render: quoteRender,
@@ -981,6 +1007,7 @@ export const ATOM_CATALOGUE: AtomDefinition[] = [
   {
     type: 'testimonial',
     label: 'Testimonial',
+    group: 'Content',
     icon: MessageSquare,
     defaultProps: {
       avatar: '',
@@ -1017,6 +1044,7 @@ export const ATOM_CATALOGUE: AtomDefinition[] = [
   {
     type: 'stats',
     label: 'Stat',
+    group: 'Content',
     icon: BarChart3,
     defaultProps: { number: '500+', label: 'Happy clients', color: '#2563eb' },
     Render: statsRender,
@@ -1044,13 +1072,16 @@ export const ATOM_CATALOGUE: AtomDefinition[] = [
   {
     type: 'rating',
     label: 'Rating',
+    group: 'Content',
     icon: Star,
     defaultProps: { count: 5, color: '#f59e0b' },
     Render: ratingRender,
     Field: ({ atom, onChange }) => (
       <div className="flex flex-col gap-3.5">
         <label className="block">
-          <span className="mb-1.5 block text-xs font-semibold text-slate-600">Stars (0-5)</span>
+          <span className="mb-1.5 block text-[10.5px] font-bold uppercase tracking-wide text-slate-400">
+            Stars (0-5)
+          </span>
           <input
             type="number"
             min={0}
@@ -1059,7 +1090,7 @@ export const ATOM_CATALOGUE: AtomDefinition[] = [
             onChange={(e) =>
               onChange({ count: Math.max(0, Math.min(5, Number(e.target.value) || 0)) })
             }
-            className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+            className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100"
           />
         </label>
         <ColorInput
@@ -1071,9 +1102,11 @@ export const ATOM_CATALOGUE: AtomDefinition[] = [
       </div>
     ),
   },
+  // ── Advanced ─────────────────────────────────────────────────────────
   {
     type: 'form',
     label: 'Form',
+    group: 'Advanced',
     icon: ClipboardList,
     defaultProps: { fields: 'Name, Email, Message', buttonText: 'Send' },
     Render: formRender,
@@ -1095,6 +1128,7 @@ export const ATOM_CATALOGUE: AtomDefinition[] = [
   {
     type: 'html',
     label: 'HTML / Embed',
+    group: 'Advanced',
     icon: Code2,
     defaultProps: { code: '<p>Custom HTML goes here.</p>' },
     Render: htmlRender,

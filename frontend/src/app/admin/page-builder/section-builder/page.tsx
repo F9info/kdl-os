@@ -15,7 +15,8 @@ import { getDefaultProjectId } from '../packs/composer/custom-blocks-store'
  * back button returns to wherever it was opened from (`returnTo`).
  *
  * `category` pins which block category the finished section will be filed
- * under (so it shows up back in that category's Insert-a-block picker).
+ * under (so it shows up back in that category's Insert-a-block picker) —
+ * defaults to 'content' when opened from the sidebar with no page context.
  * `projectId` carries the single-project scoping key transparently — the
  * operator never sees or picks it (see KDL "no projects concept" removal);
  * falls back to the one default project when the caller has none in scope.
@@ -23,7 +24,7 @@ import { getDefaultProjectId } from '../packs/composer/custom-blocks-store'
 export default function SectionBuilderPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const category = searchParams.get('category') ?? ''
+  const category = searchParams.get('category') || 'content'
   // Open-redirect guard: `returnTo` is caller-controlled (query param) and
   // fed straight to router.push — must be a same-origin admin path, never
   // an absolute/protocol-relative URL (`//evil.com`, `https://evil.com`)
@@ -39,17 +40,6 @@ export default function SectionBuilderPage() {
     if (projectId) return
     getDefaultProjectId().then(setProjectId)
   }, [projectId])
-
-  if (!category) {
-    return (
-      <ModuleGuard slug="page-builder">
-        <div className="p-8 text-sm text-muted-foreground">
-          Missing block category — open Section Builder from an &quot;Insert a block&quot;
-          screen&apos;s &quot;Create new&quot; button.
-        </div>
-      </ModuleGuard>
-    )
-  }
 
   return (
     <ModuleGuard slug="page-builder">
