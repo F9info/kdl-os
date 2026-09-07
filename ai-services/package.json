@@ -16,7 +16,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.120.0",
+    "@anthropic-ai/sdk": "^0.123.0",
     "@langchain/core": "^0.3.0",
     "chromadb": "^1.9.0",
     "cookie-parser": "^1.4.6",
