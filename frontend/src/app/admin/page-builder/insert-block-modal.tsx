@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { usePuck } from '@puckeditor/core'
 import type { AppState, Config } from '@puckeditor/core'
@@ -50,6 +50,54 @@ function carryOverBrandProps(content: AppState['data']['content'], componentType
     if (existing.props[field] !== undefined) carried[field] = existing.props[field]
   }
   return carried
+}
+
+export type BlockCardEntry = {
+  key: string
+  variant: string | null
+  index: number
+  total: number
+}
+
+type MinimalContentBlock = { type: string; props?: Record<string, unknown> }
+
+const cardIdentity = (key: string, variant: string | null) => `${key}::${variant ?? 'null'}`
+
+/**
+ * Annotates each card with whether a block of that exact type+variant
+ * already exists in the page's current content, and pins any such card to
+ * the front of its own variant group (cards are already grouped by `key`,
+ * since both popups build `cards` via `componentKeys.flatMap(key => ...)` —
+ * this only reorders *within* each existing group, never across groups).
+ */
+export function withCurrentSelection<T extends BlockCardEntry>(
+  cards: T[],
+  content: MinimalContentBlock[] | null | undefined
+): (T & { isCurrent: boolean })[] {
+  const present = new Set(
+    (content ?? []).map((block) =>
+      cardIdentity(block.type, (block.props?.variant as string | undefined) ?? null)
+    )
+  )
+  const annotated = cards.map((card) => ({
+    ...card,
+    isCurrent: present.has(cardIdentity(card.key, card.variant)),
+  }))
+
+  const groupOrder: string[] = []
+  const groups = new Map<string, typeof annotated>()
+  for (const card of annotated) {
+    if (!groups.has(card.key)) {
+      groups.set(card.key, [])
+      groupOrder.push(card.key)
+    }
+    groups.get(card.key)!.push(card)
+  }
+
+  return groupOrder.flatMap((key) => {
+    const group = groups.get(key)!
+    return [...group.filter((c) => c.isCurrent), ...group.filter((c) => !c.isCurrent)]
+  })
 }
 
 export function insertBlockComponent(
@@ -170,6 +218,29 @@ function BlockCard({
 }) {
   const { config } = usePuck()
   const comp = (config.components as Record<string, PuckComponentConfig>)[componentKey]
+  const wrapRef = useRef<HTMLDivElement>(null)
+  // A fixed-width (1200px) canvas guarantees the component's own internal
+  // flex/grid layout always computes as if shown at a real desktop width,
+  // regardless of how wide this card actually is — a narrow card showing
+  // e.g. a 4-column grid unscaled would cram all 4 columns into a sliver.
+  // Scale (via `zoom`, not `transform: scale` — same reasoning as
+  // RenderPreview in website/layout/page.tsx: `transform` only shrinks the
+  // paint, not the box) to the card's OWN measured width instead of a
+  // hardcoded 0.55 — hardcoding assumed the old 2-column ~350px-wide card;
+  // once the grid went to 1 column (full modal width), that same 0.55 left
+  // most of the now much-wider card as blank space.
+  const [scale, setScale] = useState(0.55)
+  useEffect(() => {
+    const el = wrapRef.current
+    if (!el) return
+    const update = () => {
+      if (el.clientWidth > 0) setScale(el.clientWidth / 1200)
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
   if (!comp?.render) return null
   const props = previewProps(comp, variant)
   const previewHeight = COMPACT_PREVIEW_HEIGHT[componentKey] ?? DEFAULT_PREVIEW_HEIGHT
@@ -187,12 +258,11 @@ function BlockCard({
         {total > 1 ? ` · ${index + 1}` : ''}
       </span>
       <div
+        ref={wrapRef}
         style={{ height: previewHeight }}
         className="overflow-hidden bg-white pointer-events-none"
       >
-        <div style={{ width: 1200, transform: 'scale(0.55)', transformOrigin: 'top left' }}>
-          {comp.render(props)}
-        </div>
+        <div style={{ width: 1200, zoom: scale }}>{comp.render(props)}</div>
       </div>
       <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-slate-900/55 to-transparent p-4 opacity-0 transition group-hover:opacity-100">
         <span className="rounded-lg bg-white px-5 py-2 text-[13px] font-extrabold text-blue-600 shadow-lg">
@@ -483,7 +553,7 @@ export function SectionPickerPopup({
       onClick={(e) => e.target === e.currentTarget && onClose()}
       onKeyDown={(e) => e.key === 'Escape' && onClose()}
     >
-      <div className="flex max-h-[85vh] w-[min(760px,95vw)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+      <div className="flex max-h-[85vh] w-[min(1100px,95vw)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center gap-3.5 border-b border-slate-200 px-4.5 py-3.5">
           <b className="text-base">{cat?.title ?? categoryKey}</b>
           <span className="flex-1" />
@@ -495,9 +565,9 @@ export function SectionPickerPopup({
             <X size={20} />
           </button>
         </div>
-        <div className="grid auto-rows-min grid-cols-2 gap-3.5 overflow-auto p-4.5">
+        <div className="grid auto-rows-min grid-cols-1 gap-3.5 overflow-auto p-4.5">
           {cards.length === 0 ? (
-            <div className="col-span-2 p-5 text-sm text-slate-400">No designs yet.</div>
+            <div className="p-5 text-sm text-slate-400">No designs yet.</div>
           ) : (
             cards.map(({ key, variant, index, total }) => (
               <BlockCard
