@@ -36,7 +36,7 @@ describe('withCurrentSelection', () => {
     const cards = [entry('ConstructionAboutSplit', null, 0, 1)]
     const content = [{ type: 'ConstructionAboutSplit', props: { id: 'y' } }]
     const result = withCurrentSelection(cards, content)
-    expect(result[0].isCurrent).toBe(true)
+    expect(result[0]?.isCurrent).toBe(true)
   })
 
   it('leaves order and flags unchanged when nothing on the page matches', () => {
