@@ -785,6 +785,53 @@ type ConstructionProps = {
     faq4Answer: string
     padding: 'sm' | 'md' | 'lg'
   }
+  ConstructionFAQAccordionCategories: {
+    sectionTitle: string
+    category1Label: string
+    category1Faq1Question: string
+    category1Faq1Answer: string
+    category1Faq2Question: string
+    category1Faq2Answer: string
+    category1Faq3Question: string
+    category1Faq3Answer: string
+    category2Label: string
+    category2Faq1Question: string
+    category2Faq1Answer: string
+    category2Faq2Question: string
+    category2Faq2Answer: string
+    category2Faq3Question: string
+    category2Faq3Answer: string
+    padding: 'sm' | 'md' | 'lg'
+  }
+  ConstructionFAQTwoColumn: {
+    sectionTitle: string
+    faq1Question: string
+    faq1Answer: string
+    faq2Question: string
+    faq2Answer: string
+    faq3Question: string
+    faq3Answer: string
+    faq4Question: string
+    faq4Answer: string
+    faq5Question: string
+    faq5Answer: string
+    faq6Question: string
+    faq6Answer: string
+    padding: 'sm' | 'md' | 'lg'
+  }
+  ConstructionFAQWithContact: {
+    sectionTitle: string
+    faq1Question: string
+    faq1Answer: string
+    faq2Question: string
+    faq2Answer: string
+    faq3Question: string
+    faq3Answer: string
+    contactHeading: string
+    contactCtaLabel: string
+    contactCtaHref: string
+    padding: 'sm' | 'md' | 'lg'
+  }
   ConstructionSectorsTabbed: {
     heading: string
     tab1Label: string
@@ -7321,6 +7368,333 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     },
   },
 
+  // FAQ grouped into 2 labeled categories, 3 Q/A pairs each — same static
+  // <details> convention as ConstructionFAQ (first item per category open).
+  ConstructionFAQAccordionCategories: {
+    label: 'FAQ Accordion Categories',
+    fields: {
+      sectionTitle: { type: 'text' },
+      category1Label: { type: 'text' },
+      category1Faq1Question: { type: 'text' },
+      category1Faq1Answer: { type: 'textarea' },
+      category1Faq2Question: { type: 'text' },
+      category1Faq2Answer: { type: 'textarea' },
+      category1Faq3Question: { type: 'text' },
+      category1Faq3Answer: { type: 'textarea' },
+      category2Label: { type: 'text' },
+      category2Faq1Question: { type: 'text' },
+      category2Faq1Answer: { type: 'textarea' },
+      category2Faq2Question: { type: 'text' },
+      category2Faq2Answer: { type: 'textarea' },
+      category2Faq3Question: { type: 'text' },
+      category2Faq3Answer: { type: 'textarea' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+    },
+    defaultProps: {
+      sectionTitle: 'Frequently Asked Questions',
+      category1Label: 'Pricing',
+      category1Faq1Question: 'How do you put together a cost estimate?',
+      category1Faq1Answer:
+        'We walk the site, review drawings, and return a itemized estimate covering labor, materials, and permits within a few business days.',
+      category1Faq2Question: 'What are your payment terms?',
+      category1Faq2Answer:
+        'Payments are milestone-based — a deposit to start, then draws tied to completed phases, with a final payment on handover.',
+      category1Faq3Question: 'Are there ever hidden fees?',
+      category1Faq3Answer:
+        'No. Any cost outside the original scope is documented as a change order and approved by you before we proceed.',
+      category2Label: 'Process',
+      category2Faq1Question: 'What is the typical project timeline?',
+      category2Faq1Answer:
+        'Most projects run 4-8 months from groundbreaking to handover, depending on scope and site conditions.',
+      category2Faq2Question: 'Who handles permits and approvals?',
+      category2Faq2Answer:
+        'We manage the full permitting process, from application through inspections, so you don’t have to deal with the paperwork.',
+      category2Faq3Question: 'How often will you visit the site?',
+      category2Faq3Answer:
+        'Our site supervisor visits daily during active construction, with the project manager checking in weekly with progress photos.',
+      padding: 'md',
+    },
+    render: ({
+      sectionTitle,
+      category1Label,
+      category1Faq1Question,
+      category1Faq1Answer,
+      category1Faq2Question,
+      category1Faq2Answer,
+      category1Faq3Question,
+      category1Faq3Answer,
+      category2Label,
+      category2Faq1Question,
+      category2Faq1Answer,
+      category2Faq2Question,
+      category2Faq2Answer,
+      category2Faq3Question,
+      category2Faq3Answer,
+      padding,
+    }) => {
+      const categories = [
+        {
+          label: category1Label,
+          items: [
+            { q: category1Faq1Question, a: category1Faq1Answer },
+            { q: category1Faq2Question, a: category1Faq2Answer },
+            { q: category1Faq3Question, a: category1Faq3Answer },
+          ].filter((f) => f.q),
+        },
+        {
+          label: category2Label,
+          items: [
+            { q: category2Faq1Question, a: category2Faq1Answer },
+            { q: category2Faq2Question, a: category2Faq2Answer },
+            { q: category2Faq3Question, a: category2Faq3Answer },
+          ].filter((f) => f.q),
+        },
+      ].filter((c) => c.items.length > 0)
+      return (
+        <section className={`${padY[padding]} bg-white`}>
+          <div className={wrap}>
+            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+              {sectionTitle}
+            </h2>
+            <div className="grid md:grid-cols-2 gap-10">
+              {categories.map((cat, ci) => (
+                <div key={ci}>
+                  <h3 className="text-lg font-semibold text-orange-600 mb-4">{cat.label}</h3>
+                  <div className="flex flex-col gap-3">
+                    {cat.items.map((item, i) => (
+                      <details
+                        key={i}
+                        className="rounded-xl border border-slate-200 p-5 group"
+                        {...(i === 0 ? { open: true } : {})}
+                      >
+                        <summary className="font-semibold text-slate-900 cursor-pointer list-none flex items-center justify-between gap-4">
+                          {item.q}
+                          <span className="text-orange-600 group-open:rotate-45 transition shrink-0">
+                            +
+                          </span>
+                        </summary>
+                        <p className="text-sm text-slate-600 leading-relaxed mt-3">{item.a}</p>
+                      </details>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // 6 Q/A pairs laid out two columns (3 per column) — denser than the
+  // flat-4 ConstructionFAQ. Same static <details> convention.
+  ConstructionFAQTwoColumn: {
+    label: 'FAQ Two Column',
+    fields: {
+      sectionTitle: { type: 'text' },
+      faq1Question: { type: 'text' },
+      faq1Answer: { type: 'textarea' },
+      faq2Question: { type: 'text' },
+      faq2Answer: { type: 'textarea' },
+      faq3Question: { type: 'text' },
+      faq3Answer: { type: 'textarea' },
+      faq4Question: { type: 'text' },
+      faq4Answer: { type: 'textarea' },
+      faq5Question: { type: 'text' },
+      faq5Answer: { type: 'textarea' },
+      faq6Question: { type: 'text' },
+      faq6Answer: { type: 'textarea' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+    },
+    defaultProps: {
+      sectionTitle: 'Frequently Asked Questions',
+      faq1Question: 'How long does a typical project take?',
+      faq1Answer:
+        'Most residential projects run 4-8 months from groundbreaking to handover, depending on scope.',
+      faq2Question: 'Do you provide fixed-price contracts?',
+      faq2Answer: 'Yes, most projects are quoted and contracted on a fixed-price basis.',
+      faq3Question: 'Are you licensed and insured?',
+      faq3Answer: 'Yes, we are fully licensed and carry comprehensive insurance cover.',
+      faq4Question: 'Can I make changes once construction starts?',
+      faq4Answer:
+        'Minor changes are usually possible — we log every change order with its cost and schedule impact before proceeding.',
+      faq5Question: 'Do you handle permits and inspections?',
+      faq5Answer: 'Yes, we manage the full permitting process and coordinate every inspection.',
+      faq6Question: 'What happens if the weather delays work?',
+      faq6Answer:
+        'Weather days are built into the schedule; if a delay is significant we notify you and adjust the timeline together.',
+      padding: 'md',
+    },
+    render: ({
+      sectionTitle,
+      faq1Question,
+      faq1Answer,
+      faq2Question,
+      faq2Answer,
+      faq3Question,
+      faq3Answer,
+      faq4Question,
+      faq4Answer,
+      faq5Question,
+      faq5Answer,
+      faq6Question,
+      faq6Answer,
+      padding,
+    }) => {
+      const columns = [
+        [
+          { q: faq1Question, a: faq1Answer },
+          { q: faq2Question, a: faq2Answer },
+          { q: faq3Question, a: faq3Answer },
+        ].filter((f) => f.q),
+        [
+          { q: faq4Question, a: faq4Answer },
+          { q: faq5Question, a: faq5Answer },
+          { q: faq6Question, a: faq6Answer },
+        ].filter((f) => f.q),
+      ]
+      return (
+        <section className={`${padY[padding]} bg-white`}>
+          <div className={wrap}>
+            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+              {sectionTitle}
+            </h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              {columns.map((col, ci) => (
+                <div key={ci} className="flex flex-col gap-3">
+                  {col.map((item, i) => (
+                    <details
+                      key={i}
+                      className="rounded-xl border border-slate-200 p-5 group"
+                      {...(ci === 0 && i === 0 ? { open: true } : {})}
+                    >
+                      <summary className="font-semibold text-slate-900 cursor-pointer list-none flex items-center justify-between gap-4">
+                        {item.q}
+                        <span className="text-orange-600 group-open:rotate-45 transition shrink-0">
+                          +
+                        </span>
+                      </summary>
+                      <p className="text-sm text-slate-600 leading-relaxed mt-3">{item.a}</p>
+                    </details>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // 3 Q/A pairs beside a "still have questions?" contact CTA panel.
+  ConstructionFAQWithContact: {
+    label: 'FAQ with Contact',
+    fields: {
+      sectionTitle: { type: 'text' },
+      faq1Question: { type: 'text' },
+      faq1Answer: { type: 'textarea' },
+      faq2Question: { type: 'text' },
+      faq2Answer: { type: 'textarea' },
+      faq3Question: { type: 'text' },
+      faq3Answer: { type: 'textarea' },
+      contactHeading: { type: 'text' },
+      contactCtaLabel: { type: 'text' },
+      contactCtaHref: { type: 'text' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+    },
+    defaultProps: {
+      sectionTitle: 'Frequently Asked Questions',
+      faq1Question: 'How long does a typical project take?',
+      faq1Answer:
+        'Most residential projects run 4-8 months from groundbreaking to handover, depending on scope.',
+      faq2Question: 'Do you provide fixed-price contracts?',
+      faq2Answer: 'Yes, most projects are quoted and contracted on a fixed-price basis.',
+      faq3Question: 'Are you licensed and insured?',
+      faq3Answer: 'Yes, we are fully licensed and carry comprehensive insurance cover.',
+      contactHeading: 'Still have questions?',
+      contactCtaLabel: 'Talk to Us',
+      contactCtaHref: '#contact',
+      padding: 'md',
+    },
+    render: ({
+      sectionTitle,
+      faq1Question,
+      faq1Answer,
+      faq2Question,
+      faq2Answer,
+      faq3Question,
+      faq3Answer,
+      contactHeading,
+      contactCtaLabel,
+      contactCtaHref,
+      padding,
+    }) => {
+      const items = [
+        { q: faq1Question, a: faq1Answer },
+        { q: faq2Question, a: faq2Answer },
+        { q: faq3Question, a: faq3Answer },
+      ].filter((f) => f.q)
+      return (
+        <section className={`${padY[padding]} bg-white`}>
+          <div className={wrap}>
+            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+              {sectionTitle}
+            </h2>
+            <div className="grid md:grid-cols-3 gap-8 items-start">
+              <div className="md:col-span-2 flex flex-col gap-3">
+                {items.map((item, i) => (
+                  <details
+                    key={i}
+                    className="rounded-xl border border-slate-200 p-5 group"
+                    {...(i === 0 ? { open: true } : {})}
+                  >
+                    <summary className="font-semibold text-slate-900 cursor-pointer list-none flex items-center justify-between gap-4">
+                      {item.q}
+                      <span className="text-orange-600 group-open:rotate-45 transition shrink-0">
+                        +
+                      </span>
+                    </summary>
+                    <p className="text-sm text-slate-600 leading-relaxed mt-3">{item.a}</p>
+                  </details>
+                ))}
+              </div>
+              <div className="rounded-xl bg-slate-900 p-8 text-center">
+                <h3 className="text-xl font-semibold text-white mb-4">{contactHeading}</h3>
+                <a
+                  href={contactCtaHref}
+                  className="inline-block rounded-lg bg-orange-600 px-6 py-3 text-sm font-semibold text-white hover:bg-orange-500 transition"
+                >
+                  {contactCtaLabel}
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
   // Sectors — 3 tabbed sector descriptions (static tab switch, mirrors
   // ConstructionOurBrands's tab pattern: useState picks the active tab,
   // all tabs are rendered client-side, no server state).
@@ -7977,7 +8351,12 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
   },
   faq: {
     title: 'FAQ',
-    components: ['ConstructionFAQ'],
+    components: [
+      'ConstructionFAQ',
+      'ConstructionFAQAccordionCategories',
+      'ConstructionFAQTwoColumn',
+      'ConstructionFAQWithContact',
+    ],
   },
   testimonials: {
     title: 'Testimonials',
