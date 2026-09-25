@@ -1,6 +1,6 @@
 # Fill Every Section-Picker Category to 4 Designs — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Every category in the Page Builder's Section-picker popup should offer at least 4 real, visually distinct designs — 14 of the 16 categories currently have 1-3. Add 34 new Puck components (construction pack) across those 14 categories, matching existing sibling conventions exactly.
 
@@ -37,11 +37,11 @@
 
 **Render layout:** `wrap` div → eyebrow (small uppercase, muted) + heading (bold, text-2xl/3xl) → below, a flex row of 4 items, each a dot (small filled circle, connected by a horizontal line — a `border-t` on a shared flex container with each item's dot as a `-mt` offset circle is a simple CSS way to do this, or a `grid grid-cols-4` with a shared `<div className="absolute ... border-t">` line behind — implementer's call on the simplest correct CSS, doesn't need to be pixel-perfect, just clearly read as a timeline) → year (bold) + label (smaller, muted) under each dot.
 
-- [ ] **Step 1:** Add the component (fields, defaultProps, render) to `typedComponents`, following the conventions above.
-- [ ] **Step 2:** Register `ConstructionMilestoneTimeline` in `typedCategories.counters.components` (alongside `ConstructionStatsStrip`, `ConstructionSafetyRecord`).
-- [ ] **Step 3:** `cd frontend && npx tsc --noEmit` — zero errors.
-- [ ] **Step 4:** `cd frontend && npx next lint --file src/app/admin/page-builder/packs/construction/index.tsx` — clean.
-- [ ] **Step 5:** Commit:
+- [x] **Step 1:** Add the component (fields, defaultProps, render) to `typedComponents`, following the conventions above.
+- [x] **Step 2:** Register `ConstructionMilestoneTimeline` in `typedCategories.counters.components` (alongside `ConstructionStatsStrip`, `ConstructionSafetyRecord`).
+- [x] **Step 3:** `cd frontend && npx tsc --noEmit` — zero errors.
+- [x] **Step 4:** `cd frontend && npx next lint --file src/app/admin/page-builder/packs/construction/index.tsx` — clean.
+- [x] **Step 5:** Commit:
   ```bash
   git add frontend/src/app/admin/page-builder/packs/construction/index.tsx
   git commit -m "feat(page-builder): add Milestone Timeline design to the Counters category
@@ -61,11 +61,11 @@
 
 **Render layout:** single flex row, `justify-between` or `justify-center gap-6` on wider screens, headline left-ish, CTA button + phone right-ish; wraps to stacked on narrow (`flex-col sm:flex-row`).
 
-- [ ] **Step 1:** Add the component to `typedComponents`.
-- [ ] **Step 2:** Register in `typedCategories.cta.components`.
-- [ ] **Step 3:** `npx tsc --noEmit` — zero errors.
-- [ ] **Step 4:** `npx next lint --file src/app/admin/page-builder/packs/construction/index.tsx` — clean.
-- [ ] **Step 5:** Commit (same message pattern as Task 1, describing this component/category).
+- [x] **Step 1:** Add the component to `typedComponents`.
+- [x] **Step 2:** Register in `typedCategories.cta.components`.
+- [x] **Step 3:** `npx tsc --noEmit` — zero errors.
+- [x] **Step 4:** `npx next lint --file src/app/admin/page-builder/packs/construction/index.tsx` — clean.
+- [x] **Step 5:** Commit (same message pattern as Task 1, describing this component/category).
 
 ---
 
@@ -77,11 +77,11 @@
 
 Both need real branded defaultProps (construction-company leadership names/titles/bios — invented but plausible, matching the Subhadra Group branding used elsewhere).
 
-- [ ] **Step 1:** Add `ConstructionTimelineHistory` to `typedComponents`; register in `typedCategories.founder.components`.
-- [ ] **Step 2:** Add `ConstructionLeadershipGrid` to `typedComponents`; register in `typedCategories.founder.components`.
-- [ ] **Step 3:** `npx tsc --noEmit` — zero errors.
-- [ ] **Step 4:** `npx next lint --file src/app/admin/page-builder/packs/construction/index.tsx` — clean.
-- [ ] **Step 5:** Commit both components together (one category, one commit).
+- [x] **Step 1:** Add `ConstructionTimelineHistory` to `typedComponents`; register in `typedCategories.founder.components`.
+- [x] **Step 2:** Add `ConstructionLeadershipGrid` to `typedComponents`; register in `typedCategories.founder.components`.
+- [x] **Step 3:** `npx tsc --noEmit` — zero errors.
+- [x] **Step 4:** `npx next lint --file src/app/admin/page-builder/packs/construction/index.tsx` — clean.
+- [x] **Step 5:** Commit both components together (one category, one commit).
 
 ---
 
@@ -91,11 +91,11 @@ Both need real branded defaultProps (construction-company leadership names/title
 
 **`ConstructionCaseStudyGrid`:** 3-card case-study grid — each card: `imageField`, client name, one result stat (e.g. "40% faster completion"), short description, link label/href. Distinct from `ConstructionBlogPosts` (which has category+title+date, no stat/client/link) by centering each card on a measurable result. Fields: `padding`, `background`, `eyebrow`, `heading`, `case1Image`(imageField)/`case1Client`/`case1Stat`/`case1Description`/`case1LinkLabel`/`case1LinkHref` … through `case3`.
 
-- [ ] **Step 1:** Add `ConstructionNewsTicker`; register in `typedCategories.blogpost.components`.
-- [ ] **Step 2:** Add `ConstructionCaseStudyGrid`; register in `typedCategories.blogpost.components`.
-- [ ] **Step 3:** `npx tsc --noEmit` — zero errors.
-- [ ] **Step 4:** `npx next lint --file ...` — clean.
-- [ ] **Step 5:** Commit both together.
+- [x] **Step 1:** Add `ConstructionNewsTicker`; register in `typedCategories.blogpost.components`.
+- [x] **Step 2:** Add `ConstructionCaseStudyGrid`; register in `typedCategories.blogpost.components`.
+- [x] **Step 3:** `npx tsc --noEmit` — zero errors.
+- [x] **Step 4:** `npx next lint --file ...` — clean.
+- [x] **Step 5:** Commit both together.
 
 ---
 
@@ -105,11 +105,11 @@ Both need real branded defaultProps (construction-company leadership names/title
 
 **`ConstructionTeamStats`:** Hybrid — a small stat row (team size, years of combined experience, certifications count — 3 stats) ABOVE or beside 3 highlighted crew photo cards (photo + name + years-with-company). Distinct from `ConstructionTeamCrew`'s plain 4-photo grid and `ConstructionCertificationsBadges`'s 6-badge grid by combining a stat callout with photos. Fields: `padding`, `background`, `stat1Value`/`stat1Label`, `stat2Value`/`stat2Label`, `stat3Value`/`stat3Label`, `crew1Photo`(imageField)/`crew1Name`/`crew1YearsWithUs` … through `crew3`.
 
-- [ ] **Step 1:** Add `ConstructionOrgChart`; register in `typedCategories.team.components`.
-- [ ] **Step 2:** Add `ConstructionTeamStats`; register in `typedCategories.team.components`.
-- [ ] **Step 3:** `npx tsc --noEmit` — zero errors.
-- [ ] **Step 4:** `npx next lint --file ...` — clean.
-- [ ] **Step 5:** Commit both together.
+- [x] **Step 1:** Add `ConstructionOrgChart`; register in `typedCategories.team.components`.
+- [x] **Step 2:** Add `ConstructionTeamStats`; register in `typedCategories.team.components`.
+- [x] **Step 3:** `npx tsc --noEmit` — zero errors.
+- [x] **Step 4:** `npx next lint --file ...` — clean.
+- [x] **Step 5:** Commit both together.
 
 ---
 
@@ -119,12 +119,12 @@ Both need real branded defaultProps (construction-company leadership names/title
 
 **`ConstructionVideoTestimonials`:** 3 video-thumbnail testimonial cards — each: `imageField('Thumbnail')`, a play-icon overlay (reuse whatever play-button visual treatment `ConstructionVideo` already uses — check that component's render for the exact icon/overlay markup and mirror it), client name, short quote caption. Fields: `padding`, `background`, `heading`, `testimonial1Thumbnail`(imageField)/`testimonial1Name`/`testimonial1Quote` … through `testimonial3`.
 
-- [ ] **Step 1:** Read `ConstructionTestimonialsSlider`'s or `ConstructionProjectsSlider`'s existing array-field render code first (whichever is closer in shape) to confirm the exact array-field + render pattern before writing `ConstructionTestimonialsCarousel` — this is the one task in this plan using a field type (`type:'array'`) that most other tasks don't, get the shape right by copying a working example, not guessing at Puck's array field API.
-- [ ] **Step 2:** Add `ConstructionTestimonialsCarousel`; register in `typedCategories.testimonials.components`.
-- [ ] **Step 3:** Add `ConstructionVideoTestimonials`; register in `typedCategories.testimonials.components`.
-- [ ] **Step 4:** `npx tsc --noEmit` — zero errors.
-- [ ] **Step 5:** `npx next lint --file ...` — clean.
-- [ ] **Step 6:** Commit both together.
+- [x] **Step 1:** Read `ConstructionTestimonialsSlider`'s or `ConstructionProjectsSlider`'s existing array-field render code first (whichever is closer in shape) to confirm the exact array-field + render pattern before writing `ConstructionTestimonialsCarousel` — this is the one task in this plan using a field type (`type:'array'`) that most other tasks don't, get the shape right by copying a working example, not guessing at Puck's array field API.
+- [x] **Step 2:** Add `ConstructionTestimonialsCarousel`; register in `typedCategories.testimonials.components`.
+- [x] **Step 3:** Add `ConstructionVideoTestimonials`; register in `typedCategories.testimonials.components`.
+- [x] **Step 4:** `npx tsc --noEmit` — zero errors.
+- [x] **Step 5:** `npx next lint --file ...` — clean.
+- [x] **Step 6:** Commit both together.
 
 ---
 
@@ -136,12 +136,12 @@ Both need real branded defaultProps (construction-company leadership names/title
 
 **`ConstructionVideoReel`:** A single portrait/vertical-aspect video card (think Instagram Reel/YouTube Shorts framing) with a caption overlay at the bottom — distinct aspect ratio and framing from the wide/horizontal `ConstructionVideo`. Fields: `padding`, `background`, `thumbnail`(imageField), `videoUrl`, `caption`.
 
-- [ ] **Step 1:** Add `ConstructionVideoGrid`; register in `typedCategories.video.components`.
-- [ ] **Step 2:** Add `ConstructionVideoSplitStats`; register in `typedCategories.video.components`.
-- [ ] **Step 3:** Add `ConstructionVideoReel`; register in `typedCategories.video.components`.
-- [ ] **Step 4:** `npx tsc --noEmit` — zero errors.
-- [ ] **Step 5:** `npx next lint --file ...` — clean.
-- [ ] **Step 6:** Commit all three together.
+- [x] **Step 1:** Add `ConstructionVideoGrid`; register in `typedCategories.video.components`.
+- [x] **Step 2:** Add `ConstructionVideoSplitStats`; register in `typedCategories.video.components`.
+- [x] **Step 3:** Add `ConstructionVideoReel`; register in `typedCategories.video.components`.
+- [x] **Step 4:** `npx tsc --noEmit` — zero errors.
+- [x] **Step 5:** `npx next lint --file ...` — clean.
+- [x] **Step 6:** Commit all three together.
 
 ---
 
@@ -153,12 +153,12 @@ Both need real branded defaultProps (construction-company leadership names/title
 
 **`ConstructionProjectMapStrip`:** Horizontal strip of 4 project location "pins" — each a small thumbnail (`imageField`) + city/area name tag, laid out as a simple horizontal row (no real map/geo library — this is a visual metaphor via tags, not an actual map integration, which is explicitly out of scope). Fields: `heading`, `location1Thumbnail`(imageField)/`location1City` … through `location4`.
 
-- [ ] **Step 1:** Add `ConstructionProjectsGridCards`; register in `typedCategories.featuredprojects.components`.
-- [ ] **Step 2:** Add `ConstructionProjectShowcaseSplit`; register in `typedCategories.featuredprojects.components`.
-- [ ] **Step 3:** Add `ConstructionProjectMapStrip`; register in `typedCategories.featuredprojects.components`.
-- [ ] **Step 4:** `npx tsc --noEmit` — zero errors.
-- [ ] **Step 5:** `npx next lint --file ...` — clean.
-- [ ] **Step 6:** Commit all three together.
+- [x] **Step 1:** Add `ConstructionProjectsGridCards`; register in `typedCategories.featuredprojects.components`.
+- [x] **Step 2:** Add `ConstructionProjectShowcaseSplit`; register in `typedCategories.featuredprojects.components`.
+- [x] **Step 3:** Add `ConstructionProjectMapStrip`; register in `typedCategories.featuredprojects.components`.
+- [x] **Step 4:** `npx tsc --noEmit` — zero errors.
+- [x] **Step 5:** `npx next lint --file ...` — clean.
+- [x] **Step 6:** Commit all three together.
 
 ---
 
@@ -170,13 +170,13 @@ Both need real branded defaultProps (construction-company leadership names/title
 
 **`ConstructionSectorsSplitFeature`:** One large "featured sector" (image + description, `imageField`) on one side, a simple list of 3-4 other sector names on the other side. Fields: `featuredImage`(imageField), `featuredTitle`, `featuredDescription`, `otherSector1` … `otherSector4` (plain text labels).
 
-- [ ] **Step 1:** Read `ConstructionOurBrands`'s tab implementation before writing `ConstructionSectorsTabbed` — mirror its structure, don't reinvent tabs.
-- [ ] **Step 2:** Add `ConstructionSectorsTabbed`; register in `typedCategories.sectors.components`.
-- [ ] **Step 3:** Add `ConstructionSectorsIconRow`; register in `typedCategories.sectors.components`.
-- [ ] **Step 4:** Add `ConstructionSectorsSplitFeature`; register in `typedCategories.sectors.components`.
-- [ ] **Step 5:** `npx tsc --noEmit` — zero errors.
-- [ ] **Step 6:** `npx next lint --file ...` — clean.
-- [ ] **Step 7:** Commit all three together.
+- [x] **Step 1:** Read `ConstructionOurBrands`'s tab implementation before writing `ConstructionSectorsTabbed` — mirror its structure, don't reinvent tabs.
+- [x] **Step 2:** Add `ConstructionSectorsTabbed`; register in `typedCategories.sectors.components`.
+- [x] **Step 3:** Add `ConstructionSectorsIconRow`; register in `typedCategories.sectors.components`.
+- [x] **Step 4:** Add `ConstructionSectorsSplitFeature`; register in `typedCategories.sectors.components`.
+- [x] **Step 5:** `npx tsc --noEmit` — zero errors.
+- [x] **Step 6:** `npx next lint --file ...` — clean.
+- [x] **Step 7:** Commit all three together.
 
 ---
 
@@ -188,13 +188,13 @@ Both need real branded defaultProps (construction-company leadership names/title
 
 **`ConstructionBrandsSpotlight`:** One large "featured brand partner" logo (`imageField`) + description, plus a smaller row of 3-4 other brand logos below. Fields: `spotlightLogo`(imageField), `spotlightDescription`, `otherLogo1`(imageField) … `otherLogo4`(imageField).
 
-- [ ] **Step 1:** Add `ConstructionBrandsLogoGrid`; register in `typedCategories.brands.components`.
-- [ ] **Step 2:** Read the array-field pattern again (same reference as Task 6) before writing `ConstructionBrandsCarousel`.
-- [ ] **Step 3:** Add `ConstructionBrandsCarousel`; register in `typedCategories.brands.components`.
-- [ ] **Step 4:** Add `ConstructionBrandsSpotlight`; register in `typedCategories.brands.components`.
-- [ ] **Step 5:** `npx tsc --noEmit` — zero errors.
-- [ ] **Step 6:** `npx next lint --file ...` — clean.
-- [ ] **Step 7:** Commit all three together.
+- [x] **Step 1:** Add `ConstructionBrandsLogoGrid`; register in `typedCategories.brands.components`.
+- [x] **Step 2:** Read the array-field pattern again (same reference as Task 6) before writing `ConstructionBrandsCarousel`.
+- [x] **Step 3:** Add `ConstructionBrandsCarousel`; register in `typedCategories.brands.components`.
+- [x] **Step 4:** Add `ConstructionBrandsSpotlight`; register in `typedCategories.brands.components`.
+- [x] **Step 5:** `npx tsc --noEmit` — zero errors.
+- [x] **Step 6:** `npx next lint --file ...` — clean.
+- [x] **Step 7:** Commit all three together.
 
 ---
 
@@ -206,13 +206,13 @@ Both need real branded defaultProps (construction-company leadership names/title
 
 **`ConstructionFAQWithContact`:** 3 Q/A pairs on one side, a "still have questions?" contact CTA panel (heading + button) on the other side. Fields: `faq1Question`/`Answer` … `faq3Question`/`Answer`, `contactHeading`, `contactCtaLabel`/`contactCtaHref`.
 
-- [ ] **Step 1:** Read `ConstructionFAQ`'s existing render first to confirm the static (non-JS-accordion) convention before writing the 3 new ones.
-- [ ] **Step 2:** Add `ConstructionFAQAccordionCategories`; register in `typedCategories.faq.components`.
-- [ ] **Step 3:** Add `ConstructionFAQTwoColumn`; register in `typedCategories.faq.components`.
-- [ ] **Step 4:** Add `ConstructionFAQWithContact`; register in `typedCategories.faq.components`.
-- [ ] **Step 5:** `npx tsc --noEmit` — zero errors.
-- [ ] **Step 6:** `npx next lint --file ...` — clean.
-- [ ] **Step 7:** Commit all three together.
+- [x] **Step 1:** Read `ConstructionFAQ`'s existing render first to confirm the static (non-JS-accordion) convention before writing the 3 new ones.
+- [x] **Step 2:** Add `ConstructionFAQAccordionCategories`; register in `typedCategories.faq.components`.
+- [x] **Step 3:** Add `ConstructionFAQTwoColumn`; register in `typedCategories.faq.components`.
+- [x] **Step 4:** Add `ConstructionFAQWithContact`; register in `typedCategories.faq.components`.
+- [x] **Step 5:** `npx tsc --noEmit` — zero errors.
+- [x] **Step 6:** `npx next lint --file ...` — clean.
+- [x] **Step 7:** Commit all three together.
 
 ---
 
@@ -224,12 +224,12 @@ Both need real branded defaultProps (construction-company leadership names/title
 
 **`ConstructionClientsCaseHighlight`:** One client spotlight — logo (`imageField`) + one result stat + a short quote, plus a smaller row of 3-4 other client logos below. Fields: `spotlightLogo`(imageField), `spotlightStat`, `spotlightQuote`, `otherLogo1`(imageField) … `otherLogo4`(imageField).
 
-- [ ] **Step 1:** Add `ConstructionClientsTestimonialStrip`; register in `typedCategories.clients.components`.
-- [ ] **Step 2:** Add `ConstructionClientsMarquee`; register in `typedCategories.clients.components`.
-- [ ] **Step 3:** Add `ConstructionClientsCaseHighlight`; register in `typedCategories.clients.components`.
-- [ ] **Step 4:** `npx tsc --noEmit` — zero errors.
-- [ ] **Step 5:** `npx next lint --file ...` — clean.
-- [ ] **Step 6:** Commit all three together.
+- [x] **Step 1:** Add `ConstructionClientsTestimonialStrip`; register in `typedCategories.clients.components`.
+- [x] **Step 2:** Add `ConstructionClientsMarquee`; register in `typedCategories.clients.components`.
+- [x] **Step 3:** Add `ConstructionClientsCaseHighlight`; register in `typedCategories.clients.components`.
+- [x] **Step 4:** `npx tsc --noEmit` — zero errors.
+- [x] **Step 5:** `npx next lint --file ...` — clean.
+- [x] **Step 6:** Commit all three together.
 
 ---
 
@@ -241,13 +241,13 @@ Both need real branded defaultProps (construction-company leadership names/title
 
 **`ConstructionContactSplitMap`:** Form on one side (reuse the simple contact form fields from above), address + business-hours text on the other side (no real map/geo integration — a static placeholder image or a simple styled block standing in for "map", consistent with `ConstructionProjectMapStrip`'s Task 8 note that real map integration is out of scope). Fields: `heading`, `submitLabel`, `address`, `businessHours`.
 
-- [ ] **Step 1:** Read `ConstructionLeadFormFAQ`'s existing render to confirm the static-form-markup convention (no real submission wiring) before writing the 3 new ones.
-- [ ] **Step 2:** Add `ConstructionSimpleContactForm`; register in `typedCategories.contact.components`.
-- [ ] **Step 3:** Add `ConstructionQuoteRequestForm`; register in `typedCategories.contact.components`.
-- [ ] **Step 4:** Add `ConstructionContactSplitMap`; register in `typedCategories.contact.components`.
-- [ ] **Step 5:** `npx tsc --noEmit` — zero errors.
-- [ ] **Step 6:** `npx next lint --file ...` — clean.
-- [ ] **Step 7:** Commit all three together.
+- [x] **Step 1:** Read `ConstructionLeadFormFAQ`'s existing render to confirm the static-form-markup convention (no real submission wiring) before writing the 3 new ones.
+- [x] **Step 2:** Add `ConstructionSimpleContactForm`; register in `typedCategories.contact.components`.
+- [x] **Step 3:** Add `ConstructionQuoteRequestForm`; register in `typedCategories.contact.components`.
+- [x] **Step 4:** Add `ConstructionContactSplitMap`; register in `typedCategories.contact.components`.
+- [x] **Step 5:** `npx tsc --noEmit` — zero errors.
+- [x] **Step 6:** `npx next lint --file ...` — clean.
+- [x] **Step 7:** Commit all three together.
 
 ---
 
@@ -259,22 +259,22 @@ Both need real branded defaultProps (construction-company leadership names/title
 
 **`ConstructionSocialVideoHighlights`:** 3 short-video/reel thumbnail cards with platform badges — reuse the play-icon-overlay convention from the Video category tasks (`ConstructionVideo`'s existing markup) plus a small platform badge per card. Fields: `highlight1Thumbnail`(imageField)/`highlight1Platform`(select)/`highlight1Caption` … through `highlight3`.
 
-- [ ] **Step 1:** Check `ConstructionSocialMedia`'s exact existing field names (`facebookHandle` etc.) and `ConstructionVideo`'s play-icon markup before writing these three, to reuse both conventions exactly.
-- [ ] **Step 2:** Add `ConstructionSocialFeedGrid`; register in `typedCategories.socialmedia.components`.
-- [ ] **Step 3:** Add `ConstructionSocialFollowBanner`; register in `typedCategories.socialmedia.components`.
-- [ ] **Step 4:** Add `ConstructionSocialVideoHighlights`; register in `typedCategories.socialmedia.components`.
-- [ ] **Step 5:** `npx tsc --noEmit` — zero errors.
-- [ ] **Step 6:** `npx next lint --file ...` — clean.
-- [ ] **Step 7:** Commit all three together.
+- [x] **Step 1:** Check `ConstructionSocialMedia`'s exact existing field names (`facebookHandle` etc.) and `ConstructionVideo`'s play-icon markup before writing these three, to reuse both conventions exactly.
+- [x] **Step 2:** Add `ConstructionSocialFeedGrid`; register in `typedCategories.socialmedia.components`.
+- [x] **Step 3:** Add `ConstructionSocialFollowBanner`; register in `typedCategories.socialmedia.components`.
+- [x] **Step 4:** Add `ConstructionSocialVideoHighlights`; register in `typedCategories.socialmedia.components`.
+- [x] **Step 5:** `npx tsc --noEmit` — zero errors.
+- [x] **Step 6:** `npx next lint --file ...` — clean.
+- [x] **Step 7:** Commit all three together.
 
 ---
 
 ## Task 15: Final rebuild and verification
 
-- [ ] **Step 1:** `cd frontend && npx tsc --noEmit` (whole project) — zero errors.
-- [ ] **Step 2:** `cd frontend && npx vitest run` — no regressions (same pre-existing 3-failure baseline in `template-engine-website-stage.test.tsx` is acceptable, nothing else should fail).
-- [ ] **Step 3:** From repo root: `docker compose build frontend && docker compose up -d frontend` — the running app must actually serve all 34 new components.
-- [ ] **Step 4:** Spot-check in a real browser (or ask the user to): open the Section-picker popup for each of the 14 categories touched by this plan and confirm exactly 4 (or more, with a working "Show all" toggle) designs appear, each rendering without visual breakage.
+- [x] **Step 1:** `cd frontend && npx tsc --noEmit` (whole project) — zero errors.
+- [x] **Step 2:** `cd frontend && npx vitest run` — no regressions (same pre-existing 3-failure baseline in `template-engine-website-stage.test.tsx` is acceptable, nothing else should fail).
+- [x] **Step 3:** From repo root: `docker compose build frontend && docker compose up -d frontend` — the running app must actually serve all 34 new components.
+- [x] **Step 4:** Spot-check in a real browser (or ask the user to): open the Section-picker popup for each of the 14 categories touched by this plan and confirm exactly 4 (or more, with a working "Show all" toggle) designs appear, each rendering without visual breakage.
 
 ## Self-Review
 
