@@ -785,6 +785,41 @@ type ConstructionProps = {
     faq4Answer: string
     padding: 'sm' | 'md' | 'lg'
   }
+  ConstructionSectorsTabbed: {
+    heading: string
+    tab1Label: string
+    tab1Description: string
+    tab2Label: string
+    tab2Description: string
+    tab3Label: string
+    tab3Description: string
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+  }
+  ConstructionSectorsIconRow: {
+    heading: string
+    sector1Icon: IconKey
+    sector1Label: string
+    sector2Icon: IconKey
+    sector2Label: string
+    sector3Icon: IconKey
+    sector3Label: string
+    sector4Icon: IconKey
+    sector4Label: string
+    sector5Icon: IconKey
+    sector5Label: string
+    padding: 'sm' | 'md' | 'lg'
+  }
+  ConstructionSectorsSplitFeature: {
+    featuredImage: string
+    featuredTitle: string
+    featuredDescription: string
+    otherSector1: string
+    otherSector2: string
+    otherSector3: string
+    otherSector4: string
+    padding: 'sm' | 'md' | 'lg'
+  }
 }
 
 interface CarouselTestimonialSlide {
@@ -7254,6 +7289,314 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       )
     },
   },
+
+  // Sectors — 3 tabbed sector descriptions (static tab switch, mirrors
+  // ConstructionOurBrands's tab pattern: useState picks the active tab,
+  // all tabs are rendered client-side, no server state).
+  ConstructionSectorsTabbed: {
+    label: 'Sectors Tabbed',
+    fields: {
+      heading: { type: 'text' },
+      tab1Label: { type: 'text' },
+      tab1Description: { type: 'textarea' },
+      tab2Label: { type: 'text' },
+      tab2Description: { type: 'textarea' },
+      tab3Label: { type: 'text' },
+      tab3Description: { type: 'textarea' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'radio',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      heading: 'Sectors We Serve',
+      tab1Label: 'Residential',
+      tab1Description:
+        'Villas, apartments and gated communities — AC, electrical, fire safety, home automation and security, designed and installed by one team from groundbreaking to move-in.',
+      tab2Label: 'Commercial',
+      tab2Description:
+        'Offices, retail and hospitality fit-outs delivered on a fixed schedule — MEP, HVAC, networking and surveillance coordinated so tenants move in on day one.',
+      tab3Label: 'Industrial',
+      tab3Description:
+        'Plants and warehouses with heavy-load electrical, fire detection and power backup built to compliance, plus scheduled maintenance to keep production running.',
+      padding: 'md',
+      background: 'white',
+    },
+    render: function ConstructionSectorsTabbedRender({
+      heading,
+      tab1Label,
+      tab1Description,
+      tab2Label,
+      tab2Description,
+      tab3Label,
+      tab3Description,
+      padding,
+      background,
+    }) {
+      const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
+      const tabs = [
+        { label: tab1Label, description: tab1Description },
+        { label: tab2Label, description: tab2Description },
+        { label: tab3Label, description: tab3Description },
+      ].filter((t) => t.label)
+      const [activeTab, setActiveTab] = useState(tabs[0]?.label ?? '')
+      const active = tabs.find((t) => t.label === activeTab) ?? tabs[0]
+      return (
+        <section
+          ref={ref}
+          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={wrap}>
+            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+              {heading}
+            </h2>
+            {tabs.length > 0 && (
+              <div className="flex flex-wrap justify-center gap-3 mb-8">
+                {tabs.map((t) => (
+                  <button
+                    key={t.label}
+                    type="button"
+                    onClick={() => setActiveTab(t.label)}
+                    className={`rounded-full px-5 py-2.5 text-sm font-semibold transition ${
+                      t.label === activeTab
+                        ? 'bg-slate-950 text-white'
+                        : 'bg-white border border-slate-200 text-slate-700 hover:border-slate-400'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            {active?.description && (
+              <p className="max-w-2xl mx-auto text-center text-slate-600 leading-relaxed">
+                {active.description}
+              </p>
+            )}
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // Sectors — compact single-line icon row, 5 sectors, no images.
+  ConstructionSectorsIconRow: {
+    label: 'Sectors Icon Row',
+    fields: {
+      heading: { type: 'text' },
+      sector1Icon: {
+        type: 'select',
+        options: [
+          { label: 'Hard Hat', value: 'hardhat' },
+          { label: 'Shield', value: 'shield' },
+          { label: 'Star', value: 'star' },
+        ],
+      },
+      sector1Label: { type: 'text' },
+      sector2Icon: {
+        type: 'select',
+        options: [
+          { label: 'Hard Hat', value: 'hardhat' },
+          { label: 'Shield', value: 'shield' },
+          { label: 'Star', value: 'star' },
+        ],
+      },
+      sector2Label: { type: 'text' },
+      sector3Icon: {
+        type: 'select',
+        options: [
+          { label: 'Hard Hat', value: 'hardhat' },
+          { label: 'Shield', value: 'shield' },
+          { label: 'Star', value: 'star' },
+        ],
+      },
+      sector3Label: { type: 'text' },
+      sector4Icon: {
+        type: 'select',
+        options: [
+          { label: 'Hard Hat', value: 'hardhat' },
+          { label: 'Shield', value: 'shield' },
+          { label: 'Star', value: 'star' },
+        ],
+      },
+      sector4Label: { type: 'text' },
+      sector5Icon: {
+        type: 'select',
+        options: [
+          { label: 'Hard Hat', value: 'hardhat' },
+          { label: 'Shield', value: 'shield' },
+          { label: 'Star', value: 'star' },
+        ],
+      },
+      sector5Label: { type: 'text' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+    },
+    defaultProps: {
+      heading: 'Sectors We Serve',
+      sector1Icon: 'hardhat',
+      sector1Label: 'Residential',
+      sector2Icon: 'shield',
+      sector2Label: 'Commercial',
+      sector3Icon: 'star',
+      sector3Label: 'Industrial',
+      sector4Icon: 'hardhat',
+      sector4Label: 'Institutional',
+      sector5Icon: 'shield',
+      sector5Label: 'Infrastructure',
+      padding: 'sm',
+    },
+    render: function ConstructionSectorsIconRowRender({
+      heading,
+      sector1Icon,
+      sector1Label,
+      sector2Icon,
+      sector2Label,
+      sector3Icon,
+      sector3Label,
+      sector4Icon,
+      sector4Label,
+      sector5Icon,
+      sector5Label,
+      padding,
+    }) {
+      const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
+      const sectors = [
+        { icon: sector1Icon, label: sector1Label },
+        { icon: sector2Icon, label: sector2Label },
+        { icon: sector3Icon, label: sector3Label },
+        { icon: sector4Icon, label: sector4Label },
+        { icon: sector5Icon, label: sector5Label },
+      ].filter((s) => s.label)
+      return (
+        <section ref={ref} className={`${revealCls} ${padY[padding]} bg-white`}>
+          <div className={wrap}>
+            {heading && (
+              <h2 className="text-xl md:text-2xl font-bold text-slate-900 text-center mb-6">
+                {heading}
+              </h2>
+            )}
+            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
+              {sectors.map((s, i) => {
+                const Icon = ICON_BY_KEY[s.icon] ?? HardHatIcon
+                return (
+                  <span
+                    key={i}
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700"
+                  >
+                    <span className="text-orange-500 [&>svg]:w-5 [&>svg]:h-5">
+                      <Icon />
+                    </span>
+                    {s.label}
+                  </span>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // Sectors — one large featured sector (image + description) beside a
+  // plain-text list of the other sectors, mirrors ConstructionFeaturedProject's
+  // image/text split layout.
+  ConstructionSectorsSplitFeature: {
+    label: 'Sectors Split Feature',
+    fields: {
+      featuredImage: imageField('Featured Image'),
+      featuredTitle: { type: 'text' },
+      featuredDescription: { type: 'textarea' },
+      otherSector1: { type: 'text' },
+      otherSector2: { type: 'text' },
+      otherSector3: { type: 'text' },
+      otherSector4: { type: 'text' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+    },
+    defaultProps: {
+      featuredImage:
+        'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=900&h=650&fit=crop&auto=format',
+      featuredTitle: 'Commercial Construction',
+      featuredDescription:
+        'Offices, retail and hospitality fit-outs delivered on a fixed schedule — MEP, HVAC, networking and surveillance coordinated so tenants move in on day one.',
+      otherSector1: 'Residential',
+      otherSector2: 'Industrial',
+      otherSector3: 'Institutional',
+      otherSector4: 'Infrastructure',
+      padding: 'md',
+    },
+    render: function ConstructionSectorsSplitFeatureRender({
+      featuredImage,
+      featuredTitle,
+      featuredDescription,
+      otherSector1,
+      otherSector2,
+      otherSector3,
+      otherSector4,
+      padding,
+    }) {
+      const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
+      const others = [otherSector1, otherSector2, otherSector3, otherSector4].filter(Boolean)
+      return (
+        <section ref={ref} className={`${revealCls} ${padY[padding]} bg-white`}>
+          <div className={wrap}>
+            <div className="md:flex gap-12 items-center">
+              <div className="md:w-1/2 mb-8 md:mb-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={featuredImage}
+                  alt={featuredTitle}
+                  className="rounded-2xl w-full h-80 object-cover"
+                />
+              </div>
+              <div className="md:w-1/2">
+                <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-4">
+                  {featuredTitle}
+                </h2>
+                {featuredDescription && (
+                  <p className="text-slate-600 leading-relaxed mb-8">{featuredDescription}</p>
+                )}
+                {others.length > 0 && (
+                  <ul className="space-y-3">
+                    {others.map((label, i) => (
+                      <li key={i} className="flex items-center gap-3 text-slate-700 font-medium">
+                        <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+                        {label}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
 }
 
 // ── categories ─────────────────────────────────────────────────────────────────
@@ -7308,6 +7651,14 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
       'ConstructionProjectsGridCards',
       'ConstructionProjectShowcaseSplit',
       'ConstructionProjectMapStrip',
+    ],
+  },
+  sectors: {
+    title: 'Sectors',
+    components: [
+      'ConstructionSectorsTabbed',
+      'ConstructionSectorsIconRow',
+      'ConstructionSectorsSplitFeature',
     ],
   },
   team: {
