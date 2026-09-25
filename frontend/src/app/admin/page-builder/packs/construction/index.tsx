@@ -325,6 +325,20 @@ type ConstructionProps = {
     padding: 'sm' | 'md' | 'lg'
     background: 'dark' | 'accent' | 'muted'
   }
+  ConstructionMilestoneTimeline: {
+    eyebrow: string
+    heading: string
+    milestone1Year: string
+    milestone1Label: string
+    milestone2Year: string
+    milestone2Label: string
+    milestone3Year: string
+    milestone3Label: string
+    milestone4Year: string
+    milestone4Label: string
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+  }
   ConstructionOfferingsRows: {
     sectionTitle: string
     sectionSubtitle: string
@@ -4547,6 +4561,99 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     },
   },
 
+  // Milestone timeline — horizontal "our journey" strip
+  ConstructionMilestoneTimeline: {
+    label: 'Milestone Timeline',
+    fields: {
+      eyebrow: { type: 'text' },
+      heading: { type: 'text' },
+      milestone1Year: { type: 'text' },
+      milestone1Label: { type: 'text' },
+      milestone2Year: { type: 'text' },
+      milestone2Label: { type: 'text' },
+      milestone3Year: { type: 'text' },
+      milestone3Label: { type: 'text' },
+      milestone4Year: { type: 'text' },
+      milestone4Label: { type: 'text' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'select',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      eyebrow: 'Our Journey',
+      heading: 'Two Decades of Growth',
+      milestone1Year: '1996',
+      milestone1Label: 'Founded in Vijayawada',
+      milestone2Year: '2008',
+      milestone2Label: 'First commercial VRF installation',
+      milestone3Year: '2015',
+      milestone3Label: '500+ projects delivered',
+      milestone4Year: '2024',
+      milestone4Label: "Andhra Pradesh's trusted engineering partner",
+      padding: 'md',
+      background: 'white',
+    },
+    render: ({
+      eyebrow,
+      heading,
+      milestone1Year,
+      milestone1Label,
+      milestone2Year,
+      milestone2Label,
+      milestone3Year,
+      milestone3Label,
+      milestone4Year,
+      milestone4Label,
+      padding,
+      background,
+    }) => {
+      const milestones = [
+        { year: milestone1Year, label: milestone1Label },
+        { year: milestone2Year, label: milestone2Label },
+        { year: milestone3Year, label: milestone3Label },
+        { year: milestone4Year, label: milestone4Label },
+      ].filter((m) => m.year || m.label)
+      return (
+        <section
+          className={`${background === 'muted' ? 'bg-slate-50' : 'bg-white'} ${padY[padding]}`}
+        >
+          <div className={wrap}>
+            <div className="text-center mb-12">
+              {eyebrow && (
+                <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                  {eyebrow}
+                </p>
+              )}
+              <h2 className="text-2xl md:text-3xl font-bold text-slate-900">{heading}</h2>
+            </div>
+            <div className="relative grid grid-cols-2 md:grid-cols-4 gap-y-10">
+              <div className="hidden md:block absolute top-1.5 left-0 right-0 h-px bg-slate-200" />
+              {milestones.map((m, i) => (
+                <div key={i} className="relative flex flex-col items-center text-center px-2">
+                  <span className="w-3 h-3 rounded-full bg-orange-500 mb-4" />
+                  <p className="text-lg font-bold text-slate-900">{m.year}</p>
+                  <p className="text-sm text-slate-600 mt-1">{m.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
   // Lead form + FAQ
   ConstructionLeadFormFAQ: {
     label: 'Lead Form + FAQ',
@@ -5370,7 +5477,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
 const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
   counters: {
     title: 'Counters',
-    components: ['ConstructionStatsStrip', 'ConstructionSafetyRecord'],
+    components: [
+      'ConstructionStatsStrip',
+      'ConstructionSafetyRecord',
+      'ConstructionMilestoneTimeline',
+    ],
   },
   founder: {
     title: 'Founder',
