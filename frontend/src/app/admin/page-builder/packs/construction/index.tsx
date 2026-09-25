@@ -218,6 +218,15 @@ type ConstructionProps = {
     phoneLabel: string
     background: 'dark' | 'accent' | 'muted'
   }
+  ConstructionUrgencyBanner: {
+    padding: 'sm' | 'md' | 'lg'
+    background: 'accent' | 'dark'
+    headline: string
+    ctaLabel: string
+    ctaHref: string
+    phoneNumber: string
+    phoneLabel: string
+  }
   ConstructionStatsStrip: {
     stat1Value: string
     stat1Label: string
@@ -3156,6 +3165,81 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     },
   },
 
+  // Thin single-row urgency banner CTA
+  ConstructionUrgencyBanner: {
+    label: 'Urgency Banner',
+    fields: {
+      headline: { type: 'text' },
+      ctaLabel: { type: 'text' },
+      ctaHref: { type: 'text' },
+      phoneNumber: { type: 'text' },
+      phoneLabel: { type: 'text' },
+      background: {
+        type: 'select',
+        options: [
+          { label: 'Accent (Orange)', value: 'accent' },
+          { label: 'Dark', value: 'dark' },
+        ],
+      },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+    },
+    defaultProps: {
+      headline: 'Only 3 install slots left this month — book your site survey today',
+      ctaLabel: 'Book a Survey',
+      ctaHref: '#quote',
+      phoneNumber: '+91-98765-43210',
+      phoneLabel: 'Call now',
+      background: 'accent',
+      padding: 'sm',
+    },
+    render: ({ headline, ctaLabel, ctaHref, phoneNumber, phoneLabel, background, padding }) => {
+      const bgCls = background === 'dark' ? 'bg-slate-900 text-white' : 'bg-orange-500 text-white'
+      const btnCls =
+        background === 'dark'
+          ? 'bg-orange-500 text-white hover:bg-orange-600'
+          : 'bg-white text-slate-900 hover:bg-slate-100'
+      return (
+        <section className={`${bgCls} ${padY[padding]}`}>
+          <div className={wrap}>
+            <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-4">
+              {headline && (
+                <p className="text-base md:text-lg font-bold text-center sm:text-left">
+                  {headline}
+                </p>
+              )}
+              <div className="flex items-center gap-4 shrink-0">
+                {ctaLabel && (
+                  <a
+                    href={ctaHref}
+                    className={`inline-flex rounded-lg px-5 py-2.5 text-sm font-semibold transition whitespace-nowrap ${btnCls}`}
+                  >
+                    {ctaLabel}
+                  </a>
+                )}
+                {phoneNumber && (
+                  <a
+                    href={`tel:${phoneNumber}`}
+                    className="text-sm font-semibold hover:underline whitespace-nowrap"
+                  >
+                    {phoneLabel ? `${phoneLabel}: ` : ''}
+                    {phoneNumber}
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
   // Featured project / case study
   ConstructionFeaturedProject: {
     label: 'Featured Project',
@@ -5527,7 +5611,12 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
   },
   cta: {
     title: 'Call to Action',
-    components: ['ConstructionQuoteCTA', 'ConstructionTaglineStrip', 'ConstructionFloatingActions'],
+    components: [
+      'ConstructionQuoteCTA',
+      'ConstructionUrgencyBanner',
+      'ConstructionTaglineStrip',
+      'ConstructionFloatingActions',
+    ],
   },
   bottombar: {
     title: 'Footer',
