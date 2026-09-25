@@ -10,12 +10,14 @@ import {
   ArrowRight,
   ExternalLink,
   Plus,
+  Sparkles,
   Upload as UploadIcon,
   X,
 } from 'lucide-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchDetailPageTypes } from '@/admin/lib/detail-page-types'
 import { useSiteHomeHref } from '@/admin/hooks/useSiteHomeHref'
+import { useIdentity } from '@/hooks/useIdentity'
 import api from '@/lib/axios'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,6 +31,7 @@ import {
   useAdvanceStage,
   useBrandKit,
   useCreateSite,
+  useGenerateWebsiteCopy,
   usePatchTypography,
   useRetryStage,
   useSkipStage,
@@ -110,6 +113,9 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
   const createSite = useCreateSite(run.projectId)
   const { data: brandKit } = useBrandKit(run.projectId)
   const patchTypography = usePatchTypography(run.projectId)
+  const generateCopy = useGenerateWebsiteCopy(run.id, run.projectId)
+  const { identity } = useIdentity()
+  const businessDescription = identity.description?.trim() || ''
   const uiStateKey = `te-website-ui:${run.projectId}`
   // The only in-place flow is the Web app one; the other cards are links.
   const [openBrand, setOpenBrand] = useState<'webapp' | null>(
@@ -419,14 +425,30 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
                       : 'One page for every Navigation item, plus Home. Open a page to edit it.'}
                   </p>
                 </div>
-                {demoSiteHref && (
-                  <Button size="sm" asChild>
-                    <a href={demoSiteHref} target="_blank" rel="noreferrer">
-                      <ExternalLink className="mr-2 h-3.5 w-3.5" />
-                      Demo all pages
-                    </a>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={!businessDescription || generateCopy.isPending}
+                    onClick={() => generateCopy.mutate()}
+                    title={
+                      !businessDescription
+                        ? 'Fill in the business description in Settings > Identity first'
+                        : undefined
+                    }
+                  >
+                    <Sparkles className="mr-2 h-3.5 w-3.5" />
+                    {generateCopy.isPending ? 'Generating…' : 'Generate content with AI'}
                   </Button>
-                )}
+                  {demoSiteHref && (
+                    <Button size="sm" asChild>
+                      <a href={demoSiteHref} target="_blank" rel="noreferrer">
+                        <ExternalLink className="mr-2 h-3.5 w-3.5" />
+                        Demo all pages
+                      </a>
+                    </Button>
+                  )}
+                </div>
               </div>
               <NavPagesGrid projectId={run.projectId} homeId={outputRef?.pageKeyToId?.home} />
             </div>

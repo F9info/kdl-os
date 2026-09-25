@@ -268,6 +268,35 @@ export function useContinueToPalette(projectId: string) {
   })
 }
 
+export function useGenerateWebsiteCopy(runId: string, projectId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () =>
+      api
+        .post<{ success: boolean; data: { patchedBlocks: string[] } }>(
+          `${BASE}/runs/${runId}/stages/website/generate-copy`,
+          undefined,
+          projectScope(projectId)
+        )
+        .then((r) => r.data.data),
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: runKey(runId) })
+      if (result.patchedBlocks.length > 0) {
+        toast({ title: `Generated content for ${result.patchedBlocks.length} section(s)` })
+      } else {
+        toast({
+          title: 'Nothing to generate',
+          description:
+            'Every section already has hand-edited content, or AI generation is not configured.',
+        })
+      }
+    },
+    onError: (err) => {
+      toast({ title: extractErrorCode(err), variant: 'destructive' })
+    },
+  })
+}
+
 export function useBrandKit(projectId: string | null) {
   return useQuery({
     queryKey: projectId ? ['brand-kit', projectId] : [],
