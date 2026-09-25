@@ -1,6 +1,6 @@
 # Section Picker Popup UI Refresh — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Give both Page Builder popups (`SectionPickerPopup`, `InsertBlockModal`) a large centered title, a 2-column card grid whose preview images/text shrink proportionally with card width, a checkmark on whichever design is already live on the page (pinned to the front of its variant group), and a consistent full-width "Create new" footer button.
 
@@ -18,7 +18,7 @@
 - Modify: `frontend/src/app/admin/page-builder/insert-block-modal.tsx` (add exported type + function, near the top helpers, after `carryOverBrandProps` and before `insertBlockComponent`, around line 53)
 - Test: `frontend/tests/regression/insert-block-modal.test.ts` (new)
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `frontend/tests/regression/insert-block-modal.test.ts`:
 
@@ -83,12 +83,12 @@ describe('withCurrentSelection', () => {
 })
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `cd frontend && npx vitest run tests/regression/insert-block-modal.test.ts`
 Expected: FAIL — `withCurrentSelection` is not exported from `insert-block-modal.tsx` (module has no such export).
 
-- [ ] **Step 3: Add the helper**
+- [x] **Step 3: Add the helper**
 
 In `frontend/src/app/admin/page-builder/insert-block-modal.tsx`, find this existing block (around line 43-53):
 
@@ -156,12 +156,12 @@ export function withCurrentSelection<T extends BlockCardEntry>(
 }
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `cd frontend && npx vitest run tests/regression/insert-block-modal.test.ts`
 Expected: PASS, all 5 tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/app/admin/page-builder/insert-block-modal.tsx frontend/tests/regression/insert-block-modal.test.ts
@@ -181,7 +181,7 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 **Files:**
 - Modify: `frontend/src/app/admin/page-builder/insert-block-modal.tsx:7,158-226`
 
-- [ ] **Step 1: Add the `Check` icon import**
+- [x] **Step 1: Add the `Check` icon import**
 
 Find:
 ```tsx
@@ -192,7 +192,7 @@ Replace with:
 import { Check, Plus, Search, X } from 'lucide-react'
 ```
 
-- [ ] **Step 2: Add the `isCurrent` prop and render the checkmark badge**
+- [x] **Step 2: Add the `isCurrent` prop and render the checkmark badge**
 
 Find the `BlockCard` function signature and its opening lines:
 
@@ -232,7 +232,7 @@ function BlockCard({
 }) {
 ```
 
-- [ ] **Step 3: Fix the preview height to scale with the card's measured width**
+- [x] **Step 3: Fix the preview height to scale with the card's measured width**
 
 Find:
 ```tsx
@@ -254,7 +254,7 @@ Replace with:
   )
 ```
 
-- [ ] **Step 4: Render the checkmark badge and tighten the name badge**
+- [x] **Step 4: Render the checkmark badge and tighten the name badge**
 
 Find:
 ```tsx
@@ -277,12 +277,12 @@ Replace with:
       ) : null}
 ```
 
-- [ ] **Step 5: Verify with a type-check (no automated render test — see plan's Testing note)**
+- [x] **Step 5: Verify with a type-check (no automated render test — see plan's Testing note)**
 
 Run: `cd frontend && npx tsc --noEmit`
 Expected: FAILS right now with two errors — `BlockCard` is called from `InsertBlockModal` and `SectionPickerPopup` without the new required `isCurrent` prop. This is expected at this point in the plan; Tasks 3 and 4 fix both call sites. Confirm the errors are exactly those two missing-prop errors (file:line for each `<BlockCard ... />` call) and nothing else — if there's a different/unrelated error, stop and investigate before continuing.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add frontend/src/app/admin/page-builder/insert-block-modal.tsx
@@ -298,7 +298,7 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 **Files:**
 - Modify: `frontend/src/app/admin/page-builder/insert-block-modal.tsx:466-469,508-533`
 
-- [ ] **Step 1: Wire `cards` through `withCurrentSelection`**
+- [x] **Step 1: Wire `cards` through `withCurrentSelection`**
 
 Find (inside `SectionPickerPopup`):
 ```tsx
@@ -319,7 +319,7 @@ Replace with:
   )
 ```
 
-- [ ] **Step 2: Centered, large title with an absolutely-positioned close button**
+- [x] **Step 2: Centered, large title with an absolutely-positioned close button**
 
 Find:
 ```tsx
@@ -352,7 +352,7 @@ Replace with:
         </div>
 ```
 
-- [ ] **Step 3: 2-column grid and pass `isCurrent` into `BlockCard`**
+- [x] **Step 3: 2-column grid and pass `isCurrent` into `BlockCard`**
 
 Find:
 ```tsx
@@ -397,12 +397,12 @@ Replace with:
 
 (The footer `"+ Create new"` button below this grid is already a full-width block — no change needed for `SectionPickerPopup`.)
 
-- [ ] **Step 4: Type-check**
+- [x] **Step 4: Type-check**
 
 Run: `cd frontend && npx tsc --noEmit`
 Expected: the two errors from Task 2 Step 5 are now down to one (the remaining `<BlockCard>` call inside `InsertBlockModal`, fixed in Task 4).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/app/admin/page-builder/insert-block-modal.tsx
@@ -418,7 +418,7 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 **Files:**
 - Modify: `frontend/src/app/admin/page-builder/insert-block-modal.tsx:291-294,341-444`
 
-- [ ] **Step 1: Wire `cards` through `withCurrentSelection`**
+- [x] **Step 1: Wire `cards` through `withCurrentSelection`**
 
 Find (inside `InsertBlockModal`):
 ```tsx
@@ -439,7 +439,7 @@ Replace with:
   )
 ```
 
-- [ ] **Step 2: Split the header into a centered-title row and its own search row**
+- [x] **Step 2: Split the header into a centered-title row and its own search row**
 
 Find:
 ```tsx
@@ -496,7 +496,7 @@ Replace with:
         </div>
 ```
 
-- [ ] **Step 3: 2-column grid, pass `isCurrent`, drop the inline "Create new" cell**
+- [x] **Step 3: 2-column grid, pass `isCurrent`, drop the inline "Create new" cell**
 
 Find:
 ```tsx
@@ -624,22 +624,22 @@ Replace with:
 
 Note: `Plus` is still used elsewhere in this file (`InsertBlockButton`'s trigger button at the bottom of the file) — do not remove its import.
 
-- [ ] **Step 4: Type-check**
+- [x] **Step 4: Type-check**
 
 Run: `cd frontend && npx tsc --noEmit`
 Expected: zero errors (the last missing-`isCurrent`-prop error from Task 2 Step 5 is now fixed).
 
-- [ ] **Step 5: Lint**
+- [x] **Step 5: Lint**
 
 Run: `cd frontend && npx next lint --file src/app/admin/page-builder/insert-block-modal.tsx`
 Expected: `✔ No ESLint warnings or errors`.
 
-- [ ] **Step 6: Run the full frontend test suite**
+- [x] **Step 6: Run the full frontend test suite**
 
 Run: `cd frontend && npx vitest run`
 Expected: PASS, including the 5 new `insert-block-modal.test.ts` tests, no regressions elsewhere. If `pnpm test`'s wrapper script fails on an unrelated pnpm build-script preflight (`ERR_PNPM_IGNORED_BUILDS`), use `npx vitest run` directly instead — that's an environment quirk, not a real failure.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add frontend/src/app/admin/page-builder/insert-block-modal.tsx
