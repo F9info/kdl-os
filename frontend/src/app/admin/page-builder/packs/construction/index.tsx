@@ -9,6 +9,19 @@ import { imageField } from '../image-field'
 const padY = { sm: 'py-8', md: 'py-14', lg: 'py-24' } as const
 const wrap = 'mx-auto max-w-6xl px-4 md:px-8'
 
+// Text-badge fallback for platform indicators — no lucide-react social icons
+// (Facebook/Instagram/LinkedIn/YouTube) are imported anywhere in this file, so
+// a small colored initials badge is used instead of adding a new dependency.
+const socialPlatformBadge: Record<
+  'instagram' | 'facebook' | 'linkedin' | 'youtube',
+  { label: string; cls: string }
+> = {
+  instagram: { label: 'IG', cls: 'bg-gradient-to-br from-purple-600 to-pink-500' },
+  facebook: { label: 'FB', cls: 'bg-blue-600' },
+  linkedin: { label: 'in', cls: 'bg-sky-800' },
+  youtube: { label: 'YT', cls: 'bg-red-600' },
+}
+
 // ── per-component prop shapes ─────────────────────────────────────────────────
 
 type ConstructionProps = {
@@ -820,6 +833,44 @@ type ConstructionProps = {
     linkedinHandle: string
     twitterHandle: string
     padding: 'sm' | 'md' | 'lg'
+  }
+  ConstructionSocialFeedGrid: {
+    heading: string
+    post1Image: string
+    post1Caption: string
+    post1Platform: 'instagram' | 'facebook' | 'linkedin' | 'youtube'
+    post2Image: string
+    post2Caption: string
+    post2Platform: 'instagram' | 'facebook' | 'linkedin' | 'youtube'
+    post3Image: string
+    post3Caption: string
+    post3Platform: 'instagram' | 'facebook' | 'linkedin' | 'youtube'
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+  }
+  ConstructionSocialFollowBanner: {
+    heading: string
+    followerCount: string
+    followerLabel: string
+    facebookHandle: string
+    instagramHandle: string
+    linkedinHandle: string
+    twitterHandle: string
+    padding: 'sm' | 'md' | 'lg'
+  }
+  ConstructionSocialVideoHighlights: {
+    heading: string
+    highlight1Thumbnail: string
+    highlight1Platform: 'instagram' | 'facebook' | 'linkedin' | 'youtube'
+    highlight1Caption: string
+    highlight2Thumbnail: string
+    highlight2Platform: 'instagram' | 'facebook' | 'linkedin' | 'youtube'
+    highlight2Caption: string
+    highlight3Thumbnail: string
+    highlight3Platform: 'instagram' | 'facebook' | 'linkedin' | 'youtube'
+    highlight3Caption: string
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
   }
   ConstructionFAQ: {
     sectionTitle: string
@@ -7838,6 +7889,359 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     },
   },
 
+  ConstructionSocialFeedGrid: {
+    label: 'Social Feed Grid',
+    fields: {
+      heading: { type: 'text' },
+      post1Image: imageField('Image'),
+      post1Caption: { type: 'text' },
+      post1Platform: {
+        type: 'select',
+        options: [
+          { label: 'Instagram', value: 'instagram' },
+          { label: 'Facebook', value: 'facebook' },
+          { label: 'LinkedIn', value: 'linkedin' },
+          { label: 'YouTube', value: 'youtube' },
+        ],
+      },
+      post2Image: imageField('Image'),
+      post2Caption: { type: 'text' },
+      post2Platform: {
+        type: 'select',
+        options: [
+          { label: 'Instagram', value: 'instagram' },
+          { label: 'Facebook', value: 'facebook' },
+          { label: 'LinkedIn', value: 'linkedin' },
+          { label: 'YouTube', value: 'youtube' },
+        ],
+      },
+      post3Image: imageField('Image'),
+      post3Caption: { type: 'text' },
+      post3Platform: {
+        type: 'select',
+        options: [
+          { label: 'Instagram', value: 'instagram' },
+          { label: 'Facebook', value: 'facebook' },
+          { label: 'LinkedIn', value: 'linkedin' },
+          { label: 'YouTube', value: 'youtube' },
+        ],
+      },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'radio',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      heading: 'From Our Feed',
+      post1Image:
+        'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=500&h=500&fit=crop&auto=format',
+      post1Caption: 'Foundation pour complete at our Vijayawada twin-tower site 🏗️',
+      post1Platform: 'instagram',
+      post2Image:
+        'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=500&h=500&fit=crop&auto=format',
+      post2Caption: 'Safety briefing before today’s crane lift.',
+      post2Platform: 'facebook',
+      post3Image:
+        'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=500&h=500&fit=crop&auto=format',
+      post3Caption: 'Behind the scenes: our MEP coordination walkthrough.',
+      post3Platform: 'linkedin',
+      padding: 'md',
+      background: 'white',
+    },
+    render: ({
+      heading,
+      post1Image,
+      post1Caption,
+      post1Platform,
+      post2Image,
+      post2Caption,
+      post2Platform,
+      post3Image,
+      post3Caption,
+      post3Platform,
+      padding,
+      background,
+    }) => {
+      const posts = [
+        { image: post1Image, caption: post1Caption, platform: post1Platform },
+        { image: post2Image, caption: post2Caption, platform: post2Platform },
+        { image: post3Image, caption: post3Caption, platform: post3Platform },
+      ].filter((p) => p.image)
+      return (
+        <section
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={wrap}>
+            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+              {heading}
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {posts.map((p, i) => {
+                const badge = socialPlatformBadge[p.platform]
+                return (
+                  <div
+                    key={i}
+                    className="rounded-xl overflow-hidden border border-slate-200 bg-white"
+                  >
+                    <div className="relative aspect-square bg-slate-900">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={p.image} alt="" className="w-full h-full object-cover" />
+                      {badge && (
+                        <span
+                          className={`absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${badge.cls}`}
+                        >
+                          {badge.label}
+                        </span>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <p className="text-sm text-slate-700">{p.caption}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  ConstructionSocialFollowBanner: {
+    label: 'Social Follow Banner',
+    fields: {
+      heading: { type: 'text' },
+      followerCount: { type: 'text' },
+      followerLabel: { type: 'text' },
+      facebookHandle: { type: 'text' },
+      instagramHandle: { type: 'text' },
+      linkedinHandle: { type: 'text' },
+      twitterHandle: { type: 'text' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+    },
+    defaultProps: {
+      heading: 'Follow Our Journey',
+      followerCount: '25K+',
+      followerLabel: 'Followers across platforms',
+      facebookHandle: 'facebook.com/subhadragroup',
+      instagramHandle: 'instagram.com/subhadragroup',
+      linkedinHandle: 'linkedin.com/company/subhadragroup',
+      twitterHandle: 'x.com/subhadragroup',
+      padding: 'md',
+    },
+    render: ({
+      heading,
+      followerCount,
+      followerLabel,
+      facebookHandle,
+      instagramHandle,
+      linkedinHandle,
+      twitterHandle,
+      padding,
+    }) => {
+      const links = [
+        ['f', facebookHandle],
+        ['ig', instagramHandle],
+        ['in', linkedinHandle],
+        ['X', twitterHandle],
+      ].filter(([, href]) => href)
+      return (
+        <section className={`${padY[padding]} bg-orange-500`}>
+          <div className={`${wrap} flex flex-col sm:flex-row items-center justify-between gap-8`}>
+            <div className="text-center sm:text-left">
+              <h2 className="text-2xl md:text-3xl font-bold text-white">{heading}</h2>
+              <p className="mt-1 text-lg font-semibold text-white/90">
+                {followerCount}{' '}
+                <span className="text-sm font-normal text-white/70">{followerLabel}</span>
+              </p>
+            </div>
+            <div className="flex gap-3">
+              {links.map(([label, href], i) => (
+                <a
+                  key={i}
+                  href={href ? `https://${href}` : '#'}
+                  className="w-14 h-14 rounded-full bg-white text-orange-600 flex items-center justify-center font-bold text-base shadow-lg hover:bg-slate-900 hover:text-white transition"
+                >
+                  {label}
+                </a>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  ConstructionSocialVideoHighlights: {
+    label: 'Social Video Highlights',
+    fields: {
+      heading: { type: 'text' },
+      highlight1Thumbnail: imageField('Thumbnail'),
+      highlight1Platform: {
+        type: 'select',
+        options: [
+          { label: 'Instagram', value: 'instagram' },
+          { label: 'Facebook', value: 'facebook' },
+          { label: 'LinkedIn', value: 'linkedin' },
+          { label: 'YouTube', value: 'youtube' },
+        ],
+      },
+      highlight1Caption: { type: 'text' },
+      highlight2Thumbnail: imageField('Thumbnail'),
+      highlight2Platform: {
+        type: 'select',
+        options: [
+          { label: 'Instagram', value: 'instagram' },
+          { label: 'Facebook', value: 'facebook' },
+          { label: 'LinkedIn', value: 'linkedin' },
+          { label: 'YouTube', value: 'youtube' },
+        ],
+      },
+      highlight2Caption: { type: 'text' },
+      highlight3Thumbnail: imageField('Thumbnail'),
+      highlight3Platform: {
+        type: 'select',
+        options: [
+          { label: 'Instagram', value: 'instagram' },
+          { label: 'Facebook', value: 'facebook' },
+          { label: 'LinkedIn', value: 'linkedin' },
+          { label: 'YouTube', value: 'youtube' },
+        ],
+      },
+      highlight3Caption: { type: 'text' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'radio',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      heading: 'Reels & Highlights',
+      highlight1Thumbnail:
+        'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=400&h=700&fit=crop&auto=format',
+      highlight1Platform: 'youtube',
+      highlight1Caption: 'Site walkthrough: Riverside Villas, week 12',
+      highlight2Thumbnail:
+        'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=700&fit=crop&auto=format',
+      highlight2Platform: 'instagram',
+      highlight2Caption: 'Meet the team behind our MEP crew',
+      highlight3Thumbnail:
+        'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=400&h=700&fit=crop&auto=format',
+      highlight3Platform: 'facebook',
+      highlight3Caption: 'Client shoutout: on-time handover in Vijayawada',
+      padding: 'md',
+      background: 'white',
+    },
+    render: ({
+      heading,
+      highlight1Thumbnail,
+      highlight1Platform,
+      highlight1Caption,
+      highlight2Thumbnail,
+      highlight2Platform,
+      highlight2Caption,
+      highlight3Thumbnail,
+      highlight3Platform,
+      highlight3Caption,
+      padding,
+      background,
+    }) => {
+      const highlights = [
+        {
+          thumbnail: highlight1Thumbnail,
+          platform: highlight1Platform,
+          caption: highlight1Caption,
+        },
+        {
+          thumbnail: highlight2Thumbnail,
+          platform: highlight2Platform,
+          caption: highlight2Caption,
+        },
+        {
+          thumbnail: highlight3Thumbnail,
+          platform: highlight3Platform,
+          caption: highlight3Caption,
+        },
+      ].filter((h) => h.thumbnail)
+      return (
+        <section
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={wrap}>
+            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+              {heading}
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              {highlights.map((h, i) => {
+                const badge = socialPlatformBadge[h.platform]
+                return (
+                  <div
+                    key={i}
+                    className="rounded-xl overflow-hidden border border-slate-200 bg-white"
+                  >
+                    <div className="relative aspect-[9/16] bg-slate-900">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={h.thumbnail}
+                        alt=""
+                        className="w-full h-full object-cover opacity-80"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="w-10 h-10 rounded-full bg-white/95 flex items-center justify-center shadow-xl">
+                          <svg width="14" height="16" viewBox="0 0 26 30" fill="none">
+                            <path d="M0 0L26 15L0 30V0Z" fill="#ea580c" />
+                          </svg>
+                        </span>
+                      </div>
+                      {badge && (
+                        <span
+                          className={`absolute top-2 left-2 w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold text-white ${badge.cls}`}
+                        >
+                          {badge.label}
+                        </span>
+                      )}
+                    </div>
+                    <div className="p-3">
+                      <p className="text-sm text-slate-700">{h.caption}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
   // ── Standalone FAQ accordion ────────────────────────────────────────────────
   ConstructionFAQ: {
     label: 'FAQ',
@@ -8952,7 +9356,12 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
   },
   socialmedia: {
     title: 'Social Media',
-    components: ['ConstructionSocialMedia'],
+    components: [
+      'ConstructionSocialMedia',
+      'ConstructionSocialFeedGrid',
+      'ConstructionSocialFollowBanner',
+      'ConstructionSocialVideoHighlights',
+    ],
   },
 }
 
