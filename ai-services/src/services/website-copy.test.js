@@ -5,6 +5,7 @@ vi.mock('../governance/audit-logger.js', () => ({ auditLogger: vi.fn().mockResol
 vi.mock('../governance/compliance.js', () => ({ scrubInput: (s) => s }));
 
 import { brainRouter } from '../orchestrator/brain-router.js';
+import { auditLogger } from '../governance/audit-logger.js';
 import { generateWebsiteCopy } from './website-copy.js';
 
 const VALID_JSON = JSON.stringify({
@@ -66,6 +67,11 @@ describe('generateWebsiteCopy', () => {
       'HIGH',
       expect.objectContaining({ max_tokens: expect.any(Number) }),
     );
+    expect(vi.mocked(auditLogger)).toHaveBeenCalledWith(
+      expect.objectContaining({ cost_estimate: expect.any(Number) }),
+    );
+    const auditedCost = vi.mocked(auditLogger).mock.calls[0][0].cost_estimate;
+    expect(auditedCost).toBeGreaterThan(0);
   });
 
   it('retries once on schema-invalid output, then succeeds', async () => {

@@ -10,6 +10,7 @@ import { textBlock } from '../brains/claude.js';
 import { scrubInput } from '../governance/compliance.js';
 import { auditLogger } from '../governance/audit-logger.js';
 import { logger } from '../utils/logger.js';
+import { estimateCostUsd } from '../config/model-pricing.js';
 import { websiteCopyOutputSchema } from './website-copy-schemas.js';
 
 const MAX_TOKENS = 1024;
@@ -66,7 +67,9 @@ function tryParseJson(content) {
   }
 }
 
-async function recordUsage(sessionId, model, usage, success) {
+const roundCost = (usd) => Math.round(usd * 1_000_000) / 1_000_000;
+
+async function recordUsage(sessionId, model, usage, costUsd, success) {
   try {
     await auditLogger({
       event: 'website.copy_generation',
@@ -74,6 +77,7 @@ async function recordUsage(sessionId, model, usage, success) {
       priority: 'HIGH',
       input_tokens: usage?.input_tokens ?? 0,
       output_tokens: usage?.output_tokens ?? 0,
+      cost_estimate: costUsd,
       session_id: sessionId,
       meta: { success },
     });
@@ -93,6 +97,7 @@ export async function generateWebsiteCopy(input, opts = {}) {
 
   let lastModel = null;
   let lastUsage = null;
+  let costUsd = 0;
 
   for (let attempt = 1; attempt <= 2; attempt += 1) {
     let response;
@@ -111,18 +116,20 @@ export async function generateWebsiteCopy(input, opts = {}) {
       }
     } catch (err) {
       logger.error('website-copy: model call failed', { message: err.message, attempt });
-      await recordUsage(sessionId, lastModel, lastUsage, false);
+      await recordUsage(sessionId, lastModel, lastUsage, roundCost(costUsd), false);
       return { success: false, copy: null, model: lastModel, usage: lastUsage };
     }
 
     lastModel = response.model ?? lastModel;
     lastUsage = response.usage ?? lastUsage;
+    // A failed/schema-invalid attempt still burned real tokens — count it.
+    costUsd += estimateCostUsd(response.model, response.usage);
 
     const parsed = tryParseJson(response.content);
     const validated = parsed ? websiteCopyOutputSchema.safeParse(parsed) : null;
 
     if (validated?.success) {
-      await recordUsage(sessionId, lastModel, lastUsage, true);
+      await recordUsage(sessionId, lastModel, lastUsage, roundCost(costUsd), true);
       return { success: true, copy: validated.data, model: lastModel, usage: lastUsage };
     }
 
@@ -136,6 +143,6 @@ export async function generateWebsiteCopy(input, opts = {}) {
   }
 
   logger.error('website-copy: schema-invalid after repair attempt', { sessionId });
-  await recordUsage(sessionId, lastModel, lastUsage, false);
+  await recordUsage(sessionId, lastModel, lastUsage, roundCost(costUsd), false);
   return { success: false, copy: null, model: lastModel, usage: lastUsage };
 }
