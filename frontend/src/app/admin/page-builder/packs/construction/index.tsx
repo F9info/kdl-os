@@ -628,6 +628,21 @@ type ConstructionProps = {
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
   }
+  ConstructionSimpleContactForm: {
+    heading: string
+    submitLabel: string
+  }
+  ConstructionQuoteRequestForm: {
+    heading: string
+    submitLabel: string
+    trustText: string
+  }
+  ConstructionContactSplitMap: {
+    heading: string
+    submitLabel: string
+    address: string
+    businessHours: string
+  }
   ConstructionTaglineStrip: {
     logoUrl: string
     brand: string
@@ -6324,6 +6339,250 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     },
   },
 
+  // Simple contact form — no FAQ, just the form
+  ConstructionSimpleContactForm: {
+    label: 'Simple Contact Form',
+    fields: {
+      heading: { type: 'text' },
+      submitLabel: { type: 'text' },
+    },
+    defaultProps: {
+      heading: 'Get in Touch',
+      submitLabel: 'Send Message',
+    },
+    render: function ConstructionSimpleContactFormRender({ heading, submitLabel }) {
+      const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
+      return (
+        <section ref={ref} className={`${revealCls} ${padY.md} bg-white`}>
+          <div className={`${wrap} max-w-xl`}>
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6 text-center">
+              {heading}
+            </h2>
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm">
+              {/*
+                Display-only: no lead-capture endpoint exists in this app
+                yet. Plain div (not <form>) + type="button" submit so
+                nothing navigates or posts on click — deliberate, not an
+                oversight.
+              */}
+              <div className="flex flex-col gap-4">
+                <input
+                  type="text"
+                  placeholder="Name"
+                  className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                />
+                <input
+                  type="email"
+                  placeholder="Email"
+                  className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                />
+                <input
+                  type="tel"
+                  placeholder="Phone"
+                  className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                />
+                <textarea
+                  placeholder="Message"
+                  rows={4}
+                  className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                />
+                <button
+                  type="button"
+                  className="rounded-lg bg-orange-500 px-6 py-3 text-white font-semibold hover:bg-orange-600 transition text-sm"
+                >
+                  {submitLabel}
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // Quote request form — project-type + budget selects, trust badges row
+  ConstructionQuoteRequestForm: {
+    label: 'Quote Request Form',
+    fields: {
+      heading: { type: 'text' },
+      submitLabel: { type: 'text' },
+      trustText: { type: 'text' },
+    },
+    defaultProps: {
+      heading: 'Request a Quote',
+      submitLabel: 'Get My Quote',
+      trustText: '1000+ businesses across Andhra Pradesh trust us',
+    },
+    render: function ConstructionQuoteRequestFormRender({ heading, submitLabel, trustText }) {
+      const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
+      return (
+        <section ref={ref} className={`${revealCls} ${padY.md} bg-slate-50`}>
+          <div className={`${wrap} max-w-xl`}>
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6 text-center">
+              {heading}
+            </h2>
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm">
+              {/*
+                Display-only: no lead-capture endpoint exists in this app
+                yet. Plain div (not <form>) + type="button" submit so
+                nothing navigates or posts on click — deliberate, not an
+                oversight.
+              */}
+              <div className="flex flex-col gap-4">
+                <input
+                  type="text"
+                  placeholder="Name"
+                  className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                />
+                <input
+                  type="email"
+                  placeholder="Email"
+                  className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                />
+                <input
+                  type="tel"
+                  placeholder="Phone"
+                  className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                />
+                <select className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-700">
+                  <option>Residential</option>
+                  <option>Commercial</option>
+                  <option>Industrial</option>
+                </select>
+                <select className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-700">
+                  <option>Under ₹10 Lakh</option>
+                  <option>₹10–50 Lakh</option>
+                  <option>₹50 Lakh – 1 Crore</option>
+                  <option>Above ₹1 Crore</option>
+                </select>
+                <textarea
+                  placeholder="Tell us about your project"
+                  rows={3}
+                  className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                />
+                <button
+                  type="button"
+                  className="rounded-lg bg-orange-500 px-6 py-3 text-white font-semibold hover:bg-orange-600 transition text-sm"
+                >
+                  {submitLabel}
+                </button>
+                {trustText && <p className="text-center text-sm text-slate-600">{trustText}</p>}
+              </div>
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // Contact form + address/hours, map placeholder (no real map library)
+  ConstructionContactSplitMap: {
+    label: 'Contact + Map Split',
+    fields: {
+      heading: { type: 'text' },
+      submitLabel: { type: 'text' },
+      address: { type: 'textarea' },
+      businessHours: { type: 'text' },
+    },
+    defaultProps: {
+      heading: 'Visit or Contact Us',
+      submitLabel: 'Send Message',
+      address: '12-6-8, Currency Nagar, Vijayawada, Andhra Pradesh 520008',
+      businessHours: 'Mon-Sat, 9am - 6pm',
+    },
+    render: function ConstructionContactSplitMapRender({
+      heading,
+      submitLabel,
+      address,
+      businessHours,
+    }) {
+      const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
+      return (
+        <section ref={ref} className={`${revealCls} ${padY.md} bg-white`}>
+          <div className={wrap}>
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-10 text-center">
+              {heading}
+            </h2>
+            <div className="md:flex gap-12">
+              <div className="md:w-1/2 mb-10 md:mb-0">
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm">
+                  {/*
+                    Display-only: no lead-capture endpoint exists in this app
+                    yet. Plain div (not <form>) + type="button" submit so
+                    nothing navigates or posts on click — deliberate, not an
+                    oversight.
+                  */}
+                  <div className="flex flex-col gap-4">
+                    <input
+                      type="text"
+                      placeholder="Name"
+                      className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                    />
+                    <input
+                      type="email"
+                      placeholder="Email"
+                      className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                    />
+                    <input
+                      type="tel"
+                      placeholder="Phone"
+                      className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                    />
+                    <textarea
+                      placeholder="Message"
+                      rows={4}
+                      className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                    />
+                    <button
+                      type="button"
+                      className="rounded-lg bg-orange-500 px-6 py-3 text-white font-semibold hover:bg-orange-600 transition text-sm"
+                    >
+                      {submitLabel}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="md:w-1/2 flex flex-col gap-6">
+                <div className="flex items-center justify-center rounded-2xl bg-slate-100 h-56">
+                  <svg
+                    className="w-10 h-10 text-slate-400"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                </div>
+                {address && (
+                  <div>
+                    <h3 className="font-semibold text-slate-900 mb-1">Address</h3>
+                    <p className="text-sm text-slate-600 whitespace-pre-line">{address}</p>
+                  </div>
+                )}
+                {businessHours && (
+                  <div>
+                    <h3 className="font-semibold text-slate-900 mb-1">Business Hours</h3>
+                    <p className="text-sm text-slate-600">{businessHours}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
   // Tagline strip
   ConstructionTaglineStrip: {
     label: 'Tagline Strip',
@@ -8671,7 +8930,12 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
   },
   contact: {
     title: 'Forms',
-    components: ['ConstructionLeadFormFAQ'],
+    components: [
+      'ConstructionLeadFormFAQ',
+      'ConstructionSimpleContactForm',
+      'ConstructionQuoteRequestForm',
+      'ConstructionContactSplitMap',
+    ],
   },
   cta: {
     title: 'Call to Action',
