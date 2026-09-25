@@ -8,6 +8,7 @@ import { chatController } from './controllers/chat.js';
 import { embedController } from './controllers/embed.js';
 import { transcribeController } from './controllers/transcribe.js';
 import { brandInferenceController } from './controllers/brand-inference.js';
+import { websiteCopyController } from './controllers/website-copy.js';
 import { authenticate } from './middleware/auth.js';
 import { callerLimit, allow } from './middleware/caller-limit.js';
 import { successResponse, errorResponse } from './utils/response.js';
@@ -55,6 +56,7 @@ app.post('/api/ai/chat', authenticate, callerLimit('chat', 60), chatController);
 app.post('/api/ai/embed', authenticate, allow({ service: true, roles: ADMINS }), callerLimit('embed', 120), embedController);
 app.post('/api/ai/transcribe', authenticate, callerLimit('transcribe', 20), transcribeController);
 app.post('/api/ai/brand-inference', authenticate, allow({ service: true }), callerLimit('brand_inference', 20), brandInferenceController);
+app.post('/api/ai/website-copy', authenticate, allow({ service: true }), callerLimit('website_copy', 20), websiteCopyController);
 
 app.use((req, res) => errorResponse(res, 'Not found', 404));
 
