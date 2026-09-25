@@ -65,10 +65,13 @@ const cardIdentity = (key: string, variant: string | null) => `${key}::${variant
 
 /**
  * Annotates each card with whether a block of that exact type+variant
- * already exists in the page's current content, and pins any such card to
- * the front of its own variant group (cards are already grouped by `key`,
- * since both popups build `cards` via `componentKeys.flatMap(key => ...)` —
- * this only reorders *within* each existing group, never across groups).
+ * already exists in the page's current content, and pins any such card(s)
+ * to the very front of the whole list — a popup category can mix several
+ * unrelated component types (e.g. "Feature Cards" + "Services Grid" +
+ * "Core Offerings" all under one "Services" category), so the design
+ * that's actually live on the page needs to lead the grid regardless of
+ * which of those types it belongs to, not just rise within its own type's
+ * variants.
  */
 export function withCurrentSelection<T extends BlockCardEntry>(
   cards: T[],
@@ -83,21 +86,7 @@ export function withCurrentSelection<T extends BlockCardEntry>(
     ...card,
     isCurrent: present.has(cardIdentity(card.key, card.variant)),
   }))
-
-  const groupOrder: string[] = []
-  const groups = new Map<string, typeof annotated>()
-  for (const card of annotated) {
-    if (!groups.has(card.key)) {
-      groups.set(card.key, [])
-      groupOrder.push(card.key)
-    }
-    groups.get(card.key)!.push(card)
-  }
-
-  return groupOrder.flatMap((key) => {
-    const group = groups.get(key)!
-    return [...group.filter((c) => c.isCurrent), ...group.filter((c) => !c.isCurrent)]
-  })
+  return [...annotated.filter((c) => c.isCurrent), ...annotated.filter((c) => !c.isCurrent)]
 }
 
 export function insertBlockComponent(
@@ -155,6 +144,14 @@ const TOP_OF_PAGE_CATEGORIES = new Set(['top-bar', 'header'])
 
 /** Component types a Hero insert should land right after, not at page's end. */
 const TOP_OF_PAGE_TYPES = new Set(['ConstructionTopBar', 'ConstructionHeader'])
+
+/**
+ * Every popup shows at most this many cards by default (current design
+ * first, per withCurrentSelection) — a category can have far more designs
+ * across all its component types than fit on screen at once. "Show all"
+ * reveals the rest.
+ */
+const MAX_VISIBLE_CARDS = 4
 
 /** Placeholder for a `type: 'slot'` field's content when previewing outside
  *  Puck's own render pipeline — Puck normally swaps a slot's raw `[]` for a
@@ -281,6 +278,12 @@ export function InsertBlockModal({
   const [query, setQuery] = useState('')
   const q = query.trim().toLowerCase()
   const [customBlocks, setCustomBlocks] = useState<CustomBlockRecord[]>([])
+  // Collapsed back to the default 4-card view whenever the category (or
+  // search) changes — "show all" shouldn't carry over to a different list.
+  const [showAll, setShowAll] = useState(false)
+  useEffect(() => {
+    setShowAll(false)
+  }, [activeCat, q])
 
   // "Create new" leaves this modal (and this page) entirely for the real
   // Section Builder screen — a full page, not another overlay stacked on
@@ -426,18 +429,28 @@ export function InsertBlockModal({
             {cards.length === 0 ? (
               <div className="p-5 text-sm text-slate-400">No blocks match.</div>
             ) : (
-              cards.map(({ key, variant, index, total, isCurrent }) => (
-                <BlockCard
-                  key={`${key}-${variant ?? 'default'}`}
-                  componentKey={key}
-                  variant={variant}
-                  index={index}
-                  total={total}
-                  isCurrent={isCurrent}
-                  onInsert={insertBlock}
-                />
-              ))
+              (showAll ? cards : cards.slice(0, MAX_VISIBLE_CARDS)).map(
+                ({ key, variant, index, total, isCurrent }) => (
+                  <BlockCard
+                    key={`${key}-${variant ?? 'default'}`}
+                    componentKey={key}
+                    variant={variant}
+                    index={index}
+                    total={total}
+                    isCurrent={isCurrent}
+                    onInsert={insertBlock}
+                  />
+                )
+              )
             )}
+            {cards.length > MAX_VISIBLE_CARDS ? (
+              <button
+                onClick={() => setShowAll((v) => !v)}
+                className="col-span-2 rounded-lg border border-dashed border-slate-300 py-2 text-sm font-semibold text-blue-600 hover:border-blue-400 hover:bg-blue-50"
+              >
+                {showAll ? 'Show less' : `Show all ${cards.length} designs`}
+              </button>
+            ) : null}
             {!q
               ? customBlocks.map((block) => (
                   <div
@@ -501,6 +514,7 @@ export function SectionPickerPopup({
   const router = useRouter()
   const cat = (config.categories ?? {})[categoryKey]
   const componentKeys = cat?.components ?? []
+  const [showAll, setShowAll] = useState(false)
 
   const cards = withCurrentSelection(
     componentKeys.flatMap((key) => {
@@ -564,18 +578,28 @@ export function SectionPickerPopup({
           {cards.length === 0 ? (
             <div className="p-5 text-sm text-slate-400">No designs yet.</div>
           ) : (
-            cards.map(({ key, variant, index, total, isCurrent }) => (
-              <BlockCard
-                key={`${key}-${variant ?? 'default'}`}
-                componentKey={key}
-                variant={variant}
-                index={index}
-                total={total}
-                isCurrent={isCurrent}
-                onInsert={insertBlock}
-              />
-            ))
+            (showAll ? cards : cards.slice(0, MAX_VISIBLE_CARDS)).map(
+              ({ key, variant, index, total, isCurrent }) => (
+                <BlockCard
+                  key={`${key}-${variant ?? 'default'}`}
+                  componentKey={key}
+                  variant={variant}
+                  index={index}
+                  total={total}
+                  isCurrent={isCurrent}
+                  onInsert={insertBlock}
+                />
+              )
+            )
           )}
+          {cards.length > MAX_VISIBLE_CARDS ? (
+            <button
+              onClick={() => setShowAll((v) => !v)}
+              className="col-span-2 rounded-lg border border-dashed border-slate-300 py-2 text-sm font-semibold text-blue-600 hover:border-blue-400 hover:bg-blue-50"
+            >
+              {showAll ? 'Show less' : `Show all ${cards.length} designs`}
+            </button>
+          ) : null}
         </div>
         <div className="mt-4 border-t border-slate-200 p-4.5">
           <button

@@ -17,18 +17,18 @@ describe('withCurrentSelection', () => {
     expect(result.find((c) => c.variant === '1')?.isCurrent).toBe(false)
   })
 
-  it('pins the matching card to the front of its own variant group, leaving other groups untouched', () => {
+  it('pins the matching card to the very front of the whole list, ahead of unrelated component types', () => {
     const cards = [
+      entry('ConstructionAboutSplit', null, 0, 1),
       entry('ConstructionHero', '1', 0, 2),
       entry('ConstructionHero', '2', 1, 2),
-      entry('ConstructionAboutSplit', null, 0, 1),
     ]
     const content = [{ type: 'ConstructionHero', props: { id: 'x', variant: '2' } }]
     const result = withCurrentSelection(cards, content)
     expect(result.map((c) => `${c.key}:${c.variant}`)).toEqual([
       'ConstructionHero:2',
-      'ConstructionHero:1',
       'ConstructionAboutSplit:null',
+      'ConstructionHero:1',
     ])
   })
 
