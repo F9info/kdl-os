@@ -186,23 +186,6 @@ function previewProps(comp: PuckComponentConfig, variant: string | null) {
   return props
 }
 
-// Short, bar-shaped components (sticky headers, top bars) render to only a
-// sliver of the default 210px preview box — leaving most of the card (and,
-// on hover, the dark "Insert" gradient overlay, which is sized to the whole
-// card) as dead empty space. Give these a shorter preview box instead.
-const COMPACT_PREVIEW_HEIGHT: Record<string, number> = {
-  ConstructionHeader: 110,
-  ConstructionTopBar: 110,
-  // Layout primitives ship with empty slots (a "Content" placeholder is the
-  // only thing rendered) — same dead-space problem as the bar-shaped
-  // components above, just worse: default 320px next to ~30-50px of actual
-  // content.
-  Section: 110,
-  Columns: 110,
-  Spacer: 60,
-}
-const DEFAULT_PREVIEW_HEIGHT = 320
-
 function BlockCard({
   componentKey,
   variant,
@@ -245,13 +228,6 @@ function BlockCard({
   }, [])
   if (!comp?.render) return null
   const props = previewProps(comp, variant)
-  // Scale the container height by the same factor the rendered content is
-  // zoomed by, so a narrower (e.g. 2-up) card shrinks its image/text
-  // proportionally instead of leaving dead space below a now-smaller render
-  // inside an unchanged fixed-height box.
-  const previewHeight = Math.round(
-    (COMPACT_PREVIEW_HEIGHT[componentKey] ?? DEFAULT_PREVIEW_HEIGHT) * scale
-  )
 
   return (
     <div
@@ -270,11 +246,7 @@ function BlockCard({
           <Check size={12} /> Current
         </span>
       ) : null}
-      <div
-        ref={wrapRef}
-        style={{ height: previewHeight }}
-        className="overflow-hidden bg-white pointer-events-none"
-      >
+      <div ref={wrapRef} className="overflow-hidden bg-white pointer-events-none">
         <div style={{ width: 1200, zoom: scale }}>{comp.render(props)}</div>
       </div>
       <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-slate-900/55 to-transparent p-4 opacity-0 transition group-hover:opacity-100">
@@ -496,7 +468,7 @@ export function InsertBlockModal({
           </div>
         </div>
         {!q ? (
-          <div className="border-t border-slate-200 p-4.5">
+          <div className="mt-4 border-t border-slate-200 p-4.5">
             <button
               onClick={openComposer}
               className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-extrabold text-white hover:bg-blue-700"
@@ -605,7 +577,7 @@ export function SectionPickerPopup({
             ))
           )}
         </div>
-        <div className="border-t border-slate-200 p-4.5">
+        <div className="mt-4 border-t border-slate-200 p-4.5">
           <button
             onClick={openComposer}
             className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-extrabold text-white hover:bg-blue-700"
