@@ -524,10 +524,13 @@ export function SectionPickerPopup({
   const cat = (config.categories ?? {})[categoryKey]
   const componentKeys = cat?.components ?? []
 
-  const cards = componentKeys.flatMap((key) => {
-    const variants = blockVariants[key] ?? [null]
-    return variants.map((variant, index) => ({ key, variant, index, total: variants.length }))
-  })
+  const cards = withCurrentSelection(
+    componentKeys.flatMap((key) => {
+      const variants = blockVariants[key] ?? [null]
+      return variants.map((variant, index) => ({ key, variant, index, total: variants.length }))
+    }),
+    appState.data.content
+  )
 
   function insertBlock(componentKey: string, variant: string | null) {
     let destinationIndex: number | undefined
@@ -567,28 +570,30 @@ export function SectionPickerPopup({
       onKeyDown={(e) => e.key === 'Escape' && onClose()}
     >
       <div className="flex max-h-[85vh] w-[min(1100px,95vw)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center gap-3.5 border-b border-slate-200 px-4.5 py-3.5">
-          <b className="text-base">{cat?.title ?? categoryKey}</b>
-          <span className="flex-1" />
+        <div className="relative border-b border-slate-200 px-5 py-4">
+          <h2 className="text-center text-xl font-extrabold sm:text-2xl">
+            {cat?.title ?? categoryKey}
+          </h2>
           <button
             onClick={onClose}
-            className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+            className="absolute right-3.5 top-3.5 rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
             aria-label="Close"
           >
             <X size={20} />
           </button>
         </div>
-        <div className="grid auto-rows-min grid-cols-1 gap-3.5 overflow-auto p-4.5">
+        <div className="grid auto-rows-min grid-cols-2 gap-3.5 overflow-auto p-4.5">
           {cards.length === 0 ? (
             <div className="p-5 text-sm text-slate-400">No designs yet.</div>
           ) : (
-            cards.map(({ key, variant, index, total }) => (
+            cards.map(({ key, variant, index, total, isCurrent }) => (
               <BlockCard
                 key={`${key}-${variant ?? 'default'}`}
                 componentKey={key}
                 variant={variant}
                 index={index}
                 total={total}
+                isCurrent={isCurrent}
                 onInsert={insertBlock}
               />
             ))
