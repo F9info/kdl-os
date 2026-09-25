@@ -820,6 +820,37 @@ type ConstructionProps = {
     otherSector4: string
     padding: 'sm' | 'md' | 'lg'
   }
+  ConstructionBrandsLogoGrid: {
+    heading: string
+    logo1: string
+    logo2: string
+    logo3: string
+    logo4: string
+    logo5: string
+    logo6: string
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+  }
+  ConstructionBrandsCarousel: {
+    sectionTitle: string
+    logos: BrandLogoItem[]
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+  }
+  ConstructionBrandsSpotlight: {
+    spotlightLogo: string
+    spotlightDescription: string
+    otherLogo1: string
+    otherLogo2: string
+    otherLogo3: string
+    otherLogo4: string
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+  }
+}
+
+interface BrandLogoItem {
+  logo: string
 }
 
 interface CarouselTestimonialSlide {
@@ -7597,6 +7628,262 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       )
     },
   },
+
+  // Brands — 6-logo grid using real logo images (imageField), distinct
+  // from ConstructionOurBrands' text-name tabbed groups.
+  ConstructionBrandsLogoGrid: {
+    label: 'Brands Logo Grid',
+    fields: {
+      heading: { type: 'text' },
+      logo1: imageField('Logo 1'),
+      logo2: imageField('Logo 2'),
+      logo3: imageField('Logo 3'),
+      logo4: imageField('Logo 4'),
+      logo5: imageField('Logo 5'),
+      logo6: imageField('Logo 6'),
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'radio',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      heading: 'Backed by the brands you already trust',
+      logo1: dummyLogo(160, 80, 'Brand 1'),
+      logo2: dummyLogo(160, 80, 'Brand 2'),
+      logo3: dummyLogo(160, 80, 'Brand 3'),
+      logo4: dummyLogo(160, 80, 'Brand 4'),
+      logo5: dummyLogo(160, 80, 'Brand 5'),
+      logo6: dummyLogo(160, 80, 'Brand 6'),
+      padding: 'md',
+      background: 'white',
+    },
+    render: function ConstructionBrandsLogoGridRender({
+      heading,
+      logo1,
+      logo2,
+      logo3,
+      logo4,
+      logo5,
+      logo6,
+      padding,
+      background,
+    }) {
+      const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
+      const logos = [logo1, logo2, logo3, logo4, logo5, logo6].filter(Boolean)
+      return (
+        <section
+          ref={ref}
+          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={wrap}>
+            {heading && (
+              <h2 className="text-center text-2xl md:text-3xl font-bold text-slate-900 mb-10">
+                {heading}
+              </h2>
+            )}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
+              {logos.map((logo, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-center rounded-xl border border-slate-100 bg-white p-5 h-24"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={logo} alt="" className="max-h-12 max-w-full object-contain" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // Brands — array-based horizontal logo strip (Puck 'array' field, mirrors
+  // ConstructionTestimonialsCarousel's array pattern). Static flex row, no
+  // scroll JS — matches how this file's other "slider"/"carousel" components
+  // render statically in the admin preview.
+  ConstructionBrandsCarousel: {
+    label: 'Brands Carousel',
+    fields: {
+      sectionTitle: { type: 'text' },
+      logos: {
+        type: 'array',
+        min: 0,
+        max: 10,
+        getItemSummary: (item, index) => `Logo ${(index ?? 0) + 1}`,
+        defaultItemProps: {
+          logo: '',
+        },
+        arrayFields: {
+          logo: imageField('Logo'),
+        },
+      },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'radio',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      sectionTitle: 'Brands we work with',
+      logos: [
+        { logo: dummyLogo(140, 70, 'Brand 1') },
+        { logo: dummyLogo(140, 70, 'Brand 2') },
+        { logo: dummyLogo(140, 70, 'Brand 3') },
+        { logo: dummyLogo(140, 70, 'Brand 4') },
+        { logo: dummyLogo(140, 70, 'Brand 5') },
+      ],
+      padding: 'md',
+      background: 'white',
+    },
+    render: function ConstructionBrandsCarouselRender({
+      sectionTitle,
+      logos,
+      padding,
+      background,
+    }) {
+      const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
+      return (
+        <section
+          ref={ref}
+          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={wrap}>
+            {sectionTitle && (
+              <h2 className="text-center text-2xl md:text-3xl font-bold text-slate-900 mb-10">
+                {sectionTitle}
+              </h2>
+            )}
+            <div className="flex flex-wrap items-center justify-center gap-8">
+              {logos.map((item, i) =>
+                item.logo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={i}
+                    src={item.logo}
+                    alt=""
+                    className="h-10 max-w-[140px] object-contain"
+                  />
+                ) : null
+              )}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // Brands — one large "featured partner" logo + description, plus a
+  // smaller row of other brand logos below.
+  ConstructionBrandsSpotlight: {
+    label: 'Brands Spotlight',
+    fields: {
+      spotlightLogo: imageField('Spotlight Logo'),
+      spotlightDescription: { type: 'textarea' },
+      otherLogo1: imageField('Other Logo 1'),
+      otherLogo2: imageField('Other Logo 2'),
+      otherLogo3: imageField('Other Logo 3'),
+      otherLogo4: imageField('Other Logo 4'),
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'radio',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      spotlightLogo: dummyLogo(240, 120, 'Blue Star'),
+      spotlightDescription:
+        'Our long-standing partnership with Blue Star powers every HVAC and refrigeration installation we deliver — from residential VRF systems to large-scale commercial chillers.',
+      otherLogo1: dummyLogo(140, 70, 'Brand 1'),
+      otherLogo2: dummyLogo(140, 70, 'Brand 2'),
+      otherLogo3: dummyLogo(140, 70, 'Brand 3'),
+      otherLogo4: dummyLogo(140, 70, 'Brand 4'),
+      padding: 'md',
+      background: 'white',
+    },
+    render: function ConstructionBrandsSpotlightRender({
+      spotlightLogo,
+      spotlightDescription,
+      otherLogo1,
+      otherLogo2,
+      otherLogo3,
+      otherLogo4,
+      padding,
+      background,
+    }) {
+      const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
+      const otherLogos = [otherLogo1, otherLogo2, otherLogo3, otherLogo4].filter(Boolean)
+      return (
+        <section
+          ref={ref}
+          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={`${wrap} text-center`}>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 mb-6">
+              Featured Brand Partner
+            </p>
+            {spotlightLogo && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={spotlightLogo}
+                alt=""
+                className="mx-auto h-16 md:h-20 max-w-[280px] object-contain mb-6"
+              />
+            )}
+            {spotlightDescription && (
+              <p className="max-w-2xl mx-auto text-slate-600 leading-relaxed mb-10">
+                {spotlightDescription}
+              </p>
+            )}
+            {otherLogos.length > 0 && (
+              <div className="flex flex-wrap items-center justify-center gap-8 pt-8 border-t border-slate-100">
+                {otherLogos.map((logo, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={i}
+                    src={logo}
+                    alt=""
+                    className="h-8 max-w-[110px] object-contain opacity-80"
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )
+    },
+  },
 }
 
 // ── categories ─────────────────────────────────────────────────────────────────
@@ -7678,6 +7965,14 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
       'ConstructionProductsShowcase',
       'ConstructionWhyChooseUs',
       'ConstructionProcessTimeline',
+    ],
+  },
+  brands: {
+    title: 'Brands',
+    components: [
+      'ConstructionBrandsLogoGrid',
+      'ConstructionBrandsCarousel',
+      'ConstructionBrandsSpotlight',
     ],
   },
   faq: {
