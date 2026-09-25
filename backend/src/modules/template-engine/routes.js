@@ -28,6 +28,7 @@ import {
   getExport,
   retryStage,
   skipStage,
+  generateCopy,
 } from './controller.js';
 
 const router = Router();
@@ -73,6 +74,9 @@ router.post('/runs/:runId/stages/:stage/advance', requirePermission('template-en
 // Stage recovery — retry resets FAILED → PENDING; skip moves FAILED optional → SKIPPED.
 router.post('/runs/:runId/stages/:stage/retry', requirePermission('template-engine', 'run'), validate(stageRecoveryParamSchema), requireProject(), retryStage);
 router.post('/runs/:runId/stages/:stage/skip', requirePermission('template-engine', 'run'), validate(stageRecoveryParamSchema), requireProject(), skipStage);
+
+// AI copy generation — explicit opt-in action on the WEBSITE stage (KDL-… intake→body-copy).
+router.post('/runs/:runId/stages/:stage/generate-copy', requirePermission('template-engine', 'run'), validate(stageRecoveryParamSchema), requireProject(), generateCopy);
 
 // Export — requires :export permission (TEMPLATE_ENGINE_ARCH.md §9).
 router.get('/runs/:runId/export', requirePermission('template-engine', 'export'), validate(runParamSchema), requireProject(), getExport);

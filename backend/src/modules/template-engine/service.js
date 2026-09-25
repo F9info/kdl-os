@@ -2,6 +2,10 @@
 import { prisma } from '../../config/database.js';
 import { getDriver } from './drivers/index.js';
 import { enqueueSiteBuild } from './site/queue.js';
+import { aiServicesConfigured, requestWebsiteCopy } from './ai-client.js';
+import { withCreditHold } from '../credits/service.js';
+import { WEBSITE_COPY_GENERATION_COST } from './costs.js';
+import { buildGenerationTargets, applyGeneratedCopy } from './drivers/website-copy-generation.js';
 
 // ── Enum helpers (avoids importing the Prisma enum at runtime) ────────────────
 
@@ -192,6 +196,94 @@ export async function skipStage(runId, stageSlug, userId, projectId) {
     where: { id: stage.id },
     data: { status: 'SKIPPED', errorCode: null, completedAt: new Date() },
   });
+}
+
+// ── AI copy generation ────────────────────────────────────────────────────────
+
+// Explicit opt-in action on the WEBSITE stage — generates Hero/About body
+// copy from intake data via ai-services, patching only blocks still at
+// their static-seed default (see drivers/website-copy-generation.js). Never
+// throws for AI/credit reasons: an unconfigured AI path, missing intake
+// data, a transport failure, or an insufficient-credits refusal all resolve
+// to `patchedBlocks: []` — the static seed text already on the page IS the
+// fallback, nothing more to do.
+export async function generateWebsiteCopy(runId, projectId, userId) {
+  const run = await getRun(runId, projectId); // throws 404 on mismatch
+  const stage = run.stages.find((s) => s.stage === 'WEBSITE');
+  if (!stage || stage.status !== 'DONE') {
+    const err = new Error('WEBSITE_NOT_ASSEMBLED');
+    err.status = 409;
+    err.code = 'WEBSITE_NOT_ASSEMBLED';
+    throw err;
+  }
+
+  const homePageId = stage.outputRef?.pageKeyToId?.home;
+  if (!homePageId) {
+    const err = new Error('NO_HOME_PAGE');
+    err.status = 409;
+    err.code = 'NO_HOME_PAGE';
+    throw err;
+  }
+
+  const page = await prisma.builderPage.findFirst({ where: { id: homePageId, deleted_at: null } });
+  if (!page) return { patchedBlocks: [] };
+
+  const targets = buildGenerationTargets(page.data);
+  if (targets.length === 0) return { patchedBlocks: [] };
+
+  const bizFields = await prisma.settingField.findMany({
+    where: { slug: { in: ['brand-profile-company-name', 'brand-profile-business-description'] } },
+  });
+  const companyName = bizFields.find((f) => f.slug === 'brand-profile-company-name')?.value || 'Your Business';
+  const businessDescription =
+    bizFields.find((f) => f.slug === 'brand-profile-business-description')?.value || '';
+  if (!businessDescription) return { patchedBlocks: [] };
+
+  if (!aiServicesConfigured()) return { patchedBlocks: [] };
+
+  let patchedBlocks = [];
+  try {
+    await withCreditHold(
+      {
+        projectId,
+        actorId: userId,
+        source: 'template-engine.website-copy',
+        estimateMc: BigInt(WEBSITE_COPY_GENERATION_COST),
+        idempotencyKey: undefined,
+      },
+      async () => {
+        let envelope;
+        try {
+          envelope = await requestWebsiteCopy({ projectId, companyName, businessDescription });
+        } catch {
+          // Transport/auth failure talking to ai-services (AI_TRANSPORT/AI_AUTH)
+          // — degrade silently, same posture as brand-kit's runInference.
+          // Never billable: the hold settles at 0 µc, nothing was generated.
+          return { result: null, actualMc: 0n, usage: null };
+        }
+        if (!envelope.success) {
+          return { result: null, actualMc: 0n, usage: null };
+        }
+        const patchedData = applyGeneratedCopy(page.data, envelope.copy, targets);
+        await prisma.builderPage.update({ where: { id: page.id }, data: { data: patchedData } });
+        patchedBlocks = [...new Set(targets.map((t) => t.blockType))];
+        return {
+          result: null,
+          actualMc: BigInt(WEBSITE_COPY_GENERATION_COST),
+          usage: {
+            provider: 'anthropic',
+            model: envelope.model,
+            inputTokens: envelope.usage?.input_tokens ?? 0,
+            outputTokens: envelope.usage?.output_tokens ?? 0,
+          },
+        };
+      },
+    );
+  } catch (creditErr) {
+    if (creditErr.code !== 'INSUFFICIENT_CREDITS') throw creditErr;
+  }
+
+  return { patchedBlocks };
 }
 
 // ── Stage advance ─────────────────────────────────────────────────────────────

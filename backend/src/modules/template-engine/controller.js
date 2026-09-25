@@ -351,3 +351,25 @@ export const staticDownload = async (req, res, next) => {
     next(err);
   }
 };
+
+export const generateCopy = async (req, res, next) => {
+  try {
+    const { runId } = req.validated.params;
+    const result = await service.generateWebsiteCopy(runId, req.projectId, req.user.id);
+    writeActivityAsync({
+      actor: req.user.id,
+      module: 'template-engine',
+      action: 'website_copy_generated',
+      subject_type: 'TemplateEngineRun',
+      subject_id: runId,
+      description: `Generated AI copy for ${result.patchedBlocks.length} block(s)`,
+      properties: { runId, patchedBlocks: result.patchedBlocks },
+      ip_address: getClientIp(req),
+    });
+    return successResponse(res, result);
+  } catch (err) {
+    if (err.status === 409) return errorResponse(res, err.message, 409, { code: err.code });
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};

@@ -1225,7 +1225,7 @@ function genericConstructionHero(pageTitle) {
 
 // ─── Home page: full construction homepage (KDL-558) ────────────────────
 
-const CONSTRUCTION_HERO_HOME = {
+export const CONSTRUCTION_HERO_HOME = {
   variant: '1',
   visible: true,
   d1Slides: [
@@ -1284,7 +1284,7 @@ const CONSTRUCTION_OFFERINGS_ROWS = {
   background: 'white',
 };
 
-const CONSTRUCTION_ABOUT_SPLIT = {
+export const CONSTRUCTION_ABOUT_SPLIT = {
   eyebrow: 'About Us',
   heading: 'Two Decades of Building With Integrity',
   paragraph:

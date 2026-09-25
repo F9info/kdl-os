@@ -6,9 +6,26 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../../config/database.js', () => ({ prisma: {} }));
 vi.mock('./drivers/index.js', () => ({ getDriver: vi.fn() }));
+vi.mock('./ai-client.js', () => ({
+  aiServicesConfigured: vi.fn(),
+  requestWebsiteCopy: vi.fn(),
+}));
+vi.mock('../credits/service.js', () => ({
+  withCreditHold: vi.fn(),
+  CreditError: class CreditError extends Error {
+    constructor(code, message) {
+      super(message ?? code);
+      this.name = 'CreditError';
+      this.code = code;
+    }
+  },
+}));
 
 import { prisma } from '../../config/database.js';
-import { retryStage, skipStage } from './service.js';
+import { retryStage, skipStage, generateWebsiteCopy } from './service.js';
+import { aiServicesConfigured, requestWebsiteCopy } from './ai-client.js';
+import { withCreditHold, CreditError } from '../credits/service.js';
+import { CONSTRUCTION_HERO_HOME, CONSTRUCTION_ABOUT_SPLIT } from './drivers/website-seed-content.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -189,5 +206,130 @@ describe('skipStage', () => {
       stage('WEBSITE', 'DONE'),
     ];
     expect(checkGate('preflight', stagesAfterSkip)).toMatchObject({ ok: true });
+  });
+});
+
+// ── generateWebsiteCopy ─────────────────────────────────────────────────────
+
+describe('generateWebsiteCopy', () => {
+  function makeHomePageData() {
+    return {
+      content: [
+        { type: 'ConstructionHero', props: { id: 'home-ConstructionHero', ...CONSTRUCTION_HERO_HOME } },
+        { type: 'ConstructionAboutSplit', props: { id: 'home-ConstructionAboutSplit', ...CONSTRUCTION_ABOUT_SPLIT } },
+      ],
+    };
+  }
+
+  const doneWebsiteStage = () =>
+    stage('WEBSITE', 'DONE', 'stage-WEBSITE-1');
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    aiServicesConfigured.mockReturnValue(true);
+    withCreditHold.mockImplementation(async (_opts, fn) => {
+      const { result } = await fn();
+      return result;
+    });
+  });
+
+  it('patches the home page and returns which blocks were updated', async () => {
+    const websiteStage = { ...doneWebsiteStage(), outputRef: { pageKeyToId: { home: 'page-home' } } };
+    prisma.templateEngineRun = {
+      findUnique: vi.fn().mockResolvedValue(makeRun([websiteStage])),
+    };
+    prisma.builderPage = {
+      findFirst: vi.fn().mockResolvedValue({ id: 'page-home', data: makeHomePageData() }),
+      update: vi.fn().mockResolvedValue({}),
+    };
+    prisma.settingField = {
+      findMany: vi.fn().mockResolvedValue([
+        { slug: 'brand-profile-company-name', value: 'Acme Co' },
+        { slug: 'brand-profile-business-description', value: 'We build things.' },
+      ]),
+    };
+    requestWebsiteCopy.mockResolvedValue({
+      success: true,
+      model: 'claude-sonnet-4-6',
+      usage: { input_tokens: 100, output_tokens: 50 },
+      copy: {
+        hero: [
+          { badge: 'B0', headline: 'H0', subheadline: 'S0', ctaLabel: 'C0' },
+          { badge: 'B1', headline: 'H1', subheadline: 'S1', ctaLabel: 'C1' },
+          { badge: 'B2', headline: 'H2', subheadline: 'S2', ctaLabel: 'C2' },
+        ],
+        about: { eyebrow: 'New', heading: 'New heading', paragraph: 'New paragraph' },
+      },
+    });
+
+    const result = await generateWebsiteCopy('run-1', 'proj-A', 'user-1');
+
+    expect(result.patchedBlocks.slice().sort()).toEqual(['ConstructionAboutSplit', 'ConstructionHero']);
+    expect(prisma.builderPage.update).toHaveBeenCalledTimes(1);
+    const [updateArgs] = prisma.builderPage.update.mock.calls[0];
+    expect(updateArgs.where).toEqual({ id: 'page-home' });
+    const heroBlock = updateArgs.data.data.content.find((b) => b.type === 'ConstructionHero');
+    const aboutBlock = updateArgs.data.data.content.find((b) => b.type === 'ConstructionAboutSplit');
+    expect(heroBlock.props.d1Slides[0].headline).toBe('H0');
+    expect(heroBlock.props.d1Slides[1].headline).toBe('H1');
+    expect(heroBlock.props.d1Slides[2].headline).toBe('H2');
+    expect(aboutBlock.props.heading).toBe('New heading');
+  });
+
+  it('leaves the page untouched when the credit hold is refused', async () => {
+    const websiteStage = { ...doneWebsiteStage(), outputRef: { pageKeyToId: { home: 'page-home' } } };
+    prisma.templateEngineRun = {
+      findUnique: vi.fn().mockResolvedValue(makeRun([websiteStage])),
+    };
+    prisma.builderPage = {
+      findFirst: vi.fn().mockResolvedValue({ id: 'page-home', data: makeHomePageData() }),
+      update: vi.fn(),
+    };
+    prisma.settingField = {
+      findMany: vi.fn().mockResolvedValue([
+        { slug: 'brand-profile-company-name', value: 'Acme Co' },
+        { slug: 'brand-profile-business-description', value: 'We build things.' },
+      ]),
+    };
+    withCreditHold.mockRejectedValue(new CreditError('INSUFFICIENT_CREDITS', 'nope'));
+
+    const result = await generateWebsiteCopy('run-1', 'proj-A', 'user-1');
+
+    expect(result).toEqual({ patchedBlocks: [] });
+    expect(prisma.builderPage.update).not.toHaveBeenCalled();
+  });
+
+  it('leaves the page untouched (no throw, no charge) when ai-services is unreachable', async () => {
+    const websiteStage = { ...doneWebsiteStage(), outputRef: { pageKeyToId: { home: 'page-home' } } };
+    prisma.templateEngineRun = {
+      findUnique: vi.fn().mockResolvedValue(makeRun([websiteStage])),
+    };
+    prisma.builderPage = {
+      findFirst: vi.fn().mockResolvedValue({ id: 'page-home', data: makeHomePageData() }),
+      update: vi.fn(),
+    };
+    prisma.settingField = {
+      findMany: vi.fn().mockResolvedValue([
+        { slug: 'brand-profile-company-name', value: 'Acme Co' },
+        { slug: 'brand-profile-business-description', value: 'We build things.' },
+      ]),
+    };
+    requestWebsiteCopy.mockRejectedValue(Object.assign(new Error('ai-services unreachable'), { code: 'AI_TRANSPORT' }));
+
+    const result = await generateWebsiteCopy('run-1', 'proj-A', 'user-1');
+
+    expect(result).toEqual({ patchedBlocks: [] });
+    expect(prisma.builderPage.update).not.toHaveBeenCalled();
+  });
+
+  it('throws WEBSITE_NOT_ASSEMBLED when the website stage has not completed', async () => {
+    prisma.templateEngineRun = {
+      findUnique: vi.fn().mockResolvedValue(makeRun([stage('WEBSITE', 'PENDING')])),
+    };
+
+    await expect(generateWebsiteCopy('run-1', 'proj-A', 'user-1')).rejects.toMatchObject({
+      status: 409,
+      code: 'WEBSITE_NOT_ASSEMBLED',
+    });
   });
 });
