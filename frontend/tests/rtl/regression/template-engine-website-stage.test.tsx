@@ -25,6 +25,7 @@ vi.mock('@/admin/hooks/useTemplateEngine', () => ({
   useSkipStage: () => ({ mutate: vi.fn(), isPending: false }),
   useBrandKit: mockUseBrandKit,
   usePatchTypography: () => ({ mutate: mockPatchTypography, isPending: false }),
+  useGenerateWebsiteCopy: () => ({ mutate: vi.fn(), isPending: false }),
   useCreateSite: () => ({ mutate: mockCreateSite, isPending: false }),
   useTemplateEngineRuns: () => ({ data: [], isLoading: false }),
 }))
@@ -40,8 +41,22 @@ vi.mock('@/admin/hooks/useModules', () => ({
   useModules: () => ({ isEnabled: (slug: string) => !surfaceState.off.includes(slug) }),
 }))
 
+vi.mock('@/hooks/useIdentity', () => ({
+  useIdentity: () => ({ identity: { description: 'We build things.' } }),
+}))
+
 vi.mock('@/components/shared/MediaPicker', () => ({
   MediaPicker: () => null,
+}))
+
+// WebsiteStage reads the business-description intake field via a raw
+// useQuery + api.get (same endpoint IntakeStage already mocks this way) to
+// gate the "Generate content with AI" button — mock it so the query resolves
+// harmlessly instead of hitting the network under test.
+vi.mock('@/lib/axios', () => ({
+  default: {
+    get: vi.fn().mockResolvedValue({ data: { data: { fields: [] } } }),
+  },
 }))
 
 const BRAND_KIT: BrandKit = {
