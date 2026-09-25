@@ -586,6 +586,60 @@ type ConstructionProps = {
     client11Name: string
     client12Logo: string
     client12Name: string
+    client13Logo: string
+    client13Name: string
+    client14Logo: string
+    client14Name: string
+    client15Logo: string
+    client15Name: string
+    client16Logo: string
+    client16Name: string
+    client17Logo: string
+    client17Name: string
+    client18Logo: string
+    client18Name: string
+    client19Logo: string
+    client19Name: string
+    client20Logo: string
+    client20Name: string
+    client21Logo: string
+    client21Name: string
+    client22Logo: string
+    client22Name: string
+    client23Logo: string
+    client23Name: string
+    client24Logo: string
+    client24Name: string
+    client25Logo: string
+    client25Name: string
+    client26Logo: string
+    client26Name: string
+    client27Logo: string
+    client27Name: string
+    client28Logo: string
+    client28Name: string
+    client29Logo: string
+    client29Name: string
+    client30Logo: string
+    client30Name: string
+    client31Logo: string
+    client31Name: string
+    client32Logo: string
+    client32Name: string
+    client33Logo: string
+    client33Name: string
+    client34Logo: string
+    client34Name: string
+    client35Logo: string
+    client35Name: string
+    client36Logo: string
+    client36Name: string
+    client37Logo: string
+    client37Name: string
+    client38Logo: string
+    client38Name: string
+    client39Logo: string
+    client39Name: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
   }
@@ -5015,6 +5069,60 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       client11Name: { type: 'text' },
       client12Logo: { type: 'text' },
       client12Name: { type: 'text' },
+      client13Logo: { type: 'text' },
+      client13Name: { type: 'text' },
+      client14Logo: { type: 'text' },
+      client14Name: { type: 'text' },
+      client15Logo: { type: 'text' },
+      client15Name: { type: 'text' },
+      client16Logo: { type: 'text' },
+      client16Name: { type: 'text' },
+      client17Logo: { type: 'text' },
+      client17Name: { type: 'text' },
+      client18Logo: { type: 'text' },
+      client18Name: { type: 'text' },
+      client19Logo: { type: 'text' },
+      client19Name: { type: 'text' },
+      client20Logo: { type: 'text' },
+      client20Name: { type: 'text' },
+      client21Logo: { type: 'text' },
+      client21Name: { type: 'text' },
+      client22Logo: { type: 'text' },
+      client22Name: { type: 'text' },
+      client23Logo: { type: 'text' },
+      client23Name: { type: 'text' },
+      client24Logo: { type: 'text' },
+      client24Name: { type: 'text' },
+      client25Logo: { type: 'text' },
+      client25Name: { type: 'text' },
+      client26Logo: { type: 'text' },
+      client26Name: { type: 'text' },
+      client27Logo: { type: 'text' },
+      client27Name: { type: 'text' },
+      client28Logo: { type: 'text' },
+      client28Name: { type: 'text' },
+      client29Logo: { type: 'text' },
+      client29Name: { type: 'text' },
+      client30Logo: { type: 'text' },
+      client30Name: { type: 'text' },
+      client31Logo: { type: 'text' },
+      client31Name: { type: 'text' },
+      client32Logo: { type: 'text' },
+      client32Name: { type: 'text' },
+      client33Logo: { type: 'text' },
+      client33Name: { type: 'text' },
+      client34Logo: { type: 'text' },
+      client34Name: { type: 'text' },
+      client35Logo: { type: 'text' },
+      client35Name: { type: 'text' },
+      client36Logo: { type: 'text' },
+      client36Name: { type: 'text' },
+      client37Logo: { type: 'text' },
+      client37Name: { type: 'text' },
+      client38Logo: { type: 'text' },
+      client38Name: { type: 'text' },
+      client39Logo: { type: 'text' },
+      client39Name: { type: 'text' },
       padding: {
         type: 'select',
         options: [
@@ -5032,32 +5140,87 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       },
     },
     defaultProps: {
-      sectionTitle: 'Trusted By',
-      sectionSubtitle: 'A selection of clients we have partnered with.',
-      client1Logo: 'https://placehold.co/200x100/e2e8f0/64748b?text=Client+1',
-      client1Name: 'Client 1',
-      client2Logo: 'https://placehold.co/200x100/e2e8f0/64748b?text=Client+2',
-      client2Name: 'Client 2',
-      client3Logo: 'https://placehold.co/200x100/e2e8f0/64748b?text=Client+3',
-      client3Name: 'Client 3',
-      client4Logo: 'https://placehold.co/200x100/e2e8f0/64748b?text=Client+4',
-      client4Name: 'Client 4',
-      client5Logo: 'https://placehold.co/200x100/e2e8f0/64748b?text=Client+5',
-      client5Name: 'Client 5',
-      client6Logo: 'https://placehold.co/200x100/e2e8f0/64748b?text=Client+6',
-      client6Name: 'Client 6',
-      client7Logo: 'https://placehold.co/200x100/e2e8f0/64748b?text=Client+7',
-      client7Name: 'Client 7',
-      client8Logo: 'https://placehold.co/200x100/e2e8f0/64748b?text=Client+8',
-      client8Name: 'Client 8',
-      client9Logo: 'https://placehold.co/200x100/e2e8f0/64748b?text=Client+9',
-      client9Name: 'Client 9',
-      client10Logo: 'https://placehold.co/200x100/e2e8f0/64748b?text=Client+10',
-      client10Name: 'Client 10',
-      client11Logo: 'https://placehold.co/200x100/e2e8f0/64748b?text=Client+11',
-      client11Name: 'Client 11',
-      client12Logo: 'https://placehold.co/200x100/e2e8f0/64748b?text=Client+12',
-      client12Name: 'Client 12',
+      sectionTitle: 'Trusted by businesses & institutions',
+      sectionSubtitle:
+        'From retail malls to hospitality and healthcare — brands across Andhra Pradesh trust us to keep their buildings running.',
+      client1Logo: '/seed/subhadra/clients/client-01.png',
+      client1Name: 'Marriott',
+      client2Logo: '/seed/subhadra/clients/client-02.png',
+      client2Name: 'Novotel Hotels',
+      client3Logo: '/seed/subhadra/clients/client-03.png',
+      client3Name: 'Best Western',
+      client4Logo: '/seed/subhadra/clients/client-04.png',
+      client4Name: "Fortune — Member ITC's Hotel Group",
+      client5Logo: '/seed/subhadra/clients/client-05.png',
+      client5Name: 'Radisson Blu',
+      client6Logo: '/seed/subhadra/clients/client-06.png',
+      client6Name: 'ABC Hospitals',
+      client7Logo: '/seed/subhadra/clients/client-07.png',
+      client7Name: 'Medicover',
+      client8Logo: '/seed/subhadra/clients/client-08.png',
+      client8Name: 'Apollo Hospitals',
+      client9Logo: '/seed/subhadra/clients/client-09.png',
+      client9Name: 'Lotus Multispeciality Hospital',
+      client10Logo: '/seed/subhadra/clients/client-10.png',
+      client10Name: 'Ikya Hospital',
+      client11Logo: '/seed/subhadra/clients/client-11.png',
+      client11Name: 'Vaibhav Jewellers',
+      client12Logo: '/seed/subhadra/clients/client-12.png',
+      client12Name: 'Lifestyle',
+      client13Logo: '/seed/subhadra/clients/client-13.png',
+      client13Name: 'Kankatala',
+      client14Logo: '/seed/subhadra/clients/client-14.png',
+      client14Name: 'South India Shopping Mall',
+      client15Logo: '/seed/subhadra/clients/client-15.png',
+      client15Name: 'KLM Fashion Mall',
+      client16Logo: '/seed/subhadra/clients/client-16.png',
+      client16Name: 'Lucky Shopping Mall',
+      client17Logo: '/seed/subhadra/clients/client-17.png',
+      client17Name: 'Kalamandir',
+      client18Logo: '/seed/subhadra/clients/client-18.png',
+      client18Name: 'SR Shopping Mall',
+      client19Logo: '/seed/subhadra/clients/client-19.png',
+      client19Name: 'Bothra Group',
+      client20Logo: '/seed/subhadra/clients/client-20.png',
+      client20Name: 'Visakha Dairy',
+      client21Logo: '/seed/subhadra/clients/client-21.png',
+      client21Name: 'Varun Group',
+      client22Logo: '/seed/subhadra/clients/client-22.png',
+      client22Name: 'Lakshmi Group',
+      client23Logo: '/seed/subhadra/clients/client-23.png',
+      client23Name: 'PVR',
+      client24Logo: '/seed/subhadra/clients/client-24.png',
+      client24Name: 'Cinépolis',
+      client25Logo: '/seed/subhadra/clients/client-25.png',
+      client25Name: 'Vizag Steel (RINL)',
+      client26Logo: '/seed/subhadra/clients/client-26.png',
+      client26Name: 'ANITS',
+      client27Logo: '/seed/subhadra/clients/client-27.png',
+      client27Name: 'GITAM',
+      client28Logo: '/seed/subhadra/clients/client-28.png',
+      client28Name: 'Vizag Conventions',
+      client29Logo: '/seed/subhadra/clients/client-29.png',
+      client29Name: "Chenna's The Convention",
+      client30Logo: '/seed/subhadra/clients/client-30.png',
+      client30Name: 'A1 Grand — The Convention',
+      client31Logo: '/seed/subhadra/clients/client-31.png',
+      client31Name: 'Laurus Labs',
+      client32Logo: '/seed/subhadra/clients/client-32.png',
+      client32Name: 'Asian Paints',
+      client33Logo: '/seed/subhadra/clients/client-33.png',
+      client33Name: 'Yokohama',
+      client34Logo: '/seed/subhadra/clients/client-34.png',
+      client34Name: 'NCL Group',
+      client35Logo: '/seed/subhadra/clients/client-35.png',
+      client35Name: 'GVMC',
+      client36Logo: '/seed/subhadra/clients/client-36.png',
+      client36Name: 'Visakhapatnam Port Authority',
+      client37Logo: '/seed/subhadra/clients/client-37.png',
+      client37Name: 'Lansum Properties LLP',
+      client38Logo: '/seed/subhadra/clients/client-38.png',
+      client38Name: 'MK Builders & Developers',
+      client39Logo: '/seed/subhadra/clients/client-39.png',
+      client39Name: 'FAME Realty',
       padding: 'md',
       background: 'white',
     },
@@ -5088,8 +5251,62 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       client11Name,
       client12Logo,
       client12Name,
+      client13Logo,
+      client13Name,
+      client14Logo,
+      client14Name,
+      client15Logo,
+      client15Name,
+      client16Logo,
+      client16Name,
+      client17Logo,
+      client17Name,
+      client18Logo,
+      client18Name,
+      client19Logo,
+      client19Name,
+      client20Logo,
+      client20Name,
+      client21Logo,
+      client21Name,
+      client22Logo,
+      client22Name,
+      client23Logo,
+      client23Name,
+      client24Logo,
+      client24Name,
       padding,
       background,
+      client25Logo,
+      client25Name,
+      client26Logo,
+      client26Name,
+      client27Logo,
+      client27Name,
+      client28Logo,
+      client28Name,
+      client29Logo,
+      client29Name,
+      client30Logo,
+      client30Name,
+      client31Logo,
+      client31Name,
+      client32Logo,
+      client32Name,
+      client33Logo,
+      client33Name,
+      client34Logo,
+      client34Name,
+      client35Logo,
+      client35Name,
+      client36Logo,
+      client36Name,
+      client37Logo,
+      client37Name,
+      client38Logo,
+      client38Name,
+      client39Logo,
+      client39Name,
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
       const clients = [
@@ -5105,11 +5322,34 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         { logo: client10Logo, name: client10Name },
         { logo: client11Logo, name: client11Name },
         { logo: client12Logo, name: client12Name },
+        { logo: client13Logo, name: client13Name },
+        { logo: client14Logo, name: client14Name },
+        { logo: client15Logo, name: client15Name },
+        { logo: client16Logo, name: client16Name },
+        { logo: client17Logo, name: client17Name },
+        { logo: client18Logo, name: client18Name },
+        { logo: client19Logo, name: client19Name },
+        { logo: client20Logo, name: client20Name },
+        { logo: client21Logo, name: client21Name },
+        { logo: client22Logo, name: client22Name },
+        { logo: client23Logo, name: client23Name },
+        { logo: client24Logo, name: client24Name },
+        { logo: client25Logo, name: client25Name },
+        { logo: client26Logo, name: client26Name },
+        { logo: client27Logo, name: client27Name },
+        { logo: client28Logo, name: client28Name },
+        { logo: client29Logo, name: client29Name },
+        { logo: client30Logo, name: client30Name },
+        { logo: client31Logo, name: client31Name },
+        { logo: client32Logo, name: client32Name },
+        { logo: client33Logo, name: client33Name },
+        { logo: client34Logo, name: client34Name },
+        { logo: client35Logo, name: client35Name },
+        { logo: client36Logo, name: client36Name },
+        { logo: client37Logo, name: client37Name },
+        { logo: client38Logo, name: client38Name },
+        { logo: client39Logo, name: client39Name },
       ].filter((c) => c.logo)
-      const pageSize = 6
-      const pageCount = Math.max(1, Math.ceil(clients.length / pageSize))
-      const [page, setPage] = useState(0)
-      const visible = clients.slice(page * pageSize, page * pageSize + pageSize)
       return (
         <section
           ref={ref}
@@ -5122,36 +5362,17 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 <p className="text-slate-600 max-w-2xl mx-auto">{sectionSubtitle}</p>
               )}
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-5 mb-8">
-              {visible.map((c, i) => (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-5">
+              {clients.map((c, i) => (
                 <div
                   key={i}
                   className="flex items-center justify-center rounded-xl border border-slate-200 bg-white p-5 h-24"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={c.logo}
-                    alt={c.name}
-                    className="max-h-10 max-w-full object-contain grayscale hover:grayscale-0 transition"
-                  />
+                  <img src={c.logo} alt={c.name} className="max-h-10 max-w-full object-contain" />
                 </div>
               ))}
             </div>
-            {pageCount > 1 && (
-              <div className="flex justify-center gap-2">
-                {Array.from({ length: pageCount }).map((_, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    aria-label={`Show clients page ${i + 1}`}
-                    onClick={() => setPage(i)}
-                    className={`w-2.5 h-2.5 rounded-full transition ${
-                      i === page ? 'bg-orange-500' : 'bg-slate-300'
-                    }`}
-                  />
-                ))}
-              </div>
-            )}
           </div>
         </section>
       )
