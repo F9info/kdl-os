@@ -2,6 +2,7 @@ import type { Config } from '@puckeditor/core'
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import type { ComponentPack } from '../types'
+import { imageField } from '../image-field'
 
 // ── shared helpers ────────────────────────────────────────────────────────────
 
@@ -538,6 +539,38 @@ type ConstructionProps = {
     founderName: string
     founderTitle: string
     padding: 'sm' | 'md' | 'lg'
+  }
+  ConstructionTimelineHistory: {
+    eyebrow: string
+    heading: string
+    entry1Year: string
+    entry1Text: string
+    entry2Year: string
+    entry2Text: string
+    entry3Year: string
+    entry3Text: string
+    entry4Year: string
+    entry4Text: string
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+  }
+  ConstructionLeadershipGrid: {
+    eyebrow: string
+    heading: string
+    leader1Photo: string
+    leader1Name: string
+    leader1Title: string
+    leader1Bio: string
+    leader2Photo: string
+    leader2Name: string
+    leader2Title: string
+    leader2Bio: string
+    leader3Photo: string
+    leader3Name: string
+    leader3Title: string
+    leader3Bio: string
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
   }
   ConstructionVideo: {
     sectionTitle: string
@@ -5250,6 +5283,216 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     ),
   },
 
+  // ── Timeline History — vertical "our history" timeline for About ──────────
+  ConstructionTimelineHistory: {
+    label: 'Timeline History',
+    fields: {
+      eyebrow: { type: 'text' },
+      heading: { type: 'text' },
+      entry1Year: { type: 'text' },
+      entry1Text: { type: 'textarea' },
+      entry2Year: { type: 'text' },
+      entry2Text: { type: 'textarea' },
+      entry3Year: { type: 'text' },
+      entry3Text: { type: 'textarea' },
+      entry4Year: { type: 'text' },
+      entry4Text: { type: 'textarea' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'select',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      eyebrow: 'Our History',
+      heading: 'Three Decades of Building Trust',
+      entry1Year: '1996',
+      entry1Text:
+        'Subhadra Group opens its doors in Vijayawada, offering HVAC design and installation to the first wave of commercial clients.',
+      entry2Year: '2005',
+      entry2Text:
+        'Expanded into Electricals and ELV systems, becoming one of the region’s few single-window building engineering contractors.',
+      entry3Year: '2015',
+      entry3Text:
+        'Crossed 500 completed projects and opened a dedicated in-house engineering and training team for our field crews.',
+      entry4Year: '2026',
+      entry4Text:
+        'Now 30+ years in, serving residential, commercial and industrial clients across Andhra Pradesh with a full-service model.',
+      padding: 'md',
+      background: 'white',
+    },
+    render: ({
+      eyebrow,
+      heading,
+      entry1Year,
+      entry1Text,
+      entry2Year,
+      entry2Text,
+      entry3Year,
+      entry3Text,
+      entry4Year,
+      entry4Text,
+      padding,
+      background,
+    }) => {
+      const entries = [
+        { year: entry1Year, text: entry1Text },
+        { year: entry2Year, text: entry2Text },
+        { year: entry3Year, text: entry3Text },
+        { year: entry4Year, text: entry4Text },
+      ].filter((e) => e.year || e.text)
+      return (
+        <section
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={wrap}>
+            <div className="mb-10">
+              {eyebrow && (
+                <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                  {eyebrow}
+                </p>
+              )}
+              <h2 className="text-2xl md:text-4xl font-bold text-slate-900">{heading}</h2>
+            </div>
+            <div className="max-w-2xl border-l-2 border-slate-200 pl-8">
+              {entries.map((e, i) => (
+                <div key={i} className="relative pb-10 last:pb-0">
+                  <span className="absolute -left-[41px] top-0 flex items-center justify-center rounded-full bg-orange-500 text-white text-xs font-bold px-3 py-1">
+                    {e.year}
+                  </span>
+                  <p className="text-slate-600 leading-relaxed pt-1">{e.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // ── Leadership Grid — 3 leadership photo cards for About ───────────────────
+  ConstructionLeadershipGrid: {
+    label: 'Leadership Grid',
+    fields: {
+      eyebrow: { type: 'text' },
+      heading: { type: 'text' },
+      leader1Photo: imageField('Photo'),
+      leader1Name: { type: 'text' },
+      leader1Title: { type: 'text' },
+      leader1Bio: { type: 'textarea' },
+      leader2Photo: imageField('Photo'),
+      leader2Name: { type: 'text' },
+      leader2Title: { type: 'text' },
+      leader2Bio: { type: 'textarea' },
+      leader3Photo: imageField('Photo'),
+      leader3Name: { type: 'text' },
+      leader3Title: { type: 'text' },
+      leader3Bio: { type: 'textarea' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'select',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      eyebrow: 'Leadership',
+      heading: 'The Team Behind Every Project',
+      leader1Photo:
+        'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=480&h=480&fit=crop&crop=faces&auto=format',
+      leader1Name: 'Ramesh Kumar',
+      leader1Title: 'Managing Director',
+      leader1Bio:
+        'Founded Subhadra Group in 1996; sets the technical standard for every project we take on.',
+      leader2Photo:
+        'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=480&h=480&fit=crop&crop=faces&auto=format',
+      leader2Name: 'Priya Nair',
+      leader2Title: 'Head of Engineering',
+      leader2Bio: 'Leads design and QA across HVAC, Electricals and ELV for every active site.',
+      leader3Photo:
+        'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=480&h=480&fit=crop&crop=faces&auto=format',
+      leader3Name: 'Suresh Reddy',
+      leader3Title: 'Operations Director',
+      leader3Bio: 'Runs day-to-day site delivery, scheduling and our 24×7 service desk.',
+      padding: 'md',
+      background: 'white',
+    },
+    render: ({
+      eyebrow,
+      heading,
+      leader1Photo,
+      leader1Name,
+      leader1Title,
+      leader1Bio,
+      leader2Photo,
+      leader2Name,
+      leader2Title,
+      leader2Bio,
+      leader3Photo,
+      leader3Name,
+      leader3Title,
+      leader3Bio,
+      padding,
+      background,
+    }) => {
+      const leaders = [
+        { photo: leader1Photo, name: leader1Name, title: leader1Title, bio: leader1Bio },
+        { photo: leader2Photo, name: leader2Name, title: leader2Title, bio: leader2Bio },
+        { photo: leader3Photo, name: leader3Name, title: leader3Title, bio: leader3Bio },
+      ].filter((l) => l.name)
+      return (
+        <section
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={wrap}>
+            <div className="text-center mb-12">
+              {eyebrow && (
+                <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                  {eyebrow}
+                </p>
+              )}
+              <h2 className="text-2xl md:text-4xl font-bold text-slate-900">{heading}</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {leaders.map((l, i) => (
+                <div key={i} className="text-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={l.photo}
+                    alt={l.name}
+                    className="w-32 h-32 mx-auto rounded-full object-cover mb-4"
+                  />
+                  <p className="font-semibold text-slate-900">{l.name}</p>
+                  <p className="text-sm text-orange-600 mb-2">{l.title}</p>
+                  <p className="text-sm text-slate-600">{l.bio}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
   // ── Video showcase ─────────────────────────────────────────────────────────
   ConstructionVideo: {
     label: 'Video',
@@ -5569,7 +5812,12 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
   },
   founder: {
     title: 'Founder',
-    components: ['ConstructionFounder', 'ConstructionAboutSplit'],
+    components: [
+      'ConstructionFounder',
+      'ConstructionAboutSplit',
+      'ConstructionTimelineHistory',
+      'ConstructionLeadershipGrid',
+    ],
   },
   video: {
     title: 'Video',
