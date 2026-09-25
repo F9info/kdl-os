@@ -248,7 +248,7 @@ export async function generateWebsiteCopy(runId, projectId, userId) {
         projectId,
         actorId: userId,
         source: 'template-engine.website-copy',
-        estimateMc: BigInt(WEBSITE_COPY_GENERATION_COST),
+        estimateMc: BigInt(WEBSITE_COPY_GENERATION_COST) * 1_000_000n,
         idempotencyKey: undefined,
       },
       async () => {
@@ -269,7 +269,7 @@ export async function generateWebsiteCopy(runId, projectId, userId) {
         patchedBlocks = [...new Set(targets.map((t) => t.blockType))];
         return {
           result: null,
-          actualMc: BigInt(WEBSITE_COPY_GENERATION_COST),
+          actualMc: BigInt(WEBSITE_COPY_GENERATION_COST) * 1_000_000n,
           usage: {
             provider: 'anthropic',
             model: envelope.model,

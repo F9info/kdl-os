@@ -8,7 +8,29 @@
 
 import { CONSTRUCTION_HERO_HOME, CONSTRUCTION_ABOUT_SPLIT } from './website-seed-content.js';
 
-const deepEqual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+// Key-order-independent structural equality. NOT JSON.stringify comparison —
+// jsonb (builder_pages.data's real column type) reorders object keys on
+// every round trip through Postgres (confirmed empirically: alphabetical-
+// by-length, not insertion order), so a slide read back from a real DB would
+// never string-match CONSTRUCTION_HERO_HOME's literal key order even when
+// byte-for-byte unedited. No lodash/fast-deep-equal is a direct dependency
+// of this package (only transitive, via other deps) — this is small enough
+// to keep dependency-free rather than take on an indirect-turned-direct dep.
+function deepEqual(a, b) {
+  if (a === b) return true;
+  if (a === null || b === null || typeof a !== 'object' || typeof b !== 'object') return false;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+  if (Array.isArray(a)) {
+    if (a.length !== b.length) return false;
+    return a.every((item, i) => deepEqual(item, b[i]));
+  }
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+  return aKeys.every(
+    (key) => Object.prototype.hasOwnProperty.call(b, key) && deepEqual(a[key], b[key]),
+  );
+}
 
 // v1 scope: Hero + About only (Disciplines isn't part of the generic seed
 // set at all, so it has no static default to compare against here).

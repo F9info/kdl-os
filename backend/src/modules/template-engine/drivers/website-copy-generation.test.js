@@ -40,6 +40,39 @@ describe('buildGenerationTargets', () => {
     expect(heroIndices).toEqual([0, 2]);
   });
 
+  it('detects a still-default slide even when its keys come back in a different order (jsonb round-trip)', () => {
+    // Postgres jsonb reorders object keys on every round trip (confirmed
+    // empirically: alphabetical-by-length, not insertion order) — a slide
+    // read back from a real DB will have different key ORDER than
+    // CONSTRUCTION_HERO_HOME's literal declaration, even when the VALUES are
+    // byte-for-byte identical (i.e. genuinely untouched). A JSON.stringify-
+    // based comparison is key-order-sensitive and would wrongly treat this
+    // as "hand-edited".
+    const seedSlide0 = CONSTRUCTION_HERO_HOME.d1Slides[0];
+    const reorderedSlide0 = {
+      ctaHref: seedSlide0.ctaHref,
+      ctaLabel: seedSlide0.ctaLabel,
+      subheadline: seedSlide0.subheadline,
+      headline: seedSlide0.headline,
+      badge: seedSlide0.badge,
+      image: seedSlide0.image,
+    };
+    // Sanity check the fixture actually has reordered keys vs. the seed.
+    expect(Object.keys(reorderedSlide0)).not.toEqual(Object.keys(seedSlide0));
+
+    const data = makePageData({
+      hero: {
+        d1Slides: [reorderedSlide0, CONSTRUCTION_HERO_HOME.d1Slides[1], CONSTRUCTION_HERO_HOME.d1Slides[2]],
+      },
+    });
+    const targets = buildGenerationTargets(data);
+    const heroIndices = targets
+      .filter((t) => t.blockType === 'ConstructionHero')
+      .map((t) => t.slideIndex)
+      .sort();
+    expect(heroIndices).toEqual([0, 1, 2]);
+  });
+
   it('returns no hero or about targets when everything has been hand-edited', () => {
     const data = makePageData({
       hero: { d1Slides: CONSTRUCTION_HERO_HOME.d1Slides.map((s) => ({ ...s, headline: 'Edited' })) },
