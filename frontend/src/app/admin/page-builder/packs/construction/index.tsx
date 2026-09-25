@@ -576,6 +576,39 @@ type ConstructionProps = {
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
   }
+  ConstructionClientsTestimonialStrip: {
+    sectionTitle: string
+    client1Logo: string
+    client1Quote: string
+    client2Logo: string
+    client2Quote: string
+    client3Logo: string
+    client3Quote: string
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+  }
+  ConstructionClientsMarquee: {
+    sectionTitle: string
+    logo1: string
+    logo2: string
+    logo3: string
+    logo4: string
+    logo5: string
+    logo6: string
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+  }
+  ConstructionClientsCaseHighlight: {
+    spotlightLogo: string
+    spotlightStat: string
+    spotlightQuote: string
+    otherLogo1: string
+    otherLogo2: string
+    otherLogo3: string
+    otherLogo4: string
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+  }
   ConstructionLeadFormFAQ: {
     sectionTitle: string
     faq1Question: string
@@ -5059,6 +5092,267 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     },
   },
 
+  // Clients — client-logo + one-line-quote pairs (bridges Clients and
+  // Testimonials themes, but stays registered under 'clients').
+  ConstructionClientsTestimonialStrip: {
+    label: 'Clients Testimonial Strip',
+    fields: {
+      sectionTitle: { type: 'text' },
+      client1Logo: imageField('Client 1 Logo'),
+      client1Quote: { type: 'textarea' },
+      client2Logo: imageField('Client 2 Logo'),
+      client2Quote: { type: 'textarea' },
+      client3Logo: imageField('Client 3 Logo'),
+      client3Quote: { type: 'textarea' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'radio',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      sectionTitle: 'Clients Who Trust Subhadra Group',
+      client1Logo: dummyLogo(140, 70, 'Client 1'),
+      client1Quote: 'Subhadra Group turned our HVAC overhaul around three weeks ahead of schedule.',
+      client2Logo: dummyLogo(140, 70, 'Client 2'),
+      client2Quote:
+        'Zero safety incidents across an 18-month build — their site discipline is unmatched.',
+      client3Logo: dummyLogo(140, 70, 'Client 3'),
+      client3Quote:
+        'One team owned design, supply and install for our entire fit-out. No coordination headaches.',
+      padding: 'md',
+      background: 'white',
+    },
+    render: function ConstructionClientsTestimonialStripRender({
+      sectionTitle,
+      client1Logo,
+      client1Quote,
+      client2Logo,
+      client2Quote,
+      client3Logo,
+      client3Quote,
+      padding,
+      background,
+    }) {
+      const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
+      const clients = [
+        { logo: client1Logo, quote: client1Quote },
+        { logo: client2Logo, quote: client2Quote },
+        { logo: client3Logo, quote: client3Quote },
+      ].filter((c) => c.quote)
+      return (
+        <section
+          ref={ref}
+          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={wrap}>
+            {sectionTitle && (
+              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+                {sectionTitle}
+              </h2>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {clients.map((c, i) => (
+                <div
+                  key={i}
+                  className="rounded-xl border border-slate-200 bg-white p-6 flex flex-col gap-4"
+                >
+                  {c.logo && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={c.logo} alt="" className="h-8 max-w-[140px] object-contain" />
+                  )}
+                  <p className="text-slate-700 text-sm leading-relaxed">&#8220;{c.quote}&#8221;</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // Clients — longer static logo row (6 logos), no scroll JS — matches this
+  // file's static-slider-render convention.
+  ConstructionClientsMarquee: {
+    label: 'Clients Marquee',
+    fields: {
+      sectionTitle: { type: 'text' },
+      logo1: imageField('Logo 1'),
+      logo2: imageField('Logo 2'),
+      logo3: imageField('Logo 3'),
+      logo4: imageField('Logo 4'),
+      logo5: imageField('Logo 5'),
+      logo6: imageField('Logo 6'),
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'radio',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      sectionTitle: 'Trusted by Businesses Across Andhra Pradesh',
+      logo1: dummyLogo(140, 70, 'Client 1'),
+      logo2: dummyLogo(140, 70, 'Client 2'),
+      logo3: dummyLogo(140, 70, 'Client 3'),
+      logo4: dummyLogo(140, 70, 'Client 4'),
+      logo5: dummyLogo(140, 70, 'Client 5'),
+      logo6: dummyLogo(140, 70, 'Client 6'),
+      padding: 'md',
+      background: 'white',
+    },
+    render: function ConstructionClientsMarqueeRender({
+      sectionTitle,
+      logo1,
+      logo2,
+      logo3,
+      logo4,
+      logo5,
+      logo6,
+      padding,
+      background,
+    }) {
+      const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
+      const logos = [logo1, logo2, logo3, logo4, logo5, logo6].filter(Boolean)
+      return (
+        <section
+          ref={ref}
+          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={wrap}>
+            {sectionTitle && (
+              <h2 className="text-center text-2xl md:text-3xl font-bold text-slate-900 mb-10">
+                {sectionTitle}
+              </h2>
+            )}
+            <div className="flex flex-wrap justify-center gap-8">
+              {logos.map((logo, i) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={i} src={logo} alt="" className="h-10 max-w-[140px] object-contain" />
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // Clients — one client spotlight (logo + result stat + quote) plus a
+  // smaller row of other client logos below (mirrors ConstructionBrandsSpotlight).
+  ConstructionClientsCaseHighlight: {
+    label: 'Clients Case Highlight',
+    fields: {
+      spotlightLogo: imageField('Spotlight Logo'),
+      spotlightStat: { type: 'text' },
+      spotlightQuote: { type: 'textarea' },
+      otherLogo1: imageField('Other Logo 1'),
+      otherLogo2: imageField('Other Logo 2'),
+      otherLogo3: imageField('Other Logo 3'),
+      otherLogo4: imageField('Other Logo 4'),
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'radio',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      spotlightLogo: dummyLogo(240, 120, 'Reddy Builders'),
+      spotlightStat: '40% faster handover',
+      spotlightQuote:
+        'Subhadra Group delivered our 12-unit residential complex three weeks ahead of schedule, without a single quality defect.',
+      otherLogo1: dummyLogo(140, 70, 'Client 1'),
+      otherLogo2: dummyLogo(140, 70, 'Client 2'),
+      otherLogo3: dummyLogo(140, 70, 'Client 3'),
+      otherLogo4: dummyLogo(140, 70, 'Client 4'),
+      padding: 'md',
+      background: 'white',
+    },
+    render: function ConstructionClientsCaseHighlightRender({
+      spotlightLogo,
+      spotlightStat,
+      spotlightQuote,
+      otherLogo1,
+      otherLogo2,
+      otherLogo3,
+      otherLogo4,
+      padding,
+      background,
+    }) {
+      const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
+      const otherLogos = [otherLogo1, otherLogo2, otherLogo3, otherLogo4].filter(Boolean)
+      return (
+        <section
+          ref={ref}
+          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={`${wrap} text-center`}>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 mb-6">
+              Client Spotlight
+            </p>
+            {spotlightLogo && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={spotlightLogo}
+                alt=""
+                className="mx-auto h-16 md:h-20 max-w-[280px] object-contain mb-6"
+              />
+            )}
+            {spotlightStat && (
+              <p className="text-3xl md:text-4xl font-bold text-orange-600 mb-4">{spotlightStat}</p>
+            )}
+            {spotlightQuote && (
+              <p className="max-w-2xl mx-auto text-slate-600 leading-relaxed mb-10">
+                &#8220;{spotlightQuote}&#8221;
+              </p>
+            )}
+            {otherLogos.length > 0 && (
+              <div className="flex flex-wrap items-center justify-center gap-8 pt-8 border-t border-slate-100">
+                {otherLogos.map((logo, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={i}
+                    src={logo}
+                    alt=""
+                    className="h-8 max-w-[110px] object-contain opacity-80"
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )
+    },
+  },
+
   // 8. Testimonials
   ConstructionTestimonials: {
     label: 'Testimonials',
@@ -8362,9 +8656,17 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
     title: 'Testimonials',
     components: [
       'ConstructionTestimonials',
-      'ConstructionClientsGrid',
       'ConstructionTestimonialsCarousel',
       'ConstructionVideoTestimonials',
+    ],
+  },
+  clients: {
+    title: 'Clients',
+    components: [
+      'ConstructionClientsGrid',
+      'ConstructionClientsTestimonialStrip',
+      'ConstructionClientsMarquee',
+      'ConstructionClientsCaseHighlight',
     ],
   },
   contact: {
