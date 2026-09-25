@@ -329,6 +329,26 @@ type ConstructionProps = {
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
   }
+  ConstructionTestimonialsCarousel: {
+    sectionTitle: string
+    slides: CarouselTestimonialSlide[]
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+  }
+  ConstructionVideoTestimonials: {
+    sectionTitle: string
+    testimonial1Thumbnail: string
+    testimonial1Name: string
+    testimonial1Quote: string
+    testimonial2Thumbnail: string
+    testimonial2Name: string
+    testimonial2Quote: string
+    testimonial3Thumbnail: string
+    testimonial3Name: string
+    testimonial3Quote: string
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+  }
   ConstructionProcessTimeline: {
     sectionTitle: string
     sectionSubtitle: string
@@ -690,6 +710,13 @@ type ConstructionProps = {
     faq4Answer: string
     padding: 'sm' | 'md' | 'lg'
   }
+}
+
+interface CarouselTestimonialSlide {
+  photo: string
+  quote: string
+  name: string
+  role: string
 }
 
 // ── shared icon SVGs (inline, no external deps) ───────────────────────────────
@@ -4674,6 +4701,248 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     },
   },
 
+  ConstructionTestimonialsCarousel: {
+    label: 'Testimonials Carousel',
+    fields: {
+      sectionTitle: { type: 'text' },
+      slides: {
+        type: 'array',
+        min: 0,
+        max: 8,
+        getItemSummary: (item) => item.name || 'New testimonial',
+        defaultItemProps: {
+          photo: '',
+          quote: '',
+          name: 'New testimonial',
+          role: '',
+        },
+        arrayFields: {
+          photo: imageField('Photo'),
+          quote: { type: 'textarea' },
+          name: { type: 'text' },
+          role: { type: 'text' },
+        },
+      },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'radio',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      sectionTitle: 'In Their Own Words',
+      slides: [
+        {
+          photo:
+            'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=440&h=440&fit=crop&crop=faces&q=80&auto=format',
+          quote:
+            'Subhadra Group ran our entire HVAC and electrical fit-out as one coordinated scope — no chasing three contractors, no finger-pointing when something needed adjusting.',
+          name: 'Venkat Reddy',
+          role: 'Reddy Builders Pvt Ltd',
+        },
+        {
+          photo:
+            'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=440&h=440&fit=crop&crop=faces&q=80&auto=format',
+          quote:
+            'Zero lost-time incidents across an 18-month build. Their site team treated our compliance checklist like it was their own.',
+          name: 'Anita Sharma',
+          role: 'National Highways Authority (Vendor)',
+        },
+        {
+          photo:
+            'https://images.unsplash.com/photo-1607746882042-944635dfe10e?w=440&h=440&fit=crop&crop=faces&q=80&auto=format',
+          quote:
+            'Weekly reporting and transparent budgeting meant no surprises at handover. We knew exactly where every rupee went.',
+          name: 'Mohan Das',
+          role: 'Das Commercial Properties',
+        },
+        {
+          photo:
+            'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=440&h=440&fit=crop&crop=faces&q=80&auto=format',
+          quote:
+            'From design to supply to install, one team owned the whole showroom fit-out. The AMC support since handover has been excellent.',
+          name: 'Priya Nair',
+          role: 'Operations Lead, CMR Shopping Mall',
+        },
+      ],
+      padding: 'md',
+      background: 'white',
+    },
+    render: function ConstructionTestimonialsCarouselRender({
+      sectionTitle,
+      slides: rawSlides,
+      padding,
+      background,
+    }) {
+      const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
+      const slides = (rawSlides ?? []).filter((s) => s.quote)
+      const current = slides[0]
+      return (
+        <section
+          ref={ref}
+          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={wrap}>
+            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+              {sectionTitle}
+            </h2>
+            {current && (
+              <div className="max-w-3xl mx-auto text-center">
+                {current.photo && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={current.photo}
+                    alt={current.name}
+                    className="w-24 h-24 rounded-full object-cover mx-auto mb-6"
+                  />
+                )}
+                <p className="text-xl md:text-2xl font-medium text-slate-800 leading-relaxed mb-6">
+                  &#8220;{current.quote}&#8221;
+                </p>
+                <p className="font-semibold text-slate-900">{current.name}</p>
+                {current.role && <p className="text-sm text-slate-500">{current.role}</p>}
+              </div>
+            )}
+            {slides.length > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-10">
+                {slides.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`h-2.5 rounded-full ${
+                      i === 0 ? 'w-6 bg-orange-500' : 'w-2.5 bg-slate-300'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )
+    },
+  },
+
+  ConstructionVideoTestimonials: {
+    label: 'Video Testimonials',
+    fields: {
+      sectionTitle: { type: 'text' },
+      testimonial1Thumbnail: imageField('Thumbnail'),
+      testimonial1Name: { type: 'text' },
+      testimonial1Quote: { type: 'textarea' },
+      testimonial2Thumbnail: imageField('Thumbnail'),
+      testimonial2Name: { type: 'text' },
+      testimonial2Quote: { type: 'textarea' },
+      testimonial3Thumbnail: imageField('Thumbnail'),
+      testimonial3Name: { type: 'text' },
+      testimonial3Quote: { type: 'textarea' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'radio',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      sectionTitle: 'Hear It From Our Clients',
+      testimonial1Thumbnail:
+        'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=640&h=360&fit=crop&auto=format',
+      testimonial1Name: 'Operations Manager, Hospitality Group',
+      testimonial1Quote:
+        'One team handled our entire HVAC and electrical fit-out, start to finish, with no coordination headaches.',
+      testimonial2Thumbnail:
+        'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=640&h=360&fit=crop&auto=format',
+      testimonial2Name: 'Facilities Head, Healthcare Facility',
+      testimonial2Quote:
+        'Critical-area AC and fire safety were sized and installed to code without a single delay to our opening date.',
+      testimonial3Thumbnail:
+        'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=640&h=360&fit=crop&auto=format',
+      testimonial3Name: 'Retail Operations Lead, Shopping Mall',
+      testimonial3Quote:
+        'We compared three vendors for our showroom fit-out — Subhadra Group was the only one that could design, supply and install everything themselves.',
+      padding: 'md',
+      background: 'white',
+    },
+    render: ({
+      sectionTitle,
+      testimonial1Thumbnail,
+      testimonial1Name,
+      testimonial1Quote,
+      testimonial2Thumbnail,
+      testimonial2Name,
+      testimonial2Quote,
+      testimonial3Thumbnail,
+      testimonial3Name,
+      testimonial3Quote,
+      padding,
+      background,
+    }) => {
+      const testimonials = [
+        { thumbnail: testimonial1Thumbnail, name: testimonial1Name, quote: testimonial1Quote },
+        { thumbnail: testimonial2Thumbnail, name: testimonial2Name, quote: testimonial2Quote },
+        { thumbnail: testimonial3Thumbnail, name: testimonial3Name, quote: testimonial3Quote },
+      ].filter((t) => t.thumbnail)
+      return (
+        <section
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={wrap}>
+            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+              {sectionTitle}
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {testimonials.map((t, i) => (
+                <div
+                  key={i}
+                  className="rounded-xl overflow-hidden border border-slate-200 bg-white"
+                >
+                  <div className="relative aspect-video bg-slate-900">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={t.thumbnail}
+                      alt=""
+                      className="w-full h-full object-cover opacity-80"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="w-20 h-20 rounded-full bg-white/95 flex items-center justify-center shadow-xl">
+                        <svg width="26" height="30" viewBox="0 0 26 30" fill="none">
+                          <path d="M0 0L26 15L0 30V0Z" fill="#ea580c" />
+                        </svg>
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-5">
+                    <p className="text-slate-700 text-sm leading-relaxed mb-3">
+                      &#8220;{t.quote}&#8221;
+                    </p>
+                    <p className="font-semibold text-slate-900 text-sm">{t.name}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
   // 9. Process / timeline
   ConstructionProcessTimeline: {
     label: 'Process Timeline',
@@ -6421,7 +6690,12 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
   },
   testimonials: {
     title: 'Testimonials',
-    components: ['ConstructionTestimonials', 'ConstructionClientsGrid'],
+    components: [
+      'ConstructionTestimonials',
+      'ConstructionClientsGrid',
+      'ConstructionTestimonialsCarousel',
+      'ConstructionVideoTestimonials',
+    ],
   },
   contact: {
     title: 'Forms',
