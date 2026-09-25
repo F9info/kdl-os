@@ -276,6 +276,42 @@ type ConstructionProps = {
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
   }
+  ConstructionOrgChart: {
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+    heading: string
+    topName: string
+    topRole: string
+    topPhoto: string
+    report1Name: string
+    report1Role: string
+    report1Photo: string
+    report2Name: string
+    report2Role: string
+    report2Photo: string
+    report3Name: string
+    report3Role: string
+    report3Photo: string
+  }
+  ConstructionTeamStats: {
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+    stat1Value: string
+    stat1Label: string
+    stat2Value: string
+    stat2Label: string
+    stat3Value: string
+    stat3Label: string
+    crew1Photo: string
+    crew1Name: string
+    crew1YearsWithUs: string
+    crew2Photo: string
+    crew2Name: string
+    crew2YearsWithUs: string
+    crew3Photo: string
+    crew3Name: string
+    crew3YearsWithUs: string
+  }
   ConstructionTestimonials: {
     sectionTitle: string
     quote1Text: string
@@ -4097,6 +4133,244 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     },
   },
 
+  // 8. Org chart — 2-tier leadership hierarchy
+  ConstructionOrgChart: {
+    label: 'Org Chart',
+    fields: {
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'radio',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+      heading: { type: 'text' },
+      topName: { type: 'text' },
+      topRole: { type: 'text' },
+      topPhoto: imageField('Photo'),
+      report1Name: { type: 'text' },
+      report1Role: { type: 'text' },
+      report1Photo: imageField('Photo'),
+      report2Name: { type: 'text' },
+      report2Role: { type: 'text' },
+      report2Photo: imageField('Photo'),
+      report3Name: { type: 'text' },
+      report3Role: { type: 'text' },
+      report3Photo: imageField('Photo'),
+    },
+    defaultProps: {
+      padding: 'md',
+      background: 'white',
+      heading: 'Our Organization',
+      topName: 'Ramesh Kumar',
+      topRole: 'Managing Director',
+      topPhoto:
+        'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=300&h=300&fit=crop&crop=faces&auto=format',
+      report1Name: 'Priya Nair',
+      report1Role: 'Head of Engineering',
+      report1Photo:
+        'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=300&h=300&fit=crop&crop=faces&auto=format',
+      report2Name: 'Suresh Reddy',
+      report2Role: 'Head of Operations',
+      report2Photo:
+        'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=300&h=300&fit=crop&crop=faces&auto=format',
+      report3Name: 'Arun Mehta',
+      report3Role: 'Head of Safety & Compliance',
+      report3Photo:
+        'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=300&h=300&fit=crop&crop=faces&auto=format',
+    },
+    render: ({
+      padding,
+      background,
+      heading,
+      topName,
+      topRole,
+      topPhoto,
+      report1Name,
+      report1Role,
+      report1Photo,
+      report2Name,
+      report2Role,
+      report2Photo,
+      report3Name,
+      report3Role,
+      report3Photo,
+    }) => {
+      const reports = [
+        { name: report1Name, role: report1Role, photo: report1Photo },
+        { name: report2Name, role: report2Role, photo: report2Photo },
+        { name: report3Name, role: report3Role, photo: report3Photo },
+      ].filter((r) => r.name)
+      return (
+        <section
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={wrap}>
+            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+              {heading}
+            </h2>
+            <div className="flex justify-center">
+              <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={topPhoto} alt={topName} className="w-12 h-12 rounded-full object-cover" />
+                <div>
+                  <p className="font-semibold text-slate-900 text-sm">{topName}</p>
+                  <p className="text-xs text-orange-600">{topRole}</p>
+                </div>
+              </div>
+            </div>
+            <div className="w-px h-4 bg-slate-300 mx-auto" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {reports.map((r, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={r.photo} alt={r.name} className="w-10 h-10 rounded-full object-cover" />
+                  <div>
+                    <p className="font-semibold text-slate-900 text-sm">{r.name}</p>
+                    <p className="text-xs text-slate-500">{r.role}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // 9. Team stats — stat row + highlighted crew cards
+  ConstructionTeamStats: {
+    label: 'Team Stats',
+    fields: {
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'radio',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+      stat1Value: { type: 'text' },
+      stat1Label: { type: 'text' },
+      stat2Value: { type: 'text' },
+      stat2Label: { type: 'text' },
+      stat3Value: { type: 'text' },
+      stat3Label: { type: 'text' },
+      crew1Photo: imageField('Photo'),
+      crew1Name: { type: 'text' },
+      crew1YearsWithUs: { type: 'text' },
+      crew2Photo: imageField('Photo'),
+      crew2Name: { type: 'text' },
+      crew2YearsWithUs: { type: 'text' },
+      crew3Photo: imageField('Photo'),
+      crew3Name: { type: 'text' },
+      crew3YearsWithUs: { type: 'text' },
+    },
+    defaultProps: {
+      padding: 'md',
+      background: 'muted',
+      stat1Value: '45+',
+      stat1Label: 'Team Members',
+      stat2Value: '300+',
+      stat2Label: 'Combined Years of Experience',
+      stat3Value: '12',
+      stat3Label: 'Certifications Held',
+      crew1Photo:
+        'https://images.unsplash.com/photo-1479839672679-a46483c0e7c8?w=400&h=400&fit=crop&auto=format',
+      crew1Name: 'Ramesh Kapoor',
+      crew1YearsWithUs: '14 years with us',
+      crew2Photo:
+        'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=400&fit=crop&auto=format',
+      crew2Name: 'Sunita Joshi',
+      crew2YearsWithUs: '9 years with us',
+      crew3Photo:
+        'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=400&h=400&fit=crop&auto=format',
+      crew3Name: 'Arun Mehta',
+      crew3YearsWithUs: '7 years with us',
+    },
+    render: ({
+      padding,
+      background,
+      stat1Value,
+      stat1Label,
+      stat2Value,
+      stat2Label,
+      stat3Value,
+      stat3Label,
+      crew1Photo,
+      crew1Name,
+      crew1YearsWithUs,
+      crew2Photo,
+      crew2Name,
+      crew2YearsWithUs,
+      crew3Photo,
+      crew3Name,
+      crew3YearsWithUs,
+    }) => {
+      const stats = [
+        { value: stat1Value, label: stat1Label },
+        { value: stat2Value, label: stat2Label },
+        { value: stat3Value, label: stat3Label },
+      ].filter((s) => s.value)
+      const crew = [
+        { photo: crew1Photo, name: crew1Name, years: crew1YearsWithUs },
+        { photo: crew2Photo, name: crew2Name, years: crew2YearsWithUs },
+        { photo: crew3Photo, name: crew3Name, years: crew3YearsWithUs },
+      ].filter((c) => c.name)
+      return (
+        <section
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={wrap}>
+            <div className="grid grid-cols-3 gap-4 mb-12">
+              {stats.map((s, i) => (
+                <div key={i} className="text-center">
+                  <p className="text-3xl md:text-4xl font-bold text-orange-600">{s.value}</p>
+                  <p className="text-xs md:text-sm text-slate-500 mt-1">{s.label}</p>
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {crew.map((c, i) => (
+                <div
+                  key={i}
+                  className="text-center rounded-xl border border-slate-200 bg-white p-6"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={c.photo}
+                    alt={c.name}
+                    className="w-20 h-20 rounded-full object-cover mx-auto mb-3 border-4 border-orange-100"
+                  />
+                  <p className="font-semibold text-slate-900">{c.name}</p>
+                  <p className="text-xs text-slate-500 mt-1">{c.years}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
   // Clients — paginated logo grid
   ConstructionClientsGrid: {
     label: 'Clients (Paginated Grid)',
@@ -6124,7 +6398,12 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
   },
   team: {
     title: 'Team',
-    components: ['ConstructionTeamCrew', 'ConstructionCertificationsBadges'],
+    components: [
+      'ConstructionTeamCrew',
+      'ConstructionCertificationsBadges',
+      'ConstructionOrgChart',
+      'ConstructionTeamStats',
+    ],
   },
   services: {
     title: 'Services',
