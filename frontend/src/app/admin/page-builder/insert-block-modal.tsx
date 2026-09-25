@@ -349,10 +349,13 @@ export function InsertBlockModal({
         })
     : (categories.find(([key]) => key === activeCat)?.[1].components ?? [])
 
-  const cards = componentKeys.flatMap((key) => {
-    const variants = blockVariants[key] ?? [null]
-    return variants.map((variant, index) => ({ key, variant, index, total: variants.length }))
-  })
+  const cards = withCurrentSelection(
+    componentKeys.flatMap((key) => {
+      const variants = blockVariants[key] ?? [null]
+      return variants.map((variant, index) => ({ key, variant, index, total: variants.length }))
+    }),
+    appState.data.content
+  )
 
   function insertBlock(componentKey: string, variant: string | null) {
     // Top Bar / Header blocks belong above everything else on the page, not
@@ -407,9 +410,18 @@ export function InsertBlockModal({
       onKeyDown={(e) => e.key === 'Escape' && onClose()}
     >
       <div className="flex h-[min(82vh,780px)] w-[min(1120px,95vw)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center gap-3.5 border-b border-slate-200 px-5 py-3.5">
-          <b className="text-base">Insert a block</b>
-          <div className="relative max-w-[300px] flex-1">
+        <div className="relative border-b border-slate-200 px-5 py-4">
+          <h2 className="text-center text-xl font-extrabold sm:text-2xl">Insert a block</h2>
+          <button
+            onClick={onClose}
+            className="absolute right-3.5 top-3.5 rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+            aria-label="Close"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <div className="border-b border-slate-200 px-5 py-3">
+          <div className="relative max-w-[300px]">
             <Search
               size={14}
               className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
@@ -421,14 +433,6 @@ export function InsertBlockModal({
               className="w-full rounded-md border border-slate-200 py-2 pl-8 pr-3 text-sm"
             />
           </div>
-          <span className="flex-1" />
-          <button
-            onClick={onClose}
-            className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-            aria-label="Close"
-          >
-            <X size={20} />
-          </button>
         </div>
         <div className="flex flex-1 overflow-hidden">
           <div className="w-[210px] flex-none overflow-auto border-r border-slate-200 bg-white">
@@ -446,17 +450,18 @@ export function InsertBlockModal({
               </button>
             ))}
           </div>
-          <div className="grid flex-1 auto-rows-min grid-cols-1 gap-4 overflow-auto bg-slate-50 p-5">
+          <div className="grid flex-1 auto-rows-min grid-cols-2 gap-4 overflow-auto bg-slate-50 p-5">
             {cards.length === 0 ? (
               <div className="p-5 text-sm text-slate-400">No blocks match.</div>
             ) : (
-              cards.map(({ key, variant, index, total }) => (
+              cards.map(({ key, variant, index, total, isCurrent }) => (
                 <BlockCard
                   key={`${key}-${variant ?? 'default'}`}
                   componentKey={key}
                   variant={variant}
                   index={index}
                   total={total}
+                  isCurrent={isCurrent}
                   onInsert={insertBlock}
                 />
               ))
@@ -488,17 +493,18 @@ export function InsertBlockModal({
                   </div>
                 ))
               : null}
-            {!q ? (
-              <button
-                onClick={openComposer}
-                className="flex min-h-[210px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 text-blue-600 hover:border-blue-400 hover:bg-blue-50"
-              >
-                <Plus size={22} />
-                <span className="text-sm font-bold">Create new</span>
-              </button>
-            ) : null}
           </div>
         </div>
+        {!q ? (
+          <div className="border-t border-slate-200 p-4.5">
+            <button
+              onClick={openComposer}
+              className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-extrabold text-white hover:bg-blue-700"
+            >
+              + Create new
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   )
