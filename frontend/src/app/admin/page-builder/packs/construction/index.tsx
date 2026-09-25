@@ -635,6 +635,40 @@ type ConstructionProps = {
     videoUrl: string
     padding: 'sm' | 'md' | 'lg'
   }
+  ConstructionVideoGrid: {
+    heading: string
+    video1Thumbnail: string
+    video1Title: string
+    video1Duration: string
+    video2Thumbnail: string
+    video2Title: string
+    video2Duration: string
+    video3Thumbnail: string
+    video3Title: string
+    video3Duration: string
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+  }
+  ConstructionVideoSplitStats: {
+    thumbnail: string
+    videoUrl: string
+    heading: string
+    stat1Value: string
+    stat1Label: string
+    stat2Value: string
+    stat2Label: string
+    stat3Value: string
+    stat3Label: string
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+  }
+  ConstructionVideoReel: {
+    thumbnail: string
+    videoUrl: string
+    caption: string
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+  }
   ConstructionBlogPosts: {
     sectionTitle: string
     post1Image: string
@@ -6123,6 +6157,263 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     ),
   },
 
+  ConstructionVideoGrid: {
+    label: 'Video Grid',
+    fields: {
+      heading: { type: 'text' },
+      video1Thumbnail: imageField('Thumbnail'),
+      video1Title: { type: 'text' },
+      video1Duration: { type: 'text' },
+      video2Thumbnail: imageField('Thumbnail'),
+      video2Title: { type: 'text' },
+      video2Duration: { type: 'text' },
+      video3Thumbnail: imageField('Thumbnail'),
+      video3Title: { type: 'text' },
+      video3Duration: { type: 'text' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'radio',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      heading: 'Watch Our Work',
+      video1Thumbnail:
+        'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=640&h=360&fit=crop&auto=format',
+      video1Title: 'Site Walkthrough: Riverside Villas',
+      video1Duration: '3:42',
+      video2Thumbnail:
+        'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=640&h=360&fit=crop&auto=format',
+      video2Title: 'Safety Training on Site',
+      video2Duration: '5:10',
+      video3Thumbnail:
+        'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=640&h=360&fit=crop&auto=format',
+      video3Title: 'Client Testimonial: Riverside Villas',
+      video3Duration: '2:15',
+      padding: 'md',
+      background: 'white',
+    },
+    render: ({
+      heading,
+      video1Thumbnail,
+      video1Title,
+      video1Duration,
+      video2Thumbnail,
+      video2Title,
+      video2Duration,
+      video3Thumbnail,
+      video3Title,
+      video3Duration,
+      padding,
+      background,
+    }) => {
+      const videos = [
+        { thumbnail: video1Thumbnail, title: video1Title, duration: video1Duration },
+        { thumbnail: video2Thumbnail, title: video2Title, duration: video2Duration },
+        { thumbnail: video3Thumbnail, title: video3Title, duration: video3Duration },
+      ].filter((v) => v.thumbnail)
+      return (
+        <section
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={wrap}>
+            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+              {heading}
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {videos.map((v, i) => (
+                <div
+                  key={i}
+                  className="rounded-xl overflow-hidden border border-slate-200 bg-white"
+                >
+                  <div className="relative aspect-video bg-slate-900">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={v.thumbnail}
+                      alt=""
+                      className="w-full h-full object-cover opacity-80"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="w-12 h-12 rounded-full bg-white/95 flex items-center justify-center shadow-xl">
+                        <svg width="16" height="18" viewBox="0 0 26 30" fill="none">
+                          <path d="M0 0L26 15L0 30V0Z" fill="#ea580c" />
+                        </svg>
+                      </span>
+                    </div>
+                    {v.duration && (
+                      <span className="absolute bottom-2 right-2 rounded bg-black/75 px-1.5 py-0.5 text-xs font-medium text-white">
+                        {v.duration}
+                      </span>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <p className="font-semibold text-slate-900 text-sm">{v.title}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  ConstructionVideoSplitStats: {
+    label: 'Video + Stats Split',
+    fields: {
+      thumbnail: imageField('Thumbnail'),
+      videoUrl: { type: 'text' },
+      heading: { type: 'text' },
+      stat1Value: { type: 'text' },
+      stat1Label: { type: 'text' },
+      stat2Value: { type: 'text' },
+      stat2Label: { type: 'text' },
+      stat3Value: { type: 'text' },
+      stat3Label: { type: 'text' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'radio',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      thumbnail:
+        'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=960&h=720&fit=crop&auto=format',
+      videoUrl: '',
+      heading: 'Why Watch This Video',
+      stat1Value: '500+',
+      stat1Label: 'Projects Shown',
+      stat2Value: '15 min',
+      stat2Label: 'Full Walkthrough',
+      stat3Value: '4K',
+      stat3Label: 'Site Footage Quality',
+      padding: 'md',
+      background: 'white',
+    },
+    render: ({
+      thumbnail,
+      heading,
+      stat1Value,
+      stat1Label,
+      stat2Value,
+      stat2Label,
+      stat3Value,
+      stat3Label,
+      padding,
+      background,
+    }) => {
+      const stats = [
+        { value: stat1Value, label: stat1Label },
+        { value: stat2Value, label: stat2Label },
+        { value: stat3Value, label: stat3Label },
+      ].filter((s) => s.value)
+      return (
+        <section
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={`${wrap} grid grid-cols-1 md:grid-cols-2 gap-10 items-center`}>
+            <div className="relative rounded-2xl overflow-hidden shadow-lg aspect-video bg-slate-900">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={thumbnail} alt="" className="w-full h-full object-cover opacity-80" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="w-16 h-16 rounded-full bg-white/95 flex items-center justify-center shadow-xl">
+                  <svg width="20" height="23" viewBox="0 0 26 30" fill="none">
+                    <path d="M0 0L26 15L0 30V0Z" fill="#ea580c" />
+                  </svg>
+                </span>
+              </div>
+            </div>
+            <div>
+              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-8">{heading}</h2>
+              <div className="grid grid-cols-3 gap-4">
+                {stats.map((s, i) => (
+                  <div key={i}>
+                    <p className="text-2xl md:text-3xl font-bold text-orange-600">{s.value}</p>
+                    <p className="text-xs md:text-sm text-slate-600 mt-1">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  ConstructionVideoReel: {
+    label: 'Video Reel',
+    fields: {
+      thumbnail: imageField('Thumbnail'),
+      videoUrl: { type: 'text' },
+      caption: { type: 'text' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'radio',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      thumbnail:
+        'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=540&h=960&fit=crop&auto=format',
+      videoUrl: '',
+      caption: 'A day on site with our engineering team',
+      padding: 'md',
+      background: 'white',
+    },
+    render: ({ thumbnail, caption, padding, background }) => (
+      <section
+        className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+      >
+        <div className={wrap}>
+          <div className="relative mx-auto max-w-xs rounded-2xl overflow-hidden shadow-lg aspect-[9/16] bg-slate-900">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={thumbnail} alt="" className="w-full h-full object-cover opacity-80" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="w-14 h-14 rounded-full bg-white/95 flex items-center justify-center shadow-xl">
+                <svg width="18" height="21" viewBox="0 0 26 30" fill="none">
+                  <path d="M0 0L26 15L0 30V0Z" fill="#ea580c" />
+                </svg>
+              </span>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 pt-10">
+              <p className="text-white text-sm font-medium">{caption}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    ),
+  },
+
   // ── Blog / news posts ───────────────────────────────────────────────────────
   ConstructionBlogPosts: {
     label: 'Blog Posts',
@@ -6653,7 +6944,12 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
   },
   video: {
     title: 'Video',
-    components: ['ConstructionVideo'],
+    components: [
+      'ConstructionVideo',
+      'ConstructionVideoGrid',
+      'ConstructionVideoSplitStats',
+      'ConstructionVideoReel',
+    ],
   },
   blogpost: {
     title: 'Blog Posts',
