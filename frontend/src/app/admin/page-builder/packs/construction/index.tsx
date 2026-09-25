@@ -463,6 +463,47 @@ type ConstructionProps = {
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
   }
+  ConstructionProjectsGridCards: {
+    heading: string
+    project1Image: string
+    project1Title: string
+    project1Category: string
+    project1Stat: string
+    project2Image: string
+    project2Title: string
+    project2Category: string
+    project2Stat: string
+    project3Image: string
+    project3Title: string
+    project3Category: string
+    project3Stat: string
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+  }
+  ConstructionProjectShowcaseSplit: {
+    image: string
+    title: string
+    description: string
+    stat1Value: string
+    stat1Label: string
+    stat2Value: string
+    stat2Label: string
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+  }
+  ConstructionProjectMapStrip: {
+    heading: string
+    location1Thumbnail: string
+    location1City: string
+    location2Thumbnail: string
+    location2City: string
+    location3Thumbnail: string
+    location3City: string
+    location4Thumbnail: string
+    location4City: string
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+  }
   ConstructionProductsShowcase: {
     sectionTitle: string
     sectionSubtitle: string
@@ -3574,6 +3615,306 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   )}
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // Static 3-project grid — image, category tag, one stat per card
+  ConstructionProjectsGridCards: {
+    label: 'Projects Grid',
+    fields: {
+      heading: { type: 'text' },
+      project1Image: imageField('Image'),
+      project1Title: { type: 'text' },
+      project1Category: { type: 'text' },
+      project1Stat: { type: 'text' },
+      project2Image: imageField('Image'),
+      project2Title: { type: 'text' },
+      project2Category: { type: 'text' },
+      project2Stat: { type: 'text' },
+      project3Image: imageField('Image'),
+      project3Title: { type: 'text' },
+      project3Category: { type: 'text' },
+      project3Stat: { type: 'text' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'select',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      heading: 'Selected Projects',
+      project1Image:
+        'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=480&h=360&fit=crop&auto=format',
+      project1Title: 'Riverside Villas',
+      project1Category: 'Residential',
+      project1Stat: '48 units · 2024',
+      project2Image:
+        'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=480&h=360&fit=crop&auto=format',
+      project2Title: 'Coastal Business Park',
+      project2Category: 'Commercial',
+      project2Stat: '6.5 lakh sq ft',
+      project3Image:
+        'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=480&h=360&fit=crop&auto=format',
+      project3Title: 'Greenfield Logistics Hub',
+      project3Category: 'Industrial',
+      project3Stat: '8.2 lakh sq ft',
+      padding: 'md',
+      background: 'white',
+    },
+    render: ({
+      heading,
+      project1Image,
+      project1Title,
+      project1Category,
+      project1Stat,
+      project2Image,
+      project2Title,
+      project2Category,
+      project2Stat,
+      project3Image,
+      project3Title,
+      project3Category,
+      project3Stat,
+      padding,
+      background,
+    }) => {
+      const projects = [
+        {
+          image: project1Image,
+          title: project1Title,
+          category: project1Category,
+          stat: project1Stat,
+        },
+        {
+          image: project2Image,
+          title: project2Title,
+          category: project2Category,
+          stat: project2Stat,
+        },
+        {
+          image: project3Image,
+          title: project3Title,
+          category: project3Category,
+          stat: project3Stat,
+        },
+      ].filter((p) => p.title)
+      return (
+        <section
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={wrap}>
+            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+              {heading}
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {projects.map((p, i) => (
+                <div key={i} className="rounded-xl overflow-hidden border border-slate-200">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.image} alt={p.title} className="w-full aspect-[4/3] object-cover" />
+                  <div className="p-5">
+                    <span className="inline-block rounded-full bg-orange-50 text-orange-600 text-xs font-semibold px-3 py-1 mb-3">
+                      {p.category}
+                    </span>
+                    <p className="font-semibold text-slate-900">{p.title}</p>
+                    <p className="text-sm text-slate-500 mt-1">{p.stat}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // One large featured project — image split, description, 2 stats
+  ConstructionProjectShowcaseSplit: {
+    label: 'Project Showcase Split',
+    fields: {
+      image: imageField('Image'),
+      title: { type: 'text' },
+      description: { type: 'textarea' },
+      stat1Value: { type: 'text' },
+      stat1Label: { type: 'text' },
+      stat2Value: { type: 'text' },
+      stat2Label: { type: 'text' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'radio',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      image:
+        'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=960&h=720&fit=crop&auto=format',
+      title: 'Meridian Corporate Towers',
+      description:
+        'A 12-lakh sq ft twin-tower commercial complex in Vijayawada, delivered end-to-end — structural design, MEP, and interiors — under a single Subhadra Group contract.',
+      stat1Value: '12 Lakh sq ft',
+      stat1Label: 'Built-up Area',
+      stat2Value: '22 Months',
+      stat2Label: 'Design to Handover',
+      padding: 'md',
+      background: 'white',
+    },
+    render: ({
+      image,
+      title,
+      description,
+      stat1Value,
+      stat1Label,
+      stat2Value,
+      stat2Label,
+      padding,
+      background,
+    }) => {
+      const stats = [
+        { value: stat1Value, label: stat1Label },
+        { value: stat2Value, label: stat2Label },
+      ].filter((s) => s.value)
+      return (
+        <section
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={`${wrap} grid grid-cols-1 md:grid-cols-2 gap-10 items-center`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={image}
+              alt={title}
+              className="rounded-2xl w-full aspect-[4/3] object-cover shadow-lg"
+            />
+            <div>
+              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-4">{title}</h2>
+              {description && <p className="text-slate-600 leading-relaxed mb-8">{description}</p>}
+              <div className="grid grid-cols-2 gap-6">
+                {stats.map((s, i) => (
+                  <div key={i}>
+                    <p className="text-2xl md:text-3xl font-bold text-orange-600">{s.value}</p>
+                    <p className="text-xs md:text-sm text-slate-600 mt-1">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // Horizontal strip of project-location pins — thumbnail + city tag
+  ConstructionProjectMapStrip: {
+    label: 'Project Locations Strip',
+    fields: {
+      heading: { type: 'text' },
+      location1Thumbnail: imageField('Thumbnail'),
+      location1City: { type: 'text' },
+      location2Thumbnail: imageField('Thumbnail'),
+      location2City: { type: 'text' },
+      location3Thumbnail: imageField('Thumbnail'),
+      location3City: { type: 'text' },
+      location4Thumbnail: imageField('Thumbnail'),
+      location4City: { type: 'text' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'select',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      heading: 'Where We Build',
+      location1Thumbnail:
+        'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=200&h=200&fit=crop&auto=format',
+      location1City: 'Vijayawada',
+      location2Thumbnail:
+        'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=200&h=200&fit=crop&auto=format',
+      location2City: 'Visakhapatnam',
+      location3Thumbnail:
+        'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=200&h=200&fit=crop&auto=format',
+      location3City: 'Guntur',
+      location4Thumbnail:
+        'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=200&h=200&fit=crop&auto=format',
+      location4City: 'Tirupati',
+      padding: 'md',
+      background: 'white',
+    },
+    render: ({
+      heading,
+      location1Thumbnail,
+      location1City,
+      location2Thumbnail,
+      location2City,
+      location3Thumbnail,
+      location3City,
+      location4Thumbnail,
+      location4City,
+      padding,
+      background,
+    }) => {
+      const locations = [
+        { thumbnail: location1Thumbnail, city: location1City },
+        { thumbnail: location2Thumbnail, city: location2City },
+        { thumbnail: location3Thumbnail, city: location3City },
+        { thumbnail: location4Thumbnail, city: location4City },
+      ].filter((l) => l.city)
+      return (
+        <section
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={wrap}>
+            {heading && (
+              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+                {heading}
+              </h2>
+            )}
+            <div className="flex flex-wrap justify-center gap-6">
+              {locations.map((l, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 rounded-full border border-slate-200 pl-1.5 pr-5 py-1.5"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={l.thumbnail}
+                    alt={l.city}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                  <span className="font-semibold text-slate-900 text-sm">{l.city}</span>
+                </div>
+              ))}
             </div>
           </div>
         </section>
@@ -6959,6 +7300,14 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
       'ConstructionFeaturedProject',
       'ConstructionNewsTicker',
       'ConstructionCaseStudyGrid',
+    ],
+  },
+  featuredprojects: {
+    title: 'Featured Projects',
+    components: [
+      'ConstructionProjectsGridCards',
+      'ConstructionProjectShowcaseSplit',
+      'ConstructionProjectMapStrip',
     ],
   },
   team: {
