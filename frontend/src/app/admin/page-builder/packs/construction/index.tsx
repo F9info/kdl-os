@@ -221,6 +221,24 @@ type ConstructionProps = {
     project8NumberTag: string
     project8Description: string
     project8Href: string
+    project9Title: string
+    project9Category: string
+    project9Image: string
+    project9NumberTag: string
+    project9Description: string
+    project9Href: string
+    project10Title: string
+    project10Category: string
+    project10Image: string
+    project10NumberTag: string
+    project10Description: string
+    project10Href: string
+    project11Title: string
+    project11Category: string
+    project11Image: string
+    project11NumberTag: string
+    project11Description: string
+    project11Href: string
     padding: 'sm' | 'md' | 'lg'
   }
   ConstructionQuoteCTA: {
@@ -526,36 +544,94 @@ type ConstructionProps = {
     category4Label: string
     product1Category: string
     product1Icon: IconKey
+    product1Image: string
     product1Title: string
     product1Description: string
+    product1Brands: string
     product2Category: string
     product2Icon: IconKey
+    product2Image: string
     product2Title: string
     product2Description: string
+    product2Brands: string
     product3Category: string
     product3Icon: IconKey
+    product3Image: string
     product3Title: string
     product3Description: string
+    product3Brands: string
     product4Category: string
     product4Icon: IconKey
+    product4Image: string
     product4Title: string
     product4Description: string
+    product4Brands: string
     product5Category: string
     product5Icon: IconKey
+    product5Image: string
     product5Title: string
     product5Description: string
+    product5Brands: string
     product6Category: string
     product6Icon: IconKey
+    product6Image: string
     product6Title: string
     product6Description: string
+    product6Brands: string
     product7Category: string
     product7Icon: IconKey
+    product7Image: string
     product7Title: string
     product7Description: string
+    product7Brands: string
     product8Category: string
     product8Icon: IconKey
+    product8Image: string
     product8Title: string
     product8Description: string
+    product8Brands: string
+    product9Category: string
+    product9Icon: 'hardhat' | 'shield' | 'star'
+    product9Image: string
+    product9Title: string
+    product9Description: string
+    product9Brands: string
+    product10Category: string
+    product10Icon: 'hardhat' | 'shield' | 'star'
+    product10Image: string
+    product10Title: string
+    product10Description: string
+    product10Brands: string
+    product11Category: string
+    product11Icon: 'hardhat' | 'shield' | 'star'
+    product11Image: string
+    product11Title: string
+    product11Description: string
+    product11Brands: string
+    product12Category: string
+    product12Icon: 'hardhat' | 'shield' | 'star'
+    product12Image: string
+    product12Title: string
+    product12Description: string
+    product12Brands: string
+    product13Category: string
+    product13Icon: 'hardhat' | 'shield' | 'star'
+    product13Image: string
+    product13Title: string
+    product13Description: string
+    product13Brands: string
+    product14Category: string
+    product14Icon: 'hardhat' | 'shield' | 'star'
+    product14Image: string
+    product14Title: string
+    product14Description: string
+    product14Brands: string
+    product15Category: string
+    product15Icon: 'hardhat' | 'shield' | 'star'
+    product15Image: string
+    product15Title: string
+    product15Description: string
+    product15Brands: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
   }
@@ -984,6 +1060,48 @@ type ConstructionProps = {
     contactCtaLabel: string
     contactCtaHref: string
     padding: 'sm' | 'md' | 'lg'
+  }
+  ConstructionDisciplinesGrid: {
+    sectionTitle: string
+    sectionSubtitle: string
+    discipline1Icon: IconKey
+    discipline1Image: string
+    discipline1Title: string
+    discipline1Description: string
+    discipline1Brands: string
+    discipline1Href: string
+    discipline2Icon: IconKey
+    discipline2Image: string
+    discipline2Title: string
+    discipline2Description: string
+    discipline2Brands: string
+    discipline2Href: string
+    discipline3Icon: IconKey
+    discipline3Image: string
+    discipline3Title: string
+    discipline3Description: string
+    discipline3Brands: string
+    discipline3Href: string
+    discipline4Icon: IconKey
+    discipline4Image: string
+    discipline4Title: string
+    discipline4Description: string
+    discipline4Brands: string
+    discipline4Href: string
+    discipline5Icon: IconKey
+    discipline5Image: string
+    discipline5Title: string
+    discipline5Description: string
+    discipline5Brands: string
+    discipline5Href: string
+    discipline6Icon: IconKey
+    discipline6Image: string
+    discipline6Title: string
+    discipline6Description: string
+    discipline6Brands: string
+    discipline6Href: string
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
   }
   ConstructionSectorsTabbed: {
     heading: string
@@ -3284,52 +3402,70 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       sectionSubtitle: { type: 'textarea' },
       project1Title: { type: 'text' },
       project1Category: { type: 'text' },
-      project1Image: { type: 'text' },
+      project1Image: imageField('Image'),
       project1NumberTag: { type: 'text' },
       project1Description: { type: 'textarea' },
       project1Href: { type: 'text' },
       project2Title: { type: 'text' },
       project2Category: { type: 'text' },
-      project2Image: { type: 'text' },
+      project2Image: imageField('Image'),
       project2NumberTag: { type: 'text' },
       project2Description: { type: 'textarea' },
       project2Href: { type: 'text' },
       project3Title: { type: 'text' },
       project3Category: { type: 'text' },
-      project3Image: { type: 'text' },
+      project3Image: imageField('Image'),
       project3NumberTag: { type: 'text' },
       project3Description: { type: 'textarea' },
       project3Href: { type: 'text' },
       project4Title: { type: 'text' },
       project4Category: { type: 'text' },
-      project4Image: { type: 'text' },
+      project4Image: imageField('Image'),
       project4NumberTag: { type: 'text' },
       project4Description: { type: 'textarea' },
       project4Href: { type: 'text' },
       project5Title: { type: 'text' },
       project5Category: { type: 'text' },
-      project5Image: { type: 'text' },
+      project5Image: imageField('Image'),
       project5NumberTag: { type: 'text' },
       project5Description: { type: 'textarea' },
       project5Href: { type: 'text' },
       project6Title: { type: 'text' },
       project6Category: { type: 'text' },
-      project6Image: { type: 'text' },
+      project6Image: imageField('Image'),
       project6NumberTag: { type: 'text' },
       project6Description: { type: 'textarea' },
       project6Href: { type: 'text' },
       project7Title: { type: 'text' },
       project7Category: { type: 'text' },
-      project7Image: { type: 'text' },
+      project7Image: imageField('Image'),
       project7NumberTag: { type: 'text' },
       project7Description: { type: 'textarea' },
       project7Href: { type: 'text' },
       project8Title: { type: 'text' },
       project8Category: { type: 'text' },
-      project8Image: { type: 'text' },
+      project8Image: imageField('Image'),
       project8NumberTag: { type: 'text' },
       project8Description: { type: 'textarea' },
       project8Href: { type: 'text' },
+      project9Title: { type: 'text' },
+      project9Category: { type: 'text' },
+      project9Image: imageField('Image'),
+      project9NumberTag: { type: 'text' },
+      project9Description: { type: 'textarea' },
+      project9Href: { type: 'text' },
+      project10Title: { type: 'text' },
+      project10Category: { type: 'text' },
+      project10Image: imageField('Image'),
+      project10NumberTag: { type: 'text' },
+      project10Description: { type: 'textarea' },
+      project10Href: { type: 'text' },
+      project11Title: { type: 'text' },
+      project11Category: { type: 'text' },
+      project11Image: imageField('Image'),
+      project11NumberTag: { type: 'text' },
+      project11Description: { type: 'textarea' },
+      project11Href: { type: 'text' },
       padding: {
         type: 'select',
         options: [
@@ -3340,56 +3476,79 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       },
     },
     defaultProps: {
-      sectionTitle: 'Sectors We Serve',
-      sectionSubtitle: 'Specialised delivery across every major construction vertical.',
-      project1Title: 'Sector One',
+      sectionTitle: 'Solutions for every space',
+      sectionSubtitle:
+        'From luxury residences to hotels, hospitals, showrooms and industrial plants — scroll to explore.',
+      project1Title: 'Villa',
       project1Category: 'Residential',
-      project1Image: 'https://placehold.co/600x450/475569/ffffff?text=Sector+One',
+      project1Image: '/seed/subhadra/sectors/villa.jpg',
       project1NumberTag: '01',
-      project1Description: 'Placeholder description for this sector.',
-      project1Href: '#sector-1',
-      project2Title: 'Sector Two',
-      project2Category: 'Commercial',
-      project2Image: 'https://placehold.co/600x450/334155/ffffff?text=Sector+Two',
+      project1Description: 'Comfort, control and cinema for private residences.',
+      project1Href: '#villa',
+      project2Title: 'Hotel',
+      project2Category: 'Hospitality',
+      project2Image: '/seed/subhadra/sectors/hotel.jpg',
       project2NumberTag: '02',
-      project2Description: 'Placeholder description for this sector.',
-      project2Href: '#sector-2',
-      project3Title: 'Sector Three',
-      project3Category: 'Infrastructure',
-      project3Image: 'https://placehold.co/600x450/1e293b/ffffff?text=Sector+Three',
+      project2Description: 'Guest-room comfort that runs all day, every day.',
+      project2Href: '#hotel',
+      project3Title: 'Hospital',
+      project3Category: 'Healthcare',
+      project3Image:
+        'https://images.unsplash.com/photo-1626315869436-d6781ba69d6e?w=600&h=800&fit=crop&q=75&auto=format',
       project3NumberTag: '03',
-      project3Description: 'Placeholder description for this sector.',
-      project3Href: '#sector-3',
-      project4Title: 'Sector Four',
-      project4Category: 'Institutional',
-      project4Image: 'https://placehold.co/600x450/0f172a/ffffff?text=Sector+Four',
+      project3Description: 'Critical-area AC, fire safety and power backup, built to compliance.',
+      project3Href: '#hospital',
+      project4Title: 'Showrooms',
+      project4Category: 'Retail',
+      project4Image: '/seed/subhadra/sectors/showrooms.jpg',
       project4NumberTag: '04',
-      project4Description: 'Placeholder description for this sector.',
-      project4Href: '#sector-4',
-      project5Title: 'Sector Five',
-      project5Category: 'Industrial',
-      project5Image: 'https://placehold.co/600x450/1e3a5f/ffffff?text=Sector+Five',
+      project4Description: 'Cooling, lighting and access control for retail floors.',
+      project4Href: '#showrooms',
+      project5Title: 'Convention Center',
+      project5Category: 'Events',
+      project5Image: '/seed/subhadra/sectors/convention-center.jpg',
       project5NumberTag: '05',
-      project5Description: 'Placeholder description for this sector.',
-      project5Href: '#sector-5',
-      project6Title: 'Sector Six',
-      project6Category: 'Specialist',
-      project6Image: 'https://placehold.co/600x450/14532d/ffffff?text=Sector+Six',
+      project5Description: 'High-load cooling and professional audio.',
+      project5Href: '#convention-center',
+      project6Title: 'Education',
+      project6Category: 'Institutional',
+      project6Image: '/seed/subhadra/sectors/educational-institute.jpg',
       project6NumberTag: '06',
-      project6Description: 'Placeholder description for this sector.',
-      project6Href: '#sector-6',
-      project7Title: 'Sector Seven',
-      project7Category: 'Hospitality',
-      project7Image: 'https://placehold.co/600x450/78350f/ffffff?text=Sector+Seven',
+      project6Description: 'Campus electrical, networking and safety.',
+      project6Href: '#educational-institute',
+      project7Title: 'Builder',
+      project7Category: 'Construction',
+      project7Image: '/seed/subhadra/sectors/builder.jpg',
       project7NumberTag: '07',
-      project7Description: 'Placeholder description for this sector.',
-      project7Href: '#sector-7',
-      project8Title: 'Sector Eight',
-      project8Category: 'Retail',
-      project8Image: 'https://placehold.co/600x450/581c87/ffffff?text=Sector+Eight',
+      project7Description: 'Turnkey MEP packages, block after block, on schedule.',
+      project7Href: '#builder',
+      project8Title: 'Industry',
+      project8Category: 'Industrial',
+      project8Image: '/seed/subhadra/sectors/industry.jpg',
       project8NumberTag: '08',
-      project8Description: 'Placeholder description for this sector.',
-      project8Href: '#sector-8',
+      project8Description: 'Transformers, switchgear and plant maintenance.',
+      project8Href: '#industry',
+      project9Title: 'Government',
+      project9Category: 'Public',
+      project9Image:
+        'https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=600&h=800&fit=crop&q=75&auto=format',
+      project9NumberTag: '09',
+      project9Description: 'Compliant electrical, safety and power backup for public buildings.',
+      project9Href: '#government',
+      project10Title: 'Premium Flats',
+      project10Category: 'Residential',
+      project10Image:
+        'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=800&fit=crop&q=75&auto=format',
+      project10NumberTag: '10',
+      project10Description: 'Snag-free AC, electrical and automation fit-outs for apartments.',
+      project10Href: '#premium-flats',
+      project11Title: 'Gated Communities',
+      project11Category: 'Township',
+      project11Image:
+        'https://images.unsplash.com/photo-1580216643062-cf460548a66a?w=600&h=800&fit=crop&q=75&auto=format',
+      project11NumberTag: '11',
+      project11Description: 'Gate automation, security and electrical for entire townships.',
+      project11Href: '#gated-communities',
       padding: 'md',
     },
     render: function ConstructionProjectGalleryRender({
@@ -3443,7 +3602,25 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       project8NumberTag,
       project8Description,
       project8Href,
+      project9Title,
+      project9Category,
+      project9Image,
+      project9NumberTag,
+      project9Description,
+      project9Href,
       padding,
+      project10Title,
+      project10Category,
+      project10Image,
+      project10NumberTag,
+      project10Description,
+      project10Href,
+      project11Title,
+      project11Category,
+      project11Image,
+      project11NumberTag,
+      project11Description,
+      project11Href,
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
       const projects = [
@@ -3510,6 +3687,30 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           numberTag: project8NumberTag,
           description: project8Description,
           href: project8Href,
+        },
+        {
+          title: project9Title,
+          category: project9Category,
+          image: project9Image,
+          numberTag: project9NumberTag,
+          description: project9Description,
+          href: project9Href,
+        },
+        {
+          title: project10Title,
+          category: project10Category,
+          image: project10Image,
+          numberTag: project10NumberTag,
+          description: project10Description,
+          href: project10Href,
+        },
+        {
+          title: project11Title,
+          category: project11Category,
+          image: project11Image,
+          numberTag: project11NumberTag,
+          description: project11Description,
+          href: project11Href,
         },
       ].filter((p) => p.title)
       return (
@@ -4207,8 +4408,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           { label: 'Star', value: 'star' },
         ],
       },
+      product1Image: imageField('Image'),
       product1Title: { type: 'text' },
       product1Description: { type: 'textarea' },
+      product1Brands: { type: 'text' },
       product2Category: { type: 'text' },
       product2Icon: {
         type: 'select',
@@ -4218,8 +4421,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           { label: 'Star', value: 'star' },
         ],
       },
+      product2Image: imageField('Image'),
       product2Title: { type: 'text' },
       product2Description: { type: 'textarea' },
+      product2Brands: { type: 'text' },
       product3Category: { type: 'text' },
       product3Icon: {
         type: 'select',
@@ -4229,8 +4434,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           { label: 'Star', value: 'star' },
         ],
       },
+      product3Image: imageField('Image'),
       product3Title: { type: 'text' },
       product3Description: { type: 'textarea' },
+      product3Brands: { type: 'text' },
       product4Category: { type: 'text' },
       product4Icon: {
         type: 'select',
@@ -4240,8 +4447,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           { label: 'Star', value: 'star' },
         ],
       },
+      product4Image: imageField('Image'),
       product4Title: { type: 'text' },
       product4Description: { type: 'textarea' },
+      product4Brands: { type: 'text' },
       product5Category: { type: 'text' },
       product5Icon: {
         type: 'select',
@@ -4251,8 +4460,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           { label: 'Star', value: 'star' },
         ],
       },
+      product5Image: imageField('Image'),
       product5Title: { type: 'text' },
       product5Description: { type: 'textarea' },
+      product5Brands: { type: 'text' },
       product6Category: { type: 'text' },
       product6Icon: {
         type: 'select',
@@ -4262,8 +4473,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           { label: 'Star', value: 'star' },
         ],
       },
+      product6Image: imageField('Image'),
       product6Title: { type: 'text' },
       product6Description: { type: 'textarea' },
+      product6Brands: { type: 'text' },
       product7Category: { type: 'text' },
       product7Icon: {
         type: 'select',
@@ -4273,8 +4486,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           { label: 'Star', value: 'star' },
         ],
       },
+      product7Image: imageField('Image'),
       product7Title: { type: 'text' },
       product7Description: { type: 'textarea' },
+      product7Brands: { type: 'text' },
       product8Category: { type: 'text' },
       product8Icon: {
         type: 'select',
@@ -4284,8 +4499,101 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           { label: 'Star', value: 'star' },
         ],
       },
+      product8Image: imageField('Image'),
       product8Title: { type: 'text' },
       product8Description: { type: 'textarea' },
+      product8Brands: { type: 'text' },
+      product9Category: { type: 'text' },
+      product9Icon: {
+        type: 'select',
+        options: [
+          { label: 'Hard Hat', value: 'hardhat' },
+          { label: 'Shield', value: 'shield' },
+          { label: 'Star', value: 'star' },
+        ],
+      },
+      product9Image: imageField('Image'),
+      product9Title: { type: 'text' },
+      product9Description: { type: 'textarea' },
+      product9Brands: { type: 'text' },
+      product10Category: { type: 'text' },
+      product10Icon: {
+        type: 'select',
+        options: [
+          { label: 'Hard Hat', value: 'hardhat' },
+          { label: 'Shield', value: 'shield' },
+          { label: 'Star', value: 'star' },
+        ],
+      },
+      product10Image: imageField('Image'),
+      product10Title: { type: 'text' },
+      product10Description: { type: 'textarea' },
+      product10Brands: { type: 'text' },
+      product11Category: { type: 'text' },
+      product11Icon: {
+        type: 'select',
+        options: [
+          { label: 'Hard Hat', value: 'hardhat' },
+          { label: 'Shield', value: 'shield' },
+          { label: 'Star', value: 'star' },
+        ],
+      },
+      product11Image: imageField('Image'),
+      product11Title: { type: 'text' },
+      product11Description: { type: 'textarea' },
+      product11Brands: { type: 'text' },
+      product12Category: { type: 'text' },
+      product12Icon: {
+        type: 'select',
+        options: [
+          { label: 'Hard Hat', value: 'hardhat' },
+          { label: 'Shield', value: 'shield' },
+          { label: 'Star', value: 'star' },
+        ],
+      },
+      product12Image: imageField('Image'),
+      product12Title: { type: 'text' },
+      product12Description: { type: 'textarea' },
+      product12Brands: { type: 'text' },
+      product13Category: { type: 'text' },
+      product13Icon: {
+        type: 'select',
+        options: [
+          { label: 'Hard Hat', value: 'hardhat' },
+          { label: 'Shield', value: 'shield' },
+          { label: 'Star', value: 'star' },
+        ],
+      },
+      product13Image: imageField('Image'),
+      product13Title: { type: 'text' },
+      product13Description: { type: 'textarea' },
+      product13Brands: { type: 'text' },
+      product14Category: { type: 'text' },
+      product14Icon: {
+        type: 'select',
+        options: [
+          { label: 'Hard Hat', value: 'hardhat' },
+          { label: 'Shield', value: 'shield' },
+          { label: 'Star', value: 'star' },
+        ],
+      },
+      product14Image: imageField('Image'),
+      product14Title: { type: 'text' },
+      product14Description: { type: 'textarea' },
+      product14Brands: { type: 'text' },
+      product15Category: { type: 'text' },
+      product15Icon: {
+        type: 'select',
+        options: [
+          { label: 'Hard Hat', value: 'hardhat' },
+          { label: 'Shield', value: 'shield' },
+          { label: 'Star', value: 'star' },
+        ],
+      },
+      product15Image: imageField('Image'),
+      product15Title: { type: 'text' },
+      product15Description: { type: 'textarea' },
+      product15Brands: { type: 'text' },
       padding: {
         type: 'select',
         options: [
@@ -4303,44 +4611,120 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       },
     },
     defaultProps: {
-      sectionTitle: 'Our Products',
-      sectionSubtitle: 'Sourced and supplied through our vetted vendor network.',
-      category1Label: 'Category One',
-      category2Label: 'Category Two',
-      category3Label: 'Category Three',
-      category4Label: 'Category Four',
-      product1Category: 'Category One',
+      sectionTitle: 'Everything for your building, in stock',
+      sectionSubtitle:
+        'We deal only in world-class brands that are pioneers in their fields — Schneider Electric, Blue Star, Polycab, RR Kabel, Crompton, Cummins and more.',
+      category1Label: 'Electrical',
+      category2Label: 'Climate & refrigeration',
+      category3Label: 'Safety & systems',
+      category4Label: 'Automation',
+      product1Category: 'Electrical',
       product1Icon: 'hardhat',
-      product1Title: 'Product One',
-      product1Description: 'Placeholder product description for this listing.',
-      product2Category: 'Category One',
+      product1Image:
+        'https://images.unsplash.com/photo-1623707430101-9e74cefe05e2?w=700&h=525&fit=crop&q=75&auto=format',
+      product1Title: 'Switches & wiring devices',
+      product1Description: 'Livia, Zencelo, Unica Pure, Clipsal X, Avatar On, Cube Series.',
+      product1Brands: 'Schneider Electric · Norisys',
+      product2Category: 'Electrical',
       product2Icon: 'shield',
-      product2Title: 'Product Two',
-      product2Description: 'Placeholder product description for this listing.',
-      product3Category: 'Category Two',
+      product2Image:
+        'https://images.unsplash.com/photo-1753272691001-4d68806ac590?w=700&h=525&fit=crop&q=75&auto=format',
+      product2Title: 'MCB, DB & switchgear',
+      product2Description: 'Distribution boards, MCB/MCCB, ACB and panel boards.',
+      product2Brands: 'Schneider Electric',
+      product3Category: 'Climate & refrigeration',
       product3Icon: 'star',
-      product3Title: 'Product Three',
-      product3Description: 'Placeholder product description for this listing.',
-      product4Category: 'Category Two',
+      product3Image:
+        'https://images.unsplash.com/photo-1718203862467-c33159fdc504?w=700&h=525&fit=crop&q=75&auto=format',
+      product3Title: 'Central & VRF AC',
+      product3Description:
+        'Centralized AC, chillers, VRF and cassette units for offices, hotels and retail.',
+      product3Brands: 'Blue Star',
+      product4Category: 'Climate & refrigeration',
       product4Icon: 'hardhat',
-      product4Title: 'Product Four',
-      product4Description: 'Placeholder product description for this listing.',
-      product5Category: 'Category Three',
+      product4Image:
+        'https://images.unsplash.com/photo-1564998115952-368e7d4969ea?w=700&h=525&fit=crop&q=75&auto=format',
+      product4Title: 'Refrigeration',
+      product4Description: 'Visi coolers, deep freezers, water coolers and ice-cube machines.',
+      product4Brands: 'Blue Star',
+      product5Category: 'Safety & systems',
       product5Icon: 'shield',
-      product5Title: 'Product Five',
-      product5Description: 'Placeholder product description for this listing.',
-      product6Category: 'Category Three',
+      product5Image:
+        'https://images.unsplash.com/photo-1643123182527-3bd30840e7ed?w=700&h=525&fit=crop&q=75&auto=format',
+      product5Title: 'CCTV',
+      product5Description: 'Dome, bullet, PTZ, number-plate and face-recognition cameras.',
+      product5Brands: 'CP Plus · Honeywell · Matrix',
+      product6Category: 'Safety & systems',
       product6Icon: 'star',
-      product6Title: 'Product Six',
-      product6Description: 'Placeholder product description for this listing.',
-      product7Category: 'Category Four',
+      product6Image:
+        'https://images.unsplash.com/photo-1508817172652-4be4be2795cb?w=700&h=525&fit=crop&q=75&auto=format',
+      product6Title: 'Fire alarm & fighting',
+      product6Description: 'Panels, detectors, sprinklers, booster pumps and extinguishers.',
+      product6Brands: 'Honeywell · Minimax · Tyco',
+      product7Category: 'Automation',
       product7Icon: 'hardhat',
-      product7Title: 'Product Seven',
-      product7Description: 'Placeholder product description for this listing.',
-      product8Category: 'Category Four',
+      product7Image: '/seed/subhadra/products/home-automation.jpg',
+      product7Title: 'Home automation',
+      product7Description: 'Retrofit and centralized control of lighting, curtains and AC.',
+      product7Brands: 'Schneider · Toyama · Bticino',
+      product8Category: 'Automation',
       product8Icon: 'shield',
-      product8Title: 'Product Eight',
-      product8Description: 'Placeholder product description for this listing.',
+      product8Image:
+        'https://images.unsplash.com/photo-1773867567872-3ad1fa481082?w=700&h=525&fit=crop&q=75&auto=format',
+      product8Title: 'Home theater',
+      product8Description: 'Dolby Atmos rooms, 4K projection, acoustic design and multiroom audio.',
+      product8Brands: 'Focal · Sony · Denon',
+      product9Category: 'Electrical',
+      product9Icon: 'star',
+      product9Image:
+        'https://images.unsplash.com/photo-1775714351784-51e93e4c12a7?w=700&h=525&fit=crop&q=75&auto=format',
+      product9Title: 'Cables & wires',
+      product9Description: 'Flexible LT/HT cables and FR/FR-LSH/LSOH house wiring, all sizes.',
+      product9Brands: 'Polycab · RR Kabel',
+      product10Category: 'Electrical',
+      product10Icon: 'hardhat',
+      product10Image:
+        'https://images.unsplash.com/photo-1780445392484-38a4852a1fd8?w=700&h=525&fit=crop&q=75&auto=format',
+      product10Title: 'Generators & UPS',
+      product10Description: '15 KVA to 3750 KVA silent diesel generators, online UPS from 1 KVA.',
+      product10Brands: 'Cummins · APC',
+      product11Category: 'Electrical',
+      product11Icon: 'shield',
+      product11Image:
+        'https://images.unsplash.com/photo-1758448755856-01d3add0177b?w=700&h=525&fit=crop&q=75&auto=format',
+      product11Title: 'Lights',
+      product11Description: 'COB spots, panels, street and flood lighting.',
+      product11Brands: 'Wipro · Crompton · Halonix',
+      product12Category: 'Electrical',
+      product12Icon: 'star',
+      product12Image:
+        'https://images.unsplash.com/photo-1698653223542-3319103c425b?w=700&h=525&fit=crop&q=75&auto=format',
+      product12Title: 'Fans & ventilation',
+      product12Description: 'Designer ceiling fans, ventilation and fresh-air fans.',
+      product12Brands: 'Crompton · WadBros',
+      product13Category: 'Safety & systems',
+      product13Icon: 'hardhat',
+      product13Image:
+        'https://images.unsplash.com/photo-1585079374502-415f8516dcc3?w=700&h=525&fit=crop&q=75&auto=format',
+      product13Title: 'Access control',
+      product13Description: 'Biometric & proximity access, attendance systems.',
+      product13Brands: 'Matrix',
+      product14Category: 'Safety & systems',
+      product14Icon: 'shield',
+      product14Image:
+        'https://images.unsplash.com/photo-1630965764686-159c575031b3?w=700&h=525&fit=crop&q=75&auto=format',
+      product14Title: 'PA system',
+      product14Description:
+        'Public address for showrooms, malls, hotels, hospitals and industries.',
+      product14Brands: 'Ahuja · Honeywell · Bosch',
+      product15Category: 'Automation',
+      product15Icon: 'star',
+      product15Image:
+        'https://images.unsplash.com/photo-1682559736721-c2e77ff4c650?w=700&h=525&fit=crop&q=75&auto=format',
+      product15Title: 'Networking solutions',
+      product15Description:
+        'Structured cabling, switches and enterprise Wi-Fi for offices and campuses.',
+      product15Brands: 'Matrix',
       padding: 'md',
       background: 'white',
     },
@@ -4353,37 +4737,95 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       category4Label,
       product1Category,
       product1Icon,
+      product1Image,
       product1Title,
       product1Description,
+      product1Brands,
       product2Category,
       product2Icon,
+      product2Image,
       product2Title,
       product2Description,
+      product2Brands,
       product3Category,
       product3Icon,
+      product3Image,
       product3Title,
       product3Description,
+      product3Brands,
       product4Category,
       product4Icon,
+      product4Image,
       product4Title,
       product4Description,
+      product4Brands,
       product5Category,
       product5Icon,
+      product5Image,
       product5Title,
       product5Description,
+      product5Brands,
       product6Category,
       product6Icon,
+      product6Image,
       product6Title,
       product6Description,
+      product6Brands,
       product7Category,
       product7Icon,
+      product7Image,
       product7Title,
       product7Description,
+      product7Brands,
       product8Category,
       product8Icon,
+      product8Image,
       product8Title,
       product8Description,
+      product8Brands,
       padding,
+      product9Category,
+      product9Icon,
+      product9Image,
+      product9Title,
+      product9Description,
+      product9Brands,
+      product10Category,
+      product10Icon,
+      product10Image,
+      product10Title,
+      product10Description,
+      product10Brands,
+      product11Category,
+      product11Icon,
+      product11Image,
+      product11Title,
+      product11Description,
+      product11Brands,
+      product12Category,
+      product12Icon,
+      product12Image,
+      product12Title,
+      product12Description,
+      product12Brands,
+      product13Category,
+      product13Icon,
+      product13Image,
+      product13Title,
+      product13Description,
+      product13Brands,
+      product14Category,
+      product14Icon,
+      product14Image,
+      product14Title,
+      product14Description,
+      product14Brands,
+      product15Category,
+      product15Icon,
+      product15Image,
+      product15Title,
+      product15Description,
+      product15Brands,
       background,
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
@@ -4394,50 +4836,122 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         {
           category: product1Category,
           icon: product1Icon,
+          image: product1Image,
           title: product1Title,
           description: product1Description,
+          brands: product1Brands,
         },
         {
           category: product2Category,
           icon: product2Icon,
+          image: product2Image,
           title: product2Title,
           description: product2Description,
+          brands: product2Brands,
         },
         {
           category: product3Category,
           icon: product3Icon,
+          image: product3Image,
           title: product3Title,
           description: product3Description,
+          brands: product3Brands,
         },
         {
           category: product4Category,
           icon: product4Icon,
+          image: product4Image,
           title: product4Title,
           description: product4Description,
+          brands: product4Brands,
         },
         {
           category: product5Category,
           icon: product5Icon,
+          image: product5Image,
           title: product5Title,
           description: product5Description,
+          brands: product5Brands,
         },
         {
           category: product6Category,
           icon: product6Icon,
+          image: product6Image,
           title: product6Title,
           description: product6Description,
+          brands: product6Brands,
         },
         {
           category: product7Category,
           icon: product7Icon,
+          image: product7Image,
           title: product7Title,
           description: product7Description,
+          brands: product7Brands,
         },
         {
           category: product8Category,
           icon: product8Icon,
+          image: product8Image,
           title: product8Title,
           description: product8Description,
+          brands: product8Brands,
+        },
+        {
+          category: product9Category,
+          icon: product9Icon,
+          image: product9Image,
+          title: product9Title,
+          description: product9Description,
+          brands: product9Brands,
+        },
+        {
+          category: product10Category,
+          icon: product10Icon,
+          image: product10Image,
+          title: product10Title,
+          description: product10Description,
+          brands: product10Brands,
+        },
+        {
+          category: product11Category,
+          icon: product11Icon,
+          image: product11Image,
+          title: product11Title,
+          description: product11Description,
+          brands: product11Brands,
+        },
+        {
+          category: product12Category,
+          icon: product12Icon,
+          image: product12Image,
+          title: product12Title,
+          description: product12Description,
+          brands: product12Brands,
+        },
+        {
+          category: product13Category,
+          icon: product13Icon,
+          image: product13Image,
+          title: product13Title,
+          description: product13Description,
+          brands: product13Brands,
+        },
+        {
+          category: product14Category,
+          icon: product14Icon,
+          image: product14Image,
+          title: product14Title,
+          description: product14Description,
+          brands: product14Brands,
+        },
+        {
+          category: product15Category,
+          icon: product15Icon,
+          image: product15Image,
+          title: product15Title,
+          description: product15Description,
+          brands: product15Brands,
         },
       ].filter((p) => p.title)
       const [activeTab, setActiveTab] = useState(categories[0] ?? '')
@@ -4478,13 +4992,24 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 return (
                   <div
                     key={i}
-                    className="rounded-xl border border-slate-200 bg-white p-5 hover:shadow-md transition"
+                    className="overflow-hidden rounded-xl border border-slate-200 bg-white hover:shadow-md transition"
                   >
-                    <div className="text-orange-500 mb-3">
-                      <Icon />
+                    {p.image && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={p.image} alt={p.title} className="h-40 w-full object-cover" />
+                    )}
+                    <div className="p-5">
+                      {!p.image && (
+                        <div className="text-orange-500 mb-3">
+                          <Icon />
+                        </div>
+                      )}
+                      <h3 className="font-semibold text-slate-900 mb-1">{p.title}</h3>
+                      <p className="text-slate-600 text-sm leading-relaxed">{p.description}</p>
+                      {p.brands && (
+                        <p className="mt-2 text-xs font-medium text-orange-600">{p.brands}</p>
+                      )}
                     </div>
-                    <h3 className="font-semibold text-slate-900 mb-1">{p.title}</h3>
-                    <p className="text-slate-600 text-sm leading-relaxed">{p.description}</p>
                   </div>
                 )
               })}
@@ -8876,6 +9401,274 @@ const typedComponents: Config<ConstructionProps>['components'] = {
   // Sectors — 3 tabbed sector descriptions (static tab switch, mirrors
   // ConstructionOurBrands's tab pattern: useState picks the active tab,
   // all tabs are rendered client-side, no server state).
+  ConstructionDisciplinesGrid: {
+    label: 'Disciplines Grid',
+    fields: {
+      sectionTitle: { type: 'text' },
+      sectionSubtitle: { type: 'textarea' },
+      discipline1Icon: DISCIPLINE_ICON_FIELD,
+      discipline1Image: imageField('Image'),
+      discipline1Title: { type: 'text' },
+      discipline1Description: { type: 'textarea' },
+      discipline1Brands: { type: 'text' },
+      discipline1Href: { type: 'text' },
+      discipline2Icon: DISCIPLINE_ICON_FIELD,
+      discipline2Image: imageField('Image'),
+      discipline2Title: { type: 'text' },
+      discipline2Description: { type: 'textarea' },
+      discipline2Brands: { type: 'text' },
+      discipline2Href: { type: 'text' },
+      discipline3Icon: DISCIPLINE_ICON_FIELD,
+      discipline3Image: imageField('Image'),
+      discipline3Title: { type: 'text' },
+      discipline3Description: { type: 'textarea' },
+      discipline3Brands: { type: 'text' },
+      discipline3Href: { type: 'text' },
+      discipline4Icon: DISCIPLINE_ICON_FIELD,
+      discipline4Image: imageField('Image'),
+      discipline4Title: { type: 'text' },
+      discipline4Description: { type: 'textarea' },
+      discipline4Brands: { type: 'text' },
+      discipline4Href: { type: 'text' },
+      discipline5Icon: DISCIPLINE_ICON_FIELD,
+      discipline5Image: imageField('Image'),
+      discipline5Title: { type: 'text' },
+      discipline5Description: { type: 'textarea' },
+      discipline5Brands: { type: 'text' },
+      discipline5Href: { type: 'text' },
+      discipline6Icon: DISCIPLINE_ICON_FIELD,
+      discipline6Image: imageField('Image'),
+      discipline6Title: { type: 'text' },
+      discipline6Description: { type: 'textarea' },
+      discipline6Brands: { type: 'text' },
+      discipline6Href: { type: 'text' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'radio',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      sectionTitle: 'Six disciplines, engineered as one system',
+      sectionSubtitle:
+        'Designed, supplied, installed and maintained by one accountable team — with a dedicated service manager for every discipline.',
+      discipline1Icon: 'snowflake',
+      discipline1Image:
+        'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=800&h=600&fit=crop&q=80&auto=format',
+      discipline1Title: 'Central AC',
+      discipline1Description:
+        'Centralized air-conditioning sized, supplied and installed by our own engineers — from single rooms to full commercial buildings, backed by annual maintenance and genuine spares on call.',
+      discipline1Brands: 'Blue Star',
+      discipline1Href: '#products',
+      discipline2Icon: 'plug',
+      discipline2Image: '/seed/subhadra/products/mcb1.jpg',
+      discipline2Title: 'Electrical & Switchgear',
+      discipline2Description:
+        'We supply complete range of Switches, Wires, MCBs, Distribution Boards, Cables, Switchgear, Panel Boards, Generators, Transformers, UPS, Stabilizers.',
+      discipline2Brands: 'Schneider Electric',
+      discipline2Href: '#products',
+      discipline3Icon: 'shield',
+      discipline3Image:
+        'https://images.unsplash.com/photo-1643123182527-3bd30840e7ed?w=900&h=675&fit=crop&q=80&auto=format',
+      discipline3Title: 'Safety and Security Solutions',
+      discipline3Description:
+        'CCTV, video analytics, access control, fire alarm, intrusion alarm and fire-fighting systems designed and installed by our own team — so every entry point is covered and safety never waits.',
+      discipline3Brands: 'Honeywell · Minimax · Tyco',
+      discipline3Href: '#products',
+      discipline4Icon: 'housegear',
+      discipline4Image: '/seed/subhadra/products/home-automation.jpg',
+      discipline4Title: 'Home Automation',
+      discipline4Description:
+        'Lighting, AC, curtains and appliances — retrofit or centralized, all on one interface you control from anywhere, with voice control and scheduled scenes for everyday comfort.',
+      discipline4Brands: 'Schneider · RTI · Bticino',
+      discipline4Href: '#products',
+      discipline5Icon: 'tv',
+      discipline5Image:
+        'https://images.unsplash.com/photo-1631702825172-a9a848c473ad?w=900&h=675&fit=crop&q=80&auto=format',
+      discipline5Title: 'Home Theater',
+      discipline5Description:
+        'Dolby Atmos rooms, 4K projection and multiroom audio — custom-built and installed by our own team, with acoustic treatment and calibration for true cinema-grade sound.',
+      discipline5Brands: 'Focal · Sony · Denon',
+      discipline5Href: '#products',
+      discipline6Icon: 'lightbulb',
+      discipline6Image:
+        'https://images.unsplash.com/photo-1524634126442-357e0eac3c14?w=900&h=675&fit=crop&q=80&auto=format',
+      discipline6Title: 'Premium Lighting',
+      discipline6Description:
+        'Designer, architectural and smart-dimmable lighting — specified, supplied and installed to elevate every room, with layered scenes for ambience, task and accent lighting.',
+      discipline6Brands: 'Wipro · Crompton · Philips',
+      discipline6Href: '#products',
+      padding: 'md',
+      background: 'white',
+    },
+    render: function ConstructionDisciplinesGridRender({
+      sectionTitle,
+      sectionSubtitle,
+      discipline1Icon,
+      discipline1Image,
+      discipline1Title,
+      discipline1Description,
+      discipline1Brands,
+      discipline1Href,
+      discipline2Icon,
+      discipline2Image,
+      discipline2Title,
+      discipline2Description,
+      discipline2Brands,
+      discipline2Href,
+      discipline3Icon,
+      discipline3Image,
+      discipline3Title,
+      discipline3Description,
+      discipline3Brands,
+      discipline3Href,
+      discipline4Icon,
+      discipline4Image,
+      discipline4Title,
+      discipline4Description,
+      discipline4Brands,
+      discipline4Href,
+      discipline5Icon,
+      discipline5Image,
+      discipline5Title,
+      discipline5Description,
+      discipline5Brands,
+      discipline5Href,
+      discipline6Icon,
+      discipline6Image,
+      discipline6Title,
+      discipline6Description,
+      discipline6Brands,
+      discipline6Href,
+      padding,
+      background,
+    }) {
+      const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
+      const disciplines = [
+        {
+          icon: discipline1Icon,
+          image: discipline1Image,
+          title: discipline1Title,
+          description: discipline1Description,
+          brands: discipline1Brands,
+          href: discipline1Href,
+        },
+        {
+          icon: discipline2Icon,
+          image: discipline2Image,
+          title: discipline2Title,
+          description: discipline2Description,
+          brands: discipline2Brands,
+          href: discipline2Href,
+        },
+        {
+          icon: discipline3Icon,
+          image: discipline3Image,
+          title: discipline3Title,
+          description: discipline3Description,
+          brands: discipline3Brands,
+          href: discipline3Href,
+        },
+        {
+          icon: discipline4Icon,
+          image: discipline4Image,
+          title: discipline4Title,
+          description: discipline4Description,
+          brands: discipline4Brands,
+          href: discipline4Href,
+        },
+        {
+          icon: discipline5Icon,
+          image: discipline5Image,
+          title: discipline5Title,
+          description: discipline5Description,
+          brands: discipline5Brands,
+          href: discipline5Href,
+        },
+        {
+          icon: discipline6Icon,
+          image: discipline6Image,
+          title: discipline6Title,
+          description: discipline6Description,
+          brands: discipline6Brands,
+          href: discipline6Href,
+        },
+      ].filter((d) => d.title)
+      return (
+        <section
+          ref={ref}
+          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={wrap}>
+            <div className="text-center mb-10">
+              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">{sectionTitle}</h2>
+              {sectionSubtitle && (
+                <p className="text-slate-600 max-w-2xl mx-auto">{sectionSubtitle}</p>
+              )}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {disciplines.map((d, i) => {
+                const Icon = ICON_BY_KEY[d.icon] ?? HardHatIcon
+                return (
+                  <article
+                    key={i}
+                    className="overflow-hidden rounded-xl border border-slate-200 bg-white hover:shadow-md transition"
+                  >
+                    {d.image && (
+                      <div className="relative">
+                        <span
+                          className={`absolute left-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-xl text-white shadow ${
+                            i % 2 === 0 ? 'bg-orange-500' : 'bg-slate-900'
+                          }`}
+                        >
+                          <Icon />
+                        </span>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={d.image} alt={d.title} className="h-44 w-full object-cover" />
+                      </div>
+                    )}
+                    <div className="p-5">
+                      <h3 className="font-semibold text-lg text-slate-900 mb-2">{d.title}</h3>
+                      {d.description && (
+                        <p className="text-slate-600 text-sm leading-relaxed mb-3">
+                          {d.description}
+                        </p>
+                      )}
+                      <div className="flex items-center justify-between gap-3">
+                        {d.brands && (
+                          <span className="text-xs font-medium text-slate-400">{d.brands}</span>
+                        )}
+                        {d.href && (
+                          <a
+                            href={d.href}
+                            className="text-sm font-semibold text-orange-600 hover:text-orange-700 whitespace-nowrap"
+                          >
+                            Explore →
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // Our Brands — 3 tabs, each a set of "heading|Brand A, Brand B" groups
   ConstructionSectorsTabbed: {
     label: 'Sectors Tabbed',
     fields: {
