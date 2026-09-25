@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { usePuck } from '@puckeditor/core'
 import type { AppState, Config } from '@puckeditor/core'
-import { Plus, Search, X } from 'lucide-react'
+import { Check, Plus, Search, X } from 'lucide-react'
 import { blockVariants } from './puck.config'
 import { listCustomBlocks, type CustomBlockRecord } from './packs/composer/custom-blocks-store'
 import { renderComposedBlock } from './packs/composer/render-composed-block'
@@ -208,12 +208,14 @@ function BlockCard({
   variant,
   index,
   total,
+  isCurrent,
   onInsert,
 }: {
   componentKey: string
   variant: string | null
   index: number
   total: number
+  isCurrent: boolean
   onInsert: (componentKey: string, variant: string | null) => void
 }) {
   const { config } = usePuck()
@@ -243,7 +245,13 @@ function BlockCard({
   }, [])
   if (!comp?.render) return null
   const props = previewProps(comp, variant)
-  const previewHeight = COMPACT_PREVIEW_HEIGHT[componentKey] ?? DEFAULT_PREVIEW_HEIGHT
+  // Scale the container height by the same factor the rendered content is
+  // zoomed by, so a narrower (e.g. 2-up) card shrinks its image/text
+  // proportionally instead of leaving dead space below a now-smaller render
+  // inside an unchanged fixed-height box.
+  const previewHeight = Math.round(
+    (COMPACT_PREVIEW_HEIGHT[componentKey] ?? DEFAULT_PREVIEW_HEIGHT) * scale
+  )
 
   return (
     <div
@@ -253,10 +261,15 @@ function BlockCard({
       onKeyDown={(e) => e.key === 'Enter' && onInsert(componentKey, variant)}
       className="group relative self-start cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md"
     >
-      <span className="absolute right-2.5 top-2.5 z-[2] rounded-md bg-slate-900 px-2.5 py-1 text-[11px] font-extrabold text-white">
+      <span className="absolute right-2.5 top-2.5 z-[2] rounded-md bg-slate-900 px-2 py-0.5 text-[10px] font-extrabold text-white">
         {comp.label ?? componentKey}
         {total > 1 ? ` · ${index + 1}` : ''}
       </span>
+      {isCurrent ? (
+        <span className="absolute left-2.5 top-2.5 z-[2] flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-0.5 text-[10px] font-extrabold text-white">
+          <Check size={12} /> Current
+        </span>
+      ) : null}
       <div
         ref={wrapRef}
         style={{ height: previewHeight }}
