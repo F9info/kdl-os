@@ -595,6 +595,44 @@ type ConstructionProps = {
     post3Date: string
     padding: 'sm' | 'md' | 'lg'
   }
+  ConstructionNewsTicker: {
+    eyebrow: string
+    heading: string
+    news1Headline: string
+    news1Date: string
+    news2Headline: string
+    news2Date: string
+    news3Headline: string
+    news3Date: string
+    news4Headline: string
+    news4Date: string
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+  }
+  ConstructionCaseStudyGrid: {
+    eyebrow: string
+    heading: string
+    case1Image: string
+    case1Client: string
+    case1Stat: string
+    case1Description: string
+    case1LinkLabel: string
+    case1LinkHref: string
+    case2Image: string
+    case2Client: string
+    case2Stat: string
+    case2Description: string
+    case2LinkLabel: string
+    case2LinkHref: string
+    case3Image: string
+    case3Client: string
+    case3Stat: string
+    case3Description: string
+    case3LinkLabel: string
+    case3LinkHref: string
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+  }
   ConstructionSocialMedia: {
     sectionTitle: string
     sectionSubtitle: string
@@ -5641,6 +5679,257 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     },
   },
 
+  // ── Compact news ticker list ────────────────────────────────────────────────
+  ConstructionNewsTicker: {
+    label: 'News Ticker',
+    fields: {
+      eyebrow: { type: 'text' },
+      heading: { type: 'text' },
+      news1Headline: { type: 'text' },
+      news1Date: { type: 'text' },
+      news2Headline: { type: 'text' },
+      news2Date: { type: 'text' },
+      news3Headline: { type: 'text' },
+      news3Date: { type: 'text' },
+      news4Headline: { type: 'text' },
+      news4Date: { type: 'text' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'select',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      eyebrow: 'Latest News',
+      heading: 'From the Newsroom',
+      news1Headline: 'Riverside Villas handed over three weeks ahead of schedule',
+      news1Date: 'Mar 18, 2026',
+      news2Headline: 'Subhadra Group wins Regional Contractor of the Year',
+      news2Date: 'Feb 22, 2026',
+      news3Headline: 'New Vijayawada office opens to serve growing project pipeline',
+      news3Date: 'Jan 30, 2026',
+      news4Headline: 'Crossed 500 residential units delivered across Andhra Pradesh',
+      news4Date: 'Jan 05, 2026',
+      padding: 'md',
+      background: 'white',
+    },
+    render: ({
+      eyebrow,
+      heading,
+      news1Headline,
+      news1Date,
+      news2Headline,
+      news2Date,
+      news3Headline,
+      news3Date,
+      news4Headline,
+      news4Date,
+      padding,
+      background,
+    }) => {
+      const items = [
+        { headline: news1Headline, date: news1Date },
+        { headline: news2Headline, date: news2Date },
+        { headline: news3Headline, date: news3Date },
+        { headline: news4Headline, date: news4Date },
+      ].filter((n) => n.headline)
+      return (
+        <section
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={`${wrap} max-w-3xl`}>
+            {eyebrow && (
+              <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                {eyebrow}
+              </p>
+            )}
+            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-8">{heading}</h2>
+            <div className="divide-y divide-slate-200">
+              {items.map((item, i) => (
+                <div key={i} className="flex justify-between items-baseline gap-4 py-3">
+                  <span className="font-medium text-slate-900">{item.headline}</span>
+                  <span className="text-sm text-slate-500 shrink-0">{item.date}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // ── Case-study result cards ─────────────────────────────────────────────────
+  ConstructionCaseStudyGrid: {
+    label: 'Case Study Grid',
+    fields: {
+      eyebrow: { type: 'text' },
+      heading: { type: 'text' },
+      case1Image: imageField('Image'),
+      case1Client: { type: 'text' },
+      case1Stat: { type: 'text' },
+      case1Description: { type: 'textarea' },
+      case1LinkLabel: { type: 'text' },
+      case1LinkHref: { type: 'text' },
+      case2Image: imageField('Image'),
+      case2Client: { type: 'text' },
+      case2Stat: { type: 'text' },
+      case2Description: { type: 'textarea' },
+      case2LinkLabel: { type: 'text' },
+      case2LinkHref: { type: 'text' },
+      case3Image: imageField('Image'),
+      case3Client: { type: 'text' },
+      case3Stat: { type: 'text' },
+      case3Description: { type: 'textarea' },
+      case3LinkLabel: { type: 'text' },
+      case3LinkHref: { type: 'text' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'select',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      eyebrow: 'Case Studies',
+      heading: 'Results Our Clients Can Measure',
+      case1Image:
+        'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=480&h=320&fit=crop&auto=format',
+      case1Client: 'Riverside Villas',
+      case1Stat: '40% faster completion',
+      case1Description:
+        'A 48-unit residential build delivered ahead of schedule with zero safety incidents.',
+      case1LinkLabel: 'View Case Study',
+      case1LinkHref: '#',
+      case2Image:
+        'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=480&h=320&fit=crop&auto=format',
+      case2Client: 'Coastal Business Park',
+      case2Stat: '₹1.2Cr saved on MEP',
+      case2Description:
+        'Redesigned MEP coordination cut material waste and rework across three towers.',
+      case2LinkLabel: 'View Case Study',
+      case2LinkHref: '#',
+      case3Image:
+        'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=480&h=320&fit=crop&auto=format',
+      case3Client: 'Greenfield Logistics Hub',
+      case3Stat: '18-month turnaround',
+      case3Description:
+        'Full site development and warehouse fit-out handed over in a single dry season.',
+      case3LinkLabel: 'View Case Study',
+      case3LinkHref: '#',
+      padding: 'md',
+      background: 'white',
+    },
+    render: ({
+      eyebrow,
+      heading,
+      case1Image,
+      case1Client,
+      case1Stat,
+      case1Description,
+      case1LinkLabel,
+      case1LinkHref,
+      case2Image,
+      case2Client,
+      case2Stat,
+      case2Description,
+      case2LinkLabel,
+      case2LinkHref,
+      case3Image,
+      case3Client,
+      case3Stat,
+      case3Description,
+      case3LinkLabel,
+      case3LinkHref,
+      padding,
+      background,
+    }) => {
+      const cases = [
+        {
+          image: case1Image,
+          client: case1Client,
+          stat: case1Stat,
+          description: case1Description,
+          linkLabel: case1LinkLabel,
+          linkHref: case1LinkHref,
+        },
+        {
+          image: case2Image,
+          client: case2Client,
+          stat: case2Stat,
+          description: case2Description,
+          linkLabel: case2LinkLabel,
+          linkHref: case2LinkHref,
+        },
+        {
+          image: case3Image,
+          client: case3Client,
+          stat: case3Stat,
+          description: case3Description,
+          linkLabel: case3LinkLabel,
+          linkHref: case3LinkHref,
+        },
+      ].filter((c) => c.client)
+      return (
+        <section
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={wrap}>
+            <div className="text-center mb-12">
+              {eyebrow && (
+                <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                  {eyebrow}
+                </p>
+              )}
+              <h2 className="text-2xl md:text-4xl font-bold text-slate-900">{heading}</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {cases.map((c, i) => (
+                <div key={i} className="rounded-xl overflow-hidden border border-slate-200">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={c.image} alt={c.client} className="w-full aspect-[3/2] object-cover" />
+                  <div className="p-5">
+                    <p className="text-lg font-bold text-orange-600 mb-2">{c.stat}</p>
+                    <p className="font-semibold text-slate-900">{c.client}</p>
+                    <p className="text-sm text-slate-600 leading-relaxed mt-1 mb-4">
+                      {c.description}
+                    </p>
+                    {c.linkLabel && (
+                      <a
+                        href={c.linkHref}
+                        className="inline-flex items-center gap-1 text-orange-600 font-semibold text-sm hover:gap-2 transition-all"
+                      >
+                        {c.linkLabel} <span aria-hidden="true">→</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
   // ── Social media strip ──────────────────────────────────────────────────────
   ConstructionSocialMedia: {
     label: 'Social Media',
@@ -5829,6 +6118,8 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
       'ConstructionBlogPosts',
       'ConstructionProjectGallery',
       'ConstructionFeaturedProject',
+      'ConstructionNewsTicker',
+      'ConstructionCaseStudyGrid',
     ],
   },
   team: {
