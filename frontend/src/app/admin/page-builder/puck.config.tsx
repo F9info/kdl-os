@@ -34,14 +34,62 @@ const composed = composePacks(root, [general, construction, medical, composer])
 // shows just its own designs instead of being buried inside a pack's own
 // grouping. General's NavBar (its own 4 designs) joins Header here since
 // compose.ts only merges same-key categories that AREN'T overridden below.
+const categoriesUnordered: NonNullable<Config['categories']> = {
+  ...composed.categories,
+  'top-bar': { title: 'Top Header', components: ['ConstructionTopBar'] },
+  header: { title: 'Header', components: ['ConstructionHeader', 'NavBar'] },
+  hero: { title: 'Hero Slider', components: ['ConstructionHero'] },
+}
+
+// The Section tab's category list (and the "Insert a block" sidebar) render
+// in object key order — plain object-spread order left Top Header/Header/
+// Hero Slider stranded at the very end (they're added after the spread
+// above), which reads nothing like an actual page's top-to-bottom layout.
+// This reorders to match how a generated page actually flows: header/hero
+// first, closing with the footer, everything else roughly in the order it
+// tends to appear on a real site in between. Any category not listed here
+// (e.g. a future pack's new category) still renders — just appended after
+// the ones below, instead of silently disappearing.
+const CATEGORY_ORDER = [
+  'top-bar',
+  'header',
+  'hero',
+  'welcome',
+  'taglinestrip',
+  'founder',
+  'counters',
+  'services',
+  'video',
+  'featuredprojects',
+  'sectors',
+  'team',
+  'testimonials',
+  'brands',
+  'clients',
+  'blogpost',
+  'faq',
+  'contact',
+  'cta',
+  'socialmedia',
+  'bottombar',
+]
+
+function orderCategories(
+  categories: NonNullable<Config['categories']>
+): NonNullable<Config['categories']> {
+  const ordered: NonNullable<Config['categories']> = {}
+  for (const key of CATEGORY_ORDER) {
+    if (categories[key]) ordered[key] = categories[key]
+  }
+  for (const [key, cat] of Object.entries(categories)) {
+    if (!(key in ordered)) ordered[key] = cat
+  }
+  return ordered
+}
+
 export const config: Config = {
   ...composed,
-  categories: {
-    ...composed.categories,
-    'top-bar': { title: 'Top Header', components: ['ConstructionTopBar'] },
-    header: { title: 'Header', components: ['ConstructionHeader', 'NavBar'] },
-    hero: { title: 'Hero Slider', components: ['ConstructionHero'] },
-  },
+  categories: orderCategories(categoriesUnordered),
 }
 
 /**
