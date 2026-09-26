@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Pencil, Trash2, Plus, ExternalLink, FileEdit } from 'lucide-react'
+import { Settings, Trash2, Plus, ExternalLink, FileEdit } from 'lucide-react'
 import type { ColumnDef } from '@tanstack/react-table'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
@@ -189,29 +189,34 @@ function SectorsPageContent() {
       header: 'Actions',
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => openEdit(row.original)}
-            aria-label={`Edit ${row.original.name}`}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
-          {row.original.detail_page_id && (
-            <Button
-              variant="ghost"
-              size="icon"
-              asChild
-              aria-label={`Edit ${row.original.name} content`}
-            >
+          {row.original.detail_page_id ? (
+            <Button size="sm" asChild>
               <a
                 href={`/admin/template-engine/edit/${row.original.detail_page_id}?projectId=${projectId ?? ''}`}
               >
-                <FileEdit className="h-4 w-4" />
+                <FileEdit className="mr-1.5 h-3.5 w-3.5" />
+                Edit page
               </a>
             </Button>
+          ) : (
+            <span className="text-xs text-muted-foreground">No page linked</span>
           )}
-          <Button variant="ghost" size="icon" asChild aria-label={`View ${row.original.name} live`}>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => openEdit(row.original)}
+            aria-label={`${row.original.name} settings (name, slug, SEO)`}
+            title="Settings — name, slug, description, SEO"
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            asChild
+            aria-label={`View ${row.original.name} live`}
+            title="View live"
+          >
             <a
               href={`/sectors/${row.original.slug}?projectId=${projectId ?? ''}`}
               target="_blank"
@@ -258,6 +263,14 @@ function SectorsPageContent() {
           </Button>
         }
       />
+
+      <p className="mb-4 text-sm text-muted-foreground">
+        <strong className="text-foreground">Edit page</strong> opens the sector&apos;s detail page
+        in the full section editor — add/remove/reorder sections (Hero, Gallery, Video, CTA…), pick
+        each section&apos;s design, and edit its content, same editor every other page uses.{' '}
+        <strong className="text-foreground">Settings</strong> (gear icon) is only for this
+        sector&apos;s own name, slug, category and SEO fields.
+      </p>
 
       <DataTable
         columns={columns}
