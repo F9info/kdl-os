@@ -416,6 +416,7 @@ type ConstructionProps = {
     backgroundImage: string
     imageAlt: string
     subtitle: string
+    homeHref: string
   }
   ConstructionServicesGrid: {
     sectionTitle: string
@@ -4120,6 +4121,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       backgroundImage: imageField('Background image'),
       imageAlt: { type: 'text' },
       subtitle: { type: 'textarea' },
+      // This site's public pages are served at generated `/p/<slug>` paths,
+      // not a clean `/` root — so the breadcrumb's "Home" link can't be
+      // hardcoded (see docs/superpowers/plans/2026-09-26-inner-banner.md for
+      // the pre-existing hardcoded version this replaces).
+      homeHref: { type: 'text' },
     },
     defaultProps: {
       variant: '1',
@@ -4128,6 +4134,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       imageAlt: 'Subhadra Group showroom building exterior',
       subtitle:
         'Your one-stop solution for building engineering products & services — 30 years of trust, one accountable team.',
+      homeHref: '/',
     },
     render: function ConstructionInnerBannerRender({
       id,
@@ -4137,6 +4144,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       backgroundImage,
       imageAlt,
       subtitle,
+      homeHref,
     }) {
       if (visible === false) return <></>
       const title = (puck?.metadata?.pageTitle as string | undefined) || 'Page Title'
@@ -4147,7 +4155,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           className="mb-3 flex items-center gap-2 text-[13px] text-white/80"
           aria-label="Breadcrumb"
         >
-          <Link href="/" className="hover:text-white">
+          <Link href={homeHref || '/'} className="hover:text-white">
             Home
           </Link>
           <span>/</span>
@@ -4238,7 +4246,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               className="mb-4 flex items-center justify-center gap-2 text-[13px] font-semibold text-white/60"
               aria-label="Breadcrumb"
             >
-              <Link href="/" className="text-white/85 hover:text-white">
+              <Link href={homeHref || '/'} className="text-white/85 hover:text-white">
                 Home
               </Link>
               <span className="opacity-50">/</span>
