@@ -1183,6 +1183,30 @@ function NavigationStep({
   const [dropTarget, setDropTarget] = useState<{ id: string; zone: NavDropZone } | null>(null)
   const selectedLabels = navFlattenLabels(tree)
   const extras = selectedLabels.filter((n) => !SUGGESTED_PAGES.includes(n))
+  // No optimistic local update on add/remove/reorder below — every change
+  // only ever reflects in `tree` once the server round-trip actually
+  // completes and refetches. Without this, clicking a pill then reloading
+  // (or clicking Next) before that request finishes silently drops the
+  // change — it was never saved, but nothing on screen said so. This is
+  // the one thing to actually watch/disable against, not a cosmetic spinner.
+  const isSavingNav =
+    createItemMutation.isPending || deleteItemMutation.isPending || saveOrderMutation.isPending
+
+  // Disabling the in-app Back/Next/pill buttons stops navigating away
+  // mid-save, but not an actual browser refresh/tab-close — that's a real
+  // way to lose an add/remove/reorder that hasn't finished its round trip
+  // yet, and is exactly what was reported ("added a page, refreshed, it
+  // was gone"). The native confirm dialog is the only way to warn against
+  // that specific case.
+  useEffect(() => {
+    if (!isSavingNav) return
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [isSavingNav])
 
   // navigationPages still has to be a flat string[] for the site-scaffolding
   // driver's existing contract (which page rows get created) — that's
@@ -1302,7 +1326,14 @@ function NavigationStep({
 
   return (
     <div className="space-y-3">
-      <Button type="button" variant="ghost" size="sm" onClick={onBack} className="gap-1.5 px-2">
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={onBack}
+        disabled={isSavingNav}
+        className="gap-1.5 px-2"
+      >
         <ArrowLeft className="h-3.5 w-3.5" />
         Back to type scale
       </Button>
@@ -1330,9 +1361,10 @@ function NavigationStep({
                 <button
                   key={name}
                   type="button"
+                  disabled={isSavingNav}
                   onClick={() => togglePage(name)}
                   className={cn(
-                    'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors',
+                    'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50',
                     on ? 'border-primary bg-primary/10 text-primary' : 'hover:bg-accent'
                   )}
                 >
@@ -1346,10 +1378,11 @@ function NavigationStep({
             <Input
               placeholder="Add a custom page (e.g. Case studies)"
               value={customName}
+              disabled={isSavingNav}
               onChange={(e) => setCustomName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && addCustomPage()}
             />
-            <Button type="button" onClick={addCustomPage}>
+            <Button type="button" onClick={addCustomPage} disabled={isSavingNav}>
               Add
             </Button>
           </div>
@@ -1358,10 +1391,20 @@ function NavigationStep({
         <div className="rounded-lg border bg-card p-4 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold">Selected navigation</span>
-            <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-              Live
+            <span
+              className={cn(
+                'rounded-full px-2.5 py-1 text-xs font-medium',
+                isSavingNav ? 'bg-amber-100 text-amber-700' : 'bg-muted text-muted-foreground'
+              )}
+            >
+              {isSavingNav ? 'Saving…' : 'Live'}
             </span>
           </div>
+          {isSavingNav && (
+            <p className="text-xs text-amber-700">
+              Saving your change — don&apos;t refresh or leave this step yet.
+            </p>
+          )}
           {tree.length > 0 ? (
             <>
               <p className="text-[11px] text-muted-foreground">
@@ -1379,7 +1422,7 @@ function NavigationStep({
       </div>
 
       <div className="flex justify-end">
-        <Button type="button" onClick={onNext}>
+        <Button type="button" onClick={onNext} disabled={isSavingNav}>
           Next
           <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
         </Button>
