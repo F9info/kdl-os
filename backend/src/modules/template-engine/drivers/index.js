@@ -38,6 +38,10 @@ import {
   seedMedicalPageData,
   seedConstructionPageData,
   patchNavLinks,
+  patchBrand,
+  patchConstructionContact,
+  patchComposerLogos,
+  patchLayout,
 } from './website-seed-content.js';
 
 import { prisma } from '../../../config/database.js';
@@ -55,8 +59,19 @@ async function resolveWebsiteBrand(projectId, userId) {
   }
 
   let companyName = null;
+  let email = null;
+  let phone = null;
+  let secondaryEmail = null;
+  let secondaryPhone = null;
+  let addressLines = [];
   try {
-    companyName = (await getCompanyInfo(projectId)).company_name;
+    const info = await getCompanyInfo(projectId);
+    companyName = info.company_name;
+    email = info.email;
+    phone = info.phone;
+    secondaryEmail = info.secondaryEmail;
+    secondaryPhone = info.secondaryPhone;
+    addressLines = info.addressLines;
   } catch {
     // contact fields not filled in yet
   }
@@ -75,6 +90,11 @@ async function resolveWebsiteBrand(projectId, userId) {
   return {
     companyName,
     logoUrl,
+    email,
+    phone,
+    secondaryEmail,
+    secondaryPhone,
+    addressLines,
     primaryHex: colors.primary?.hex ?? null,
     secondaryHex: colors.secondary?.hex ?? null,
     headingFont: kit?.typography?.heading?.family ?? null,
@@ -308,7 +328,7 @@ const SEEDER_BY_PACK = {
  * Crash recovery: recorded pageKeyToId is checked on re-run; existing pages are reused.
  */
 const websiteDriver = {
-  async execute({ run, stageRecord, userId, templatePack, navigationPages }) {
+  async execute({ run, stageRecord, userId, templatePack, navigationPages, layout }) {
     const seed = SEEDER_BY_PACK[templatePack] ?? seedWebsitePageData;
     const brand = await resolveWebsiteBrand(run.projectId, userId);
 
@@ -363,12 +383,23 @@ const websiteDriver = {
         // since leaving it deleted would point outputRef at an invisible,
         // inaccessible row everywhere else in the app.
         if (existing.deleted_at != null) patch.deleted_at = null;
-        const patchedData = patchNavLinks(existing.data, seedPages);
+        let patchedData = patchNavLinks(existing.data, seedPages);
+        const brandPatched = patchBrand(patchedData ?? existing.data, brand);
+        if (brandPatched) patchedData = brandPatched;
+        const contactPatched = patchConstructionContact(patchedData ?? existing.data, brand);
+        if (contactPatched) patchedData = contactPatched;
+        const logoAtomsPatched = patchComposerLogos(patchedData ?? existing.data, brand);
+        if (logoAtomsPatched) patchedData = logoAtomsPatched;
+        const layoutPatched = patchLayout(patchedData ?? existing.data, layout, key, brand, seedPages);
+        if (layoutPatched) patchedData = layoutPatched;
         if (patchedData) patch.data = patchedData;
+        if (!existing.project_id) patch.project_id = run.projectId;
         page = Object.keys(patch).length > 0 ? await updatePage(existing.id, patch, userId) : existing;
       } else {
+        const seeded = seed(key, title, brand, seedPages);
+        const layoutApplied = patchLayout(seeded, layout, key, brand, seedPages);
         page = await createPage(
-          { title, slug, data: seed(key, title, brand, seedPages) },
+          { title, slug, data: layoutApplied ?? seeded, project_id: run.projectId },
           userId,
         );
       }
