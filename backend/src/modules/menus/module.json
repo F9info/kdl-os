@@ -1,0 +1,22 @@
+{
+  "slug": "menus",
+  "name": "Menus",
+  "version": "1.0.0",
+  "description": "Multi-level drag-and-drop navigation menus (header, footer, mobile)",
+  "core": false,
+  "apiPrefix": "/api/menus",
+  "permissions": [
+    "menus"
+  ],
+  "nav": [
+    {
+      "label": "Menus",
+      "path": "/admin/menus",
+      "icon": "Package",
+      "permission": "menus:view"
+    }
+  ],
+  "dependsOn": [],
+  "queues": [],
+  "env": []
+}

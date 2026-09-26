@@ -1,0 +1,57 @@
+// Menus module schema.
+// Reusable, project-scoped, up-to-3-level navigation — a "key" (header,
+// footer, mobile, ...) identifies which nav slot a Menu fills; a project can
+// have any number of Menus. First hierarchical (self-referencing) model in
+// this schema — MenuItem.parent_id is a plain adjacency-list self-relation,
+// depth capped at 3 levels by the admin UI, not the database (the schema
+// itself stays generic/unbounded).
+
+model Menu {
+  id         String     @id @default(cuid())
+  project_id String?
+  key        String
+  name       String
+  created_at DateTime   @default(now())
+  updated_at DateTime   @updatedAt
+  items      MenuItem[]
+
+  @@unique([project_id, key])
+  @@map("menus")
+}
+
+enum MenuItemLinkType {
+  page
+  custom
+  external
+
+  @@map("menu_item_link_type")
+}
+
+model MenuItem {
+  id              String           @id @default(cuid())
+  menu_id         String
+  parent_id       String?
+  label           String
+  link_type       MenuItemLinkType @default(custom)
+  // Set when link_type = "page" — the BuilderPage this item points at.
+  // Plain string reference (no hard FK), matching this schema's existing
+  // convention for cross-module references (see BuilderPage.project_id,
+  // BrandKit.logo_media_id) rather than a Prisma `@relation`.
+  page_id         String?
+  // Set when link_type = "custom" (any in-app path, e.g. "/contact") or
+  // "external" (a full URL, e.g. "https://...").
+  url             String?
+  open_in_new_tab Boolean          @default(false)
+  is_active       Boolean          @default(true)
+  order           Int              @default(0)
+  created_at      DateTime         @default(now())
+  updated_at      DateTime         @updatedAt
+
+  menu   Menu       @relation(fields: [menu_id], references: [id], onDelete: Cascade)
+  parent MenuItem?  @relation("MenuItemChildren", fields: [parent_id], references: [id], onDelete: Cascade)
+  children MenuItem[] @relation("MenuItemChildren")
+
+  @@index([menu_id])
+  @@index([parent_id])
+  @@map("menu_items")
+}

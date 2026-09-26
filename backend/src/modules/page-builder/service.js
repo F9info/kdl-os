@@ -5,7 +5,14 @@ export const listPages = async () => {
   return prisma.builderPage.findMany({
     where: { deleted_at: null },
     orderBy: { updated_at: 'desc' },
-    select: { id: true, slug: true, title: true, status: true, updated_at: true },
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      status: true,
+      updated_at: true,
+      project_id: true,
+    },
   });
 };
 
@@ -25,11 +32,11 @@ export const getPageBySlug = async (slug) => {
 export const getPublishedBySlug = async (slug) => {
   return prisma.builderPage.findFirst({
     where: { slug, status: 'PUBLISHED', deleted_at: null },
-    select: { slug: true, title: true, data: true },
+    select: { slug: true, title: true, data: true, project_id: true },
   });
 };
 
-export const createPage = async ({ title, slug, data }, actorId) => {
+export const createPage = async ({ title, slug, data, project_id }, actorId) => {
   const page = await prisma.builderPage.create({
     data: {
       title,
@@ -37,6 +44,7 @@ export const createPage = async ({ title, slug, data }, actorId) => {
       status: 'DRAFT',
       data: data ?? { root: { props: { title } }, content: [], zones: {} },
       created_by: actorId,
+      project_id,
     },
   });
   writeActivityAsync({

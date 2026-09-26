@@ -9,6 +9,7 @@ import { imageField } from '../image-field'
 import { InlineEditableText } from '../inline-editable-text'
 import { teamMemberField } from '../team-member-field'
 import { useSettingsFieldValues } from '../use-settings-field-values'
+import { useHeaderMenuTree, HeaderNavMenu } from '../header-nav-menu'
 
 // ── shared helpers ────────────────────────────────────────────────────────────
 
@@ -2427,6 +2428,13 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       // it — only float it on the real public page; stay `sticky` (still
       // transparent-colored) while editing so the layout can't break.
       const isEditingInPuck = puck?.isEditing ?? false
+      // Menus module (backend/src/modules/menus/) is the source of truth
+      // once a project has a configured "header" menu — enables real
+      // dropdown/flyout submenus. `links` below is the fallback for a
+      // project that hasn't set one up, and stays the only source for
+      // designs 2-4 and the mobile panel for now (phase 1: Design 1's
+      // desktop nav only, not yet extended to the rest).
+      const menuTree = useHeaderMenuTree(puck?.metadata?.projectId as string | undefined)
       const navItems = (links || '')
         .split('\n')
         .map((line) => line.split('|'))
@@ -2835,17 +2843,25 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   )}
                 </a>
                 <div className="hidden md:flex items-center gap-7">
-                  <nav className="flex items-center gap-2">
-                    {navItems.map(([label, href], i) => (
-                      <a
-                        key={i}
-                        href={href || '#'}
-                        className={i === 0 ? activeNavLinkClass : `${navLinkClass} px-2`}
-                      >
-                        {label}
-                      </a>
-                    ))}
-                  </nav>
+                  {menuTree ? (
+                    <HeaderNavMenu
+                      items={menuTree}
+                      linkClassName={navLinkClass}
+                      activeClassName={activeNavLinkClass}
+                    />
+                  ) : (
+                    <nav className="flex items-center gap-2">
+                      {navItems.map(([label, href], i) => (
+                        <a
+                          key={i}
+                          href={href || '#'}
+                          className={i === 0 ? activeNavLinkClass : `${navLinkClass} px-2`}
+                        >
+                          {label}
+                        </a>
+                      ))}
+                    </nav>
+                  )}
                   <div className="flex items-center gap-3">
                     {(isEditingInPuck || loginLabel) && (
                       <a
