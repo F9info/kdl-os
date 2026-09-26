@@ -1,6 +1,7 @@
 import type { Config } from '@puckeditor/core'
 import { useState, useEffect, useRef, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
+import Link from 'next/link'
 import type { ComponentPack } from '../types'
 import { imageField } from '../image-field'
 import { InlineEditableText } from '../inline-editable-text'
@@ -4040,6 +4041,144 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 )}
               </div>
             </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  ConstructionInnerBanner: {
+    label: 'Inner Banner',
+    fields: {
+      variant: {
+        type: 'select',
+        options: [
+          { label: 'Design 1 — Full-bleed photo', value: '1' },
+          { label: 'Design 2 — Split card', value: '2' },
+          { label: 'Design 3 — Compact centered strip', value: '3' },
+          { label: 'Design 4 — Frosted glass over photo', value: '4' },
+        ],
+      },
+      visible: {
+        type: 'radio',
+        options: [
+          { label: 'Show', value: true },
+          { label: 'Hide', value: false },
+        ],
+      },
+      backgroundImage: imageField('Background image'),
+      imageAlt: { type: 'text' },
+      subtitle: { type: 'textarea' },
+    },
+    defaultProps: {
+      variant: '1',
+      visible: true,
+      backgroundImage:
+        'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1600&h=900&fit=crop&q=80&auto=format',
+      imageAlt: 'Building engineering site',
+      subtitle:
+        'Your one-stop solution for building engineering products & services — 30 years of trust, one accountable team.',
+    },
+    render: function ConstructionInnerBannerRender({
+      id,
+      puck,
+      variant,
+      visible,
+      backgroundImage,
+      imageAlt,
+      subtitle,
+    }) {
+      if (visible === false) return <></>
+      const title = (puck?.metadata?.pageTitle as string | undefined) || 'Page Title'
+      const isEditing = puck?.isEditing ?? false
+
+      const breadcrumb = (
+        <nav
+          className="mb-3 flex items-center gap-2 text-[13px] text-white/80"
+          aria-label="Breadcrumb"
+        >
+          <Link href="/" className="hover:text-white">
+            Home
+          </Link>
+          <span>/</span>
+          <span className="font-semibold text-white">{title}</span>
+        </nav>
+      )
+
+      const subtitleNode = (
+        <InlineEditableText
+          id={id}
+          path={['subtitle']}
+          value={subtitle}
+          as="p"
+          isEditing={isEditing}
+          multiline
+        />
+      )
+
+      if (variant === '2') {
+        return (
+          <section className="grid overflow-hidden bg-slate-900 md:grid-cols-2">
+            <div className="flex flex-col justify-center gap-3 px-8 py-16 md:px-14">
+              {breadcrumb}
+              <h1 className="text-3xl font-extrabold text-white md:text-4xl">{title}</h1>
+              <div className="max-w-md text-[15px] text-white/75">{subtitleNode}</div>
+              <span className="mt-4 h-1 w-16 rounded bg-orange-500" />
+            </div>
+            <div className="relative min-h-[280px]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={backgroundImage}
+                alt={imageAlt}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            </div>
+          </section>
+        )
+      }
+
+      if (variant === '3') {
+        return (
+          <section className="bg-gradient-to-r from-slate-900 to-slate-700 px-6 py-14 text-center">
+            <div className="mx-auto flex max-w-2xl flex-col items-center">
+              {breadcrumb}
+              <h1 className="text-3xl font-extrabold text-white md:text-4xl">{title}</h1>
+              <div className="mt-2 max-w-lg text-[15px] text-white/75">{subtitleNode}</div>
+            </div>
+          </section>
+        )
+      }
+
+      if (variant === '4') {
+        return (
+          <section className="relative overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={backgroundImage} alt={imageAlt} className="h-[380px] w-full object-cover" />
+            <div className="absolute bottom-6 left-6 max-w-md rounded-2xl border border-white/30 bg-white/15 p-6 backdrop-blur-md">
+              {breadcrumb}
+              <h1 className="text-2xl font-extrabold text-white md:text-3xl">{title}</h1>
+              <div className="mt-2 text-[14px] text-white/85">{subtitleNode}</div>
+            </div>
+          </section>
+        )
+      }
+
+      // Design 1 — pixel clone of the reference site's .page-banner
+      // (after-delete-folder/about.html and every other inner page).
+      return (
+        <section className="relative overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={backgroundImage}
+            alt={imageAlt}
+            style={{ objectPosition: 'center 72%' }}
+            className="h-[380px] w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 px-6 pb-8 md:px-14">
+            {breadcrumb}
+            <h1 className="text-3xl font-extrabold text-white md:text-4xl">{title}</h1>
+            <div className="mt-2 max-w-xl text-[15px] text-white/85">{subtitleNode}</div>
           </div>
         </section>
       )
