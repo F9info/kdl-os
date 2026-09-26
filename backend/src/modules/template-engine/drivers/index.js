@@ -402,6 +402,15 @@ const websiteDriver = {
           { title, slug, data: layoutApplied ?? seeded, project_id: run.projectId },
           userId,
         );
+        // Every other assembled page's nav/footer links straight to this
+        // slug (seedPages, above) and "Demo all pages" opens it directly —
+        // a page that's only navigable once someone remembers to click
+        // Publish on it individually is a 404 waiting to happen the moment
+        // any real content is added. Auto-publish on first assembly only;
+        // the reuse branch above never touches an existing page's status,
+        // so an admin who deliberately unpublishes a page later stays in
+        // control of it.
+        page = await updatePage(page.id, { status: 'PUBLISHED' }, userId);
       }
 
       pageKeyToId[key] = page.id;
