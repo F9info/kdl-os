@@ -113,6 +113,25 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
     | undefined
   const pages = Object.entries(outputRef?.pageKeyToId ?? {})
   const pageCount = outputRef?.pageIds?.length ?? pages.length
+  // Sector detail pages (Showrooms, Hotel, Hospital…) are real assembled
+  // pages too — each one auto-created and linked via the Sectors module
+  // (backend/src/modules/sectors/) — but live in their own table, not
+  // outputRef.pageKeyToId, so they need their own fetch to show up
+  // alongside Home/About/Contact in this same grid rather than being
+  // invisible from this screen (only reachable via the separate
+  // /admin/sectors page otherwise).
+  const { data: sectorPages } = useQuery({
+    queryKey: ['sectors-for-pages-grid', run.projectId],
+    queryFn: () =>
+      api.get('/sectors', { params: { project_id: run.projectId } }).then(
+        (r) =>
+          r.data.data.items as {
+            id: string
+            name: string
+            detail_page_id: string | null
+          }[]
+      ),
+  })
   // Page slugs are deterministic (`te-{runId}-{key}`, set by the website
   // driver — see template-engine/drivers/index.js's `seedPages`), so the
   // real public Home URL can be computed here with no extra fetch. Prefers
@@ -271,7 +290,11 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
                   <p className="text-sm text-muted-foreground">
                     {advance.isPending
                       ? 'Updating pages for your latest selection…'
-                      : `${pageCount} page${pageCount !== 1 ? 's' : ''} assembled in the page-builder engine. Open a page to edit it, or view all pages to step through the whole site.`}
+                      : `${pageCount} page${pageCount !== 1 ? 's' : ''}${
+                          sectorPages?.length
+                            ? ` + ${sectorPages.length} sector detail page${sectorPages.length !== 1 ? 's' : ''}`
+                            : ''
+                        } assembled in the page-builder engine. Open a page to edit it, or view all pages to step through the whole site.`}
                   </p>
                 </div>
                 {demoSiteHref && (
@@ -305,6 +328,29 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
                     </div>
                   </div>
                 ))}
+                {(sectorPages ?? [])
+                  .filter((s) => s.detail_page_id)
+                  .map((sector) => (
+                    <div key={sector.id} className="overflow-hidden rounded-lg border bg-card">
+                      <div className="h-1.5 bg-gradient-to-r from-orange-500 to-primary" />
+                      <div className="flex min-h-[110px] flex-col gap-2 p-4">
+                        <span className="w-fit rounded-full bg-orange-100 px-2.5 py-1 text-xs font-medium text-orange-700">
+                          Sector
+                        </span>
+                        <b className="text-sm">{sector.name}</b>
+                        <Button size="sm" asChild className="mt-auto w-fit">
+                          <a
+                            href={`/admin/template-engine/edit/${sector.detail_page_id}?projectId=${run.projectId}`}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <Pencil className="mr-2 h-3.5 w-3.5" />
+                            Edit
+                          </a>
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
               </div>
             </div>
           ) : (
