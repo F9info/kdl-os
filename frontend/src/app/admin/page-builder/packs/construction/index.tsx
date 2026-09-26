@@ -1,8 +1,9 @@
 import type { Config } from '@puckeditor/core'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import type { ComponentPack } from '../types'
 import { imageField } from '../image-field'
+import { InlineEditableText } from '../inline-editable-text'
 
 // ── shared helpers ────────────────────────────────────────────────────────────
 
@@ -22,6 +23,247 @@ const socialPlatformBadge: Record<
   youtube: { label: 'YT', cls: 'bg-red-600' },
 }
 
+// Shared option lists + style resolver for the "Slider Settings" /
+// "Typography" Style-tab accordions (blocks-panel.tsx `SplitFieldEditor`
+// groups any `slider*`/`typo*` field into those accordions automatically —
+// see `isStyleField` there). Font size/weight are resolved via inline style
+// rather than Tailwind utility classes so an override always wins over the
+// component's own responsive `text-3xl md:text-5xl`-style classes.
+const FONT_SIZE_OPTIONS = [
+  { label: 'Default', value: '' },
+  { label: 'Small', value: 'sm' },
+  { label: 'Base', value: 'base' },
+  { label: 'Large', value: 'lg' },
+  { label: 'XL', value: 'xl' },
+  { label: '2XL', value: '2xl' },
+  { label: '3XL', value: '3xl' },
+  { label: '4XL', value: '4xl' },
+  { label: '5XL', value: '5xl' },
+] as const
+
+const FONT_WEIGHT_OPTIONS = [
+  { label: 'Default', value: '' },
+  { label: 'Normal', value: 'normal' },
+  { label: 'Medium', value: 'medium' },
+  { label: 'Semibold', value: 'semibold' },
+  { label: 'Bold', value: 'bold' },
+  { label: 'Extrabold', value: 'extrabold' },
+] as const
+
+const FONT_SIZE_PX: Record<string, string> = {
+  sm: '14px',
+  base: '16px',
+  lg: '18px',
+  xl: '20px',
+  '2xl': '24px',
+  '3xl': '30px',
+  '4xl': '36px',
+  '5xl': '48px',
+}
+
+const FONT_WEIGHT_VAL: Record<string, string> = {
+  normal: '400',
+  medium: '500',
+  semibold: '600',
+  bold: '700',
+  extrabold: '800',
+}
+
+function typoStyle(size?: string, weight?: string, color?: string): CSSProperties {
+  const style: CSSProperties = {}
+  if (size && FONT_SIZE_PX[size]) style.fontSize = FONT_SIZE_PX[size]
+  if (weight && FONT_WEIGHT_VAL[weight]) style.fontWeight = FONT_WEIGHT_VAL[weight]
+  if (color) style.color = color
+  return style
+}
+
+// Brand-color-aware contrast helpers — a solid-color header (Design 3) needs
+// its accent strip visibly distinct from the main bar and its text/icons
+// readable against whatever brand color the bar ends up being (reported:
+// "why look like this?? ... all should be visable not the logo and nav
+// also not visable" when primaryColor happened to be red, same as the
+// hardcoded red accent strip and red login text — everything collapsed
+// into one unreadable block). No palette-role plumbing beyond the two
+// colors already available (primary/secondary): a distinct accent is
+// derived by shading the bar color itself when secondary is missing or too
+// close to it, so this always produces a visible result with zero new data
+// requirements.
+function hexToRgb(hex: string | undefined): { r: number; g: number; b: number } | null {
+  const clean = (hex || '').replace('#', '')
+  if (!/^[0-9a-fA-F]{6}$/.test(clean)) return null
+  const num = parseInt(clean, 16)
+  return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 }
+}
+
+function relativeLuminance(rgb: { r: number; g: number; b: number }): number {
+  const lin = (c: number) => {
+    const v = c / 255
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+  }
+  return 0.2126 * lin(rgb.r) + 0.7152 * lin(rgb.g) + 0.0722 * lin(rgb.b)
+}
+
+// Black or white, whichever reads better against `hex`.
+function readableTextColor(hex: string | undefined, fallback = '#111827'): string {
+  const rgb = hexToRgb(hex)
+  if (!rgb) return fallback
+  return relativeLuminance(rgb) > 0.55 ? '#111827' : '#ffffff'
+}
+
+function colorsAreClose(hexA: string | undefined, hexB: string | undefined): boolean {
+  const a = hexToRgb(hexA)
+  const b = hexToRgb(hexB)
+  if (!a || !b) return false
+  return Math.abs(relativeLuminance(a) - relativeLuminance(b)) < 0.18
+}
+
+// Push `hex` toward black (amount < 0) or white (amount > 0) by `amount`
+// (0-1) — a guaranteed-distinct fallback accent when there's no usable
+// secondary color to contrast against the bar.
+function shadeColor(hex: string, amount: number): string {
+  const rgb = hexToRgb(hex)
+  if (!rgb) return hex
+  const adjust = (c: number) =>
+    Math.max(0, Math.min(255, Math.round(amount > 0 ? c + (255 - c) * amount : c + c * amount)))
+  const toHex = (c: number) => c.toString(16).padStart(2, '0')
+  return `#${toHex(adjust(rgb.r))}${toHex(adjust(rgb.g))}${toHex(adjust(rgb.b))}`
+}
+
+// The accent strip's color: the brand's secondary color if it's actually
+// distinct from the bar, otherwise a shaded version of the bar color
+// itself (always visible, never requires a second brand color to exist).
+function accentColorFor(barColor: string, secondaryColor: string | undefined): string {
+  if (secondaryColor && !colorsAreClose(secondaryColor, barColor)) return secondaryColor
+  const rgb = hexToRgb(barColor)
+  const isLight = rgb ? relativeLuminance(rgb) > 0.55 : false
+  return shadeColor(barColor, isLight ? -0.45 : 0.45)
+}
+
+function rgbToHsl({ r, g, b }: { r: number; g: number; b: number }): {
+  h: number
+  s: number
+  l: number
+} {
+  const rn = r / 255
+  const gn = g / 255
+  const bn = b / 255
+  const max = Math.max(rn, gn, bn)
+  const min = Math.min(rn, gn, bn)
+  const l = (max + min) / 2
+  if (max === min) return { h: 0, s: 0, l }
+  const d = max - min
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+  let h = 0
+  if (max === rn) h = ((gn - bn) / d) % 6
+  else if (max === gn) h = (bn - rn) / d + 2
+  else h = (rn - gn) / d + 4
+  h = (h * 60 + 360) % 360
+  return { h, s, l }
+}
+
+function hslToHex(h: number, s: number, l: number): string {
+  const c = (1 - Math.abs(2 * l - 1)) * s
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1))
+  const m = l - c / 2
+  const [r0, g0, b0] =
+    h < 60
+      ? [c, x, 0]
+      : h < 120
+        ? [x, c, 0]
+        : h < 180
+          ? [0, c, x]
+          : h < 240
+            ? [0, x, c]
+            : h < 300
+              ? [x, 0, c]
+              : [c, 0, x]
+  const toHex = (v: number) =>
+    Math.round((v + m) * 255)
+      .toString(16)
+      .padStart(2, '0')
+  return `#${toHex(r0)}${toHex(g0)}${toHex(b0)}`
+}
+
+// A vivid, hue-shifted twin of `hex` — for a two-tone block layout (Footer
+// Design 2) where the accent needs to visibly read as a *different* color,
+// not just a lighter/darker version of the same hue. Plain lightness
+// shading (shadeColor) keeps the same hue, so an orange bar's "shaded"
+// accent is still orange — reported as "still not change" on a project
+// whose brand secondary is an unsaturated placeholder gray (reads as
+// same-family as the primary once shaded). Rotating the hue guarantees a
+// different color family regardless of the input.
+function hueShiftAccent(hex: string): string {
+  const rgb = hexToRgb(hex)
+  if (!rgb) return '#f5a623'
+  const { h } = rgbToHsl(rgb)
+  return hslToHex((h + 45) % 360, 0.85, 0.55)
+}
+
+// Whether `hex` is saturated/distinct enough from `barColor` to use as-is
+// for a colorful two-tone accent — a low-saturation brand "secondary"
+// (an unset placeholder gray, common when no real second color was ever
+// chosen) isn't colorful even when its luminance test passes, so it falls
+// through to hueShiftAccent instead of painting a dull gray block.
+function isVividAccent(hex: string | undefined, barColor: string): boolean {
+  const rgb = hexToRgb(hex)
+  if (!rgb) return false
+  const { h, s } = rgbToHsl(rgb)
+  if (s < 0.2) return false
+  const barHsl = hexToRgb(barColor)
+  if (!barHsl) return true
+  const hueDiff = Math.abs(h - rgbToHsl(barHsl).h)
+  return Math.min(hueDiff, 360 - hueDiff) > 20
+}
+
+// A CSS gradient string mixing two brand-palette colors — used everywhere
+// a section needs a "colorful" theme-driven background instead of a flat
+// single hue, per the standing rule: every section pulls only from the
+// project's own primary/secondary/tertiary/quaternary palette (never an
+// unrelated hardcoded hue like the old purple/pink promo bar), and
+// different sections mix different pairs of those 4 so the whole layout
+// doesn't read as one repeated color.
+function themeGradient(colorA: string, colorB: string, angle = 135): string {
+  return `linear-gradient(${angle}deg, ${colorA}, ${colorB})`
+}
+
+// Components that ship 4 designs under a `d1Foo`/`d2Foo`/`d3Foo`/`d4Foo`
+// field-naming convention (Hero, Top Bar) have no per-variant field
+// scoping from Puck itself — every field for all 4 designs shows at once
+// in the right-hand panel regardless of which `variant` is selected,
+// a wall of ~70 fields with no indication which ones actually do
+// anything for the design you're looking at (reported: editing the Hero
+// only offered a way to "change theme and edit the slider" buried in that
+// wall, not a scoped/obvious one). `resolveFields` is Puck's supported
+// hook for narrowing the fields shown based on current props — keep
+// `variant`/`visible` and any shared (non-`d{n}`-prefixed) field always,
+// and only the current variant's own `d{variant}...` fields.
+function variantFields<T extends Record<string, unknown>>(
+  fields: T,
+  variant: string | undefined
+): Partial<T> {
+  const v = variant || '1'
+  const otherVariantPrefix = /^d[1-4]/
+  return Object.fromEntries(
+    Object.entries(fields).filter(
+      ([key]) => !otherVariantPrefix.test(key) || key.startsWith(`d${v}`)
+    )
+  ) as Partial<T>
+}
+
+// Neutral gray-box placeholder for logo/QR-style slots — a real stock photo
+// would look wrong there (see the dummyImage() twin in the backend seed
+// driver). A data: URI, unlike placehold.co, needs no CSP img-src allowlist
+// entry since 'data:' is already permitted everywhere.
+function dummyLogo(w: number, h: number, label: string) {
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">` +
+    `<rect width="100%" height="100%" fill="#e2e8f0"/>` +
+    `<text x="50%" y="50%" font-family="sans-serif" font-size="${Math.round(Math.min(w, h) / 5)}" ` +
+    `fill="#64748b" text-anchor="middle" dominant-baseline="middle">${label}</text>` +
+    `</svg>`
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
+}
+
 // ── per-component prop shapes ─────────────────────────────────────────────────
 
 type ConstructionProps = {
@@ -36,11 +278,25 @@ type ConstructionProps = {
     ctaLabel: string
     ctaHref: string
     phoneNumber: string
+    email: string
     primaryColor: string
+    secondaryColor: string
+    tertiaryColor: string
+    quaternaryColor: string
+    transparent: boolean
+    lightText: boolean
+    social1Href: string
+    social2Href: string
+    social3Href: string
+    social4Href: string
   }
   ConstructionTopBar: {
     variant: '1' | '2' | '3' | '4'
     visible: boolean
+    primaryColor: string
+    secondaryColor: string
+    tertiaryColor: string
+    quaternaryColor: string
     d1Address: string
     d1Phone: string
     d1Email: string
@@ -58,7 +314,6 @@ type ConstructionProps = {
     d2Item2Text: string
     d2Item3Text: string
     d2TrackLabel: string
-    d2TrackHref: string
     d2Language: string
     d3Tagline: string
     d3Phone: string
@@ -79,78 +334,86 @@ type ConstructionProps = {
   ConstructionHero: {
     variant: '1' | '2' | '3' | '4'
     visible: boolean
-    d1Slide1Image: string
-    d1Slide1Badge: string
-    d1Slide1Headline: string
-    d1Slide1Subheadline: string
-    d1Slide1CtaLabel: string
-    d1Slide1CtaHref: string
-    d1Slide2Image: string
-    d1Slide2Badge: string
-    d1Slide2Headline: string
-    d1Slide2Subheadline: string
-    d1Slide2CtaLabel: string
-    d1Slide2CtaHref: string
-    d1Slide3Image: string
-    d1Slide3Badge: string
-    d1Slide3Headline: string
-    d1Slide3Subheadline: string
-    d1Slide3CtaLabel: string
-    d1Slide3CtaHref: string
+    primaryColor: string
+    secondaryColor: string
+    d1Slides: {
+      image: string
+      badge: string
+      headline: string
+      subheadline: string
+      ctaLabel: string
+      ctaHref: string
+    }[]
     d2BadgeText: string
-    d2Headline: string
-    d2HighlightWord: string
-    d2Subheadline: string
+    d2BrandsLabel: string
     d2CtaLabel: string
     d2CtaHref: string
     d2SecondaryLabel: string
-    d2SecondaryHref: string
     d2Avatar1: string
     d2Avatar2: string
     d2Avatar3: string
     d2TrustText: string
-    d2Slide1Image: string
-    d2Slide1Tag: string
-    d2Slide1Title: string
-    d2Slide1Subtitle: string
-    d2Slide2Image: string
-    d2Slide2Tag: string
-    d2Slide2Title: string
-    d2Slide2Subtitle: string
-    d2Slide3Image: string
-    d2Slide3Tag: string
-    d2Slide3Title: string
-    d2Slide3Subtitle: string
+    d2Stat1Value: string
+    d2Stat1Label: string
+    d2Stat2Value: string
+    d2Stat2Label: string
+    d2Stat3Value: string
+    d2Stat3Label: string
+    d2Slides: {
+      dotLabel: string
+      image: string
+      lead: string
+      highlight: string
+      description: string
+      brands: { name: string; logo: string }[]
+      workHref: string
+    }[]
     d3Eyebrow: string
     d3Headline: string
     d3Subheadline: string
     d3CtaLabel: string
     d3CtaHref: string
-    d3Slide1Image: string
-    d3Slide1Quote: string
-    d3Slide1Author: string
-    d3Slide1Role: string
-    d3Slide2Image: string
-    d3Slide2Quote: string
-    d3Slide2Author: string
-    d3Slide2Role: string
-    d3Slide3Image: string
-    d3Slide3Quote: string
-    d3Slide3Author: string
-    d3Slide3Role: string
+    d3Slides: {
+      image: string
+      quote: string
+      author: string
+      role: string
+    }[]
     d4Headline: string
     d4Subheadline: string
     d4CtaLabel: string
     d4CtaHref: string
-    d4Slide1Icon: IconKey
-    d4Slide1Title: string
-    d4Slide1Description: string
-    d4Slide2Icon: IconKey
-    d4Slide2Title: string
-    d4Slide2Description: string
-    d4Slide3Icon: IconKey
-    d4Slide3Title: string
-    d4Slide3Description: string
+    d4Slides: {
+      icon: IconKey
+      title: string
+      description: string
+    }[]
+    sliderShowArrows: boolean
+    sliderShowDots: boolean
+    sliderAutoplay: boolean
+    sliderAutoplaySpeed: number
+    sliderLoop: boolean
+    sliderTransition: 'slide' | 'fade'
+    typoTitleSize: string
+    typoTitleWeight: string
+    typoTitleColor: string
+    typoTaglineSize: string
+    typoTaglineWeight: string
+    typoTaglineColor: string
+    typoParaSize: string
+    typoParaWeight: string
+    typoParaColor: string
+    typoButtonSize: string
+    typoButtonWeight: string
+    typoButtonColor: string
+    activeSlideIndex: number
+  }
+  ConstructionInnerBanner: {
+    variant: '1' | '2' | '3' | '4'
+    visible: boolean
+    backgroundImage: string
+    imageAlt: string
+    subtitle: string
   }
   ConstructionServicesGrid: {
     sectionTitle: string
@@ -173,72 +436,14 @@ type ConstructionProps = {
   ConstructionProjectGallery: {
     sectionTitle: string
     sectionSubtitle: string
-    project1Title: string
-    project1Category: string
-    project1Image: string
-    project1NumberTag: string
-    project1Description: string
-    project1Href: string
-    project2Title: string
-    project2Category: string
-    project2Image: string
-    project2NumberTag: string
-    project2Description: string
-    project2Href: string
-    project3Title: string
-    project3Category: string
-    project3Image: string
-    project3NumberTag: string
-    project3Description: string
-    project3Href: string
-    project4Title: string
-    project4Category: string
-    project4Image: string
-    project4NumberTag: string
-    project4Description: string
-    project4Href: string
-    project5Title: string
-    project5Category: string
-    project5Image: string
-    project5NumberTag: string
-    project5Description: string
-    project5Href: string
-    project6Title: string
-    project6Category: string
-    project6Image: string
-    project6NumberTag: string
-    project6Description: string
-    project6Href: string
-    project7Title: string
-    project7Category: string
-    project7Image: string
-    project7NumberTag: string
-    project7Description: string
-    project7Href: string
-    project8Title: string
-    project8Category: string
-    project8Image: string
-    project8NumberTag: string
-    project8Description: string
-    project8Href: string
-    project9Title: string
-    project9Category: string
-    project9Image: string
-    project9NumberTag: string
-    project9Description: string
-    project9Href: string
-    project10Title: string
-    project10Category: string
-    project10Image: string
-    project10NumberTag: string
-    project10Description: string
-    project10Href: string
-    project11Title: string
-    project11Category: string
-    project11Image: string
-    project11NumberTag: string
-    project11Description: string
-    project11Href: string
+    items: {
+      title: string
+      category: string
+      image: string
+      numberTag: string
+      description: string
+      href: string
+    }[]
     padding: 'sm' | 'md' | 'lg'
   }
   ConstructionQuoteCTA: {
@@ -472,6 +677,8 @@ type ConstructionProps = {
     check3Text: string
     brochureLabel: string
     brochureHref: string
+    membershipLabel: string
+    members: { title: string; logo: string }[]
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
   }
@@ -536,186 +743,29 @@ type ConstructionProps = {
     background: 'white' | 'muted'
   }
   ConstructionProductsShowcase: {
+    sectionEyebrow: string
     sectionTitle: string
     sectionSubtitle: string
     category1Label: string
     category2Label: string
     category3Label: string
     category4Label: string
-    product1Category: string
-    product1Icon: IconKey
-    product1Image: string
-    product1Title: string
-    product1Description: string
-    product1Brands: string
-    product2Category: string
-    product2Icon: IconKey
-    product2Image: string
-    product2Title: string
-    product2Description: string
-    product2Brands: string
-    product3Category: string
-    product3Icon: IconKey
-    product3Image: string
-    product3Title: string
-    product3Description: string
-    product3Brands: string
-    product4Category: string
-    product4Icon: IconKey
-    product4Image: string
-    product4Title: string
-    product4Description: string
-    product4Brands: string
-    product5Category: string
-    product5Icon: IconKey
-    product5Image: string
-    product5Title: string
-    product5Description: string
-    product5Brands: string
-    product6Category: string
-    product6Icon: IconKey
-    product6Image: string
-    product6Title: string
-    product6Description: string
-    product6Brands: string
-    product7Category: string
-    product7Icon: IconKey
-    product7Image: string
-    product7Title: string
-    product7Description: string
-    product7Brands: string
-    product8Category: string
-    product8Icon: IconKey
-    product8Image: string
-    product8Title: string
-    product8Description: string
-    product8Brands: string
-    product9Category: string
-    product9Icon: 'hardhat' | 'shield' | 'star'
-    product9Image: string
-    product9Title: string
-    product9Description: string
-    product9Brands: string
-    product10Category: string
-    product10Icon: 'hardhat' | 'shield' | 'star'
-    product10Image: string
-    product10Title: string
-    product10Description: string
-    product10Brands: string
-    product11Category: string
-    product11Icon: 'hardhat' | 'shield' | 'star'
-    product11Image: string
-    product11Title: string
-    product11Description: string
-    product11Brands: string
-    product12Category: string
-    product12Icon: 'hardhat' | 'shield' | 'star'
-    product12Image: string
-    product12Title: string
-    product12Description: string
-    product12Brands: string
-    product13Category: string
-    product13Icon: 'hardhat' | 'shield' | 'star'
-    product13Image: string
-    product13Title: string
-    product13Description: string
-    product13Brands: string
-    product14Category: string
-    product14Icon: 'hardhat' | 'shield' | 'star'
-    product14Image: string
-    product14Title: string
-    product14Description: string
-    product14Brands: string
-    product15Category: string
-    product15Icon: 'hardhat' | 'shield' | 'star'
-    product15Image: string
-    product15Title: string
-    product15Description: string
-    product15Brands: string
+    items: {
+      category: string
+      icon: 'hardhat' | 'shield' | 'star'
+      image: string
+      title: string
+      description: string
+      brands: string
+    }[]
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
   }
   ConstructionClientsGrid: {
+    sectionEyebrow: string
     sectionTitle: string
     sectionSubtitle: string
-    client1Logo: string
-    client1Name: string
-    client2Logo: string
-    client2Name: string
-    client3Logo: string
-    client3Name: string
-    client4Logo: string
-    client4Name: string
-    client5Logo: string
-    client5Name: string
-    client6Logo: string
-    client6Name: string
-    client7Logo: string
-    client7Name: string
-    client8Logo: string
-    client8Name: string
-    client9Logo: string
-    client9Name: string
-    client10Logo: string
-    client10Name: string
-    client11Logo: string
-    client11Name: string
-    client12Logo: string
-    client12Name: string
-    client13Logo: string
-    client13Name: string
-    client14Logo: string
-    client14Name: string
-    client15Logo: string
-    client15Name: string
-    client16Logo: string
-    client16Name: string
-    client17Logo: string
-    client17Name: string
-    client18Logo: string
-    client18Name: string
-    client19Logo: string
-    client19Name: string
-    client20Logo: string
-    client20Name: string
-    client21Logo: string
-    client21Name: string
-    client22Logo: string
-    client22Name: string
-    client23Logo: string
-    client23Name: string
-    client24Logo: string
-    client24Name: string
-    client25Logo: string
-    client25Name: string
-    client26Logo: string
-    client26Name: string
-    client27Logo: string
-    client27Name: string
-    client28Logo: string
-    client28Name: string
-    client29Logo: string
-    client29Name: string
-    client30Logo: string
-    client30Name: string
-    client31Logo: string
-    client31Name: string
-    client32Logo: string
-    client32Name: string
-    client33Logo: string
-    client33Name: string
-    client34Logo: string
-    client34Name: string
-    client35Logo: string
-    client35Name: string
-    client36Logo: string
-    client36Name: string
-    client37Logo: string
-    client37Name: string
-    client38Logo: string
-    client38Name: string
-    client39Logo: string
-    client39Name: string
+    items: { logo: string; name: string }[]
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
   }
@@ -753,23 +803,17 @@ type ConstructionProps = {
     background: 'white' | 'muted'
   }
   ConstructionLeadFormFAQ: {
+    sectionEyebrow: string
     sectionTitle: string
-    faq1Question: string
-    faq1Answer: string
-    faq2Question: string
-    faq2Answer: string
-    faq3Question: string
-    faq3Answer: string
-    faq4Question: string
-    faq4Answer: string
-    faq5Question: string
-    faq5Answer: string
-    faq6Question: string
-    faq6Answer: string
+    sectionIntroLinkLabel: string
+    sectionIntroLinkHref: string
+    faqs: { question: string; answer: string }[]
     formHeading: string
     formSubtext: string
+    interestOptions: string
+    ctaLabel: string
+    formPrivacyNote: string
     padding: 'sm' | 'md' | 'lg'
-    background: 'white' | 'muted'
   }
   ConstructionSimpleContactForm: {
     heading: string
@@ -793,11 +837,24 @@ type ConstructionProps = {
   }
   ConstructionFloatingActions: {
     whatsappHref: string
+    brochureHref: string
+    badgeYearLabel: string
+    badgeNumber: string
+    badgeLabel: string
   }
   ConstructionFooter: {
+    variant: '1' | '2' | '3' | '4'
     logoUrl: string
     brand: string
     tagline: string
+    aboutTitle: string
+    aboutText: string
+    aboutLinkLabel: string
+    aboutLinkHref: string
+    primaryColor: string
+    secondaryColor: string
+    tertiaryColor: string
+    quaternaryColor: string
     social1Label: string
     social1Href: string
     social2Label: string
@@ -806,18 +863,38 @@ type ConstructionProps = {
     social3Href: string
     social4Label: string
     social4Href: string
-    newsletterPlaceholder: string
-    newsletterButtonLabel: string
     companyLinksTitle: string
     links: string
+    group2Title: string
+    group2Links: string
+    group3Title: string
+    group3Links: string
+    partnerLogo1Url: string
+    partnerLogo2Url: string
+    partnerLogo3Url: string
+    partnerLogo4Url: string
+    badge1Url: string
+    badge1Label: string
+    badge2Url: string
+    badge2Label: string
+    policyLinks: string
+    group4Links: string
+    newsletterTitle: string
+    newsletterPlaceholder: string
+    newsletterButtonLabel: string
     contactTitle: string
     contactPhone: string
+    contactPhone2: string
     contactEmail: string
+    contactEmail2: string
     contactAddress: string
     showroomTitle: string
     showroomAddress: string
+    regdOfficeTitle: string
+    regdOfficeAddress: string
     qrImage: string
     qrCaption: string
+    estdYear: string
     copyright: string
   }
   ConstructionFounder: {
@@ -1062,44 +1139,41 @@ type ConstructionProps = {
     padding: 'sm' | 'md' | 'lg'
   }
   ConstructionDisciplinesGrid: {
+    sectionEyebrow: string
     sectionTitle: string
     sectionSubtitle: string
-    discipline1Icon: IconKey
-    discipline1Image: string
-    discipline1Title: string
-    discipline1Description: string
-    discipline1Brands: string
-    discipline1Href: string
-    discipline2Icon: IconKey
-    discipline2Image: string
-    discipline2Title: string
-    discipline2Description: string
-    discipline2Brands: string
-    discipline2Href: string
-    discipline3Icon: IconKey
-    discipline3Image: string
-    discipline3Title: string
-    discipline3Description: string
-    discipline3Brands: string
-    discipline3Href: string
-    discipline4Icon: IconKey
-    discipline4Image: string
-    discipline4Title: string
-    discipline4Description: string
-    discipline4Brands: string
-    discipline4Href: string
-    discipline5Icon: IconKey
-    discipline5Image: string
-    discipline5Title: string
-    discipline5Description: string
-    discipline5Brands: string
-    discipline5Href: string
-    discipline6Icon: IconKey
-    discipline6Image: string
-    discipline6Title: string
-    discipline6Description: string
-    discipline6Brands: string
-    discipline6Href: string
+    items: {
+      icon: IconKey
+      image: string
+      title: string
+      description: string
+      brands: string
+      href: string
+    }[]
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+  }
+  ConstructionOurBrands: {
+    sectionTitle: string
+    sectionSubtitle: string
+    tab1Label: string
+    tab1Groups: string
+    tab2Label: string
+    tab2Groups: string
+    tab3Label: string
+    tab3Groups: string
+    padding: 'sm' | 'md' | 'lg'
+  }
+  ConstructionProjectsSlider: {
+    sectionEyebrow: string
+    sectionTitle: string
+    slides: ProjectSlide[]
+    padding: 'sm' | 'md' | 'lg'
+  }
+  ConstructionTestimonialsSlider: {
+    sectionEyebrow: string
+    sectionTitle: string
+    slides: TestimonialSlide[]
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
   }
@@ -1178,6 +1252,33 @@ interface CarouselTestimonialSlide {
   role: string
 }
 
+interface ProjectSlide {
+  eyebrow: string
+  image: string
+  title: string
+  description: string
+  tags: string
+  linkLabel: string
+  linkHref: string
+  ctaLabel: string
+  ctaHref: string
+}
+
+interface TestimonialSlide {
+  photo: string
+  quote: string
+  name: string
+  role: string
+  videoLabel: string
+}
+
+interface CarouselTestimonialSlide {
+  photo: string
+  quote: string
+  name: string
+  role: string
+}
+
 // ── shared icon SVGs (inline, no external deps) ───────────────────────────────
 
 function HardHatIcon() {
@@ -1227,6 +1328,122 @@ function StarIcon() {
   )
 }
 
+function SnowflakeIcon() {
+  return (
+    <svg
+      className="w-6 h-6"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 2v20M4.2 6.5l15.6 11M4.2 17.5l15.6-11M8 3.5l4 2 4-2M8 20.5l4-2 4 2M2.5 8.5l1.7 4-1.7 4M21.5 8.5l-1.7 4 1.7 4"
+      />
+    </svg>
+  )
+}
+
+function HouseGearIcon() {
+  return (
+    <svg
+      className="w-6 h-6"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 11l9-7 9 7M5 10v10h5v-6h4v6h5V10" />
+      <circle cx="12" cy="17" r="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function TvIcon() {
+  return (
+    <svg
+      className="w-6 h-6"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <rect
+        x="3"
+        y="5"
+        width="18"
+        height="12"
+        rx="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 21h8M12 17v4" />
+    </svg>
+  )
+}
+
+function PlugIcon() {
+  return (
+    <svg
+      className="w-6 h-6"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9 3v5M15 3v5M7 8h10l-1 5a4 4 0 01-4 3.5v3.5"
+      />
+    </svg>
+  )
+}
+
+function FireIcon() {
+  return (
+    <svg
+      className="w-6 h-6"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 3c1 3-3 4-3 7a3 3 0 006 0c0-1-.5-1.7-1-2.3.8.3 3 1.7 3 5.3a5 5 0 01-10 0c0-4 3-6 5-10z"
+      />
+    </svg>
+  )
+}
+
+function LightbulbIcon() {
+  return (
+    <svg
+      className="w-6 h-6"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9 18h6M10 21h4M12 3a6 6 0 00-3.5 10.9c.6.4 1 1.1 1 1.9v.2h5v-.2c0-.8.4-1.5 1-1.9A6 6 0 0012 3z"
+      />
+    </svg>
+  )
+}
+
 function PinIcon() {
   return (
     <svg
@@ -1243,6 +1460,72 @@ function PinIcon() {
         d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"
       />
       <circle cx="12" cy="9.5" r="2.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+// Address 1 in the Logo & Contact Details form is one free-text line
+// (street/building/landmark/city/PIN all together) — full-length it wraps
+// the topbar onto two lines and buries the links/socials. Display-only
+// shrink to "area, city" (last two comma segments, trailing 6-digit PIN
+// stripped off the city) — the underlying d1Address value/source is
+// untouched, this only changes what Design 1 renders it as.
+function shortAddress(full: string): string {
+  if (!full) return full
+  const parts = full
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean)
+  return parts
+    .slice(-2)
+    .map((p) => p.replace(/\s*-\s*\d[\d\s]*\d\s*$/, '').trim())
+    .filter(Boolean)
+    .join(', ')
+}
+
+function MegaphoneIcon() {
+  return (
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 11v2a2 2 0 0 0 2 2h1l3 5V9l-3-1H5a2 2 0 0 0-2 2z"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 8l9-4v16l-9-4" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M20 10.5v3" />
+    </svg>
+  )
+}
+
+function TruckIcon() {
+  return (
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <rect
+        x="2"
+        y="7"
+        width="12"
+        height="10"
+        rx="1"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M14 10h4l4 3.5V17h-8z" />
+      <circle cx="7" cy="18.5" r="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="17.5" cy="18.5" r="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -1349,26 +1632,6 @@ function HeadsetIcon() {
   )
 }
 
-function GlobeIcon() {
-  return (
-    <svg
-      className="w-4 h-4"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.8}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="9" strokeLinecap="round" strokeLinejoin="round" />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M3 12h18M12 3c2.5 2.5 4 6 4 9s-1.5 6.5-4 9c-2.5-2.5-4-6-4-9s1.5-6.5 4-9z"
-      />
-    </svg>
-  )
-}
-
 function FacebookIcon() {
   return (
     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -1418,6 +1681,61 @@ function XIcon() {
   )
 }
 
+function ChevronDownIcon() {
+  return (
+    <svg
+      className="w-3 h-3"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.2}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+    </svg>
+  )
+}
+
+function SearchIcon() {
+  return (
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="7" strokeLinecap="round" strokeLinejoin="round" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.3-4.3" />
+    </svg>
+  )
+}
+
+function HeartIcon() {
+  return (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 21s-7.5-4.6-10-9.3C.5 8 2.4 4.5 6 4c2.1-.3 4 .8 6 3 2-2.2 3.9-3.3 6-3 3.6.5 5.5 4 4 7.7-2.5 4.7-10 9.3-10 9.3z" />
+    </svg>
+  )
+}
+
+function GridIcon() {
+  return (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="5" cy="5" r="2" />
+      <circle cx="12" cy="5" r="2" />
+      <circle cx="19" cy="5" r="2" />
+      <circle cx="5" cy="12" r="2" />
+      <circle cx="12" cy="12" r="2" />
+      <circle cx="19" cy="12" r="2" />
+      <circle cx="5" cy="19" r="2" />
+      <circle cx="12" cy="19" r="2" />
+      <circle cx="19" cy="19" r="2" />
+    </svg>
+  )
+}
+
 function YoutubeIcon() {
   return (
     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -1426,13 +1744,35 @@ function YoutubeIcon() {
   )
 }
 
-type IconKey = 'hardhat' | 'shield' | 'star'
+type IconKey =
+  'hardhat' | 'shield' | 'star' | 'snowflake' | 'housegear' | 'tv' | 'plug' | 'fire' | 'lightbulb'
 
 const ICON_BY_KEY: Record<IconKey, () => JSX.Element> = {
   hardhat: HardHatIcon,
   shield: CheckShieldIcon,
   star: StarIcon,
+  snowflake: SnowflakeIcon,
+  housegear: HouseGearIcon,
+  tv: TvIcon,
+  plug: PlugIcon,
+  fire: FireIcon,
+  lightbulb: LightbulbIcon,
 }
+
+const DISCIPLINE_ICON_FIELD = {
+  type: 'select',
+  options: [
+    { label: 'Snowflake (AC)', value: 'snowflake' },
+    { label: 'House + Gear (Automation)', value: 'housegear' },
+    { label: 'TV (Theater)', value: 'tv' },
+    { label: 'Plug (Electrical)', value: 'plug' },
+    { label: 'Fire', value: 'fire' },
+    { label: 'Lightbulb', value: 'lightbulb' },
+    { label: 'Shield', value: 'shield' },
+    { label: 'Star', value: 'star' },
+    { label: 'Hard Hat', value: 'hardhat' },
+  ],
+} as const
 
 const REVEAL_BASE = 'transition-all duration-700 ease-out'
 
@@ -1478,9 +1818,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         type: 'select',
         options: [
           { label: 'Design 1 — Contact + links + socials', value: '1' },
-          { label: 'Design 2 — Promo strip', value: '2' },
+          { label: 'Design 2 — Announcement + social + language', value: '2' },
           { label: 'Design 3 — Tagline + CTA button', value: '3' },
-          { label: 'Design 4 — Follow us + tagline + help', value: '4' },
+          { label: 'Design 4 — Support items + login/signup', value: '4' },
         ],
       },
       visible: {
@@ -1507,7 +1847,6 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       d2Item2Text: { type: 'text' },
       d2Item3Text: { type: 'text' },
       d2TrackLabel: { type: 'text' },
-      d2TrackHref: { type: 'text' },
       d2Language: { type: 'text' },
       d3Tagline: { type: 'text' },
       d3Phone: { type: 'text' },
@@ -1524,48 +1863,69 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       d4FaqLabel: { type: 'text' },
       d4FaqHref: { type: 'text' },
       d4Language: { type: 'text' },
+      primaryColor: { type: 'text' },
+      secondaryColor: { type: 'text' },
+      tertiaryColor: { type: 'text' },
+      quaternaryColor: { type: 'text' },
     },
+    resolveFields: (data, { fields }) =>
+      variantFields(fields, data.props?.variant) as typeof fields,
     defaultProps: {
       variant: '1',
       visible: true,
+      primaryColor: '',
+      secondaryColor: '',
+      tertiaryColor: '',
+      quaternaryColor: '',
       d1Address: '123 Business Street, Mumbai, India',
       d1Phone: '+91 98765 43210',
       d1Email: 'hello@yourdomain.com',
-      d1Link1Label: 'About Us',
-      d1Link1Href: '#about',
-      d1Link2Label: 'Careers',
-      d1Link2Href: '#careers',
-      d1Link3Label: 'Support',
-      d1Link3Href: '#support',
+      d1Link1Label: 'Careers',
+      d1Link1Href: '#careers',
+      d1Link2Label: 'Support',
+      d1Link2Href: '#support',
+      d1Link3Label: 'Blog',
+      d1Link3Href: '#blog',
       d1Social1Href: '#',
       d1Social2Href: '#',
       d1Social3Href: '#',
       d1Social4Href: '#',
-      d2Item1Text: 'Free Shipping on Orders Over ₹999',
-      d2Item2Text: 'Secure Payments Guaranteed',
-      d2Item3Text: '24/7 Customer Support',
-      d2TrackLabel: 'Track Order',
-      d2TrackHref: '#track',
+      // Design 2's own text ("announcement" + short tagline) — d4Tagline/
+      // d2Item1Text names don't line up with what's rendered under
+      // variant==='2' below; fields are shared across all 4 designs (Puck
+      // has no per-variant field scoping) and got reassigned by content fit
+      // rather than renamed, to avoid a much bigger mechanical diff across
+      // the type/fields/defaultProps/destructure blocks for a purely
+      // cosmetic key name. See the variant==='2' and variant==='4' render
+      // comments below for the full reassignment.
+      d2Item1Text: "Let's build something amazing together!",
+      d2Item2Text: '24/7 Support',
+      d2Item3Text: 'On-Time Delivery',
+      d2TrackLabel: 'Secure & Trusted',
       d2Language: 'EN',
       d3Tagline: 'We help businesses grow digitally.',
       d3Phone: '+91 98765 43210',
       d3Email: 'hello@yourdomain.com',
-      d3CtaLabel: 'Book a Free Consultation',
+      d3CtaLabel: 'Start Your Project',
       d3CtaHref: '#consultation',
-      d4Tagline: 'Building ideas. Delivering results.',
+      d4Tagline: 'Transforming Ideas into Digital Solutions',
       d4Social1Href: '#',
       d4Social2Href: '#',
       d4Social3Href: '#',
       d4Social4Href: '#',
-      d4HelpLabel: 'Help Center',
-      d4HelpHref: '#help',
-      d4FaqLabel: 'FAQs',
-      d4FaqHref: '#faqs',
-      d4Language: 'English (IN)',
+      d4HelpLabel: 'Login',
+      d4HelpHref: '#login',
+      d4FaqLabel: 'Sign Up',
+      d4FaqHref: '#signup',
+      d4Language: 'Get 10% Off on Your First Project!',
     },
     render: function ConstructionTopBarRender({
       variant,
       visible,
+      primaryColor,
+      secondaryColor,
+      tertiaryColor,
+      quaternaryColor,
       d1Address,
       d1Phone,
       d1Email,
@@ -1583,7 +1943,6 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       d2Item2Text,
       d2Item3Text,
       d2TrackLabel,
-      d2TrackHref,
       d2Language,
       d3Tagline,
       d3Phone,
@@ -1601,106 +1960,46 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       d4FaqHref,
       d4Language,
     }) {
-      if (!visible) return <></>
+      if (visible === false) return <></>
 
       if (variant === '2') {
-        // Plain border-l per item (not the divide-x utility) — divide-x's
-        // sibling selector looks fine in one row, but stretches/misaligns
-        // once flex-wrap actually wraps a narrow topbar onto a second line.
-        const itemBorder = 'border-l border-slate-200 pl-6 first:border-l-0 first:pl-0'
+        // Dark announcement bar. Field reuse note (see defaultProps comment
+        // above): d4Tagline carries the announcement text and d2Item1Text
+        // the short tagline that follows it; d4Social1-4Href/d2Language
+        // carry the socials + language dropdown on the right.
+        // Dark bar mixes secondary→tertiary (not a neutral slate) so it
+        // still reads as "this brand's colors" even at its darkest point;
+        // hover accent uses primaryColor via a CSS var so Tailwind's
+        // hover: pseudo-class still works with a value that isn't known
+        // until render time.
         return (
-          <div className="bg-white border-b border-slate-100">
-            <div
-              className={`${wrap} flex flex-wrap items-center justify-center gap-x-0 gap-y-2 py-2.5 text-sm text-slate-600`}
-            >
-              <span className={`flex items-center gap-2 pr-6 ${itemBorder}`}>
-                <GiftIcon />
-                {d2Item1Text}
-              </span>
-              <span className={`flex items-center gap-2 pr-6 ${itemBorder}`}>
-                <CheckShieldIcon />
-                {d2Item2Text}
-              </span>
-              <span className={`flex items-center gap-2 pr-6 ${itemBorder}`}>
-                <HeadsetIcon />
-                {d2Item3Text}
-              </span>
-              {d2TrackLabel && (
-                <a
-                  href={d2TrackHref}
-                  className={`pr-6 hover:text-orange-600 transition ${itemBorder}`}
-                >
-                  {d2TrackLabel}
-                </a>
-              )}
-              {d2Language && (
-                <span className={`flex items-center gap-1 ${itemBorder}`}>
-                  {d2Language}
-                  <svg
-                    className="w-3.5 h-3.5"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
-                  </svg>
-                </span>
-              )}
-            </div>
-          </div>
-        )
-      }
-
-      if (variant === '3') {
-        return (
-          <div className="bg-white border-b border-slate-100">
-            <div
-              className={`${wrap} flex flex-wrap items-center justify-between gap-4 py-3 text-sm text-slate-600`}
-            >
-              {d3Tagline && <p className="font-medium text-slate-900">{d3Tagline}</p>}
-              <div className="flex items-center gap-4 divide-x divide-slate-200">
-                {d3Phone && (
-                  <span className="flex items-center gap-2 pr-4">
-                    <PhoneIcon />
-                    {d3Phone}
+          <div
+            style={{
+              backgroundImage: themeGradient(
+                secondaryColor || '#12142a',
+                tertiaryColor || '#000000'
+              ),
+              ['--tb-accent' as string]: primaryColor || '#f5a623',
+            }}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 text-sm text-slate-200 md:px-8">
+              <div className="flex flex-wrap items-center gap-3 divide-x divide-white/20">
+                {d4Tagline && (
+                  <span className="flex items-center gap-2 pr-3 first:pl-0">
+                    <MegaphoneIcon />
+                    {d4Tagline}
                   </span>
                 )}
-                {d3Email && (
-                  <span className="flex items-center gap-2 pl-4">
-                    <MailIcon />
-                    {d3Email}
-                  </span>
-                )}
+                {d2Item1Text && <span className="pl-3">{d2Item1Text}</span>}
               </div>
-              {d3CtaLabel && (
-                <a
-                  href={d3CtaHref}
-                  className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition"
-                >
-                  {d3CtaLabel}
-                  <span aria-hidden="true">→</span>
-                </a>
-              )}
-            </div>
-          </div>
-        )
-      }
-
-      if (variant === '4') {
-        return (
-          <div className="bg-white border-b border-slate-100">
-            <div
-              className={`${wrap} flex flex-wrap items-center justify-between gap-4 py-3 text-sm text-slate-600`}
-            >
-              <div className="flex items-center gap-3">
-                <span className="font-medium text-slate-900">Follow Us:</span>
+              <div className="flex items-center gap-4">
+                <span className="text-slate-400">Follow us:</span>
                 <div className="flex items-center gap-3">
                   {d4Social1Href && (
                     <a
                       href={d4Social1Href}
                       aria-label="Facebook"
-                      className="hover:text-orange-600 transition"
+                      className="hover:text-[var(--tb-accent)] transition"
                     >
                       <FacebookIcon />
                     </a>
@@ -1708,51 +2007,34 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   {d4Social2Href && (
                     <a
                       href={d4Social2Href}
-                      aria-label="LinkedIn"
-                      className="hover:text-orange-600 transition"
+                      aria-label="Instagram"
+                      className="hover:text-[var(--tb-accent)] transition"
                     >
-                      <LinkedInIcon />
+                      <InstagramIcon />
                     </a>
                   )}
                   {d4Social3Href && (
                     <a
                       href={d4Social3Href}
-                      aria-label="Instagram"
-                      className="hover:text-orange-600 transition"
+                      aria-label="LinkedIn"
+                      className="hover:text-[var(--tb-accent)] transition"
                     >
-                      <InstagramIcon />
+                      <LinkedInIcon />
                     </a>
                   )}
                   {d4Social4Href && (
                     <a
                       href={d4Social4Href}
                       aria-label="YouTube"
-                      className="hover:text-orange-600 transition"
+                      className="hover:text-[var(--tb-accent)] transition"
                     >
                       <YoutubeIcon />
                     </a>
                   )}
                 </div>
-              </div>
-              {d4Tagline && <p>{d4Tagline}</p>}
-              <div className="flex items-center gap-4">
-                {d4HelpLabel && (
-                  <a href={d4HelpHref} className="hover:text-orange-600 transition">
-                    {d4HelpLabel}
-                  </a>
-                )}
-                {d4FaqLabel && (
-                  <a
-                    href={d4FaqHref}
-                    className="border-l border-slate-200 pl-4 hover:text-orange-600 transition"
-                  >
-                    {d4FaqLabel}
-                  </a>
-                )}
-                {d4Language && (
-                  <span className="flex items-center gap-1">
-                    <GlobeIcon />
-                    {d4Language}
+                {d2Language && (
+                  <span className="flex items-center gap-1 border-l border-white/20 pl-4">
+                    {d2Language}
                     <svg
                       className="w-3.5 h-3.5"
                       fill="none"
@@ -1770,17 +2052,129 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         )
       }
 
-      // Design 1 (default)
-      return (
-        <div className="bg-white border-b border-slate-100">
+      if (variant === '3') {
+        // Was a hardcoded purple/pink gradient unrelated to the brand's
+        // own palette — now primary→secondary, this component's own theme
+        // colors (falls back to the same generic orange/near-black the
+        // rest of the pack uses when a project hasn't set a brand kit yet).
+        const barAccent = primaryColor || '#ff5a36'
+        return (
           <div
-            className={`${wrap} flex flex-wrap items-center justify-between gap-4 py-3 text-sm text-slate-600`}
+            style={{
+              backgroundImage: themeGradient(barAccent, secondaryColor || '#12142a'),
+            }}
           >
+            <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-3 text-sm text-white md:px-8">
+              {d3Tagline && <p className="font-medium text-white">{d3Tagline}</p>}
+              <div className="flex items-center gap-4 divide-x divide-white/30">
+                {d3Phone && (
+                  <span className="flex items-center gap-2 pr-4">
+                    <PhoneIcon />
+                    {d3Phone}
+                  </span>
+                )}
+                {d3Email && (
+                  <span className="flex items-center gap-2 pl-4">
+                    <MailIcon />
+                    {d3Email}
+                  </span>
+                )}
+              </div>
+              {d3CtaLabel && (
+                <a
+                  href={d3CtaHref}
+                  style={{ color: barAccent }}
+                  className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold hover:bg-white/90 transition"
+                >
+                  {d3CtaLabel}
+                  <span aria-hidden="true">→</span>
+                </a>
+              )}
+            </div>
+          </div>
+        )
+      }
+
+      if (variant === '4') {
+        // Support/trust items + Login/Sign Up. Field reuse note (see
+        // defaultProps comment above): d2Item2Text/d2Item3Text/d2TrackLabel
+        // carry the first three items and d4Language the fourth (promo);
+        // d4HelpLabel/Href and d4FaqLabel/Href carry Login and Sign Up.
+        const itemBorder = 'border-l border-slate-200 pl-6 first:border-l-0 first:pl-0'
+        return (
+          <div
+            className="bg-white border-b"
+            style={{
+              ['--tb-accent' as string]: primaryColor || '#f5a623',
+              borderColor: quaternaryColor || '#e2e8f0',
+            }}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-y-2 px-4 py-2.5 text-sm text-slate-600 md:px-8">
+              <div className="flex flex-wrap items-center">
+                {d2Item2Text && (
+                  <span className={`flex items-center gap-2 pr-6 ${itemBorder}`}>
+                    <HeadsetIcon />
+                    {d2Item2Text}
+                  </span>
+                )}
+                {d2Item3Text && (
+                  <span className={`flex items-center gap-2 pr-6 ${itemBorder}`}>
+                    <TruckIcon />
+                    {d2Item3Text}
+                  </span>
+                )}
+                {d2TrackLabel && (
+                  <span className={`flex items-center gap-2 pr-6 ${itemBorder}`}>
+                    <CheckShieldIcon />
+                    {d2TrackLabel}
+                  </span>
+                )}
+                {d4Language && (
+                  <span className={`flex items-center gap-2 ${itemBorder}`}>
+                    <GiftIcon />
+                    {d4Language}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-4">
+                {d4HelpLabel && (
+                  <a href={d4HelpHref} className="hover:text-[var(--tb-accent)] transition">
+                    {d4HelpLabel}
+                  </a>
+                )}
+                {d4FaqLabel && (
+                  <a
+                    href={d4FaqHref}
+                    className="border-l border-slate-200 pl-4 hover:text-[var(--tb-accent)] transition"
+                  >
+                    {d4FaqLabel}
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      // Design 1 (default) — edge-to-edge (not the shared `wrap` max-w-6xl
+      // column other designs use): contact info sits flush against the
+      // bar's true left edge and links/socials flush against its true
+      // right edge, not just the edges of a centered column with dead
+      // margin outside it on wide screens.
+      return (
+        <div
+          className="bg-white border-b"
+          style={{
+            ['--tb-accent' as string]: primaryColor || '#f5a623',
+            borderColor: quaternaryColor || '#e2e8f0',
+          }}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-3 text-sm text-slate-600 md:px-8">
             <div className="flex items-center gap-4 divide-x divide-slate-200">
-              {d1Address && (
+              {d1Email && (
                 <span className="flex items-center gap-2 pr-4 first:pl-0">
-                  <PinIcon />
-                  {d1Address}
+                  <MailIcon />
+                  {d1Email}
                 </span>
               )}
               {d1Phone && (
@@ -1789,10 +2183,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   {d1Phone}
                 </span>
               )}
-              {d1Email && (
-                <span className="flex items-center gap-2 pl-4">
-                  <MailIcon />
-                  {d1Email}
+              {d1Address && (
+                <span className="flex items-center gap-2 pl-4 whitespace-nowrap">
+                  <PinIcon />
+                  {shortAddress(d1Address)}
                 </span>
               )}
             </div>
@@ -1804,7 +2198,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               ]
                 .filter((l) => l.label)
                 .map((l, i) => (
-                  <a key={i} href={l.href} className="hover:text-orange-600 transition">
+                  <a key={i} href={l.href} className="hover:text-[var(--tb-accent)] transition">
                     {l.label}
                   </a>
                 ))}
@@ -1813,7 +2207,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   <a
                     href={d1Social1Href}
                     aria-label="Facebook"
-                    className="hover:text-orange-600 transition"
+                    className="hover:text-[var(--tb-accent)] transition"
                   >
                     <FacebookIcon />
                   </a>
@@ -1822,7 +2216,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   <a
                     href={d1Social2Href}
                     aria-label="LinkedIn"
-                    className="hover:text-orange-600 transition"
+                    className="hover:text-[var(--tb-accent)] transition"
                   >
                     <LinkedInIcon />
                   </a>
@@ -1831,7 +2225,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   <a
                     href={d1Social3Href}
                     aria-label="Instagram"
-                    className="hover:text-orange-600 transition"
+                    className="hover:text-[var(--tb-accent)] transition"
                   >
                     <InstagramIcon />
                   </a>
@@ -1840,7 +2234,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   <a
                     href={d1Social4Href}
                     aria-label="X"
-                    className="hover:text-orange-600 transition"
+                    className="hover:text-[var(--tb-accent)] transition"
                   >
                     <XIcon />
                   </a>
@@ -1861,9 +2255,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         type: 'select',
         options: [
           { label: 'Design 1 — Classic (logo, centered nav, Login + CTA)', value: '1' },
-          { label: 'Design 2 — Centered logo, split nav', value: '2' },
-          { label: 'Design 3 — Phone + CTA emphasis', value: '3' },
-          { label: 'Design 4 — Dark premium', value: '4' },
+          { label: 'Design 2 — Diagonal banner (socials) + phone badge', value: '2' },
+          { label: 'Design 3 — Solid color bar, login + grid menu', value: '3' },
+          { label: 'Design 4 — Phone/email badges, search + CTA', value: '4' },
         ],
       },
       visible: {
@@ -1881,22 +2275,69 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       ctaLabel: { type: 'text' },
       ctaHref: { type: 'text' },
       phoneNumber: { type: 'text' },
+      email: { type: 'text' },
       primaryColor: { type: 'text' },
+      secondaryColor: { type: 'text' },
+      tertiaryColor: { type: 'text' },
+      quaternaryColor: { type: 'text' },
+      // Design 1 only, for now — floats the header over the section below
+      // instead of occupying its own row (matches
+      // subhadra.cloudhostingcompany.in). Text colour is a separate toggle,
+      // not implied by transparency — a transparent header only reads over a
+      // dark/photo hero with light text, but over a light hero the header
+      // needs to stay dark-on-transparent, so both need to be independently
+      // choosable.
+      transparent: {
+        type: 'radio',
+        label: 'Transparent header (Design 1)',
+        options: [
+          { label: 'Off', value: false },
+          { label: 'On', value: true },
+        ],
+      },
+      lightText: {
+        type: 'radio',
+        label: 'Light text (Design 1 — for a dark/photo hero underneath)',
+        options: [
+          { label: 'Off', value: false },
+          { label: 'On', value: true },
+        ],
+      },
+      // Design 2's banner strip (Facebook/LinkedIn/Instagram/X) — a flat,
+      // variant-agnostic field set like phoneNumber/primaryColor above
+      // (this component doesn't use TopBar/Footer's per-design d1-d4 prefix
+      // convention), so it's just "the 4 social links", available to
+      // whichever design wants them.
+      social1Href: { type: 'text' },
+      social2Href: { type: 'text' },
+      social3Href: { type: 'text' },
+      social4Href: { type: 'text' },
     },
     defaultProps: {
       variant: '1',
       visible: true,
       brand: 'Your Brand',
       logoUrl: '',
-      links: 'Home|#\nAbout|#\nProducts|#\nServices|#\nSectors|#\nContact|#',
-      loginLabel: 'Login',
+      links: 'Home|#\nAbout|#\nProducts & Services|#\nSectors|#\nContact|#',
+      loginLabel: '',
       loginHref: '#login',
-      ctaLabel: 'Get a Quote',
-      ctaHref: '#quote',
+      ctaLabel: 'Download Brochure ↓',
+      ctaHref: '#brochure',
       phoneNumber: '+91 98765 43210',
+      email: 'hello@yourdomain.com',
       primaryColor: '',
+      secondaryColor: '',
+      tertiaryColor: '',
+      quaternaryColor: '',
+      transparent: true,
+      lightText: true,
+      social1Href: '#',
+      social2Href: '#',
+      social3Href: '#',
+      social4Href: '#',
     },
     render: function ConstructionHeaderRender({
+      id,
       variant,
       visible,
       brand,
@@ -1907,9 +2348,26 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       ctaLabel,
       ctaHref,
       phoneNumber,
+      email,
       primaryColor,
+      secondaryColor,
+      tertiaryColor,
+      quaternaryColor,
+      transparent,
+      lightText,
+      social1Href,
+      social2Href,
+      social3Href,
+      social4Href,
+      puck,
     }) {
       const [mobileOpen, setMobileOpen] = useState(false)
+      // This admin canvas renders the page directly (no iframe), so a truly
+      // `fixed` header escapes the canvas and overlaps the editor's own
+      // toolbar (Back/Insert block/Publish) instead of just the hero below
+      // it — only float it on the real public page; stay `sticky` (still
+      // transparent-colored) while editing so the layout can't break.
+      const isEditingInPuck = puck?.isEditing ?? false
       const navItems = (links || '')
         .split('\n')
         .map((line) => line.split('|'))
@@ -1976,12 +2434,13 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         </>
       )
 
-      const hamburgerBtn = (colorClass: string) => (
+      const hamburgerBtn = (colorClass?: string, colorStyle?: string) => (
         <button
           type="button"
           aria-label="Toggle menu"
           onClick={() => setMobileOpen(true)}
-          className={`md:hidden p-2 -mr-2 ${colorClass}`}
+          className={`md:hidden p-2 -mr-2 ${colorClass ?? ''}`}
+          style={colorStyle ? { color: colorStyle } : undefined}
         >
           <svg
             className="w-6 h-6"
@@ -1995,65 +2454,104 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         </button>
       )
 
-      if (!visible) return <></>
+      if (visible === false) return <></>
 
       if (variant === '2') {
-        const half = Math.ceil(navItems.length / 2)
-        const leftLinks = navItems.slice(0, half)
-        const rightLinks = navItems.slice(half)
+        // Diagonal orange banner (social icons) between the logo and the
+        // phone badge, nav row underneath with the first item highlighted
+        // as active — no CTA button in this design, just the phone badge.
         return (
           <>
-            <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-100 text-slate-900">
-              <div className={`${wrap} flex items-center justify-between h-16`}>
-                <a href="#" className="flex items-center gap-2 font-bold md:hidden">
-                  {logoUrl && (
+            <header
+              className="sticky top-0 z-40 bg-white text-slate-900"
+              style={{ ['--hdr-accent' as string]: primaryColor || '#f5a623' }}
+            >
+              <div className="flex items-stretch">
+                <a href="#" className="flex shrink-0 items-center px-4 py-3 md:px-8">
+                  {logoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={logoUrl} alt={brand} className="h-8 w-auto" />
+                    <img src={logoUrl} alt={brand} className="h-9 w-auto" />
+                  ) : (
+                    <span className="font-bold">{brand}</span>
                   )}
-                  <span>{brand}</span>
                 </a>
-                <div className="hidden md:grid md:flex-1 md:grid-cols-[1fr_auto_1fr] md:items-center md:gap-6">
-                  <nav className="flex items-center justify-end gap-6">
-                    {leftLinks.map(([label, href], i) => (
+                <div className="relative hidden flex-1 items-center md:flex">
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      backgroundImage: themeGradient(
+                        primaryColor || '#f5a623',
+                        tertiaryColor || secondaryColor || '#12142a'
+                      ),
+                      clipPath: 'polygon(8% 0, 100% 0, 100% 100%, 0 100%)',
+                    }}
+                  />
+                  <div className="relative z-10 flex flex-1 items-center justify-center gap-5 py-3 pl-10">
+                    {social1Href && (
                       <a
-                        key={i}
-                        href={href || '#'}
-                        className="text-sm font-medium text-slate-700 hover:text-orange-500 transition"
+                        href={social1Href}
+                        aria-label="Facebook"
+                        className="text-white/90 hover:text-white transition"
                       >
-                        {label}
+                        <FacebookIcon />
                       </a>
-                    ))}
-                  </nav>
-                  <a href="#" className="flex items-center gap-2 font-bold justify-self-center">
-                    {logoUrl && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={logoUrl} alt={brand} className="h-8 w-auto" />
                     )}
-                    <span>{brand}</span>
-                  </a>
-                  <div className="flex items-center justify-end gap-6">
-                    {rightLinks.map(([label, href], i) => (
+                    {social2Href && (
                       <a
-                        key={i}
-                        href={href || '#'}
-                        className="text-sm font-medium text-slate-700 hover:text-orange-500 transition"
+                        href={social2Href}
+                        aria-label="LinkedIn"
+                        className="text-white/90 hover:text-white transition"
                       >
-                        {label}
+                        <LinkedInIcon />
                       </a>
-                    ))}
-                    {ctaLabel && (
+                    )}
+                    {social3Href && (
                       <a
-                        href={ctaHref}
-                        style={ctaStyle}
-                        className="inline-flex items-center rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 transition"
+                        href={social3Href}
+                        aria-label="Instagram"
+                        className="text-white/90 hover:text-white transition"
                       >
-                        {ctaLabel}
+                        <InstagramIcon />
+                      </a>
+                    )}
+                    {social4Href && (
+                      <a
+                        href={social4Href}
+                        aria-label="X"
+                        className="text-white/90 hover:text-white transition"
+                      >
+                        <XIcon />
                       </a>
                     )}
                   </div>
                 </div>
-                {hamburgerBtn('text-slate-700')}
+                {phoneNumber && (
+                  <a
+                    href={`tel:${phoneNumber.replace(/[^\d+]/g, '')}`}
+                    style={ctaStyle}
+                    className="hidden shrink-0 items-center gap-2 bg-slate-900 px-6 text-sm font-semibold text-white md:flex"
+                  >
+                    <PhoneIcon />
+                    {phoneNumber}
+                  </a>
+                )}
+                {hamburgerBtn('text-slate-700 ml-auto md:hidden')}
               </div>
+              <nav className="hidden items-center justify-center gap-8 py-3 text-sm font-bold uppercase tracking-wide md:flex">
+                {navItems.map(([label, href], i) => (
+                  <a
+                    key={i}
+                    href={href || '#'}
+                    className={
+                      i === 0
+                        ? 'text-[var(--hdr-accent)]'
+                        : 'text-slate-800 hover:text-[var(--hdr-accent)] transition'
+                    }
+                  >
+                    {label}
+                  </a>
+                ))}
+              </nav>
             </header>
             {mobilePanel}
           </>
@@ -2061,51 +2559,62 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       }
 
       if (variant === '3') {
+        // Solid-color bar (brand primaryColor, falling back to amber) under
+        // an accent strip. Bar text/icon color and the strip's color are
+        // both computed from the actual bar color (readableTextColor/
+        // accentColorFor above) instead of hardcoded dark text + a fixed
+        // red strip — those broke down into an unreadable single-color
+        // block whenever a project's primaryColor happened to be red too
+        // (reported: "why look like this?? ... not visable"). "Login /
+        // Signup" and the grid icon are this design's own fixed chrome,
+        // not brand-editable fields — same convention as Design 2's
+        // hardcoded "Follow us:" label. No dropdown-chevron affordance on
+        // nav items: `links` is a flat label|href list with no submenu
+        // data to back one.
+        const barBg = primaryColor || '#f5a623'
+        const barText = readableTextColor(barBg)
+        const stripBg = accentColorFor(barBg, secondaryColor)
         return (
           <>
-            <header className="sticky top-0 z-40 bg-white border-b-2 border-orange-500">
-              <div className={`${wrap} flex items-center justify-between h-16`}>
-                <div className="flex items-center gap-10">
-                  <a href="#" className="flex items-center gap-2 font-bold text-slate-900">
-                    {logoUrl && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={logoUrl} alt={brand} className="h-8 w-auto" />
-                    )}
-                    <span>{brand}</span>
-                  </a>
-                  <nav className="hidden md:flex items-center gap-6">
-                    {navItems.map(([label, href], i) => (
-                      <a
-                        key={i}
-                        href={href || '#'}
-                        className="text-sm font-medium text-slate-700 hover:text-orange-500 transition"
-                      >
-                        {label}
-                      </a>
-                    ))}
-                  </nav>
-                </div>
-                <div className="hidden md:flex items-center gap-5">
-                  {phoneNumber && (
+            <div className="h-1.5" style={{ backgroundColor: stripBg }} />
+            <header
+              className="sticky top-0 z-40"
+              style={{ backgroundColor: barBg, color: barText }}
+            >
+              <div className="flex items-center justify-between px-4 py-3 md:px-8">
+                <a href="#" className="flex items-center">
+                  {logoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={logoUrl} alt={brand} className="h-14 w-auto" />
+                  ) : (
+                    <span className="font-bold">{brand}</span>
+                  )}
+                </a>
+                <nav className="hidden items-center gap-8 text-sm font-bold uppercase tracking-wide md:flex">
+                  {navItems.map(([label, href], i) => (
+                    <a key={i} href={href || '#'} className="hover:opacity-70 transition">
+                      {label}
+                    </a>
+                  ))}
+                </nav>
+                <div className="hidden items-center gap-4 md:flex">
+                  {loginHref && (
                     <a
-                      href={`tel:${phoneNumber}`}
-                      className="flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-orange-600 transition"
+                      href={loginHref}
+                      className="text-sm font-bold hover:opacity-80 transition"
+                      style={{ color: stripBg }}
                     >
-                      <PhoneIcon />
-                      {phoneNumber}
+                      Login / Signup
                     </a>
                   )}
-                  {ctaLabel && (
-                    <a
-                      href={ctaHref}
-                      style={ctaStyle}
-                      className="inline-flex items-center rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 transition"
-                    >
-                      {ctaLabel}
-                    </a>
-                  )}
+                  <span
+                    className="flex h-9 w-9 items-center justify-center rounded-md"
+                    style={{ backgroundColor: `${barText}1a`, color: barText }}
+                  >
+                    <GridIcon />
+                  </span>
                 </div>
-                {hamburgerBtn('text-slate-700')}
+                {hamburgerBtn(undefined, barText)}
               </div>
             </header>
             {mobilePanel}
@@ -2114,95 +2623,222 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       }
 
       if (variant === '4') {
+        // Two-row: contact-badge row (phone/email, search, CTA) over a
+        // left-aligned nav row. "Get Involved" and the search box are this
+        // design's own fixed chrome (like Design 2's "Follow us:" and
+        // Design 3's "Login / Signup") — search has nothing to actually
+        // search here, it's decorative UI matching the reference. Chevron
+        // on the first nav item only: decorative (no submenu data to back
+        // a real dropdown), matching the reference's one dropdown-looking
+        // item without implying every item has one.
+        const accent = primaryColor || '#c9a227'
+        const accentText = readableTextColor(accent)
         return (
           <>
-            <header className="sticky top-0 z-40 bg-slate-900 border-b border-slate-800 text-white">
-              <div className={`${wrap} flex items-center justify-between h-16`}>
-                <a href="#" className="flex items-center gap-2 font-bold">
-                  {logoUrl && (
+            <header
+              className="sticky top-0 z-40 bg-white text-slate-900"
+              style={{ ['--hdr-accent' as string]: primaryColor || '#f5a623' }}
+            >
+              <div className="flex flex-wrap items-center gap-4 px-4 py-3 md:px-8">
+                <a href="#" className="flex shrink-0 items-center">
+                  {logoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={logoUrl} alt={brand} className="h-8 w-auto" />
+                    <img src={logoUrl} alt={brand} className="h-14 w-auto" />
+                  ) : (
+                    <span className="font-bold">{brand}</span>
                   )}
-                  <span>{brand}</span>
                 </a>
-                <nav className="hidden md:flex items-center gap-7">
-                  {navItems.map(([label, href], i) => (
-                    <a
-                      key={i}
-                      href={href || '#'}
-                      className="text-xs font-semibold uppercase tracking-wide text-slate-300 hover:text-orange-400 transition"
-                    >
-                      {label}
-                    </a>
-                  ))}
-                </nav>
-                <div className="hidden md:flex items-center">
-                  {ctaLabel && (
-                    <a
-                      href={ctaHref}
-                      style={ctaStyle}
-                      className="inline-flex items-center rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-orange-400 transition"
-                    >
-                      {ctaLabel}
-                    </a>
+                <div className="hidden flex-1 items-center gap-6 md:flex">
+                  {phoneNumber && (
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                        style={{ backgroundColor: accent, color: accentText }}
+                      >
+                        <PhoneIcon />
+                      </span>
+                      <div className="leading-tight">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                          Make a call
+                        </p>
+                        <p className="text-sm font-bold text-slate-900">{phoneNumber}</p>
+                      </div>
+                    </div>
+                  )}
+                  {phoneNumber && email && <span className="h-9 border-l border-slate-200" />}
+                  {email && (
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                        style={{ backgroundColor: accent, color: accentText }}
+                      >
+                        <MailIcon />
+                      </span>
+                      <div className="leading-tight">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                          Send email
+                        </p>
+                        <p className="text-sm font-bold text-slate-900">{email}</p>
+                      </div>
+                    </div>
                   )}
                 </div>
-                {hamburgerBtn('text-white')}
+                <div className="hidden shrink-0 items-center gap-3 md:flex">
+                  <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-400">
+                    <span>Type &amp; Hit Enter...</span>
+                    <SearchIcon />
+                  </div>
+                  <a
+                    href={ctaHref}
+                    className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold"
+                    style={{ backgroundColor: accent, color: accentText }}
+                  >
+                    Get Involved
+                    <HeartIcon />
+                  </a>
+                </div>
+                {hamburgerBtn('text-slate-700')}
               </div>
+              <nav className="hidden items-center gap-8 border-t border-slate-100 px-4 py-3 text-sm font-semibold text-slate-800 md:flex md:px-8">
+                {navItems.map(([label, href], i) => (
+                  <a
+                    key={i}
+                    href={href || '#'}
+                    className="flex items-center gap-1 hover:text-[var(--hdr-accent)] transition"
+                  >
+                    {label}
+                    {i === 0 && <ChevronDownIcon />}
+                  </a>
+                ))}
+              </nav>
             </header>
             {mobilePanel}
           </>
         )
       }
 
-      // Design 1 (default) — classic
-      return (
-        <>
-          <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-100">
-            <div className={`${wrap} flex items-center justify-between h-16`}>
-              <a href="#" className="flex items-center gap-2 font-bold text-slate-900">
-                {logoUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={logoUrl} alt={brand} className="h-8 w-auto" />
-                )}
-                <span>{brand}</span>
-              </a>
-              <nav className="hidden md:flex items-center gap-7">
-                {navItems.map(([label, href], i) => (
-                  <a
-                    key={i}
-                    href={href || '#'}
-                    className="text-sm font-medium text-slate-700 hover:text-orange-500 transition"
-                  >
-                    {label}
-                  </a>
-                ))}
-              </nav>
-              <div className="hidden md:flex items-center gap-3">
-                {loginLabel && (
-                  <a
-                    href={loginHref}
-                    className="inline-flex items-center rounded-lg border-2 border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50 transition"
-                  >
-                    {loginLabel}
-                  </a>
-                )}
-                {ctaLabel && (
-                  <a
-                    href={ctaHref}
-                    style={ctaStyle}
-                    className="inline-flex items-center rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 transition"
-                  >
-                    {ctaLabel}
-                  </a>
-                )}
+      // Design 1 (default) — classic. `transparent` floats the header over
+      // whatever's below (position: fixed removes it from flow, so the
+      // next block naturally starts at y=0 underneath it) with
+      // light-on-dark text. Nav is grouped with the CTA/login on the right
+      // (not with the logo) — logo sits alone on the far left, the
+      // nav+actions cluster sits together on the far right, matching the
+      // reference exactly (reported: "not beside logo ... need beside
+      // button" — an earlier `navAlign` toggle put nav next to the logo
+      // instead, which never actually matched either reference layout, so
+      // it's gone rather than kept as a second dead option).
+      {
+        const headerPositionClass = transparent
+          ? isEditingInPuck
+            ? // Sticky (not fixed) here means this header sits in normal flow
+              // instead of floating over the hero below it — a `bg-transparent`
+              // background would just show the plain white canvas behind it,
+              // making `lightText`'s white nav invisible (reported: nav links
+              // "missing" — they were rendering, just white-on-white). Give it
+              // a solid dark backing only in this editing path so text stays
+              // legible; the real public page still gets a true transparent
+              // float via the `fixed` branch below.
+              'sticky top-0 z-40 bg-slate-900/95 backdrop-blur'
+            : 'fixed top-0 inset-x-0 z-40 bg-transparent'
+          : 'sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-100'
+        const brandTextClass = lightText ? 'text-white' : 'text-slate-900'
+        const navLinkClass = lightText
+          ? 'text-sm font-medium text-white/90 hover:text-[var(--hdr-accent)] transition'
+          : 'text-sm font-medium text-slate-700 hover:text-[var(--hdr-accent)] transition'
+        const loginBtnClass = lightText
+          ? 'inline-flex items-center rounded-lg border-2 border-white/40 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10 transition'
+          : 'inline-flex items-center rounded-lg border-2 border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50 transition'
+        const hamburgerColorClass = lightText ? 'text-white' : 'text-slate-700'
+
+        // Active-tab pill on the first nav item (e.g. "Home") — this
+        // component has no routing context to know the real current page,
+        // so the first link is treated as "active", matching the reference
+        // design's single highlighted pill among otherwise-plain links.
+        const activeNavLinkClass = lightText
+          ? 'rounded-full bg-white/15 px-4 py-2 text-sm font-medium text-white transition'
+          : 'rounded-full bg-slate-900/10 px-4 py-2 text-sm font-medium text-slate-900 transition'
+
+        return (
+          <>
+            <header
+              className={headerPositionClass}
+              style={{ ['--hdr-accent' as string]: primaryColor || '#f5a623' }}
+            >
+              <div className="flex items-center justify-between px-4 h-16 md:px-8">
+                <a href="#" className={`flex items-center gap-2 font-bold ${brandTextClass}`}>
+                  {logoUrl ? (
+                    // Logo image already carries the brand name/mark — no
+                    // separate text label next to it (was duplicating it).
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={logoUrl} alt={brand} className="h-8 w-auto" />
+                  ) : (
+                    <span>{brand}</span>
+                  )}
+                </a>
+                <div className="hidden md:flex items-center gap-7">
+                  <nav className="flex items-center gap-2">
+                    {navItems.map(([label, href], i) => (
+                      <a
+                        key={i}
+                        href={href || '#'}
+                        className={i === 0 ? activeNavLinkClass : `${navLinkClass} px-2`}
+                      >
+                        {label}
+                      </a>
+                    ))}
+                  </nav>
+                  <div className="flex items-center gap-3">
+                    {(isEditingInPuck || loginLabel) && (
+                      <a
+                        href={loginHref}
+                        onClick={isEditingInPuck ? (e) => e.preventDefault() : undefined}
+                        className={loginBtnClass}
+                      >
+                        <InlineEditableText
+                          id={id}
+                          path={['loginLabel']}
+                          value={loginLabel ?? ''}
+                          isEditing={isEditingInPuck}
+                        />
+                      </a>
+                    )}
+                    {(isEditingInPuck || ctaLabel) && (
+                      <a
+                        href={ctaHref}
+                        onClick={isEditingInPuck ? (e) => e.preventDefault() : undefined}
+                        // A hardcoded `bg-gradient-to-r from-orange-500
+                        // to-red-500` class previously painted over
+                        // `ctaStyle`'s inline backgroundColor unconditionally
+                        // (a CSS background-image always draws over
+                        // background-color) — primaryColor never actually
+                        // showed here. Now the gradient itself is built from
+                        // the brand's own colors.
+                        style={{
+                          backgroundColor: primaryColor || '#f5a623',
+                          backgroundImage: themeGradient(
+                            primaryColor || '#f5a623',
+                            quaternaryColor || secondaryColor || '#12142a'
+                          ),
+                        }}
+                        className="inline-flex items-center rounded-full px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition"
+                      >
+                        <InlineEditableText
+                          id={id}
+                          path={['ctaLabel']}
+                          value={ctaLabel ?? ''}
+                          isEditing={isEditingInPuck}
+                        />
+                      </a>
+                    )}
+                  </div>
+                </div>
+                {hamburgerBtn(hamburgerColorClass)}
               </div>
-              {hamburgerBtn('text-slate-700')}
-            </div>
-          </header>
-          {mobilePanel}
-        </>
-      )
+            </header>
+            {mobilePanel}
+          </>
+        )
+      }
     },
   },
 
@@ -2214,7 +2850,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         type: 'select',
         options: [
           { label: 'Design 1 — Full-bleed photo slider', value: '1' },
-          { label: 'Design 2 — Split with slider card', value: '2' },
+          { label: 'Design 2 — Dark split hero, slide-driven headline', value: '2' },
           { label: 'Design 3 — Centered rotating quote', value: '3' },
           { label: 'Design 4 — Fixed headline + feature slider', value: '4' },
         ],
@@ -2226,301 +2862,572 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           { label: 'Hide', value: false },
         ],
       },
-      d1Slide1Image: { type: 'text' },
-      d1Slide1Badge: { type: 'text' },
-      d1Slide1Headline: { type: 'text' },
-      d1Slide1Subheadline: { type: 'textarea' },
-      d1Slide1CtaLabel: { type: 'text' },
-      d1Slide1CtaHref: { type: 'text' },
-      d1Slide2Image: { type: 'text' },
-      d1Slide2Badge: { type: 'text' },
-      d1Slide2Headline: { type: 'text' },
-      d1Slide2Subheadline: { type: 'textarea' },
-      d1Slide2CtaLabel: { type: 'text' },
-      d1Slide2CtaHref: { type: 'text' },
-      d1Slide3Image: { type: 'text' },
-      d1Slide3Badge: { type: 'text' },
-      d1Slide3Headline: { type: 'text' },
-      d1Slide3Subheadline: { type: 'textarea' },
-      d1Slide3CtaLabel: { type: 'text' },
-      d1Slide3CtaHref: { type: 'text' },
+      primaryColor: { type: 'text' },
+      secondaryColor: { type: 'text' },
+      d1Slides: {
+        type: 'array',
+        min: 0,
+        max: 8,
+        getItemSummary: (item, index) => item.headline || `Slide ${(index ?? 0) + 1}`,
+        defaultItemProps: {
+          image: '',
+          badge: '',
+          headline: 'New slide',
+          subheadline: '',
+          ctaLabel: '',
+          ctaHref: '#quote',
+        },
+        arrayFields: {
+          image: imageField('Image'),
+          badge: { type: 'text' },
+          headline: { type: 'text' },
+          subheadline: { type: 'textarea' },
+          ctaLabel: { type: 'text' },
+          ctaHref: { type: 'text' },
+        },
+      },
+      d2Slides: {
+        type: 'array',
+        min: 0,
+        max: 8,
+        getItemSummary: (item, index) => item.dotLabel || `Slide ${(index ?? 0) + 1}`,
+        defaultItemProps: {
+          dotLabel: 'New slide',
+          image: '',
+          lead: '',
+          highlight: '',
+          description: '',
+          brands: [],
+          workHref: '',
+        },
+        arrayFields: {
+          dotLabel: { type: 'text' },
+          image: imageField('Image'),
+          lead: { type: 'text' },
+          highlight: { type: 'text' },
+          description: { type: 'textarea' },
+          // Per-slide "See Our Work" target — leave blank to hide the
+          // button on that slide (e.g. Electrical & Switchgear has no
+          // matching work page in the reference site).
+          workHref: { type: 'text' },
+          brands: {
+            type: 'array',
+            min: 0,
+            max: 10,
+            getItemSummary: (item, index) => item.name || `Brand ${(index ?? 0) + 1}`,
+            defaultItemProps: { name: 'New brand', logo: '' },
+            arrayFields: {
+              name: { type: 'text' },
+              logo: imageField('Logo'),
+            },
+          },
+        },
+      },
       d2BadgeText: { type: 'text' },
-      d2Headline: { type: 'text' },
-      d2HighlightWord: { type: 'text' },
-      d2Subheadline: { type: 'textarea' },
+      d2BrandsLabel: { type: 'text' },
       d2CtaLabel: { type: 'text' },
       d2CtaHref: { type: 'text' },
       d2SecondaryLabel: { type: 'text' },
-      d2SecondaryHref: { type: 'text' },
       d2Avatar1: { type: 'text' },
       d2Avatar2: { type: 'text' },
       d2Avatar3: { type: 'text' },
       d2TrustText: { type: 'text' },
-      d2Slide1Image: { type: 'text' },
-      d2Slide1Tag: { type: 'text' },
-      d2Slide1Title: { type: 'text' },
-      d2Slide1Subtitle: { type: 'textarea' },
-      d2Slide2Image: { type: 'text' },
-      d2Slide2Tag: { type: 'text' },
-      d2Slide2Title: { type: 'text' },
-      d2Slide2Subtitle: { type: 'textarea' },
-      d2Slide3Image: { type: 'text' },
-      d2Slide3Tag: { type: 'text' },
-      d2Slide3Title: { type: 'text' },
-      d2Slide3Subtitle: { type: 'textarea' },
+      d2Stat1Value: { type: 'text' },
+      d2Stat1Label: { type: 'text' },
+      d2Stat2Value: { type: 'text' },
+      d2Stat2Label: { type: 'text' },
+      d2Stat3Value: { type: 'text' },
+      d2Stat3Label: { type: 'text' },
+      d3Slides: {
+        type: 'array',
+        min: 0,
+        max: 6,
+        getItemSummary: (item, index) => item.author || `Slide ${(index ?? 0) + 1}`,
+        defaultItemProps: {
+          image: '',
+          quote: '',
+          author: 'New quote',
+          role: '',
+        },
+        arrayFields: {
+          image: imageField('Photo'),
+          quote: { type: 'textarea' },
+          author: { type: 'text' },
+          role: { type: 'text' },
+        },
+      },
       d3Eyebrow: { type: 'text' },
       d3Headline: { type: 'text' },
       d3Subheadline: { type: 'textarea' },
       d3CtaLabel: { type: 'text' },
       d3CtaHref: { type: 'text' },
-      d3Slide1Image: { type: 'text' },
-      d3Slide1Quote: { type: 'textarea' },
-      d3Slide1Author: { type: 'text' },
-      d3Slide1Role: { type: 'text' },
-      d3Slide2Image: { type: 'text' },
-      d3Slide2Quote: { type: 'textarea' },
-      d3Slide2Author: { type: 'text' },
-      d3Slide2Role: { type: 'text' },
-      d3Slide3Image: { type: 'text' },
-      d3Slide3Quote: { type: 'textarea' },
-      d3Slide3Author: { type: 'text' },
-      d3Slide3Role: { type: 'text' },
+      d4Slides: {
+        type: 'array',
+        min: 0,
+        max: 6,
+        getItemSummary: (item, index) => item.title || `Slide ${(index ?? 0) + 1}`,
+        defaultItemProps: {
+          icon: 'hardhat',
+          title: 'New feature',
+          description: '',
+        },
+        arrayFields: {
+          icon: DISCIPLINE_ICON_FIELD,
+          title: { type: 'text' },
+          description: { type: 'textarea' },
+        },
+      },
       d4Headline: { type: 'text' },
       d4Subheadline: { type: 'textarea' },
       d4CtaLabel: { type: 'text' },
       d4CtaHref: { type: 'text' },
-      d4Slide1Icon: {
-        type: 'select',
+      sliderShowArrows: {
+        type: 'radio',
         options: [
-          { label: 'Hard Hat', value: 'hardhat' },
-          { label: 'Shield', value: 'shield' },
-          { label: 'Star', value: 'star' },
+          { label: 'Show', value: true },
+          { label: 'Hide', value: false },
         ],
       },
-      d4Slide1Title: { type: 'text' },
-      d4Slide1Description: { type: 'textarea' },
-      d4Slide2Icon: {
-        type: 'select',
+      sliderShowDots: {
+        type: 'radio',
         options: [
-          { label: 'Hard Hat', value: 'hardhat' },
-          { label: 'Shield', value: 'shield' },
-          { label: 'Star', value: 'star' },
+          { label: 'Show', value: true },
+          { label: 'Hide', value: false },
         ],
       },
-      d4Slide2Title: { type: 'text' },
-      d4Slide2Description: { type: 'textarea' },
-      d4Slide3Icon: {
-        type: 'select',
+      sliderAutoplay: {
+        type: 'radio',
         options: [
-          { label: 'Hard Hat', value: 'hardhat' },
-          { label: 'Shield', value: 'shield' },
-          { label: 'Star', value: 'star' },
+          { label: 'On', value: true },
+          { label: 'Off', value: false },
         ],
       },
-      d4Slide3Title: { type: 'text' },
-      d4Slide3Description: { type: 'textarea' },
+      sliderAutoplaySpeed: { type: 'number' },
+      sliderLoop: {
+        type: 'radio',
+        options: [
+          { label: 'On', value: true },
+          { label: 'Off', value: false },
+        ],
+      },
+      sliderTransition: {
+        type: 'select',
+        options: [
+          { label: 'Slide', value: 'slide' },
+          { label: 'Fade', value: 'fade' },
+        ],
+      },
+      typoTitleSize: { type: 'select', options: FONT_SIZE_OPTIONS },
+      typoTitleWeight: { type: 'select', options: FONT_WEIGHT_OPTIONS },
+      typoTitleColor: { type: 'text' },
+      typoTaglineSize: { type: 'select', options: FONT_SIZE_OPTIONS },
+      typoTaglineWeight: { type: 'select', options: FONT_WEIGHT_OPTIONS },
+      typoTaglineColor: { type: 'text' },
+      typoParaSize: { type: 'select', options: FONT_SIZE_OPTIONS },
+      typoParaWeight: { type: 'select', options: FONT_WEIGHT_OPTIONS },
+      typoParaColor: { type: 'text' },
+      typoButtonSize: { type: 'select', options: FONT_SIZE_OPTIONS },
+      typoButtonWeight: { type: 'select', options: FONT_WEIGHT_OPTIONS },
+      typoButtonColor: { type: 'text' },
+      // No UI control of its own — the Fields panel's slide picker
+      // (blocks-panel.tsx's SlidePreviewPicker) writes this directly to
+      // jump the canvas preview to a specific slide.
+      activeSlideIndex: { type: 'number', visible: false },
     },
+    resolveFields: (data, { fields }) =>
+      variantFields(fields, data.props?.variant) as typeof fields,
     defaultProps: {
       variant: '1',
+      activeSlideIndex: 0,
       visible: true,
-      d1Slide1Image: 'https://placehold.co/1600x900/1e293b/ffffff?text=Project+One',
-      d1Slide1Badge: 'Residential',
-      d1Slide1Headline: 'Building Homes That Last Generations',
-      d1Slide1Subheadline:
-        'Premium residential construction backed by two decades of craftsmanship.',
-      d1Slide1CtaLabel: 'Get a Free Quote',
-      d1Slide1CtaHref: '#quote',
-      d1Slide2Image: 'https://placehold.co/1600x900/334155/ffffff?text=Project+Two',
-      d1Slide2Badge: 'Commercial',
-      d1Slide2Headline: 'Commercial Spaces Built On Schedule',
-      d1Slide2Subheadline:
-        'From office parks to retail complexes, delivered on time and on budget.',
-      d1Slide2CtaLabel: 'See Our Work',
-      d1Slide2CtaHref: '#projects',
-      d1Slide3Image: 'https://placehold.co/1600x900/0f172a/ffffff?text=Project+Three',
-      d1Slide3Badge: 'Infrastructure',
-      d1Slide3Headline: 'Infrastructure That Moves Communities Forward',
-      d1Slide3Subheadline:
-        'Roads, bridges, and public works engineered to the highest safety standard.',
-      d1Slide3CtaLabel: 'Start Your Project',
-      d1Slide3CtaHref: '#quote',
-      d2BadgeText: 'Trusted General Contractor',
-      d2Headline: 'Building Your Vision, On Time & On Budget',
-      d2HighlightWord: 'Vision',
-      d2Subheadline:
-        'Award-winning general contractor serving residential and commercial clients across the region. Licensed, insured, and safety-certified.',
-      d2CtaLabel: 'Get a Free Quote',
+      primaryColor: '',
+      secondaryColor: '',
+      d1Slides: [
+        {
+          image: '/seed/subhadra/hero-slider/center-ac.jpeg',
+          badge: 'Central AC',
+          headline: 'Cool comfort, engineered precisely.',
+          subheadline:
+            'Centralized air-conditioning sized, supplied and installed by our own engineers — from single rooms to full commercial buildings, backed by annual maintenance and genuine spares on call.',
+          ctaLabel: 'Get a Quote',
+          ctaHref: '#quote',
+        },
+        {
+          image: '/seed/subhadra/hero-slider/complete-electrical.jpg',
+          badge: 'Electrical & Switchgear',
+          headline: 'Electrical products, engineered to last.',
+          subheadline:
+            'We supply Switches, Wires, MCBs, Distribution Boards, Cables, Switchgear, Panel Boards, Generators, Transformers, UPS, Stabilizers.',
+          ctaLabel: 'Get a Quote',
+          ctaHref: '#quote',
+        },
+        {
+          image: '/seed/subhadra/hero-slider/safety-security.jpg',
+          badge: 'Safety and Security',
+          headline: 'Safety and security systems, engineered to protect.',
+          subheadline:
+            'CCTV, video analytics, access control, fire alarm, detection and fire-fighting systems designed and installed by our own team — so every entry point is covered and safety never waits.',
+          ctaLabel: 'See Our Work',
+          ctaHref: 'work-safety-security.html',
+        },
+      ],
+      d2BadgeText: '',
+      d2BrandsLabel: 'Brands',
+      d2CtaLabel: 'Get a Quote →',
       d2CtaHref: '#quote',
       d2SecondaryLabel: 'See Our Work',
-      d2SecondaryHref: '#projects',
-      d2Avatar1: 'https://placehold.co/80x80/475569/ffffff?text=C1',
-      d2Avatar2: 'https://placehold.co/80x80/334155/ffffff?text=C2',
-      d2Avatar3: 'https://placehold.co/80x80/1e293b/ffffff?text=C3',
-      d2TrustText: '500+ clients trust us',
-      d2Slide1Image: 'https://placehold.co/900x700/475569/ffffff?text=Project+One',
-      d2Slide1Tag: 'Residential',
-      d2Slide1Title: 'Riverside Villas',
-      d2Slide1Subtitle: 'A 24-unit residential development delivered ahead of schedule.',
-      d2Slide2Image: 'https://placehold.co/900x700/334155/ffffff?text=Project+Two',
-      d2Slide2Tag: 'Commercial',
-      d2Slide2Title: 'Tech Park Phase 2',
-      d2Slide2Subtitle: 'A 6-storey commercial office park with LEED-aligned design.',
-      d2Slide3Image: 'https://placehold.co/900x700/1e293b/ffffff?text=Project+Three',
-      d2Slide3Tag: 'Infrastructure',
-      d2Slide3Title: 'Highway Bridge Rehab',
-      d2Slide3Subtitle: 'Structural rehabilitation completed with zero traffic disruption.',
-      d3Eyebrow: 'Why Contractors Choose Us',
-      d3Headline: 'Precision-Built. Delivered On Time.',
-      d3Subheadline: 'A track record our clients are proud to put their name behind.',
-      d3CtaLabel: 'Request a Consultation',
+      d2Avatar1: '/seed/subhadra/clients/client-01.png',
+      d2Avatar2: '/seed/subhadra/clients/client-14.png',
+      d2Avatar3: '/seed/subhadra/clients/client-21.png',
+      d2TrustText: '1000+ businesses across Andhra Pradesh trust us',
+      d2Stat1Value: '30+',
+      d2Stat1Label: 'Years of Trust',
+      d2Stat2Value: '1 Lakh+',
+      d2Stat2Label: 'Trusted Clients',
+      d2Stat3Value: '24×7',
+      d2Stat3Label: 'Support On Installations',
+      d2Slides: [
+        {
+          dotLabel: 'Central AC',
+          image: '/seed/subhadra/hero-slider/center-ac.jpeg',
+          lead: 'Cool comfort,',
+          highlight: 'engineered precisely.',
+          description:
+            'Centralized air-conditioning sized, supplied and installed by our own engineers — from single rooms to full commercial buildings, backed by annual maintenance and genuine spares on call.',
+          brands: [
+            {
+              name: 'Blue Star',
+              logo: '/seed/subhadra/ourbrands/design-execution-maintenance/Blue_Star_primary_logo.png',
+            },
+          ],
+          workHref: 'work-central-ac.html',
+        },
+        {
+          dotLabel: 'Electrical & Switchgear',
+          image: '/seed/subhadra/hero-slider/complete-electrical.jpg',
+          lead: 'Electrical products,',
+          highlight: 'engineered to last.',
+          description:
+            'We supply Switches, Wires, MCBs, Distribution Boards, Cables, Switchgear, Panel Boards, Generators, Transformers, UPS, Stabilizers.',
+          brands: [
+            {
+              name: 'Schneider Electric',
+              logo: '/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png',
+            },
+            { name: 'RR Kabel', logo: '/seed/subhadra/ourbrands/electrical-products/RRKabel.jpg' },
+            {
+              name: 'Crompton',
+              logo: '/seed/subhadra/ourbrands/electrical-products/Crompton.avif',
+            },
+            { name: 'Norisys', logo: '/seed/subhadra/ourbrands/electrical-products/Norisys.png' },
+            { name: 'Cummins', logo: '/seed/subhadra/ourbrands/electrical-products/Cunnins.png' },
+            { name: 'APC', logo: '/seed/subhadra/ourbrands/electrical-products/LogoAPC.svg' },
+          ],
+          // No matching work page in the reference site for this slide —
+          // blank hides the "See Our Work" button (data-hide-cta="work").
+          workHref: '',
+        },
+        {
+          dotLabel: 'Safety and Security',
+          image: '/seed/subhadra/hero-slider/safety-security.jpg',
+          lead: 'Safety and security systems,',
+          highlight: 'engineered to protect.',
+          description:
+            'CCTV, video analytics, access control, fire alarm, detection and fire-fighting systems designed and installed by our own team — so every entry point is covered and safety never waits.',
+          brands: [
+            {
+              name: 'CP Plus',
+              logo: '/seed/subhadra/ourbrands/design-execution-maintenance/CP%20Plus.jpg',
+            },
+            {
+              name: 'Honeywell',
+              logo: '/seed/subhadra/ourbrands/design-execution-maintenance/Honeywell%20CCTV.jpg',
+            },
+            {
+              name: 'Ravel',
+              logo: '/seed/subhadra/ourbrands/design-execution-maintenance/Ravel.png',
+            },
+            {
+              name: 'Bosch',
+              logo: '/seed/subhadra/ourbrands/design-execution-maintenance/Bosch.jpg',
+            },
+            {
+              name: 'Ajax',
+              logo: '/seed/subhadra/ourbrands/lifestyle-residential-products/Ajax%20logo.jpg',
+            },
+            {
+              name: 'Matrix',
+              logo: '/seed/subhadra/ourbrands/design-execution-maintenance/Matrix.jpg',
+            },
+          ],
+          workHref: 'work-safety-security.html',
+        },
+        {
+          dotLabel: 'Home Automation',
+          image: '/seed/subhadra/hero-slider/home-automation.jpg',
+          lead: 'Smart homes,',
+          highlight: 'engineered as one.',
+          description:
+            'Lighting, AC, curtains and appliances — retrofit or centralized, all on one interface you control from anywhere, with voice control and scheduled scenes for everyday comfort.',
+          brands: [
+            {
+              name: 'Schneider Electric',
+              logo: '/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png',
+            },
+            {
+              name: 'Bticino',
+              logo: '/seed/subhadra/ourbrands/lifestyle-residential-products/BTicino-IME.jpg',
+            },
+            {
+              name: 'RTI',
+              logo: '/seed/subhadra/ourbrands/lifestyle-residential-products/RTI.png',
+            },
+            {
+              name: 'Toyama',
+              logo: '/seed/subhadra/ourbrands/lifestyle-residential-products/Toyama%20logo-768.webp',
+            },
+            {
+              name: 'eelectron',
+              logo: '/seed/subhadra/ourbrands/lifestyle-residential-products/eelectron.png',
+            },
+          ],
+          workHref: 'work-home-automation.html',
+        },
+        {
+          dotLabel: 'Home Theater',
+          image: '/seed/subhadra/hero-slider/home-theater.jpg',
+          lead: 'Home theaters,',
+          highlight: 'engineered for sound.',
+          description:
+            'Dolby Atmos rooms, 4K projection and multiroom audio — custom-built and installed by our own team, with acoustic treatment and calibration for true cinema-grade sound.',
+          brands: [
+            {
+              name: 'M&K Sound',
+              logo: '/seed/subhadra/ourbrands/lifestyle-residential-products/M%26K%20Sound%20logo.png',
+            },
+            {
+              name: 'Focal',
+              logo: '/seed/subhadra/ourbrands/lifestyle-residential-products/focal-logo.png',
+            },
+            {
+              name: 'Sony',
+              logo: '/seed/subhadra/ourbrands/lifestyle-residential-products/Sony%20logo.png',
+            },
+            {
+              name: 'Optoma',
+              logo: '/seed/subhadra/ourbrands/lifestyle-residential-products/Optoma%20logo.jpeg',
+            },
+            {
+              name: 'SVS',
+              logo: '/seed/subhadra/ourbrands/lifestyle-residential-products/SVS%20sub%20logo.png',
+            },
+            {
+              name: 'Marantz',
+              logo: '/seed/subhadra/ourbrands/lifestyle-residential-products/Marantz%20logo.svg',
+            },
+          ],
+          workHref: 'work-home-theater.html',
+        },
+        {
+          dotLabel: 'Premium Lighting',
+          image: '/seed/subhadra/hero-slider/premium-lighting.jpg',
+          lead: 'Premium lighting,',
+          highlight: 'engineered to impress.',
+          description:
+            'Designer, architectural and smart-dimmable lighting — specified, supplied and installed to elevate every room, with layered scenes for ambience, task and accent lighting.',
+          brands: [
+            {
+              name: 'Futura',
+              logo: '/seed/subhadra/ourbrands/electrical-products/Futura%20-1.svg',
+            },
+            { name: 'Wipro', logo: '/seed/subhadra/ourbrands/electrical-products/Wipro.png' },
+          ],
+          workHref: 'work-premium-lighting.html',
+        },
+      ],
+      d3Eyebrow: 'Happy Clients',
+      d3Headline: 'Engineered Once, Trusted For 30 Years.',
+      d3Subheadline:
+        'All building-related engineering products & services under one roof — residential, commercial and industrial, since 1996.',
+      d3CtaLabel: 'Get a Quote',
       d3CtaHref: '#quote',
-      d3Slide1Image: 'https://placehold.co/200x200/475569/ffffff?text=RK',
-      d3Slide1Quote:
-        'They delivered our headquarters three weeks ahead of schedule without a single defect.',
-      d3Slide1Author: 'Ramesh Kapoor',
-      d3Slide1Role: 'Director, Kapoor Industries',
-      d3Slide2Image: 'https://placehold.co/200x200/334155/ffffff?text=AS',
-      d3Slide2Quote:
-        'Transparent budgeting and weekly reporting made this the easiest build we have managed.',
-      d3Slide2Author: 'Anita Sharma',
-      d3Slide2Role: 'COO, Sharma Retail Group',
-      d3Slide3Image: 'https://placehold.co/200x200/1e293b/ffffff?text=MD',
-      d3Slide3Quote:
-        'Safety-first culture and zero incidents across an 18-month infrastructure project.',
-      d3Slide3Author: 'Mohan Das',
-      d3Slide3Role: 'Project Sponsor, NHA',
-      d4Headline: 'One Contractor. Every Capability.',
-      d4Subheadline: 'A single accountable team across design, build, and handover.',
-      d4CtaLabel: 'Start Your Project',
+      d3Slides: [
+        {
+          image:
+            'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&h=200&fit=crop&crop=faces&q=80&auto=format',
+          quote:
+            'One team handled our entire HVAC and electrical fit-out — no coordination headaches between contractors, and the AMC support since handover has been excellent.',
+          author: 'Operations Manager',
+          role: 'Hospitality group, Visakhapatnam',
+        },
+        {
+          image:
+            'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&h=200&fit=crop&crop=faces&q=80&auto=format',
+          quote:
+            'Critical-area AC and fire safety were sized and installed to code without a single delay to our opening date. Their service manager still checks in every quarter.',
+          author: 'Facilities Head',
+          role: 'Healthcare facility, Andhra Pradesh',
+        },
+        {
+          image:
+            'https://images.unsplash.com/photo-1607746882042-944635dfe10e?w=200&h=200&fit=crop&crop=faces&q=80&auto=format',
+          quote:
+            "We compared three vendors for our showroom's cooling and CCTV — Subhadra Group was the only one that could design, supply and install everything themselves.",
+          author: 'Retail Operations Lead',
+          role: 'Shopping mall, Visakhapatnam',
+        },
+      ],
+      d4Headline: 'Six Disciplines, Engineered As One System',
+      d4Subheadline:
+        'Designed, supplied, installed and maintained by one accountable team — with a dedicated service manager for every discipline.',
+      d4CtaLabel: 'Get a Quote',
       d4CtaHref: '#quote',
-      d4Slide1Icon: 'hardhat',
-      d4Slide1Title: 'Structural Construction',
-      d4Slide1Description:
-        'End-to-end structural builds engineered to code, from footings to rooftop.',
-      d4Slide2Icon: 'shield',
-      d4Slide2Title: 'Safety & Compliance',
-      d4Slide2Description: 'Zero-harm culture with third-party audits on every active site.',
-      d4Slide3Icon: 'star',
-      d4Slide3Title: 'Quality Assurance',
-      d4Slide3Description:
-        'Rigorous quality checks at every milestone, backed by a defect-free warranty.',
+      d4Slides: [
+        {
+          icon: 'snowflake',
+          title: 'Central AC',
+          description:
+            'Premium centralized air-conditioning providing consistent comfort, efficient climate control and a refined indoor environment — sized and installed by our own engineers.',
+        },
+        {
+          icon: 'housegear',
+          title: 'Home Automation',
+          description:
+            'Complete integration of lighting, A/V, curtains, AC and appliances — retrofit or centralized, all on one interface you control from anywhere.',
+        },
+        {
+          icon: 'tv',
+          title: 'Home Theater',
+          description:
+            'Customized rooms with Dolby Atmos, 4K projection, acoustic design and recliners — plus multiroom audio across the rest of the home.',
+        },
+      ],
+      sliderShowArrows: true,
+      sliderShowDots: true,
+      sliderAutoplay: false,
+      sliderAutoplaySpeed: 5000,
+      sliderLoop: true,
+      sliderTransition: 'fade',
+      typoTitleSize: '',
+      typoTitleWeight: '',
+      typoTitleColor: '',
+      typoTaglineSize: '',
+      typoTaglineWeight: '',
+      typoTaglineColor: '',
+      typoParaSize: '',
+      typoParaWeight: '',
+      typoParaColor: '',
+      typoButtonSize: '',
+      typoButtonWeight: '',
+      typoButtonColor: '',
     },
     render: function ConstructionHeroRender({
+      id,
+      puck,
       variant,
       visible,
-      d1Slide1Image,
-      d1Slide1Badge,
-      d1Slide1Headline,
-      d1Slide1Subheadline,
-      d1Slide1CtaLabel,
-      d1Slide1CtaHref,
-      d1Slide2Image,
-      d1Slide2Badge,
-      d1Slide2Headline,
-      d1Slide2Subheadline,
-      d1Slide2CtaLabel,
-      d1Slide2CtaHref,
-      d1Slide3Image,
-      d1Slide3Badge,
-      d1Slide3Headline,
-      d1Slide3Subheadline,
-      d1Slide3CtaLabel,
-      d1Slide3CtaHref,
+      primaryColor,
+      secondaryColor,
+      d1Slides,
       d2BadgeText,
-      d2Headline,
-      d2HighlightWord,
-      d2Subheadline,
+      d2BrandsLabel,
       d2CtaLabel,
       d2CtaHref,
       d2SecondaryLabel,
-      d2SecondaryHref,
       d2Avatar1,
       d2Avatar2,
       d2Avatar3,
       d2TrustText,
-      d2Slide1Image,
-      d2Slide1Tag,
-      d2Slide1Title,
-      d2Slide1Subtitle,
-      d2Slide2Image,
-      d2Slide2Tag,
-      d2Slide2Title,
-      d2Slide2Subtitle,
-      d2Slide3Image,
-      d2Slide3Tag,
-      d2Slide3Title,
-      d2Slide3Subtitle,
+      d2Stat1Value,
+      d2Stat1Label,
+      d2Stat2Value,
+      d2Stat2Label,
+      d2Stat3Value,
+      d2Stat3Label,
+      d2Slides: d2SlidesRaw,
       d3Eyebrow,
       d3Headline,
       d3Subheadline,
       d3CtaLabel,
       d3CtaHref,
-      d3Slide1Image,
-      d3Slide1Quote,
-      d3Slide1Author,
-      d3Slide1Role,
-      d3Slide2Image,
-      d3Slide2Quote,
-      d3Slide2Author,
-      d3Slide2Role,
-      d3Slide3Image,
-      d3Slide3Quote,
-      d3Slide3Author,
-      d3Slide3Role,
+      d3Slides,
       d4Headline,
       d4Subheadline,
       d4CtaLabel,
       d4CtaHref,
-      d4Slide1Icon,
-      d4Slide1Title,
-      d4Slide1Description,
-      d4Slide2Icon,
-      d4Slide2Title,
-      d4Slide2Description,
-      d4Slide3Icon,
-      d4Slide3Title,
-      d4Slide3Description,
+      d4Slides,
+      sliderShowArrows,
+      sliderShowDots,
+      sliderAutoplay,
+      sliderAutoplaySpeed,
+      sliderLoop,
+      sliderTransition,
+      typoTitleSize,
+      typoTitleWeight,
+      typoTitleColor,
+      typoTaglineSize,
+      typoTaglineWeight,
+      typoTaglineColor,
+      typoParaSize,
+      typoParaWeight,
+      typoParaColor,
+      typoButtonSize,
+      typoButtonWeight,
+      typoButtonColor,
+      activeSlideIndex,
     }) {
-      const [activeSlide, setActiveSlide] = useState(0)
-      if (!visible) return <></>
+      const [activeSlide, setActiveSlide] = useState(activeSlideIndex ?? 0)
+      // Lets the Fields panel's slide picker (blocks-panel.tsx) jump the
+      // canvas preview to a specific slide by writing this prop — the
+      // canvas's own prev/next/dot clicks stay local-only (no dispatch),
+      // this only reacts to an external change.
+      useEffect(() => {
+        if (typeof activeSlideIndex === 'number') setActiveSlide(activeSlideIndex)
+      }, [activeSlideIndex])
+      const d1SlidesList = (d1Slides ?? []).filter((s) => s.image)
+      const d2SlidesList = (d2SlidesRaw ?? []).filter((s) => s.image)
+      const d3SlidesList = (d3Slides ?? []).filter((s) => s.quote)
+      const d4SlidesList = (d4Slides ?? []).filter((s) => s.title)
+      const heroTotal =
+        variant === '1'
+          ? d1SlidesList.length
+          : variant === '3'
+            ? d3SlidesList.length
+            : variant === '4'
+              ? d4SlidesList.length
+              : d2SlidesList.length
+      useEffect(() => {
+        if (!sliderAutoplay || heroTotal <= 1) return
+        const ms = Math.max(1000, Number(sliderAutoplaySpeed) || 5000)
+        const id = setInterval(() => {
+          setActiveSlide((i) => {
+            const next = i + 1
+            if (next >= heroTotal) return sliderLoop ? 0 : i
+            return next
+          })
+        }, ms)
+        return () => clearInterval(id)
+      }, [sliderAutoplay, sliderAutoplaySpeed, sliderLoop, heroTotal])
+      const heroTitleStyle = typoStyle(typoTitleSize, typoTitleWeight, typoTitleColor)
+      const heroTaglineStyle = typoStyle(typoTaglineSize, typoTaglineWeight, typoTaglineColor)
+      const heroParaStyle = typoStyle(typoParaSize, typoParaWeight, typoParaColor)
+      const heroButtonStyle = typoStyle(typoButtonSize, typoButtonWeight, typoButtonColor)
+      const heroTransitionClass =
+        sliderTransition === 'slide' ? 'animate-hero-slide-in' : 'animate-hero-fade-in'
+      const isEditing = puck?.isEditing ?? false
+      if (visible === false) return <></>
 
       if (variant === '1') {
-        const slides = [
-          {
-            image: d1Slide1Image,
-            badge: d1Slide1Badge,
-            headline: d1Slide1Headline,
-            subheadline: d1Slide1Subheadline,
-            ctaLabel: d1Slide1CtaLabel,
-            ctaHref: d1Slide1CtaHref,
-          },
-          {
-            image: d1Slide2Image,
-            badge: d1Slide2Badge,
-            headline: d1Slide2Headline,
-            subheadline: d1Slide2Subheadline,
-            ctaLabel: d1Slide2CtaLabel,
-            ctaHref: d1Slide2CtaHref,
-          },
-          {
-            image: d1Slide3Image,
-            badge: d1Slide3Badge,
-            headline: d1Slide3Headline,
-            subheadline: d1Slide3Subheadline,
-            ctaLabel: d1Slide3CtaLabel,
-            ctaHref: d1Slide3CtaHref,
-          },
-        ].filter((s) => s.image)
+        const slides = d1SlidesList
         const total = slides.length
         const idx = Math.min(activeSlide, Math.max(total - 1, 0))
+        const s = slides[idx]
+        const canPrev = sliderLoop || idx > 0
+        const canNext = sliderLoop || idx < total - 1
         return (
           <section className="relative h-[560px] md:h-[640px] overflow-hidden bg-slate-900">
-            {slides.map((s, i) => (
-              <div
-                key={i}
-                className="absolute inset-0 transition-opacity duration-700 ease-in-out"
-                style={{ opacity: i === idx ? 1 : 0, pointerEvents: i === idx ? 'auto' : 'none' }}
-              >
+            {s && (
+              <div key={idx} className={`absolute inset-0 ${heroTransitionClass}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={s.image}
@@ -2532,34 +3439,45 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   className={`${wrap} relative z-10 h-full flex flex-col justify-center max-w-2xl`}
                 >
                   {s.badge && (
-                    <span className="inline-flex w-fit items-center rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold text-white mb-5">
+                    <span
+                      className="inline-flex w-fit items-center rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold text-white mb-5"
+                      style={heroTaglineStyle}
+                    >
                       {s.badge}
                     </span>
                   )}
-                  <h1 className="text-3xl md:text-5xl font-extrabold text-white leading-tight tracking-tight mb-4">
+                  <h1
+                    className="text-3xl md:text-5xl font-extrabold text-white leading-tight tracking-tight mb-4"
+                    style={heroTitleStyle}
+                  >
                     {s.headline}
                   </h1>
-                  <p className="text-slate-200 text-base md:text-lg mb-7 max-w-lg">
+                  <p
+                    className="text-slate-200 text-base md:text-lg mb-7 max-w-lg"
+                    style={heroParaStyle}
+                  >
                     {s.subheadline}
                   </p>
                   {s.ctaLabel && (
                     <a
                       href={s.ctaHref}
                       className="inline-flex w-fit items-center rounded-lg bg-orange-500 px-7 py-3.5 text-white font-semibold hover:bg-orange-600 transition text-base"
+                      style={heroButtonStyle}
                     >
                       {s.ctaLabel}
                     </a>
                   )}
                 </div>
               </div>
-            ))}
-            {total > 1 && (
+            )}
+            {total > 1 && sliderShowArrows && (
               <>
                 <button
                   type="button"
                   aria-label="Previous slide"
-                  onClick={() => setActiveSlide((i) => (i - 1 + total) % total)}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/15 text-white flex items-center justify-center hover:bg-white/25 transition backdrop-blur"
+                  disabled={!canPrev}
+                  onClick={() => canPrev && setActiveSlide((i) => (i - 1 + total) % total)}
+                  className={`absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/15 text-white flex items-center justify-center hover:bg-white/25 transition backdrop-blur ${canPrev ? '' : 'opacity-30 cursor-not-allowed'}`}
                 >
                   <svg
                     className="w-5 h-5"
@@ -2574,8 +3492,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 <button
                   type="button"
                   aria-label="Next slide"
-                  onClick={() => setActiveSlide((i) => (i + 1) % total)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/15 text-white flex items-center justify-center hover:bg-white/25 transition backdrop-blur"
+                  disabled={!canNext}
+                  onClick={() => canNext && setActiveSlide((i) => (i + 1) % total)}
+                  className={`absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/15 text-white flex items-center justify-center hover:bg-white/25 transition backdrop-blur ${canNext ? '' : 'opacity-30 cursor-not-allowed'}`}
                 >
                   <svg
                     className="w-5 h-5"
@@ -2587,73 +3506,71 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
                   </svg>
                 </button>
-                <div className="absolute bottom-6 left-0 right-0 z-20 flex justify-center gap-2">
-                  {slides.map((_, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      aria-label={`Show slide ${i + 1}`}
-                      onClick={() => setActiveSlide(i)}
-                      className={`h-2 rounded-full transition-all ${
-                        i === idx ? 'w-7 bg-orange-500' : 'w-2 bg-white/50'
-                      }`}
-                    />
-                  ))}
-                </div>
               </>
+            )}
+            {total > 1 && sliderShowDots && (
+              <div className="absolute bottom-6 left-0 right-0 z-20 flex justify-center gap-2">
+                {slides.map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    aria-label={`Show slide ${i + 1}`}
+                    onClick={() => setActiveSlide(i)}
+                    className={`h-2 rounded-full transition-all ${
+                      i === idx ? 'w-7 bg-orange-500' : 'w-2 bg-white/50'
+                    }`}
+                  />
+                ))}
+              </div>
             )}
           </section>
         )
       }
 
       if (variant === '3') {
-        const slides = [
-          {
-            image: d3Slide1Image,
-            quote: d3Slide1Quote,
-            author: d3Slide1Author,
-            role: d3Slide1Role,
-          },
-          {
-            image: d3Slide2Image,
-            quote: d3Slide2Quote,
-            author: d3Slide2Author,
-            role: d3Slide2Role,
-          },
-          {
-            image: d3Slide3Image,
-            quote: d3Slide3Quote,
-            author: d3Slide3Author,
-            role: d3Slide3Role,
-          },
-        ].filter((s) => s.quote)
+        const slides = d3SlidesList
         const total = slides.length
         const idx = Math.min(activeSlide, Math.max(total - 1, 0))
         const slide = slides[idx]
+        const canPrev = sliderLoop || idx > 0
+        const canNext = sliderLoop || idx < total - 1
         return (
           <section className="bg-slate-50 py-16 md:py-24">
             <div className={`${wrap} text-center`}>
               {d3Eyebrow && (
-                <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-3">
+                <p
+                  className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-3"
+                  style={heroTaglineStyle}
+                >
                   {d3Eyebrow}
                 </p>
               )}
-              <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight mb-4 max-w-3xl mx-auto">
+              <h1
+                className="text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight mb-4 max-w-3xl mx-auto"
+                style={heroTitleStyle}
+              >
                 {d3Headline}
               </h1>
-              <p className="text-slate-600 text-base md:text-lg mb-10 max-w-xl mx-auto">
+              <p
+                className="text-slate-600 text-base md:text-lg mb-10 max-w-xl mx-auto"
+                style={heroParaStyle}
+              >
                 {d3Subheadline}
               </p>
               {d3CtaLabel && (
                 <a
                   href={d3CtaHref}
                   className="inline-flex items-center rounded-lg bg-orange-500 px-7 py-3.5 text-white font-semibold hover:bg-orange-600 transition text-base mb-12"
+                  style={heroButtonStyle}
                 >
                   {d3CtaLabel}
                 </a>
               )}
               {slide && (
-                <div className="relative max-w-2xl mx-auto rounded-2xl bg-white border border-slate-200 shadow-sm p-8 md:p-10">
+                <div
+                  key={idx}
+                  className={`relative max-w-2xl mx-auto rounded-2xl bg-white border border-slate-200 shadow-sm p-8 md:p-10 ${heroTransitionClass}`}
+                >
                   <div className="flex flex-col items-center gap-4">
                     {slide.image && (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -2671,13 +3588,14 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       <p className="text-sm text-slate-500">{slide.role}</p>
                     </div>
                   </div>
-                  {total > 1 && (
+                  {total > 1 && sliderShowArrows && (
                     <>
                       <button
                         type="button"
                         aria-label="Previous"
-                        onClick={() => setActiveSlide((i) => (i - 1 + total) % total)}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-slate-50 text-slate-700 flex items-center justify-center hover:bg-slate-100 transition"
+                        disabled={!canPrev}
+                        onClick={() => canPrev && setActiveSlide((i) => (i - 1 + total) % total)}
+                        className={`absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-slate-50 text-slate-700 flex items-center justify-center hover:bg-slate-100 transition ${canPrev ? '' : 'opacity-30 cursor-not-allowed'}`}
                       >
                         <svg
                           className="w-4 h-4"
@@ -2692,8 +3610,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       <button
                         type="button"
                         aria-label="Next"
-                        onClick={() => setActiveSlide((i) => (i + 1) % total)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-slate-50 text-slate-700 flex items-center justify-center hover:bg-slate-100 transition"
+                        disabled={!canNext}
+                        onClick={() => canNext && setActiveSlide((i) => (i + 1) % total)}
+                        className={`absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-slate-50 text-slate-700 flex items-center justify-center hover:bg-slate-100 transition ${canNext ? '' : 'opacity-30 cursor-not-allowed'}`}
                       >
                         <svg
                           className="w-4 h-4"
@@ -2709,7 +3628,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   )}
                 </div>
               )}
-              {total > 1 && (
+              {total > 1 && sliderShowDots && (
                 <div className="flex justify-center gap-2 mt-6">
                   {slides.map((_, i) => (
                     <button
@@ -2730,34 +3649,39 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       }
 
       if (variant === '4') {
-        const slides = [
-          { icon: d4Slide1Icon, title: d4Slide1Title, description: d4Slide1Description },
-          { icon: d4Slide2Icon, title: d4Slide2Title, description: d4Slide2Description },
-          { icon: d4Slide3Icon, title: d4Slide3Title, description: d4Slide3Description },
-        ].filter((s) => s.title)
+        const slides = d4SlidesList
         const total = slides.length
         const idx = Math.min(activeSlide, Math.max(total - 1, 0))
         const slide = slides[idx]
         const Icon = slide ? (ICON_BY_KEY[slide.icon] ?? HardHatIcon) : HardHatIcon
+        const canPrev = sliderLoop || idx > 0
+        const canNext = sliderLoop || idx < total - 1
         return (
           <section className="bg-white py-16 md:py-24 border-b border-slate-100">
             <div className={`${wrap} text-center`}>
-              <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight mb-4 max-w-3xl mx-auto">
+              <h1
+                className="text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight mb-4 max-w-3xl mx-auto"
+                style={heroTitleStyle}
+              >
                 {d4Headline}
               </h1>
-              <p className="text-slate-600 text-base md:text-lg mb-4 max-w-xl mx-auto">
+              <p
+                className="text-slate-600 text-base md:text-lg mb-4 max-w-xl mx-auto"
+                style={heroParaStyle}
+              >
                 {d4Subheadline}
               </p>
               {d4CtaLabel && (
                 <a
                   href={d4CtaHref}
                   className="inline-flex items-center rounded-lg bg-orange-500 px-7 py-3.5 text-white font-semibold hover:bg-orange-600 transition text-base mb-12"
+                  style={heroButtonStyle}
                 >
                   {d4CtaLabel}
                 </a>
               )}
               {slide && (
-                <div className="relative max-w-md mx-auto">
+                <div key={idx} className={`relative max-w-md mx-auto ${heroTransitionClass}`}>
                   <div className="rounded-2xl border border-slate-200 shadow-sm p-8 hover:shadow-md transition">
                     <div className="text-orange-500 mb-4 flex justify-center [&>svg]:w-9 [&>svg]:h-9">
                       <Icon />
@@ -2765,13 +3689,14 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     <h3 className="text-lg font-bold text-slate-900 mb-2">{slide.title}</h3>
                     <p className="text-slate-600 text-sm leading-relaxed">{slide.description}</p>
                   </div>
-                  {total > 1 && (
+                  {total > 1 && sliderShowArrows && (
                     <>
                       <button
                         type="button"
                         aria-label="Previous"
-                        onClick={() => setActiveSlide((i) => (i - 1 + total) % total)}
-                        className="absolute -left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white border border-slate-200 text-slate-700 flex items-center justify-center hover:bg-slate-50 transition shadow-sm"
+                        disabled={!canPrev}
+                        onClick={() => canPrev && setActiveSlide((i) => (i - 1 + total) % total)}
+                        className={`absolute -left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white border border-slate-200 text-slate-700 flex items-center justify-center hover:bg-slate-50 transition shadow-sm ${canPrev ? '' : 'opacity-30 cursor-not-allowed'}`}
                       >
                         <svg
                           className="w-4 h-4"
@@ -2786,8 +3711,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       <button
                         type="button"
                         aria-label="Next"
-                        onClick={() => setActiveSlide((i) => (i + 1) % total)}
-                        className="absolute -right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white border border-slate-200 text-slate-700 flex items-center justify-center hover:bg-slate-50 transition shadow-sm"
+                        disabled={!canNext}
+                        onClick={() => canNext && setActiveSlide((i) => (i + 1) % total)}
+                        className={`absolute -right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white border border-slate-200 text-slate-700 flex items-center justify-center hover:bg-slate-50 transition shadow-sm ${canNext ? '' : 'opacity-30 cursor-not-allowed'}`}
                       >
                         <svg
                           className="w-4 h-4"
@@ -2803,7 +3729,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   )}
                 </div>
               )}
-              {total > 1 && (
+              {total > 1 && sliderShowDots && (
                 <div className="flex justify-center gap-2 mt-6">
                   {slides.map((_, i) => (
                     <button
@@ -2823,70 +3749,175 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         )
       }
 
-      // Design 2 (default) — split with slider card
-      const d2Slides = [
-        {
-          image: d2Slide1Image,
-          tag: d2Slide1Tag,
-          title: d2Slide1Title,
-          subtitle: d2Slide1Subtitle,
-        },
-        {
-          image: d2Slide2Image,
-          tag: d2Slide2Tag,
-          title: d2Slide2Title,
-          subtitle: d2Slide2Subtitle,
-        },
-        {
-          image: d2Slide3Image,
-          tag: d2Slide3Tag,
-          title: d2Slide3Title,
-          subtitle: d2Slide3Subtitle,
-        },
-      ].filter((s) => s.image)
+      // Design 2 (default) — dark split hero whose headline/lede/image/
+      // brand logo all swap per active dot, matching the reference site's
+      // real hero (data-headline/data-desc swapped by JS there; here it's
+      // just React state, `activeSlide`, shared with the other designs'
+      // sliders). Up to 6 slides, matching the reference's 6 dots.
+      const d2Slides = d2SlidesList
       const d2Total = d2Slides.length
       const d2Idx = Math.min(activeSlide, Math.max(d2Total - 1, 0))
       const d2Slide = d2Slides[d2Idx]
-      const headlineParts =
-        d2HighlightWord && d2Headline.includes(d2HighlightWord)
-          ? d2Headline.split(d2HighlightWord)
-          : [d2Headline, '']
       const avatars = [d2Avatar1, d2Avatar2, d2Avatar3].filter(Boolean)
+      const heroBg = secondaryColor || '#0a0c18'
+      const heroAccent = primaryColor || '#ff5a36'
+      const heroText = readableTextColor(heroBg)
+      const heroMuted = heroText === '#ffffff' ? 'rgba(255,255,255,0.7)' : 'rgba(17,24,39,0.65)'
+      const stats = [
+        {
+          value: d2Stat1Value,
+          label: d2Stat1Label,
+          valuePath: 'd2Stat1Value',
+          labelPath: 'd2Stat1Label',
+        },
+        {
+          value: d2Stat2Value,
+          label: d2Stat2Label,
+          valuePath: 'd2Stat2Value',
+          labelPath: 'd2Stat2Label',
+        },
+        {
+          value: d2Stat3Value,
+          label: d2Stat3Label,
+          valuePath: 'd2Stat3Value',
+          labelPath: 'd2Stat3Label',
+        },
+      ].filter((s) => s.value)
+      const d2CanPrev = sliderLoop || d2Idx > 0
+      const d2CanNext = sliderLoop || d2Idx < d2Total - 1
       return (
-        <section className="bg-white py-14 md:py-20">
-          <div className={`${wrap} grid grid-cols-1 md:grid-cols-2 gap-10 items-center`}>
-            <div>
+        <section className="py-14 md:py-20" style={{ backgroundColor: heroBg, color: heroText }}>
+          {/* Reference markup wraps this in `container-fluid` (full-width,
+              gutter padding only), not the capped `.container` most other
+              sections use — a full-bleed banner, not a centered column with
+              large side margins. `wrap` (mx-auto max-w-6xl) is deliberately
+              not used here. */}
+          <div
+            key={d2Idx}
+            className={`grid grid-cols-1 gap-10 px-4 items-center md:grid-cols-2 md:px-8 ${heroTransitionClass}`}
+          >
+            <div className="order-2 md:order-2">
               {d2BadgeText && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 border border-orange-200 text-orange-600 text-xs font-semibold px-3 py-1 mb-5">
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold mb-5"
+                  style={{ borderColor: heroAccent, color: heroAccent, ...heroTaglineStyle }}
+                >
                   {d2BadgeText}
                 </span>
               )}
-              <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight mb-5">
-                {headlineParts[0]}
-                {d2HighlightWord && <span className="text-orange-500">{d2HighlightWord}</span>}
-                {headlineParts[1]}
+              <h1
+                className="text-3xl md:text-5xl font-extrabold leading-tight tracking-tight mb-5"
+                style={heroTitleStyle}
+              >
+                <InlineEditableText
+                  id={id}
+                  path={['d2Slides', d2Idx, 'lead']}
+                  value={d2Slide?.lead ?? ''}
+                  isEditing={isEditing}
+                />{' '}
+                {(isEditing || d2Slide?.highlight) && (
+                  <InlineEditableText
+                    id={id}
+                    path={['d2Slides', d2Idx, 'highlight']}
+                    value={d2Slide?.highlight ?? ''}
+                    style={{ color: heroAccent, ...heroTitleStyle }}
+                    isEditing={isEditing}
+                  />
+                )}
               </h1>
-              <p className="text-slate-600 text-base md:text-lg mb-8 max-w-lg">{d2Subheadline}</p>
+              {(isEditing || d2Slide?.description) && (
+                <p
+                  className="text-base md:text-lg mb-8 max-w-lg"
+                  style={{ color: heroMuted, ...heroParaStyle }}
+                >
+                  <InlineEditableText
+                    id={id}
+                    path={['d2Slides', d2Idx, 'description']}
+                    value={d2Slide?.description ?? ''}
+                    isEditing={isEditing}
+                    multiline
+                  />
+                </p>
+              )}
+              {d2Slide?.brands && d2Slide.brands.length > 0 && (
+                <div className="mb-8">
+                  <p
+                    className="text-xs font-semibold uppercase tracking-wide mb-2"
+                    style={{ color: heroMuted }}
+                  >
+                    <InlineEditableText
+                      id={id}
+                      path={['d2BrandsLabel']}
+                      value={d2BrandsLabel ?? ''}
+                      isEditing={isEditing}
+                    />
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    {d2Slide.brands.map((b, i) =>
+                      b.logo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          key={i}
+                          src={b.logo}
+                          alt={b.name}
+                          title={b.name}
+                          className="h-10 max-w-[110px] rounded-lg bg-white object-contain px-3 py-2"
+                        />
+                      ) : (
+                        <span
+                          key={i}
+                          className="text-sm font-semibold"
+                          style={{ color: heroMuted }}
+                        >
+                          {b.name}
+                        </span>
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                {d2CtaLabel && (
+                {(isEditing || d2CtaLabel) && (
                   <a
                     href={d2CtaHref}
-                    className="inline-flex items-center justify-center rounded-lg bg-orange-500 px-7 py-3.5 text-white font-semibold hover:bg-orange-600 transition text-base"
+                    onClick={isEditing ? (e) => e.preventDefault() : undefined}
+                    style={{
+                      backgroundColor: heroAccent,
+                      color: readableTextColor(heroAccent),
+                      ...heroButtonStyle,
+                    }}
+                    className="inline-flex items-center justify-center rounded-lg px-7 py-3.5 font-semibold hover:opacity-90 transition text-base"
                   >
-                    {d2CtaLabel}
+                    <InlineEditableText
+                      id={id}
+                      path={['d2CtaLabel']}
+                      value={d2CtaLabel ?? ''}
+                      isEditing={isEditing}
+                    />
                   </a>
                 )}
-                {d2SecondaryLabel && (
+                {/* Per-slide link (Fields panel → this slide's own
+                    "workHref") — blank hides the button on that slide,
+                    matching the reference's Electrical & Switchgear slide
+                    which has no matching work page. */}
+                {(isEditing || d2Slide?.workHref) && (
                   <a
-                    href={d2SecondaryHref}
-                    className="inline-flex items-center justify-center rounded-lg border-2 border-slate-300 px-7 py-3.5 text-slate-900 font-semibold hover:bg-slate-50 transition text-base"
+                    href={d2Slide?.workHref || '#'}
+                    onClick={isEditing ? (e) => e.preventDefault() : undefined}
+                    className="inline-flex items-center justify-center rounded-lg border-2 px-7 py-3.5 font-semibold hover:bg-white/10 transition text-base"
+                    style={{ borderColor: heroMuted, color: heroText, ...heroButtonStyle }}
                   >
-                    {d2SecondaryLabel}
+                    <InlineEditableText
+                      id={id}
+                      path={['d2SecondaryLabel']}
+                      value={d2SecondaryLabel ?? ''}
+                      isEditing={isEditing}
+                    />
                   </a>
                 )}
               </div>
               {avatars.length > 0 && (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 mb-8">
                   <div className="flex -space-x-3">
                     {avatars.map((src, i) => (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -2894,44 +3925,74 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                         key={i}
                         src={src}
                         alt=""
-                        className="w-9 h-9 rounded-full border-2 border-white object-cover"
+                        className="w-9 h-9 rounded-full border-2 object-cover"
+                        style={{ borderColor: heroBg }}
                       />
                     ))}
                   </div>
-                  {d2TrustText && <p className="text-sm text-slate-600">{d2TrustText}</p>}
+                  {(isEditing || d2TrustText) && (
+                    <p className="text-sm" style={{ color: heroMuted }}>
+                      <InlineEditableText
+                        id={id}
+                        path={['d2TrustText']}
+                        value={d2TrustText ?? ''}
+                        isEditing={isEditing}
+                      />
+                    </p>
+                  )}
+                </div>
+              )}
+              {stats.length > 0 && (
+                <div
+                  className="flex flex-wrap gap-8 border-t pt-6"
+                  style={{ borderColor: heroMuted }}
+                >
+                  {stats.map((s, i) => (
+                    <div key={i}>
+                      <p className="text-2xl md:text-3xl font-extrabold">
+                        <InlineEditableText
+                          id={id}
+                          path={[s.valuePath]}
+                          value={s.value ?? ''}
+                          isEditing={isEditing}
+                        />
+                      </p>
+                      <p className="text-xs mt-1" style={{ color: heroMuted }}>
+                        <InlineEditableText
+                          id={id}
+                          path={[s.labelPath]}
+                          value={s.label ?? ''}
+                          isEditing={isEditing}
+                        />
+                      </p>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
-            <div>
-              <div className="relative rounded-2xl overflow-hidden aspect-[4/3] bg-slate-100">
+            {/* Image column comes first (left) — matches the reference's
+                actual visual order (its "copy" div is first in the DOM but
+                CSS reorders it visually right of the image). */}
+            <div className="order-1 md:order-1">
+              <div className="relative rounded-2xl overflow-hidden aspect-[4/3] bg-slate-800">
                 {d2Slide?.image && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={d2Slide.image}
-                    alt={d2Slide.title}
+                    alt={d2Slide.dotLabel || ''}
                     className="absolute inset-0 w-full h-full object-cover"
                   />
                 )}
-                {d2Slide && (d2Slide.title || d2Slide.subtitle) && (
-                  <div className="absolute bottom-4 left-4 right-4 rounded-lg bg-white/90 backdrop-blur p-4">
-                    {d2Slide.tag && (
-                      <span className="text-xs font-medium text-orange-600 uppercase tracking-wide">
-                        {d2Slide.tag}
-                      </span>
-                    )}
-                    <p className="font-semibold text-slate-900">{d2Slide.title}</p>
-                    {d2Slide.subtitle && (
-                      <p className="text-xs text-slate-600 mt-0.5">{d2Slide.subtitle}</p>
-                    )}
-                  </div>
-                )}
-                {d2Total > 1 && (
+                {d2Total > 1 && sliderShowArrows && (
                   <>
                     <button
                       type="button"
                       aria-label="Previous slide"
-                      onClick={() => setActiveSlide((i) => (i - 1 + d2Total) % d2Total)}
-                      className="absolute left-3 top-3 w-8 h-8 rounded-full bg-white/90 text-slate-900 flex items-center justify-center shadow hover:bg-white transition"
+                      disabled={!d2CanPrev}
+                      onClick={() =>
+                        d2CanPrev && setActiveSlide((i) => (i - 1 + d2Total) % d2Total)
+                      }
+                      className={`absolute left-3 top-3 w-8 h-8 rounded-full bg-white/90 text-slate-900 flex items-center justify-center shadow hover:bg-white transition ${d2CanPrev ? '' : 'opacity-30 cursor-not-allowed'}`}
                     >
                       <svg
                         className="w-4 h-4"
@@ -2946,8 +4007,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     <button
                       type="button"
                       aria-label="Next slide"
-                      onClick={() => setActiveSlide((i) => (i + 1) % d2Total)}
-                      className="absolute right-3 top-3 w-8 h-8 rounded-full bg-white/90 text-slate-900 flex items-center justify-center shadow hover:bg-white transition"
+                      disabled={!d2CanNext}
+                      onClick={() => d2CanNext && setActiveSlide((i) => (i + 1) % d2Total)}
+                      className={`absolute right-3 top-3 w-8 h-8 rounded-full bg-white/90 text-slate-900 flex items-center justify-center shadow hover:bg-white transition ${d2CanNext ? '' : 'opacity-30 cursor-not-allowed'}`}
                     >
                       <svg
                         className="w-4 h-4"
@@ -2961,22 +4023,22 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     </button>
                   </>
                 )}
+                {d2Total > 1 && sliderShowDots && (
+                  <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-2">
+                    {d2Slides.map((s, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        aria-label={s.dotLabel || `Show slide ${i + 1}`}
+                        onClick={() => setActiveSlide(i)}
+                        className={`h-2 rounded-full transition-all ${
+                          i === d2Idx ? 'w-6 bg-white' : 'w-2 bg-white/50'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-              {d2Total > 1 && (
-                <div className="flex justify-center gap-2 mt-4">
-                  {d2Slides.map((_, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      aria-label={`Show slide ${i + 1}`}
-                      onClick={() => setActiveSlide(i)}
-                      className={`h-2 rounded-full transition-all ${
-                        i === d2Idx ? 'w-6 bg-orange-500' : 'w-2 bg-slate-300'
-                      }`}
-                    />
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         </section>
@@ -3146,21 +4208,24 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       sectionTitle: 'Our Core Offerings',
       sectionSubtitle: 'Everything you need from a single, accountable contractor.',
       offering1NumberTag: '01',
-      offering1Image: 'https://placehold.co/700x500/475569/ffffff?text=Offering+One',
+      offering1Image:
+        'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=700&h=500&fit=crop&auto=format',
       offering1Heading: 'Structural Construction',
       offering1Description:
         'End-to-end structural builds engineered to code, from footings to rooftop.',
       offering1BrandNames: 'Brand One · Brand Two',
       offering1Href: '#',
       offering2NumberTag: '02',
-      offering2Image: 'https://placehold.co/700x500/334155/ffffff?text=Offering+Two',
+      offering2Image:
+        'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=700&h=500&fit=crop&auto=format',
       offering2Heading: 'MEP & Systems Integration',
       offering2Description:
         'Mechanical, electrical, and plumbing systems coordinated under one schedule.',
       offering2BrandNames: 'Brand Three · Brand Four',
       offering2Href: '#',
       offering3NumberTag: '03',
-      offering3Image: 'https://placehold.co/700x500/1e293b/ffffff?text=Offering+Three',
+      offering3Image:
+        'https://images.unsplash.com/photo-1479839672679-a46483c0e7c8?w=700&h=500&fit=crop&auto=format',
       offering3Heading: 'Finishing & Interiors',
       offering3Description:
         'Precision finishing work that turns a shell into a move-in-ready space.',
@@ -3286,7 +4351,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       eyebrow: { type: 'text' },
       heading: { type: 'text' },
       paragraph: { type: 'textarea' },
-      photo: { type: 'text' },
+      photo: imageField('Photo'),
       badgeNumber: { type: 'text' },
       badgeLabel: { type: 'text' },
       check1Text: { type: 'text' },
@@ -3294,6 +4359,19 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       check3Text: { type: 'text' },
       brochureLabel: { type: 'text' },
       brochureHref: { type: 'text' },
+      membershipLabel: { type: 'text' },
+      members: {
+        type: 'array',
+        min: 0,
+        max: 20,
+        getItemSummary: (item, index) => item.title || `Logo ${(index ?? 0) + 1}`,
+        defaultItemProps: { title: '', logo: '' },
+        arrayFields: {
+          logo: imageField('Logo'),
+          // Optional — leave blank to show just the logo with no caption.
+          title: { type: 'text' },
+        },
+      },
       padding: {
         type: 'select',
         options: [
@@ -3312,21 +4390,34 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     },
     defaultProps: {
       eyebrow: 'About Us',
-      heading: 'Two Decades of Building With Integrity',
+      heading: 'Your one-stop solution for building engineering',
       paragraph:
-        'We are a full-service general contractor delivering residential, commercial, and infrastructure projects. Our in-house engineering and project management teams keep every job transparent, on schedule, and within budget.',
-      photo: 'https://placehold.co/700x800/475569/ffffff?text=Our+Team',
-      badgeNumber: '15+',
-      badgeLabel: 'Years Experience',
-      check1Text: 'Licensed & fully insured',
-      check2Text: 'In-house engineering team',
-      check3Text: 'Transparent weekly reporting',
-      brochureLabel: 'Download Brochure',
-      brochureHref: '#',
+        'Subhadra Group was founded in 1996 to provide all building-related engineering products & services under one roof for residential, commercial buildings and industries. With 30+ years of technical expertise across HVAC, Electricals and ELV systems, our team delivers perfect-engineered solutions for every application.',
+      photo: '/seed/subhadra/about.webp',
+      badgeNumber: '30',
+      badgeLabel: 'Years of Trust',
+      check1Text: 'World-class, pioneer brands only',
+      check2Text: 'Our own trained engineers, no sub-contracting',
+      check3Text: 'A dedicated service manager per discipline, 24×7',
+      brochureLabel: 'Read More →',
+      brochureHref: 'about.html',
+      membershipLabel: 'Proud member of',
+      members: [
+        { title: '', logo: '/seed/subhadra/member/fsai.jpeg' },
+        { title: '', logo: '/seed/subhadra/member/IIID.jpeg' },
+        { title: '', logo: '/seed/subhadra/member/IGBC.png' },
+        { title: '', logo: '/seed/subhadra/member/IPA.png' },
+        { title: '', logo: '/seed/subhadra/member/ASHRAE.webp' },
+        { title: '', logo: '/seed/subhadra/member/bni.svg' },
+        { title: '', logo: '/seed/subhadra/member/cii.svg' },
+        { title: '', logo: '/seed/subhadra/member/VCCI.png' },
+      ],
       padding: 'md',
-      background: 'white',
+      background: 'muted',
     },
     render: function ConstructionAboutSplitRender({
+      id,
+      puck,
       eyebrow,
       heading,
       paragraph,
@@ -3338,35 +4429,79 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       check3Text,
       brochureLabel,
       brochureHref,
+      membershipLabel,
+      members,
       padding,
       background,
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
-      const checks = [check1Text, check2Text, check3Text].filter(Boolean)
+      const isEditing = puck?.isEditing ?? false
+      const checks = [
+        { text: check1Text, path: 'check1Text' },
+        { text: check2Text, path: 'check2Text' },
+        { text: check3Text, path: 'check3Text' },
+      ].filter((c) => c.text)
+      const memberLogos = (members ?? []).filter((m) => m.logo)
       return (
         <section
           ref={ref}
           className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
         >
-          <div className={`${wrap} md:flex gap-14 items-center`}>
+          <div className="w-full px-6 md:px-10 lg:px-16 md:flex gap-14 items-center">
             <div className="md:w-2/5 relative mb-10 md:mb-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={photo} alt={heading} className="rounded-2xl w-full h-96 object-cover" />
-              {(badgeNumber || badgeLabel) && (
+              {(isEditing || badgeNumber || badgeLabel) && (
                 <div className="absolute -bottom-6 -right-6 w-28 h-28 rounded-full bg-orange-500 text-white flex flex-col items-center justify-center text-center shadow-lg">
-                  <span className="text-2xl font-extrabold leading-none">{badgeNumber}</span>
-                  <span className="text-[11px] font-medium mt-1 px-2">{badgeLabel}</span>
+                  <span className="text-2xl font-extrabold leading-none">
+                    <InlineEditableText
+                      id={id}
+                      path={['badgeNumber']}
+                      value={badgeNumber ?? ''}
+                      isEditing={isEditing}
+                    />
+                  </span>
+                  <span className="text-[11px] font-medium mt-1 px-2">
+                    <InlineEditableText
+                      id={id}
+                      path={['badgeLabel']}
+                      value={badgeLabel ?? ''}
+                      isEditing={isEditing}
+                    />
+                  </span>
                 </div>
               )}
             </div>
             <div className="md:w-3/5">
-              {eyebrow && (
+              {(isEditing || eyebrow) && (
                 <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
-                  {eyebrow}
+                  <InlineEditableText
+                    id={id}
+                    path={['eyebrow']}
+                    value={eyebrow ?? ''}
+                    isEditing={isEditing}
+                  />
                 </p>
               )}
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-4">{heading}</h2>
-              {paragraph && <p className="text-slate-600 leading-relaxed mb-6">{paragraph}</p>}
+              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-4">
+                <InlineEditableText
+                  id={id}
+                  path={['heading']}
+                  value={heading ?? ''}
+                  isEditing={isEditing}
+                />
+              </h2>
+              {(isEditing || paragraph) && (
+                <p className="text-slate-600 leading-relaxed mb-6">
+                  <InlineEditableText
+                    id={id}
+                    path={['paragraph']}
+                    value={paragraph ?? ''}
+                    isEditing={isEditing}
+                    multiline
+                  />
+                </p>
+              )}
               {checks.length > 0 && (
                 <ul className="flex flex-col gap-3 mb-8">
                   {checks.map((c, i) => (
@@ -3374,18 +4509,61 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       <span className="text-green-600 flex-shrink-0">
                         <CheckShieldIcon />
                       </span>
-                      {c}
+                      <InlineEditableText
+                        id={id}
+                        path={[c.path]}
+                        value={c.text ?? ''}
+                        isEditing={isEditing}
+                      />
                     </li>
                   ))}
                 </ul>
               )}
-              {brochureLabel && (
+              {(isEditing || brochureLabel) && (
                 <a
                   href={brochureHref}
+                  onClick={isEditing ? (e) => e.preventDefault() : undefined}
                   className="inline-flex items-center rounded-lg bg-orange-500 px-6 py-3 text-white font-semibold hover:bg-orange-600 transition text-sm"
                 >
-                  {brochureLabel}
+                  <InlineEditableText
+                    id={id}
+                    path={['brochureLabel']}
+                    value={brochureLabel ?? ''}
+                    isEditing={isEditing}
+                  />
                 </a>
+              )}
+              {memberLogos.length > 0 && (
+                <div className="mt-8">
+                  {(isEditing || membershipLabel) && (
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">
+                      <InlineEditableText
+                        id={id}
+                        path={['membershipLabel']}
+                        value={membershipLabel ?? ''}
+                        isEditing={isEditing}
+                      />
+                    </p>
+                  )}
+                  <div className="flex flex-wrap items-end gap-4">
+                    {memberLogos.map((m, i) => (
+                      <div key={i} className="flex flex-col items-center gap-1">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={m.logo}
+                          alt={m.title || ''}
+                          title={m.title || undefined}
+                          className="h-9 w-auto object-contain opacity-90"
+                        />
+                        {m.title && (
+                          <span className="text-[10px] text-slate-500 text-center leading-tight max-w-[80px]">
+                            {m.title}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -3400,72 +4578,28 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     fields: {
       sectionTitle: { type: 'text' },
       sectionSubtitle: { type: 'textarea' },
-      project1Title: { type: 'text' },
-      project1Category: { type: 'text' },
-      project1Image: imageField('Image'),
-      project1NumberTag: { type: 'text' },
-      project1Description: { type: 'textarea' },
-      project1Href: { type: 'text' },
-      project2Title: { type: 'text' },
-      project2Category: { type: 'text' },
-      project2Image: imageField('Image'),
-      project2NumberTag: { type: 'text' },
-      project2Description: { type: 'textarea' },
-      project2Href: { type: 'text' },
-      project3Title: { type: 'text' },
-      project3Category: { type: 'text' },
-      project3Image: imageField('Image'),
-      project3NumberTag: { type: 'text' },
-      project3Description: { type: 'textarea' },
-      project3Href: { type: 'text' },
-      project4Title: { type: 'text' },
-      project4Category: { type: 'text' },
-      project4Image: imageField('Image'),
-      project4NumberTag: { type: 'text' },
-      project4Description: { type: 'textarea' },
-      project4Href: { type: 'text' },
-      project5Title: { type: 'text' },
-      project5Category: { type: 'text' },
-      project5Image: imageField('Image'),
-      project5NumberTag: { type: 'text' },
-      project5Description: { type: 'textarea' },
-      project5Href: { type: 'text' },
-      project6Title: { type: 'text' },
-      project6Category: { type: 'text' },
-      project6Image: imageField('Image'),
-      project6NumberTag: { type: 'text' },
-      project6Description: { type: 'textarea' },
-      project6Href: { type: 'text' },
-      project7Title: { type: 'text' },
-      project7Category: { type: 'text' },
-      project7Image: imageField('Image'),
-      project7NumberTag: { type: 'text' },
-      project7Description: { type: 'textarea' },
-      project7Href: { type: 'text' },
-      project8Title: { type: 'text' },
-      project8Category: { type: 'text' },
-      project8Image: imageField('Image'),
-      project8NumberTag: { type: 'text' },
-      project8Description: { type: 'textarea' },
-      project8Href: { type: 'text' },
-      project9Title: { type: 'text' },
-      project9Category: { type: 'text' },
-      project9Image: imageField('Image'),
-      project9NumberTag: { type: 'text' },
-      project9Description: { type: 'textarea' },
-      project9Href: { type: 'text' },
-      project10Title: { type: 'text' },
-      project10Category: { type: 'text' },
-      project10Image: imageField('Image'),
-      project10NumberTag: { type: 'text' },
-      project10Description: { type: 'textarea' },
-      project10Href: { type: 'text' },
-      project11Title: { type: 'text' },
-      project11Category: { type: 'text' },
-      project11Image: imageField('Image'),
-      project11NumberTag: { type: 'text' },
-      project11Description: { type: 'textarea' },
-      project11Href: { type: 'text' },
+      items: {
+        type: 'array',
+        min: 0,
+        max: 30,
+        getItemSummary: (item, index) => item.title || `Project ${(index ?? 0) + 1}`,
+        defaultItemProps: {
+          title: '',
+          category: '',
+          image: '',
+          numberTag: '',
+          description: '',
+          href: '',
+        },
+        arrayFields: {
+          title: { type: 'text' },
+          category: { type: 'text' },
+          image: imageField('Image'),
+          numberTag: { type: 'text' },
+          description: { type: 'textarea' },
+          href: { type: 'text' },
+        },
+      },
       padding: {
         type: 'select',
         options: [
@@ -3479,254 +4613,149 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       sectionTitle: 'Solutions for every space',
       sectionSubtitle:
         'From luxury residences to hotels, hospitals, showrooms and industrial plants — scroll to explore.',
-      project1Title: 'Villa',
-      project1Category: 'Residential',
-      project1Image: '/seed/subhadra/sectors/villa.jpg',
-      project1NumberTag: '01',
-      project1Description: 'Comfort, control and cinema for private residences.',
-      project1Href: '#villa',
-      project2Title: 'Hotel',
-      project2Category: 'Hospitality',
-      project2Image: '/seed/subhadra/sectors/hotel.jpg',
-      project2NumberTag: '02',
-      project2Description: 'Guest-room comfort that runs all day, every day.',
-      project2Href: '#hotel',
-      project3Title: 'Hospital',
-      project3Category: 'Healthcare',
-      project3Image:
-        'https://images.unsplash.com/photo-1626315869436-d6781ba69d6e?w=600&h=800&fit=crop&q=75&auto=format',
-      project3NumberTag: '03',
-      project3Description: 'Critical-area AC, fire safety and power backup, built to compliance.',
-      project3Href: '#hospital',
-      project4Title: 'Showrooms',
-      project4Category: 'Retail',
-      project4Image: '/seed/subhadra/sectors/showrooms.jpg',
-      project4NumberTag: '04',
-      project4Description: 'Cooling, lighting and access control for retail floors.',
-      project4Href: '#showrooms',
-      project5Title: 'Convention Center',
-      project5Category: 'Events',
-      project5Image: '/seed/subhadra/sectors/convention-center.jpg',
-      project5NumberTag: '05',
-      project5Description: 'High-load cooling and professional audio.',
-      project5Href: '#convention-center',
-      project6Title: 'Education',
-      project6Category: 'Institutional',
-      project6Image: '/seed/subhadra/sectors/educational-institute.jpg',
-      project6NumberTag: '06',
-      project6Description: 'Campus electrical, networking and safety.',
-      project6Href: '#educational-institute',
-      project7Title: 'Builder',
-      project7Category: 'Construction',
-      project7Image: '/seed/subhadra/sectors/builder.jpg',
-      project7NumberTag: '07',
-      project7Description: 'Turnkey MEP packages, block after block, on schedule.',
-      project7Href: '#builder',
-      project8Title: 'Industry',
-      project8Category: 'Industrial',
-      project8Image: '/seed/subhadra/sectors/industry.jpg',
-      project8NumberTag: '08',
-      project8Description: 'Transformers, switchgear and plant maintenance.',
-      project8Href: '#industry',
-      project9Title: 'Government',
-      project9Category: 'Public',
-      project9Image:
-        'https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=600&h=800&fit=crop&q=75&auto=format',
-      project9NumberTag: '09',
-      project9Description: 'Compliant electrical, safety and power backup for public buildings.',
-      project9Href: '#government',
-      project10Title: 'Premium Flats',
-      project10Category: 'Residential',
-      project10Image:
-        'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=800&fit=crop&q=75&auto=format',
-      project10NumberTag: '10',
-      project10Description: 'Snag-free AC, electrical and automation fit-outs for apartments.',
-      project10Href: '#premium-flats',
-      project11Title: 'Gated Communities',
-      project11Category: 'Township',
-      project11Image:
-        'https://images.unsplash.com/photo-1580216643062-cf460548a66a?w=600&h=800&fit=crop&q=75&auto=format',
-      project11NumberTag: '11',
-      project11Description: 'Gate automation, security and electrical for entire townships.',
-      project11Href: '#gated-communities',
+      items: [
+        {
+          title: 'Villa',
+          category: 'Residential',
+          image: '/seed/subhadra/sectors/villa.jpg',
+          numberTag: '01',
+          description: 'Comfort, control and cinema for private residences.',
+          href: '#villa',
+        },
+        {
+          title: 'Hotel',
+          category: 'Hospitality',
+          image: '/seed/subhadra/sectors/hotel.jpg',
+          numberTag: '02',
+          description: 'Guest-room comfort that runs all day, every day.',
+          href: '#hotel',
+        },
+        {
+          title: 'Hospital',
+          category: 'Healthcare',
+          image:
+            'https://images.unsplash.com/photo-1626315869436-d6781ba69d6e?w=600&h=800&fit=crop&q=75&auto=format',
+          numberTag: '03',
+          description: 'Critical-area AC, fire safety and power backup, built to compliance.',
+          href: '#hospital',
+        },
+        {
+          title: 'Showrooms',
+          category: 'Retail',
+          image: '/seed/subhadra/sectors/showrooms.jpg',
+          numberTag: '04',
+          description: 'Cooling, lighting and access control for retail floors.',
+          href: '#showrooms',
+        },
+        {
+          title: 'Convention Center',
+          category: 'Events',
+          image: '/seed/subhadra/sectors/convention-center.jpg',
+          numberTag: '05',
+          description: 'High-load cooling and professional audio.',
+          href: '#convention-center',
+        },
+        {
+          title: 'Education',
+          category: 'Institutional',
+          image: '/seed/subhadra/sectors/educational-institute.jpg',
+          numberTag: '06',
+          description: 'Campus electrical, networking and safety.',
+          href: '#educational-institute',
+        },
+        {
+          title: 'Builder',
+          category: 'Construction',
+          image: '/seed/subhadra/sectors/builder.jpg',
+          numberTag: '07',
+          description: 'Turnkey MEP packages, block after block, on schedule.',
+          href: '#builder',
+        },
+        {
+          title: 'Industry',
+          category: 'Industrial',
+          image: '/seed/subhadra/sectors/industry.jpg',
+          numberTag: '08',
+          description: 'Transformers, switchgear and plant maintenance.',
+          href: '#industry',
+        },
+        {
+          title: 'Government',
+          category: 'Public',
+          image:
+            'https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=600&h=800&fit=crop&q=75&auto=format',
+          numberTag: '09',
+          description: 'Compliant electrical, safety and power backup for public buildings.',
+          href: '#government',
+        },
+        {
+          title: 'Premium Flats',
+          category: 'Residential',
+          image:
+            'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=800&fit=crop&q=75&auto=format',
+          numberTag: '10',
+          description: 'Snag-free AC, electrical and automation fit-outs for apartments.',
+          href: '#premium-flats',
+        },
+        {
+          title: 'Gated Communities',
+          category: 'Township',
+          image:
+            'https://images.unsplash.com/photo-1580216643062-cf460548a66a?w=600&h=800&fit=crop&q=75&auto=format',
+          numberTag: '11',
+          description: 'Gate automation, security and electrical for entire townships.',
+          href: '#gated-communities',
+        },
+      ],
       padding: 'md',
     },
     render: function ConstructionProjectGalleryRender({
+      id,
+      puck,
       sectionTitle,
       sectionSubtitle,
-      project1Title,
-      project1Category,
-      project1Image,
-      project1NumberTag,
-      project1Description,
-      project1Href,
-      project2Title,
-      project2Category,
-      project2Image,
-      project2NumberTag,
-      project2Description,
-      project2Href,
-      project3Title,
-      project3Category,
-      project3Image,
-      project3NumberTag,
-      project3Description,
-      project3Href,
-      project4Title,
-      project4Category,
-      project4Image,
-      project4NumberTag,
-      project4Description,
-      project4Href,
-      project5Title,
-      project5Category,
-      project5Image,
-      project5NumberTag,
-      project5Description,
-      project5Href,
-      project6Title,
-      project6Category,
-      project6Image,
-      project6NumberTag,
-      project6Description,
-      project6Href,
-      project7Title,
-      project7Category,
-      project7Image,
-      project7NumberTag,
-      project7Description,
-      project7Href,
-      project8Title,
-      project8Category,
-      project8Image,
-      project8NumberTag,
-      project8Description,
-      project8Href,
-      project9Title,
-      project9Category,
-      project9Image,
-      project9NumberTag,
-      project9Description,
-      project9Href,
+      items,
       padding,
-      project10Title,
-      project10Category,
-      project10Image,
-      project10NumberTag,
-      project10Description,
-      project10Href,
-      project11Title,
-      project11Category,
-      project11Image,
-      project11NumberTag,
-      project11Description,
-      project11Href,
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
-      const projects = [
-        {
-          title: project1Title,
-          category: project1Category,
-          image: project1Image,
-          numberTag: project1NumberTag,
-          description: project1Description,
-          href: project1Href,
-        },
-        {
-          title: project2Title,
-          category: project2Category,
-          image: project2Image,
-          numberTag: project2NumberTag,
-          description: project2Description,
-          href: project2Href,
-        },
-        {
-          title: project3Title,
-          category: project3Category,
-          image: project3Image,
-          numberTag: project3NumberTag,
-          description: project3Description,
-          href: project3Href,
-        },
-        {
-          title: project4Title,
-          category: project4Category,
-          image: project4Image,
-          numberTag: project4NumberTag,
-          description: project4Description,
-          href: project4Href,
-        },
-        {
-          title: project5Title,
-          category: project5Category,
-          image: project5Image,
-          numberTag: project5NumberTag,
-          description: project5Description,
-          href: project5Href,
-        },
-        {
-          title: project6Title,
-          category: project6Category,
-          image: project6Image,
-          numberTag: project6NumberTag,
-          description: project6Description,
-          href: project6Href,
-        },
-        {
-          title: project7Title,
-          category: project7Category,
-          image: project7Image,
-          numberTag: project7NumberTag,
-          description: project7Description,
-          href: project7Href,
-        },
-        {
-          title: project8Title,
-          category: project8Category,
-          image: project8Image,
-          numberTag: project8NumberTag,
-          description: project8Description,
-          href: project8Href,
-        },
-        {
-          title: project9Title,
-          category: project9Category,
-          image: project9Image,
-          numberTag: project9NumberTag,
-          description: project9Description,
-          href: project9Href,
-        },
-        {
-          title: project10Title,
-          category: project10Category,
-          image: project10Image,
-          numberTag: project10NumberTag,
-          description: project10Description,
-          href: project10Href,
-        },
-        {
-          title: project11Title,
-          category: project11Category,
-          image: project11Image,
-          numberTag: project11NumberTag,
-          description: project11Description,
-          href: project11Href,
-        },
-      ].filter((p) => p.title)
+      const isEditing = puck?.isEditing ?? false
+      const projects = (items ?? []).map((p, n) => ({ ...p, n })).filter((p) => p.title)
       return (
         <section ref={ref} className={`${revealCls} ${padY[padding]} bg-white`}>
-          <div className={wrap}>
+          {/* Reference (v2-sectors) wraps this section in container-fluid, not
+              a max-width container — full width so the rail can show more
+              cards edge-to-edge, unlike every other section on the page. */}
+          <div className="w-full px-4 md:px-8">
             <div className="text-center mb-10">
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">{sectionTitle}</h2>
-              {sectionSubtitle && (
-                <p className="text-slate-600 max-w-2xl mx-auto">{sectionSubtitle}</p>
+              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">
+                <InlineEditableText
+                  id={id}
+                  path={['sectionTitle']}
+                  value={sectionTitle ?? ''}
+                  isEditing={isEditing}
+                />
+              </h2>
+              {(isEditing || sectionSubtitle) && (
+                <p className="text-slate-600 max-w-2xl mx-auto">
+                  <InlineEditableText
+                    id={id}
+                    path={['sectionSubtitle']}
+                    value={sectionSubtitle ?? ''}
+                    isEditing={isEditing}
+                    multiline
+                  />
+                </p>
               )}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {/* Reference (.v2-sector-rail) breaks at 640/900/1200px → 2/3/4
+                columns — Tailwind's stock `lg` (1024px) would skip straight
+                from 2 to 4, so 900/1200 need arbitrary-value breakpoints. */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 min-[900px]:grid-cols-3 min-[1200px]:grid-cols-4 gap-4">
               {projects.map((p, i) => (
                 <a
                   key={i}
                   href={p.href || '#'}
+                  onClick={isEditing ? (e) => e.preventDefault() : undefined}
                   className="group relative rounded-xl overflow-hidden aspect-[4/3] block"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -3742,14 +4771,33 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     </span>
                   )}
                   <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                    {p.category && (
+                    {(isEditing || p.category) && (
                       <span className="text-xs font-medium text-orange-300 uppercase tracking-wide">
-                        {p.category}
+                        <InlineEditableText
+                          id={id}
+                          path={['items', p.n, 'category']}
+                          value={p.category ?? ''}
+                          isEditing={isEditing}
+                        />
                       </span>
                     )}
-                    <p className="font-semibold">{p.title}</p>
-                    {p.description && (
-                      <p className="text-xs text-white/80 mt-0.5">{p.description}</p>
+                    <p className="font-semibold">
+                      <InlineEditableText
+                        id={id}
+                        path={['items', p.n, 'title']}
+                        value={p.title ?? ''}
+                        isEditing={isEditing}
+                      />
+                    </p>
+                    {(isEditing || p.description) && (
+                      <p className="text-xs text-white/80 mt-0.5">
+                        <InlineEditableText
+                          id={id}
+                          path={['items', p.n, 'description']}
+                          value={p.description ?? ''}
+                          isEditing={isEditing}
+                        />
+                      </p>
                     )}
                   </div>
                 </a>
@@ -3981,7 +5029,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     },
     defaultProps: {
       sectionTitle: 'Featured Project',
-      image: 'https://placehold.co/900x650/475569/ffffff?text=Featured+Project',
+      image:
+        'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=900&h=650&fit=crop&auto=format',
       paragraph:
         'A ground-up commercial build delivered across 14 months — from site mobilisation to final handover — with zero schedule slippage.',
       scope1Icon: 'hardhat',
@@ -4393,207 +5442,42 @@ const typedComponents: Config<ConstructionProps>['components'] = {
   ConstructionProductsShowcase: {
     label: 'Products Showcase (Tabbed)',
     fields: {
+      sectionEyebrow: { type: 'text' },
       sectionTitle: { type: 'text' },
       sectionSubtitle: { type: 'textarea' },
       category1Label: { type: 'text' },
       category2Label: { type: 'text' },
       category3Label: { type: 'text' },
       category4Label: { type: 'text' },
-      product1Category: { type: 'text' },
-      product1Icon: {
-        type: 'select',
-        options: [
-          { label: 'Hard Hat', value: 'hardhat' },
-          { label: 'Shield', value: 'shield' },
-          { label: 'Star', value: 'star' },
-        ],
+      items: {
+        type: 'array',
+        min: 0,
+        max: 40,
+        getItemSummary: (item, index) => item.title || `Product ${(index ?? 0) + 1}`,
+        defaultItemProps: {
+          category: '',
+          icon: 'hardhat',
+          image: '',
+          title: '',
+          description: '',
+          brands: '',
+        },
+        arrayFields: {
+          category: { type: 'text' },
+          icon: {
+            type: 'select',
+            options: [
+              { label: 'Hard Hat', value: 'hardhat' },
+              { label: 'Shield', value: 'shield' },
+              { label: 'Star', value: 'star' },
+            ],
+          },
+          image: imageField('Image'),
+          title: { type: 'text' },
+          description: { type: 'textarea' },
+          brands: { type: 'text' },
+        },
       },
-      product1Image: imageField('Image'),
-      product1Title: { type: 'text' },
-      product1Description: { type: 'textarea' },
-      product1Brands: { type: 'text' },
-      product2Category: { type: 'text' },
-      product2Icon: {
-        type: 'select',
-        options: [
-          { label: 'Hard Hat', value: 'hardhat' },
-          { label: 'Shield', value: 'shield' },
-          { label: 'Star', value: 'star' },
-        ],
-      },
-      product2Image: imageField('Image'),
-      product2Title: { type: 'text' },
-      product2Description: { type: 'textarea' },
-      product2Brands: { type: 'text' },
-      product3Category: { type: 'text' },
-      product3Icon: {
-        type: 'select',
-        options: [
-          { label: 'Hard Hat', value: 'hardhat' },
-          { label: 'Shield', value: 'shield' },
-          { label: 'Star', value: 'star' },
-        ],
-      },
-      product3Image: imageField('Image'),
-      product3Title: { type: 'text' },
-      product3Description: { type: 'textarea' },
-      product3Brands: { type: 'text' },
-      product4Category: { type: 'text' },
-      product4Icon: {
-        type: 'select',
-        options: [
-          { label: 'Hard Hat', value: 'hardhat' },
-          { label: 'Shield', value: 'shield' },
-          { label: 'Star', value: 'star' },
-        ],
-      },
-      product4Image: imageField('Image'),
-      product4Title: { type: 'text' },
-      product4Description: { type: 'textarea' },
-      product4Brands: { type: 'text' },
-      product5Category: { type: 'text' },
-      product5Icon: {
-        type: 'select',
-        options: [
-          { label: 'Hard Hat', value: 'hardhat' },
-          { label: 'Shield', value: 'shield' },
-          { label: 'Star', value: 'star' },
-        ],
-      },
-      product5Image: imageField('Image'),
-      product5Title: { type: 'text' },
-      product5Description: { type: 'textarea' },
-      product5Brands: { type: 'text' },
-      product6Category: { type: 'text' },
-      product6Icon: {
-        type: 'select',
-        options: [
-          { label: 'Hard Hat', value: 'hardhat' },
-          { label: 'Shield', value: 'shield' },
-          { label: 'Star', value: 'star' },
-        ],
-      },
-      product6Image: imageField('Image'),
-      product6Title: { type: 'text' },
-      product6Description: { type: 'textarea' },
-      product6Brands: { type: 'text' },
-      product7Category: { type: 'text' },
-      product7Icon: {
-        type: 'select',
-        options: [
-          { label: 'Hard Hat', value: 'hardhat' },
-          { label: 'Shield', value: 'shield' },
-          { label: 'Star', value: 'star' },
-        ],
-      },
-      product7Image: imageField('Image'),
-      product7Title: { type: 'text' },
-      product7Description: { type: 'textarea' },
-      product7Brands: { type: 'text' },
-      product8Category: { type: 'text' },
-      product8Icon: {
-        type: 'select',
-        options: [
-          { label: 'Hard Hat', value: 'hardhat' },
-          { label: 'Shield', value: 'shield' },
-          { label: 'Star', value: 'star' },
-        ],
-      },
-      product8Image: imageField('Image'),
-      product8Title: { type: 'text' },
-      product8Description: { type: 'textarea' },
-      product8Brands: { type: 'text' },
-      product9Category: { type: 'text' },
-      product9Icon: {
-        type: 'select',
-        options: [
-          { label: 'Hard Hat', value: 'hardhat' },
-          { label: 'Shield', value: 'shield' },
-          { label: 'Star', value: 'star' },
-        ],
-      },
-      product9Image: imageField('Image'),
-      product9Title: { type: 'text' },
-      product9Description: { type: 'textarea' },
-      product9Brands: { type: 'text' },
-      product10Category: { type: 'text' },
-      product10Icon: {
-        type: 'select',
-        options: [
-          { label: 'Hard Hat', value: 'hardhat' },
-          { label: 'Shield', value: 'shield' },
-          { label: 'Star', value: 'star' },
-        ],
-      },
-      product10Image: imageField('Image'),
-      product10Title: { type: 'text' },
-      product10Description: { type: 'textarea' },
-      product10Brands: { type: 'text' },
-      product11Category: { type: 'text' },
-      product11Icon: {
-        type: 'select',
-        options: [
-          { label: 'Hard Hat', value: 'hardhat' },
-          { label: 'Shield', value: 'shield' },
-          { label: 'Star', value: 'star' },
-        ],
-      },
-      product11Image: imageField('Image'),
-      product11Title: { type: 'text' },
-      product11Description: { type: 'textarea' },
-      product11Brands: { type: 'text' },
-      product12Category: { type: 'text' },
-      product12Icon: {
-        type: 'select',
-        options: [
-          { label: 'Hard Hat', value: 'hardhat' },
-          { label: 'Shield', value: 'shield' },
-          { label: 'Star', value: 'star' },
-        ],
-      },
-      product12Image: imageField('Image'),
-      product12Title: { type: 'text' },
-      product12Description: { type: 'textarea' },
-      product12Brands: { type: 'text' },
-      product13Category: { type: 'text' },
-      product13Icon: {
-        type: 'select',
-        options: [
-          { label: 'Hard Hat', value: 'hardhat' },
-          { label: 'Shield', value: 'shield' },
-          { label: 'Star', value: 'star' },
-        ],
-      },
-      product13Image: imageField('Image'),
-      product13Title: { type: 'text' },
-      product13Description: { type: 'textarea' },
-      product13Brands: { type: 'text' },
-      product14Category: { type: 'text' },
-      product14Icon: {
-        type: 'select',
-        options: [
-          { label: 'Hard Hat', value: 'hardhat' },
-          { label: 'Shield', value: 'shield' },
-          { label: 'Star', value: 'star' },
-        ],
-      },
-      product14Image: imageField('Image'),
-      product14Title: { type: 'text' },
-      product14Description: { type: 'textarea' },
-      product14Brands: { type: 'text' },
-      product15Category: { type: 'text' },
-      product15Icon: {
-        type: 'select',
-        options: [
-          { label: 'Hard Hat', value: 'hardhat' },
-          { label: 'Shield', value: 'shield' },
-          { label: 'Star', value: 'star' },
-        ],
-      },
-      product15Image: imageField('Image'),
-      product15Title: { type: 'text' },
-      product15Description: { type: 'textarea' },
-      product15Brands: { type: 'text' },
       padding: {
         type: 'select',
         options: [
@@ -4611,6 +5495,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       },
     },
     defaultProps: {
+      sectionEyebrow: 'In our showroom',
       sectionTitle: 'Everything for your building, in stock',
       sectionSubtitle:
         'We deal only in world-class brands that are pioneers in their fields — Schneider Electric, Blue Star, Polycab, RR Kabel, Crompton, Cummins and more.',
@@ -4618,344 +5503,169 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       category2Label: 'Climate & refrigeration',
       category3Label: 'Safety & systems',
       category4Label: 'Automation',
-      product1Category: 'Electrical',
-      product1Icon: 'hardhat',
-      product1Image:
-        'https://images.unsplash.com/photo-1623707430101-9e74cefe05e2?w=700&h=525&fit=crop&q=75&auto=format',
-      product1Title: 'Switches & wiring devices',
-      product1Description: 'Livia, Zencelo, Unica Pure, Clipsal X, Avatar On, Cube Series.',
-      product1Brands: 'Schneider Electric · Norisys',
-      product2Category: 'Electrical',
-      product2Icon: 'shield',
-      product2Image:
-        'https://images.unsplash.com/photo-1753272691001-4d68806ac590?w=700&h=525&fit=crop&q=75&auto=format',
-      product2Title: 'MCB, DB & switchgear',
-      product2Description: 'Distribution boards, MCB/MCCB, ACB and panel boards.',
-      product2Brands: 'Schneider Electric',
-      product3Category: 'Climate & refrigeration',
-      product3Icon: 'star',
-      product3Image:
-        'https://images.unsplash.com/photo-1718203862467-c33159fdc504?w=700&h=525&fit=crop&q=75&auto=format',
-      product3Title: 'Central & VRF AC',
-      product3Description:
-        'Centralized AC, chillers, VRF and cassette units for offices, hotels and retail.',
-      product3Brands: 'Blue Star',
-      product4Category: 'Climate & refrigeration',
-      product4Icon: 'hardhat',
-      product4Image:
-        'https://images.unsplash.com/photo-1564998115952-368e7d4969ea?w=700&h=525&fit=crop&q=75&auto=format',
-      product4Title: 'Refrigeration',
-      product4Description: 'Visi coolers, deep freezers, water coolers and ice-cube machines.',
-      product4Brands: 'Blue Star',
-      product5Category: 'Safety & systems',
-      product5Icon: 'shield',
-      product5Image:
-        'https://images.unsplash.com/photo-1643123182527-3bd30840e7ed?w=700&h=525&fit=crop&q=75&auto=format',
-      product5Title: 'CCTV',
-      product5Description: 'Dome, bullet, PTZ, number-plate and face-recognition cameras.',
-      product5Brands: 'CP Plus · Honeywell · Matrix',
-      product6Category: 'Safety & systems',
-      product6Icon: 'star',
-      product6Image:
-        'https://images.unsplash.com/photo-1508817172652-4be4be2795cb?w=700&h=525&fit=crop&q=75&auto=format',
-      product6Title: 'Fire alarm & fighting',
-      product6Description: 'Panels, detectors, sprinklers, booster pumps and extinguishers.',
-      product6Brands: 'Honeywell · Minimax · Tyco',
-      product7Category: 'Automation',
-      product7Icon: 'hardhat',
-      product7Image: '/seed/subhadra/products/home-automation.jpg',
-      product7Title: 'Home automation',
-      product7Description: 'Retrofit and centralized control of lighting, curtains and AC.',
-      product7Brands: 'Schneider · Toyama · Bticino',
-      product8Category: 'Automation',
-      product8Icon: 'shield',
-      product8Image:
-        'https://images.unsplash.com/photo-1773867567872-3ad1fa481082?w=700&h=525&fit=crop&q=75&auto=format',
-      product8Title: 'Home theater',
-      product8Description: 'Dolby Atmos rooms, 4K projection, acoustic design and multiroom audio.',
-      product8Brands: 'Focal · Sony · Denon',
-      product9Category: 'Electrical',
-      product9Icon: 'star',
-      product9Image:
-        'https://images.unsplash.com/photo-1775714351784-51e93e4c12a7?w=700&h=525&fit=crop&q=75&auto=format',
-      product9Title: 'Cables & wires',
-      product9Description: 'Flexible LT/HT cables and FR/FR-LSH/LSOH house wiring, all sizes.',
-      product9Brands: 'Polycab · RR Kabel',
-      product10Category: 'Electrical',
-      product10Icon: 'hardhat',
-      product10Image:
-        'https://images.unsplash.com/photo-1780445392484-38a4852a1fd8?w=700&h=525&fit=crop&q=75&auto=format',
-      product10Title: 'Generators & UPS',
-      product10Description: '15 KVA to 3750 KVA silent diesel generators, online UPS from 1 KVA.',
-      product10Brands: 'Cummins · APC',
-      product11Category: 'Electrical',
-      product11Icon: 'shield',
-      product11Image:
-        'https://images.unsplash.com/photo-1758448755856-01d3add0177b?w=700&h=525&fit=crop&q=75&auto=format',
-      product11Title: 'Lights',
-      product11Description: 'COB spots, panels, street and flood lighting.',
-      product11Brands: 'Wipro · Crompton · Halonix',
-      product12Category: 'Electrical',
-      product12Icon: 'star',
-      product12Image:
-        'https://images.unsplash.com/photo-1698653223542-3319103c425b?w=700&h=525&fit=crop&q=75&auto=format',
-      product12Title: 'Fans & ventilation',
-      product12Description: 'Designer ceiling fans, ventilation and fresh-air fans.',
-      product12Brands: 'Crompton · WadBros',
-      product13Category: 'Safety & systems',
-      product13Icon: 'hardhat',
-      product13Image:
-        'https://images.unsplash.com/photo-1585079374502-415f8516dcc3?w=700&h=525&fit=crop&q=75&auto=format',
-      product13Title: 'Access control',
-      product13Description: 'Biometric & proximity access, attendance systems.',
-      product13Brands: 'Matrix',
-      product14Category: 'Safety & systems',
-      product14Icon: 'shield',
-      product14Image:
-        'https://images.unsplash.com/photo-1630965764686-159c575031b3?w=700&h=525&fit=crop&q=75&auto=format',
-      product14Title: 'PA system',
-      product14Description:
-        'Public address for showrooms, malls, hotels, hospitals and industries.',
-      product14Brands: 'Ahuja · Honeywell · Bosch',
-      product15Category: 'Automation',
-      product15Icon: 'star',
-      product15Image:
-        'https://images.unsplash.com/photo-1682559736721-c2e77ff4c650?w=700&h=525&fit=crop&q=75&auto=format',
-      product15Title: 'Networking solutions',
-      product15Description:
-        'Structured cabling, switches and enterprise Wi-Fi for offices and campuses.',
-      product15Brands: 'Matrix',
+      items: [
+        {
+          category: 'Electrical',
+          icon: 'hardhat',
+          image:
+            'https://images.unsplash.com/photo-1623707430101-9e74cefe05e2?w=700&h=525&fit=crop&q=75&auto=format',
+          title: 'Switches & wiring devices',
+          description: 'Livia, Zencelo, Unica Pure, Clipsal X, Avatar On, Cube Series.',
+          brands: 'Schneider Electric · Norisys',
+        },
+        {
+          category: 'Electrical',
+          icon: 'shield',
+          image:
+            'https://images.unsplash.com/photo-1753272691001-4d68806ac590?w=700&h=525&fit=crop&q=75&auto=format',
+          title: 'MCB, DB & switchgear',
+          description: 'Distribution boards, MCB/MCCB, ACB and panel boards.',
+          brands: 'Schneider Electric',
+        },
+        {
+          category: 'Climate & refrigeration',
+          icon: 'star',
+          image:
+            'https://images.unsplash.com/photo-1718203862467-c33159fdc504?w=700&h=525&fit=crop&q=75&auto=format',
+          title: 'Central & VRF AC',
+          description:
+            'Centralized AC, chillers, VRF and cassette units for offices, hotels and retail.',
+          brands: 'Blue Star',
+        },
+        {
+          category: 'Climate & refrigeration',
+          icon: 'hardhat',
+          image:
+            'https://images.unsplash.com/photo-1564998115952-368e7d4969ea?w=700&h=525&fit=crop&q=75&auto=format',
+          title: 'Refrigeration',
+          description: 'Visi coolers, deep freezers, water coolers and ice-cube machines.',
+          brands: 'Blue Star',
+        },
+        {
+          category: 'Safety & systems',
+          icon: 'shield',
+          image:
+            'https://images.unsplash.com/photo-1643123182527-3bd30840e7ed?w=700&h=525&fit=crop&q=75&auto=format',
+          title: 'CCTV',
+          description: 'Dome, bullet, PTZ, number-plate and face-recognition cameras.',
+          brands: 'CP Plus · Honeywell · Matrix',
+        },
+        {
+          category: 'Safety & systems',
+          icon: 'star',
+          image:
+            'https://images.unsplash.com/photo-1508817172652-4be4be2795cb?w=700&h=525&fit=crop&q=75&auto=format',
+          title: 'Fire alarm & fighting',
+          description: 'Panels, detectors, sprinklers, booster pumps and extinguishers.',
+          brands: 'Honeywell · Minimax · Tyco',
+        },
+        {
+          category: 'Automation',
+          icon: 'hardhat',
+          image: '/seed/subhadra/products/home-automation.jpg',
+          title: 'Home automation',
+          description: 'Retrofit and centralized control of lighting, curtains and AC.',
+          brands: 'Schneider · Toyama · Bticino',
+        },
+        {
+          category: 'Automation',
+          icon: 'shield',
+          image:
+            'https://images.unsplash.com/photo-1773867567872-3ad1fa481082?w=700&h=525&fit=crop&q=75&auto=format',
+          title: 'Home theater',
+          description: 'Dolby Atmos rooms, 4K projection, acoustic design and multiroom audio.',
+          brands: 'Focal · Sony · Denon',
+        },
+        {
+          category: 'Electrical',
+          icon: 'star',
+          image:
+            'https://images.unsplash.com/photo-1775714351784-51e93e4c12a7?w=700&h=525&fit=crop&q=75&auto=format',
+          title: 'Cables & wires',
+          description: 'Flexible LT/HT cables and FR/FR-LSH/LSOH house wiring, all sizes.',
+          brands: 'Polycab · RR Kabel',
+        },
+        {
+          category: 'Electrical',
+          icon: 'hardhat',
+          image:
+            'https://images.unsplash.com/photo-1780445392484-38a4852a1fd8?w=700&h=525&fit=crop&q=75&auto=format',
+          title: 'Generators & UPS',
+          description: '15 KVA to 3750 KVA silent diesel generators, online UPS from 1 KVA.',
+          brands: 'Cummins · APC',
+        },
+        {
+          category: 'Electrical',
+          icon: 'shield',
+          image:
+            'https://images.unsplash.com/photo-1758448755856-01d3add0177b?w=700&h=525&fit=crop&q=75&auto=format',
+          title: 'Lights',
+          description: 'COB spots, panels, street and flood lighting.',
+          brands: 'Wipro · Crompton · Halonix',
+        },
+        {
+          category: 'Electrical',
+          icon: 'star',
+          image:
+            'https://images.unsplash.com/photo-1698653223542-3319103c425b?w=700&h=525&fit=crop&q=75&auto=format',
+          title: 'Fans & ventilation',
+          description: 'Designer ceiling fans, ventilation and fresh-air fans.',
+          brands: 'Crompton · WadBros',
+        },
+        {
+          category: 'Safety & systems',
+          icon: 'hardhat',
+          image:
+            'https://images.unsplash.com/photo-1585079374502-415f8516dcc3?w=700&h=525&fit=crop&q=75&auto=format',
+          title: 'Access control',
+          description: 'Biometric & proximity access, attendance systems.',
+          brands: 'Matrix',
+        },
+        {
+          category: 'Safety & systems',
+          icon: 'shield',
+          image:
+            'https://images.unsplash.com/photo-1630965764686-159c575031b3?w=700&h=525&fit=crop&q=75&auto=format',
+          title: 'PA system',
+          description: 'Public address for showrooms, malls, hotels, hospitals and industries.',
+          brands: 'Ahuja · Honeywell · Bosch',
+        },
+        {
+          category: 'Automation',
+          icon: 'star',
+          image:
+            'https://images.unsplash.com/photo-1682559736721-c2e77ff4c650?w=700&h=525&fit=crop&q=75&auto=format',
+          title: 'Networking solutions',
+          description:
+            'Structured cabling, switches and enterprise Wi-Fi for offices and campuses.',
+          brands: 'Matrix',
+        },
+      ],
       padding: 'md',
       background: 'white',
     },
     render: function ConstructionProductsShowcaseRender({
+      id,
+      puck,
+      sectionEyebrow,
       sectionTitle,
       sectionSubtitle,
       category1Label,
       category2Label,
       category3Label,
       category4Label,
-      product1Category,
-      product1Icon,
-      product1Image,
-      product1Title,
-      product1Description,
-      product1Brands,
-      product2Category,
-      product2Icon,
-      product2Image,
-      product2Title,
-      product2Description,
-      product2Brands,
-      product3Category,
-      product3Icon,
-      product3Image,
-      product3Title,
-      product3Description,
-      product3Brands,
-      product4Category,
-      product4Icon,
-      product4Image,
-      product4Title,
-      product4Description,
-      product4Brands,
-      product5Category,
-      product5Icon,
-      product5Image,
-      product5Title,
-      product5Description,
-      product5Brands,
-      product6Category,
-      product6Icon,
-      product6Image,
-      product6Title,
-      product6Description,
-      product6Brands,
-      product7Category,
-      product7Icon,
-      product7Image,
-      product7Title,
-      product7Description,
-      product7Brands,
-      product8Category,
-      product8Icon,
-      product8Image,
-      product8Title,
-      product8Description,
-      product8Brands,
+      items,
       padding,
-      product9Category,
-      product9Icon,
-      product9Image,
-      product9Title,
-      product9Description,
-      product9Brands,
-      product10Category,
-      product10Icon,
-      product10Image,
-      product10Title,
-      product10Description,
-      product10Brands,
-      product11Category,
-      product11Icon,
-      product11Image,
-      product11Title,
-      product11Description,
-      product11Brands,
-      product12Category,
-      product12Icon,
-      product12Image,
-      product12Title,
-      product12Description,
-      product12Brands,
-      product13Category,
-      product13Icon,
-      product13Image,
-      product13Title,
-      product13Description,
-      product13Brands,
-      product14Category,
-      product14Icon,
-      product14Image,
-      product14Title,
-      product14Description,
-      product14Brands,
-      product15Category,
-      product15Icon,
-      product15Image,
-      product15Title,
-      product15Description,
-      product15Brands,
       background,
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
       const categories = [category1Label, category2Label, category3Label, category4Label].filter(
         Boolean
       )
-      const products = [
-        {
-          category: product1Category,
-          icon: product1Icon,
-          image: product1Image,
-          title: product1Title,
-          description: product1Description,
-          brands: product1Brands,
-        },
-        {
-          category: product2Category,
-          icon: product2Icon,
-          image: product2Image,
-          title: product2Title,
-          description: product2Description,
-          brands: product2Brands,
-        },
-        {
-          category: product3Category,
-          icon: product3Icon,
-          image: product3Image,
-          title: product3Title,
-          description: product3Description,
-          brands: product3Brands,
-        },
-        {
-          category: product4Category,
-          icon: product4Icon,
-          image: product4Image,
-          title: product4Title,
-          description: product4Description,
-          brands: product4Brands,
-        },
-        {
-          category: product5Category,
-          icon: product5Icon,
-          image: product5Image,
-          title: product5Title,
-          description: product5Description,
-          brands: product5Brands,
-        },
-        {
-          category: product6Category,
-          icon: product6Icon,
-          image: product6Image,
-          title: product6Title,
-          description: product6Description,
-          brands: product6Brands,
-        },
-        {
-          category: product7Category,
-          icon: product7Icon,
-          image: product7Image,
-          title: product7Title,
-          description: product7Description,
-          brands: product7Brands,
-        },
-        {
-          category: product8Category,
-          icon: product8Icon,
-          image: product8Image,
-          title: product8Title,
-          description: product8Description,
-          brands: product8Brands,
-        },
-        {
-          category: product9Category,
-          icon: product9Icon,
-          image: product9Image,
-          title: product9Title,
-          description: product9Description,
-          brands: product9Brands,
-        },
-        {
-          category: product10Category,
-          icon: product10Icon,
-          image: product10Image,
-          title: product10Title,
-          description: product10Description,
-          brands: product10Brands,
-        },
-        {
-          category: product11Category,
-          icon: product11Icon,
-          image: product11Image,
-          title: product11Title,
-          description: product11Description,
-          brands: product11Brands,
-        },
-        {
-          category: product12Category,
-          icon: product12Icon,
-          image: product12Image,
-          title: product12Title,
-          description: product12Description,
-          brands: product12Brands,
-        },
-        {
-          category: product13Category,
-          icon: product13Icon,
-          image: product13Image,
-          title: product13Title,
-          description: product13Description,
-          brands: product13Brands,
-        },
-        {
-          category: product14Category,
-          icon: product14Icon,
-          image: product14Image,
-          title: product14Title,
-          description: product14Description,
-          brands: product14Brands,
-        },
-        {
-          category: product15Category,
-          icon: product15Icon,
-          image: product15Image,
-          title: product15Title,
-          description: product15Description,
-          brands: product15Brands,
-        },
-      ].filter((p) => p.title)
+      const products = (items ?? []).map((p, n) => ({ ...p, n })).filter((p) => p.title)
       const [activeTab, setActiveTab] = useState(categories[0] ?? '')
       const visible = products.filter((p) => p.category === activeTab)
+      const isEditing = puck?.isEditing ?? false
       return (
         <section
           ref={ref}
@@ -4963,9 +5673,34 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         >
           <div className={wrap}>
             <div className="text-center mb-8">
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">{sectionTitle}</h2>
-              {sectionSubtitle && (
-                <p className="text-slate-600 max-w-2xl mx-auto">{sectionSubtitle}</p>
+              {(isEditing || sectionEyebrow) && (
+                <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                  <InlineEditableText
+                    id={id}
+                    path={['sectionEyebrow']}
+                    value={sectionEyebrow ?? ''}
+                    isEditing={isEditing}
+                  />
+                </p>
+              )}
+              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">
+                <InlineEditableText
+                  id={id}
+                  path={['sectionTitle']}
+                  value={sectionTitle ?? ''}
+                  isEditing={isEditing}
+                />
+              </h2>
+              {(isEditing || sectionSubtitle) && (
+                <p className="text-slate-600 max-w-2xl mx-auto">
+                  <InlineEditableText
+                    id={id}
+                    path={['sectionSubtitle']}
+                    value={sectionSubtitle ?? ''}
+                    isEditing={isEditing}
+                    multiline
+                  />
+                </p>
               )}
             </div>
             {categories.length > 0 && (
@@ -5004,10 +5739,32 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                           <Icon />
                         </div>
                       )}
-                      <h3 className="font-semibold text-slate-900 mb-1">{p.title}</h3>
-                      <p className="text-slate-600 text-sm leading-relaxed">{p.description}</p>
-                      {p.brands && (
-                        <p className="mt-2 text-xs font-medium text-orange-600">{p.brands}</p>
+                      <h3 className="font-semibold text-slate-900 mb-1">
+                        <InlineEditableText
+                          id={id}
+                          path={['items', p.n, 'title']}
+                          value={p.title ?? ''}
+                          isEditing={isEditing}
+                        />
+                      </h3>
+                      <p className="text-slate-600 text-sm leading-relaxed">
+                        <InlineEditableText
+                          id={id}
+                          path={['items', p.n, 'description']}
+                          value={p.description ?? ''}
+                          isEditing={isEditing}
+                          multiline
+                        />
+                      </p>
+                      {(isEditing || p.brands) && (
+                        <p className="mt-2 text-xs font-medium text-orange-600">
+                          <InlineEditableText
+                            id={id}
+                            path={['items', p.n, 'brands']}
+                            value={p.brands ?? ''}
+                            isEditing={isEditing}
+                          />
+                        </p>
                       )}
                     </div>
                   </div>
@@ -5148,16 +5905,20 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         'Experienced professionals committed to delivering quality on every project.',
       member1Name: 'Ramesh Kapoor',
       member1Role: 'Director & Project Head',
-      member1Image: 'https://placehold.co/400x400/475569/ffffff?text=RK',
+      member1Image:
+        'https://images.unsplash.com/photo-1479839672679-a46483c0e7c8?w=400&h=400&fit=crop&auto=format',
       member2Name: 'Sunita Joshi',
       member2Role: 'Senior Site Engineer',
-      member2Image: 'https://placehold.co/400x400/334155/ffffff?text=SJ',
+      member2Image:
+        'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=400&fit=crop&auto=format',
       member3Name: 'Arun Mehta',
       member3Role: 'Safety & Compliance Officer',
-      member3Image: 'https://placehold.co/400x400/1e293b/ffffff?text=AM',
+      member3Image:
+        'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=400&h=400&fit=crop&auto=format',
       member4Name: 'Priya Nair',
       member4Role: 'Estimation & Contracts',
-      member4Image: 'https://placehold.co/400x400/0f172a/ffffff?text=PN',
+      member4Image:
+        'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=400&fit=crop&auto=format',
       padding: 'md',
       background: 'white',
     },
@@ -5568,86 +6329,20 @@ const typedComponents: Config<ConstructionProps>['components'] = {
   ConstructionClientsGrid: {
     label: 'Clients (Paginated Grid)',
     fields: {
+      sectionEyebrow: { type: 'text' },
       sectionTitle: { type: 'text' },
       sectionSubtitle: { type: 'textarea' },
-      client1Logo: { type: 'text' },
-      client1Name: { type: 'text' },
-      client2Logo: { type: 'text' },
-      client2Name: { type: 'text' },
-      client3Logo: { type: 'text' },
-      client3Name: { type: 'text' },
-      client4Logo: { type: 'text' },
-      client4Name: { type: 'text' },
-      client5Logo: { type: 'text' },
-      client5Name: { type: 'text' },
-      client6Logo: { type: 'text' },
-      client6Name: { type: 'text' },
-      client7Logo: { type: 'text' },
-      client7Name: { type: 'text' },
-      client8Logo: { type: 'text' },
-      client8Name: { type: 'text' },
-      client9Logo: { type: 'text' },
-      client9Name: { type: 'text' },
-      client10Logo: { type: 'text' },
-      client10Name: { type: 'text' },
-      client11Logo: { type: 'text' },
-      client11Name: { type: 'text' },
-      client12Logo: { type: 'text' },
-      client12Name: { type: 'text' },
-      client13Logo: { type: 'text' },
-      client13Name: { type: 'text' },
-      client14Logo: { type: 'text' },
-      client14Name: { type: 'text' },
-      client15Logo: { type: 'text' },
-      client15Name: { type: 'text' },
-      client16Logo: { type: 'text' },
-      client16Name: { type: 'text' },
-      client17Logo: { type: 'text' },
-      client17Name: { type: 'text' },
-      client18Logo: { type: 'text' },
-      client18Name: { type: 'text' },
-      client19Logo: { type: 'text' },
-      client19Name: { type: 'text' },
-      client20Logo: { type: 'text' },
-      client20Name: { type: 'text' },
-      client21Logo: { type: 'text' },
-      client21Name: { type: 'text' },
-      client22Logo: { type: 'text' },
-      client22Name: { type: 'text' },
-      client23Logo: { type: 'text' },
-      client23Name: { type: 'text' },
-      client24Logo: { type: 'text' },
-      client24Name: { type: 'text' },
-      client25Logo: { type: 'text' },
-      client25Name: { type: 'text' },
-      client26Logo: { type: 'text' },
-      client26Name: { type: 'text' },
-      client27Logo: { type: 'text' },
-      client27Name: { type: 'text' },
-      client28Logo: { type: 'text' },
-      client28Name: { type: 'text' },
-      client29Logo: { type: 'text' },
-      client29Name: { type: 'text' },
-      client30Logo: { type: 'text' },
-      client30Name: { type: 'text' },
-      client31Logo: { type: 'text' },
-      client31Name: { type: 'text' },
-      client32Logo: { type: 'text' },
-      client32Name: { type: 'text' },
-      client33Logo: { type: 'text' },
-      client33Name: { type: 'text' },
-      client34Logo: { type: 'text' },
-      client34Name: { type: 'text' },
-      client35Logo: { type: 'text' },
-      client35Name: { type: 'text' },
-      client36Logo: { type: 'text' },
-      client36Name: { type: 'text' },
-      client37Logo: { type: 'text' },
-      client37Name: { type: 'text' },
-      client38Logo: { type: 'text' },
-      client38Name: { type: 'text' },
-      client39Logo: { type: 'text' },
-      client39Name: { type: 'text' },
+      items: {
+        type: 'array',
+        min: 0,
+        max: 60,
+        getItemSummary: (item, index) => item.name || `Client ${(index ?? 0) + 1}`,
+        defaultItemProps: { logo: '', name: '' },
+        arrayFields: {
+          logo: imageField('Logo'),
+          name: { type: 'text' },
+        },
+      },
       padding: {
         type: 'select',
         options: [
@@ -5665,216 +6360,70 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       },
     },
     defaultProps: {
+      sectionEyebrow: 'Our Clients',
       sectionTitle: 'Trusted by businesses & institutions',
       sectionSubtitle:
         'From retail malls to hospitality and healthcare — brands across Andhra Pradesh trust us to keep their buildings running.',
-      client1Logo: '/seed/subhadra/clients/client-01.png',
-      client1Name: 'Marriott',
-      client2Logo: '/seed/subhadra/clients/client-02.png',
-      client2Name: 'Novotel Hotels',
-      client3Logo: '/seed/subhadra/clients/client-03.png',
-      client3Name: 'Best Western',
-      client4Logo: '/seed/subhadra/clients/client-04.png',
-      client4Name: "Fortune — Member ITC's Hotel Group",
-      client5Logo: '/seed/subhadra/clients/client-05.png',
-      client5Name: 'Radisson Blu',
-      client6Logo: '/seed/subhadra/clients/client-06.png',
-      client6Name: 'ABC Hospitals',
-      client7Logo: '/seed/subhadra/clients/client-07.png',
-      client7Name: 'Medicover',
-      client8Logo: '/seed/subhadra/clients/client-08.png',
-      client8Name: 'Apollo Hospitals',
-      client9Logo: '/seed/subhadra/clients/client-09.png',
-      client9Name: 'Lotus Multispeciality Hospital',
-      client10Logo: '/seed/subhadra/clients/client-10.png',
-      client10Name: 'Ikya Hospital',
-      client11Logo: '/seed/subhadra/clients/client-11.png',
-      client11Name: 'Vaibhav Jewellers',
-      client12Logo: '/seed/subhadra/clients/client-12.png',
-      client12Name: 'Lifestyle',
-      client13Logo: '/seed/subhadra/clients/client-13.png',
-      client13Name: 'Kankatala',
-      client14Logo: '/seed/subhadra/clients/client-14.png',
-      client14Name: 'South India Shopping Mall',
-      client15Logo: '/seed/subhadra/clients/client-15.png',
-      client15Name: 'KLM Fashion Mall',
-      client16Logo: '/seed/subhadra/clients/client-16.png',
-      client16Name: 'Lucky Shopping Mall',
-      client17Logo: '/seed/subhadra/clients/client-17.png',
-      client17Name: 'Kalamandir',
-      client18Logo: '/seed/subhadra/clients/client-18.png',
-      client18Name: 'SR Shopping Mall',
-      client19Logo: '/seed/subhadra/clients/client-19.png',
-      client19Name: 'Bothra Group',
-      client20Logo: '/seed/subhadra/clients/client-20.png',
-      client20Name: 'Visakha Dairy',
-      client21Logo: '/seed/subhadra/clients/client-21.png',
-      client21Name: 'Varun Group',
-      client22Logo: '/seed/subhadra/clients/client-22.png',
-      client22Name: 'Lakshmi Group',
-      client23Logo: '/seed/subhadra/clients/client-23.png',
-      client23Name: 'PVR',
-      client24Logo: '/seed/subhadra/clients/client-24.png',
-      client24Name: 'Cinépolis',
-      client25Logo: '/seed/subhadra/clients/client-25.png',
-      client25Name: 'Vizag Steel (RINL)',
-      client26Logo: '/seed/subhadra/clients/client-26.png',
-      client26Name: 'ANITS',
-      client27Logo: '/seed/subhadra/clients/client-27.png',
-      client27Name: 'GITAM',
-      client28Logo: '/seed/subhadra/clients/client-28.png',
-      client28Name: 'Vizag Conventions',
-      client29Logo: '/seed/subhadra/clients/client-29.png',
-      client29Name: "Chenna's The Convention",
-      client30Logo: '/seed/subhadra/clients/client-30.png',
-      client30Name: 'A1 Grand — The Convention',
-      client31Logo: '/seed/subhadra/clients/client-31.png',
-      client31Name: 'Laurus Labs',
-      client32Logo: '/seed/subhadra/clients/client-32.png',
-      client32Name: 'Asian Paints',
-      client33Logo: '/seed/subhadra/clients/client-33.png',
-      client33Name: 'Yokohama',
-      client34Logo: '/seed/subhadra/clients/client-34.png',
-      client34Name: 'NCL Group',
-      client35Logo: '/seed/subhadra/clients/client-35.png',
-      client35Name: 'GVMC',
-      client36Logo: '/seed/subhadra/clients/client-36.png',
-      client36Name: 'Visakhapatnam Port Authority',
-      client37Logo: '/seed/subhadra/clients/client-37.png',
-      client37Name: 'Lansum Properties LLP',
-      client38Logo: '/seed/subhadra/clients/client-38.png',
-      client38Name: 'MK Builders & Developers',
-      client39Logo: '/seed/subhadra/clients/client-39.png',
-      client39Name: 'FAME Realty',
+      items: [
+        { logo: '/seed/subhadra/clients/client-01.png', name: 'Marriott' },
+        { logo: '/seed/subhadra/clients/client-02.png', name: 'Novotel Hotels' },
+        { logo: '/seed/subhadra/clients/client-03.png', name: 'Best Western' },
+        {
+          logo: '/seed/subhadra/clients/client-04.png',
+          name: "Fortune \u2014 Member ITC's Hotel Group",
+        },
+        { logo: '/seed/subhadra/clients/client-05.png', name: 'Radisson Blu' },
+        { logo: '/seed/subhadra/clients/client-06.png', name: 'ABC Hospitals' },
+        { logo: '/seed/subhadra/clients/client-07.png', name: 'Medicover' },
+        { logo: '/seed/subhadra/clients/client-08.png', name: 'Apollo Hospitals' },
+        { logo: '/seed/subhadra/clients/client-09.png', name: 'Lotus Multispeciality Hospital' },
+        { logo: '/seed/subhadra/clients/client-10.png', name: 'Ikya Hospital' },
+        { logo: '/seed/subhadra/clients/client-11.png', name: 'Vaibhav Jewellers' },
+        { logo: '/seed/subhadra/clients/client-12.png', name: 'Lifestyle' },
+        { logo: '/seed/subhadra/clients/client-13.png', name: 'Kankatala' },
+        { logo: '/seed/subhadra/clients/client-14.png', name: 'South India Shopping Mall' },
+        { logo: '/seed/subhadra/clients/client-15.png', name: 'KLM Fashion Mall' },
+        { logo: '/seed/subhadra/clients/client-16.png', name: 'Lucky Shopping Mall' },
+        { logo: '/seed/subhadra/clients/client-17.png', name: 'Kalamandir' },
+        { logo: '/seed/subhadra/clients/client-18.png', name: 'SR Shopping Mall' },
+        { logo: '/seed/subhadra/clients/client-19.png', name: 'Bothra Group' },
+        { logo: '/seed/subhadra/clients/client-20.png', name: 'Visakha Dairy' },
+        { logo: '/seed/subhadra/clients/client-21.png', name: 'Varun Group' },
+        { logo: '/seed/subhadra/clients/client-22.png', name: 'Lakshmi Group' },
+        { logo: '/seed/subhadra/clients/client-23.png', name: 'PVR' },
+        { logo: '/seed/subhadra/clients/client-24.png', name: 'Cin\u00e9polis' },
+        { logo: '/seed/subhadra/clients/client-25.png', name: 'Vizag Steel (RINL)' },
+        { logo: '/seed/subhadra/clients/client-26.png', name: 'ANITS' },
+        { logo: '/seed/subhadra/clients/client-27.png', name: 'GITAM' },
+        { logo: '/seed/subhadra/clients/client-28.png', name: 'Vizag Conventions' },
+        { logo: '/seed/subhadra/clients/client-29.png', name: "Chenna's The Convention" },
+        { logo: '/seed/subhadra/clients/client-30.png', name: 'A1 Grand \u2014 The Convention' },
+        { logo: '/seed/subhadra/clients/client-31.png', name: 'Laurus Labs' },
+        { logo: '/seed/subhadra/clients/client-32.png', name: 'Asian Paints' },
+        { logo: '/seed/subhadra/clients/client-33.png', name: 'Yokohama' },
+        { logo: '/seed/subhadra/clients/client-34.png', name: 'NCL Group' },
+        { logo: '/seed/subhadra/clients/client-35.png', name: 'GVMC' },
+        { logo: '/seed/subhadra/clients/client-36.png', name: 'Visakhapatnam Port Authority' },
+        { logo: '/seed/subhadra/clients/client-37.png', name: 'Lansum Properties LLP' },
+        { logo: '/seed/subhadra/clients/client-38.png', name: 'MK Builders & Developers' },
+        { logo: '/seed/subhadra/clients/client-39.png', name: 'FAME Realty' },
+      ],
       padding: 'md',
-      background: 'white',
+      background: 'muted',
     },
     render: function ConstructionClientsGridRender({
+      id,
+      puck,
+      sectionEyebrow,
       sectionTitle,
       sectionSubtitle,
-      client1Logo,
-      client1Name,
-      client2Logo,
-      client2Name,
-      client3Logo,
-      client3Name,
-      client4Logo,
-      client4Name,
-      client5Logo,
-      client5Name,
-      client6Logo,
-      client6Name,
-      client7Logo,
-      client7Name,
-      client8Logo,
-      client8Name,
-      client9Logo,
-      client9Name,
-      client10Logo,
-      client10Name,
-      client11Logo,
-      client11Name,
-      client12Logo,
-      client12Name,
-      client13Logo,
-      client13Name,
-      client14Logo,
-      client14Name,
-      client15Logo,
-      client15Name,
-      client16Logo,
-      client16Name,
-      client17Logo,
-      client17Name,
-      client18Logo,
-      client18Name,
-      client19Logo,
-      client19Name,
-      client20Logo,
-      client20Name,
-      client21Logo,
-      client21Name,
-      client22Logo,
-      client22Name,
-      client23Logo,
-      client23Name,
-      client24Logo,
-      client24Name,
+      items,
       padding,
       background,
-      client25Logo,
-      client25Name,
-      client26Logo,
-      client26Name,
-      client27Logo,
-      client27Name,
-      client28Logo,
-      client28Name,
-      client29Logo,
-      client29Name,
-      client30Logo,
-      client30Name,
-      client31Logo,
-      client31Name,
-      client32Logo,
-      client32Name,
-      client33Logo,
-      client33Name,
-      client34Logo,
-      client34Name,
-      client35Logo,
-      client35Name,
-      client36Logo,
-      client36Name,
-      client37Logo,
-      client37Name,
-      client38Logo,
-      client38Name,
-      client39Logo,
-      client39Name,
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
-      const clients = [
-        { logo: client1Logo, name: client1Name },
-        { logo: client2Logo, name: client2Name },
-        { logo: client3Logo, name: client3Name },
-        { logo: client4Logo, name: client4Name },
-        { logo: client5Logo, name: client5Name },
-        { logo: client6Logo, name: client6Name },
-        { logo: client7Logo, name: client7Name },
-        { logo: client8Logo, name: client8Name },
-        { logo: client9Logo, name: client9Name },
-        { logo: client10Logo, name: client10Name },
-        { logo: client11Logo, name: client11Name },
-        { logo: client12Logo, name: client12Name },
-        { logo: client13Logo, name: client13Name },
-        { logo: client14Logo, name: client14Name },
-        { logo: client15Logo, name: client15Name },
-        { logo: client16Logo, name: client16Name },
-        { logo: client17Logo, name: client17Name },
-        { logo: client18Logo, name: client18Name },
-        { logo: client19Logo, name: client19Name },
-        { logo: client20Logo, name: client20Name },
-        { logo: client21Logo, name: client21Name },
-        { logo: client22Logo, name: client22Name },
-        { logo: client23Logo, name: client23Name },
-        { logo: client24Logo, name: client24Name },
-        { logo: client25Logo, name: client25Name },
-        { logo: client26Logo, name: client26Name },
-        { logo: client27Logo, name: client27Name },
-        { logo: client28Logo, name: client28Name },
-        { logo: client29Logo, name: client29Name },
-        { logo: client30Logo, name: client30Name },
-        { logo: client31Logo, name: client31Name },
-        { logo: client32Logo, name: client32Name },
-        { logo: client33Logo, name: client33Name },
-        { logo: client34Logo, name: client34Name },
-        { logo: client35Logo, name: client35Name },
-        { logo: client36Logo, name: client36Name },
-        { logo: client37Logo, name: client37Name },
-        { logo: client38Logo, name: client38Name },
-        { logo: client39Logo, name: client39Name },
-      ].filter((c) => c.logo)
+      const clients = (items ?? []).filter((c) => c.logo)
+      const isEditing = puck?.isEditing ?? false
       return (
         <section
           ref={ref}
@@ -5882,9 +6431,34 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         >
           <div className={wrap}>
             <div className="text-center mb-10">
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">{sectionTitle}</h2>
-              {sectionSubtitle && (
-                <p className="text-slate-600 max-w-2xl mx-auto">{sectionSubtitle}</p>
+              {(isEditing || sectionEyebrow) && (
+                <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                  <InlineEditableText
+                    id={id}
+                    path={['sectionEyebrow']}
+                    value={sectionEyebrow ?? ''}
+                    isEditing={isEditing}
+                  />
+                </p>
+              )}
+              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">
+                <InlineEditableText
+                  id={id}
+                  path={['sectionTitle']}
+                  value={sectionTitle ?? ''}
+                  isEditing={isEditing}
+                />
+              </h2>
+              {(isEditing || sectionSubtitle) && (
+                <p className="text-slate-600 max-w-2xl mx-auto">
+                  <InlineEditableText
+                    id={id}
+                    path={['sectionSubtitle']}
+                    value={sectionSubtitle ?? ''}
+                    isEditing={isEditing}
+                    multiline
+                  />
+                </p>
               )}
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-5">
@@ -6950,21 +7524,26 @@ const typedComponents: Config<ConstructionProps>['components'] = {
   ConstructionLeadFormFAQ: {
     label: 'Lead Form + FAQ',
     fields: {
+      sectionEyebrow: { type: 'text' },
       sectionTitle: { type: 'text' },
-      faq1Question: { type: 'text' },
-      faq1Answer: { type: 'textarea' },
-      faq2Question: { type: 'text' },
-      faq2Answer: { type: 'textarea' },
-      faq3Question: { type: 'text' },
-      faq3Answer: { type: 'textarea' },
-      faq4Question: { type: 'text' },
-      faq4Answer: { type: 'textarea' },
-      faq5Question: { type: 'text' },
-      faq5Answer: { type: 'textarea' },
-      faq6Question: { type: 'text' },
-      faq6Answer: { type: 'textarea' },
+      sectionIntroLinkLabel: { type: 'text' },
+      sectionIntroLinkHref: { type: 'text' },
+      faqs: {
+        type: 'array',
+        min: 0,
+        max: 20,
+        getItemSummary: (item, index) => item.question || `FAQ ${(index ?? 0) + 1}`,
+        defaultItemProps: { question: '', answer: '' },
+        arrayFields: {
+          question: { type: 'text' },
+          answer: { type: 'textarea' },
+        },
+      },
       formHeading: { type: 'text' },
       formSubtext: { type: 'textarea' },
+      interestOptions: { type: 'textarea' },
+      ctaLabel: { type: 'text' },
+      formPrivacyNote: { type: 'text' },
       padding: {
         type: 'select',
         options: [
@@ -6973,99 +7552,149 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           { label: 'Large', value: 'lg' },
         ],
       },
-      background: {
-        type: 'radio',
-        options: [
-          { label: 'White', value: 'white' },
-          { label: 'Muted', value: 'muted' },
-        ],
-      },
     },
     defaultProps: {
-      sectionTitle: 'Frequently Asked Questions',
-      faq1Question: 'How long does a typical project take?',
-      faq1Answer:
-        'Timelines vary by scope — a detailed schedule is provided after site assessment.',
-      faq2Question: 'Do you provide fixed-price contracts?',
-      faq2Answer: 'Yes, most projects are quoted and contracted on a fixed-price basis.',
-      faq3Question: 'Are you licensed and insured?',
-      faq3Answer: 'Yes, we are fully licensed and carry comprehensive insurance cover.',
-      faq4Question: 'Can I see your past work?',
-      faq4Answer:
-        'Yes — see the Sectors and Featured Project sections above, or request our portfolio.',
-      faq5Question: 'Do you handle permits and approvals?',
-      faq5Answer: 'Yes, permit acquisition is coordinated as part of our project management scope.',
-      faq6Question: 'What areas do you serve?',
-      faq6Answer: 'We currently serve residential and commercial clients across the region.',
-      formHeading: 'Get a Free Quote',
-      formSubtext: 'Tell us about your project and our team will get back to you within 48 hours.',
+      sectionEyebrow: 'FAQ',
+      sectionTitle: 'Questions, answered',
+      sectionIntroLinkLabel: 'Get in touch',
+      sectionIntroLinkHref: '#quote',
+      faqs: [
+        {
+          question: 'Do you only work in Visakhapatnam, or across Andhra Pradesh?',
+          answer:
+            "We're based in Visakhapatnam, but our engineering teams design, install and maintain systems for clients across Andhra Pradesh — including plants, hospitals and retail groups outside the city.",
+        },
+        {
+          question: 'How fast can I get a quote?',
+          answer:
+            'Share your requirement through the quote form on this page or visit our showroom — our engineers typically respond with a sized solution and quote within 24 hours.',
+        },
+        {
+          question: 'Do you only sell products, or also install and maintain them?',
+          answer:
+            'Both, always. Every product we stock is designed, supplied, installed and maintained by our own trained engineers — never subcontracted — with a dedicated service manager for ongoing support.',
+        },
+        {
+          question: 'What brands do you deal in?',
+          answer:
+            'Only world-class, pioneer brands in each category — Schneider Electric, Blue Star, Polycab, RR Kabel, Crompton, Cummins, Honeywell and more — so spares and service are never a problem.',
+        },
+        {
+          question: 'Can I see products in person before buying?',
+          answer:
+            'Yes — walk into our Visakhapatnam showroom to compare products on the shelf before you decide, or have our engineers visit your site directly for a free assessment.',
+        },
+        {
+          question: 'What kind of after-sales support do you offer?',
+          answer:
+            '24×7 support with a dedicated service manager for every discipline we install in — from AMC contracts to emergency call-outs.',
+        },
+      ],
+      formHeading: 'Request a free quote',
+      formSubtext: "Fill this in and we'll call you back.",
+      interestOptions:
+        'Central AC\nHome Automation\nHome Theater\nCCTV & Security\nFire Safety\nElectrical\nSomething else',
+      ctaLabel: 'Get My Free Quote →',
+      formPrivacyNote: "We'll only use these details to respond to your enquiry.",
       padding: 'md',
-      background: 'white',
     },
     render: function ConstructionLeadFormFAQRender({
+      id,
+      puck,
+      sectionEyebrow,
       sectionTitle,
-      faq1Question,
-      faq1Answer,
-      faq2Question,
-      faq2Answer,
-      faq3Question,
-      faq3Answer,
-      faq4Question,
-      faq4Answer,
-      faq5Question,
-      faq5Answer,
-      faq6Question,
-      faq6Answer,
+      sectionIntroLinkLabel,
+      sectionIntroLinkHref,
+      faqs: faqsRaw,
       formHeading,
       formSubtext,
+      interestOptions,
+      ctaLabel,
+      formPrivacyNote,
       padding,
-      background,
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
       const [openIndex, setOpenIndex] = useState<number | null>(0)
-      const faqs = [
-        { question: faq1Question, answer: faq1Answer },
-        { question: faq2Question, answer: faq2Answer },
-        { question: faq3Question, answer: faq3Answer },
-        { question: faq4Question, answer: faq4Answer },
-        { question: faq5Question, answer: faq5Answer },
-        { question: faq6Question, answer: faq6Answer },
-      ].filter((f) => f.question)
+      const [contactPref, setContactPref] = useState<'whatsapp' | 'phone'>('whatsapp')
+      const isEditing = puck?.isEditing ?? false
+      const options = (interestOptions ?? '')
+        .split('\n')
+        .map((o) => o.trim())
+        .filter(Boolean)
+      const faqs = (faqsRaw ?? []).map((f, n) => ({ ...f, n })).filter((f) => f.question)
       return (
-        <section
-          ref={ref}
-          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
-        >
-          <div className={`${wrap} md:flex gap-12`}>
-            <div className="md:w-1/2 mb-10 md:mb-0">
-              <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6">{sectionTitle}</h2>
-              <div className="flex flex-col gap-3">
+        <section ref={ref} className={`${revealCls} ${padY[padding]} bg-slate-950`}>
+          {/* Reference (v2-lead) wraps this in container-fluid, not a
+              max-width container. */}
+          <div className="w-full px-4 md:px-8 md:flex gap-12">
+            <div className="md:w-1/2 mb-14 md:mb-0">
+              {(isEditing || sectionEyebrow) && (
+                <p className="mb-3 text-xs font-bold uppercase tracking-wide text-orange-500">
+                  <InlineEditableText
+                    id={id}
+                    path={['sectionEyebrow']}
+                    value={sectionEyebrow ?? ''}
+                    isEditing={isEditing}
+                  />
+                </p>
+              )}
+              <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+                <InlineEditableText
+                  id={id}
+                  path={['sectionTitle']}
+                  value={sectionTitle ?? ''}
+                  isEditing={isEditing}
+                />
+              </h2>
+              {(isEditing || sectionIntroLinkLabel) && (
+                <p className="text-slate-400 mb-6">
+                  Can&apos;t find what you&apos;re looking for?{' '}
+                  <a
+                    href={sectionIntroLinkHref}
+                    onClick={isEditing ? (e) => e.preventDefault() : undefined}
+                    className="text-orange-500 font-semibold hover:text-orange-400"
+                  >
+                    <InlineEditableText
+                      id={id}
+                      path={['sectionIntroLinkLabel']}
+                      value={sectionIntroLinkLabel ?? ''}
+                      isEditing={isEditing}
+                    />
+                  </a>{' '}
+                  and our engineers will help directly.
+                </p>
+              )}
+              <div className="flex flex-col">
                 {faqs.map((f, i) => {
                   const isOpen = openIndex === i
                   return (
-                    <div
-                      key={i}
-                      className="rounded-xl border border-slate-200 bg-white overflow-hidden"
-                    >
+                    <div key={i} className="border-b border-slate-800">
                       <button
                         type="button"
                         onClick={() => setOpenIndex(isOpen ? null : i)}
-                        className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left font-medium text-slate-900"
+                        className="w-full flex items-center justify-between gap-4 py-4 text-left font-semibold text-white"
                       >
-                        {f.question}
-                        <svg
-                          className={`w-4 h-4 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                          viewBox="0 0 24 24"
+                        <InlineEditableText
+                          id={id}
+                          path={['faqs', f.n, 'question']}
+                          value={f.question ?? ''}
+                          isEditing={isEditing}
+                        />
+                        <span
+                          className={`flex-shrink-0 text-orange-500 text-xl leading-none transition-transform ${isOpen ? 'rotate-45' : ''}`}
                         >
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                        </svg>
+                          +
+                        </span>
                       </button>
                       {isOpen && (
-                        <p className="px-5 pb-4 text-sm text-slate-600 leading-relaxed">
-                          {f.answer}
+                        <p className="pb-4 text-sm text-slate-400 leading-relaxed">
+                          <InlineEditableText
+                            id={id}
+                            path={['faqs', f.n, 'answer']}
+                            value={f.answer ?? ''}
+                            isEditing={isEditing}
+                            multiline
+                          />
                         </p>
                       )}
                     </div>
@@ -7074,9 +7703,25 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               </div>
             </div>
             <div className="md:w-1/2">
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm">
-                <h3 className="text-xl font-bold text-slate-900 mb-2">{formHeading}</h3>
-                {formSubtext && <p className="text-sm text-slate-600 mb-6">{formSubtext}</p>}
+              <div className="relative rounded-2xl bg-white p-6 md:p-8 shadow-2xl">
+                <h3 className="mb-2 inline-block rounded bg-orange-500 px-2 py-1 text-lg font-bold text-white">
+                  <InlineEditableText
+                    id={id}
+                    path={['formHeading']}
+                    value={formHeading ?? ''}
+                    isEditing={isEditing}
+                  />
+                </h3>
+                {(isEditing || formSubtext) && (
+                  <p className="text-sm text-slate-600 mb-6">
+                    <InlineEditableText
+                      id={id}
+                      path={['formSubtext']}
+                      value={formSubtext ?? ''}
+                      isEditing={isEditing}
+                    />
+                  </p>
+                )}
                 {/*
                   Display-only: no lead-capture endpoint exists in this app
                   yet. Plain div (not <form>) + type="button" submit so
@@ -7084,49 +7729,106 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   oversight.
                 */}
                 <div className="flex flex-col gap-4">
-                  <input
-                    type="text"
-                    placeholder="Name"
-                    className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
-                  />
-                  <input
-                    type="tel"
-                    placeholder="Phone"
-                    className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
-                  />
-                  <input
-                    type="email"
-                    placeholder="Email"
-                    className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
-                  />
-                  <select className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-700">
-                    <option>General Inquiry</option>
-                    <option>Residential Project</option>
-                    <option>Commercial Project</option>
-                    <option>Infrastructure Project</option>
-                  </select>
-                  <div className="flex gap-5 text-sm text-slate-700">
-                    <label className="flex items-center gap-2">
-                      <input type="radio" name="lead-form-fake-contact-pref" defaultChecked /> Phone
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input type="radio" name="lead-form-fake-contact-pref" /> Email
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input type="radio" name="lead-form-fake-contact-pref" /> WhatsApp
-                    </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="mb-1.5 block text-sm font-semibold text-slate-900">
+                        Name
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-sm font-semibold text-slate-900">
+                        Phone
+                      </label>
+                      <input
+                        type="tel"
+                        className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm"
+                      />
+                    </div>
                   </div>
-                  <textarea
-                    placeholder="Message (optional)"
-                    rows={3}
-                    className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
-                  />
+                  <div>
+                    <label className="mb-1.5 block text-sm font-semibold text-slate-900">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm"
+                    />
+                  </div>
+                  {options.length > 0 && (
+                    <div>
+                      <label className="mb-1.5 block text-sm font-semibold text-slate-900">
+                        What are you looking for?
+                      </label>
+                      <select className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm text-slate-700">
+                        {options.map((o, i) => (
+                          <option key={i}>{o}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  <div>
+                    <label className="mb-1.5 block text-sm font-semibold text-slate-900">
+                      Preferred contact
+                    </label>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setContactPref('whatsapp')}
+                        className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                          contactPref === 'whatsapp'
+                            ? 'border-orange-500 text-orange-600'
+                            : 'border-slate-300 text-slate-700'
+                        }`}
+                      >
+                        WhatsApp
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setContactPref('phone')}
+                        className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                          contactPref === 'phone'
+                            ? 'border-orange-500 text-orange-600'
+                            : 'border-slate-300 text-slate-700'
+                        }`}
+                      >
+                        Phone Call
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-semibold text-slate-900">
+                      Message (optional)
+                    </label>
+                    <textarea
+                      rows={3}
+                      className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm"
+                    />
+                  </div>
                   <button
                     type="button"
-                    className="rounded-lg bg-orange-500 px-6 py-3 text-white font-semibold hover:bg-orange-600 transition text-sm"
+                    className="rounded-lg bg-gradient-to-r from-orange-600 to-orange-400 px-6 py-3.5 text-white font-semibold hover:opacity-90 transition text-sm"
                   >
-                    Submit
+                    <InlineEditableText
+                      id={id}
+                      path={['ctaLabel']}
+                      value={ctaLabel ?? ''}
+                      isEditing={isEditing}
+                    />
                   </button>
+                  {(isEditing || formPrivacyNote) && (
+                    <p className="text-center text-xs text-slate-400">
+                      <InlineEditableText
+                        id={id}
+                        path={['formPrivacyNote']}
+                        value={formPrivacyNote ?? ''}
+                        isEditing={isEditing}
+                      />
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -7384,14 +8086,14 @@ const typedComponents: Config<ConstructionProps>['components'] = {
   ConstructionTaglineStrip: {
     label: 'Tagline Strip',
     fields: {
-      logoUrl: { type: 'text' },
+      logoUrl: imageField('Logo'),
       brand: { type: 'text' },
       tagline: { type: 'text' },
     },
     defaultProps: {
-      logoUrl: '',
-      brand: 'Your Brand',
-      tagline: 'Building with integrity, delivering with precision.',
+      logoUrl: '/seed/subhadra/brand/logo.png',
+      brand: 'Subhadra Group',
+      tagline: 'Your one-stop solution for building engineering products & services.',
     },
     render: ({ logoUrl, brand, tagline }) => (
       <div className="bg-slate-900 text-white py-6">
@@ -7408,49 +8110,122 @@ const typedComponents: Config<ConstructionProps>['components'] = {
 
   // Floating WhatsApp + back-to-top
   ConstructionFloatingActions: {
-    label: 'Floating Actions (WhatsApp + Back to Top)',
+    label: 'Floating Actions (WhatsApp + Brochure + Trust Badge)',
     fields: {
       whatsappHref: { type: 'text' },
+      brochureHref: { type: 'text' },
+      badgeYearLabel: { type: 'text' },
+      badgeNumber: { type: 'text' },
+      badgeLabel: { type: 'text' },
     },
     defaultProps: {
-      whatsappHref: 'https://wa.me/919876543210',
+      whatsappHref:
+        'https://wa.me/918897224466?text=Hi%20Subhadra%20Group%2C%20I%27d%20like%20to%20know%20more%20about%20your%20services.',
+      brochureHref: '/seed/subhadra/Subhadra-Group-30-Years-Brochure.pdf',
+      badgeYearLabel: 'Estd. 1996',
+      badgeNumber: '30',
+      badgeLabel: 'years of Trust',
     },
-    render: ({ whatsappHref }) => {
-      const scrollTop = () => {
-        if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
-      }
+    render: ({ id, whatsappHref, brochureHref, badgeYearLabel, badgeNumber, badgeLabel, puck }) => {
+      const isEditing = puck?.isEditing ?? false
       return (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-3">
-          {whatsappHref && (
-            <a
-              href={whatsappHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Chat on WhatsApp"
-              className="w-14 h-14 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg hover:bg-green-600 transition"
+        <>
+          <div className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-3">
+            {whatsappHref && (
+              <a
+                href={whatsappHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Chat on WhatsApp"
+                className="w-14 h-14 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg hover:bg-green-600 transition"
+              >
+                <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2zm0 2a8 8 0 1 1-4.3 14.8l-.3-.2-3 .8.8-3-.2-.3A8 8 0 0 1 12 4zm-2.2 3.6c-.2 0-.5 0-.7.3-.2.3-.9.9-.9 2.1s.9 2.4 1 2.6c.1.1 1.7 2.7 4.3 3.7 2.1.8 2.5.7 3 .6.4-.1 1.3-.5 1.5-1 .2-.5.2-.9.1-1-.1-.1-.2-.2-.5-.3l-1.9-.9c-.3-.1-.4-.1-.6.1l-.7 1c-.1.2-.3.2-.5.1-.7-.3-1.6-.8-2.3-1.6-.6-.6-1-1.3-1.2-1.7-.1-.2 0-.4.1-.5l.5-.6c.1-.2.1-.3 0-.5l-.9-2.1c-.1-.3-.3-.3-.5-.3h-.3z" />
+                </svg>
+              </a>
+            )}
+            {brochureHref && (
+              <a
+                href={brochureHref}
+                download
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Download brochure"
+                className="w-11 h-11 rounded-full bg-slate-900 text-white flex items-center justify-center shadow-lg hover:bg-slate-800 transition"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16"
+                  />
+                </svg>
+              </a>
+            )}
+          </div>
+          {badgeNumber && (
+            <div
+              className="fixed bottom-6 left-6 z-40 hidden md:flex h-24 w-24 items-center justify-center rounded-full bg-slate-950 shadow-lg"
+              aria-hidden="true"
             >
-              <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2zm0 2a8 8 0 1 1-4.3 14.8l-.3-.2-3 .8.8-3-.2-.3A8 8 0 0 1 12 4zm-2.2 3.6c-.2 0-.5 0-.7.3-.2.3-.9.9-.9 2.1s.9 2.4 1 2.6c.1.1 1.7 2.7 4.3 3.7 2.1.8 2.5.7 3 .6.4-.1 1.3-.5 1.5-1 .2-.5.2-.9.1-1-.1-.1-.2-.2-.5-.3l-1.9-.9c-.3-.1-.4-.1-.6.1l-.7 1c-.1.2-.3.2-.5.1-.7-.3-1.6-.8-2.3-1.6-.6-.6-1-1.3-1.2-1.7-.1-.2 0-.4.1-.5l.5-.6c.1-.2.1-.3 0-.5l-.9-2.1c-.1-.3-.3-.3-.5-.3h-.3z" />
+              <svg className="absolute inset-0 h-full w-full" viewBox="0 0 200 200">
+                <defs>
+                  <linearGradient id="fabGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#f6d876" />
+                    <stop offset="50%" stopColor="#c9971f" />
+                    <stop offset="100%" stopColor="#f6d876" />
+                  </linearGradient>
+                </defs>
+                <circle
+                  cx="100"
+                  cy="100"
+                  r="94"
+                  fill="none"
+                  stroke="url(#fabGoldGrad)"
+                  strokeWidth="9"
+                  strokeDasharray="4 9"
+                  strokeLinecap="round"
+                />
               </svg>
-            </a>
+              <div className="relative flex flex-col items-center text-center text-white">
+                {(isEditing || badgeYearLabel) && (
+                  <span className="text-[9px] tracking-wide">
+                    <InlineEditableText
+                      id={id}
+                      path={['badgeYearLabel']}
+                      value={badgeYearLabel ?? ''}
+                      isEditing={isEditing}
+                    />
+                  </span>
+                )}
+                <span className="text-2xl font-extrabold leading-none">
+                  <InlineEditableText
+                    id={id}
+                    path={['badgeNumber']}
+                    value={badgeNumber ?? ''}
+                    isEditing={isEditing}
+                  />
+                </span>
+                {(isEditing || badgeLabel) && (
+                  <span className="text-[9px] leading-tight">
+                    <InlineEditableText
+                      id={id}
+                      path={['badgeLabel']}
+                      value={badgeLabel ?? ''}
+                      isEditing={isEditing}
+                    />
+                  </span>
+                )}
+              </div>
+            </div>
           )}
-          <button
-            type="button"
-            aria-label="Back to top"
-            onClick={scrollTop}
-            className="w-11 h-11 rounded-full bg-slate-900 text-white flex items-center justify-center shadow-lg hover:bg-slate-800 transition"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
-            </svg>
-          </button>
-        </div>
+        </>
       )
     },
   },
@@ -7459,9 +8234,26 @@ const typedComponents: Config<ConstructionProps>['components'] = {
   ConstructionFooter: {
     label: 'Construction Footer (4 Column)',
     fields: {
+      variant: {
+        type: 'select',
+        options: [
+          { label: 'Design 1 — 4-column, showroom + regd. office', value: '1' },
+          { label: 'Design 2 — colorful blocks, about + quick links + contact', value: '2' },
+          { label: 'Design 3 — white logo bar, dark link columns + big phone', value: '3' },
+          { label: 'Design 4 — dark curve, 4 link columns + newsletter signup', value: '4' },
+        ],
+      },
       logoUrl: { type: 'text' },
       brand: { type: 'text' },
       tagline: { type: 'textarea' },
+      aboutTitle: { type: 'text' },
+      aboutText: { type: 'textarea' },
+      aboutLinkLabel: { type: 'text' },
+      aboutLinkHref: { type: 'text' },
+      primaryColor: { type: 'text' },
+      secondaryColor: { type: 'text' },
+      tertiaryColor: { type: 'text' },
+      quaternaryColor: { type: 'text' },
       social1Label: { type: 'text' },
       social1Href: { type: 'text' },
       social2Label: { type: 'text' },
@@ -7470,24 +8262,53 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       social3Href: { type: 'text' },
       social4Label: { type: 'text' },
       social4Href: { type: 'text' },
-      newsletterPlaceholder: { type: 'text' },
-      newsletterButtonLabel: { type: 'text' },
       companyLinksTitle: { type: 'text' },
       links: { type: 'textarea' },
+      group2Title: { type: 'text' },
+      group2Links: { type: 'textarea' },
+      group3Title: { type: 'text' },
+      group3Links: { type: 'textarea' },
+      partnerLogo1Url: { type: 'text' },
+      partnerLogo2Url: { type: 'text' },
+      partnerLogo3Url: { type: 'text' },
+      partnerLogo4Url: { type: 'text' },
+      badge1Url: { type: 'text' },
+      badge1Label: { type: 'text' },
+      badge2Url: { type: 'text' },
+      badge2Label: { type: 'text' },
+      policyLinks: { type: 'textarea' },
+      group4Links: { type: 'textarea' },
+      newsletterTitle: { type: 'text' },
+      newsletterPlaceholder: { type: 'text' },
+      newsletterButtonLabel: { type: 'text' },
       contactTitle: { type: 'text' },
       contactPhone: { type: 'text' },
+      contactPhone2: { type: 'text' },
       contactEmail: { type: 'text' },
+      contactEmail2: { type: 'text' },
       contactAddress: { type: 'textarea' },
       showroomTitle: { type: 'text' },
       showroomAddress: { type: 'textarea' },
+      regdOfficeTitle: { type: 'text' },
+      regdOfficeAddress: { type: 'textarea' },
       qrImage: { type: 'text' },
       qrCaption: { type: 'text' },
+      estdYear: { type: 'text' },
       copyright: { type: 'text' },
     },
     defaultProps: {
+      variant: '1',
       logoUrl: '',
       brand: 'Your Brand',
       tagline: 'Building with integrity, delivering with precision.',
+      aboutTitle: 'Who We Are',
+      aboutText: 'A trusted name delivering quality projects on time, every time.',
+      aboutLinkLabel: '',
+      aboutLinkHref: '',
+      primaryColor: '',
+      secondaryColor: '',
+      tertiaryColor: '',
+      quaternaryColor: '',
       social1Label: 'f',
       social1Href: '#',
       social2Label: 'in',
@@ -7496,24 +8317,55 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       social3Href: '#',
       social4Label: 'x',
       social4Href: '#',
-      newsletterPlaceholder: 'Your email address',
-      newsletterButtonLabel: 'Subscribe',
       companyLinksTitle: 'Company',
       links: 'Home|#\nAbout|#\nContact|#',
+      group2Title: 'Solutions',
+      group2Links: 'CRM|#\nAssociation Management|#',
+      group3Title: 'Quick Links',
+      group3Links: 'Open Source|#\nCMS|#\nSupport|#',
+      partnerLogo1Url: dummyLogo(80, 40, 'Partner'),
+      partnerLogo2Url: dummyLogo(80, 40, 'Partner'),
+      partnerLogo3Url: dummyLogo(80, 40, 'Partner'),
+      partnerLogo4Url: dummyLogo(80, 40, 'Partner'),
+      badge1Url: dummyLogo(120, 32, 'DMCA Protected'),
+      badge1Label: 'DMCA Protected',
+      badge2Url: dummyLogo(120, 32, 'Copyscape Protected'),
+      badge2Label: 'Protected by Copyscape',
+      policyLinks: 'Terms & Conditions|#\nPrivacy Policy|#\nSitemap|#\nBlogs|#',
+      group4Links: 'My Account|#\nPress|#\nCareers|#\nAffiliate Program|#',
+      newsletterTitle: 'Sign up to get 15% off your first order',
+      newsletterPlaceholder: 'Your Email Address',
+      newsletterButtonLabel: 'Subscribe',
       contactTitle: 'Contact',
       contactPhone: '+91-98765-43210',
+      contactPhone2: '',
       contactEmail: 'info@yourbrand.com',
+      contactEmail2: '',
       contactAddress: '123 Business Avenue\nCity, State 000000',
       showroomTitle: 'Showroom',
       showroomAddress: '456 Showroom Road\nCity, State 000000',
-      qrImage: 'https://placehold.co/160x160/ffffff/1e293b?text=QR+Code',
+      regdOfficeTitle: 'Regd. Office',
+      regdOfficeAddress: '',
+      qrImage: dummyLogo(160, 160, 'QR Code'),
       qrCaption: 'Scan for directions',
+      estdYear: '',
       copyright: '© Your Brand. All rights reserved.',
     },
     render: ({
+      id,
+      puck,
+      variant,
       logoUrl,
       brand,
       tagline,
+      aboutTitle,
+      aboutText,
+      aboutLinkLabel,
+      aboutLinkHref,
+      primaryColor,
+      secondaryColor,
+      tertiaryColor,
+      quaternaryColor,
       social1Label,
       social1Href,
       social2Label,
@@ -7522,75 +8374,550 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       social3Href,
       social4Label,
       social4Href,
-      newsletterPlaceholder,
-      newsletterButtonLabel,
       companyLinksTitle,
       links,
+      group2Title,
+      group2Links,
+      group3Title,
+      group3Links,
+      partnerLogo1Url,
+      partnerLogo2Url,
+      partnerLogo3Url,
+      partnerLogo4Url,
+      badge1Url,
+      badge1Label,
+      badge2Url,
+      badge2Label,
+      policyLinks,
+      group4Links,
+      newsletterTitle,
+      newsletterPlaceholder,
+      newsletterButtonLabel,
       contactTitle,
       contactPhone,
+      contactPhone2,
       contactEmail,
+      contactEmail2,
       contactAddress,
       showroomTitle,
       showroomAddress,
+      regdOfficeTitle,
+      regdOfficeAddress,
       qrImage,
       qrCaption,
+      estdYear,
       copyright,
     }) => {
-      const companyLinks = (links || '')
-        .split('\n')
-        .map((line) => line.split('|'))
-        .filter(([label]) => label)
+      const parseLinkList = (text: string) =>
+        (text || '')
+          .split('\n')
+          .map((line) => line.split('|'))
+          .filter(([label]) => label)
+      const companyLinks = parseLinkList(links)
       const socials = [
-        { label: social1Label, href: social1Href },
-        { label: social2Label, href: social2Href },
-        { label: social3Label, href: social3Href },
-        { label: social4Label, href: social4Href },
-      ].filter((s) => s.label)
-      return (
-        <footer className="bg-slate-900 text-white pt-16 pb-8">
-          <div className={wrap}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
-              <div>
-                <div className="flex items-center gap-2 font-bold text-lg mb-3">
-                  {logoUrl && (
+        { label: social1Label, href: social1Href, Icon: FacebookIcon },
+        { label: social2Label, href: social2Href, Icon: LinkedInIcon },
+        { label: social3Label, href: social3Href, Icon: InstagramIcon },
+        { label: social4Label, href: social4Href, Icon: XIcon },
+      ].filter((s) => s.href)
+      // Badge is purely decorative and only shows once there's a founding
+      // year to compute "years of trust" from — no fake number without
+      // real data behind it.
+      const yearsOfTrust =
+        estdYear && /^\d{4}$/.test(estdYear) ? new Date().getFullYear() - Number(estdYear) : null
+      const isEditing = puck?.isEditing ?? false
+
+      // Design 2 — colorful blocks driven by the brand kit's own
+      // primary/secondary colors (same accentColorFor/readableTextColor
+      // contrast helpers Header already uses) instead of hardcoded
+      // yellow/red, so it reskins to whatever brand is active.
+      if (variant === '2') {
+        const mainBg = primaryColor || '#dc2626'
+        // Reference design pairs a clearly distinct accent color for the
+        // logo block, not a shade/tint of the same hue. A plain lightness
+        // fallback (or a fixed amber) still reads as "the same color" when
+        // the brand's own secondary is an unsaturated placeholder gray or
+        // sits in the same warm family as the primary (reported: "still
+        // not change" on an orange-brand project) — hueShiftAccent
+        // guarantees a genuinely different color family regardless of the
+        // brand's actual primary hue.
+        const accentBg = isVividAccent(secondaryColor, mainBg)
+          ? (secondaryColor as string)
+          : hueShiftAccent(mainBg)
+        const mainText = readableTextColor(mainBg)
+        const accentText = readableTextColor(accentBg)
+        const contactLines = [contactPhone, contactPhone2, contactEmail, contactEmail2].filter(
+          Boolean
+        )
+        return (
+          <footer>
+            <div className="grid grid-cols-1 md:grid-cols-2">
+              {/* Left half — one flat accent color, like the reference (not
+                  a 25%-wide strip) — logo panel + About share the same bg. */}
+              <div
+                style={{ backgroundColor: accentBg, color: accentText }}
+                className="grid grid-cols-1 sm:grid-cols-[220px_1fr]"
+              >
+                <div className="flex flex-col items-center justify-center gap-3 p-8 text-center">
+                  {logoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={logoUrl} alt={brand} className="h-8 w-auto" />
+                    <img src={logoUrl} alt={brand} className="h-14 w-auto rounded bg-white p-1" />
+                  ) : (
+                    <span className="text-lg font-bold">{brand}</span>
                   )}
-                  <span>{brand}</span>
+                  {tagline && (
+                    <p className="text-xs font-semibold uppercase tracking-wide whitespace-pre-line">
+                      {tagline}
+                    </p>
+                  )}
                 </div>
-                {tagline && (
-                  <p className="text-sm text-white/70 mb-5 whitespace-pre-line">{tagline}</p>
+                <div className="p-8">
+                  {aboutTitle && <h4 className="mb-3 text-lg font-bold uppercase">{aboutTitle}</h4>}
+                  {aboutText && (
+                    <p className="text-sm opacity-90 whitespace-pre-line">{aboutText}</p>
+                  )}
+                  {aboutLinkHref && (
+                    <a
+                      href={aboutLinkHref}
+                      className="mt-2 inline-block text-sm font-bold underline"
+                    >
+                      {aboutLinkLabel || 'Read More...'}
+                    </a>
+                  )}
+                </div>
+              </div>
+              {/* Right half — one flat main color — Quick Links + Contact
+                  share the same bg. */}
+              <div
+                style={{ backgroundColor: mainBg, color: mainText }}
+                className="grid grid-cols-1 sm:grid-cols-2"
+              >
+                <div className="p-8">
+                  {companyLinksTitle && (
+                    <h4 className="mb-3 text-lg font-bold uppercase">{companyLinksTitle}</h4>
+                  )}
+                  <ul className="flex flex-col gap-2 text-sm">
+                    {companyLinks.map(([label, href], i) => (
+                      <li key={i}>
+                        <a href={href || '#'} className="opacity-90 transition hover:opacity-100">
+                          → {label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="p-8">
+                  {contactTitle && (
+                    <h4 className="mb-3 text-lg font-bold uppercase">{contactTitle}</h4>
+                  )}
+                  {contactAddress && (
+                    <p className="mb-2 text-sm opacity-90 whitespace-pre-line">{contactAddress}</p>
+                  )}
+                  {contactLines.length > 0 && (
+                    <ul className="mb-3 flex flex-col gap-1 text-sm opacity-90">
+                      {contactLines.map((line, i) => (
+                        <li key={i}>{line}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {socials.length > 0 && (
+                    <div className="flex gap-2">
+                      {socials.map((s, i) => (
+                        <a
+                          key={i}
+                          href={s.href}
+                          aria-label={s.label || 'Social link'}
+                          className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 transition hover:bg-white/25"
+                        >
+                          <s.Icon />
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div
+              className="flex flex-col items-center justify-between gap-2 px-4 py-4 text-xs text-white/50 sm:flex-row md:px-8"
+              style={{ backgroundColor: secondaryColor || '#12142a' }}
+            >
+              <p>{copyright}</p>
+              <a href="https://f9tech.com" className="transition hover:text-white">
+                Design by f9tech.com
+              </a>
+            </div>
+          </footer>
+        )
+      }
+
+      // Design 3 — white logo/social bar over a solid dark band (the band
+      // uses the brand's own primaryColor, falling back to navy) with 3
+      // link columns + a phone/email/address column, matching the F9
+      // reference. Only 4 social icon slots exist on this component
+      // (reused as-is from Designs 1/2) — the reference shows 5 platforms,
+      // but adding a 5th icon type purely to match icon *count* isn't worth
+      // a new field + new SVG when the existing 4-icon row already matches
+      // the reference's structure (a row of circular icon buttons).
+      if (variant === '3') {
+        const bandBg = primaryColor || '#10275c'
+        const bandText = readableTextColor(bandBg)
+        const bandGradient = themeGradient(bandBg, tertiaryColor || '#000000', 145)
+        const groups = [
+          { title: companyLinksTitle, links: companyLinks, showPartners: true },
+          { title: group2Title, links: parseLinkList(group2Links), showPartners: false },
+          { title: group3Title, links: parseLinkList(group3Links), showPartners: false },
+        ].filter((g) => g.title || g.links.length > 0)
+        const partnerLogos = [
+          partnerLogo1Url,
+          partnerLogo2Url,
+          partnerLogo3Url,
+          partnerLogo4Url,
+        ].filter(Boolean)
+        const badges = [
+          { url: badge1Url, label: badge1Label },
+          { url: badge2Url, label: badge2Label },
+        ].filter((b) => b.url)
+        const policyItems = parseLinkList(policyLinks)
+
+        return (
+          <footer>
+            <div className="relative overflow-hidden bg-white py-6">
+              <div
+                className={`${wrap} flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between`}
+              >
+                {logoUrl ? (
+                  <span
+                    className="inline-flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-2 border-dashed p-2"
+                    style={{ borderColor: bandBg }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={logoUrl} alt={brand} className="h-full w-full object-contain" />
+                  </span>
+                ) : (
+                  <span className="text-2xl font-bold" style={{ color: bandBg }}>
+                    {brand}
+                  </span>
                 )}
                 {socials.length > 0 && (
-                  <div className="flex gap-2 mb-6">
+                  <div className="flex gap-3">
                     {socials.map((s, i) => (
                       <a
                         key={i}
                         href={s.href}
-                        aria-label={s.label}
-                        className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-xs font-semibold hover:bg-white/20 transition"
+                        aria-label={s.label || 'Social link'}
+                        style={{ color: bandBg }}
+                        className="flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-md transition hover:shadow-lg [&_svg]:h-5 [&_svg]:w-5"
                       >
-                        {s.label}
+                        <s.Icon />
                       </a>
                     ))}
                   </div>
                 )}
-                <form onSubmit={(e) => e.preventDefault()} className="flex gap-2">
+              </div>
+              {/* Curved seam into the dark band below, instead of a flat
+                  edge — a straight `border-t` read as "flat/missing" next
+                  to the reference's wave transition. */}
+              <svg
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-6 w-full translate-y-1/2"
+                viewBox="0 0 1440 60"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
+                <path d="M0 60 Q 720 0 1440 60 L1440 60 L0 60 Z" fill={bandBg} />
+              </svg>
+            </div>
+            <div
+              style={{ backgroundColor: bandBg, backgroundImage: bandGradient, color: bandText }}
+              className="relative overflow-hidden"
+            >
+              {/* Faint concentric dashed rings in the corner, matching the
+                  reference's decorative background — purely ornamental so
+                  it's drawn in a translucent neutral (not a brand color)
+                  and stays subtle against any bandBg. */}
+              <svg
+                className="pointer-events-none absolute -right-16 -top-16 h-72 w-72 opacity-[0.08]"
+                viewBox="0 0 200 200"
+                fill="none"
+                aria-hidden="true"
+              >
+                <circle cx="100" cy="100" r="40" stroke="white" strokeDasharray="3 4" />
+                <circle cx="100" cy="100" r="70" stroke="white" strokeDasharray="3 4" />
+                <circle cx="100" cy="100" r="100" stroke="white" strokeDasharray="3 4" />
+              </svg>
+              <div
+                className={`${wrap} relative grid grid-cols-1 gap-8 pb-10 pt-12 sm:grid-cols-2 lg:grid-cols-4`}
+              >
+                {groups.map((g, i) => (
+                  <div key={i}>
+                    {g.title && (
+                      <h4 className="mb-4 text-sm font-bold uppercase tracking-wide">{g.title}</h4>
+                    )}
+                    <ul className="flex flex-col gap-2.5 text-sm">
+                      {g.links.map(([label, href], j) => (
+                        <li key={j}>
+                          <a
+                            href={href || '#'}
+                            className="uppercase tracking-wide opacity-90 transition hover:opacity-100"
+                          >
+                            {label}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                    {g.showPartners && partnerLogos.length > 0 && (
+                      <div className="mt-6 flex flex-wrap gap-2">
+                        {partnerLogos.map((url, k) => (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            key={k}
+                            src={url}
+                            alt=""
+                            className="h-10 w-auto rounded bg-white p-1"
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+                <div>
+                  {contactPhone && <p className="mb-2 text-2xl font-extrabold">{contactPhone}</p>}
+                  {contactEmail && <p className="mb-4 text-lg font-semibold">{contactEmail}</p>}
+                  {contactAddress && (
+                    <p className="mb-4 text-sm opacity-90 whitespace-pre-line">{contactAddress}</p>
+                  )}
+                  {badges.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {badges.map((b, i) => (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          key={i}
+                          src={b.url}
+                          alt={b.label || ''}
+                          className="h-8 w-auto rounded bg-white p-1"
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div
+                className={`${wrap} relative flex flex-col items-center justify-between gap-3 border-t border-white/10 pb-6 text-xs opacity-80 sm:flex-row`}
+              >
+                <p>{copyright}</p>
+                {policyItems.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {policyItems.map(([label, href], i) => (
+                      <span key={i} className="flex items-center gap-2">
+                        {i > 0 && <span className="opacity-50">|</span>}
+                        <a
+                          href={href || '#'}
+                          className="uppercase tracking-wide transition hover:opacity-100"
+                        >
+                          {label}
+                        </a>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </footer>
+        )
+      }
+
+      // Design 4 — dark curved band, 4 link columns + a newsletter signup
+      // column, matching the reference. The 4th column's heading reuses
+      // `brand` (already dynamic) instead of a new title field, since the
+      // reference's 4th column is titled with the brand name itself.
+      if (variant === '4') {
+        const bandBg = primaryColor || '#0b3d2e'
+        const bandText = readableTextColor(bandBg)
+        // primary→secondary here, distinct from Design 1's secondary→
+        // tertiary and Design 3's primary→tertiary — each footer design
+        // mixes a different pair from the same 4-color palette.
+        const bandGradient = themeGradient(bandBg, secondaryColor || '#12142a', 150)
+        const accentBg = isVividAccent(secondaryColor, bandBg)
+          ? (secondaryColor as string)
+          : hueShiftAccent(bandBg)
+        const accentText = readableTextColor(accentBg)
+        const groups = [
+          { title: companyLinksTitle, links: companyLinks },
+          { title: group2Title, links: parseLinkList(group2Links) },
+          { title: group3Title, links: parseLinkList(group3Links) },
+          { title: brand, links: parseLinkList(group4Links) },
+        ].filter((g) => g.title || g.links.length > 0)
+        const badges = [
+          { url: badge1Url, label: badge1Label },
+          { url: badge2Url, label: badge2Label },
+        ].filter((b) => b.url)
+        const policyItems = parseLinkList(policyLinks)
+
+        return (
+          <footer
+            className="relative overflow-hidden"
+            style={{ backgroundColor: bandBg, backgroundImage: bandGradient, color: bandText }}
+          >
+            {/* White page bleeds into the band via a curve, not a flat top
+                edge — matches the reference's rounded top seam. Drawn
+                fully inside the footer's own box (no negative-translate +
+                overflow-hidden combo) — that combo previously clipped
+                almost the entire shape, leaving nothing visible. */}
+            <svg
+              className="pointer-events-none absolute inset-x-0 top-0 h-16 w-full"
+              viewBox="0 0 1440 100"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <path d="M0 0 H1440 V40 Q 720 100 0 40 Z" fill="white" />
+            </svg>
+            <div
+              className={`${wrap} relative grid grid-cols-1 gap-10 pb-10 pt-16 sm:grid-cols-2 lg:grid-cols-5`}
+            >
+              {groups.map((g, i) => (
+                <div key={i}>
+                  {g.title && <h4 className="mb-4 text-sm font-semibold">{g.title}</h4>}
+                  <ul className="flex flex-col gap-2 text-sm opacity-90">
+                    {g.links.map(([label, href], j) => (
+                      <li key={j}>
+                        <a href={href || '#'} className="transition hover:opacity-100">
+                          {label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+              <div className="sm:col-span-2 lg:col-span-1">
+                {newsletterTitle && <p className="mb-3 text-sm font-medium">{newsletterTitle}</p>}
+                <div className="flex overflow-hidden rounded-full border border-white/30">
                   <input
                     type="email"
                     placeholder={newsletterPlaceholder}
-                    className="min-w-0 flex-1 rounded-lg bg-white/10 border border-white/20 px-3 py-2 text-sm placeholder:text-white/50"
+                    disabled
+                    className="min-w-0 flex-1 bg-transparent px-4 py-2 text-sm placeholder:opacity-60 focus:outline-none"
                   />
                   <button
-                    type="submit"
-                    className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold hover:bg-orange-600 transition flex-shrink-0"
+                    type="button"
+                    disabled
+                    style={{ backgroundColor: accentBg, color: accentText }}
+                    className="px-5 py-2 text-sm font-semibold"
                   >
                     {newsletterButtonLabel}
                   </button>
-                </form>
+                </div>
+                {socials.length > 0 && (
+                  <div className="mt-5 flex gap-2">
+                    {socials.map((s, i) => (
+                      <a
+                        key={i}
+                        href={s.href}
+                        aria-label={s.label || 'Social link'}
+                        className="flex h-8 w-8 items-center justify-center rounded-full border border-current opacity-80 transition hover:opacity-100 [&_svg]:h-3.5 [&_svg]:w-3.5"
+                      >
+                        <s.Icon />
+                      </a>
+                    ))}
+                  </div>
+                )}
+                {badges.length > 0 && (
+                  <div className="mt-5 flex gap-2">
+                    {badges.map((b, i) => (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        key={i}
+                        src={b.url}
+                        alt={b.label || ''}
+                        className="h-12 w-12 rounded-full bg-white p-1"
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div
+              className={`${wrap} relative flex flex-col items-center justify-between gap-2 border-t border-white/10 pb-6 pt-4 text-xs opacity-70 sm:flex-row`}
+            >
+              <p>{copyright}</p>
+              {policyItems.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {policyItems.map(([label, href], i) => (
+                    <span key={i} className="flex items-center gap-2">
+                      {i > 0 && <span className="opacity-50">|</span>}
+                      <a href={href || '#'} className="transition hover:opacity-100">
+                        {label}
+                      </a>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </footer>
+        )
+      }
+
+      // Design 1's own background: the brand's secondary color, not a
+      // flat neutral slate-950 — requested explicitly ("first footer
+      // background color need secondary color"). tertiaryColor blends in
+      // so it's a gradient, not a flat fill, matching the rest of the pack's
+      // "mix two palette colors, vary the pair per section" rule.
+      const design1Bg = secondaryColor || '#12142a'
+      return (
+        <footer
+          className="relative text-white pt-16 pb-8"
+          style={{
+            backgroundColor: design1Bg,
+            backgroundImage: themeGradient(design1Bg, tertiaryColor || '#000000', 160),
+          }}
+        >
+          {/* Reference (v2-footer) wraps this in .container, not
+              container-fluid — constrained width like every other footer
+              on the page, unlike the full-bleed Header/Hero/Sectors. */}
+          <div className={wrap}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-10">
+              <div>
+                <div className="flex items-center gap-2 font-bold text-lg mb-3">
+                  {logoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={logoUrl} alt={brand} className="h-8 w-auto" />
+                  ) : (
+                    <span>{brand}</span>
+                  )}
+                </div>
+                {(isEditing || tagline) && (
+                  <p className="text-sm text-white/70 mb-5 whitespace-pre-line">
+                    <InlineEditableText
+                      id={id}
+                      path={['tagline']}
+                      value={tagline ?? ''}
+                      isEditing={isEditing}
+                      multiline
+                    />
+                  </p>
+                )}
+                {socials.length > 0 && (
+                  <div className="flex gap-2">
+                    {socials.map((s, i) => (
+                      <a
+                        key={i}
+                        href={s.href}
+                        aria-label={s.label || 'Social link'}
+                        className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"
+                      >
+                        <s.Icon />
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
               <div>
-                <h4 className="font-semibold mb-4">{companyLinksTitle}</h4>
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-white/50 mb-4">
+                  <InlineEditableText
+                    id={id}
+                    path={['companyLinksTitle']}
+                    value={companyLinksTitle ?? ''}
+                    isEditing={isEditing}
+                  />
+                </h4>
                 <ul className="flex flex-col gap-2.5 text-sm text-white/70">
                   {companyLinks.map(([label, href], i) => (
                     <li key={i}>
@@ -7602,38 +8929,151 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 </ul>
               </div>
               <div>
-                <h4 className="font-semibold mb-4">{contactTitle}</h4>
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-white/50 mb-4">
+                  <InlineEditableText
+                    id={id}
+                    path={['contactTitle']}
+                    value={contactTitle ?? ''}
+                    isEditing={isEditing}
+                  />
+                </h4>
                 <ul className="flex flex-col gap-2.5 text-sm text-white/70">
-                  {contactPhone && <li>{contactPhone}</li>}
-                  {contactEmail && <li>{contactEmail}</li>}
-                  {contactAddress && <li className="whitespace-pre-line">{contactAddress}</li>}
+                  {(isEditing || contactPhone) && (
+                    <li>
+                      <InlineEditableText
+                        id={id}
+                        path={['contactPhone']}
+                        value={contactPhone ?? ''}
+                        isEditing={isEditing}
+                      />
+                    </li>
+                  )}
+                  {(isEditing || contactPhone2) && (
+                    <li>
+                      <InlineEditableText
+                        id={id}
+                        path={['contactPhone2']}
+                        value={contactPhone2 ?? ''}
+                        isEditing={isEditing}
+                      />
+                    </li>
+                  )}
+                  {(isEditing || contactEmail) && (
+                    <li>
+                      <InlineEditableText
+                        id={id}
+                        path={['contactEmail']}
+                        value={contactEmail ?? ''}
+                        isEditing={isEditing}
+                      />
+                    </li>
+                  )}
+                  {(isEditing || contactEmail2) && (
+                    <li>
+                      <InlineEditableText
+                        id={id}
+                        path={['contactEmail2']}
+                        value={contactEmail2 ?? ''}
+                        isEditing={isEditing}
+                      />
+                    </li>
+                  )}
                 </ul>
               </div>
               <div>
-                <h4 className="font-semibold mb-4">{showroomTitle}</h4>
-                {showroomAddress && (
-                  <p className="text-sm text-white/70 whitespace-pre-line mb-4">
-                    {showroomAddress}
-                  </p>
-                )}
-                {qrImage && (
-                  <div>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={qrImage}
-                      alt={qrCaption}
-                      className="w-20 h-20 rounded-lg bg-white p-1"
-                    />
-                    {qrCaption && <p className="text-xs text-white/50 mt-1.5">{qrCaption}</p>}
-                  </div>
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-white/50 mb-4">
+                  <InlineEditableText
+                    id={id}
+                    path={['showroomTitle']}
+                    value={showroomTitle ?? ''}
+                    isEditing={isEditing}
+                  />
+                </h4>
+                <div className="flex items-start gap-4">
+                  {(isEditing || showroomAddress) && (
+                    <p className="text-sm text-white/70 whitespace-pre-line">
+                      <InlineEditableText
+                        id={id}
+                        path={['showroomAddress']}
+                        value={showroomAddress ?? ''}
+                        isEditing={isEditing}
+                        multiline
+                      />
+                    </p>
+                  )}
+                  {qrImage && (
+                    <div className="shrink-0 text-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={qrImage}
+                        alt={qrCaption}
+                        className="w-16 h-16 rounded-lg bg-white p-1"
+                      />
+                      {(isEditing || qrCaption) && (
+                        <p className="text-[11px] text-white/50 mt-1.5 max-w-[80px]">
+                          <InlineEditableText
+                            id={id}
+                            path={['qrCaption']}
+                            value={qrCaption ?? ''}
+                            isEditing={isEditing}
+                          />
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {(isEditing || regdOfficeAddress) && (
+                  <>
+                    <h4 className="text-xs font-semibold uppercase tracking-wide text-white/50 mb-2 mt-5">
+                      <InlineEditableText
+                        id={id}
+                        path={['regdOfficeTitle']}
+                        value={regdOfficeTitle ?? ''}
+                        isEditing={isEditing}
+                      />
+                    </h4>
+                    <p className="text-sm text-white/70 whitespace-pre-line">
+                      <InlineEditableText
+                        id={id}
+                        path={['regdOfficeAddress']}
+                        value={regdOfficeAddress ?? ''}
+                        isEditing={isEditing}
+                        multiline
+                      />
+                    </p>
+                  </>
                 )}
               </div>
             </div>
             <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-white/50">
-              <p>{copyright}</p>
-              <p>Design by KDL</p>
+              <p>
+                <InlineEditableText
+                  id={id}
+                  path={['copyright']}
+                  value={copyright ?? ''}
+                  isEditing={isEditing}
+                />
+              </p>
+              <a href="https://f9tech.com" className="hover:text-white transition">
+                Design by f9tech.com
+              </a>
             </div>
           </div>
+          {yearsOfTrust !== null && (
+            <div className="absolute right-4 bottom-8 hidden md:flex h-28 w-28 items-center justify-center rounded-full border-2 border-dashed border-amber-400/70 text-center">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-400">
+                  Estd. {estdYear}
+                </p>
+                <p className="text-2xl font-extrabold leading-none text-amber-400">
+                  {yearsOfTrust}
+                </p>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-400">
+                  Years of Trust
+                </p>
+              </div>
+            </div>
+          )}
         </footer>
       )
     },
@@ -7659,7 +9099,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     },
     defaultProps: {
       sectionTitle: 'From Our Founder',
-      photo: 'https://placehold.co/480x480',
+      photo:
+        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=480&h=480&fit=crop&auto=format',
       quoteText:
         'We started this company on one promise: build it right, on time, every time. Twenty years later, that promise still guides every project we take on.',
       founderName: 'Ramesh Kumar',
@@ -7932,7 +9373,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     defaultProps: {
       sectionTitle: 'See Us in Action',
       sectionSubtitle: 'A walkthrough of our current build sites and how we work.',
-      thumbnail: 'https://placehold.co/1280x720',
+      thumbnail:
+        'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=1280&h=720&fit=crop&auto=format',
       videoUrl: '',
       padding: 'md',
     },
@@ -8246,15 +9688,18 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     },
     defaultProps: {
       sectionTitle: 'Latest From the Site',
-      post1Image: 'https://placehold.co/480x300',
+      post1Image:
+        'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=480&h=300&fit=crop&auto=format',
       post1Category: 'Project Update',
       post1Title: 'Riverside Villas reaches structural completion',
       post1Date: 'Mar 12, 2026',
-      post2Image: 'https://placehold.co/480x300',
+      post2Image:
+        'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=480&h=300&fit=crop&auto=format',
       post2Category: 'Safety',
       post2Title: 'How we hit 400 days without a lost-time incident',
       post2Date: 'Feb 28, 2026',
-      post3Image: 'https://placehold.co/480x300',
+      post3Image:
+        'https://images.unsplash.com/photo-1479839672679-a46483c0e7c8?w=480&h=300&fit=crop&auto=format',
       post3Category: 'Company News',
       post3Title: 'We are hiring: site engineers and project managers',
       post3Date: 'Feb 10, 2026',
@@ -9398,50 +10843,35 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     },
   },
 
-  // Sectors — 3 tabbed sector descriptions (static tab switch, mirrors
-  // ConstructionOurBrands's tab pattern: useState picks the active tab,
-  // all tabs are rendered client-side, no server state).
+  // Disciplines grid — 6 cards: image + title + description + brand + link
   ConstructionDisciplinesGrid: {
     label: 'Disciplines Grid',
     fields: {
+      sectionEyebrow: { type: 'text' },
       sectionTitle: { type: 'text' },
       sectionSubtitle: { type: 'textarea' },
-      discipline1Icon: DISCIPLINE_ICON_FIELD,
-      discipline1Image: imageField('Image'),
-      discipline1Title: { type: 'text' },
-      discipline1Description: { type: 'textarea' },
-      discipline1Brands: { type: 'text' },
-      discipline1Href: { type: 'text' },
-      discipline2Icon: DISCIPLINE_ICON_FIELD,
-      discipline2Image: imageField('Image'),
-      discipline2Title: { type: 'text' },
-      discipline2Description: { type: 'textarea' },
-      discipline2Brands: { type: 'text' },
-      discipline2Href: { type: 'text' },
-      discipline3Icon: DISCIPLINE_ICON_FIELD,
-      discipline3Image: imageField('Image'),
-      discipline3Title: { type: 'text' },
-      discipline3Description: { type: 'textarea' },
-      discipline3Brands: { type: 'text' },
-      discipline3Href: { type: 'text' },
-      discipline4Icon: DISCIPLINE_ICON_FIELD,
-      discipline4Image: imageField('Image'),
-      discipline4Title: { type: 'text' },
-      discipline4Description: { type: 'textarea' },
-      discipline4Brands: { type: 'text' },
-      discipline4Href: { type: 'text' },
-      discipline5Icon: DISCIPLINE_ICON_FIELD,
-      discipline5Image: imageField('Image'),
-      discipline5Title: { type: 'text' },
-      discipline5Description: { type: 'textarea' },
-      discipline5Brands: { type: 'text' },
-      discipline5Href: { type: 'text' },
-      discipline6Icon: DISCIPLINE_ICON_FIELD,
-      discipline6Image: imageField('Image'),
-      discipline6Title: { type: 'text' },
-      discipline6Description: { type: 'textarea' },
-      discipline6Brands: { type: 'text' },
-      discipline6Href: { type: 'text' },
+      items: {
+        type: 'array',
+        min: 0,
+        max: 20,
+        getItemSummary: (item, index) => item.title || `Discipline ${(index ?? 0) + 1}`,
+        defaultItemProps: {
+          icon: 'snowflake',
+          image: '',
+          title: '',
+          description: '',
+          brands: '',
+          href: '',
+        },
+        arrayFields: {
+          icon: DISCIPLINE_ICON_FIELD,
+          image: imageField('Image'),
+          title: { type: 'text' },
+          description: { type: 'textarea' },
+          brands: { type: 'text' },
+          href: { type: 'text' },
+        },
+      },
       padding: {
         type: 'select',
         options: [
@@ -9459,151 +10889,86 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       },
     },
     defaultProps: {
+      sectionEyebrow: "What we're known for",
       sectionTitle: 'Six disciplines, engineered as one system',
       sectionSubtitle:
         'Designed, supplied, installed and maintained by one accountable team — with a dedicated service manager for every discipline.',
-      discipline1Icon: 'snowflake',
-      discipline1Image:
-        'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=800&h=600&fit=crop&q=80&auto=format',
-      discipline1Title: 'Central AC',
-      discipline1Description:
-        'Centralized air-conditioning sized, supplied and installed by our own engineers — from single rooms to full commercial buildings, backed by annual maintenance and genuine spares on call.',
-      discipline1Brands: 'Blue Star',
-      discipline1Href: '#products',
-      discipline2Icon: 'plug',
-      discipline2Image: '/seed/subhadra/products/mcb1.jpg',
-      discipline2Title: 'Electrical & Switchgear',
-      discipline2Description:
-        'We supply complete range of Switches, Wires, MCBs, Distribution Boards, Cables, Switchgear, Panel Boards, Generators, Transformers, UPS, Stabilizers.',
-      discipline2Brands: 'Schneider Electric',
-      discipline2Href: '#products',
-      discipline3Icon: 'shield',
-      discipline3Image:
-        'https://images.unsplash.com/photo-1643123182527-3bd30840e7ed?w=900&h=675&fit=crop&q=80&auto=format',
-      discipline3Title: 'Safety and Security Solutions',
-      discipline3Description:
-        'CCTV, video analytics, access control, fire alarm, intrusion alarm and fire-fighting systems designed and installed by our own team — so every entry point is covered and safety never waits.',
-      discipline3Brands: 'Honeywell · Minimax · Tyco',
-      discipline3Href: '#products',
-      discipline4Icon: 'housegear',
-      discipline4Image: '/seed/subhadra/products/home-automation.jpg',
-      discipline4Title: 'Home Automation',
-      discipline4Description:
-        'Lighting, AC, curtains and appliances — retrofit or centralized, all on one interface you control from anywhere, with voice control and scheduled scenes for everyday comfort.',
-      discipline4Brands: 'Schneider · RTI · Bticino',
-      discipline4Href: '#products',
-      discipline5Icon: 'tv',
-      discipline5Image:
-        'https://images.unsplash.com/photo-1631702825172-a9a848c473ad?w=900&h=675&fit=crop&q=80&auto=format',
-      discipline5Title: 'Home Theater',
-      discipline5Description:
-        'Dolby Atmos rooms, 4K projection and multiroom audio — custom-built and installed by our own team, with acoustic treatment and calibration for true cinema-grade sound.',
-      discipline5Brands: 'Focal · Sony · Denon',
-      discipline5Href: '#products',
-      discipline6Icon: 'lightbulb',
-      discipline6Image:
-        'https://images.unsplash.com/photo-1524634126442-357e0eac3c14?w=900&h=675&fit=crop&q=80&auto=format',
-      discipline6Title: 'Premium Lighting',
-      discipline6Description:
-        'Designer, architectural and smart-dimmable lighting — specified, supplied and installed to elevate every room, with layered scenes for ambience, task and accent lighting.',
-      discipline6Brands: 'Wipro · Crompton · Philips',
-      discipline6Href: '#products',
+      items: [
+        {
+          icon: 'snowflake',
+          image:
+            'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=800&h=600&fit=crop&q=80&auto=format',
+          title: 'Central AC',
+          description:
+            'Centralized air-conditioning sized, supplied and installed by our own engineers — from single rooms to full commercial buildings, backed by annual maintenance and genuine spares on call.',
+          brands: 'Blue Star',
+          href: '#products',
+        },
+        {
+          icon: 'plug',
+          image: '/seed/subhadra/products/mcb1.jpg',
+          title: 'Electrical & Switchgear',
+          description:
+            'We supply complete range of Switches, Wires, MCBs, Distribution Boards, Cables, Switchgear, Panel Boards, Generators, Transformers, UPS, Stabilizers.',
+          brands: 'Schneider Electric',
+          href: '#products',
+        },
+        {
+          icon: 'shield',
+          image:
+            'https://images.unsplash.com/photo-1643123182527-3bd30840e7ed?w=900&h=675&fit=crop&q=80&auto=format',
+          title: 'Safety and Security Solutions',
+          description:
+            'CCTV, video analytics, access control, fire alarm, intrusion alarm and fire-fighting systems designed and installed by our own team — so every entry point is covered and safety never waits.',
+          brands: 'Honeywell · Minimax · Tyco',
+          href: '#products',
+        },
+        {
+          icon: 'housegear',
+          image: '/seed/subhadra/products/home-automation.jpg',
+          title: 'Home Automation',
+          description:
+            'Lighting, AC, curtains and appliances — retrofit or centralized, all on one interface you control from anywhere, with voice control and scheduled scenes for everyday comfort.',
+          brands: 'Schneider · RTI · Bticino',
+          href: '#products',
+        },
+        {
+          icon: 'tv',
+          image:
+            'https://images.unsplash.com/photo-1631702825172-a9a848c473ad?w=900&h=675&fit=crop&q=80&auto=format',
+          title: 'Home Theater',
+          description:
+            'Dolby Atmos rooms, 4K projection and multiroom audio — custom-built and installed by our own team, with acoustic treatment and calibration for true cinema-grade sound.',
+          brands: 'Focal · Sony · Denon',
+          href: '#products',
+        },
+        {
+          icon: 'lightbulb',
+          image:
+            'https://images.unsplash.com/photo-1524634126442-357e0eac3c14?w=900&h=675&fit=crop&q=80&auto=format',
+          title: 'Premium Lighting',
+          description:
+            'Designer, architectural and smart-dimmable lighting — specified, supplied and installed to elevate every room, with layered scenes for ambience, task and accent lighting.',
+          brands: 'Wipro · Crompton · Philips',
+          href: '#products',
+        },
+      ],
       padding: 'md',
       background: 'white',
     },
     render: function ConstructionDisciplinesGridRender({
+      id,
+      puck,
+      sectionEyebrow,
       sectionTitle,
       sectionSubtitle,
-      discipline1Icon,
-      discipline1Image,
-      discipline1Title,
-      discipline1Description,
-      discipline1Brands,
-      discipline1Href,
-      discipline2Icon,
-      discipline2Image,
-      discipline2Title,
-      discipline2Description,
-      discipline2Brands,
-      discipline2Href,
-      discipline3Icon,
-      discipline3Image,
-      discipline3Title,
-      discipline3Description,
-      discipline3Brands,
-      discipline3Href,
-      discipline4Icon,
-      discipline4Image,
-      discipline4Title,
-      discipline4Description,
-      discipline4Brands,
-      discipline4Href,
-      discipline5Icon,
-      discipline5Image,
-      discipline5Title,
-      discipline5Description,
-      discipline5Brands,
-      discipline5Href,
-      discipline6Icon,
-      discipline6Image,
-      discipline6Title,
-      discipline6Description,
-      discipline6Brands,
-      discipline6Href,
+      items,
       padding,
       background,
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
-      const disciplines = [
-        {
-          icon: discipline1Icon,
-          image: discipline1Image,
-          title: discipline1Title,
-          description: discipline1Description,
-          brands: discipline1Brands,
-          href: discipline1Href,
-        },
-        {
-          icon: discipline2Icon,
-          image: discipline2Image,
-          title: discipline2Title,
-          description: discipline2Description,
-          brands: discipline2Brands,
-          href: discipline2Href,
-        },
-        {
-          icon: discipline3Icon,
-          image: discipline3Image,
-          title: discipline3Title,
-          description: discipline3Description,
-          brands: discipline3Brands,
-          href: discipline3Href,
-        },
-        {
-          icon: discipline4Icon,
-          image: discipline4Image,
-          title: discipline4Title,
-          description: discipline4Description,
-          brands: discipline4Brands,
-          href: discipline4Href,
-        },
-        {
-          icon: discipline5Icon,
-          image: discipline5Image,
-          title: discipline5Title,
-          description: discipline5Description,
-          brands: discipline5Brands,
-          href: discipline5Href,
-        },
-        {
-          icon: discipline6Icon,
-          image: discipline6Image,
-          title: discipline6Title,
-          description: discipline6Description,
-          brands: discipline6Brands,
-          href: discipline6Href,
-        },
-      ].filter((d) => d.title)
+      const isEditing = puck?.isEditing ?? false
+      const disciplines = (items ?? []).map((d, n) => ({ ...d, n })).filter((d) => d.title)
       return (
         <section
           ref={ref}
@@ -9611,9 +10976,34 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         >
           <div className={wrap}>
             <div className="text-center mb-10">
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">{sectionTitle}</h2>
-              {sectionSubtitle && (
-                <p className="text-slate-600 max-w-2xl mx-auto">{sectionSubtitle}</p>
+              {(isEditing || sectionEyebrow) && (
+                <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                  <InlineEditableText
+                    id={id}
+                    path={['sectionEyebrow']}
+                    value={sectionEyebrow ?? ''}
+                    isEditing={isEditing}
+                  />
+                </p>
+              )}
+              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">
+                <InlineEditableText
+                  id={id}
+                  path={['sectionTitle']}
+                  value={sectionTitle ?? ''}
+                  isEditing={isEditing}
+                />
+              </h2>
+              {(isEditing || sectionSubtitle) && (
+                <p className="text-slate-600 max-w-2xl mx-auto">
+                  <InlineEditableText
+                    id={id}
+                    path={['sectionSubtitle']}
+                    value={sectionSubtitle ?? ''}
+                    isEditing={isEditing}
+                    multiline
+                  />
+                </p>
               )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -9638,31 +11028,696 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       </div>
                     )}
                     <div className="p-5">
-                      <h3 className="font-semibold text-lg text-slate-900 mb-2">{d.title}</h3>
-                      {d.description && (
+                      <h3 className="font-semibold text-lg text-slate-900 mb-2">
+                        <InlineEditableText
+                          id={id}
+                          path={['items', d.n, 'title']}
+                          value={d.title ?? ''}
+                          isEditing={isEditing}
+                        />
+                      </h3>
+                      {(isEditing || d.description) && (
                         <p className="text-slate-600 text-sm leading-relaxed mb-3">
-                          {d.description}
+                          <InlineEditableText
+                            id={id}
+                            path={['items', d.n, 'description']}
+                            value={d.description ?? ''}
+                            isEditing={isEditing}
+                            multiline
+                          />
                         </p>
                       )}
-                      <div className="flex items-center justify-between gap-3">
-                        {d.brands && (
-                          <span className="text-xs font-medium text-slate-400">{d.brands}</span>
-                        )}
-                        {d.href && (
+                      {d.href && (
+                        <div className="border-t border-slate-100 pt-3 mt-1">
                           <a
                             href={d.href}
                             className="text-sm font-semibold text-orange-600 hover:text-orange-700 whitespace-nowrap"
                           >
                             Explore →
                           </a>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   </article>
                 )
               })}
             </div>
           </div>
+        </section>
+      )
+    },
+  },
+
+  // Our Brands — 3 tabs, each a set of "heading|Brand A, Brand B" groups
+  ConstructionOurBrands: {
+    label: 'Our Brands (Tabbed Categories)',
+    fields: {
+      sectionTitle: { type: 'text' },
+      sectionSubtitle: { type: 'textarea' },
+      tab1Label: { type: 'text' },
+      tab1Groups: { type: 'textarea' },
+      tab2Label: { type: 'text' },
+      tab2Groups: { type: 'textarea' },
+      tab3Label: { type: 'text' },
+      tab3Groups: { type: 'textarea' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+    },
+    defaultProps: {
+      sectionTitle: 'Backed by the names you already trust',
+      sectionSubtitle:
+        'Every discipline is built on certified, industry-leading brands — sourced, installed and serviced by our own engineers.',
+      tab1Label: 'Design, Execution & Maintenance',
+      tab1Groups:
+        'Air Conditioning|Blue Star::/seed/subhadra/ourbrands/design-execution-maintenance/Blue_Star_primary_logo.png\n' +
+        'Refrigeration|Blue Star::/seed/subhadra/ourbrands/design-execution-maintenance/Blue_Star_primary_logo.png\n' +
+        'EPABX|Matrix::/seed/subhadra/ourbrands/design-execution-maintenance/Matrix.jpg\n' +
+        'Fire Fighting|Newage::/seed/subhadra/ourbrands/design-execution-maintenance/Newage.jpg;Safex::/seed/subhadra/ourbrands/design-execution-maintenance/Safex.png;Tyco::/seed/subhadra/ourbrands/design-execution-maintenance/tyco_logo_v1.png\n' +
+        'CCTV|CP Plus::/seed/subhadra/ourbrands/design-execution-maintenance/CP%20Plus.jpg;Matrix::/seed/subhadra/ourbrands/design-execution-maintenance/Matrix.jpg;Honeywell::/seed/subhadra/ourbrands/design-execution-maintenance/Honeywell%20CCTV.jpg;Prama::/seed/subhadra/ourbrands/design-execution-maintenance/Prama.jpg\n' +
+        'Access Control|Matrix::/seed/subhadra/ourbrands/design-execution-maintenance/Matrix.jpg;Essl::/seed/subhadra/ourbrands/design-execution-maintenance/esslogo.png\n' +
+        'Public Address System|JBL::/seed/subhadra/ourbrands/design-execution-maintenance/JBL.png;Bosch::/seed/subhadra/ourbrands/design-execution-maintenance/Bosch.jpg;Ahuja::/seed/subhadra/ourbrands/design-execution-maintenance/Ahuja.jpg;Studio Master::/seed/subhadra/ourbrands/design-execution-maintenance/Studio%20Master.jpg;Crown::/seed/subhadra/ourbrands/design-execution-maintenance/Crown.jpg;Sound Craft::/seed/subhadra/ourbrands/design-execution-maintenance/Sound%20Craft.svg\n' +
+        'Fire Alarm|Ravel::/seed/subhadra/ourbrands/design-execution-maintenance/Ravel.png;Honeywell::/seed/subhadra/ourbrands/design-execution-maintenance/hon-honeywell-technologies-logo-full-horizontal.svg;Agni::/seed/subhadra/ourbrands/design-execution-maintenance/Agni.jpg;Bosch::/seed/subhadra/ourbrands/design-execution-maintenance/Bosch.jpg\n' +
+        'Professional Audio|JBL::/seed/subhadra/ourbrands/design-execution-maintenance/JBL.png;Bose::/seed/subhadra/ourbrands/design-execution-maintenance/bose-logo.jpg;Electro-Voice::/seed/subhadra/ourbrands/design-execution-maintenance/Electro-Voice.png;QSC::/seed/subhadra/ourbrands/design-execution-maintenance/qsc.png\n' +
+        'Network Solutions|TP-Link::/seed/subhadra/ourbrands/design-execution-maintenance/TP-Link-Logo.wine.svg;Grandstream::/seed/subhadra/ourbrands/design-execution-maintenance/logo-grandstream-low-web.webp;Netgear::/seed/subhadra/ourbrands/design-execution-maintenance/Net%20Gare%20brand-logo.svg;Netfox::/seed/subhadra/ourbrands/design-execution-maintenance/Netfox-logo-WO-TM.png;D-Link::/seed/subhadra/ourbrands/design-execution-maintenance/D-link.svg;Syrotech::/seed/subhadra/ourbrands/design-execution-maintenance/Syro%20Tech.png;Honeywell::/seed/subhadra/ourbrands/design-execution-maintenance/hon-honeywell-technologies-logo-full-horizontal.svg',
+      tab2Label: 'Electrical Products',
+      tab2Groups:
+        'Fans|Crompton::/seed/subhadra/ourbrands/electrical-products/Crompton.avif\n' +
+        'Designer Fans|WadBros::/seed/subhadra/ourbrands/electrical-products/Wadbros.png\n' +
+        'Exhaust Fans|WadBros::/seed/subhadra/ourbrands/electrical-products/Wadbros.png\n' +
+        'Wires|RR Kabel::/seed/subhadra/ourbrands/electrical-products/RRKabel.jpg\n' +
+        'Fresh Air System|WadBros::/seed/subhadra/ourbrands/electrical-products/Wadbros.png\n' +
+        'MCB, DB & Switchgear|Schneider Electric::/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png\n' +
+        'Lighting|Futura::/seed/subhadra/ourbrands/electrical-products/Futura%20-1.svg;Wipro::/seed/subhadra/ourbrands/electrical-products/Wipro.png;Crompton::/seed/subhadra/ourbrands/electrical-products/Crompton.avif;Philips::/seed/subhadra/ourbrands/electrical-products/lighting-philips-logo.jpg\n' +
+        'Switches|Schneider Electric::/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png;Norisys::/seed/subhadra/ourbrands/electrical-products/Norisys.png;Legrand::/seed/subhadra/ourbrands/electrical-products/Legrand-Logo.png\n' +
+        'Panel Boards|Customized\n' +
+        'Generators|Cummins::/seed/subhadra/ourbrands/electrical-products/Cunnins.png;Jackson::/seed/subhadra/ourbrands/electrical-products/Jakson.png;Mahindra::/seed/subhadra/ourbrands/electrical-products/Mahindra.png\n' +
+        'Load Break Switch|Transgard::/seed/subhadra/ourbrands/electrical-products/Transguard-Logo-white.png;Megawin::/seed/subhadra/ourbrands/electrical-products/Megawin.jpg\n' +
+        'Servo Stabilizer|Powertex::/seed/subhadra/ourbrands/electrical-products/Power%20Tex.jpg;Servomax::/seed/subhadra/ourbrands/electrical-products/Servomax-logo-2048x471.webp\n' +
+        'UPS|APC::/seed/subhadra/ourbrands/electrical-products/LogoAPC.svg;Fuji Electric::/seed/subhadra/ourbrands/electrical-products/Fuji-Electric-Logo.jpg',
+      tab3Label: 'Lifestyle Residential Products',
+      tab3Groups:
+        'Gate Automation|Beninca::/seed/subhadra/ourbrands/lifestyle-residential-products/beninca-logo.png;Veer::/seed/subhadra/ourbrands/lifestyle-residential-products/veer-logo-.png\n' +
+        'Video Door Phone|One Touch::/seed/subhadra/ourbrands/lifestyle-residential-products/One%20Touch_logo.svg;Legrand Bticino::/seed/subhadra/ourbrands/lifestyle-residential-products/BTicino-IME.jpg\n' +
+        'Smart Lock|Yale::/seed/subhadra/ourbrands/lifestyle-residential-products/yale_logo.avif;Onetouch::/seed/subhadra/ourbrands/lifestyle-residential-products/One%20Touch_logo.svg;Ezviz::/seed/subhadra/ourbrands/lifestyle-residential-products/ezviz-logo_.png\n' +
+        'Home Automation — Retrofit|Schneider Electric::/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png;Legrand::/seed/subhadra/ourbrands/electrical-products/Legrand-Logo.png;Toyama::/seed/subhadra/ourbrands/lifestyle-residential-products/Toyama%20logo-768.webp\n' +
+        'Home Automation — Centralized|Schneider Electric::/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png;Legrand::/seed/subhadra/ourbrands/electrical-products/Legrand-Logo.png;Moorgen::/seed/subhadra/ourbrands/lifestyle-residential-products/Moorgen.jpg;Eelectron::/seed/subhadra/ourbrands/lifestyle-residential-products/eelectron.png\n' +
+        'Intrusion Alarm|Ajax::/seed/subhadra/ourbrands/lifestyle-residential-products/Ajax%20logo.jpg;Texecom::/seed/subhadra/ourbrands/lifestyle-residential-products/Texecom.png\n' +
+        'Multi-Room Audio|Xscase::/seed/subhadra/ourbrands/lifestyle-residential-products/Xscase.png;Sonos::/seed/subhadra/ourbrands/lifestyle-residential-products/Sonos.png;RTI::/seed/subhadra/ourbrands/lifestyle-residential-products/RTI.png;Lithe Audio\n' +
+        'Living Room Audio|Devialet::/seed/subhadra/ourbrands/lifestyle-residential-products/devialet-logo.png;Sonos::/seed/subhadra/ourbrands/lifestyle-residential-products/Sonos.png\n' +
+        'Home Theater — Amplifiers|Denon::/seed/subhadra/ourbrands/lifestyle-residential-products/Denon%20logo.svg;Marantz::/seed/subhadra/ourbrands/lifestyle-residential-products/Marantz%20logo.svg;JBL::/seed/subhadra/ourbrands/lifestyle-residential-products/jbl-logo.svg;Integra::/seed/subhadra/ourbrands/lifestyle-residential-products/Integra-Logo-White.svg;Onkyo::/seed/subhadra/ourbrands/lifestyle-residential-products/Logo%20-%20Onkyo%20Med%20Wht.svg;Emotiva::/seed/subhadra/ourbrands/lifestyle-residential-products/emotiva%401x.svg\n' +
+        'Home Theater — Speakers|Focal::/seed/subhadra/ourbrands/lifestyle-residential-products/focal-logo.png;M&K Sound::/seed/subhadra/ourbrands/lifestyle-residential-products/M%26K%20Sound%20logo.png;Artcoustic::/seed/subhadra/ourbrands/lifestyle-residential-products/Artcoustic-logo.webp;JBL::/seed/subhadra/ourbrands/lifestyle-residential-products/jbl-logo.svg;Klipsch::/seed/subhadra/ourbrands/lifestyle-residential-products/Klipsch_script_logo.svg;KEF::/seed/subhadra/ourbrands/lifestyle-residential-products/Kef%20logo.png;Polk::/seed/subhadra/ourbrands/lifestyle-residential-products/Polk-logo.webp;Dali::/seed/subhadra/ourbrands/lifestyle-residential-products/Dali.png\n' +
+        'Home Theater — Subwoofers|Ascendo::/seed/subhadra/ourbrands/lifestyle-residential-products/Acendo%20Sub%20logo.jpeg;SVS::/seed/subhadra/ourbrands/lifestyle-residential-products/SVS%20sub%20logo.png\n' +
+        'Home Theater — Projectors|Optoma::/seed/subhadra/ourbrands/lifestyle-residential-products/Optoma%20logo.jpeg;Sony::/seed/subhadra/ourbrands/lifestyle-residential-products/Sony%20logo.png;JVC::/seed/subhadra/ourbrands/lifestyle-residential-products/jvc_logo.svg;BenQ::/seed/subhadra/ourbrands/lifestyle-residential-products/benq-logo.png;Epson::/seed/subhadra/ourbrands/lifestyle-residential-products/Epson%20logo.png\n' +
+        'Home Theater — Screens|Euroscreen::/seed/subhadra/ourbrands/lifestyle-residential-products/Eurros%20Screen.svg;Liberty Screen::/seed/subhadra/ourbrands/lifestyle-residential-products/Liberty%20-logo.gif;Elite Screen::/seed/subhadra/ourbrands/lifestyle-residential-products/Elite%20screen.jpeg;VU-Tech Screen\n' +
+        'Heat Pump|A. O. Smith::/seed/subhadra/ourbrands/lifestyle-residential-products/Ao%20smith.jpeg',
+      padding: 'md',
+    },
+    render: function ConstructionOurBrandsRender({
+      id,
+      puck,
+      sectionTitle,
+      sectionSubtitle,
+      tab1Label,
+      tab1Groups,
+      tab2Label,
+      tab2Groups,
+      tab3Label,
+      tab3Groups,
+      padding,
+    }) {
+      const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
+      const isEditing = puck?.isEditing ?? false
+      const tabs = [
+        { n: 1, label: tab1Label, groups: tab1Groups },
+        { n: 2, label: tab2Label, groups: tab2Groups },
+        { n: 3, label: tab3Label, groups: tab3Groups },
+      ].filter((t) => t.label)
+      const [activeTab, setActiveTab] = useState(tabs[0]?.label ?? '')
+      const active = tabs.find((t) => t.label === activeTab) ?? tabs[0]
+      const groups = (active?.groups ?? '')
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+          const [heading, brandsRaw] = line.split('|')
+          return {
+            heading: (heading ?? '').trim(),
+            brands: (brandsRaw ?? '')
+              .split(';')
+              .map((b) => b.trim())
+              .filter(Boolean)
+              .map((entry) => {
+                const [name, logo] = entry.split('::')
+                return { name: (name ?? '').trim(), logo: (logo ?? '').trim() }
+              })
+              .filter((b) => b.name),
+          }
+        })
+        .filter((g) => g.heading)
+      return (
+        <section ref={ref} className={`${revealCls} ${padY[padding]} bg-[#eef1f6]`}>
+          <div className={wrap}>
+            <div className="text-center mb-8">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 mb-2">
+                Our Brands
+              </p>
+              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">
+                <InlineEditableText
+                  id={id}
+                  path={['sectionTitle']}
+                  value={sectionTitle ?? ''}
+                  isEditing={isEditing}
+                />
+              </h2>
+              {(isEditing || sectionSubtitle) && (
+                <p className="text-slate-600 max-w-2xl mx-auto">
+                  <InlineEditableText
+                    id={id}
+                    path={['sectionSubtitle']}
+                    value={sectionSubtitle ?? ''}
+                    isEditing={isEditing}
+                    multiline
+                  />
+                </p>
+              )}
+            </div>
+            {tabs.length > 0 && (
+              <div className="flex flex-wrap justify-center gap-3 mb-10">
+                {tabs.map((t) => (
+                  <button
+                    key={t.label}
+                    type="button"
+                    onClick={() => setActiveTab(t.label)}
+                    className={`rounded-full px-5 py-2.5 text-sm font-semibold transition ${
+                      t.label === activeTab
+                        ? 'bg-slate-950 text-white'
+                        : 'bg-white border border-slate-200 text-slate-700 hover:border-slate-400'
+                    }`}
+                  >
+                    <InlineEditableText
+                      id={id}
+                      path={[`tab${t.n}Label`]}
+                      value={t.label ?? ''}
+                      isEditing={isEditing}
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {groups.map((g, i) => (
+                <div key={i} className="rounded-xl bg-white p-5">
+                  <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500 pb-3 mb-4 border-b border-slate-100">
+                    {g.heading}
+                  </h4>
+                  <div className="flex flex-wrap items-center gap-5">
+                    {g.brands.map((b, j) =>
+                      b.logo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          key={j}
+                          src={b.logo}
+                          alt={b.name}
+                          title={b.name}
+                          className="h-6 max-w-[110px] object-contain"
+                        />
+                      ) : (
+                        <span key={j} className="text-xs font-medium text-slate-500">
+                          {b.name}
+                        </span>
+                      )
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // Featured Projects slider — 3 case-study slides, prev/next index switcher
+  ConstructionProjectsSlider: {
+    label: 'Featured Projects Slider',
+    fields: {
+      sectionEyebrow: { type: 'text' },
+      sectionTitle: { type: 'text' },
+      slides: {
+        type: 'array',
+        min: 0,
+        max: 8,
+        getItemSummary: (item) => item.title || 'New project',
+        defaultItemProps: {
+          eyebrow: '',
+          image: '',
+          title: 'New project',
+          description: '',
+          tags: '',
+          linkLabel: '',
+          linkHref: '#',
+          ctaLabel: '',
+          ctaHref: '#quote',
+        },
+        arrayFields: {
+          eyebrow: { type: 'text' },
+          image: imageField('Image'),
+          title: { type: 'text' },
+          description: { type: 'textarea' },
+          tags: { type: 'text' },
+          linkLabel: { type: 'text' },
+          linkHref: { type: 'text' },
+          ctaLabel: { type: 'text' },
+          ctaHref: { type: 'text' },
+        },
+      },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+    },
+    defaultProps: {
+      sectionEyebrow: 'Subhadra Group',
+      sectionTitle: 'Real projects, every sector',
+      slides: [
+        {
+          eyebrow: '09 · Residential',
+          image: '/seed/subhadra/sectors/villa.jpg',
+          title: 'The Amara Residency',
+          description:
+            'Private residences deserve comfort that stays out of sight until you need it. We size central or split AC room-by-room, wire the home from day one, and layer in automation, home theater, multi-room audio and CCTV — all on one interface, backed by one service team for the life of the home.',
+          tags: 'Central & Split AC, Home Automation, Home Theater, CCTV',
+          linkLabel: 'Read the full project scope →',
+          linkHref: '#villa',
+          ctaLabel: 'Get a Similar Quote →',
+          ctaHref: '#quote',
+        },
+        {
+          eyebrow: '02 · Hotel',
+          image: '/seed/subhadra/case-studies/novotel.jpg',
+          title: 'Novotel Visakhapatnam',
+          description:
+            'Advanced HVAC and automation solutions designed and delivered by Subhadra Group for a premium guest experience at Novotel Visakhapatnam — central AC across guest rooms and the banquet hall, electrical and switchgear, fire and life safety, guest-room automation and diesel power backup, all as one coordinated scope, by one team.',
+          tags: 'Central AC, Electrical & Switchgear, Fire & Life Safety, Guest Room Automation, Power Backup',
+          linkLabel: 'Read the full project scope →',
+          linkHref: '#hotel',
+          ctaLabel: 'Get a Similar Quote →',
+          ctaHref: '#quote',
+        },
+        {
+          eyebrow: '01 · Retail',
+          image: '/seed/subhadra/sectors/showrooms.jpg',
+          title: 'CMR Family Shopping Mall',
+          description:
+            'A showroom floor lives or dies on how it feels the moment someone walks in. We size central and VRF AC to footfall and display heat load, fit LED lighting tuned for retail, and layer in CCTV, PA and fire safety — built into the fit-out from day one, not added after.',
+          tags: 'Central & VRF AC, LED Display Lighting, CCTV & Face Recognition, Fire Alarm & Fighting',
+          linkLabel: 'Read the full project scope →',
+          linkHref: '#showrooms',
+          ctaLabel: 'Get a Similar Quote →',
+          ctaHref: '#quote',
+        },
+      ],
+      padding: 'md',
+    },
+    render: function ConstructionProjectsSliderRender({
+      id,
+      puck,
+      sectionEyebrow,
+      sectionTitle,
+      slides: rawSlides,
+      padding,
+    }) {
+      const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
+      const isEditing = puck?.isEditing ?? false
+      // `origIndex` keeps each slide's real position in the stored `slides`
+      // array (before filtering) so InlineEditableText's `path` addresses the
+      // same slide it's visually showing, even when an earlier slide has no
+      // title and gets filtered out.
+      const slides = (rawSlides ?? [])
+        .map((s, origIndex) => ({ ...s, origIndex }))
+        .filter((s) => s.title)
+      const [index, setIndex] = useState(0)
+      const current = slides[index] ?? slides[0]
+      const tags = (current?.tags ?? '')
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean)
+      return (
+        <section ref={ref} className={`${revealCls} ${padY[padding]} bg-slate-50`}>
+          <div className={wrap}>
+            <div className="text-center mb-10">
+              {(isEditing || sectionEyebrow) && (
+                <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                  <InlineEditableText
+                    id={id}
+                    path={['sectionEyebrow']}
+                    value={sectionEyebrow ?? ''}
+                    isEditing={isEditing}
+                  />
+                </p>
+              )}
+              <h2 className="text-2xl md:text-4xl font-bold text-slate-900">
+                <InlineEditableText
+                  id={id}
+                  path={['sectionTitle']}
+                  value={sectionTitle ?? ''}
+                  isEditing={isEditing}
+                />
+              </h2>
+            </div>
+            {current && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center rounded-2xl bg-white border border-slate-200 overflow-hidden">
+                {current.image && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={current.image}
+                    alt={current.title}
+                    className="h-72 md:h-full w-full object-cover"
+                  />
+                )}
+                <div className="p-8">
+                  {(isEditing || current.eyebrow) && (
+                    <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                      <InlineEditableText
+                        id={id}
+                        path={['slides', current.origIndex, 'eyebrow']}
+                        value={current.eyebrow ?? ''}
+                        isEditing={isEditing}
+                      />
+                    </p>
+                  )}
+                  <h3 className="text-2xl font-bold text-slate-900 mb-3">
+                    <InlineEditableText
+                      id={id}
+                      path={['slides', current.origIndex, 'title']}
+                      value={current.title ?? ''}
+                      isEditing={isEditing}
+                    />
+                  </h3>
+                  {(isEditing || current.description) && (
+                    <p className="text-slate-600 text-sm leading-relaxed mb-4">
+                      <InlineEditableText
+                        id={id}
+                        path={['slides', current.origIndex, 'description']}
+                        value={current.description ?? ''}
+                        isEditing={isEditing}
+                        multiline
+                      />
+                    </p>
+                  )}
+                  {tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-5">
+                      {tags.map((t, i) => (
+                        <span
+                          key={i}
+                          className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600"
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex flex-wrap items-center gap-4">
+                    {(isEditing || current.linkLabel) && (
+                      <a
+                        href={current.linkHref}
+                        onClick={isEditing ? (e) => e.preventDefault() : undefined}
+                        className="text-sm font-semibold text-orange-600 hover:text-orange-700"
+                      >
+                        <InlineEditableText
+                          id={id}
+                          path={['slides', current.origIndex, 'linkLabel']}
+                          value={current.linkLabel ?? ''}
+                          isEditing={isEditing}
+                        />
+                      </a>
+                    )}
+                    {(isEditing || current.ctaLabel) && (
+                      <a
+                        href={current.ctaHref}
+                        onClick={isEditing ? (e) => e.preventDefault() : undefined}
+                        className="inline-flex items-center rounded-lg bg-orange-500 px-5 py-2.5 text-white font-semibold hover:bg-orange-600 transition text-sm"
+                      >
+                        <InlineEditableText
+                          id={id}
+                          path={['slides', current.origIndex, 'ctaLabel']}
+                          value={current.ctaLabel ?? ''}
+                          isEditing={isEditing}
+                        />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            {slides.length > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8">
+                {slides.map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    aria-label={`Show project ${i + 1}`}
+                    onClick={() => setIndex(i)}
+                    className={`h-2.5 rounded-full transition ${
+                      i === index ? 'w-6 bg-orange-500' : 'w-2.5 bg-slate-300'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // Testimonials slider — 3 quote slides, portrait + stars + video-testimonial note
+  ConstructionTestimonialsSlider: {
+    label: 'Testimonials Slider',
+    fields: {
+      sectionEyebrow: { type: 'text' },
+      sectionTitle: { type: 'text' },
+      slides: {
+        type: 'array',
+        min: 0,
+        max: 8,
+        getItemSummary: (item) => item.name || 'New testimonial',
+        defaultItemProps: {
+          photo: '',
+          quote: '',
+          name: 'New testimonial',
+          role: '',
+          videoLabel: '',
+        },
+        arrayFields: {
+          photo: imageField('Photo'),
+          quote: { type: 'textarea' },
+          name: { type: 'text' },
+          role: { type: 'text' },
+          videoLabel: { type: 'text' },
+        },
+      },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'radio',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      sectionEyebrow: 'Happy Clients',
+      sectionTitle: 'What our clients say',
+      slides: [
+        {
+          photo:
+            'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=440&h=550&fit=crop&crop=faces&q=80&auto=format',
+          quote:
+            'One team handled our entire HVAC and electrical fit-out — no coordination headaches between contractors, and the AMC support since handover has been excellent.',
+          name: 'Operations Manager',
+          role: 'Hospitality group, Visakhapatnam',
+          videoLabel: 'Video Testimonial',
+        },
+        {
+          photo:
+            'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=440&h=550&fit=crop&crop=faces&q=80&auto=format',
+          quote:
+            'Critical-area AC and fire safety were sized and installed to code without a single delay to our opening date. Their service manager still checks in every quarter.',
+          name: 'Facilities Head',
+          role: 'Healthcare facility, Andhra Pradesh',
+          videoLabel: 'Video Testimonial',
+        },
+        {
+          photo:
+            'https://images.unsplash.com/photo-1607746882042-944635dfe10e?w=440&h=550&fit=crop&crop=faces&q=80&auto=format',
+          quote:
+            "We compared three vendors for our showroom's cooling and CCTV — Subhadra Group was the only one that could design, supply and install everything themselves.",
+          name: 'Retail Operations Lead',
+          role: 'Shopping mall, Visakhapatnam',
+          videoLabel: 'Video Testimonial',
+        },
+      ],
+      padding: 'md',
+      background: 'white',
+    },
+    render: function ConstructionTestimonialsSliderRender({
+      id,
+      puck,
+      sectionEyebrow,
+      sectionTitle,
+      slides: rawSlides,
+      padding,
+      background,
+    }) {
+      const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
+      const isEditing = puck?.isEditing ?? false
+      const slides = (rawSlides ?? [])
+        .map((s, origIndex) => ({ ...s, origIndex }))
+        .filter((s) => s.quote)
+      const [index, setIndex] = useState(0)
+      const [videoOpen, setVideoOpen] = useState(false)
+      const current = slides[index] ?? slides[0]
+      return (
+        <section
+          ref={ref}
+          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={wrap}>
+            <div className="text-center mb-10">
+              {(isEditing || sectionEyebrow) && (
+                <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                  <InlineEditableText
+                    id={id}
+                    path={['sectionEyebrow']}
+                    value={sectionEyebrow ?? ''}
+                    isEditing={isEditing}
+                  />
+                </p>
+              )}
+              <h2 className="text-2xl md:text-4xl font-bold text-slate-900">
+                <InlineEditableText
+                  id={id}
+                  path={['sectionTitle']}
+                  value={sectionTitle ?? ''}
+                  isEditing={isEditing}
+                />
+              </h2>
+            </div>
+            {current && (
+              <div className="flex flex-col items-center gap-8 md:flex-row md:items-start md:gap-12">
+                {current.photo && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={current.photo}
+                    alt={current.name}
+                    className="h-64 w-56 flex-none rounded-2xl object-cover"
+                  />
+                )}
+                <div className="flex-1 text-center md:text-left">
+                  <div className="mb-4 flex justify-center gap-1 text-orange-500 md:justify-start">
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <StarIcon key={i} />
+                    ))}
+                  </div>
+                  <p className="mb-4 text-lg text-slate-700 leading-relaxed">
+                    &quot;
+                    <InlineEditableText
+                      id={id}
+                      path={['slides', current.origIndex, 'quote']}
+                      value={current.quote ?? ''}
+                      isEditing={isEditing}
+                      multiline
+                    />
+                    &quot;
+                  </p>
+                  <p className="font-semibold text-slate-900">
+                    <InlineEditableText
+                      id={id}
+                      path={['slides', current.origIndex, 'name']}
+                      value={current.name ?? ''}
+                      isEditing={isEditing}
+                    />
+                  </p>
+                  {(isEditing || current.role) && (
+                    <p className="mb-4 text-sm text-slate-500">
+                      <InlineEditableText
+                        id={id}
+                        path={['slides', current.origIndex, 'role']}
+                        value={current.role ?? ''}
+                        isEditing={isEditing}
+                      />
+                    </p>
+                  )}
+                  {current.videoLabel && (
+                    <button
+                      type="button"
+                      onClick={() => setVideoOpen(true)}
+                      className="mt-2 inline-flex items-center gap-2 rounded-full border border-orange-500 px-5 py-2.5 text-sm font-semibold text-orange-600 hover:bg-orange-50 transition"
+                    >
+                      ▶ {current.videoLabel}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+            {slides.length > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-10">
+                {slides.map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    aria-label={`Show testimonial ${i + 1}`}
+                    onClick={() => setIndex(i)}
+                    className={`h-2.5 rounded-full transition ${
+                      i === index ? 'w-6 bg-orange-500' : 'w-2.5 bg-slate-300'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+          {videoOpen && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+              onClick={() => setVideoOpen(false)}
+            >
+              <div
+                className="max-w-md rounded-2xl bg-white p-8 text-center"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h4 className="font-semibold text-slate-900 mb-2">{current?.videoLabel}</h4>
+                <p className="text-sm text-slate-600">
+                  We&apos;re recording video testimonials with our clients — check back soon, or ask
+                  us during your showroom visit to hear from them in person.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setVideoOpen(false)}
+                  className="mt-5 inline-flex items-center rounded-lg bg-slate-900 px-5 py-2 text-white text-sm font-semibold hover:bg-slate-800 transition"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          )}
         </section>
       )
     },
@@ -10250,7 +12305,7 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
     ],
   },
   founder: {
-    title: 'Founder',
+    title: 'About',
     components: [
       'ConstructionFounder',
       'ConstructionAboutSplit',
@@ -10271,7 +12326,6 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
     title: 'Blog Posts',
     components: [
       'ConstructionBlogPosts',
-      'ConstructionProjectGallery',
       'ConstructionFeaturedProject',
       'ConstructionNewsTicker',
       'ConstructionCaseStudyGrid',
@@ -10280,6 +12334,7 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
   featuredprojects: {
     title: 'Featured Projects',
     components: [
+      'ConstructionProjectsSlider',
       'ConstructionProjectsGridCards',
       'ConstructionProjectShowcaseSplit',
       'ConstructionProjectMapStrip',
@@ -10288,6 +12343,7 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
   sectors: {
     title: 'Sectors',
     components: [
+      'ConstructionProjectGallery',
       'ConstructionSectorsTabbed',
       'ConstructionSectorsIconRow',
       'ConstructionSectorsSplitFeature',
@@ -10310,11 +12366,13 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
       'ConstructionProductsShowcase',
       'ConstructionWhyChooseUs',
       'ConstructionProcessTimeline',
+      'ConstructionDisciplinesGrid',
     ],
   },
   brands: {
     title: 'Brands',
     components: [
+      'ConstructionOurBrands',
       'ConstructionBrandsLogoGrid',
       'ConstructionBrandsCarousel',
       'ConstructionBrandsSpotlight',
@@ -10333,6 +12391,7 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
     title: 'Testimonials',
     components: [
       'ConstructionTestimonials',
+      'ConstructionTestimonialsSlider',
       'ConstructionTestimonialsCarousel',
       'ConstructionVideoTestimonials',
     ],
