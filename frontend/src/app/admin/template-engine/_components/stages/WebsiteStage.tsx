@@ -112,6 +112,13 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
     | undefined
   const pages = Object.entries(outputRef?.pageKeyToId ?? {})
   const pageCount = outputRef?.pageIds?.length ?? pages.length
+  // Page slugs are deterministic (`te-{runId}-{key}`, set by the website
+  // driver — see template-engine/drivers/index.js's `seedPages`), so the
+  // real public Home URL can be computed here with no extra fetch. Prefers
+  // the "home" key; falls back to whatever page exists first for a run
+  // that genuinely has no Home page.
+  const demoHomeKey = pages.find(([key]) => key === 'home')?.[0] ?? pages[0]?.[0]
+  const demoSiteHref = demoHomeKey ? `/p/te-${run.id}-${demoHomeKey}` : null
   // Older runs (before navigationPages existed) have no pageKeyToTitle —
   // every key was its title lowercased then, so capitalizing the key alone
   // still matches ('home' -> 'Home').
@@ -257,16 +264,14 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
                       : `${pageCount} page${pageCount !== 1 ? 's' : ''} assembled in the page-builder engine. Open a page to edit it, or view all pages to step through the whole site.`}
                   </p>
                 </div>
-                <Button size="sm" asChild>
-                  <a
-                    href={`/admin/template-engine/site?ids=${pages.map(([, id]) => id).join(',')}&projectId=${run.projectId}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <ExternalLink className="mr-2 h-3.5 w-3.5" />
-                    View all pages
-                  </a>
-                </Button>
+                {demoSiteHref && (
+                  <Button size="sm" asChild>
+                    <a href={demoSiteHref} target="_blank" rel="noreferrer">
+                      <ExternalLink className="mr-2 h-3.5 w-3.5" />
+                      Demo all pages
+                    </a>
+                  </Button>
+                )}
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {pages.map(([key, id]) => (
