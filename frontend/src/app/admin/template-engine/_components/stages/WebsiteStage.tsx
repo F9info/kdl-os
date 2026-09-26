@@ -280,21 +280,17 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
             />
           ) : pageCount > 0 ? (
             <div className="space-y-3">
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <LayoutSettingsPanel
-                  projectId={run.projectId}
-                  editHref={`/admin/template-engine/projects/${run.projectId}/website/layout`}
-                />
-                <DetailPageLayoutsPanel
-                  types={[
-                    {
-                      label: 'Sector detail',
-                      count: sectorPages?.length ?? 0,
-                      href: `/admin/sectors?projectId=${run.projectId}`,
-                    },
-                  ]}
-                />
-              </div>
+              <LayoutSettingsPanel
+                projectId={run.projectId}
+                editHref={`/admin/template-engine/projects/${run.projectId}/website/layout`}
+                detailPageTypes={[
+                  {
+                    label: 'Sector detail',
+                    count: sectorPages?.length ?? 0,
+                    href: `/admin/sectors?projectId=${run.projectId}`,
+                  },
+                ]}
+              />
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
                   <h3 className="text-base font-semibold">Web app · Pages</h3>
@@ -1048,7 +1044,21 @@ function FontSettingsStep({
   )
 }
 
-function LayoutSettingsPanel({ projectId, editHref }: { projectId: string; editHref: string }) {
+// `detailPageTypes` — content types with many real entries (Sectors today; Services/Products/
+// Portfolio/Blog/Jobs once those get their own module) each get one button here, not one card
+// per entry — the entries themselves are managed on their own admin screen (e.g. /admin/sectors).
+// A type with zero entries is hidden rather than shown as a dead/empty button.
+function LayoutSettingsPanel({
+  projectId,
+  editHref,
+  detailPageTypes = [],
+}: {
+  projectId: string
+  editHref: string
+  detailPageTypes?: { label: string; count: number; href: string }[]
+}) {
+  const availableDetailTypes = detailPageTypes.filter((t) => t.count > 0)
+
   return (
     <div className="flex flex-col items-center gap-3 rounded-lg border bg-card p-4 text-center">
       <div>
@@ -1060,40 +1070,14 @@ function LayoutSettingsPanel({ projectId, editHref }: { projectId: string; editH
       <Button size="sm" asChild>
         <a href={editHref}>Create/Edit layout</a>
       </Button>
+      {availableDetailTypes.map((t) => (
+        <Button key={t.label} size="sm" variant="outline" asChild>
+          <a href={t.href}>
+            {t.label} ({t.count})
+          </a>
+        </Button>
+      ))}
       <WebsiteLayoutPreview projectId={projectId} />
-    </div>
-  )
-}
-
-// Content types with many real entries (Sectors today; Services/Products/Portfolio/Blog/Jobs
-// once those get their own module) each get ONE button here, not one card per entry — the
-// entries themselves are managed on their own admin screen (e.g. /admin/sectors). A type with
-// zero entries is hidden rather than shown as a dead/empty button.
-function DetailPageLayoutsPanel({
-  types,
-}: {
-  types: { label: string; count: number; href: string }[]
-}) {
-  const available = types.filter((t) => t.count > 0)
-  if (available.length === 0) return null
-
-  return (
-    <div className="flex flex-1 flex-col gap-3 rounded-lg border bg-card p-4 text-center">
-      <div>
-        <h3 className="text-sm font-semibold">Detail page layouts</h3>
-        <p className="text-xs text-muted-foreground">
-          Content types with many entries — manage each entry&apos;s own detail page here.
-        </p>
-      </div>
-      <div className="flex flex-wrap justify-center gap-2">
-        {available.map((t) => (
-          <Button key={t.label} size="sm" variant="outline" asChild>
-            <a href={t.href}>
-              {t.label} ({t.count})
-            </a>
-          </Button>
-        ))}
-      </div>
     </div>
   )
 }
