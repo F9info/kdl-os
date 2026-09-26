@@ -111,6 +111,20 @@ Recent per-issue detail is in the rolling changelog below; full history in
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+- **2026-09-26 — Web app · Pages wizard grid now lists all 11 real Sector Detail pages**: stray
+  recurring "Sector Detail" test-debris page/nav-item cleaned up (again — 3rd occurrence, root
+  cause is the Navigation wizard's custom-add field always auto-scaffolding a real page). Added a
+  `sectorPages` query to the wizard's Pages grid so all 11 real Sector Detail pages (Showrooms,
+  Hotel, Hospital, ...) show as their own orange-badged cards next to the purple Page cards, each
+  linking to the same real per-sector editor `/admin/sectors` already used — placement chosen by
+  the user via an `AskUserQuestion` clarification. Also fixed `/admin/sectors` (+Team/FAQ/Case-
+  Studies/Menus) dead-ending on "Add ?projectId= to the URL" when opened from the sidebar (new
+  shared `useDefaultProjectId()` hook), a hardcoded transparent/lightText header bug causing
+  white-on-white nav on non-hero pages, the Navigation step never applying the chosen Header/
+  Footer layout at all, nav-created pages always getting a dead `url: null` link, and a missing
+  "Saving…" indicator that made in-flight nav edits look lost on a mistimed refresh. See
+  `.agents/HANDOFF.md` same date.
+
 - **2026-09-26 — Scalable sector detail-page architecture (`/sectors/[slug]`)**: `Sector.
   detail_page_id` links each sector to an auto-created `BuilderPage` (zero manual page-creation
   per sector, works for 5 or 100+). New dynamic route serves any sector by slug, reusing the

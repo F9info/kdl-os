@@ -1,3 +1,41 @@
+## 2026-09-26 — Web app · Pages wizard grid now lists all 11 real Sector Detail pages
+
+User's complaint: a stray, empty, recurring "Sector Detail" card kept showing in the Navigation
+wizard's "Web app · Pages" grid (test debris — typing a label into the wizard's custom-add field
+both creates a real `MenuItem` and auto-scaffolds a real generic `BuilderPage`, 3rd time this
+class of bug hit this session), while the 11 *real* Sector Detail pages (Showrooms, Hotel, ...)
+built earlier this session were only reachable from the separate `/admin/sectors` screen, not
+from this wizard at all — "your flow and my flow is not match." Used `AskUserQuestion` to resolve
+placement ambiguity; user chose **"list them in the Pages grid itself."**
+
+Deleted the stray menu item + page (again). Added a `sectorPages` query to `WebsiteStage.tsx`
+(`GET /api/sectors?project_id=`) and rendered each sector with a `detail_page_id` as its own
+orange-badged "Sector" card in the same grid as the existing purple "Page" cards — same Edit
+button pattern, linking to the identical per-sector editor `/admin/sectors` already uses (no
+new/duplicate editor). Grid header now reads e.g. "7 pages + 11 sector detail pages assembled...".
+Verified via direct DB query: all 11 sectors have a non-null `detail_page_id` (Builder, Convention
+Center, Educational Institute, Gated Communities, Government, Hospital, Hotel, Industry, Premium
+Flats, Showrooms, Villa) — all 11 render as cards.
+
+**Also fixed this session** (same investigation arc, see prior entries below for the sector
+architecture itself): `/admin/sectors` dead-ended with "Add ?projectId=... to the URL" when
+opened from the sidebar directly — same bug independently confirmed on Team/FAQ/Case-Studies/
+Menus. New shared `useDefaultProjectId()` hook (`frontend/src/hooks/useDefaultProjectId.ts`)
+resolves `?projectId=` from the URL, else falls back to the project with `is_default: true` —
+applied to all 5 screens. `/admin/sectors`'s action buttons redone (primary "Edit page" button,
+gear-icon "Settings" for base fields) after user confusion between the real sector editor
+(working) and the unrelated stray page above. Root-caused and fixed 3 more real bugs found while
+chasing user reports: `layoutHeaderProps()` hardcoded `transparent:true, lightText:true` for
+every Layout-picker-assembled page (white-on-white nav on any page without a dark hero) —
+defaulted both to `false`; `runWebsiteAssembly()` (Navigation step's own advance call) never sent
+the `layout` field at all, so pages touched only via Navigation never got the chosen Header/
+Footer design applied; `createItemMutation` always sent `url: null` for auto-created nav pages
+even though a real page always gets created — added `slugifyLikeBackend()` so nav links resolve.
+"Add a page then refresh and it's gone" reproduced as **zero saving-state UI**, not silent data
+loss (an add genuinely round-trips, but a refresh mid-flight loses it, invisibly) — added an
+`isSavingNav` flag driving a "Saving…/Live" badge, disabled controls during save, and a
+`beforeunload` guard.
+
 ## 2026-09-26 — Scalable sector detail-page architecture: /sectors/[slug], auto-provisioned pages
 
 User's ask: 5 sectors today, maybe 100+ later — sector detail pages (e.g. `sector-hotel.html`)
@@ -296,92 +334,3 @@ Added a `variant` field to `ConstructionMissionVision` (1–4), same picker UX a
 Slider/Inner Banner: Design 1 is the existing alternating-badge-card layout, untouched and kept
 as `Current`; 2 (side-by-side cards), 3 (centered minimal), 4 (dark split band) are new. Verified
 in the actual picker popup — all 4 render distinctly, Design 1 correctly marked Current.
-
-## 2026-09-26 — About page fully rebuilt with real content (Phase 1 of the full-site KDL-dynamic rebuild)
-
-User's ask: rebuild the whole approved Subhadra Group HTML mockup (`after-delete-folder/`) inside
-KDL Kit's dynamic architecture — header, home page, every inner page, fields, theme engine,
-palette, website settings/layout, section builder, and a review of the whole
-Settings→Fields→Theme→Intake→Palette→Website Settings→Layout→Section Builder→Inserts→Rendering
-flow. That's 8+ subsystems in one ask — too large for one pass, so with the user's confirmation
-this session did **Phase 1 only: the About page**, chosen because it's the smallest slice that
-proves the approach end-to-end before repeating it for Contact/Sectors/Services/work-*.
-
-**Before this session**, every inner page (About included) was still generic scaffold content —
-`NavBar` (general pack, not the real header) + generic `Hero` "Welcome" copy + `Text` +
-`ConstructionSafetyRecord` + `Footer`. Confirmed via direct DB read, not assumed.
-
-**Section-by-section map against the real `about.html` body:**
-
-| Section | Outcome |
-| --- | --- |
-| Header | swapped generic `NavBar` for the real `ConstructionHeader` (variant 1) — same instance data as Home |
-| Page banner | `ConstructionInnerBanner` (this session, earlier) |
-| "Who we are" | `ConstructionAboutSplit` — real 3-paragraph copy, real photo/badge (already-seeded) |
-| Stats band | `ConstructionStatsStrip` — real values (30+/15/1 Lakh+/24×7), was generic ₹500 Cr+ placeholder |
-| Founder Profile | **new** `ConstructionFounderProfile` — 2-person alternating photo/bio cards; no existing component fit (1-person-quote and 3-card-grid don't match) |
-| "One shop for all industries" | **new** `ConstructionSectorsRadial` — center logo + numbered 11-sector chevron list; nothing like it existed |
-| Mission & Vision | **new** `ConstructionMissionVision` — 2 alternating icon-badge cards; nothing like it existed |
-| "Our Journey" | extended `ConstructionTimelineHistory` from 4 text-only entries to 7 entries + a per-entry image field (real 1996→Today milestones, was 4 generic placeholder ones) |
-| Lead-form CTA | reused `ConstructionLeadFormFAQ` as-is, `faqs: []` (about.html has no FAQ there) |
-| Clients grid | reused `ConstructionClientsGrid`, copied Home's real 39-client instance verbatim |
-| Footer | swapped in the real `ConstructionFooter` (variant 1) — same instance as Home |
-
-New images seeded: `founder.png`, `products/director.png`, `inside.webp`, `brand/shop.webp`
-(the last already added for Inner Banner).
-
-**Real bug found and fixed along the way**: this app's public pages are served at generated
-`/p/te-<runid>-<slug>` paths, not clean `/about`/`/sectors`/`/` routes. `ConstructionInnerBanner`
-hardcoded its breadcrumb's "Home" link to `href="/"` — 404 on every real page. Added a
-`homeHref` field (defaults to `/` so nothing already published silently changes) and set it to
-the real Home slug on this page's instance. Also caught the same class of mistake in my own new
-content (`ConstructionSectorsRadial`'s sector links, `ConstructionAboutSplit`'s brochureHref) —
-fixed those to the real slugs too before final publish.
-
-**Content was written directly via `PUT /page-builder/:id`**, not by clicking through the editor
-— faster for ~150 field values across 12 blocks. Caveat for next agent, **verified empirically,
-not just assumed** (published a throwaway block with only `{id}` on a scratch Untitled page and
-loaded the real public `/p/<slug>` route — body was completely empty, confirmed via
-Playwright's `page.inner_text('body')` returning `''`, then also traced the actual mechanism in
-`node_modules/@puckeditor/core/dist/index.js`: the public render path is `Render` →
-`DropZoneRenderItem` → `useSlots`/`useFieldTransforms`, which passes `item.props` straight
-through with **no `defaultProps` merge anywhere in that chain**):
-
-> **`defaultProps` only merge into what's missing when a block is inserted through the editor UI
-> (`insertBlockComponent` in `insert-block-modal.tsx`) or viewed live inside `<Puck>`'s own
-> editing canvas** (that path — `componentConfig.defaultProps` spread under `item.props`, tagged
-> `editMode: true // DEPRECATED` in the bundle — is editor-only). **The public `<Render>` output
-> at `/p/<slug>` never applies a component's `defaultProps` to already-stored content** — any
-> field missing from a block's saved `props` renders as empty/undefined there, full stop.
->
-> **This corrects the 2026-09-24 entry below** ("ConstructionHero Content tab..." /
-> Testimonials Slider `sectionEyebrow` note) — that note's "confirmed Puck merges a component's
-> `defaultProps` into whatever's missing... at render time" was only ever true for the *editor
-> canvas*, generalized too far. Any already-published page relying on a field added to a
-> component *after* that page was last saved will show that field blank on the real public site,
-> even though it looked fine in the editor. If a component gains a new field, re-save (publish)
-> every page that already uses it, don't assume it back-fills.
-
-Caught the raw-write version of this mistake once already this session (an empty
-`ConstructionClientsGrid` block, `{id}` only) before publishing — copied Home's real instance
-verbatim to fix it.
-
-**Verified live** (not just `pnpm build`): full Playwright screenshot pass through the entire
-published `/p/te-...-about` page (scrolled top to bottom) AND the real Puck editor canvas for
-this page — both match, no console errors beyond a known pre-existing `429` from this session's
-heavy repeated test-login traffic (see `dev-rate-limit-friction` memory: `docker compose restart
-backend` if it starts blocking real logins) and an unrelated font-CSP warning.
-
-**Still open from the original ask** (deliberately deferred, not forgotten):
-- Contact, Sectors, Services, work-*, sector-* pages — still generic scaffold content, same
-  treatment needed as About.
-- Settings→Fields audit (what's missing/duplicated).
-- Theme Engine / Palette configuration pass (currently Tailwind utility classes hardcoded per
-  component, not driven by theme tokens).
-- Website Settings / Website Layout review.
-- `ConstructionMissionVision`'s icon badge is a plain lucide icon circle, not the reference's
-  decorative ring SVG (dashed dots + partial arc) — flagged as a known simplification in the
-  component's own comment.
-- `ConstructionFounderProfile`'s "Read More" links point to `#` — no leadership/bio page exists
-  yet in this project to link to.
-
