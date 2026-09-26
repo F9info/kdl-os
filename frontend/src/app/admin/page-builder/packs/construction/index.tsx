@@ -815,6 +815,8 @@ type ConstructionProps = {
     sectionIntroLinkLabel: string
     sectionIntroLinkHref: string
     faqs: { question: string; answer: string }[]
+    checklistItems: string
+    trustStats: { number: string; label: string }[]
     formHeading: string
     formSubtext: string
     interestOptions: string
@@ -1270,6 +1272,22 @@ type ConstructionProps = {
     otherSector2: string
     otherSector3: string
     otherSector4: string
+    padding: 'sm' | 'md' | 'lg'
+  }
+  ConstructionSectorDetailList: {
+    variant: '1' | '2' | '3' | '4'
+    sectionEyebrow: string
+    sectionTitle: string
+    sectionSubtitle: string
+    sectors: {
+      eyebrow: string
+      name: string
+      category: string
+      description: string
+      image: string
+      ctaLabel: string
+      ctaHref: string
+    }[]
     padding: 'sm' | 'md' | 'lg'
   }
   ConstructionBrandsLogoGrid: {
@@ -1864,6 +1882,30 @@ function useScrollReveal<T extends HTMLElement>() {
     ref,
     revealCls: `${REVEAL_BASE} ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`,
   }
+}
+
+// Per-item scroll reveal for a long, stacked list (used by
+// ConstructionSectorDetailList) — `useScrollReveal`'s 0.15 intersection
+// threshold is checked against the OBSERVED ELEMENT's own height, so a
+// single ref wrapping an entire tall list (several thousand px, well over
+// any viewport) can never reach 15% visible and never reveals at all.
+// Reveals each row independently instead, same as the approved reference's
+// own per-`<article>` `data-aos="fade-up"`.
+function SectorRevealItem({
+  id,
+  className,
+  children,
+}: {
+  id?: string
+  className?: string
+  children: React.ReactNode
+}) {
+  const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
+  return (
+    <div ref={ref} id={id} className={`${revealCls} ${className ?? ''}`}>
+      {children}
+    </div>
+  )
 }
 
 // ── components ────────────────────────────────────────────────────────────────
@@ -7792,6 +7834,18 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           answer: { type: 'textarea' },
         },
       },
+      checklistItems: { type: 'textarea' },
+      trustStats: {
+        type: 'array',
+        min: 0,
+        max: 6,
+        getItemSummary: (item) => item.label || 'Stat',
+        defaultItemProps: { number: '', label: '' },
+        arrayFields: {
+          number: { type: 'text' },
+          label: { type: 'text' },
+        },
+      },
       formHeading: { type: 'text' },
       formSubtext: { type: 'textarea' },
       interestOptions: { type: 'textarea' },
@@ -7843,6 +7897,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             '24×7 support with a dedicated service manager for every discipline we install in — from AMC contracts to emergency call-outs.',
         },
       ],
+      checklistItems: '',
+      trustStats: [],
       formHeading: 'Request a free quote',
       formSubtext: "Fill this in and we'll call you back.",
       interestOptions:
@@ -7859,6 +7915,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       sectionIntroLinkLabel,
       sectionIntroLinkHref,
       faqs: faqsRaw,
+      checklistItems,
+      trustStats,
       formHeading,
       formSubtext,
       interestOptions,
@@ -7929,6 +7987,42 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   </a>{' '}
                   and our engineers will help directly.
                 </p>
+              )}
+              {checklistItems?.trim() && (
+                <ul className="mb-6 space-y-2">
+                  {checklistItems
+                    .split('\n')
+                    .map((t) => t.trim())
+                    .filter(Boolean)
+                    .map((t, i) => (
+                      <li key={i} className="flex items-center gap-2.5 text-slate-300">
+                        <svg
+                          className="h-4 w-4 shrink-0 text-orange-500"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        {t}
+                      </li>
+                    ))}
+                </ul>
+              )}
+              {trustStats && trustStats.filter((s) => s.number || s.label).length > 0 && (
+                <div className="mb-8 flex flex-wrap gap-6 border-t border-slate-800 pt-6">
+                  {trustStats
+                    .filter((s) => s.number || s.label)
+                    .map((s, i) => (
+                      <div key={i}>
+                        <b className="block text-2xl font-bold text-white">{s.number}</b>
+                        <span className="text-xs text-slate-400">{s.label}</span>
+                      </div>
+                    ))}
+                </div>
               )}
               <div className="flex flex-col">
                 {faqs.map((f, i) => {
@@ -12891,6 +12985,371 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     },
   },
 
+  // Sector Detail List — the Sectors page's main body (approved sectors.html
+  // clone as Design 1: jump-pills + 11 alternating image/text cards). Sectors
+  // module (backend/src/modules/sectors/) is the source of truth once a
+  // project has any real sectors — `sectors` below is only the generic
+  // fallback for a fresh KDL install with none yet.
+  ConstructionSectorDetailList: {
+    label: 'Sector Detail List',
+    fields: {
+      variant: {
+        type: 'select',
+        options: [
+          { label: 'Design 1 — Alternating detail rows (reference)', value: '1' },
+          { label: 'Design 2 — Card grid', value: '2' },
+          { label: 'Design 3 — Centered numbered list', value: '3' },
+          { label: 'Design 4 — Dark alternating bands', value: '4' },
+        ],
+      },
+      sectionEyebrow: { type: 'text' },
+      sectionTitle: { type: 'text' },
+      sectionSubtitle: { type: 'textarea' },
+      sectors: {
+        type: 'array',
+        getItemSummary: (item) => item.name || 'Sector',
+        arrayFields: {
+          eyebrow: { type: 'text' },
+          name: { type: 'text' },
+          category: { type: 'text' },
+          description: { type: 'textarea' },
+          image: imageField('Image'),
+          ctaLabel: { type: 'text' },
+          ctaHref: { type: 'text' },
+        },
+        defaultItemProps: {
+          eyebrow: '',
+          name: 'New Sector',
+          category: '',
+          description: '',
+          image: '',
+          ctaLabel: 'Read more →',
+          ctaHref: '#',
+        },
+      },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+    },
+    defaultProps: {
+      variant: '1',
+      sectionEyebrow: '',
+      sectionTitle: '',
+      sectionSubtitle: '',
+      sectors: [
+        {
+          eyebrow: '01 · Space',
+          name: 'Sector One',
+          category: 'Space',
+          description:
+            'A short description of what this sector needs and how the team delivers it.\n\nA second paragraph with more detail on scope and systems covered.',
+          image:
+            'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1000&h=750&fit=crop&auto=format',
+          ctaLabel: 'Read more →',
+          ctaHref: '#',
+        },
+        {
+          eyebrow: '02 · Space',
+          name: 'Sector Two',
+          category: 'Space',
+          description:
+            'A short description of what this sector needs and how the team delivers it.\n\nA second paragraph with more detail on scope and systems covered.',
+          image:
+            'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1000&h=750&fit=crop&auto=format',
+          ctaLabel: 'Read more →',
+          ctaHref: '#',
+        },
+      ],
+      padding: 'md',
+    },
+    render: function ConstructionSectorDetailListRender({
+      id,
+      puck,
+      variant,
+      sectionEyebrow,
+      sectionTitle,
+      sectionSubtitle,
+      sectors: rawSectors,
+      padding,
+    }) {
+      const projectId = puck?.metadata?.projectId as string | undefined
+      const { data: dbSectors } = useQuery({
+        queryKey: ['sectors-public', projectId],
+        queryFn: () =>
+          fetch(`/api/sectors/public${projectId ? `?project_id=${projectId}` : ''}`)
+            .then((r) => r.json())
+            .then(
+              (json) =>
+                (json?.data?.items ?? []) as {
+                  slug: string
+                  eyebrow: string | null
+                  name: string
+                  category: string | null
+                  description: string | null
+                  image: string | null
+                  cta_label: string | null
+                  cta_href: string | null
+                }[]
+            ),
+        enabled: Boolean(projectId),
+      })
+      const usingDb = Boolean(dbSectors && dbSectors.length > 0)
+      const list = (
+        usingDb
+          ? dbSectors!.map((s) => ({
+              slug: s.slug,
+              eyebrow: s.eyebrow ?? '',
+              name: s.name,
+              category: s.category ?? '',
+              description: s.description ?? '',
+              image: s.image ?? '',
+              ctaLabel: s.cta_label ?? '',
+              ctaHref: s.cta_href ?? '#',
+            }))
+          : (rawSectors ?? []).map((s) => ({
+              ...s,
+              slug: s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            }))
+      ).filter((s) => s.name)
+
+      if (list.length === 0) return <></>
+
+      const sectionHead = (sectionEyebrow || sectionTitle || sectionSubtitle) && (
+        <div className="mb-10 max-w-2xl">
+          {sectionEyebrow && (
+            <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+              {sectionEyebrow}
+            </p>
+          )}
+          {sectionTitle && (
+            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">{sectionTitle}</h2>
+          )}
+          {sectionSubtitle && <p className="text-slate-600 leading-relaxed">{sectionSubtitle}</p>}
+        </div>
+      )
+
+      if (variant === '2') {
+        return (
+          <section className={`${padY[padding]} bg-white`}>
+            <div className={wrap}>
+              {sectionHead}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {list.map((s) => (
+                  <SectorRevealItem
+                    key={s.slug}
+                    id={s.slug}
+                    className="rounded-2xl border border-slate-200 overflow-hidden bg-white flex flex-col"
+                  >
+                    {s.image && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={s.image} alt={s.name} className="h-44 w-full object-cover" />
+                    )}
+                    <div className="p-5 flex flex-col flex-1">
+                      {s.eyebrow && (
+                        <p className="text-orange-600 text-xs font-semibold uppercase tracking-wide mb-1.5">
+                          {s.eyebrow}
+                        </p>
+                      )}
+                      <h3 className="text-lg font-bold text-slate-900 mb-2">{s.name}</h3>
+                      {s.description && (
+                        <p className="text-sm text-slate-600 leading-relaxed mb-4 line-clamp-3 flex-1">
+                          {s.description.split('\n\n')[0]}
+                        </p>
+                      )}
+                      {s.ctaLabel && (
+                        <a
+                          href={s.ctaHref || '#'}
+                          className="text-sm font-semibold text-orange-600 hover:text-orange-700"
+                        >
+                          {s.ctaLabel}
+                        </a>
+                      )}
+                    </div>
+                  </SectorRevealItem>
+                ))}
+              </div>
+            </div>
+          </section>
+        )
+      }
+
+      if (variant === '3') {
+        return (
+          <section className={`${padY[padding]} bg-slate-50`}>
+            <div className={`${wrap} max-w-3xl`}>
+              {sectionHead}
+              <div className="space-y-10">
+                {list.map((s, i) => (
+                  <SectorRevealItem key={s.slug} id={s.slug} className="flex gap-5">
+                    <span className="shrink-0 h-9 w-9 rounded-full bg-slate-900 text-white text-sm font-bold flex items-center justify-center">
+                      {i + 1}
+                    </span>
+                    <div>
+                      {s.eyebrow && (
+                        <p className="text-orange-600 text-xs font-semibold uppercase tracking-wide mb-1">
+                          {s.eyebrow}
+                        </p>
+                      )}
+                      <h3 className="text-xl font-bold text-slate-900 mb-2">{s.name}</h3>
+                      {s.description
+                        .split('\n\n')
+                        .filter(Boolean)
+                        .map((p, pi) => (
+                          <p key={pi} className="text-slate-600 leading-relaxed mb-2 last:mb-0">
+                            {p}
+                          </p>
+                        ))}
+                      {s.ctaLabel && (
+                        <a
+                          href={s.ctaHref || '#'}
+                          className="inline-block mt-3 text-sm font-semibold text-orange-600 hover:text-orange-700"
+                        >
+                          {s.ctaLabel}
+                        </a>
+                      )}
+                    </div>
+                  </SectorRevealItem>
+                ))}
+              </div>
+            </div>
+          </section>
+        )
+      }
+
+      if (variant === '4') {
+        return (
+          <section className={padY[padding]}>
+            {sectionHead && <div className={wrap}>{sectionHead}</div>}
+            <div className="space-y-0">
+              {list.map((s, i) => {
+                const dark = i % 2 === 1
+                return (
+                  <SectorRevealItem
+                    key={s.slug}
+                    id={s.slug}
+                    className={dark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}
+                  >
+                    <div
+                      className={`${wrap} py-14 grid grid-cols-1 md:grid-cols-2 gap-10 items-center`}
+                    >
+                      {s.image && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={s.image}
+                          alt={s.name}
+                          className="rounded-2xl w-full h-72 object-cover"
+                        />
+                      )}
+                      <div>
+                        {s.eyebrow && (
+                          <p
+                            className={`text-sm font-semibold uppercase tracking-wide mb-2 ${dark ? 'text-orange-400' : 'text-orange-600'}`}
+                          >
+                            {s.eyebrow}
+                          </p>
+                        )}
+                        <h3 className="text-2xl font-bold mb-3">{s.name}</h3>
+                        {s.description
+                          .split('\n\n')
+                          .filter(Boolean)
+                          .map((p, pi) => (
+                            <p
+                              key={pi}
+                              className={`leading-relaxed mb-3 last:mb-0 ${dark ? 'text-slate-300' : 'text-slate-600'}`}
+                            >
+                              {p}
+                            </p>
+                          ))}
+                        {s.ctaLabel && (
+                          <a
+                            href={s.ctaHref || '#'}
+                            className={`inline-block mt-2 text-sm font-semibold ${dark ? 'text-orange-400 hover:text-orange-300' : 'text-orange-600 hover:text-orange-700'}`}
+                          >
+                            {s.ctaLabel}
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </SectorRevealItem>
+                )
+              })}
+            </div>
+          </section>
+        )
+      }
+
+      // Design 1 (default) — exact clone of the approved sectors.html:
+      // jump-pills row + alternating full image/text article rows.
+      return (
+        <section className={`${padY[padding]} bg-white`}>
+          <div className={wrap}>
+            {sectionHead}
+            <div className="flex flex-wrap gap-2 mb-12">
+              {list.map((s) => (
+                <a
+                  key={s.slug}
+                  href={`#${s.slug}`}
+                  className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-orange-500 hover:text-orange-600 transition"
+                >
+                  {s.name}
+                </a>
+              ))}
+            </div>
+            <div className="space-y-16">
+              {list.map((s, i) => (
+                <SectorRevealItem key={s.slug} id={s.slug}>
+                  <div
+                    data-id={id}
+                    className={`grid grid-cols-1 md:grid-cols-2 gap-8 items-center ${i % 2 === 1 ? 'md:[direction:rtl]' : ''}`}
+                  >
+                    {s.image && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={s.image}
+                        alt={s.name}
+                        loading="lazy"
+                        className="rounded-2xl w-full h-72 md:h-80 object-cover md:[direction:ltr]"
+                      />
+                    )}
+                    <div className="md:[direction:ltr]">
+                      {s.eyebrow && (
+                        <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                          {s.eyebrow}
+                        </p>
+                      )}
+                      <h2 className="text-2xl font-bold text-slate-900 mb-3">{s.name}</h2>
+                      {s.description
+                        .split('\n\n')
+                        .filter(Boolean)
+                        .map((p, pi) => (
+                          <p key={pi} className="text-slate-600 leading-relaxed mb-3 last:mb-0">
+                            {p}
+                          </p>
+                        ))}
+                      {s.ctaLabel && (
+                        <a
+                          href={s.ctaHref || '#'}
+                          className="inline-block mt-3 rounded-lg bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 transition"
+                        >
+                          {s.ctaLabel}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </SectorRevealItem>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
   // Brands — 6-logo grid using real logo images (imageField), distinct
   // from ConstructionOurBrands' text-name tabbed groups.
   ConstructionBrandsLogoGrid: {
@@ -13218,6 +13677,7 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
       'ConstructionSectorsIconRow',
       'ConstructionSectorsSplitFeature',
       'ConstructionSectorsRadial',
+      'ConstructionSectorDetailList',
     ],
   },
   team: {
