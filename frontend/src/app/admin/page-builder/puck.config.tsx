@@ -55,6 +55,7 @@ const CATEGORY_ORDER = [
   'header',
   'hero',
   'welcome',
+  'innerbanner',
   'taglinestrip',
   'founder',
   'counters',
