@@ -112,6 +112,16 @@ Recent per-issue detail is in the rolling changelog below; full history in
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+- **2026-09-26 — Team module: first real content module** (schema/migration/admin
+  CRUD/Puck data-binding), proving the module→schema→migration→model→seeder→service→
+  admin→frontend pattern the user asked for. New `TeamMember` model + migration, full CRUD
+  at `/api/team` (+ unauthenticated `/api/team/public`), `/admin/team` screen, seeded with
+  the 2 real Subhadra founders. `ConstructionFounderProfile` can now bind to a `TeamMember`
+  by id instead of copying content into block props — verified end-to-end: edited a bio via
+  the Team API only, the public page picked it up with zero republish. FAQ/Blog/Gallery/
+  Projects modules and the Settings→Fields migration for Vision/Mission/taglines are still
+  open — Team was phase 1 by the user's own choice. See `.agents/HANDOFF.md` same date.
+
 - **2026-09-26 — Founder Profile moved: About category → Team category**: removed from About
   (live page updated, 12→11 blocks), added to Team in place of `ConstructionTeamCrew` (kept
   Team at 4 designs; TeamCrew's code untouched, just no longer in any picker). See

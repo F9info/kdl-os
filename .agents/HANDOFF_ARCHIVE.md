@@ -2,6 +2,62 @@
 
 > Moved out of `.agents/HANDOFF.md` on 2026-07-16 to cut per-run session-load tokens. The live file keeps only the most recent entries; full history is here and in git.
 
+## 2026-09-24 — Full home-page audit vs index.html: found + fixed 3 real bugs
+
+User asked for a full compare-and-fix pass between the built home page and `index.html`.
+Findings, in order of how they were caught:
+
+1. **Section order gap**: `ConstructionProductsShowcase` was coded (much earlier this
+   session) but never inserted onto the page. Inserted it via the Section picker, then
+   used the Reorder tab's native HTML5 drag (`source.hover()+mouse.down()+target.hover()+
+   mouse.up()`, not Playwright's `dragTo()` which didn't fire the app's own dragover/drop
+   handlers reliably) to move it from the end of the list to its correct spot — between
+   Featured Projects and Clients, matching `index.html`. Verified via Postgres before/after.
+2. **Real regression — Disciplines icons**: all 6 discipline cards showed the same generic
+   hardhat icon instead of their distinct icons (snowflake/house-gear/tv/plug/fire/
+   lightbulb). Root cause: this block instance was inserted before the icon field existed
+   (see the "2026-09-24 — Discipline icon badges" entry below), so its stored props never
+   got `disciplineNIcon` values baked in, and the render's fallback (`ICON_BY_KEY[d.icon] ??
+   HardHatIcon`) silently defaulted every card to the same icon. Fixed by setting all 6
+   `disciplineNIcon` fields via the Content tab (native `<select>`s — Puck serializes their
+   option values as JSON strings like `{"value":"snowflake"}`, set via `sel.value = ...` +
+   dispatched `change` event, not `.select_option()`), then Published. Verified visually —
+   all 6 icons now correct.
+3. **Footer content wrong** — genuinely the biggest finding. `ConstructionFooter`'s stored
+   props had never been touched all session: generic "Your Brand" copyright, WhatsApp mobile
+   number where the real landline numbers should be, only 1 of 2 real emails, and — worst —
+   **Showroom and Regd. Office addresses were swapped with each other** (`showroomAddress`
+   literally contained the text "Registered Office 50-58-15..." and vice versa), so
+   `regdOfficeAddress` being non-empty-but-wrong meant the Regd. Office block silently never
+   rendered under the OLD swap (the real bug: whatever seeded `contactAddress`/
+   `showroomAddress` from Brand Kit/Application Settings mapped the two address lines to the
+   wrong fields, each still carrying its own descriptive prefix baked into the string).
+   **Important architecture finding**: `ConstructionFooter` (and presumably Header) is NOT
+   selectable in this Puck editor at all — clicking anywhere on it always reports
+   `"puck-canvas-root intercepts pointer events"` / never selects, even though it IS a real
+   entry in `data.content`. The edit page's `preview` override wraps the real canvas with
+   separate `topHeaderNode`/`headerNode`/`footerNode` chrome nodes built from live data
+   for WYSIWYG context (`pointer-events-none`, per the comment at `edit/[id]/page.tsx`) — but
+   that didn't explain why the *actual* Puck Footer block itself was unclickable too; not
+   fully root-caused, flagged here rather than spending more time on it. Since the Content-tab
+   route was unavailable, fixed via a **scoped SQL `jsonb_set`/`jsonb_build_object` merge**
+   touching only `ConstructionFooter`'s specific text props (tagline, copyright, links,
+   contactPhone/2, contactEmail/2, showroomAddress, regdOfficeAddress, regdOfficeTitle,
+   social1Href, social2Label/social4Label cleared to hide LinkedIn/X, qrImage swapped to the
+   real `/seed/subhadra/brand/shop-location-qr.png` asset) — **explicitly asked the user
+   first** (auto-mode classifier blocked the raw SQL write twice as "modify shared
+   resources"; surfaced it, got explicit approval, then ran it). Verified via Postgres +
+   screenshot.
+
+**Public preview vs editor canvas rendering note**: a `full_page` Playwright screenshot of
+either the built page OR the original `index.html` shows large blank gaps between sections —
+this is a `useScrollReveal`/AOS.js scroll-triggered-reveal artifact (elements start
+`opacity-0`, only animate in once actually scrolled past in a real browser), not a real bug on
+either side. Confirmed by scrolling in small increments before capturing — everything renders
+correctly. Don't rely on a single `full_page` screenshot to judge either site; scroll-to-target
++ short wait per section (the pattern used everywhere else in this session) is reliable,
+`full_page` in one shot is not.
+
 ## 2026-09-24 — Tagline Strip variant 2 (general pack): swapped placeholder mark for real logo
 
 Variant 2 of `general/index.tsx`'s `TaglineStrip` (built early in this session, before the real

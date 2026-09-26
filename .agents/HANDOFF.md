@@ -1,3 +1,64 @@
+## 2026-09-26 — Team module: first proper content module (schema → migration → admin CRUD → Puck data-binding)
+
+User's ask: stop storing reusable content (Team, FAQ, Blog, Gallery, Projects) as JSON blobs
+inside Puck block props — give each its own module (Prisma model, migration, seeder, service,
+admin CRUD, frontend rendering), matching the existing `module:create` scaffold's
+module→schema→migration→model→seeder→service→admin→frontend pipeline. Keep simple one-off text
+(Vision/Mission/About copy, taglines) in the existing Settings→Fields system instead — confirmed
+already fully working (`setting-fields` module), not a stub. Confirmed via investigation: **zero
+Team/FAQ/Blog/Gallery/Project tables existed anywhere** before this — literally every block's
+content was copy-pasted JSON, no single source of truth.
+
+Scoped to **Team only** as phase 1 (user's choice, to prove the pattern before repeating for
+FAQ/Blog/Gallery/Projects) — full architecture:
+
+- `backend/prisma/schema/team.prisma` — `TeamMember` (project_id, name, role, bio, photo_url,
+  order, is_active). `photo_url` is a plain string, not a Media-table FK — matches every other
+  image field already in the page-builder packs (`imageField` also stores a plain URL).
+- `backend/src/modules/team/` — full CRUD (routes/controller/service/schema), scaffolded via
+  `npm run module:create -- --slug=team --name="Team"` then filled in following the `categories`
+  module's exact pattern (closest analog: simple CRUD, no owner_module complexity). `GET
+  /api/team/public` is unauthenticated (mirrors page-builder's own `/public/:slug` — consumed by
+  both the editor canvas and the real public site).
+- `backend/src/modules/team/seed.js` — the 2 real founders (K Leela Prasad, K N V Uday Kumar).
+  **Deliberately not wired into `prisma/seed.js`** — that pipeline bootstraps a brand-new,
+  client-agnostic KDL install; this is one specific client's data. Invoked directly for this
+  project instead (`node --input-type=module -e "...seedTeam()..."`).
+- `/admin/team` — new CRUD screen (list/create/edit/delete), project-scoped via `?projectId=`.
+- `ConstructionFounderProfile` gains `person1MemberId`/`person2MemberId` (a new
+  `teamMemberField()` custom Puck field — dropdown of Team members, global list since a custom
+  field has no access to `puck.metadata` to scope it by project). Render: if a memberId is set,
+  fetches that member from `/api/team/public` and uses their live name/role/bio/photo; otherwise
+  falls back to the block's own static fields — **fully backward compatible**, no existing
+  instance breaks.
+- Threaded `projectId` into Puck's `metadata` (same mechanism as Inner Banner's `pageTitle`) in
+  both `edit/[id]/page.tsx` and `p/[slug]/page.tsx`, so render-time fetches can be project-scoped.
+
+**Module install gotcha for next agent**: creating `module.json` + `routes.js` on disk is not
+enough — `module-loader.js` mounts the router unconditionally, but `moduleGate` blocks every
+request with 404 until a `Module` row exists in the DB with `status: 'ENABLED'`.
+`seedCoreModules` (in `prisma/seed.js`) only registers modules with `"core": true` in their
+manifest — it will NOT pick up a new optional module. The real path is
+`POST /api/modules/:slug/install` then `POST /api/modules/:slug/enable` (what the real
+`/admin/modules` UI calls) — and that install step also runs the module's own `seed.js`
+automatically. Also: `backend`, like `frontend`, is a **baked-image docker container, no source
+bind-mount** — `docker compose restart backend` after adding a module does nothing; needs
+`docker compose build backend && docker compose up -d backend`, same lesson as Inner Banner's
+frontend-container finding.
+
+**Verified end-to-end, not just "looks right"**: published a page with a Founder Profile block
+linked to Leela Prasad's real `TeamMember` row, confirmed the public page showed his real DB
+bio (and the *other* person's static fallback, unlinked, showed correctly too) — then edited his
+bio through `PATCH /api/team/:id` **only**, reloaded the public page with **zero republish**,
+and the new bio appeared. That's the actual value proposition proven, not just plumbing that
+compiles.
+
+**Still open** (deliberately deferred): FAQ/Blog/Gallery/Projects modules (same pattern, not yet
+built); moving Vision/Mission/About-text/taglines to Settings→Fields (still living as static
+Puck props); Certifications-badges/Org-Chart/Team-Stats (the other 3 Team-category designs)
+still store their people as static props, not wired to `TeamMember` — only Founder Profile was
+converted this pass.
+
 ## 2026-09-26 — Founder Profile moved from About category to Team category
 
 User feedback: Founder Profile ("The people behind Subhadra Group" — K Leela Prasad/K N V Uday
@@ -338,60 +399,4 @@ to Postgres, this was editor-behavior verification only.
 (the instructed ~8-entry cap wasn't being enforced through the rest of this long session) —
 moved "Featured Projects slider inserted" through "Tagline Strip section added" (7 entries) into
 `.agents/HANDOFF_ARCHIVE.md`.
-
-## 2026-09-24 — Full home-page audit vs index.html: found + fixed 3 real bugs
-
-User asked for a full compare-and-fix pass between the built home page and `index.html`.
-Findings, in order of how they were caught:
-
-1. **Section order gap**: `ConstructionProductsShowcase` was coded (much earlier this
-   session) but never inserted onto the page. Inserted it via the Section picker, then
-   used the Reorder tab's native HTML5 drag (`source.hover()+mouse.down()+target.hover()+
-   mouse.up()`, not Playwright's `dragTo()` which didn't fire the app's own dragover/drop
-   handlers reliably) to move it from the end of the list to its correct spot — between
-   Featured Projects and Clients, matching `index.html`. Verified via Postgres before/after.
-2. **Real regression — Disciplines icons**: all 6 discipline cards showed the same generic
-   hardhat icon instead of their distinct icons (snowflake/house-gear/tv/plug/fire/
-   lightbulb). Root cause: this block instance was inserted before the icon field existed
-   (see the "2026-09-24 — Discipline icon badges" entry below), so its stored props never
-   got `disciplineNIcon` values baked in, and the render's fallback (`ICON_BY_KEY[d.icon] ??
-   HardHatIcon`) silently defaulted every card to the same icon. Fixed by setting all 6
-   `disciplineNIcon` fields via the Content tab (native `<select>`s — Puck serializes their
-   option values as JSON strings like `{"value":"snowflake"}`, set via `sel.value = ...` +
-   dispatched `change` event, not `.select_option()`), then Published. Verified visually —
-   all 6 icons now correct.
-3. **Footer content wrong** — genuinely the biggest finding. `ConstructionFooter`'s stored
-   props had never been touched all session: generic "Your Brand" copyright, WhatsApp mobile
-   number where the real landline numbers should be, only 1 of 2 real emails, and — worst —
-   **Showroom and Regd. Office addresses were swapped with each other** (`showroomAddress`
-   literally contained the text "Registered Office 50-58-15..." and vice versa), so
-   `regdOfficeAddress` being non-empty-but-wrong meant the Regd. Office block silently never
-   rendered under the OLD swap (the real bug: whatever seeded `contactAddress`/
-   `showroomAddress` from Brand Kit/Application Settings mapped the two address lines to the
-   wrong fields, each still carrying its own descriptive prefix baked into the string).
-   **Important architecture finding**: `ConstructionFooter` (and presumably Header) is NOT
-   selectable in this Puck editor at all — clicking anywhere on it always reports
-   `"puck-canvas-root intercepts pointer events"` / never selects, even though it IS a real
-   entry in `data.content`. The edit page's `preview` override wraps the real canvas with
-   separate `topHeaderNode`/`headerNode`/`footerNode` chrome nodes built from live data
-   for WYSIWYG context (`pointer-events-none`, per the comment at `edit/[id]/page.tsx`) — but
-   that didn't explain why the *actual* Puck Footer block itself was unclickable too; not
-   fully root-caused, flagged here rather than spending more time on it. Since the Content-tab
-   route was unavailable, fixed via a **scoped SQL `jsonb_set`/`jsonb_build_object` merge**
-   touching only `ConstructionFooter`'s specific text props (tagline, copyright, links,
-   contactPhone/2, contactEmail/2, showroomAddress, regdOfficeAddress, regdOfficeTitle,
-   social1Href, social2Label/social4Label cleared to hide LinkedIn/X, qrImage swapped to the
-   real `/seed/subhadra/brand/shop-location-qr.png` asset) — **explicitly asked the user
-   first** (auto-mode classifier blocked the raw SQL write twice as "modify shared
-   resources"; surfaced it, got explicit approval, then ran it). Verified via Postgres +
-   screenshot.
-
-**Public preview vs editor canvas rendering note**: a `full_page` Playwright screenshot of
-either the built page OR the original `index.html` shows large blank gaps between sections —
-this is a `useScrollReveal`/AOS.js scroll-triggered-reveal artifact (elements start
-`opacity-0`, only animate in once actually scrolled past in a real browser), not a real bug on
-either side. Confirmed by scrolling in small increments before capturing — everything renders
-correctly. Don't rely on a single `full_page` screenshot to judge either site; scroll-to-target
-+ short wait per section (the pattern used everywhere else in this session) is reliable,
-`full_page` in one shot is not.
 
