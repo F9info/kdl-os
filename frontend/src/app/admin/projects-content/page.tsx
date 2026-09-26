@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useDefaultProjectId } from '@/hooks/useDefaultProjectId'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -41,7 +41,7 @@ interface CaseStudy {
 }
 
 function ProjectsContentPageContent() {
-  const projectId = useSearchParams().get('projectId')
+  const { projectId, isLoading: projectResolving } = useDefaultProjectId()
   const queryClient = useQueryClient()
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<CaseStudy | null>(null)
@@ -201,13 +201,17 @@ function ProjectsContentPageContent() {
     },
   ]
 
+  if (projectResolving) {
+    return <div className="p-6 text-sm text-muted-foreground">Loading…</div>
+  }
+
   if (!projectId) {
     return (
       <div>
         <PageHeader title="Case Studies" />
         <p className="mt-4 text-sm text-muted-foreground">
-          Add <code>?projectId=&lt;id&gt;</code> to the URL to manage that project&apos;s case
-          studies — scoped per project, same as Team and FAQ.
+          No project exists yet to scope case studies to. Create one first, or add{' '}
+          <code>?projectId=&lt;id&gt;</code> to the URL directly.
         </p>
       </div>
     )

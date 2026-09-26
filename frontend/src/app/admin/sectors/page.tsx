@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { useSearchParams } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useDefaultProjectId } from '@/hooks/useDefaultProjectId'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Settings, Trash2, Plus, ExternalLink, FileEdit } from 'lucide-react'
@@ -45,7 +45,7 @@ interface Sector {
 }
 
 function SectorsPageContent() {
-  const projectId = useSearchParams().get('projectId')
+  const { projectId, isLoading: projectResolving } = useDefaultProjectId()
   const queryClient = useQueryClient()
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Sector | null>(null)
@@ -239,13 +239,17 @@ function SectorsPageContent() {
     },
   ]
 
+  if (projectResolving) {
+    return <div className="p-6 text-sm text-muted-foreground">Loading…</div>
+  }
+
   if (!projectId) {
     return (
       <div>
         <PageHeader title="Sectors" />
         <p className="mt-4 text-sm text-muted-foreground">
-          Add <code>?projectId=&lt;id&gt;</code> to the URL to manage that project&apos;s sectors —
-          scoped per project, same as Team, FAQ and Case Studies.
+          No project exists yet to scope sectors to. Create one first, or add{' '}
+          <code>?projectId=&lt;id&gt;</code> to the URL directly.
         </p>
       </div>
     )
