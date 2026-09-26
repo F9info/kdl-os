@@ -8717,7 +8717,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       estdYear: '',
       copyright: '© Your Brand. All rights reserved.',
     },
-    render: ({
+    render: function ConstructionFooterRender({
       id,
       puck,
       variant,
@@ -8773,13 +8773,24 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       qrCaption,
       estdYear,
       copyright,
-    }) => {
+    }) {
       const parseLinkList = (text: string) =>
         (text || '')
           .split('\n')
           .map((line) => line.split('|'))
           .filter(([label]) => label)
-      const companyLinks = parseLinkList(links)
+      // Menus module is the source of truth once a project has a real
+      // "header" menu — same one ConstructionHeader Design 1 reads. `links`
+      // is only the fallback for a project with no menu configured yet.
+      // Reading the live menu here (instead of this static field) is what
+      // keeps Footer's nav in sync with Header's and immune to the
+      // template-engine driver's `patchNavLinks` occasionally rewriting
+      // this stored field with a stale snapshot.
+      const footerProjectId = puck?.metadata?.projectId as string | undefined
+      const footerMenuTree = useHeaderMenuTree(footerProjectId)
+      const companyLinks = footerMenuTree
+        ? footerMenuTree.map((m): [string, string] => [m.label, m.url || '#'])
+        : parseLinkList(links)
       const socials = [
         { label: social1Label, href: social1Href, Icon: FacebookIcon },
         { label: social2Label, href: social2Href, Icon: LinkedInIcon },
@@ -13108,8 +13119,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               category: s.category ?? '',
               description: s.description ?? '',
               image: s.image ?? '',
-              ctaLabel: s.cta_label ?? '',
-              ctaHref: s.cta_href ?? '#',
+              ctaLabel: s.cta_label || 'Read more →',
+              // Always the real dynamic detail route for a DB-sourced
+              // sector, not the stored `cta_href` — that field only still
+              // exists for the static-fallback path below (a project with
+              // no real sectors yet has no /sectors/[slug] to link to).
+              ctaHref: `/sectors/${s.slug}${projectId ? `?projectId=${projectId}` : ''}`,
             }))
           : (rawSectors ?? []).map((s) => ({
               ...s,

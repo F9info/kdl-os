@@ -1,4 +1,5 @@
 import { prisma } from '../../config/database.js';
+import { createPage, deletePage } from '../page-builder/service.js';
 
 export const listSectors = (query) => {
   const where = {};
@@ -13,7 +14,103 @@ export const listSectors = (query) => {
 
 export const getSectorById = (id) => prisma.sector.findUnique({ where: { id } });
 
-export const createSector = (data) => prisma.sector.create({ data });
+// Reuses whatever Header/Footer blocks already exist on any other real
+// page in this project — keeps a new sector's page visually consistent
+// with the rest of the site (nav, brand, footer links) without this
+// module needing to know anything about brand-kit/theme resolution
+// itself. Works for any project: a brand-new one with no other pages yet
+// just gets a starter page with no chrome, same as any first page would.
+export async function siteChrome(projectId) {
+  if (!projectId) return { header: null, footer: null };
+  const candidates = await prisma.builderPage.findMany({
+    where: { project_id: projectId, deleted_at: null },
+    orderBy: [{ status: 'asc' }, { updated_at: 'desc' }], // PUBLISHED sorts before DRAFT
+    select: { data: true },
+    take: 10,
+  });
+  for (const { data } of candidates) {
+    const header = data?.content?.find((b) => b.type === 'ConstructionHeader');
+    const footer = data?.content?.find((b) => b.type === 'ConstructionFooter');
+    if (header || footer) return { header, footer };
+  }
+  return { header: null, footer: null };
+}
+
+// A generic starter page — the SAME reusable block library every other
+// page in this app uses (Header/Footer if the project already has any,
+// Inner Banner / Text / Lead Form + FAQ for the body), not a
+// sector-specific template. Gives every new sector a real, working,
+// admin-editable detail page with zero manual page-creation step; the
+// admin can add/reorder/replace sections afterward via the normal page
+// editor, same as Home/About.
+async function starterPageContent(sector) {
+  const firstParagraph = (sector.description ?? '').split('\n\n')[0] ?? '';
+  const { header, footer } = await siteChrome(sector.project_id);
+  return {
+    root: { props: { title: sector.name } },
+    zones: {},
+    content: [
+      ...(header ? [header] : []),
+      {
+        type: 'ConstructionInnerBanner',
+        props: {
+          id: `${sector.slug}-banner`,
+          variant: '1',
+          visible: true,
+          homeHref: '/',
+          imageAlt: sector.name,
+          subtitle: firstParagraph,
+          backgroundImage: sector.image ?? '',
+        },
+      },
+      {
+        type: 'Text',
+        props: {
+          id: `${sector.slug}-body`,
+          variant: '1',
+          text: sector.description ?? '',
+          align: 'left',
+          muted: false,
+        },
+      },
+      {
+        type: 'ConstructionLeadFormFAQ',
+        props: {
+          id: `${sector.slug}-cta`,
+          sectionEyebrow: 'Get a Quote',
+          sectionTitle: `Talk to us about ${sector.name}`,
+          sectionIntroLinkLabel: '',
+          sectionIntroLinkHref: '',
+          faqs: [],
+          checklistItems: '',
+          trustStats: [],
+          formHeading: 'Request a free quote',
+          formSubtext: "Fill this in and we'll call you back.",
+          interestOptions:
+            'Central AC\nHome Automation\nHome Theater\nCCTV & Security\nFire Safety\nElectrical\nSomething else',
+          ctaLabel: 'Get My Free Quote →',
+          formPrivacyNote: "We'll only use these details to respond to your enquiry.",
+          padding: 'md',
+        },
+      },
+      ...(footer ? [footer] : []),
+    ],
+  };
+}
+
+export const createSector = async (data, actorId) => {
+  const sector = await prisma.sector.create({ data });
+  // Internal BuilderPage slug — never read by the public route (that
+  // resolves sector -> detail_page_id -> page directly), just needs to be
+  // globally unique. Namespaced by project so the same sector slug in two
+  // different projects doesn't collide.
+  const pageSlug = `sector-detail-${sector.project_id ?? 'global'}-${sector.slug}`;
+  const page = await createPage(
+    { title: sector.name, slug: pageSlug, data: await starterPageContent(sector), project_id: sector.project_id },
+    actorId
+  );
+  return prisma.sector.update({ where: { id: sector.id }, data: { detail_page_id: page.id } });
+};
 
 export const updateSector = async (id, data) => {
   const { count } = await prisma.sector.updateMany({ where: { id }, data });
@@ -21,7 +118,53 @@ export const updateSector = async (id, data) => {
   return prisma.sector.findUnique({ where: { id } });
 };
 
-export const deleteSector = async (id) => {
+export const deleteSector = async (id, actorId) => {
+  const sector = await prisma.sector.findUnique({ where: { id } });
+  if (!sector) return false;
   const { count } = await prisma.sector.deleteMany({ where: { id } });
+  if (count > 0 && sector.detail_page_id) {
+    await deletePage(sector.detail_page_id, actorId).catch(() => {});
+  }
   return count > 0;
+};
+
+// One-time backfill for sectors created before `detail_page_id` existed —
+// `createSector` handles this automatically for every new sector going
+// forward. Safe to re-run: only touches rows that still have no page.
+export const backfillDetailPages = async (actorId) => {
+  const missing = await prisma.sector.findMany({ where: { detail_page_id: null } });
+  for (const sector of missing) {
+    const pageSlug = `sector-detail-${sector.project_id ?? 'global'}-${sector.slug}`;
+    const page = await createPage(
+      {
+        title: sector.name,
+        slug: pageSlug,
+        data: await starterPageContent(sector),
+        project_id: sector.project_id,
+      },
+      actorId
+    );
+    await prisma.sector.update({ where: { id: sector.id }, data: { detail_page_id: page.id } });
+  }
+  return missing.length;
+};
+
+// Public read for the dynamic `/sectors/[slug]` route — one request
+// returns both the sector's own base fields (name/description/SEO/etc.)
+// and its linked detail page's Puck content, joined server-side rather
+// than making the frontend do two round-trips.
+export const getPublicSectorBySlug = async (slug, projectId) => {
+  const where = { slug };
+  if (projectId) where.project_id = projectId;
+  const sector = await prisma.sector.findFirst({ where: { ...where, is_active: true } });
+  if (!sector) return null;
+
+  const page = sector.detail_page_id
+    ? await prisma.builderPage.findFirst({
+        where: { id: sector.detail_page_id, status: 'PUBLISHED', deleted_at: null },
+        select: { data: true, title: true },
+      })
+    : null;
+
+  return { sector, page };
 };

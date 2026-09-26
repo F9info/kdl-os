@@ -20,9 +20,21 @@ export const getSector = async (req, res, next) => {
   }
 };
 
+export const getPublicSector = async (req, res, next) => {
+  try {
+    const { slug } = req.validated.params;
+    const { project_id } = req.validated.query;
+    const result = await service.getPublicSectorBySlug(slug, project_id);
+    if (!result) return errorResponse(res, 'Sector not found', 404);
+    return successResponse(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const createSector = async (req, res, next) => {
   try {
-    const item = await service.createSector(req.validated.body);
+    const item = await service.createSector(req.validated.body, req.user?.id);
     return successResponse(res, { item }, 201);
   } catch (err) {
     next(err);
@@ -43,7 +55,7 @@ export const updateSector = async (req, res, next) => {
 export const deleteSector = async (req, res, next) => {
   try {
     const { id } = req.validated.params;
-    const deleted = await service.deleteSector(id);
+    const deleted = await service.deleteSector(id, req.user?.id);
     if (!deleted) return errorResponse(res, 'Sector not found', 404);
     return successResponse(res, { message: 'Sector deleted' });
   } catch (err) {

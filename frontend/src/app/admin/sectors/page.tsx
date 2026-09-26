@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Pencil, Trash2, Plus } from 'lucide-react'
+import { Pencil, Trash2, Plus, ExternalLink, FileEdit } from 'lucide-react'
 import type { ColumnDef } from '@tanstack/react-table'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
@@ -35,6 +35,11 @@ interface Sector {
   image: string | null
   cta_label: string | null
   cta_href: string | null
+  detail_page_id: string | null
+  seo_title: string | null
+  seo_description: string | null
+  og_image: string | null
+  canonical_url: string | null
   order: number
   is_active: boolean
 }
@@ -107,6 +112,10 @@ function SectorsPageContent() {
       image: '',
       cta_label: 'Read more →',
       cta_href: '#',
+      seo_title: '',
+      seo_description: '',
+      og_image: '',
+      canonical_url: '',
       order: data?.items.length ?? 0,
       is_active: true,
     })
@@ -124,6 +133,10 @@ function SectorsPageContent() {
       image: item.image ?? '',
       cta_label: item.cta_label ?? '',
       cta_href: item.cta_href ?? '',
+      seo_title: item.seo_title ?? '',
+      seo_description: item.seo_description ?? '',
+      og_image: item.og_image ?? '',
+      canonical_url: item.canonical_url ?? '',
       order: item.order,
       is_active: item.is_active,
     })
@@ -183,6 +196,29 @@ function SectorsPageContent() {
             aria-label={`Edit ${row.original.name}`}
           >
             <Pencil className="h-4 w-4" />
+          </Button>
+          {row.original.detail_page_id && (
+            <Button
+              variant="ghost"
+              size="icon"
+              asChild
+              aria-label={`Edit ${row.original.name} content`}
+            >
+              <a
+                href={`/admin/template-engine/edit/${row.original.detail_page_id}?projectId=${projectId ?? ''}`}
+              >
+                <FileEdit className="h-4 w-4" />
+              </a>
+            </Button>
+          )}
+          <Button variant="ghost" size="icon" asChild aria-label={`View ${row.original.name} live`}>
+            <a
+              href={`/sectors/${row.original.slug}?projectId=${projectId ?? ''}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <ExternalLink className="h-4 w-4" />
+            </a>
           </Button>
           <Button
             variant="ghost"
@@ -291,6 +327,37 @@ function SectorsPageContent() {
             </FormField>
             <FormField label="CTA href" error={errors.cta_href?.message}>
               <Input placeholder="#" {...register('cta_href')} />
+            </FormField>
+          </div>
+          <div className="border-t pt-4">
+            <p className="mb-3 text-sm font-semibold text-muted-foreground">
+              SEO — for /sectors/{'{slug}'}
+            </p>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <FormField
+                label="SEO title"
+                hint="Falls back to the sector name."
+                error={errors.seo_title?.message}
+              >
+                <Input placeholder={watch('name') || 'Sector name'} {...register('seo_title')} />
+              </FormField>
+              <FormField label="Canonical URL" error={errors.canonical_url?.message}>
+                <Input placeholder="https://..." {...register('canonical_url')} />
+              </FormField>
+            </div>
+            <FormField
+              label="Meta description"
+              hint="Falls back to the first paragraph of the description."
+              error={errors.seo_description?.message}
+            >
+              <Textarea rows={2} {...register('seo_description')} />
+            </FormField>
+            <FormField
+              label="Open Graph image"
+              hint="Falls back to the sector image."
+              error={errors.og_image?.message}
+            >
+              <Input placeholder="/seed/subhadra/..." {...register('og_image')} />
             </FormField>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
