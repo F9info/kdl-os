@@ -12435,6 +12435,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
 // section name, bundled with siblings where more than one fits so pickers have
 // real design choices instead of a single card.
 const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
+  innerbanner: {
+    title: 'Inner Banner',
+    components: ['ConstructionInnerBanner'],
+  },
   counters: {
     title: 'Counters',
     components: [
@@ -12588,5 +12592,6 @@ export const construction: ComponentPack = {
     ConstructionTopBar: ['1', '2', '3', '4'],
     ConstructionHeader: ['1', '2', '3', '4'],
     ConstructionHero: ['1', '2', '3', '4'],
+    ConstructionInnerBanner: ['1', '2', '3', '4'],
   },
 }
