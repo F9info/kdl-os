@@ -65,8 +65,14 @@ function MenusPageContent() {
   const projectMatchedPages = allPages.filter((p) => p.projectId === projectId)
   const projectPages = projectMatchedPages.length > 0 ? projectMatchedPages : allPages
 
-  const invalidate = () =>
+  const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['menu', projectId, MENU_KEY] })
+    // `useHeaderMenuTree` (ConstructionHeader, WebsiteLayoutPreview,
+    // useLayoutChrome) reads this same Menu under its own cache key —
+    // without invalidating it too, those previews keep showing whatever
+    // they last fetched until an unrelated remount happens to refire it.
+    queryClient.invalidateQueries({ queryKey: ['menu-public-header', projectId] })
+  }
 
   const createItemMutation = useMutation({
     mutationFn: (body: Partial<MenuItemNode> & { label: string }) =>

@@ -1116,6 +1116,11 @@ function NavigationStep({
   const invalidate = () => {
     setDirty(false)
     queryClient.invalidateQueries({ queryKey: menuQueryKey })
+    // `useHeaderMenuTree` (ConstructionHeader, WebsiteLayoutPreview,
+    // useLayoutChrome) reads this same Menu under its own cache key —
+    // without invalidating it too, those previews keep showing whatever
+    // they last fetched until an unrelated remount happens to refire it.
+    queryClient.invalidateQueries({ queryKey: ['menu-public-header', projectId] })
   }
 
   const createItemMutation = useMutation({
