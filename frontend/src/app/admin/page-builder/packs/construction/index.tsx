@@ -4073,9 +4073,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     defaultProps: {
       variant: '1',
       visible: true,
-      backgroundImage:
-        'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1600&h=900&fit=crop&q=80&auto=format',
-      imageAlt: 'Building engineering site',
+      backgroundImage: '/seed/subhadra/brand/shop.webp',
+      imageAlt: 'Subhadra Group showroom building exterior',
       subtitle:
         'Your one-stop solution for building engineering products & services — 30 years of trust, one accountable team.',
     },
