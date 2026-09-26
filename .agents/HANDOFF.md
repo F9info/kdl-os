@@ -1,3 +1,48 @@
+## 2026-09-26 — Sectors page: new module + 4-variant Section Builder block (sectors.html recreated)
+
+User's ask: recreate the approved `sectors.html` page exactly (content/images/UI/layout), fully
+dynamic through the existing KDL Kit architecture, with 4 selectable variants for the section (1 =
+exact reference clone, 2-4 = original alternatives) — same "reusable, not Subhadra-specific"
+mandate as Menus.
+
+**New Sectors module** (`backend/src/modules/sectors/`) — `Sector` model (eyebrow/name/slug/
+category/description/image/cta_label/cta_href/order/is_active), migration, CRUD + public read
+endpoint, admin UI at `/admin/sectors` — mirrors the Team/FAQ/Projects-Content module shape exactly
+(same scaffold → schema → service → controller → routes → seed → admin-CRUD pipeline).
+
+**New `ConstructionSectorDetailList` block** (added to the existing "Sectors" page-builder
+category) — Design 1 is an exact clone (jump-pills anchor row + 11 alternating image/text rows,
+reversed every other row); Designs 2-4 are card-grid / centered-numbered-list / dark-alternating-
+bands originals. Same DB-wins-if-non-empty pattern as every other content block this session:
+reads `/api/sectors/public`, falls back to its own static `sectors` field only when a project has
+no real sectors yet.
+
+**Extended `ConstructionLeadFormFAQ`** with optional `checklistItems`/`trustStats` fields —
+sectors.html's lead-CTA section has a 3-item checklist and a 3-stat trust row the shared component
+didn't support. Additive/backward-compatible: existing Home/About instances don't set these
+fields, so nothing changes for them.
+
+**Real bug found and fixed**: `useScrollReveal`'s IntersectionObserver checks a 0.15 threshold
+against the *observed element's own* bounding box. Wrapping the entire 11-row list (~4500px tall)
+in one `ref` meant it could never reach 15% visible in any real viewport — confirmed via direct DOM
+inspection, computed `opacity: 0` permanently, no scroll position ever revealed it. Fixed with a new
+per-row `SectorRevealItem` helper (reveals each row independently) — applied to all 4 variants, not
+just the one that surfaced it, since all 4 stack this many items. Matches the approved reference's
+own per-`<article> data-aos="fade-up"` more faithfully than a single section-level reveal would
+have anyway.
+
+**Seeded real data**: all 11 sectors verbatim from sectors.html. Government/Premium Flats/Gated
+Communities keep the reference's own Unsplash stock photos (no local asset exists for these 3 —
+matches existing precedent elsewhere in this codebase for stock-photo fallbacks, flagged rather
+than silently swapped). "Read more" CTAs point at `#` — the 10 sector-detail pages are future work,
+not built yet, same precedent as Founder Profile's own placeholder link. Copied the one missing
+local asset (`hospital.jpg`) so there's zero dependency on `after-delete-folder`.
+
+**Verified end-to-end**: migration + module install/enable (auto-seeded), public endpoint returns
+all 11 correctly ordered, live page screenshot (zero broken images, zero console errors, all
+jump-pills resolve to real anchor ids), all 4 variants visually confirmed distinct before restoring
+the real page to Design 1, admin CRUD screen screenshotted with real data.
+
 ## 2026-09-26 — Menus module: 3-level nav system, WordPress-style drag-drop admin UI, ConstructionHeader dropdown
 
 User's ask: dynamic, fully-configurable navigation (3 levels: main/sub/sub-sub) manageable
@@ -339,45 +384,4 @@ uncommitted changes from earlier in this session that got swept into these same 
 
 Design spec: `docs/superpowers/specs/2026-09-26-inner-banner-design.md`.
 Plan: `docs/superpowers/plans/2026-09-26-inner-banner.md`.
-
-## 2026-09-24 — Hero brand logos: nested array field (multi-upload + reorder), real logos from index.html
-
-User's screenshot showed the Hero's per-slide "Brands" row as plain text chips ("Schneider
-Electric", "RR Kabel", ...) instead of real logo images like the reference site, and asked for
-"multiple upload image option and change the order of brands" plus real logos/content copied
-directly from `/Users/f9developer/Development/subhadra`.
-
-**`d2Slides[].brands` converted from a newline-separated textarea to a nested Puck array field**
-(`{name, logo}[]`, `logo` via the existing `imageField()` helper) — Puck's `arrayFields` values
-can themselves be `type: 'array'`, so this is a plain array-inside-array, no new field-type work
-needed. This is what gives "multiple upload" (an Upload button per brand row, add as many as
-needed via the array's own "+" button) and "change the order" (array items are natively
-drag-reorderable, same as the slide accordions from the previous entry) for free.
-
-**Render** (`d2Slide.brands.map(...)`) now renders a real `<img>` per brand in a white
-rounded chip (`bg-white rounded-lg ... object-contain`) when `logo` is set, falling back to a
-plain text chip when it isn't — same `logo ? <img> : <span>` pattern already used by
-`ConstructionOurBrands`/`ConstructionProjectsSlider` elsewhere in this file.
-
-**Real logos**, one per brand, sourced from the exact files already copied into
-`frontend/public/seed/subhadra/ourbrands/{electrical-products,design-execution-maintenance,
-lifestyle-residential-products}/` earlier this session (from `subhadra/assets/images/ourbrands/`)
-— matched against `index.html`'s `.v2-hero-brands-track` markup (`data-track="0"` through `"5"`,
-one track per hero slide) so each slide's brand row is the *exact* real set: Central AC → Blue
-Star; Electrical & Switchgear → Schneider Electric, RR Kabel, Crompton, Norisys, Cummins, APC;
-Safety and Security → CP Plus, Honeywell, Ravel, Bosch, Ajax, Matrix; Home Automation →
-Schneider Electric, Bticino, RTI, Toyama, eelectron; Home Theater → M&K Sound, Focal, Sony,
-Optoma, SVS, Marantz; Premium Lighting → Futura, Wipro. Paths use `%20`/`%26` encoding for
-spaces/`&` in filenames, matching the existing convention already used for this same folder
-elsewhere in the file (`ConstructionOurBrands`). Verified all 25 referenced files actually exist
-on disk (not just assumed from the earlier copy) and that the live canvas renders a real white
-logo chip with no broken `<img>` (checked `naturalWidth === 0` on the mounted slide).
-
-Migrated the live page's already-published Hero block's `d2Slides[].brands` via the same
-Node/`pg` script pattern as the previous entry (panel reads raw stored props, not
-defaultProps-merged render output). Also found and fixed an unrelated leftover: this project's
-`sliderShowArrows`/`sliderShowDots` were `false` in the live DB — an artifact from this
-session's own earlier interactive Style-tab testing that apparently got persisted at some point
-without an explicit Publish being noticed; reset both back to `true` (the correct default) via
-a scoped SQL patch, same pre-established pattern as the Footer fix.
 

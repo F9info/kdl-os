@@ -2,7 +2,7 @@
 
 # STATUS — what is done, what is pending
 
-_Derived from code + GitHub + the board at master `197df27` (latest commit 2026-09-26)._
+_Derived from code + GitHub + the board at master `5084b13` (latest commit 2026-09-26)._
 _Regenerate: `node scripts/status-rollup.mjs`. Hand edits to this block are overwritten._
 
 Read this instead of counting board issues or PRs — both mislead. The board has 500+ done
@@ -10,7 +10,7 @@ issues with no aggregate view, and PR state under-reports what shipped (§3).
 
 ### 1. Backend module build state
 
-`backend/src/modules/*` — **27 modules: 25 built, 2 stubbed, 0 spec-only.**
+`backend/src/modules/*` — **28 modules: 26 built, 2 stubbed, 0 spec-only.**
 
 State is decided by what the directory actually contains (service + routes + controller),
 not by whether a spec or a board issue says the module is done.
@@ -33,6 +33,7 @@ not by whether a spec or a board issue says the module is done.
 | `page-builder` | ✅ built | service + routes + controller | **0** | Visual block-based page builder engine — always-on |
 | `projects` | ✅ built | service + routes + controller | 1 | Project management — Studio hard-depends on this module to scope template-engine runs. |
 | `projects-content` | ✅ built | service + routes + controller | **0** | Real completed-work case studies shown in Featured Projects blocks |
+| `sectors` | ✅ built | service + routes + controller | **0** | Real client-segment/space-type entries shown in the Sector Detail List block |
 | `setting-fields` | ✅ built | service + routes + controller | 2 | Dynamic admin-defined setting field definitions |
 | `settings` | ✅ built | service + routes + controller | 2 | Application settings management |
 | `storage-settings` | ✅ built | service + routes + controller | 1 | (no module.json) |
@@ -45,7 +46,7 @@ not by whether a spec or a board issue says the module is done.
 | `page-builder-ui` | 🟡 stubbed | nav-only shell — empty Router, no service/controller | **0** | Page Builder engine dependency shim for Template Engine, plus the Section Builder nav entry. Template Engine's own page-edit screen (imports blocks-panel.tsx/insert-block-modal.tsx/puck.config.tsx directly) is the only way to edit PAGES — a standalone 'Page Builder' nav entry duplicated that with a second, less-capable editor and was removed. Section Builder is a distinct, real feature (a from-scratch custom-section canvas) worth its own direct entry point. |
 | `theme-engine-ui` | 🟡 stubbed | nav-only shell — empty Router, no service/controller | **0** | Admin nav and screens for Theme Engine — toggleable |
 
-> ⚠ **6 built module(s) have no test file** in `backend/src/modules/<name>/` or `backend/tests/` matched by name: `e2e-fixture`, `faq`, `menus`, `page-builder`, `projects-content`, `team`. Built ≠ verified — a name-based scan can also miss suites filed elsewhere, so check before acting.
+> ⚠ **7 built module(s) have no test file** in `backend/src/modules/<name>/` or `backend/tests/` matched by name: `e2e-fixture`, `faq`, `menus`, `page-builder`, `projects-content`, `sectors`, `team`. Built ≠ verified — a name-based scan can also miss suites filed elsewhere, so check before acting.
 
 ### 2. Template-engine 9-stage driver reality
 
@@ -109,6 +110,17 @@ Recent per-issue detail is in the rolling changelog below; full history in
 <!-- ROLLING WINDOW: keep only the most recent entries here to minimise per-run context.
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
+
+- **2026-09-26 — Sectors page: new module + 4-variant Section Builder block**: recreates the
+  approved `sectors.html` fully dynamically. New `Sector` module (model/migration/CRUD/admin UI,
+  same shape as Team/FAQ/Projects-Content) + new `ConstructionSectorDetailList` block (4 variants —
+  Design 1 exact reference clone, 2-4 original alternatives), DB-wins-if-non-empty like every other
+  content block. Extended `ConstructionLeadFormFAQ` with optional checklist/trust-stats fields
+  (additive, existing pages unaffected). Real bug found+fixed: `useScrollReveal`'s 0.15 intersection
+  threshold can never be satisfied by an ~4500px-tall single-ref section — it silently never
+  revealed at all; fixed with a new per-row reveal helper, applied to all 4 variants. Seeded all 11
+  real sectors verbatim from the reference; 3 keep the reference's own Unsplash stock photos (no
+  local asset exists). See `.agents/HANDOFF.md` same date.
 
 - **2026-09-26 — Menus module: 3-level nav system, WordPress-style drag-drop admin UI**: new
   `Menu`/`MenuItem` models (self-referencing adjacency list, depth capped at 3 in app logic),

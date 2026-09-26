@@ -2,6 +2,47 @@
 
 > Moved out of `.agents/HANDOFF.md` on 2026-07-16 to cut per-run session-load tokens. The live file keeps only the most recent entries; full history is here and in git.
 
+## 2026-09-24 — Hero brand logos: nested array field (multi-upload + reorder), real logos from index.html
+
+User's screenshot showed the Hero's per-slide "Brands" row as plain text chips ("Schneider
+Electric", "RR Kabel", ...) instead of real logo images like the reference site, and asked for
+"multiple upload image option and change the order of brands" plus real logos/content copied
+directly from `/Users/f9developer/Development/subhadra`.
+
+**`d2Slides[].brands` converted from a newline-separated textarea to a nested Puck array field**
+(`{name, logo}[]`, `logo` via the existing `imageField()` helper) — Puck's `arrayFields` values
+can themselves be `type: 'array'`, so this is a plain array-inside-array, no new field-type work
+needed. This is what gives "multiple upload" (an Upload button per brand row, add as many as
+needed via the array's own "+" button) and "change the order" (array items are natively
+drag-reorderable, same as the slide accordions from the previous entry) for free.
+
+**Render** (`d2Slide.brands.map(...)`) now renders a real `<img>` per brand in a white
+rounded chip (`bg-white rounded-lg ... object-contain`) when `logo` is set, falling back to a
+plain text chip when it isn't — same `logo ? <img> : <span>` pattern already used by
+`ConstructionOurBrands`/`ConstructionProjectsSlider` elsewhere in this file.
+
+**Real logos**, one per brand, sourced from the exact files already copied into
+`frontend/public/seed/subhadra/ourbrands/{electrical-products,design-execution-maintenance,
+lifestyle-residential-products}/` earlier this session (from `subhadra/assets/images/ourbrands/`)
+— matched against `index.html`'s `.v2-hero-brands-track` markup (`data-track="0"` through `"5"`,
+one track per hero slide) so each slide's brand row is the *exact* real set: Central AC → Blue
+Star; Electrical & Switchgear → Schneider Electric, RR Kabel, Crompton, Norisys, Cummins, APC;
+Safety and Security → CP Plus, Honeywell, Ravel, Bosch, Ajax, Matrix; Home Automation →
+Schneider Electric, Bticino, RTI, Toyama, eelectron; Home Theater → M&K Sound, Focal, Sony,
+Optoma, SVS, Marantz; Premium Lighting → Futura, Wipro. Paths use `%20`/`%26` encoding for
+spaces/`&` in filenames, matching the existing convention already used for this same folder
+elsewhere in the file (`ConstructionOurBrands`). Verified all 25 referenced files actually exist
+on disk (not just assumed from the earlier copy) and that the live canvas renders a real white
+logo chip with no broken `<img>` (checked `naturalWidth === 0` on the mounted slide).
+
+Migrated the live page's already-published Hero block's `d2Slides[].brands` via the same
+Node/`pg` script pattern as the previous entry (panel reads raw stored props, not
+defaultProps-merged render output). Also found and fixed an unrelated leftover: this project's
+`sliderShowArrows`/`sliderShowDots` were `false` in the live DB — an artifact from this
+session's own earlier interactive Style-tab testing that apparently got persisted at some point
+without an explicit Publish being noticed; reset both back to `true` (the correct default) via
+a scoped SQL patch, same pre-established pattern as the Footer fix.
+
 ## 2026-09-24 — ConstructionHero Content tab: native array-based slide accordions + real content/images + resolveFields panel bug fix
 
 User asked for the Content tab's flat `d1Slide1Image`/`d1Slide1Badge`/... field wall to become
