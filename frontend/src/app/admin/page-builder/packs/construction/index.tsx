@@ -972,6 +972,7 @@ type ConstructionProps = {
     background: 'white' | 'muted'
   }
   ConstructionMissionVision: {
+    variant: '1' | '2' | '3' | '4'
     visionHeading: string
     visionParagraph1: string
     visionParagraph2: string
@@ -9767,6 +9768,15 @@ const typedComponents: Config<ConstructionProps>['components'] = {
   ConstructionMissionVision: {
     label: 'Mission & Vision',
     fields: {
+      variant: {
+        type: 'select',
+        options: [
+          { label: 'Design 1 — Alternating badge cards', value: '1' },
+          { label: 'Design 2 — Side-by-side cards', value: '2' },
+          { label: 'Design 3 — Centered minimal', value: '3' },
+          { label: 'Design 4 — Dark split band', value: '4' },
+        ],
+      },
       visionHeading: { type: 'text' },
       visionParagraph1: { type: 'textarea' },
       visionParagraph2: { type: 'textarea' },
@@ -9783,6 +9793,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       },
     },
     defaultProps: {
+      variant: '1',
       visionHeading: 'The most trusted name in building engineering across Andhra Pradesh',
       visionParagraph1:
         'To become the most trusted & complete solution provider for Electrical, Air Conditioning, Security & Safety, Automation and Entertainment systems — for homes, commercial buildings, industries & departments across entire Andhra Pradesh.',
@@ -9796,6 +9807,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding: 'md',
     },
     render: function ConstructionMissionVisionRender({
+      variant,
       visionHeading,
       visionParagraph1,
       visionParagraph2,
@@ -9804,6 +9816,84 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       missionParagraph2,
       padding,
     }) {
+      if (variant === '2') {
+        return (
+          <section className={`${padY[padding]} bg-white`}>
+            <div className={wrap}>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="rounded-2xl border border-slate-200 p-8 text-center">
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-orange-50">
+                    <Eye className="h-7 w-7 text-orange-600" strokeWidth={1.75} />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900">{visionHeading}</h3>
+                  <p className="mt-3 text-sm text-slate-600">{visionParagraph1}</p>
+                  <p className="mt-2 text-sm text-slate-600">{visionParagraph2}</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 p-8 text-center">
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-orange-50">
+                    <Rocket className="h-7 w-7 text-orange-600" strokeWidth={1.75} />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900">{missionHeading}</h3>
+                  <p className="mt-3 text-sm text-slate-600">{missionParagraph1}</p>
+                  <p className="mt-2 text-sm text-slate-600">{missionParagraph2}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        )
+      }
+
+      if (variant === '3') {
+        return (
+          <section className={`${padY[padding]} bg-white`}>
+            <div className={`${wrap} mx-auto flex max-w-3xl flex-col gap-12`}>
+              <div className="text-center">
+                <div className="mb-3 flex items-center justify-center gap-2 text-orange-600">
+                  <Eye className="h-5 w-5" strokeWidth={1.75} />
+                  <span className="text-xs font-bold uppercase tracking-wide">Our Vision</span>
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 md:text-2xl">{visionHeading}</h3>
+                <p className="mx-auto mt-4 max-w-xl text-slate-600">{visionParagraph1}</p>
+                <p className="mx-auto mt-3 max-w-xl text-slate-600">{visionParagraph2}</p>
+              </div>
+              <div className="text-center">
+                <div className="mb-3 flex items-center justify-center gap-2 text-orange-600">
+                  <Rocket className="h-5 w-5" strokeWidth={1.75} />
+                  <span className="text-xs font-bold uppercase tracking-wide">Our Mission</span>
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 md:text-2xl">{missionHeading}</h3>
+                <p className="mx-auto mt-4 max-w-xl text-slate-600">{missionParagraph1}</p>
+                <p className="mx-auto mt-3 max-w-xl text-slate-600">{missionParagraph2}</p>
+              </div>
+            </div>
+          </section>
+        )
+      }
+
+      if (variant === '4') {
+        return (
+          <section className={`${padY[padding]} bg-slate-900 text-white`}>
+            <div className={wrap}>
+              <div className="grid grid-cols-1 divide-y divide-white/10 md:grid-cols-2 md:divide-x md:divide-y-0">
+                <div className="pb-8 pr-0 md:pb-0 md:pr-10">
+                  <Eye className="h-8 w-8 text-orange-400" strokeWidth={1.5} />
+                  <h3 className="mt-4 text-xl font-bold md:text-2xl">{visionHeading}</h3>
+                  <p className="mt-4 text-white/70">{visionParagraph1}</p>
+                  <p className="mt-3 text-white/70">{visionParagraph2}</p>
+                </div>
+                <div className="pl-0 pt-8 md:pl-10 md:pt-0">
+                  <Rocket className="h-8 w-8 text-orange-400" strokeWidth={1.5} />
+                  <h3 className="mt-4 text-xl font-bold md:text-2xl">{missionHeading}</h3>
+                  <p className="mt-4 text-white/70">{missionParagraph1}</p>
+                  <p className="mt-3 text-white/70">{missionParagraph2}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        )
+      }
+
+      // Design 1 — reference clone (about.html Mission & Vision cards)
       return (
         <section className={`${padY[padding]} bg-white`}>
           <div className={`${wrap} flex flex-col gap-10`}>
@@ -13054,5 +13144,6 @@ export const construction: ComponentPack = {
     ConstructionHeader: ['1', '2', '3', '4'],
     ConstructionHero: ['1', '2', '3', '4'],
     ConstructionInnerBanner: ['1', '2', '3', '4'],
+    ConstructionMissionVision: ['1', '2', '3', '4'],
   },
 }
