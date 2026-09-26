@@ -2,6 +2,17 @@
 
 > Moved out of `.agents/HANDOFF.md` on 2026-07-16 to cut per-run session-load tokens. The live file keeps only the most recent entries; full history is here and in git.
 
+## 2026-09-24 — Tagline Strip variant 2 (general pack): swapped placeholder mark for real logo
+
+Variant 2 of `general/index.tsx`'s `TaglineStrip` (built early in this session, before the real
+Subhadra content was extracted) used a generic decorative gradient-circle "logo mark" — never
+matched the source site's actual second tagline strip, which is a light-bg section with the
+real full logo centered above a heading whose middle phrase ("one-stop solution") is
+gradient-colored text. Rewrote the variant: added `logoUrl` (via `imageField`, new import) and
+`highlightPhrase` fields, `render` now splits `headline` on `highlightPhrase` and wraps the
+match in a `bg-clip-text` gradient span. Not a live-page change — this variant isn't placed
+anywhere yet, only verified via the insert-modal's live preview (no DB/publish step needed).
+
 ## 2026-09-24 — Lead Form + FAQ: redesigned to match source site, inserted on home page
 
 `ConstructionLeadFormFAQ` was a plain light-theme card-list FAQ + basic form; source site's

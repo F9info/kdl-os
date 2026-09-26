@@ -1,3 +1,16 @@
+## 2026-09-26 — Founder Profile moved from About category to Team category
+
+User feedback: Founder Profile ("The people behind Subhadra Group" — K Leela Prasad/K N V Uday
+Kumar) belongs under Team, not About. Removed `ConstructionFounderProfile` from `founder`
+category's `components` (About no longer offers it, and its already-published instance was
+removed from the live About page content via `PUT /page-builder/:id` — 12→11 blocks). Added it
+to `team` category **in place of** `ConstructionTeamCrew`, per "show only four ui if needed
+replace one" — kept Team at exactly 4 designs (Founder Profile, Certifications & Safety Badges,
+Org Chart, Team Stats). Picked TeamCrew to drop since it was the most redundant with Founder
+Profile (both people-cards) and its content was generic placeholder people (Ramesh Kapoor etc.)
+vs Founder Profile's real ones — `ConstructionTeamCrew`'s code is untouched, just no longer
+offered in any category's picker. Verified live in the actual Team picker popup.
+
 ## 2026-09-26 — Mission & Vision given 4 selectable designs (audited every category first)
 
 User asked for "every section" to have 4 designs like Hero Slider, pointing at Mission & Vision's
@@ -381,15 +394,4 @@ either side. Confirmed by scrolling in small increments before capturing — eve
 correctly. Don't rely on a single `full_page` screenshot to judge either site; scroll-to-target
 + short wait per section (the pattern used everywhere else in this session) is reliable,
 `full_page` in one shot is not.
-
-## 2026-09-24 — Tagline Strip variant 2 (general pack): swapped placeholder mark for real logo
-
-Variant 2 of `general/index.tsx`'s `TaglineStrip` (built early in this session, before the real
-Subhadra content was extracted) used a generic decorative gradient-circle "logo mark" — never
-matched the source site's actual second tagline strip, which is a light-bg section with the
-real full logo centered above a heading whose middle phrase ("one-stop solution") is
-gradient-colored text. Rewrote the variant: added `logoUrl` (via `imageField`, new import) and
-`highlightPhrase` fields, `render` now splits `headline` on `highlightPhrase` and wraps the
-match in a `bg-clip-text` gradient span. Not a live-page change — this variant isn't placed
-anywhere yet, only verified via the insert-modal's live preview (no DB/publish step needed).
 

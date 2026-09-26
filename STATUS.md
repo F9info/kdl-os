@@ -112,6 +112,11 @@ Recent per-issue detail is in the rolling changelog below; full history in
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+- **2026-09-26 — Founder Profile moved: About category → Team category**: removed from About
+  (live page updated, 12→11 blocks), added to Team in place of `ConstructionTeamCrew` (kept
+  Team at 4 designs; TeamCrew's code untouched, just no longer in any picker). See
+  `.agents/HANDOFF.md` same date.
+
 - **2026-09-26 — Mission & Vision: 4 selectable designs**: audited every page-builder category
   for "≥4 designs like Hero Slider" first — everything else already clears 4 (multiple distinct
   components grouped per category, merged across packs by `compose.ts`). Mission & Vision was
