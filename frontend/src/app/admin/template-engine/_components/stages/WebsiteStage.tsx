@@ -280,21 +280,28 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
             />
           ) : pageCount > 0 ? (
             <div className="space-y-3">
-              <LayoutSettingsPanel
-                projectId={run.projectId}
-                editHref={`/admin/template-engine/projects/${run.projectId}/website/layout`}
-              />
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <LayoutSettingsPanel
+                  projectId={run.projectId}
+                  editHref={`/admin/template-engine/projects/${run.projectId}/website/layout`}
+                />
+                <DetailPageLayoutsPanel
+                  types={[
+                    {
+                      label: 'Sector detail',
+                      count: sectorPages?.length ?? 0,
+                      href: `/admin/sectors?projectId=${run.projectId}`,
+                    },
+                  ]}
+                />
+              </div>
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
                   <h3 className="text-base font-semibold">Web app · Pages</h3>
                   <p className="text-sm text-muted-foreground">
                     {advance.isPending
                       ? 'Updating pages for your latest selection…'
-                      : `${pageCount} page${pageCount !== 1 ? 's' : ''}${
-                          sectorPages?.length
-                            ? ` + ${sectorPages.length} sector detail page${sectorPages.length !== 1 ? 's' : ''}`
-                            : ''
-                        } assembled in the page-builder engine. Open a page to edit it, or view all pages to step through the whole site.`}
+                      : `${pageCount} page${pageCount !== 1 ? 's' : ''} assembled in the page-builder engine. Open a page to edit it, or view all pages to step through the whole site.`}
                   </p>
                 </div>
                 {demoSiteHref && (
@@ -328,29 +335,6 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
                     </div>
                   </div>
                 ))}
-                {(sectorPages ?? [])
-                  .filter((s) => s.detail_page_id)
-                  .map((sector) => (
-                    <div key={sector.id} className="overflow-hidden rounded-lg border bg-card">
-                      <div className="h-1.5 bg-gradient-to-r from-orange-500 to-primary" />
-                      <div className="flex min-h-[110px] flex-col gap-2 p-4">
-                        <span className="w-fit rounded-full bg-orange-100 px-2.5 py-1 text-xs font-medium text-orange-700">
-                          Sector
-                        </span>
-                        <b className="text-sm">{sector.name}</b>
-                        <Button size="sm" asChild className="mt-auto w-fit">
-                          <a
-                            href={`/admin/template-engine/edit/${sector.detail_page_id}?projectId=${run.projectId}`}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            <Pencil className="mr-2 h-3.5 w-3.5" />
-                            Edit
-                          </a>
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
               </div>
             </div>
           ) : (
@@ -1077,6 +1061,39 @@ function LayoutSettingsPanel({ projectId, editHref }: { projectId: string; editH
         <a href={editHref}>Create/Edit layout</a>
       </Button>
       <WebsiteLayoutPreview projectId={projectId} />
+    </div>
+  )
+}
+
+// Content types with many real entries (Sectors today; Services/Products/Portfolio/Blog/Jobs
+// once those get their own module) each get ONE button here, not one card per entry — the
+// entries themselves are managed on their own admin screen (e.g. /admin/sectors). A type with
+// zero entries is hidden rather than shown as a dead/empty button.
+function DetailPageLayoutsPanel({
+  types,
+}: {
+  types: { label: string; count: number; href: string }[]
+}) {
+  const available = types.filter((t) => t.count > 0)
+  if (available.length === 0) return null
+
+  return (
+    <div className="flex flex-1 flex-col gap-3 rounded-lg border bg-card p-4 text-center">
+      <div>
+        <h3 className="text-sm font-semibold">Detail page layouts</h3>
+        <p className="text-xs text-muted-foreground">
+          Content types with many entries — manage each entry&apos;s own detail page here.
+        </p>
+      </div>
+      <div className="flex flex-wrap justify-center gap-2">
+        {available.map((t) => (
+          <Button key={t.label} size="sm" variant="outline" asChild>
+            <a href={t.href}>
+              {t.label} ({t.count})
+            </a>
+          </Button>
+        ))}
+      </div>
     </div>
   )
 }
