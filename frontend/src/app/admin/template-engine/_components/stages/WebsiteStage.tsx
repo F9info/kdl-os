@@ -1111,6 +1111,17 @@ const SUGGESTED_PAGES = [
   'Settings',
 ]
 
+// Content types with a real per-item module (Sectors today) already generate their own real
+// detail page per entry, reachable from the "Layout <type> (N)" button in Layout settings above
+// — typing one of these labels here would instead create ONE unrelated generic scaffold page
+// with the same name, which is confusing (two different things called "Sector detail") and was
+// the repeated source of a stray/empty page bug. Keyed lowercase, matched against the trimmed
+// input.
+const RESERVED_CUSTOM_PAGE_LABELS: Record<string, string> = {
+  'sector detail':
+    'Sector Detail pages are managed per-sector — use the "Layout Sector detail" button above (Layout settings), not a custom page.',
+}
+
 // Same "header" Menu the Menus admin module (`/admin/menus`) and
 // `ConstructionHeader` read at render time — editing navigation in this
 // wizard step IS editing the live site's real nav, not a separate local
@@ -1227,6 +1238,7 @@ function NavigationStep({
   })
 
   const [customName, setCustomName] = useState('')
+  const [customNameError, setCustomNameError] = useState<string | null>(null)
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [dragId, setDragId] = useState<string | null>(null)
   const [dropTarget, setDropTarget] = useState<{ id: string; zone: NavDropZone } | null>(null)
@@ -1276,6 +1288,12 @@ function NavigationStep({
   function addCustomPage() {
     const name = customName.trim()
     if (!name || !menu || navContainsLabel(tree, name)) return
+    const reserved = RESERVED_CUSTOM_PAGE_LABELS[name.toLowerCase()]
+    if (reserved) {
+      setCustomNameError(reserved)
+      return
+    }
+    setCustomNameError(null)
     setDirty(true)
     createItemMutation.mutate({ label: name, order: tree.length })
     setCustomName('')
@@ -1428,13 +1446,17 @@ function NavigationStep({
               placeholder="Add a custom page (e.g. Case studies)"
               value={customName}
               disabled={isSavingNav}
-              onChange={(e) => setCustomName(e.target.value)}
+              onChange={(e) => {
+                setCustomName(e.target.value)
+                setCustomNameError(null)
+              }}
               onKeyDown={(e) => e.key === 'Enter' && addCustomPage()}
             />
             <Button type="button" onClick={addCustomPage} disabled={isSavingNav}>
               Add
             </Button>
           </div>
+          {customNameError && <p className="text-xs text-destructive">{customNameError}</p>}
         </div>
 
         <div className="rounded-lg border bg-card p-4 space-y-3">
