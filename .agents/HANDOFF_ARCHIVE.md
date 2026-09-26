@@ -2,6 +2,31 @@
 
 > Moved out of `.agents/HANDOFF.md` on 2026-07-16 to cut per-run session-load tokens. The live file keeps only the most recent entries; full history is here and in git.
 
+## 2026-09-24 — Testimonials Slider: fixed layout to match source site (left photo / right text)
+
+User flagged the slider rendered as a centered/stacked layout (small circular avatar above
+stars above quote); `index.html`'s actual testimonials section is a left/right split — a tall
+rectangular photo on the left, stars/quote/name/role/video-button on the right. Rewrote
+`ConstructionTestimonialsSliderRender`'s JSX (`flex-col` → `md:flex-row`, photo `rounded-full`
+avatar → `rounded-2xl` portrait `h-64 w-56`, video button plain text → pill with an orange
+border). Also added the missing `sectionEyebrow` field (two-tone "HAPPY CLIENTS" — first word
+in an orange chip, rest plain gray — matches the source markup) with default `'Happy Clients'`.
+
+**Note for next agent**: confirmed Puck merges a component's `defaultProps` into whatever's
+missing from an already-placed instance's stored props at render time — adding a brand new
+field to a component (like `sectionEyebrow` here) does NOT require re-inserting or manually
+patching already-published instances; they pick up the new field's default automatically. Only
+a genuine prop-shape *rename/restructure* (like the `ConstructionProjectsSlider`/
+`ConstructionTestimonialsSlider` array-field migration earlier in this session) breaks existing
+instances — pure additions are safe.
+
+> **CORRECTION (2026-09-26, About page rebuild entry)**: this was only ever true for the Puck
+> **editor canvas**. Empirically verified (published a bare `{id}`-only block, loaded the real
+> public `/p/<slug>` page, body was completely empty) that **the public `<Render>` output never
+> merges `defaultProps`** — only stored `props` render there. A field added after a page was
+> last published stays blank on that page's live site until the page is re-saved. Don't trust
+> "looks right in the editor" as proof a new field is safe for already-published pages.
+
 ## 2026-09-24 — Testimonials Slider inserted (+ debugging note: Reorder-tab check is unreliable)
 
 Inserted + published `ConstructionTestimonialsSlider` onto the home page. Straightforward

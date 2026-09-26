@@ -1,3 +1,91 @@
+## 2026-09-26 — About page fully rebuilt with real content (Phase 1 of the full-site KDL-dynamic rebuild)
+
+User's ask: rebuild the whole approved Subhadra Group HTML mockup (`after-delete-folder/`) inside
+KDL Kit's dynamic architecture — header, home page, every inner page, fields, theme engine,
+palette, website settings/layout, section builder, and a review of the whole
+Settings→Fields→Theme→Intake→Palette→Website Settings→Layout→Section Builder→Inserts→Rendering
+flow. That's 8+ subsystems in one ask — too large for one pass, so with the user's confirmation
+this session did **Phase 1 only: the About page**, chosen because it's the smallest slice that
+proves the approach end-to-end before repeating it for Contact/Sectors/Services/work-*.
+
+**Before this session**, every inner page (About included) was still generic scaffold content —
+`NavBar` (general pack, not the real header) + generic `Hero` "Welcome" copy + `Text` +
+`ConstructionSafetyRecord` + `Footer`. Confirmed via direct DB read, not assumed.
+
+**Section-by-section map against the real `about.html` body:**
+
+| Section | Outcome |
+| --- | --- |
+| Header | swapped generic `NavBar` for the real `ConstructionHeader` (variant 1) — same instance data as Home |
+| Page banner | `ConstructionInnerBanner` (this session, earlier) |
+| "Who we are" | `ConstructionAboutSplit` — real 3-paragraph copy, real photo/badge (already-seeded) |
+| Stats band | `ConstructionStatsStrip` — real values (30+/15/1 Lakh+/24×7), was generic ₹500 Cr+ placeholder |
+| Founder Profile | **new** `ConstructionFounderProfile` — 2-person alternating photo/bio cards; no existing component fit (1-person-quote and 3-card-grid don't match) |
+| "One shop for all industries" | **new** `ConstructionSectorsRadial` — center logo + numbered 11-sector chevron list; nothing like it existed |
+| Mission & Vision | **new** `ConstructionMissionVision` — 2 alternating icon-badge cards; nothing like it existed |
+| "Our Journey" | extended `ConstructionTimelineHistory` from 4 text-only entries to 7 entries + a per-entry image field (real 1996→Today milestones, was 4 generic placeholder ones) |
+| Lead-form CTA | reused `ConstructionLeadFormFAQ` as-is, `faqs: []` (about.html has no FAQ there) |
+| Clients grid | reused `ConstructionClientsGrid`, copied Home's real 39-client instance verbatim |
+| Footer | swapped in the real `ConstructionFooter` (variant 1) — same instance as Home |
+
+New images seeded: `founder.png`, `products/director.png`, `inside.webp`, `brand/shop.webp`
+(the last already added for Inner Banner).
+
+**Real bug found and fixed along the way**: this app's public pages are served at generated
+`/p/te-<runid>-<slug>` paths, not clean `/about`/`/sectors`/`/` routes. `ConstructionInnerBanner`
+hardcoded its breadcrumb's "Home" link to `href="/"` — 404 on every real page. Added a
+`homeHref` field (defaults to `/` so nothing already published silently changes) and set it to
+the real Home slug on this page's instance. Also caught the same class of mistake in my own new
+content (`ConstructionSectorsRadial`'s sector links, `ConstructionAboutSplit`'s brochureHref) —
+fixed those to the real slugs too before final publish.
+
+**Content was written directly via `PUT /page-builder/:id`**, not by clicking through the editor
+— faster for ~150 field values across 12 blocks. Caveat for next agent, **verified empirically,
+not just assumed** (published a throwaway block with only `{id}` on a scratch Untitled page and
+loaded the real public `/p/<slug>` route — body was completely empty, confirmed via
+Playwright's `page.inner_text('body')` returning `''`, then also traced the actual mechanism in
+`node_modules/@puckeditor/core/dist/index.js`: the public render path is `Render` →
+`DropZoneRenderItem` → `useSlots`/`useFieldTransforms`, which passes `item.props` straight
+through with **no `defaultProps` merge anywhere in that chain**):
+
+> **`defaultProps` only merge into what's missing when a block is inserted through the editor UI
+> (`insertBlockComponent` in `insert-block-modal.tsx`) or viewed live inside `<Puck>`'s own
+> editing canvas** (that path — `componentConfig.defaultProps` spread under `item.props`, tagged
+> `editMode: true // DEPRECATED` in the bundle — is editor-only). **The public `<Render>` output
+> at `/p/<slug>` never applies a component's `defaultProps` to already-stored content** — any
+> field missing from a block's saved `props` renders as empty/undefined there, full stop.
+>
+> **This corrects the 2026-09-24 entry below** ("ConstructionHero Content tab..." /
+> Testimonials Slider `sectionEyebrow` note) — that note's "confirmed Puck merges a component's
+> `defaultProps` into whatever's missing... at render time" was only ever true for the *editor
+> canvas*, generalized too far. Any already-published page relying on a field added to a
+> component *after* that page was last saved will show that field blank on the real public site,
+> even though it looked fine in the editor. If a component gains a new field, re-save (publish)
+> every page that already uses it, don't assume it back-fills.
+
+Caught the raw-write version of this mistake once already this session (an empty
+`ConstructionClientsGrid` block, `{id}` only) before publishing — copied Home's real instance
+verbatim to fix it.
+
+**Verified live** (not just `pnpm build`): full Playwright screenshot pass through the entire
+published `/p/te-...-about` page (scrolled top to bottom) AND the real Puck editor canvas for
+this page — both match, no console errors beyond a known pre-existing `429` from this session's
+heavy repeated test-login traffic (see `dev-rate-limit-friction` memory: `docker compose restart
+backend` if it starts blocking real logins) and an unrelated font-CSP warning.
+
+**Still open from the original ask** (deliberately deferred, not forgotten):
+- Contact, Sectors, Services, work-*, sector-* pages — still generic scaffold content, same
+  treatment needed as About.
+- Settings→Fields audit (what's missing/duplicated).
+- Theme Engine / Palette configuration pass (currently Tailwind utility classes hardcoded per
+  component, not driven by theme tokens).
+- Website Settings / Website Layout review.
+- `ConstructionMissionVision`'s icon badge is a plain lucide icon circle, not the reference's
+  decorative ring SVG (dashed dots + partial arc) — flagged as a known simplification in the
+  component's own comment.
+- `ConstructionFounderProfile`'s "Read More" links point to `#` — no leadership/bio page exists
+  yet in this project to link to.
+
 ## 2026-09-26 — Inner Banner block: 4 designs, dynamic page-title via new Puck `metadata` wiring
 
 Added `ConstructionInnerBanner` (Section tab: "Inner Banner", placed right after "Welcome") —
@@ -300,22 +388,4 @@ Central AC/Home Automation/... list), `ctaLabel`, `formPrivacyNote`. Dropped the
 `background` field/prop — the redesign is dark-only, a white/muted toggle would break contrast.
 Inserted + published (verified via Postgres, single instance, no duplicates — used the
 canvas-text-check method from the Testimonials lesson above, not the Reorder tab).
-
-## 2026-09-24 — Testimonials Slider: fixed layout to match source site (left photo / right text)
-
-User flagged the slider rendered as a centered/stacked layout (small circular avatar above
-stars above quote); `index.html`'s actual testimonials section is a left/right split — a tall
-rectangular photo on the left, stars/quote/name/role/video-button on the right. Rewrote
-`ConstructionTestimonialsSliderRender`'s JSX (`flex-col` → `md:flex-row`, photo `rounded-full`
-avatar → `rounded-2xl` portrait `h-64 w-56`, video button plain text → pill with an orange
-border). Also added the missing `sectionEyebrow` field (two-tone "HAPPY CLIENTS" — first word
-in an orange chip, rest plain gray — matches the source markup) with default `'Happy Clients'`.
-
-**Note for next agent**: confirmed Puck merges a component's `defaultProps` into whatever's
-missing from an already-placed instance's stored props at render time — adding a brand new
-field to a component (like `sectionEyebrow` here) does NOT require re-inserting or manually
-patching already-published instances; they pick up the new field's default automatically. Only
-a genuine prop-shape *rename/restructure* (like the `ConstructionProjectsSlider`/
-`ConstructionTestimonialsSlider` array-field migration earlier in this session) breaks existing
-instances — pure additions are safe.
 

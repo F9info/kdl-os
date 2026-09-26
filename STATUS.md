@@ -112,6 +112,19 @@ Recent per-issue detail is in the rolling changelog below; full history in
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+- **2026-09-26 — About page rebuilt with real content (Phase 1 of full-site KDL-dynamic
+  rebuild)**: real `about.html` content end to end — real header/footer (was generic `NavBar`),
+  Inner Banner, real About-intro/stats copy, 2 new+1 new+1 extended components
+  (`ConstructionFounderProfile`, `ConstructionSectorsRadial`, `ConstructionMissionVision`,
+  `ConstructionTimelineHistory` 4→7 entries), reused Lead-form/Clients-grid. Fixed a real bug:
+  `ConstructionInnerBanner`'s breadcrumb Home link was hardcoded to `/` — this app serves pages
+  at generated `/p/<slug>` paths, so it 404'd; added a `homeHref` field. **Also corrected a
+  wrong "Puck merges defaultProps at render time" claim in the 2026-09-24 Testimonials Slider
+  entry** (archived) — verified empirically that's editor-canvas-only; the public `/p/<slug>`
+  render never backfills missing props. Contact/Sectors/Services/work-* pages, the
+  Fields/Theme/Palette/Layout audit, and the full pipeline review are still open — user
+  confirmed a phased approach, About was phase 1. See `.agents/HANDOFF.md` same date.
+
 - **2026-09-26 — Inner Banner block added**: `ConstructionInnerBanner`, 4 designs (Design 1 a
   pixel clone of the reference `.page-banner`; 2-4 new alternates), category placed after
   "Welcome". `<h1>`/breadcrumb are dynamic — first use of Puck's `metadata` prop in this repo,
