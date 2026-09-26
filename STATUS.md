@@ -112,6 +112,94 @@ Recent per-issue detail is in the rolling changelog below; full history in
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+- **2026-09-26 — Inner Banner block added**: `ConstructionInnerBanner`, 4 designs (Design 1 a
+  pixel clone of the reference `.page-banner`; 2-4 new alternates), category placed after
+  "Welcome". `<h1>`/breadcrumb are dynamic — first use of Puck's `metadata` prop in this repo,
+  wired through `template-engine/edit/[id]/page.tsx` and `p/[slug]/page.tsx`. Verified against
+  the actual docker stack (which runs a baked `next start` image, not a live-reloading dev
+  server — required `docker compose build frontend` to see the change). See
+  `.agents/HANDOFF.md` same date.
+
+- **2026-09-24 — Hero brand logos: nested array field, real logos from index.html**: `d2Slides[].
+  brands` converted from a plain-text textarea to a nested Puck array (`{name, logo}[]`), giving
+  multi-image-upload and native drag-reorder for free (same array pattern as the slide
+  accordions). Populated with the real per-slide brand logo sets matched against `index.html`'s
+  `.v2-hero-brands-track` markup (25 real files from `frontend/public/seed/subhadra/ourbrands/`,
+  all verified to exist on disk). Migrated the live page's data; also fixed an unrelated leftover
+  (`sliderShowArrows`/`sliderShowDots` had been left `false` from earlier session testing).
+
+- **2026-09-24 — ConstructionHero Content tab: array-based slide accordions + real content**:
+  converted all 4 Hero designs from flat `d{n}SlideN{Field}` props to Puck native `type: 'array'`
+  fields (same pattern as `ConstructionTestimonialsSlider`/`ConstructionProjectsSlider`) — gives
+  per-slide accordions with drag/remove and an "Add" button for free, fixed content reordered to
+  sit below. Real Subhadra hero images/copy from `index.html` replace Unsplash placeholders
+  (6 real `hero-slider/*` images copied to `frontend/public/seed/subhadra/hero-slider/`); d3/d4
+  (no real-site equivalent) reuse real content already sourced for Testimonials/Disciplines.
+  Fixed a real bug found along the way: `blocks-panel.tsx`'s Style/Content tabs never called a
+  component's `resolveFields`, so Design-1..4 components leaked all 4 designs' fields at once
+  regardless of selected variant. Migrated the live page's already-published Hero block via a
+  scoped Node/`pg` script so its Content tab shows real data immediately, not an empty array.
+
+- **2026-09-24 — ConstructionHero panel: hid variant/primaryColor/secondaryColor**: removed
+  from the Style tab (not from data/type — still needed for the 4-design branching and colour
+  fallback logic, and any already-published instance still carries real values) via a new
+  scoped `HIDDEN_FIELDS` map in `blocks-panel.tsx`, keyed by component type so it doesn't hide
+  `variant` on every other block's own design picker. Verified via Playwright: fields gone from
+  panel, hero still renders Design 2 with its real colors.
+
+- **2026-09-24 — ConstructionHero Style-tab "Slider Settings" + "Typography" accordions**:
+  Slick-inspired carousel controls (arrows/dots show-hide, autoplay+speed, loop, fade-vs-slide)
+  and per-element font size/weight/color (title/tagline/paragraph/button) added to all 4 Hero
+  variants. `blocks-panel.tsx`'s Style tab now groups any `slider*`/`typo*`-prefixed field into
+  its own collapsible accordion automatically — reusable by other slider blocks on request.
+  Verified live via Playwright (toggle Hide → arrows/dots actually disappear from canvas; set a
+  typo color → H1's computed color changes); not published, editor-behavior check only.
+
+- **2026-09-24 — Full home-page audit vs index.html**: found + fixed 3 real bugs — missing
+  Products section (inserted + reordered via native drag), all 6 Discipline card icons
+  showing the same generic hardhat (stale pre-icon-field instance, fixed via Content tab),
+  and Footer content badly wrong (generic copyright, swapped Showroom/Regd.Office addresses,
+  incomplete phone/email, extra social icons) — Footer isn't selectable in this Puck editor
+  at all (not root-caused), fixed via a scoped SQL merge after explicit user approval
+  (auto-mode blocked the raw write twice). All verified via Postgres + screenshots.
+
+- **2026-09-24 — Our Brands real logos + inserted on home page**: `ConstructionOurBrands` now
+  renders real vendor logo images (99 files copied to `frontend/public/seed/subhadra/ourbrands/`)
+  instead of text chips; UI restyled to match the source site exactly. Block is now actually on
+  the live home page (was built earlier but never inserted). **Found: this editor has no
+  autosave — only the Publish button persists changes** (`PUT /api/page-builder/:id`); verified
+  via direct Postgres query, not just the UI.
+
+- **2026-09-24 — Real Content/Style tab split**: Style tab now shows only padding/background/
+  align/variant/color-type fields, Content tab shows everything else (text/images/slide add-
+  remove), for every page-builder component, via Puck's exported `AutoField`/`FieldLabel` +
+  a field-name heuristic in `blocks-panel.tsx` (`isStyleField`) — no per-component schema
+  rewrite needed. Verified live with Playwright (login + edit + persistence check).
+  **Admin login password changed to `kdl@123`** (was rejecting the docs' default
+  `kdl-dev-seed-password` — that hash predates the current seed default) — one `users` row only.
+
+- **2026-09-24 — Page-builder: real image upload field + native slide add/remove**: Theme Engine
+  link moved under every block's Style tab; new `imageField()` custom field (URL box + Upload →
+  MediaPicker) wired into About/Disciplines/Sectors/Products/Tagline images; Featured Projects
+  and Testimonials sliders switched to Puck's native `type:'array'` field for real add/remove/
+  reorder-slide UI. Breaking prop-shape change for those 2 sliders — already-placed instances
+  need re-inserting.
+
+- **2026-09-24 — Subhadra site ported into page-builder**: 10 more sections from the client's
+  marketing site added to `packs/construction/index.tsx` — 6 existing components extended with
+  Subhadra content/fields (About logos, Sectors 9th card, Products image+brands, Clients 24
+  logos, Lead/FAQ + Tagline copy, Floating Actions gained a brochure FAB + trust-badge), 4 new
+  components (Disciplines Grid, Our Brands tabs, Featured Projects slider, Testimonials slider
+  + video modal). Real assets copied to `frontend/public/seed/subhadra/`. No backend changes.
+  Trims flagged in handoff: Products 8/15, Clients 24/39, brand logos shown as text chips.
+
+- **2026-09-24 — Tagline Strip page-builder section**: new `TaglineStrip` component + top-level
+  "Tagline Strip" sidebar category in `packs/general/index.tsx`, 4 variants (gradient banner /
+  dark mark+text / minimal rule bar / floating card w/ optional CTA), shared editable fields via
+  Puck's Style tab, no backend changes. Reminder logged for next agent: `frontend` runs as a
+  built Docker image (no volume mount/hot reload) — needs `docker compose build frontend && up -d`
+  after any frontend edit.
+
 - **2026-08-25 — KDL-558 row 1**: Studio's INTAKE stage gets a real "Logo & Contact Details" form
   (company name, primary/secondary email, primary/secondary phone, address1/2), backed by the
   Application Settings engine (`owner_module: 'brand-kit'`) instead of a new BrandKit migration.

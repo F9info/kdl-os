@@ -1,973 +1,321 @@
-## 2026-08-25 — KDL-558: row 1 polish streak + row 2 (Palette editor) done (CEO)
-
-Six PRs merged in quick succession after step 4 (each its own branch/PR, verified locally + merged
-per user confirmation each time — CI is down org-wide, billing issue, same as every PR this
-session):
-
-- **#238** — Overview had two action buttons (StageShell's generic Run-stage/Complete + a custom
-  Submit); consolidated into one "Next" that saves the contact fields then advances/retries.
-- **#239** — Logo file + Company name were silently gating Next with no visible indication; added
-  red required asterisks + inline error messages on a failed click instead of a mystery-disabled
-  button.
-- **#240** — Logo upload now shows an actual image thumbnail (`GET /media/:id` presigned URL), not
-  just a checkmark; removed the "Category: Logo & Contact Details" hint repeated under all 7
-  fields (one shared category, card title already says it).
-- **#241** — Clicking Next saved + advanced the stage on the backend but never navigated — Studio's
-  routes are URL-based (`/projects/:id/:stageSlug`), so the page silently stayed on Overview.
-  Fixed: routes to `/palette` on a successful advance only (not on retry, which just resets
-  FAILED→PENDING without completing the stage).
-- **#242 — row 2 of the roadmap, a real feature, not a polish fix**: Palette stage was a stub (a
-  static "Palette extracted" card, no data shown). Rebuilt as an editor with 4 colour groups —
-  **Primary/Secondary/Accent/Neutral** (researched the actual backend `palette.colors` shape before
-  building; the prototype's "Tertiary/Quaternary" naming doesn't exist on the backend, would have
-  been a silent mismatch). Each group: editable base hex + logo eyedropper (canvas pixel sample,
-  falls back to a toast on CORS-tainted images — **not verified against real MinIO CORS headers,
-  flagged for manual test**) + live-regenerated 10-step OKLCH ramp. `frontend/src/lib/oklch-ramp.ts`
-  ports `backend/src/modules/brand-kit/palette.js`'s ramp math verbatim (same sRGB↔OKLab↔OKLCH,
-  same gamut-mapping by chroma reduction) — pure client-side, no new backend endpoint, unit-tested
-  against the same invariants the backend's own `palette.test.js` asserts. New `usePatchBrandKit`
-  hook (the PATCH endpoint existed, had no frontend consumer). Known gap surfaced, not fixed:
-  editing the palette doesn't recompute `contrast_report`, and approval only checks acknowledgment
-  of the possibly-now-stale existing adjustments.
-
-All six: typecheck + lint clean, full frontend suite green (199/199 as of #242). Backend untouched
-throughout this streak (still 1257/1257 from the last time it was touched, PR #233).
-
-**Next:** row 3 of the roadmap (Typography — embed theme-engine's per-platform panel inline in
-Studio, per `.agents/TEMPLATE_ENGINE_HTML_INTEGRATION.md`), or whatever the user asks for next —
-this session has been fully user-directed, screenshot by screenshot, not following the roadmap
-sequentially.
-
----
-
-## 2026-08-25 — KDL-558 row 1 step 4: Studio stepper — left sidebar → top horizontal tabs (CEO)
-
-Pure layout change, no data/logic touched. `StudioStepper.tsx`: `nav` wrapper
-`flex flex-col` → `flex flex-row gap-1 overflow-x-auto` (scrolls horizontally if the 9 stage labels
-don't fit); each `StepItem` button: `w-full` → `shrink-0 whitespace-nowrap`, dropped the `flex-1`
-label span (was stretching to fill vertical-list width, wrong in a horizontal row) and the `ml-auto`
-error-code badge positioning (not needed once items aren't full-width). `projects/[projectId]/layout.tsx`:
-replaced the `flex h-full gap-0` sidebar-plus-main split (`<aside className="w-56 ... border-r">`)
-with a `flex h-full flex-col` stack — stepper now a full-width `border-b` top bar, stage content
-below it. No test coverage existed for this markup (confirmed via grep) — full RTL suite (168/168) +
-type-check + lint still green as the regression check.
-
----
-
-## 2026-08-25 — KDL-558 row 1 step 3: kill Studio project-picker, wire Overview to the standalone fields (CEO)
-
-**User-confirmed scope** (asked before touching nav): "remove all this" = kill the project-picker
-landing page entirely, `/admin/template-engine` goes straight to the default project's flow. Multi-
-project support stays in the backend/DAG, just not surfaced as a picker on first load.
-
-**What was done:**
-- `frontend/src/app/admin/template-engine/page.tsx` rewritten — no more "Studio guides your brand
-  identity through a 9-stage pipeline" text / "Mode A — Active" badge / project-card list. It now
-  resolves the default project (`is_default` flag, falls back to the first project) and
-  `router.replace`s straight into `/admin/template-engine/projects/{id}` — which already had its own
-  auto-redirect-to-first-incomplete-stage logic (`projects/[projectId]/page.tsx`, pre-existing, unchanged),
-  so this reuses existing infra rather than duplicating redirect logic.
-- `IntakeStage.tsx` — title "Intake" → "Overview", description now "Upload your logo and enter your
-  contact details, then submit to unlock Brand System." (matches the user's mockup). The "Logo &
-  Contact Details" card now shows brand-kit's live status pill (draft/extracted/inferred/approved).
-- **Contact fields now render via the REAL shared `FieldControl` component**
-  (`app/admin/settings/_components/FieldControl.tsx` — the same one `/admin/settings/view/[slug]`
-  uses), fetching `GET /setting-fields/by-type/brand-profile` and saving via
-  `POST /setting-fields/values` — i.e. actually "using application settings" now, not a bespoke form
-  bound to the per-project hidden store from two steps ago. Logo upload deliberately stays on
-  brand-kit's own endpoint (real sanitization + OKLCH palette extraction depends on it) even though a
-  generic "Logo file" field also exists in the standalone catalogue — the two are intentionally not
-  the same upload path.
-- Removed now-dead `useBrandContactFields`/`useSaveBrandContactFields` hooks from
-  `useTemplateEngine.ts` (superseded by the generic setting-fields query/mutation used directly in
-  `IntakeStage.tsx`).
-- Rewrote `template-engine-intake-contact.test.tsx` against the new data source; fixed one now-stale
-  assertion in `template-engine-studio.test.tsx` (`getByText('Intake')` → `'Overview'`).
-- Full suites green: backend 1257/1257 (untouched by this step, re-run to confirm), frontend 168/168,
-  type-check + lint clean.
-
-**Left alone, still orphaned (flagging again, not removed without instruction):** the per-project
-`backend/src/modules/brand-kit/contact-fields.js` + its `/contact` routes + the `collateral`
-`resolveBrandKit()` wiring from the first attempt are now **fully unused** by the frontend (nothing
-calls `/api/brand-kit/:projectId/contact` anymore). They still work, just dead. Options for next time
-this comes up: (a) delete them outright, or (b) repoint `resolveBrandKit()`'s company lookup at the
-new standalone `brand-profile-*` fields (global values) instead of deleting the per-project
-plumbing. Not deciding this without being told.
-
----
-
-## 2026-08-25 — KDL-558 row 1 correction: standalone seeder instead of per-project hidden fields (CEO)
-
-**User correction on the prior entry below** ("Not like this"): the per-project, `owner_module`-hidden
-`contact-fields.js` approach (dynamic Type/SettingField instantiation per project, values in
-theme-engine's `SettingValue` table) was over-engineered relative to what was actually asked. What the
-user wants, step by step, starting with this step only:
-
-- The 8 fields (Logo file, Company name, Primary/Secondary email, Primary/Secondary phone,
-  Address 1/2) should be **standalone** (`owner_module: null`) — visible and editable through the
-  normal `/admin/settings/fields`, `/admin/settings/types`, `/admin/settings/categories` screens,
-  exactly like the pre-existing "Theme Settings → Site Details → Logo/Site Name" example rows (those
-  were created by hand through the admin UI — confirmed via `git grep`, no seed script produced them).
-  Not hidden per-project internal state.
-- Delivered as an **idempotent seeder** ("if already created, use it; if not, create it") — new
-  `backend/prisma/seeders/brand-profile-fields.seed.js`, mirroring `brand-kit.seed.js`'s exact
-  upsert-by-slug pattern but WITHOUT `owner_module` (deliberately opposite of that file's hiding
-  mechanism). Wired into `prisma/seed.js`'s `main()`.
-- Ran it against the live dev DB (`kdl_db` on :5443) directly — verified all 8 rows created under a new
-  `Type` "Brand Profile" (slug `brand-profile`) → `Category` "Logo & Contact Details"
-  (slug `brand-profile.logo-contact`), then re-ran to confirm idempotency (still 8 rows, no dupes).
-
-**Not touched in this step** (explicitly scoped narrow, per the user's "will tell one by one"): the
-previous `contact-fields.js` / `IntakeStage.tsx` / collateral wiring from the entry below is left as-is
-for now — not reverted, not wired to this new seeder yet. Expect a later step to reconcile these two
-(the per-project approach may end up replaced by this standalone one, or the standalone fields may
-become the *schema* while a later mechanism handles *per-project values* — undecided, wait for
-instruction rather than assuming).
-
-**Branch note:** this and the row-1 entry below live on `feat/kdl-558-brand-intake-contact-fields`
-(not master). The user made an unrelated commit on this same branch directly (pre-existing
-`.agents/BRAND_KIT_ARCH.md` / `ai-services/scripts/brand-inference-ab.*` / doc tweaks, commit
-`66b54208 "new md files crated"`) then switched back to `master` themselves — noted here only so a
-future session isn't confused by that commit's presence; it's unrelated to KDL-558.
+## 2026-09-26 — Inner Banner block: 4 designs, dynamic page-title via new Puck `metadata` wiring
+
+Added `ConstructionInnerBanner` (Section tab: "Inner Banner", placed right after "Welcome") —
+Design 1 is a pixel clone of the reference site's `.page-banner` (about.html et al: full-bleed
+photo, dark overlay, breadcrumb, `<h1>`, subtitle). Designs 2-4 are new alternates (split card /
+compact centered strip / frosted-glass-over-photo) — the real site only has one inner-banner
+design, so unlike Hero Slider there was no second/third/fourth reference to copy.
+
+The `<h1>` and breadcrumb "current" label are never a per-block field — they always read
+`puck.metadata.pageTitle`, the first use of Puck's `metadata` prop anywhere in this repo. Wired
+into both `template-engine/edit/[id]/page.tsx` (`<Puck metadata={{ pageTitle: page.title }}>`)
+and `p/[slug]/page.tsx` (`<Render metadata={{ pageTitle: page.title }}>`) — both already loaded
+`page.title` for other purposes (`headerTitle`), just hadn't threaded it into block props before.
+
+Insert-modal preview cards call `comp.render(props)` directly outside any `<Puck>`/`<Render>`
+tree (see `insert-block-modal.tsx` `BlockCard`), so `props.puck` is `undefined` there — the
+render function falls back to the literal string `'Page Title'` in that case (verified: modal
+cards show "Page Title", a real inserted block on the Home page showed "Home", a real inserted
+block on the About page showed "About" — both in the editor canvas and on the published
+`/p/<slug>` route).
+
+Verified live against the actual docker stack, not just `pnpm build`: the `frontend` container
+runs a standalone `next start` build baked into its image at `docker build` time — no source
+bind-mount, so **editing files here does nothing to `localhost:3101` until `docker compose
+build frontend && docker compose up -d frontend` is run.** Cost real time this session (first
+verification attempt showed the category missing entirely because the running container was
+still serving the pre-existing image). Test insertions used for verification (Home + About
+pages) were removed again via a direct `PUT /page-builder/:id` afterward — real project content
+is unchanged from before this task.
+
+Also found and fixed in passing: two `<a href="/">` in the new component tripped
+`@next/next/no-html-link-for-pages` (blocking, not a warning) — switched to `next/link`'s
+`Link`. First `git add` touching `packs/construction/index.tsx` and `edit/[id]/page.tsx` this
+session triggered a full `prettier --write`/`eslint --fix` reformat of those files via the
+pre-commit hook (they apparently were never run through it before) — large diffs, cosmetic
+only, verified via `tsc --noEmit` before and after. Both files also carried pre-existing
+uncommitted changes from earlier in this session that got swept into these same commits
+(nothing lost, just coarser commit attribution than the messages describe).
+
+Design spec: `docs/superpowers/specs/2026-09-26-inner-banner-design.md`.
+Plan: `docs/superpowers/plans/2026-09-26-inner-banner.md`.
+
+## 2026-09-24 — Hero brand logos: nested array field (multi-upload + reorder), real logos from index.html
+
+User's screenshot showed the Hero's per-slide "Brands" row as plain text chips ("Schneider
+Electric", "RR Kabel", ...) instead of real logo images like the reference site, and asked for
+"multiple upload image option and change the order of brands" plus real logos/content copied
+directly from `/Users/f9developer/Development/subhadra`.
+
+**`d2Slides[].brands` converted from a newline-separated textarea to a nested Puck array field**
+(`{name, logo}[]`, `logo` via the existing `imageField()` helper) — Puck's `arrayFields` values
+can themselves be `type: 'array'`, so this is a plain array-inside-array, no new field-type work
+needed. This is what gives "multiple upload" (an Upload button per brand row, add as many as
+needed via the array's own "+" button) and "change the order" (array items are natively
+drag-reorderable, same as the slide accordions from the previous entry) for free.
+
+**Render** (`d2Slide.brands.map(...)`) now renders a real `<img>` per brand in a white
+rounded chip (`bg-white rounded-lg ... object-contain`) when `logo` is set, falling back to a
+plain text chip when it isn't — same `logo ? <img> : <span>` pattern already used by
+`ConstructionOurBrands`/`ConstructionProjectsSlider` elsewhere in this file.
+
+**Real logos**, one per brand, sourced from the exact files already copied into
+`frontend/public/seed/subhadra/ourbrands/{electrical-products,design-execution-maintenance,
+lifestyle-residential-products}/` earlier this session (from `subhadra/assets/images/ourbrands/`)
+— matched against `index.html`'s `.v2-hero-brands-track` markup (`data-track="0"` through `"5"`,
+one track per hero slide) so each slide's brand row is the *exact* real set: Central AC → Blue
+Star; Electrical & Switchgear → Schneider Electric, RR Kabel, Crompton, Norisys, Cummins, APC;
+Safety and Security → CP Plus, Honeywell, Ravel, Bosch, Ajax, Matrix; Home Automation →
+Schneider Electric, Bticino, RTI, Toyama, eelectron; Home Theater → M&K Sound, Focal, Sony,
+Optoma, SVS, Marantz; Premium Lighting → Futura, Wipro. Paths use `%20`/`%26` encoding for
+spaces/`&` in filenames, matching the existing convention already used for this same folder
+elsewhere in the file (`ConstructionOurBrands`). Verified all 25 referenced files actually exist
+on disk (not just assumed from the earlier copy) and that the live canvas renders a real white
+logo chip with no broken `<img>` (checked `naturalWidth === 0` on the mounted slide).
+
+Migrated the live page's already-published Hero block's `d2Slides[].brands` via the same
+Node/`pg` script pattern as the previous entry (panel reads raw stored props, not
+defaultProps-merged render output). Also found and fixed an unrelated leftover: this project's
+`sliderShowArrows`/`sliderShowDots` were `false` in the live DB — an artifact from this
+session's own earlier interactive Style-tab testing that apparently got persisted at some point
+without an explicit Publish being noticed; reset both back to `true` (the correct default) via
+a scoped SQL patch, same pre-established pattern as the Footer fix.
+
+## 2026-09-24 — ConstructionHero Content tab: native array-based slide accordions + real content/images + resolveFields panel bug fix
+
+User asked for the Content tab's flat `d1Slide1Image`/`d1Slide1Badge`/... field wall to become
+per-slide accordions (like the screenshot: "slide 1, slide 2 etc") with an "add new slide"
+button after the last one and a remove option per slide, fixed (non-slide) content shown below
+the accordions, and all default content/images replaced with real Subhadra material from
+`/Users/f9developer/Development/subhadra/` — no more Unsplash placeholders.
+
+**Converted all 4 Hero designs from flat `d{n}SlideN{Field}` props to Puck's native `type:
+'array'` field** (same pattern as `ConstructionTestimonialsSlider`/`ConstructionProjectsSlider`,
+built earlier this session) — this *is* the accordion-with-add/remove UI the user described;
+no custom accordion component needed, Puck's ArrayField already renders each item collapsed
+(titled via `getItemSummary`), with a drag handle, a delete icon per item, and an "Add" button
+after the last one.
+- `d1Slides` (full-bleed slider): `{image, badge, headline, subheadline, ctaLabel, ctaHref}[]`
+- `d2Slides` (dark split hero, the currently-live design): `{dotLabel, image, lead, highlight,
+  description, brands}[]` — field names deliberately kept identical to the old per-slide object
+  shape already used inside the render function, so the entire ~250-line JSX body for all 4
+  variants needed **zero changes** beyond swapping the manual `[{...},{...},{...}].filter(...)`
+  construction for the incoming (now-array) prop, filtered the same way.
+- `d3Slides` (rotating quote): `{image, quote, author, role}[]`
+- `d4Slides` (fixed headline + feature slider): `{icon, title, description}[]` — `icon` reuses
+  the shared `DISCIPLINE_ICON_FIELD` select (snowflake/housegear/tv/plug/fire/lightbulb) instead
+  of the old one-off hardhat/shield/star options, so it matches `ConstructionDisciplinesGrid`'s
+  icon picker.
+Each design's own fixed/non-slide fields (d2's badge/CTA/avatars/trust-line/stats, d3/d4's
+eyebrow/headline/subheadline/CTA) were reordered to sit **after** their slide array in the
+`fields` object, so the panel shows accordions first, fixed content below — matching the
+screenshot ("below show the fixed content editable").
+
+**Real content, sourced only from the actual site** (`index.html`'s `.v2-hero` section — the
+6-slide dark-split hero is the *only* hero design that exists on the real site):
+- Copied the 6 real hero images from `subhadra/assets/images/hero-slider/*.{jpg,jpeg}` into
+  `frontend/public/seed/subhadra/hero-slider/` (this project's established real-asset
+  convention) — replaces the Unsplash stock photos on all 6 `d2Slides` items, and on 3 of
+  `d1Slides` (reused for the full-bleed design, which has no real-site equivalent of its own).
+  `d2Slides`' headline/description text already matched the site's `data-headline`/`data-desc`
+  attributes verbatim from earlier this session — only the images and a few incidental strings
+  needed fixing: `d2TrustText` was "1000+ businesses trust us", real copy is "1000+ businesses
+  **across Andhra Pradesh** trust us"; `d2CtaLabel` gained the real arrow ("Get a Quote →");
+  `d2Avatar1-3` were Unsplash headshots, now real client logos
+  (`/seed/subhadra/clients/client-01/14/21.png`) matching the real trustline's `<img>` set;
+  per-slide `brands` (blank before) now list the real brand names from each slide's
+  `.v2-hero-brands-track` (e.g. Home Theater → "Focal\nSony\nMarantz").
+- `d3Slides`/`d4Slides` have no real-site equivalent (the site only has ONE hero design) — reused
+  real content already sourced elsewhere this session rather than inventing new copy: `d3Slides`
+  reuses 3 of `ConstructionTestimonialsSlider`'s real client testimonials; `d4Slides` reuses 3 of
+  `ConstructionDisciplinesGrid`'s real discipline blurbs (Central AC/Home Automation/Home
+  Theater); `d3Headline`/`d3Subheadline` reuse the real Footer tagline ("...since 1996").
+- **Did not touch** `backend/.../drivers/website-seed-content.js`'s `CONSTRUCTION_HERO_HOME` —
+  that's the *generic* construction-template fallback used when scaffolding any brand-new
+  project, not Subhadra-specific; putting Subhadra's real content there would be the wrong layer.
+  Flagging this instead of silently skipping it, in case "make it seeder" meant something else.
+
+**Real bug found + fixed along the way**: `blocks-panel.tsx`'s `SplitFieldEditor` builds the
+Style/Content tabs by reading `config.components[type].fields` directly — it never called each
+component's own `resolveFields`, so a Design-1..4 component (Hero, and presumably
+Header/TopBar) showed **all 4 designs' fields at once** regardless of which `variant` was
+actually selected (this is exactly why an earlier screenshot showed `d1Slide1Image` etc. even
+though the selected instance was Design 2 — d1's fields just happen to be first in the object).
+Fixed by calling `component.resolveFields(selectedItem, { fields: staticFields })` when present,
+same as Puck's own field editor would. Verified: Content tab for the live (Design 2) instance
+now shows only `d2Slides` + d2's fixed fields — no `d1Slides`/`d3Slides`/`d4Slides` leaking in.
+
+**Migrated the live page's already-published Hero block** — its stored props still had the old
+flat `d2Slide1DotLabel`/etc. shape (Puck's defaultProps-merge fills *missing* keys for `render`,
+which is why the canvas already showed correct real content/images immediately after the code
+deploy, but the *editor panel* reads the raw unmerged `selectedItem.props`, so `d2Slides` showed
+as an empty array with no accordions until the real data existed there too). Wrote a small
+Node/`pg` script (`pg` is already a backend dependency), copied into the backend container and
+run once, merging the same real `d1-d4Slides` arrays + the `d2Avatar/TrustText/CtaLabel` fixes
+directly into `builder_pages.data->content` for this page's `ConstructionHero` block — same
+scoped-SQL-style approach as the earlier Footer fix, this time via a parameterized query (no
+manual string-escaping risk with the apostrophe in one of the real testimonial quotes). Verified
+via fresh page load (not just editor state) that the trustline/CTA/6 slide accordions are real.
+
+Verified end-to-end via Playwright: canvas renders the real Blue Star hero banner image, real
+"1000+ businesses across Andhra Pradesh trust us", real "Get a Quote →" with arrow; Content tab
+shows 6 accordion rows titled by real dot labels (Central AC, Electrical & Switchgear, Safety
+and Security, Home Automation, Home Theater, Premium Lighting) with a "+" add button below the
+last one, and the fixed d2 fields (badge/CTA/avatars/trust/stats) below that.
+## 2026-09-24 — ConstructionHero: Style-tab "Slider Settings" + "Typography" accordions (Slick-style controls)
+
+User asked (after reading the Slick carousel docs at kenwheeler.github.io/slick, which I
+fetched and summarized first) for the Hero slider's Style tab to expose slider behaviour
+controls (arrows show/hide, dots show/hide, autoplay + speed, loop, fade-vs-slide) plus a
+Typography group covering title/tagline/paragraph/button, matching Slick's settings table.
+
+**Scope**: `ConstructionHero` only (all 4 variants: full-bleed slider, dark split hero,
+rotating quote, fixed-headline slider) — the block shown in the screenshot. Not yet applied
+to the other carousel blocks (`ConstructionTestimonialsSlider`, `ConstructionProjectsSlider`,
+etc.); same pattern is reusable there if asked.
+
+**New fields on `ConstructionHero`** (variant-agnostic — no `d{n}` prefix, so `variantFields`
+shows them regardless of which design is selected):
+- `sliderShowArrows` / `sliderShowDots` — radio Show/Hide, gate the existing prev/next + dot
+  controls in all 4 variants.
+- `sliderAutoplay` (radio On/Off) + `sliderAutoplaySpeed` (number, ms) — drives a single
+  `setInterval` `useEffect` computed from a variant-aware `heroTotal`, called unconditionally
+  before any variant branch/early return (hooks-order safety — the 4 variants used to diverge
+  on `return` before any hook after `useState`, so the effect has to sit above that split).
+- `sliderLoop` (radio On/Off) — when off, prev/next buttons disable (`opacity-30
+  cursor-not-allowed`, `disabled` attr, guarded `onClick`) at the first/last slide instead of
+  wrapping.
+- `sliderTransition` (select Slide/Fade) — each variant now renders only the *active* slide
+  (previously variant 1 stacked all 3 slides absolutely and cross-faded via per-slide
+  `opacity`; simplified to match the other 3 variants, which already rendered only the active
+  slide) with `key={idx}` + a Tailwind keyframe class (`animate-hero-fade-in` /
+  `animate-hero-slide-in`, added to `tailwind.config.ts`) so switching slides replays the
+  animation.
+- `typoTitleSize/Weight/Color`, `typoTaglineSize/Weight/Color`, `typoParaSize/Weight/Color`,
+  `typoButtonSize/Weight/Color` (12 fields) — resolved via a `typoStyle()` helper into inline
+  `style` (not Tailwind classes — inline always wins over the component's own responsive
+  `text-3xl md:text-5xl`-style classes, which a same-specificity utility class can't reliably
+  override). Size/weight selects default to an empty string ("Default" option, added after
+  first pass looked wrong — an empty value with no matching `<option>` made the browser
+  visually show the *first* option ("Small") even though the real stored value was empty and
+  no override was actually applied); empty means "don't touch this element's own style."
+
+**blocks-panel.tsx**: `isStyleField()` gained `/^slider/` and `/^typo/` so these route to the
+Style tab (not Content). `SplitFieldEditor` (style group only) now splits into three buckets —
+general fields flat as before, then any `slider*`/`typo*` fields each in their own
+`<FieldAccordion>` (native `<details open>`, no new state/dependency) titled "Slider Settings"
+/ "Typography". Any block gets both accordions for free just by naming fields this way — no
+per-component panel wiring needed.
+
+Verified with a Playwright script driving the real editor (login → select Hero → Style tab):
+screenshotted both accordions rendering with the "Default" fix, then drove the actual radio/
+text inputs (Puck serializes radio option values as JSON strings like `{"value":true}`, so the
+click target is the `<label>` wrapping the input, not the value string) — toggling
+`sliderShowArrows`/`sliderShowDots` to Hide removed the prev/next buttons and dot row from the
+canvas (arrow button count 1→0), and setting `typoTitleColor` to `#00aa55` changed the live H1
+`getComputedStyle(...).color` to `rgb(0, 170, 85)`. Did not click Publish — nothing persisted
+to Postgres, this was editor-behavior verification only.
+
+**Housekeeping**: trimmed `.agents/HANDOFF.md`'s 2026-09-24 window from 14 entries down to 8
+(the instructed ~8-entry cap wasn't being enforced through the rest of this long session) —
+moved "Featured Projects slider inserted" through "Tagline Strip section added" (7 entries) into
+`.agents/HANDOFF_ARCHIVE.md`.
+
+## 2026-09-24 — Full home-page audit vs index.html: found + fixed 3 real bugs
+
+User asked for a full compare-and-fix pass between the built home page and `index.html`.
+Findings, in order of how they were caught:
+
+1. **Section order gap**: `ConstructionProductsShowcase` was coded (much earlier this
+   session) but never inserted onto the page. Inserted it via the Section picker, then
+   used the Reorder tab's native HTML5 drag (`source.hover()+mouse.down()+target.hover()+
+   mouse.up()`, not Playwright's `dragTo()` which didn't fire the app's own dragover/drop
+   handlers reliably) to move it from the end of the list to its correct spot — between
+   Featured Projects and Clients, matching `index.html`. Verified via Postgres before/after.
+2. **Real regression — Disciplines icons**: all 6 discipline cards showed the same generic
+   hardhat icon instead of their distinct icons (snowflake/house-gear/tv/plug/fire/
+   lightbulb). Root cause: this block instance was inserted before the icon field existed
+   (see the "2026-09-24 — Discipline icon badges" entry below), so its stored props never
+   got `disciplineNIcon` values baked in, and the render's fallback (`ICON_BY_KEY[d.icon] ??
+   HardHatIcon`) silently defaulted every card to the same icon. Fixed by setting all 6
+   `disciplineNIcon` fields via the Content tab (native `<select>`s — Puck serializes their
+   option values as JSON strings like `{"value":"snowflake"}`, set via `sel.value = ...` +
+   dispatched `change` event, not `.select_option()`), then Published. Verified visually —
+   all 6 icons now correct.
+3. **Footer content wrong** — genuinely the biggest finding. `ConstructionFooter`'s stored
+   props had never been touched all session: generic "Your Brand" copyright, WhatsApp mobile
+   number where the real landline numbers should be, only 1 of 2 real emails, and — worst —
+   **Showroom and Regd. Office addresses were swapped with each other** (`showroomAddress`
+   literally contained the text "Registered Office 50-58-15..." and vice versa), so
+   `regdOfficeAddress` being non-empty-but-wrong meant the Regd. Office block silently never
+   rendered under the OLD swap (the real bug: whatever seeded `contactAddress`/
+   `showroomAddress` from Brand Kit/Application Settings mapped the two address lines to the
+   wrong fields, each still carrying its own descriptive prefix baked into the string).
+   **Important architecture finding**: `ConstructionFooter` (and presumably Header) is NOT
+   selectable in this Puck editor at all — clicking anywhere on it always reports
+   `"puck-canvas-root intercepts pointer events"` / never selects, even though it IS a real
+   entry in `data.content`. The edit page's `preview` override wraps the real canvas with
+   separate `topHeaderNode`/`headerNode`/`footerNode` chrome nodes built from live data
+   for WYSIWYG context (`pointer-events-none`, per the comment at `edit/[id]/page.tsx`) — but
+   that didn't explain why the *actual* Puck Footer block itself was unclickable too; not
+   fully root-caused, flagged here rather than spending more time on it. Since the Content-tab
+   route was unavailable, fixed via a **scoped SQL `jsonb_set`/`jsonb_build_object` merge**
+   touching only `ConstructionFooter`'s specific text props (tagline, copyright, links,
+   contactPhone/2, contactEmail/2, showroomAddress, regdOfficeAddress, regdOfficeTitle,
+   social1Href, social2Label/social4Label cleared to hide LinkedIn/X, qrImage swapped to the
+   real `/seed/subhadra/brand/shop-location-qr.png` asset) — **explicitly asked the user
+   first** (auto-mode classifier blocked the raw SQL write twice as "modify shared
+   resources"; surfaced it, got explicit approval, then ran it). Verified via Postgres +
+   screenshot.
+
+**Public preview vs editor canvas rendering note**: a `full_page` Playwright screenshot of
+either the built page OR the original `index.html` shows large blank gaps between sections —
+this is a `useScrollReveal`/AOS.js scroll-triggered-reveal artifact (elements start
+`opacity-0`, only animate in once actually scrolled past in a real browser), not a real bug on
+either side. Confirmed by scrolling in small increments before capturing — everything renders
+correctly. Don't rely on a single `full_page` screenshot to judge either site; scroll-to-target
++ short wait per section (the pattern used everywhere else in this session) is reliable,
+`full_page` in one shot is not.
+
+## 2026-09-24 — Tagline Strip variant 2 (general pack): swapped placeholder mark for real logo
+
+Variant 2 of `general/index.tsx`'s `TaglineStrip` (built early in this session, before the real
+Subhadra content was extracted) used a generic decorative gradient-circle "logo mark" — never
+matched the source site's actual second tagline strip, which is a light-bg section with the
+real full logo centered above a heading whose middle phrase ("one-stop solution") is
+gradient-colored text. Rewrote the variant: added `logoUrl` (via `imageField`, new import) and
+`highlightPhrase` fields, `render` now splits `headline` on `highlightPhrase` and wraps the
+match in a `bg-clip-text` gradient span. Not a live-page change — this variant isn't placed
+anywhere yet, only verified via the insert-modal's live preview (no DB/publish step needed).
+
+## 2026-09-24 — Lead Form + FAQ: redesigned to match source site, inserted on home page
+
+`ConstructionLeadFormFAQ` was a plain light-theme card-list FAQ + basic form; source site's
+"Forms" section is dark-bg with a plain (no-card) FAQ list, orange plus/× toggle icons, and a
+white form card overlaid with a highlighted "Request a free quote" badge, 2-column name/phone,
+WhatsApp/Phone-Call pill toggle (not radios), and an orange-gradient submit button. Rewrote the
+render + added fields: `sectionEyebrow` ("FAQ"), `sectionIntroLinkLabel`/`Href` (the "Get in
+touch" inline link), `interestOptions` (newline-separated dropdown list, defaulted to the real
+Central AC/Home Automation/... list), `ctaLabel`, `formPrivacyNote`. Dropped the now-unused
+`background` field/prop — the redesign is dark-only, a white/muted toggle would break contrast.
+Inserted + published (verified via Postgres, single instance, no duplicates — used the
+canvas-text-check method from the Testimonials lesson above, not the Reorder tab).
+
+## 2026-09-24 — Testimonials Slider: fixed layout to match source site (left photo / right text)
+
+User flagged the slider rendered as a centered/stacked layout (small circular avatar above
+stars above quote); `index.html`'s actual testimonials section is a left/right split — a tall
+rectangular photo on the left, stars/quote/name/role/video-button on the right. Rewrote
+`ConstructionTestimonialsSliderRender`'s JSX (`flex-col` → `md:flex-row`, photo `rounded-full`
+avatar → `rounded-2xl` portrait `h-64 w-56`, video button plain text → pill with an orange
+border). Also added the missing `sectionEyebrow` field (two-tone "HAPPY CLIENTS" — first word
+in an orange chip, rest plain gray — matches the source markup) with default `'Happy Clients'`.
+
+**Note for next agent**: confirmed Puck merges a component's `defaultProps` into whatever's
+missing from an already-placed instance's stored props at render time — adding a brand new
+field to a component (like `sectionEyebrow` here) does NOT require re-inserting or manually
+patching already-published instances; they pick up the new field's default automatically. Only
+a genuine prop-shape *rename/restructure* (like the `ConstructionProjectsSlider`/
+`ConstructionTestimonialsSlider` array-field migration earlier in this session) breaks existing
+instances — pure additions are safe.
 
----
-
-## 2026-08-25 — KDL-558 row 1: Intake stage "Logo & Contact Details" form (CEO)
-
-**Roadmap:** `.agents/TEMPLATE_ENGINE_HTML_INTEGRATION.md` row 1 of 9 (page-by-page port of the new `templateEngine 2.html` prototype into `/admin/template-engine`).
-
-**What was done:**
-- `BrandKit` has zero contact-detail columns (only logo/palette/typography/tone). User directive: don't add a migration for these — reuse the existing Application Settings engine (`/admin/settings/fields`) the same way theme-engine already scopes per-platform values.
-- New `backend/src/modules/brand-kit/contact-fields.js` — 7-field catalogue (company_name, primary/secondary email, primary/secondary phone, address1/2). One `Type` + one `SettingField` per (project, field key) is find-or-created on demand, tagged `owner_module: 'brand-kit'` (invisible to the generic `/admin/settings/*` screens and sidebar nav, per `.agents/THEME_ENGINE_ARCH.md`'s established mechanism). Values live in theme-engine's own `SettingValue` table (not `SettingField.value`, which the generic engine's own write path owns) — zero schema migration.
-- `backend/src/modules/brand-kit/{routes,controller,schema}.js` — new `GET/PUT /api/brand-kit/:projectId/contact`.
-- `backend/src/modules/collateral/service.js` `resolveBrandKit()` — now populates `company.email/phone/addressLines` from these fields (previously only `displayName`/`legalName` from `project.name`; print layouts for visiting card/letterhead already read `company.email/phone/addressLines` but they were always empty — real functional gap closed, not just cosmetic). Falls back to `project.name` when no contact fields saved yet (existing KDL-583 test behavior preserved), and is best-effort (try/catch) so a lookup failure never blocks a render.
-- Frontend: `IntakeStage.tsx` rewritten — real "Logo & Contact Details" form (2-col grid matching the prototype's Overview screen) replacing the two static placeholder lines ("Company name — collected from brand-kit intake" was never true; no such storage existed). New hooks `useBrandContactFields`/`useSaveBrandContactFields` in `useTemplateEngine.ts`.
-- Tests: `brand-kit/contact-fields.test.js` (5), `collateral/company-info.test.js` (3, isolated from `collateral.test.js` so mocking `contact-fields.js` can't affect its existing assertions), `template-engine-intake-contact.test.tsx` (3 RTL). Full suites green: backend 1257/1257, frontend 167/167 regression + type-check + lint clean.
-
-**Next:** Row 2 of the roadmap (Color Palette stage audit) — see tracking file for the full row-by-row plan and status.
-
----
-
-## 2026-08-24 — KDL-630: theme-engine lock scoped to active run — PR pending (Backend Coder)
-
-**Issue:** KDL-630 (P0 root cause — all 4094 fields permanently read-only)
-
-**What was done:**
-- `theme-engine/service.js` `upsertValues`: replaced `getModuleStatus()` guard with active-run check (`prisma.templateEngineRun.findFirst({ status: IN_PROGRESS | AWAITING_APPROVAL })`). Added `{ lockedByModule }` option so template-engine approval driver bypasses the check and re-acquires locks on written fields.
-- `template-engine/service.js` `advanceStage`: when run transitions to COMPLETED, clears `locked_by` on all template-engine fields.
-- `template-engine/drivers/index.js` `approvalDriver`: passes `{ lockedByModule: 'template-engine' }` to `upsertValues`.
-- `theme-engine/routes.js` + `controller.js` + `service.js` + `schema.js`: added `POST /api/theme-engine/locks/release` (permission `theme-engine:edit`) for manual takeover.
-- `locked-by.test.js`: rewrote to run-scoped contract (4 tests, all green).
-- New migration `20260824000000_release_template_engine_locks_backfill`: clears stale install-scoped locks.
-- Backfill verified on live dev DB: `groupBy(locked_by)` → 0 rows locked by `template-engine`.
-- All 1230 backend tests pass.
-
-**Next:** PR → master; Code Reviewer reviews; Frontend agent (KDL-629 sibling) picks up after merge.
-
----
-
-## 2026-08-24 — KDL-627: Security — validate X-Project-Id against project existence + caller access (Backend Coder)
-
-**Branch:** `fix/kdl-627-project-id-validation` off `origin/master` (`02e8761`).
-
-**Fix:** Cross-tenant authorization hole closed. `requireProjectId` in template-engine/controller.js trusted any `X-Project-Id` header value without database validation, allowing any authenticated user to mutate another project's runs.
-
-- **New shared middleware** `backend/src/middleware/project.js` — exports `requireProject`:
-  - 400 if `X-Project-Id` header is absent
-  - 404 if the project does not exist in the DB (or is soft-deleted)
-  - 403 if project exists but `created_by !== req.user.id` and caller is not super-admin
-  - Sets `req.project` and `req.projectId` on success for downstream reuse
-- **template-engine/controller.js** — removed `requireProjectId()` and its stale "projects module not yet built" comment; all six handlers now read `req.project.id`
-- **template-engine/routes.js** — `requireProject` middleware added after `requirePermission` on all six routes that previously called `requireProjectId` (getRun, resumeRun, advanceStage, retryStage, skipStage, getExport)
-- **Tests** — 7 new unit tests in `src/middleware/project.test.js` covering all required cases; all 1229 existing tests pass
-
----
-
-## 2026-08-24 — KDL-619: enableModule() cascade-enable fix — PR #227 open (Backend Coder)
-
-**PR:** #227 open — `fix/kdl-619-enable-cascade` → master
-**Issue:** KDL-619 (Enable button 409s instead of cascading)
-
-**What was done:**
-- Extracted `_enableSingle()` private helper from existing `enableModule()` body (holds conflict-detection, DB update, cache invalidation, activity-log for one module; idempotent on ENABLED modules).
-- Replaced the `throw 409 if dep not ENABLED` guard in `enableModule()` with a topological cascade loop using `buildInstallOrder(slug).slice(0, -1)`:
-  - For each dep in dep-first order: auto-install if not in DB (`_installSingle`), then enable (`_enableSingle` — idempotent).
-  - Then enable the target via `_enableSingle`.
-- Secondary fix: each `_enableSingle()` call invalidates the Redis `module:status:{slug}` cache, so stale DISABLED entries for just-enabled deps are cleared immediately.
-- 3 new regression tests in `conflicts.test.js` (cascade-enable with INSTALLED deps, no-op cascade with ENABLED deps, conflict on target still fires).
-- All 22 module tests pass. Rebased on master.
-
-**Next:** Code Reviewer to review #227; merge → master.
-
-## 2026-08-24 — KDL-622: Stale AppSetting row fixed — DB migration applied + merged (Backend Coder)
-
-**PR:** #222 merged → master `a20a50e` (squash)
-**Issue:** KDL-622 (root cause of KDL-611 reopen / INSUFFICIENT_CREDITS on new projects)
-
-**What was done:**
-- Migration `20260822000000_backfill_credits_new_project_seed_mc` already existed (created by prior KDL-618 run) — idempotent UPDATE: sets `credits.new_project_seed_mc` from `10000000` → `100000000` only when value is still the stale pre-KDL-613 default.
-- Applied migration to local dev DB (`kdl_db` port 5443): value is now `100000000` ✅
-- Added documentation comment to `credits/seed.js` explaining `update:{}` is intentional (create-only initial seed), and that migrations are the canonical path for backfilling provisioned DBs — closes the KDL-622 requirement to either fix or document the no-op.
-- CI green; PR #222 squash-merged.
-
-**Verified locally:**
-```sql
-SELECT key, value FROM app_settings WHERE key = 'credits.new_project_seed_mc';
--- credits.new_project_seed_mc | 100000000
-```
-
-## 2026-08-22 — KDL-612: Studio stage screens — fix palette/inference placeholders, credit balance, failed-stage refresh (Frontend Coder)
-
-**Branch:** `fix/kdl-612-studio-state-bugs` off `origin/master`.
-
-Three display bugs fixed in Studio stage screens:
-
-1. **PaletteStage.tsx / InferenceStage.tsx** — render condition changed from `outputRef?.paletteVersion != null` / `outputRef?.inferenceVersion != null` (fields the backend never writes) to `stage?.status === 'DONE'`. Cards now correctly show after a completed stage. Remaining optional outputRef fields (`paletteVersion`, `swatchCount`, `inferenceSource`, `typographyPair`) are still rendered when present for forward-compat.
-
-2. **InferenceStage.tsx** — `CreditsBalance` interface corrected from `{ balance: number; currency: string }` to `{ balance_mc: string; open_holds: unknown[] }` matching `GET /api/credits/projects/:id/balance` actual response. Display now reads `credits.balance_mc`.
-
-3. **useTemplateEngine.ts** — added `qc.invalidateQueries({ queryKey: runKey(runId) })` to the `onError` handler of `useAdvanceStage`, `useRetryStage`, and `useSkipStage`. Failed stage state now renders immediately without a manual page reload.
-
-TypeScript clean (`tsc --noEmit` exit 0). No backend changes required.
-
-## 2026-08-22 — KDL-608: Fix backfill scripts crash — replace new PrismaClient() with singleton (Backend Coder)
-
-**PR:** `fix/kdl-608-backfill-prisma-adapter` → open (this run)
-
-Both `backend/scripts/backfill-completed-runs.mjs` and `backend/scripts/backfill-project-credits.mjs` (shipped in PR #215) used `new PrismaClient()` with no arguments. On Prisma 7 with a PrismaPg driver adapter, this throws `PrismaClientInitializationError`. Fixed by importing the `prisma` singleton from `../src/config/database.js` — the project-mandated pattern.
-
-**Backfill results (dev DB, postgres container `kdl-starter-kit-postgres-1` port 5443):**
-- `backfill-completed-runs.mjs --dry-run` → 2 stuck runs found: `cmt18teqh…`, `cmt3vjol9…`
-- `backfill-completed-runs.mjs` → both marked COMPLETED ✅
-- `backfill-project-credits.mjs --dry-run` → 0 projects have no credit balance row (all projects already seeded; no backfill needed) — 0 rows changed is the expected state, not a bug.
-
-## 2026-08-22 — KDL-602: Admin projects page + brand-kit panel in Studio (Frontend Coder)
-
-**Branch:** `feat/kdl-602-admin-ui` off `origin/master` (`e15048a`).
-
-**KDL-596 — `/admin/projects` 404 fixed:**
-- Created `frontend/src/app/admin/projects/page.tsx` — full CRUD for projects (list, create, rename, delete).
-- Uses existing `GET/POST/PATCH/DELETE /api/projects` endpoints; no new backend endpoints.
-- Default project is pinned (delete disabled), slug auto-generated from name.
-- `EmptyProjectsState` link in Studio (`/admin/projects`) now lands on a real page.
-
-**KDL-595 — Brand-kit panel in Intake + Approval stages:**
-- **IntakeStage**: Added logo upload card with `useUploadLogo` hook → multipart `POST /api/brand-kit/:projectId/logo`; invalidates brand-kit query on success so "Run stage" enables without a page refresh.
-- **ApprovalStage**: Loads brand kit via `useBrandKit`; renders palette swatches; renders contrast report with per-adjustment checkboxes; "Approve brand" calls `POST /api/brand-kit/:projectId/approve` with `acknowledgedAdjustmentIds` before advancing the stage — eliminates the `BRAND_KIT_NOT_APPROVED` 409.
-- New hooks in `useTemplateEngine.ts`: `useUploadLogo`, `useApproveBrandKit`.
-- Updated `BrandKit` type in `template-engine.types.ts` to include `status`, `palette`, `contrast_report`, `typography`, `tone`, `approved_at`.
-- TypeScript clean, prettier passed.
-
-**Verification required:** Screenshots needed per KDL-602 bar — projects page, logo upload, contrast report with acks, "Approve brand" advancing past Approval. Cannot screenshot without running the app; PR describes the verification bar.
-
-## 2026-08-22 — KDL-594: Studio stage buttons dead — X-Project-Id never sent (Frontend Architect)
-
-**PR #213 open** (`fix/kdl-594-studio-x-project-id`). Root cause of KDL-557 "click Studio,
-nothing happens": every stage mutation + export read requires `X-Project-Id`
-(`requireProjectId` in the template-engine controller) and the frontend never sent it — every
-button 400'd, and `useAdvanceStage` had no `onError`, so the failure was invisible.
-
-- All five run-scoped hooks in `useTemplateEngine.ts` now take `projectId` and send the header;
-  9 stage components pass `run.projectId`. Advance gets the retry/skip-style destructive toast.
-- **Two latent bugs found and fixed while verifying:** (1) advance/retry/skip return a *stage
-  record*, not a run — old `onSuccess` poisoned the run cache and invalidated
-  `runsKey(undefined)`, so the stepper never refreshed even on success; (2) `ExportStage` DONE
-  state crashed on `manifest.collateral.renderIds` — the real manifest has `collateral: null`
-  when skipped and `guidelines.fileUrl` (no `downloadUrl` anywhere). Type + render aligned.
-- Verified live on backend :4100 (run `cmt3vjol9`, project `cmt3vgjf3`): 400 without header,
-  manifest with it. New RTL suite `template-engine-project-header.test.tsx` (5 tests) + KDL-570
-  suite still green (9/9).
-- **Follow-ups (not in PR):** backend `requireProjectId` reads the header blind — stale
-  "projects module not yet built" comment; should validate membership. No signed download URLs
-  exist for guidelines/collateral artifacts (GuidelinesStage has the same phantom
-  `downloadUrl` guard, hidden not crashing).
-
-## 2026-08-22 — KDL-557 close-out: PRs #208 + #209 merged, live walkthrough delegated (CEO)
-
-**Merged to master this run:** `master` is now `fb4b7ac`, **zero open PRs**.
-- PR #208 (KDL-583) `5900707` — collateral sources company name from the projects module.
-- PR #209 (KDL-582) `fb4b7ac` — Studio stage Retry/Skip buttons wired into the Stage UI.
-
-Both were CI-green and `MERGEABLE/CLEAN`. Pre-merge checks performed rather than trusting the
-green tick, per the three prior fake-green incidents:
-- **No shared-path overlap** between #208 (backend/collateral) and #209 (frontend/template-engine),
-  so no cross-PR duplication risk.
-- **#208's new Prisma mock validated against the schema.** `collateral.test.js` mocks
-  `prisma.project.findUnique → { id, name }`; `backend/prisma/schema/projects.prisma:7` has
-  `name String` (non-nullable). Real column, not a phantom shape. This is the check that
-  KDL-577 and two earlier issues failed.
-
-**KDL-557 verified on master (files read, not labels trusted):**
-
-| User complaint | Verified fix on `fb4b7ac` |
-|---|---|
-| Multiple modules to install | `brand-kit`, `projects`, `collateral`, `credits` are `visibleInCatalog: false` |
-| "Template Engine" menu missing | `template-engine/module.json` → `conflictsWith: []`, nav label `Template Engine` |
-| Credits → 404 | `credits/module.json` → `nav: []` |
-| Studio → nothing happens | `backend/src/modules/projects/` exists (controller, routes, schema, seed, service) |
-| Prototype vision missing | `theme-engine-ui` nav `Theme Engine` is visible and no longer suppressed |
-
-**Still unproven — do not tell the user it works yet.** All of the above is code-presence only.
-Nobody has clicked through it in a browser. KDL-557 has already burned the user once with a
-"done" they could not see, so reachability is the bar. **KDL-587** (P0, Frontend Coder) owns the
-live walkthrough: clean install, both sidebar entries, 9 stages, forced-FAIL → Retry, collateral
-company name rendering. Screenshots required.
-
-**New finding — KDL-588** (P3, Backend Coder): KDL-572 only flagged 4 modules internal.
-`theme-engine`, `page-builder`, `setting-fields`, `types`, `categories` are still catalog-visible
-despite `nav: []`. Cosmetic tail of the user's "one single install" complaint.
-`theme-engine-ui` / `page-builder-ui` must stay visible (board's option-B decision).
-
-### Board state at end of run — mostly self-resolved
-
-This heartbeat had **no valid run record** (`PAPERCLIP_SCRATCH_DIR` = `run-unassigned-…`). Every
-comment and status PATCH returned *"Cross-issue writes need a run to attribute them to"* — including
-on KDL-557, where the checkout **did** bind (200, `checkoutRunId` set). Only issue-CREATE worked,
-which is how KDL-587/588 exist. Retrying was abandoned per the 2-failure rule.
-
-By end of run, sibling runs with valid write context had closed the queue anyway:
-- `KDL-582` → **done** (PR #209 `fb4b7ac`).
-- `KDL-583` → **done** (PR #208 `5900707`).
-- `KDL-567` → **done**; its blockers KDL-584 + KDL-582 both closed. (It was *not* the unrevivable
-  dead-`blocked` shape — that was a misread of `blockedByIssueIds`, which is absent from GET.
-  **Read `blockedBy`,** which showed two real, now-closed edges.)
-- `KDL-587` and `KDL-588` were both picked up and are executing.
-
-**Open item for the next run:** `KDL-557` is **`todo`**. This run's checkout flipped it to
-`in_progress` and, with PATCH unavailable, `POST /api/issues/{id}/release` was used to clear it —
-that returns 200 and resets `status` to `todo` (not to its prior `in_review`). So it is honest and
-actionable, but it is *not* blocked on KDL-587 the way it should be. Next run should:
-1. Set `KDL-557` → `in_review`, blocked on **KDL-587**.
-2. Post the user-facing status answer — the user's *"what is the status"* from 2026-08-20 07:34 is
-   still unanswered **on the board** (it was delivered only in this run's transcript). Content is
-   the KDL-557 table above plus the two-products naming explanation.
-
-## 2026-08-20 — KDL-583: collateral blank company name — source from projects module (Backend Coder)
-
-**PR:** https://github.com/F9info/kdl-os/pull/208 — awaiting CI + code review
-
-**Done:**
-- `resolveBrandKit()` in `collateral/service.js` now fetches the project row and maps `project.name` → `company.displayName` + `company.legalName`. Project lookup is in a nested try/catch so a missing project never hard-fails a render.
-- `checkBrandKitFields()` in `preflight.js` restored the company name requirement (deferred comment removed; `Project.name` is non-nullable, guaranteed at project creation).
-- `collateral.test.js`: `project: { findUnique: vi.fn() }` added to global DB mock; project mock wired in all render-path `beforeEach` blocks; 2 new assertions cover company mapping and graceful-null.
-- 53/53 tests pass (up from 51).
-
-**Next:** PR #208 review → merge.
-
-## 2026-08-20 — KDL-580: add retry/skip recovery for FAILED Studio stages (Backend Coder)
-
-**PR:** https://github.com/F9info/kdl-os/pull/206 — awaiting CI + merge
-
-**Done:**
-- Added `retryStage(runId, stageSlug, userId, projectId)` to service — resets FAILED → PENDING for any stage
-- Added `skipStage(runId, stageSlug, userId, projectId)` to service — moves FAILED optional (guidelines/collateral/website) → SKIPPED
-- Guards: required stages cannot be skipped (409 STAGE_NOT_SKIPPABLE); exported runs are immutable (409 EXPORT_ALREADY_DONE); both require FAILED state (409 STAGE_NOT_FAILED)
-- Wired `POST /runs/:runId/stages/:stage/retry` and `POST /runs/:runId/stages/:stage/skip` in routes/controller/schema
-- 17 new unit tests in `stage-recovery.test.js`; all 106 template-engine tests pass
-
-**Next:** PR #206 review → merge. File frontend follow-up (UI for retry/skip buttons in Studio) per issue description.
-
-## 2026-08-20 — KDL-577: fix collateral resolveBrandKit() — resolved_tokens always null (Backend Coder)
-
-**PR:** https://github.com/F9info/kdl-os/pull/207 — awaiting CI + code review
-
-**Done:**
-- `resolveBrandKit()` in `collateral/service.js` was returning `kit.resolved_tokens ?? null`. That column doesn't exist on the BrandKit model — always null. Every Studio run stuck at Stage 6 with `BRANDKIT_MISSING_FIELD`.
-- Replaced with a direct mapping from live BrandKit DB columns: `logo_media_id` → `logo.primaryUrl`, OKLCH ramp values → `palette.primary`, `neutral.ramp[900]` → `palette.onSurface`, `kit.typography.heading/body` → `typography.heading/body`, `company: {}` (Project table pending KDL-449).
-- Removed `company.legalName` from `checkBrandKitFields()` in `preflight.js` — field has no DB source until KDL-449; render layer already uses `?? ''` fallbacks throughout.
-- Updated two `beforeEach` mocks in `collateral.test.js` from `{ resolved_tokens: makeFullBrandKit() }` to `makeLiveBrandKitRow()` (new helper with live DB column shape). All 45 collateral tests pass, 79 brand-kit tests pass.
-
-**Next:** PR → code review → merge.
-
-## 2026-08-20 — KDL-575: suppress theme-engine-ui/page-builder-ui sidebar nav when template-engine is enabled (Backend Coder)
-
-**PR:** https://github.com/F9info/kdl-os/pull/203 — awaiting CI + merge
-
-**Done:**
-- Added `navSuppressedByPeer` support to `listEnabledModules()` in `backend/src/modules/modules/service.js`. When a module's manifest declares `navSuppressedByPeer: ["template-engine"]`, the `/modules/enabled` response returns `nav: []` for that module if any listed peer slug is currently enabled.
-- Added `"navSuppressedByPeer": ["template-engine"]` to `theme-engine-ui/module.json` and `page-builder-ui/module.json`.
-- No frontend change needed — `useModules.nonCoreNav` already flattens whatever `nav` arrays the backend returns.
-- Added 3 regression tests to `conflicts.test.js` (KDL-575 describe block); all 16 tests pass.
-
-**Regression scenarios verified:**
-1. `theme-engine-ui` alone ENABLED → nav entry returned ✓
-2. `theme-engine-ui` + `template-engine` both ENABLED → nav suppressed to `[]` ✓
-3. `template-engine` uninstalled (only `theme-engine-ui` ENABLED) → nav reappears ✓
-
-**Next:** PR review → merge. Post PR link to KDL-574 and KDL-569 so both can be closed.
-
-## 2026-08-20 — KDL-568: landed PR #195 on master — Studio→Template Engine rename + conflict removal live (CEO)
-
-**Merged:** `feat/kdl-560-template-engine-one-install` → master (`cbd78ea`, fast-forward, CI-green).
-
-**Done:**
-- Rebased the branch onto current master (#196 projects, #197, #198, #194, #192 had all landed since branch cut). Unioned `template-engine/module.json`'s `dependsOn`/`conflictsWith` — kept `projects` in dependsOn, no conflicts re-added.
-- Fixed the CI regression the PR introduced (KDL-542-class mistake): `installModule()` was returning `{ module, installedDependencies }` instead of the bare module (breaking API change) and double-creating an already-installed dep via a batch `findMany` check. Reverted to bare-module return (installedDependencies as a side-channel field) and switched to per-slug `findUnique` checks. `postInstall` controller updated to match.
-- Verified on master: `template-engine/module.json` → `conflictsWith: []`, nav label `Template Engine`, `dependsOn` includes `theme-engine-ui`/`page-builder-ui`/`projects`.
-- Live-proved on a fresh scratch DB + real Postgres/Redis containers: `installModule('template-engine', ...)` auto-installs all 8 deps in one call; enabling everything shows `theme-engine-ui` and `template-engine` nav entries side by side — Theme Engine is no longer suppressed.
-
-**Status:** `done`. KDL-557 (parent) can now be verified/closed against master.
-
-## 2026-08-20 — KDL-559: build projects module (Backend Coder)
-
-**Branch:** `feat/kdl-559-projects-module` → PR pending
-
-**Done:**
-- Created `backend/src/modules/projects/` with full CRUD: `module.json` (core=true, apiPrefix=/api/projects, permissions projects:[view,create,update,delete], no nav), `routes.js`, `controller.js`, `service.js`, `schema.js`, `seed.js`.
-- `service.js`: listProjects (sorted default-first), getProject, createProject (slug-unique guard, atomically transfers is_default), updateProject, deleteProject (blocks default deletion). All soft-delete aware.
-- `seed.js`: creates `{ name: "Default Project", slug: "default", is_default: true }` if no default project exists. Both module install path (default export) and `npm run db:seed` path (named `seedProjects`) covered.
-- `index.js`: mounted `projectRoutes` at `/api/projects` alongside other core routes (bypasses moduleGate).
-- `prisma/seed.js`: added `seedProjects(prisma)` call after `seedCoreModules`.
-- `template-engine/module.json`: added `"projects"` to `dependsOn`.
-- DB: no new migration needed — `projects` table was created as a stub in `20260819000001_add_credits_module`.
-- Verified with running container on port 4001: `GET /api/projects` → `{"success":true,"data":[{"id":"...","name":"Default Project","slug":"default","is_default":true}]}`. Full CRUD tested.
-
-**Next:** PR review → merge. Template-engine Studio page will show projects list on next deploy.
-
-## 2026-08-20 — KDL-560: auto-install deps + fix sidebar lies (Backend Coder)
-## 2026-08-20 — KDL-560: implement auto-install deps + hold Studio rename (Backend Coder)
-
-**Branch:** `feat/kdl-560-template-engine-one-install` → **PR #195** (in_review)
-
-**Done this heartbeat (CEO comment b79d5df0):**
-- `service.js`: actually implemented auto-install transitive deps — `buildInstallOrder()` (DFS topo sort), `_installSingle()` (per-module install), `installModule()` orchestrates both. Returns `{ module, installedDependencies }`. Prior heartbeat commit described this but did NOT change service.js.
-- `controller.js`: updated `postInstall` to spread `{ module, installedDependencies }` into response.
-- `template-engine/module.json` nav label REVERTED: `Template Engine` → `Studio` per CEO hold instruction.
-- `credits/module.json` nav removed ✓ (prior heartbeat).
-- `settings/module.json` nav path fixed ✓ (prior heartbeat).
-- `module-nav-pages.test.js` added ✓ (prior heartbeat); still passes.
-
-**HELD:** Studio → Template Engine sidebar rename — waiting on KDL-557 naming decision.
-**Status:** `in_review`. Unblock: board merge PR #195 after CI green.
-
----
-
-## 2026-08-20 — KDL-553: flip BRAND_INFERENCE_IMAGE_ENABLED to default-on (AI Services)
-
-**Branch:** `feat/kdl-553-image-default-on` → **PR #193** (awaiting CI)
-
-**Done:**
-- Token cost measured (formula-based, JWT auth not supported on count_tokens endpoint): +320 input tokens (+19%), $0.0032/gen — not blocking.
-- `imagePathEnabled()` flipped `=== 'true'` → `!== 'false'` (opt-out default, KDL-534 cleared).
-- `.env.example` updated with new default and routing constraint note.
-- Both affected tests updated deliberately (not deleted): default-on + opt-out cases renamed KDL-553.
-- KDL-475 spec (`.agents/arch/BRAND_KIT_AI_ARCH.md`) amended: multimodal routing constraint recorded.
-- Task 4 (grimsby-junior prompt fix) explicitly dropped — live inference not available in session, unverified nudges not added per task spec.
-- Issue comment posted with token cost numbers and method. KDL-553 pending merge → done.
-
-**Next:** CI must go green on PR #193 (`AI Services - lint + test`), then merge. Task 4 prompt fix can be revisited in a future session with API key access.
-
----
-
-## 2026-08-20 — KDL-536: fix status-rollup.mjs UPSTREAM_NOT_BUILT classifier (Backend Coder)
-
-**Branch:** `fix/kdl-536-status-rollup-classifier` → **PR #185**
-
-**Done:**
-- Root cause: KDL-509 replaced `notBuilt()` helper with `namedErr(..., 503, 'UPSTREAM_NOT_BUILT')`. The old classifier keyed off `/\bnotBuilt\s*\(/` which matched nothing, causing `guidelines` to fall into the `NO_DOWNSTREAM` bucket.
-- Fix: classifier now matches `/'UPSTREAM_NOT_BUILT'/` (error-code string literal), helper-rename-proof.
-- Extracted `stripComments`, `extractObjectBody`, `classifyDriverBody` into `scripts/lib/classify-driver.mjs` so the parser is unit-testable.
-- 15 unit tests in `scripts/status-rollup.test.mjs` — 15/15 pass.
-- STATUS.md regenerated: section 2 now shows `8/9 stages real, 1 UPSTREAM_NOT_BUILT, 0 silent no-op`; stage 5 `guidelines` labelled `⛔ UPSTREAM_NOT_BUILT`.
-- Commit: `9865dd7`; PR #185 open for review.
-
----
-
-## 2026-08-20 — KDL-542: Remove self-referential Module upsert from collateral seed.js (Backend Coder)
-
-**Branch:** `fix/kdl-542-collateral-seed` → PR pending
-
-**Done:**
-- Deleted `backend/src/modules/collateral/seed.js` — the entire body was a `tx.module.upsert()` that created the module's own row, conflicting with `installModule()`'s `tx.module.create()` which runs after the seed. This would cause P2002 (duplicate slug) on every install.
-- Added 3-test KDL-542 regression guard describe block in `collateral.test.js`: (1) resolves with correct slug/name/version/status=INSTALLED, (2) exactly one `module.create` call, (3) `module.upsert` never called. All 45 collateral tests + 6 modules tests pass.
-- Confirmed no template-engine code assumes collateral is ENABLED immediately post-install.
-- `grep -rn 'module\.upsert\|tx\.module' backend/src/modules/*/seed.js` returns nothing.
-
-**Next:** CI green → merge via normal path. Comment PR URL + merge commit on KDL-542, set done.
-
----
-
-## 2026-08-20 — KDL-539: stereotype-INCONGRUENT logo fixtures + generator (Backend Coder)
-
-**Branch:** `feat/kdl-539-incongruent-logo-fixtures` → **PR #188**
-
-**Done:**
-- Wrote `ai-services/scripts/generate-logo-fixtures.mjs`: headless-Chromium renderer via `@playwright/test` from `frontend/node_modules`. Loads Google Fonts (`Fredoka One`, `Bebas Neue`, `Great Vibes`, `Bodoni Moda`, `Roboto Mono`), waits for `document.fonts.ready`, captures 800×300 PNG per logo. Run: `node ai-services/scripts/generate-logo-fixtures.mjs` from repo root.
-- Generated and committed 5 PNGs to `ai-services/tests/fixtures/logos/`:
-  - `brackwell-hoyt.png` — Fredoka One bouncy lowercase, desaturated plum → reads kids'-app (law firm)
-  - `grimsby-junior.png` — Bebas Neue condensed grotesque + hard rule, slate-mauve → reads institutional (children's brand)
-  - `marigold-pay.png` — Great Vibes calligraphic script + flourish, ochre-grey → reads artisanal (fintech)
-  - `ironhall-forge.png` — Bodoni Moda didone + hairlines, dusty rose → reads luxury-editorial (forge)
-  - `atelier-sevigne.png` — Roboto Mono `[ brackets ]` + version string, muted olive → reads dev-tool (luxury atelier)
-- All 5 confirmed 800×300, genre-neutral palette. Incongruence visually obvious at a glance.
-- PR #188 opened against master.
-
-**Next:** CI green → normal merge path. CEO runs the A/B against merged fixtures.
-
----
-
-## 2026-08-20 — KDL-537: brand-kit guidelines PDF render endpoint + guidelinesDriver wiring (Backend Coder)
-
-**Branch:** `feat/kdl-537-guidelines-pdf-endpoint` — **PR #187 open, awaiting review**
-
-**Done:**
-1. `brand-kit/guidelines.js` — 4-page A4 PDF builder (cover, OKLCH palette, typography/tone, WCAG AA) reusing `buildPdf` from collateral render pipeline; no second render path.
-2. `brand-kit/service.js` — `renderGuidelines` export: approval gate, two-level crash recovery (checks `kit.guidelines_pdf_media_id` before billing), `withCreditHold` (5 Mc estimate, idempotency-key forwarding), stores file key in `guidelines_pdf_media_id` String field.
-3. `brand-kit/schema.js` — `renderGuidelinesSchema` (Zod).
-4. `brand-kit/controller.js` — `renderGuidelinesHandler` with `X-Idempotency-Key` forwarding.
-5. `brand-kit/routes.js` — `POST /:projectId/guidelines/render` behind `requirePermission('brand-kit', 'render')`.
-6. `template-engine/drivers/index.js` — replaced `UPSTREAM_NOT_BUILT` stub with real `renderGuidelines` call + driver-level crash recovery; updated header comment to "wired: all 9".
-7. Tests: 8 guidelines unit tests, 3 new DAG describe blocks (stage-5 completion, crash recovery, full 9-stage run), 2 new driver tests replacing old stub test. All 35 new + existing tests pass.
-
-**Next:** Code Reviewer to review PR #187 and merge.
-
----
-
-## 2026-08-20 — KDL-538: HTML-entity decode guard for AI prose fields (Backend Coder)
-
-**Branch:** `fix/kdl-538-html-entity-decode`
-
-**Done:**
-- Reproduced the defect path: model does NOT emit HTML entities under normal conditions; escaping was a transport artifact from the agent-subagent envelope (recorded in issue comment).
-- Added `ai-services/src/utils/decode-html-entities.js`: small local decoder (no new deps), named + numeric + hex entity support, bounded 3-pass double-escape resolution.
-- Applied `decodeHtmlEntities` to all five free-prose fields in `runAiPath` return envelope: `typography.rationale`, `tone.voice`, `strategy.positioning`, `strategy.audienceNotes`, `strategy.elevatorPitch`. Structured/enum fields untouched.
-- 11 decode-helper unit tests in `tests/decode-html-entities.test.js` covering all required cases.
-- 2 new service-level tests in `tests/brand-inference.test.js` (entity-laden mocked response → clean prose; clean response → identity).
-- All 45 tests pass (`decode-html-entities.test.js` + `brand-inference.test.js`).
-
-**Next:** PR review and merge.
-
----
-
-## 2026-08-20 — KDL-532: compileTokens namespace guard for brand-kit-* slugs (Backend Coder)
-
-**Branch:** `fix/kdl-515-brand-kit-seed` (same as KDL-515/KDL-528 fixes)
-
-**Done:**
-- Added single-segment slug guard in `compileTokens()` (`service.js:470-476`): when `slugParts.length === 1`, emit `--{slug}` verbatim as the CSS var and group the JSON tree entry under `'brand-kit'` pane. Prevents the old behavior where `neutralParts = []` → `tokenName = ''` → CSS emits junk `--:` key + `undefined` pane.
-- Extended `brand-kit.d-bk-6.integration.test.js` with a 3rd test that calls `compileTokens()` after `upsertValues()` and asserts: distinct `--brand-kit-*` CSS vars present, no `--:` junk key, no `undefined` pane.
-- All 142 existing tests still pass. New test is DB-opt-in (skipped without `RUN_DB_TESTS=1`).
-- Commit: `acca80a` — `fix(theme-engine): namespace guard for single-segment brand-kit-* slugs (KDL-532)`
-
-**Next:** PR into master; parent KDL-526 can be closed once this is verified merged.
-
----
-
-## 2026-08-19 — KDL-508: collateral module — implementation verified, PR ready (Backend Coder)
-
-**Branch:** `feat/kdl-508-collateral-on-master` — PR being opened
-
-**Done:**
-1. **Prisma:** `CollateralAsset` + `CollateralRender` models; `CollateralType`/`CollateralStatus`/`RenderFormat` enums; migration `20260820000001_add_collateral_module` (sorts after brand-kit's `20260820000000`).
-2. **Preflight (preflight.js):** all 7 §8 named error codes verbatim — `BRANDKIT_MISSING_FIELD`, `LOGO_BELOW_MIN_WIDTH`, `CONTRAST_FAIL_SMALL_PRINT`, `SPOTCOLOR_LIMIT_EXCEEDED`, `GEOMETRY_OUT_OF_BOUNDS`, `FONT_NOT_ALLOWLISTED`, `CREDITS_INSUFFICIENT`.
-3. **HTML-escaping (render/escape.js):** `escapeHtml` + `escapeZoneContent` per §11.
-4. **Render pipeline:** PDF_PRINT (crop marks) / PDF_DIGITAL / DOCX (letterhead header/footer locked) / PNG for all 4 artifact types.
-5. **Service:** `createAsset`, `listAssets`, `getAsset`, `updateAsset`, `archiveAsset`, `preflightAsset`, `renderAsset` with `withCreditHold` + idempotency-key forwarding.
-6. **Routes:** all 8 §7 endpoints behind `moduleGate('collateral')` + RBAC.
-7. **Credits:** `COLLATERAL_EXPORT_COST = 5` constant; `COLLATERAL_RENDER_ESTIMATE_MC = 5_000_000n`.
-8. **Template-engine driver:** collateral driver returns `outputRef` (phase-1 passthrough).
-9. **Tests:** 42/42 passing.
-10. **Bugs fixed:** `resolveBrandKit()` uses `findUnique` (not `findFirst` with invalid `version` field); migration retimed `20260819000002` → `20260820000001`.
-
-**Next:** CI pass → squash-merge.
-
----
-
-## 2026-08-19 — KDL-504: credits module — per-project metering, hold lifecycle, ledger (Backend Coder)
-
-**Branch:** `feat/kdl-504-credits-module` — PR #173
-
-**Done:**
-1. **Prisma schema** `backend/prisma/schema/credits.prisma` — `CreditBalance`, `CreditHold`, `CreditLedgerEntry` models; `CreditEntryType` + `CreditHoldStatus` enums; BigInt `balance_mc`/`amount_mc` columns; `@@unique` on hold `idempotency_key`; correct indexes per spec §4.
-2. **Projects stub** `backend/prisma/schema/projects.prisma` — minimal `Project` model (id/cuid, name, slug@unique, is_default, timestamps) to unblock credits FKs; full tenancy scoping lands in PROJECTS_ARCH build (KDL-474).
-3. **Migration** `20260819000001_add_credits_module/migration.sql` — creates all 3 tables + enums + FK constraints; **append-only trigger + function** on `credit_ledger_entries` (first DB trigger in repo — flagged as precedent).
-4. **`service.js`** (CREDITS_ARCH §3–6):
-   - `applyEntries` — locked mutation core: `SELECT ... FOR UPDATE` at READ COMMITTED, reaps expired holds, enforces balance ≥ estimate, inserts ledger entries with correct `balance_after_mc`, updates materialised balance, applies hold state transitions.
-   - `grantCredits`, `reserveCredits`, `settleHold`, `releaseHold`, `adjustCredits`, `forceReleaseHold`, `getBalance`, `getLedger`, `getReconciliation`, `withCreditHold`, `usdToMc`.
-   - Idempotency on holds via `@unique idempotency_key` — same key returns existing hold without re-debiting.
-   - Late settlement: EXPIRED holds get `ADJUST` entry (not silently dropped).
-   - Overage detection: `settle_overage` activity-log alert when overage > `credits.max_overage_pct`.
-5. **`controller.js`** — `serializeBigInts()` for JSON; all BigInt amounts returned as strings.
-6. **`routes.js`** — `GET balance/ledger/reconciliation` (credits:view) + `POST grants/adjustments` (credits:manage) + `POST holds/:holdId/release` (credits:manage). No POST /preflight per CEO ruling.
-7. **`schema.js`** — Zod validation with `bigIntString` transformer for `amount_mc` fields.
-8. **`seed.js`** — upserts AppSettings: `credits.usd_per_credit=0.01`, `credits.hold_ttl_seconds=900`, `credits.max_overage_pct=25`.
-9. **`module.json`** — slug `credits`, nav `Coins`, permissions `credits`.
-10. **34 tests** in `service.test.js` — `usdToMc`, `grantCredits`, `reserveCredits` (402 path, idempotency replay), `settleHold` (overage, double-settle guard, late settlement on EXPIRED), `releaseHold` (idempotent), hold lifecycle (reserve→settle, reserve→release), expired hold reaping, reconciliation arithmetic, cross-project isolation, `adjustCredits`, `forceReleaseHold`, `withCreditHold` (settle on success, release on error). **994 tests passing total.**
-
-**Notes:**
-- MERGE_DISCIPLINE exception: all 4 spec phases (C1–C4) combined in one PR per issue KDL-504 requirement. Line count: ~1300 non-generated lines (exceeds 400-line guideline). Code Reviewer may request split.
-- Projects stub is minimal — full tenancy migration (§1.2, PROJECTS_ARCH) belongs to KDL-474 build.
-- No real-Postgres concurrency/append-only integration tests (C2b in spec) — the append-only trigger is in the migration SQL; integration test coverage would require a live DB and is deferred.
-
-**Next:** brand-kit (KDL-482) and collateral engineers consume `withCreditHold` per §5 contract.
-
-## 2026-08-19 — KDL-501: PR #172 blocker fixes — §8.2 field name + :export gate (Backend Coder)
-
-**Branch:** `feat/kdl-501-template-engine-orchestrator` — PR #172
-
-**Fixes (Code Reviewer requested changes):**
-1. **`service.js:264` — §8.2 D3 guard**: `templateEngineActivityScope()` now returns `created_at: { gte: cutover }` (snake_case Prisma field) instead of `createdAt`. Previously would have thrown `PrismaClientValidationError` on first real query.
-2. **`controller.js` — §3/§9 export stage gate**: `advanceStage` now checks `template-engine:export` when `stage === 'export'`, same pattern as the `:approve` check for `stage === 'approval'`. `:run`-only users can no longer flip EXPORT to DONE.
-3. **`template-engine.test.js` — strengthened §8.2 test**: activity scope tests now assert `created_at` key is present and `createdAt` key is absent (explicit where-shape assertion).
-
-**Tests:** 71/71 pass.
-
----
-
-## 2026-08-19 — KDL-503: template-engine Phase 1 — DAG state machine, server-side gates, additive migration, RBAC (Backend Coder)
-
-**Branch:** `feat/kdl-501-template-engine-orchestrator` — PR #172
-
-**Done:**
-1. **Prisma additive migration** `20260819000000_add_template_engine_dag`: `TemplateEngineRun` + `TemplateEngineStage` models, `RunStatus`/`DagStage`/`StageStatus` enums, `@@unique([runId, stage])`, `@@index([projectId])`. `prisma validate` ✅
-2. **9-stage DAG** (stages + slugs verbatim from §3): intake → palette → inference → approval → [guidelines ‖ collateral ‖ website] → preflight → export. Fan-out is independent — one failing branch does not fail siblings.
-3. **Server-side gates**: `POST /runs/:id/stages/:stage/advance` returns 409 `STAGE_GATE_FAILED` with named `blockingReason` when §3 Depends-on unmet (KDL-446 precedent).
-4. **Crash recovery** (§4.1): orphaned RUNNING → FAILED(INTERRUPTED) at advance time; `markInterruptedStages()` on resume endpoint; approval sub-step outputRef contract.
-5. **Driver interface**: 9 stubs all throw `UPSTREAM_NOT_BUILT (503)`; preflight + export have real read-only implementations.
-6. **RBAC**: custom actions `["view","run","approve","export"]`; `:approve` double-enforced in controller for stage 4; cross-project 404 leakage guard.
-7. **Manifest**: `dependsOn` including brand-kit/collateral/credits; nav "Studio"/Sparkles; `conflictsWith` unchanged; `moduleGate` 404 when disabled.
-8. **Activity scope** (§8.2): `templateEngineActivityScope()` cutover-guard helper.
-9. **71 tests**: gate.test.js (30), dag.test.js (9), recovery.test.js (6), leakage.test.js (7), template-engine.test.js (19).
-
-**Next:** Code Reviewer reviews PR #172; Phase 2 fills in one driver at a time once upstream modules ship.
-
----
-
-## 2026-08-19 — KDL-501: template-engine orchestrator backend — 9-stage DAG per TEMPLATE_ENGINE_ARCH.md (Backend Coder)
-
-**Branch:** `feat/kdl-501-template-engine-orchestrator` — PR against master
-
-**Done:** Full 9-stage DAG orchestrator backend for the `template-engine` module (promotion of Phase-0 stub). This is a thin coordination layer — contains NO theming/rendering logic; drives existing engines via public APIs only.
-
-Key deliverables:
-1. **Prisma schema** `backend/prisma/schema/template-engine.prisma` — `TemplateEngineRun` + `TemplateEngineStage` models; `RunStatus`, `StageStatus`, `DagStage` enums; `@@unique([runId, stage])`; `outputRef Json?` stores pointers not payloads (§4).
-2. **Additive migration** `20260819000000_add_template_engine_dag/migration.sql` — creates the two tables + enums; no destructive changes.
-3. **`module.json`** updated from Phase-0 stub: permissions `[{name:"template-engine",actions:["view","run","approve","export"]}]`; `dependsOn` wired; nav entry `/admin/template-engine`.
-4. **`service.js`** — `checkGate` (pure, per §3 Depends-on), `createRun`, `getRun` (cross-project 404 guard §10), `listRuns`, `markInterruptedStages` (crash-resume: RUNNING→FAILED INTERRUPTED), `advanceStage` (gate + orphan RUNNING detection + driver.execute + DB upsert/update), `getExportManifest`, `templateEngineActivityScope` (§8 D3 data-hygiene: cutover from `_prisma_migrations`, appends `created_at >= cutover` to activity_log queries).
-5. **`drivers/index.js`** — 9 stage drivers. `preflight` aggregates named branch errors; `export` builds handoff manifest from outputRefs. Brand-kit/collateral/credits stubs throw `UPSTREAM_NOT_BUILT` (503) — DAG state machine is fully testable independently (Phase 1).
-6. **`schema.js`** — Zod schemas using combined `z.object({params,body,query})` shape per validate middleware.
-7. **`controller.js`** — `requireProjectId` header guard; `advanceStage` checks `template-engine:approve` for the APPROVAL stage; named error codes (STAGE_GATE_FAILED, STAGE_INTERRUPTED, UPSTREAM_NOT_BUILT) surfaced.
-8. **`routes.js`** — full REST surface under module `apiPrefix`.
-9. **Test suite** (5 test files, 79 files total, 960 tests passing): `template-engine.test.js` (19 tests: gate pass/block, crash recovery, activity scope, server-side gate, preflight driver); `gate.test.js` (all 9 stage gate conditions); `dag.test.js` (fan-out independence, gate rejection, UPSTREAM_NOT_BUILT recording); `recovery.test.js` (crash recovery); `leakage.test.js` (cross-project isolation). Prisma validates clean.
-
-**D3 (slug conflict):** D3 was already RESCINDED in DECISIONS.md from PR #170; `template-engine` slug is locked to the orchestrator per board tie-breaker d326e28f.
-
-**Phase 1 state:** Brand-kit (KDL-451), collateral (KDL-452), and credits modules are not yet on master → 7 of 9 drivers are stubs returning UPSTREAM_NOT_BUILT (503). Replace each with a real HTTP call once the upstream module ships. `preflight` and `export` drivers are fully implemented (pure read/aggregate, no upstream call needed).
-
-**Next:** Code Reviewer reviews this PR. KDL-502 (or similar) implements frontend stepper surface per STUDIO_IA.md. Once brand-kit lands, replace intake/palette/inference/approval/guidelines drivers with real calls.
-## 2026-08-19 — KDL-502: Studio surface frontend — 9-stage DAG UI (Frontend Coder)
-
-**Branch:** `feat/kdl-502-studio-frontend` → PR #171
-
-**Done:** Full Studio product-surface frontend per STUDIO_IA.md §5 and TEMPLATE_ENGINE_ARCH.md §7.
-- **Routes:** `/admin/template-engine` (project list landing), `projects/[projectId]` (auto-redirect to first incomplete stage), `projects/[projectId]/[stageSlug]` (9 dynamic stage screens).
-- **StudioStepper:** in-surface 9-step stepper with locked/available/in_progress/needs_attention/done display states; gate logic computed client-side from run data; blocked steps show errorCode; no client-side gate enforcement.
-- **Stage screens (×9):** intake, palette, inference, approval, guidelines, collateral, website, preflight, export. Each calls orchestrator API via `useTemplateEngine` hooks; handles API-not-yet-live gracefully.
-- **Approval stage:** surfaces two-step sub-state (approvedAt + tokensWrittenAt) per §4.1 crash-recovery spec.
-- **Inference stage:** displays advisory credit balance via `GET /api/credits/:projectId/balance` (display-only, not a gate — per TEMPLATE_ENGINE_ARCH §5).
-- **module.json:** promoted to v0.1.0 — nav label "Studio", permissions (view/run/approve/export), dependsOn extended to brand-kit + collateral + credits. conflictsWith unchanged (L5 — board decision required).
-- **LOCKED IA preserved:** L3 (flat-leaf-only nav), L5 (conflictsWith unchanged), L6 (single sidebar entry, no per-stage sidebar items).
-- **Types + hooks:** `src/types/template-engine.types.ts`, `src/hooks/useTemplateEngine.ts` — typed against TEMPLATE_ENGINE_ARCH §4 data model.
-
-**Blocker:** Backend orchestrator (KDL-453 child) not yet live. Frontend degrades gracefully (API error → empty/error state). PR ready for code review once backend lands.
-
-**Next:** Code Reviewer reviews PR #171; backend orchestrator child issues (KDL-453) land and wire up to these API endpoints.
-
----
-
-## 2026-08-18 — KDL-485: STUDIO_IA.md — canonical source-app IA for the template-engine surface (Frontend Architect)
-
-**Branch:** `docs/kdl-485-studio-ia` — docs-only
-
-**Done:** `.agents/arch/STUDIO_IA.md` (OQ-1 output, per PM-001 resolution): extracted the real admin nav tree at master `3369250` with file:line cites (`AdminSidebar.tsx` `FLAT_ITEMS`/`GROUPS`, `useModules.ts` `nonCoreNav`, module `nav[]`); ruled prototype `enabled:false` ≙ module registry status DISABLED/INSTALLED (no per-entry flag); stated the Mode A boundary (+1 sidebar entry `/admin/template-engine`, −2 via `conflictsWith`, everything else untouched, non-destructive Mode B restore); L1–L8 LOCKED vs E1–E5 extensible freeze table; 9-stage → surface mapping with a stage-list-agnostic contract (single sidebar entry, deep-linkable `/{stage-slug}` routes, in-surface stepper).
-
-**Gaps flagged (§6):** G1 the 9-stage list is enumerated NOWHERE in the repo (only the count at `PRODUCT_MODES_ARCH.md:158`) — KDL-486 must fix the canonical list; G2 manifest nav can't express subsections (intentional, don't extend); G3 core manifests' inert `nav[]` has drifted from rendered truth; G4 CommandPalette omits module entries (Studio unreachable via palette in Mode A); G5 no sidebar progress affordance (kept in-surface deliberately).
-
-**Next:** Code Reviewer reviews the PR (review child issue filed); KDL-486 (Backend Architect) consumes this doc and owns the canonical stage list + D3→RESCINDED hygiene.
-
----
-
-## 2026-08-17 — KDL-460: waived + dismissed 3 unpatchable dev-only Dependabot alerts (Security & Compliance Engineer)
-**Branch:** `security/kdl-460-waivers` — PR #155
-
-**Done:**
-1. **Verified dev-only exposure** — `image-size@1.2.1` has exactly one dependent in `frontend/pnpm-lock.yaml`: `@storybook/nextjs@8.6.18` (devDependency; Storybook not shipped). `elliptic@6.6.1` reachable only via `browserify-sign`/`create-ecdh` ← `crypto-browserify` ← `node-polyfill-webpack-plugin` ← same Storybook chain. GitHub marks all 3 alerts `scope: development`, `first_patched_version: null`.
-2. **Dismissed alerts #85, #84 (image-size HIGH), #47 (elliptic LOW)** via `gh api` as `tolerable_risk` referencing KDL-460 — **open Dependabot alerts now 0**.
-3. **WAIVERS registry** added to `docs/DEPENDENCY_TRIAGE.md` (justification + tracking issue + review-by 2026-11-17 each); `dependency-audit.yml` waiver comments now point at the registry, elliptic GHSA added to the set for tracking.
-
-**Next:** Code Reviewer to review/merge PR #155. Weekly audit (KDL-433) re-checks `first_patched_version` — fast-follow bump issue the moment upstream ships a fix.
-
----
-
-## 2026-08-17 — KDL-448 Phase 0 FRONTEND: nav icons + locked_by badge + Puck persistence + template-engine stub (Frontend Coder)
-
-**Branch:** `kdl-446-product-modes-arch` — commit `8978fd3`
-
-**Done:** All 4 frontend deliverables:
-1. **Nav icons** — Added `Palette`, `LayoutTemplate`, `Sparkles` to `MODULE_ICON_MAP` in AdminSidebar so theme-engine-ui, page-builder-ui, template-engine nav entries render correct icons (not Package fallback)
-2. **locked_by read-only badge** — Theme Engine page imports `useModules`, checks `isEnabled('template-engine')`, shows amber "Managed by Template Engine" banner and wraps editor in `pointer-events-none`. Backend 409 is the authoritative gate.
-3. **Puck persistence** — `store.ts` fully rewritten to call backend API (`GET/POST/PUT/DELETE /api/page-builder`). Listing page uses `useQuery/useMutation`. Editor uses `useQuery` + `useMutation` for save/publish. Public `/p/[slug]` uses backend public route. Pages survive container restart.
-4. **Template-engine stub admin** — `/admin/template-engine/page.tsx` with ModuleGuard, mode status display, Phase 0 notice. Backend manifest updated with nav entry `{label: "Template Engine", path: "/admin/template-engine", icon: "Sparkles"}`.
-5. **Type-check fix** — Installed missing `@axe-core/playwright` dev dep that prevented `pnpm type-check` exit 0.
-
-**Gates:** `pnpm type-check` exit 0 ✅ | `pnpm build` exit 0 ✅ | RTL suite 147/147 exit 0 ✅
-
-**Next:** CEO to run browser gate (localhost:3101, admin@kdl.com/Admin@123) and open single KDL-446 PR.
-
----
-
-## 2026-08-17 — KDL-447 Phase 0 BACKEND: conflictsWith + engine/UI split + locked_by + Puck persistence (Backend Coder)
-
-**Branch:** `kdl-446-product-modes-arch` — commit `6f9e3e7`
-
-**Done:** All 4 deliverables on `kdl-446-product-modes-arch`:
-1. `conflictsWith` — manifest schema + symmetric bidirectional 409 in installModule/enableModule
-2. Engine/UI split — theme-engine→core (no nav), +theme-engine-ui; page-builder→core (no nav), +page-builder-ui; template-engine stub (conflictsWith + seed/uninstall for locked_by)
-3. locked_by — migration (`ALTER TABLE setting_fields ADD COLUMN locked_by TEXT`) + 409 gate in theme-engine upsertValues
-4. Builder persistence — migration creating `builder_pages` table (service/controller/routes already existed)
-
-**Gates:** prisma validate exit 0; backend vitest 886/886 exit 0; ai-services vitest 21/21 exit 0.
-
-**Next:** KDL-448 (frontend child: nav hide + locked_by badge + browser gate) must complete before CEO opens the single KDL-446 PR.
-
----
-
-## 2026-08-17 — KDL-440 Phase C integration + browser gate + PR (QA / Test Engineer)
-
-**Scope:** Integration branch `feat/kdl-437-theme-engine-rename` merges BE (`feat/kdl-437-theme-engine-be`) + FE (`feat/kdl-437-theme-engine-fe`). Phase C browser gate + grep gate complete. PR open for CEO/board review.
-
-**Gate results:**
-- Browser gate (KDL-440 5-test Playwright suite): **5/5 PASS** — sidebar "Theme Engine", /admin/theme-engine loads, sidebar not flooded (<40 links), API routes renamed, /admin/theme-engine accessible
-- API route checks: `GET /api/template-engine/tokens → 404 ✓`, `GET /api/theme-engine/tokens → 200 ✓`
-- th-consume-gate renamed spec: (c), (e), (f) pass; (a), (b), (d) have pre-existing failures (networkidle timeout + Tailwind CSS specificity — not caused by rename)
-- Final grep gate: `git grep -iE "template.?engine"` returns 47 lines — all in DECISIONS.md (D3 reserved note), HANDOFF.md/HANDOFF_ARCHIVE.md (historical), backend/prisma/migrations (SQL WHERE clauses), template-engine.html (prototype). Zero live code or config matches.
-
-**Module registry change:** slug `template-engine` → `theme-engine`, name "Template Engine" → "Theme Engine". kdl-module-tracker artifact should be re-synced.
-
-**Reserved:** The name `template-engine` is now RESERVED and unused — future page/content template module must use a different slug (see .agents/DECISIONS.md D3).
-
----
-
-## 2026-07-18 — KDL-385 a11y skip-to-main-content (Frontend Coder)
-
-**Done:** Added skip navigation link (WCAG 2.4.1 Level A) — PR #106 open for review.
-
-- `frontend/src/app/admin/layout.tsx`: skip link is first focusable element, `sr-only` + visible on focus
-- `frontend/src/components/layout/AdminShell.tsx`: `id="main-content"` on `<main>`
-- Branch: `feat/kdl-385-skip-to-main`, base: master
-- Note: cherry-picked from `2c9757b` which was mistakenly bundled in `feat/kdl-386-aria-modal`; that branch still contains the skip-link changes — will be a no-op diff when KDL-386 eventually merges after KDL-385 merges first.
-
----
-
-<!-- ROLLING WINDOW: keep only the most recent ~8 entries here to minimise per-run context.
-     Prepend new entries at the top; move anything older than the window into HANDOFF_ARCHIVE.md.
-     Full history: .agents/HANDOFF_ARCHIVE.md (and git log). -->
-
-## 2026-08-17 — KDL-438 Template Engine → Theme Engine rename complete (Backend Coder)
-
-**Scope:** Backend + DB migration + shared docs. Branch: `feat/kdl-437-theme-engine-be`.
-
-**Changes:**
-- `backend/src/modules/theme-engine/` — renamed from `template-engine` via git mv (history preserved)
-- `module.json`, `seed.js`, `service.js`, `controller.js`, `uninstall.js`, `routes.js`, `kdl191-gate.mjs` all updated
-- Redis token cache key prefix: `te:tokens:*` → `th:tokens:*` (old keys expire at TTL=600s)
-- App settings keys: `template_engine.*` → `theme_engine.*`
-- Prisma migration: `20260817000000_rename_template_engine_to_theme_engine` (modules, permissions, owner_module, app_settings)
-- Shared docs: TEMPLATE_ENGINE_ARCH.md → THEME_ENGINE_ARCH.md; D3 decision recorded
-- Deleted junk dups: `uninstall 2.js`, `kdl191-gate 2.mjs`
-
-**Phase C gates:** `prisma validate` exit 0; vitest 95/95; grep returns 0 live matches.
-
-**Deploy note:** Redis `te:tokens:*` flush on deploy (or let TTL expire naturally).
-
-**Next:** Frontend sibling task to rename frontend components; Code Reviewer to verify PR.
-
----
-
-## 2026-07-18 — KDL-414 NEXT_PUBLIC_IMAGE_HOSTS must be Docker build arg (Frontend Coder)
-
-**Scope:** Rework PR #118 (branch `fix/kdl-412-admin-images`) — KDL-413 code review blocker.
-
-**Problem:** `NEXT_PUBLIC_IMAGE_HOSTS` was set only in docker-compose `environment:` (runtime), which is invisible during `pnpm build`. Because the frontend uses `output: 'standalone'`, CSP headers and `images.remotePatterns` are resolved at build time and baked into `routes-manifest.json`. The standalone `server.js` never re-reads `next.config.ts`, so only the `localhost:9000` fallback was ever baked in regardless of the compose runtime env.
-
-**Empirical proof (from KDL-413):** gate container ran with `NEXT_PUBLIC_IMAGE_HOSTS` in `process.env` yet served `img-src ... http://localhost:9000`.
-
-**Fixes:**
-- `frontend/Dockerfile` builder stage: added `ARG NEXT_PUBLIC_IMAGE_HOSTS=http:localhost:9000` + `ENV NEXT_PUBLIC_IMAGE_HOSTS=$NEXT_PUBLIC_IMAGE_HOSTS` before `RUN pnpm build` (same pattern as `NEXT_PUBLIC_API_URL`).
-- `docker-compose.yml` frontend service: changed `build: ./frontend` → `build: {context, args: {NEXT_PUBLIC_IMAGE_HOSTS: http:localhost:9002}}`. Kept runtime `environment:` entry with a comment marking it inert (visibility only).
-- **Corrected false claim** in KDL-412 HANDOFF entry below: "restart picks it up without rebuild" was wrong — a `docker compose build frontend` is always required when changing `NEXT_PUBLIC_IMAGE_HOSTS`.
-
-**Deploy note:** Any environment changing this value needs `docker compose build frontend` — a container restart alone has no effect.
-
-**Verified:** `pnpm type-check → 0 errors`. Dockerfile + compose syntax clean.
-
-**Next:** PR #118 updated; request Code Reviewer re-gate (KDL-413 → in_review).
-
-## 2026-07-18 — KDL-412 Fix broken admin images/icons + broken links (Frontend Coder)
-
-**Scope:** Broken logo preview (Theme Settings), broken media library thumbnails, and reported "broken links" (KDL-408). Branch `fix/kdl-412-admin-images`.
-
-**Root cause:** Docker compose maps MinIO's host port as `9002:9000`, and the backend sets `MINIO_PUBLIC_PORT=9002` so presigned URLs use `http://localhost:9002/…`. The frontend's CSP `img-src` defaulted to `http://localhost:9000` (hardcoded fallback in `next.config.ts` when `NEXT_PUBLIC_IMAGE_HOSTS` is unset). Every presigned URL the browser tried to load was blocked by CSP → broken-image glyph.
-
-**Fix:**
-- `docker-compose.yml`: added `NEXT_PUBLIC_IMAGE_HOSTS: http:localhost:9002` to the `frontend` service environment. `next.config.ts` reads this at server startup to build both the `img-src` CSP directive and `images.remotePatterns`.
-- `.env.example`: documented the var for non-Docker users (no default needed — bare pnpm dev keeps MinIO on the same `localhost:9000` that the code already falls back to).
-- `.agents/WORKSPACE_MAP.md`: corrected MinIO port from `9000` (container) to `9002` (host).
-
-**Verified:** `pnpm type-check → 0 errors`.
-
-**Next:** PR against master; request Code Reviewer gate.
-
-## 2026-07-18 — KDL-410 Frontend design/link regressions from PR #75 dep bump (Frontend Coder)
-
-**Scope:** Fix broken dark-mode toggle and icon typo introduced by PR #75 dep bump (next-themes 0.3→0.4, lucide-react 0.460→0.577). Commit `aeffa8b`, branch `fix/kdl-406-admin-css`.
-
-**Root causes found:**
-1. **Dark-mode toggle broken**: `CommandPalette` read `theme`/`setTheme` from `useUiStore` (Zustand, persists to `localStorage['kdl-ui']`), which never synced with next-themes' `ThemeProvider` (reads/writes `localStorage['theme']`). Clicking "Toggle theme" updated Zustand state but applied no class change to `<html>`. Fix: import `useTheme` from `next-themes` directly; remove redundant `theme`/`setTheme` from `ui.store.ts`.
-2. **SendHorizonal typo**: `integrations/page.tsx` imported misspelled `SendHorizonal` instead of `SendHorizontal`. Currently aliased in lucide-react 0.577, but a deprecated no-op in future versions.
-
-**Verified:** `pnpm type-check` → 0 errors, `pnpm build` → green.
-
-**Next:** PR with these 3-file change set. KDL-410 → done.
-
----
-
-## 2026-07-17 — KDL-353 E1 Ink & Dawn palette + typography fallback seeded into TE defaults (Backend Coder)
-
-**Scope:** `backend/src/modules/theme-engine/schema/index.js`
-
-**Changes:**
-- Brand Colors Primary: `#4f8ef7`→`#7468F3` (dark), `#0a66f0`→`#2119B3` (light) — Ink
-- Brand Colors Highlight: new field `#F7B23B` (dark) / `#F9941F` (light) — Dawn
-- Typography H1–H3 family: `'Poppins'`→`'Poppins, Sora'` across all 4 device breakpoints
-- FONTS: added `'Poppins, Sora'` and `'Sora'` as selectable options
-
-**PR:** #91 → master.
-
----
-
-## 2026-07-17 — KDL-349 Ink & Dawn palette seeded into TE schema defaults (Backend Coder)
-
-**Scope:** `backend/src/modules/theme-engine/schema/index.js` Brand Colors only.
-
-**Changes:** 2 lines — primary (`#7468F3` dark / `#2119B3` light) and accent/highlight (`#F7B23B` dark / `#F9941F` light) set in `BASE_TABS[branding]` Brand Colors sections.
-
-**PR:** #89 → master.
-
----
-
-## 2026-07-17 — KDL-275 M4 config/CORS/error-leak/infra + notifications hardening (Security & Compliance Engineer)
-
-**Scope:** KDL-270 audit findings M5, M6, M7, M8, M10, M11, M14, L13, L14, L16, L17. Deliberately did NOT touch `/share/:token` media routes (M9/L15 deferred to PR #46). PR #55 → master.
-
-**Fixes:**
-1. **M6** `backend/src/index.js` — fail-fast at boot when `CORS_ORIGIN` unset; comma-separated explicit allowlist (no more origin reflection with `credentials:true`).
-2. **M7** `ai-services/src/index.js` + `middleware/auth.js` — bare `cors()` replaced with `CORS_ORIGIN`/`FRONTEND_URL` allowlist; cookie-authenticated calls now require an allowlisted `Origin` header (CSRF defense), Bearer-header calls exempt.
-3. **M8** `backend/src/middleware/errorHandler.js` — 500 details masked unless `NODE_ENV==='development'` (was `!=='production'`, so staging leaked).
-4. **M10** ai-services `chat|embed|transcribe` controllers — upstream `err.message` logged server-side, generic 500 returned.
-5. **M11** `docker-compose.infra.yml` — `${VAR:?}` fail-fast creds from `.env` (no baked-in postgres/minio/meili defaults), all ports bound `127.0.0.1:`.
-6. **M5** `notifications/routes.js` + `frontend/src/hooks/useNotificationStream.ts` — SSE auth via single-use 60s Redis ticket (`POST /notifications/stream/ticket`, `GETDEL` consume); JWT no longer in query string. HS256 pinned on the notif JWT verify (L1's notif site).
-7. **M14** `notifications/{schema,routes,controller}.js` — real Zod schemas (`.strict()`) + `validate()` on all mutating routes; controllers read `req.validated.body`; `is_system` not settable.
-8. **L13** ai-services `trust proxy 1`; 10mb JSON limit scoped to `/api/ai/transcribe` only (default 100kb elsewhere).
-9. **L14** `docker-compose.yml` + `docker-compose.staging.yml` — all host ports `127.0.0.1:`; Redis `--requirepass` + password-form `REDIS_URL`; staging overlay documented CI/E2E-only.
-10. **L16** `config/meilisearch.js` + `.env.example` — `MEILISEARCH_API_KEY` documented as scoped admin key with generation recipe; master key confined to Meili container.
-11. **L17** `storage-settings/service.js` — raw S3/MinIO SDK errors mapped to 8-entry client-safe taxonomy; raw message stays in server log.
-
-**Verified:** backend notifications schema/controller + new `tests/error-handler.test.js` masking matrix — 29/29; ai-services full suite incl. new transcribe generic-500 test — 21/21; all 3 compose files `docker compose config` clean with vars set and hard-fail without; `node --check` clean; `ioredis@5.11.1` has `getdel`.
-
-**Deploy note (DevOps):** `.env` now REQUIRES `POSTGRES_USER/PASSWORD/DB`, `REDIS_PASSWORD` (+password-form `REDIS_URL`), `MINIO_ROOT_USER/PASSWORD`, `MEILI_MASTER_KEY`, and backend refuses to boot without `CORS_ORIGIN` (ai-services without `CORS_ORIGIN`/`FRONTEND_URL`). Frontend SSE now needs the ticket endpoint — deploy backend before/with frontend.
-
-**Next:** PR #55 awaiting Code Reviewer (Maker ≠ Grader).
-
-
-## 2026-07-14 — KDL-192 sidebar pollution fix: Type/Category/SettingField ownership contract (CEO agent, standing in as Backend Coder)
-
-**Bug:** post-KDL-174/175/176/177/178/191, the Theme Engine's 86 seeded panes (Types) all auto-promoted to top-level `AdminSidebar` menu items (`typeLeaves` from unfiltered `GET /types?is_active=true`), flooding "Application Settings" with every `webapp.*|tv.*|android.*|ios.*` pane. Root cause: no way to mark a Type/Category/SettingField as module-private data vs a standalone Application-Settings entry.
-
-**Fix — general ownership contract (also future-proofs modules 9-14 reusing these tables):**
-1. `owner_module String? @@index` added to `Type`, `Category`, `SettingField` in `core.prisma`; migration `20260714035014_add_owner_module_to_settings_tables`.
-2. `theme-engine/seed.js` stamps `owner_module: 'theme-engine'` on every Type/Category/SettingField it upserts (idempotent — verified via direct re-run against the dev DB: 0 created, 3910 updated on first pass after migration, all rows backfilled).
-3. `types|categories|setting-fields` `service.js`: `listX` defaults `where.owner_module = null` unless an explicit `?ownerModule=` query param is passed (added to each `schema.js`). This alone fixes the sidebar.
-4. `setting-fields/service.js` `getTypeBySlug` (used only by the generic `/admin/settings/view/[slug]` → `GET /setting-fields/by-type/:slug`) now filters `owner_module: null` too, so a module-owned slug can't be reached by direct URL either — verified `webapp.branding` → 404, standalone type → 200.
-5. `frontend/.../theme-engine/page.tsx` platform switcher relabeled Android → "Android Native", iOS → "iOS Native" (ids unchanged); Web App/TV already matched.
-
-**Verified live** against the dev-local Postgres (`localhost:5433/kdl_db`, isolated `npm ci` + `prisma generate` in a scratch worktree, backend started on a scratch port `4099`, real login as `admin@kdl.com`):
-- `GET /types` (no param): **total 1** (was 87) — only the standalone "Theme Settigns" type; `?ownerModule=theme-engine` → 86.
-- `GET /categories` / `GET /setting-fields` same pattern: 1 / 902 and 2 / 3910.
-- `GET /setting-fields/by-type/webapp.branding` → 404; `GET /setting-fields/by-type/theme-settigns` → 200.
-- `theme-engine/{schema,values,tokens}` endpoints unaffected (they query Prisma directly, never through the generic type/category/field services).
-- Backend suite: **698/698 pass**, 59 files, 0 regressions.
-
-**Not verified — needs QA (Maker ≠ Grader), targets localhost:3001:** the `kdl-starter-kit-*` containers serving :3001/:4000 are built-from-source images (no bind mount), so this branch's code isn't live there yet. Per the KDL-178 precedent above, QA must rebuild `backend`+`frontend` images from this PR's merged commit, `prisma migrate deploy` + re-run `theme-engine` seed (idempotent) against that stack's DB, then run the full gate: sidebar shows exactly one "Theme Engine" item, zero `settings/view/{webapp.*|tv.*|android.*|ios.*}` entries, open it → 4 platform options (Web App/TV/Android Native/iOS Native), switch platform swaps pane sidebar, edit a Web App button color + Save → `GET /tokens` reflects it.
-
-**Next:** PR opened, awaiting Code Reviewer + QA browser E2E gate on rebuilt :3001 stack.
-
-## 2026-07-13 — KDL-178 C2 review + E2E gate: PASS — Theme Engine module (KDL-174) COMPLETE (Code Reviewer)
-
-- **Module 15 Theme Engine is done and fully on master.** Backend fixes merged as `df6797c` (KDL-191, B1–B12); frontend admin UI merged as `195aaaa` (`feature/kdl-177-theme-engine-ui` @ `785453b`, KDL-177 + F1–F8 fixes). Both branches reviewed independently (maker ≠ grader) before merge.
-- **Final E2E gate re-run on the :3001/:4000 docker gate stack rebuilt from merged code** (backend image from master `df6797c`, frontend from `785453b`; freshness verified inside containers — `uninstall.js` present, theme-engine catalogue 86 types / 902 categories / 3910 fields seeded, module ENABLED). Playwright `kdl-178-theme-engine.e2e.spec.ts`: **2/2 passed, exit 0**.
-  - Gate 1: UI edit of `webapp.buttons.dark.primary_button.background_color` → Save → `GET /tokens?platform=webapp&theme=dark` reflects the new value in JSON + CSS (both `format=css` and body `css`), then restored and cache invalidation confirmed.
-  - Gate 2: disable → API gated 404 → re-enable → schema 200 with 11 webapp panes; row counts identical before/after; LEFT JOIN orphan checks 0/0/0/0 across categories/fields(×2)/values; tokens still compile.
-- Prior gate-1 PASS against backend `c9b73d3` was treated as invalidated (B3/B12 changed the `/tokens` contract) and re-run — per the re-run-all-gates rule.
-- **Next:** nothing open on Module 15. KDL-174/175/176/177/178/191 all closed.
-
-## 2026-07-13 — KDL-191 KDL-178 review fixes: install seed, uninstall cleanup, token spec (Backend Architect)
-
-- Branch `fix/kdl-191-theme-engine-review` @ `797bd5c`, awaiting Code Reviewer merge. Do not touch Phase C frontend branch.
-- **Install hooks contract changed** (`modules/service.js`): a module `seed.js` MUST export its seed as `default` (or a `seed*`-named export) and accept a Prisma client param — it now receives the install transaction client. Install/uninstall transactions run with `{timeout:180_000, maxWait:10_000}`. Optional `uninstall.js` (default export, receives tx client) removes module data from shared tables; theme-engine's is the reference implementation.
-- **Token contract now matches THEME_ENGINE_ARCH.md** (decision TE-001/TE-002 in DECISIONS.md): theme-neutral var names, `[data-theme="light|focus"]` override blocks, nested JSON `{pane:{group:{field:value}}}` (group keeps device tag, drops theme tag); unfiltered JSON mirrors `:root` = dark default. Password fields never compiled into tokens. `tokens_public=false` requires `theme-engine:view` even when authenticated. Cross-platform `?device=` rejected 422.
-- **Gate**: `backend/scripts/kdl191-gate.mjs` (fresh DB + `migrate deploy`, then run with DATABASE_URL/REDIS_URL) — 18/18 PASS exit 0. Full vitest 698/698. Note: run `npx prisma generate` if client is stale; `npm install` was needed for pre-existing missing `@zxing/library`.
-
-## 2026-07-13 — KDL-176 Theme Engine Phase B: values API + token resolver (Backend Coder)
-
-- **B1** `routes.js` created for the `theme-engine` module — the missing piece that lets `module-loader.js` mount the module at `/api/theme-engine`. Route chain: `moduleGate('theme-engine')` (applied by loader at mount) → `authenticate` → `requirePermission('theme-engine', <action>)` → `validate(Zod schema)` → controller. `GET /tokens` uses `optionalAuthenticate` instead (public-readable path); the controller enforces the `theme_engine.tokens_public` app_setting flag for unauthenticated callers.
-- **B2** `service.js`: `validateFieldValue` (color hex/rgba, number, slider min/max, select/radio enum, toggle boolean, multiselect JSON array, any-string for text/textarea/password/file/fonts/imglist); `upsertValues` (load pane fields, validate each entry, reject unknown field_id/slug with errors array, transaction upsert into `setting_values`, invalidate Redis token cache); `resetValues` (delete `setting_values` for pane, invalidate cache). Controller maps errors→422. Activity logged fire-and-forget on every mutation.
-- **B3** `service.compileTokens`: loads all fields for platform, applies saved-value override over default, filters by theme/device segment in slug, emits CSS custom properties in `:root{…}`, `@import`/`@font-face` for `fonts` fields, `.{class}{…}` rules for `imglist` fields. JSON tree `{pane:{tokenKey:value}}` alongside. Redis cache key `te:tokens:{platform}:{theme}` TTL 600s, write-through on compile, invalidated on every save/reset. `GET /tokens?format=css` or `Accept: text/css` returns raw CSS with `Content-Type: text/css`.
-- **Gates (exit codes, not self-assessed)**: `vitest run src/modules/theme-engine/` → 0. **44/44 tests pass** across 3 test files: 8 Phase A schema tests, 3 seed tests, 33 Phase B api tests (B1 route structure + schema tree shape; B2 validateFieldValue across all input types, upsertValues valid+invalid+unknown, resetValues; B3 compileTokens CSS output, dark+light both present, changed field reflects saved value, Redis cache TTL 600s, fonts/@import, imglist CSS classes; controller getTokens JSON vs CSS, public flag enforcement).
-- **Files created**: `backend/src/modules/theme-engine/routes.js`, `backend/src/modules/theme-engine/api.test.js`.
-- **Files pre-existing from prior run (Phase A output — complete, no changes needed)**: `controller.js`, `service.js`, `schema.js`, `module.json`, `schema/index.js`, `seed.js`, `schema.test.js`, `seed.test.js`.
-
-## 2026-07-13 — KDL-175 Theme Engine Phase A: schema + Prisma model + seed (Backend Architect)
-- **A1** `SettingValue` model + `SettingField.setting_values` back-relation in `backend/prisma/schema/core.prisma` (`setting_values` table: `field_id` unique FK→setting_fields cascade, denormalized `platform` indexed, string `value`, `updated_by`). Migration `20260713052617_theme_engine_setting_values` applied clean. Existing `settings`/`app_settings` module untouched — diff is exactly the new model + back-relation.
-- **A2** Verbatim port of the `theme-engine.html` prototype (`~/Downloads/theme-engine.html` — issue said committed on master but it is NOT in the repo; `.agents/THEME_ENGINE_ARCH.md` was also untracked and is committed with this work) into `backend/src/modules/theme-engine/schema/index.js` as ESM: BASE_TABS / PANE_OVERRIDES / EXTRA_TABS / PLATFORMS, C/N/SL/SE/TG/TX/PW/RA/MS/FI/TA constructors, `slug()`, `scaleField()`, build loop producing `PLAT_TABS`.
-- **A3** `seed.js`: schema-driven idempotent upsert-on-slug over Type (pane) / Category (section, theme/device tag in slug) / SettingField (field). TV px scaling applied by the schema build loop before write. Slug collision inside a build = throw, never overwrite.
-- **Gates (exit codes, not self-assessed)**: `npx prisma validate` → 0; `npx prisma migrate dev` clean → 0; `vitest run src/modules/theme-engine/` → 0 (11/11: 4 platforms build, pane counts webapp 11 / tv 37 / android 20 / ios 18, TV 720p/4K/8K px scaling x1/x3/x6, constructor→input_type/options/value encodings, seed idempotency vs unique-slug fake prisma). Real seed against dev DB ran twice: run1 `86 types / 902 categories / 3910 fields created`, run2 `0 created / 0 updated`; SQL dupe check 0; spot-check row present.
-- **Spec deviation (verbatim port wins)**: the arch doc's example slug `webapp.buttons.desktop.primary_button.background_color` does not exist — in the prototype, Primary Button is theme-tagged (dark/light), not device-tagged. Real slugs: `webapp.buttons.dark.primary_button.background_color` = `#4f8ef7`, `...light...` = `#0a66f0`. Asserted explicitly in both test files.
-- **Env note**: root `.env` now points `DATABASE_URL` at port **5443** (`kdl-dev-local-postgres-1`), not the old 5433 container. That DB had a full schema but no `_prisma_migrations` table (created via db push/dump) — `migrate dev` demanded a destructive reset. Repaired by baselining all 21 prior migrations with `prisma migrate resolve --applied`, then applying only the new one. No data lost.
-- Work committed on branch `feature/kdl-175-theme-engine-phase-a` (not merged to master — reviewer merges). Next: Phase B per KDL-174.
-
-## 2026-07-09 — KDL-122 Media DAM Phase D6: AI image ops (CEO/AI Services)
-- Found `ai/image-ops.service.js` (`runImageOpJob`) and the `replicate` driver already sitting uncommitted in the tree from an earlier interrupted session — the D1 driver registry (`ops: bg-removal/upscale/enhance/object-removal`) and the `ai-image-op` processing-job case were already wired, just never exposed over HTTP and never tested.
-- Added the missing layer: `aiImageOpSchema` (schema.js), `aiImageOp` controller (enqueues `ai-image-op` job with `{op, scale, mask, note, createdBy}`), route `POST /:id/ai-image-op` gated by `requireFeature('image_ops')` (501 when no `replicate` provider configured) + `requirePermission('media','edit')`.
-- New gate: `backend/tests/media/ai-image-ops.test.js` (8 vitest, mocked driver) — unsupported-op→422 before touching the provider, unconfigured→501, non-image→422, object-removal-without-mask→422, success path (bg-removal) asserts driver input shape + `createMediaVersion` call + result shape, scale/mask passthrough, download-failure→error. Full backend suite 570/570 (was 562), only the pre-existing unrelated `auth.controller.test.js` DATABASE_URL failure remains.
-- Frontend: `AiImageOpsPanel` in the media detail drawer (`admin/media/page.tsx`) — Remove background / Upscale 2x / Enhance buttons, shown only when `/media/ai/status` reports `image_ops.configured`. `object-removal` is NOT exposed in the UI — it needs a mask-drawing tool in the editor that wasn't built (mask is accepted backend-side as a URL to a pre-uploaded mask image); see `.agents/DECISIONS.md` MEDIA-005. RTL regression suites (MediaPage/MediaPhaseB/MediaPicker, 27/27) still pass; `tsc --noEmit` clean except one pre-existing unrelated failure (`IntegrationsPage.test.tsx` imports a non-existent page — not Phase D).
-- Both frontend (pnpm) and backend (npm) `node_modules` were missing in this workspace checkout — installed both (`pnpm install --frozen-lockfile`, `npm ci`) to run the gates; not a code change.
-- Next: D7 (recognition/QR — optional, default OFF) → D8 (cloud imports) → D9 (consolidated E2E + docs). Prior run failed on an org monthly Claude spend cap (unrelated to the code); this run's tool calls worked fine.
-
-## 2026-07-09 — KDL-119 Media DAM Phase A: A9 review + E2E — PHASE A COMPLETE ✅ (Backend Architect)
-- **Phase gate PASS: adversarial review + Playwright exit 0.** Phase B (KDL-120) is unblocked.
-- Adversarial review (feature-dev:code-reviewer over A1–A8) surfaced 3 real defects, all fixed in commit `b4aa86b`:
-  - **CRITICAL** `svg-sanitizer.js`: literal-substring scheme check bypassable via XML numeric entities (`&#106;avascript:`) + in-scheme whitespace/tabs. Now entity-decodes + strips control/whitespace before the scheme test; non-raster `data:` URIs (e.g. `data:image/svg+xml`) treated as dangerous. 4 bypass regression tests added.
-  - **HIGH** tag/meta denorm drift: `renameTag`/`deleteTag`/`updateMetaField`(slug)/`deleteMetaField` never reindexed the media carrying them → Meili served stale tag names/meta forever. Now enqueue reindex for all affected media (collected before the delete cascade). 4 tests added.
-  - **MEDIUM** url-import SSRF DNS-rebinding TOCTOU: guard validated one resolved IP, `fetch` re-resolved independently. `importFromUrl` now pins the connection to the validated IP via a custom `lookup` over node http/https (Host/SNI keep the hostname); test-only `fetchImpl` path preserved.
-- **Frontend A8 was rewritten to the real backend contract** (the earlier pass, commit 59f16ce, assumed wrong shapes): search returns `{hits,facets,pagination}` not `{media}`; media rows carry `tags:string[]` + `meta:{slug:value}` (flattened pivots); tag/untag are bulk-by-name (`POST /media/tag|untag {media_ids,tags}`); chunked routes are `PUT /media/upload/chunked/:id/part?index=` with init taking `{filename,size,mime_type,total_parts}` and status returning `received_parts[]`; recents route is `/media/recent` (singular). Search hits are flat Meili docs (no url/variants) → grid maps to stubs, clicking fetches the full row via `GET /media/:id`. `media.types.ts` + `DamExtensions.tsx` + `page.tsx` + RTL all realigned; tsc 0, 80/80 RTL.
-- **A9 E2E** `frontend/e2e/media-dam.spec.ts` — 5/5, Playwright exit 0, run against the live docker stack: 60MB chunked upload with interrupt+resume (status shows partial, early-complete 422, resume completes), zip import (2 entries incl. nested, 0 skipped), tag+custom-meta MeiliSearch hit (free-text on meta value + tag facet filter), smart-collection live rule eval, and **EICAR→quarantine verified against a real clamd** (soft-delete).
-- **Infra fixes** (commit `b4aa86b`+`8b337b1`): compose `MEILISEARCH_HOST=http://meilisearch:7700` override (root `.env` points it at localhost, which broke search inside the container → 500); clamav image `1.3`→`1.4_base-debian` (`1.3` removed upstream, `1.4_base` amd64-only; debian base is multi-arch + DB baked in, ~20s ready on arm64, no freshclam download). To scan for real: `CLAMAV_HOST=clamav docker compose --profile scan up -d clamav backend`.
-- Backend suite 500/502 — the 2 failures remain the uncommitted D5 openai-embeddings driver (5th driver breaks the "4 v1 drivers" count) + its ai-provider test; NOT Phase A, still owned by the D5 agent.
-- Commits: `59f16ce` A8, `dbfb121` A8 docs, `b4aa86b` A9 review fixes + frontend realign, `8b337b1` A9 E2E + clamav tag.
-
-
----
-*Older entries archived in [HANDOFF_ARCHIVE.md](HANDOFF_ARCHIVE.md) to reduce session-load tokens.*
-
----
-
-## KDL-579 — 2026-08-20 (Backend Coder)
-
-**Fix: auto-grant seed credits on project creation**
-
-- Branch `fix/kdl-579-seed-credits`, PR #204 open
-- `projects/service.js`: calls `grantCredits` (10M µc by default) after project creation transaction; idempotency key `new_project_seed:{projectId}`; failure logged, not thrown
-- `credits/seed.js`: new `credits.new_project_seed_mc` app setting (default 10_000_000, 0 = disabled)
-- No schema migration needed (uses existing credits ledger)
-- Status: done (PR awaiting Code Reviewer)

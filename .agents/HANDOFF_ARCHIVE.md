@@ -2,6 +2,260 @@
 
 > Moved out of `.agents/HANDOFF.md` on 2026-07-16 to cut per-run session-load tokens. The live file keeps only the most recent entries; full history is here and in git.
 
+## 2026-09-24 — Testimonials Slider inserted (+ debugging note: Reorder-tab check is unreliable)
+
+Inserted + published `ConstructionTestimonialsSlider` onto the home page. Straightforward
+change, but the verification step burned a lot of turns on a **false negative**: repeatedly
+inserting via the Section modal and checking result through the Reorder tab kept showing no new
+row, even with a proven-working click recipe (JS `card.click()` on the modal card, same pattern
+that worked for Sectors/Featured Projects/Clients). Eventually isolated the real cause —
+**checking `document.body.innerText` on the canvas immediately after the insert click showed
+the new content was actually there** every time; the Reorder-tab round-trip (clicking the
+Reorder tab button, then re-reading its rows) was the thing intermittently failing to reflect
+current state, not the insert itself. Confirmed no duplicate/orphaned inserts resulted (several
+of the "failed" attempts never actually got published, since publish was gated behind the
+faulty Reorder check) by checking Postgres before publishing the final clean pass.
+
+**Process note for next agent**: prefer checking `document.body.innerText.includes(...)` on the
+canvas directly over reading the Reorder tab's row list to confirm an insert took effect — it's
+more reliable here for reasons not fully root-caused (possibly a stale-read/tab-switch timing
+issue in the Reorder tab specifically, not seen on Style/Content tabs).
+
+## 2026-09-24 — Clients grid: fixed to match source site (full grid, real colors)
+
+Two bugs flagged after the insert above: (1) `ConstructionClientsGrid` had a 6-per-page dot
+pager — `index.html`'s actual Clients section is a plain wrapping grid, no slider at all;
+(2) logos had `grayscale hover:grayscale-0`, so every logo appeared grayscale in any static
+view (hover-to-color makes no sense in a screenshot or on touch). Removed both — render is now
+just `clients.map(...)` straight into the grid, plain `object-contain` on each `<img>`, no
+pagination state. Rebuilt/restarted; no new Puck insert needed since the block was already
+placed — a component code change alone updates every existing instance.
+
+
+## 2026-09-24 — Clients grid inserted + promoted to top-level category (+ self-caught mistake)
+
+Same pattern as Sectors/Featured Projects: split `ConstructionClientsGrid` out of the
+`testimonials` category into its own `clients` category ("Clients"), then inserted + Published
+onto the home page.
+
+**Mid-task mistake, corrected with user confirmation**: a mis-clicked sidebar coordinate
+(stale y-offset from a shorter sidebar list, taken before this session's category insertions
+pushed everything down) inserted **`ConstructionProductsShowcase`** instead of Clients, and it
+got Published before I checked the DB. Sandbox's auto-mode classifier actually blocked my first
+attempt to remove it (flagged as an irreversible deletion) — surfaced the mistake to the user
+explicitly rather than working around the block, got explicit confirmation to remove it, then
+did so via the editor's own Reorder-tab trash icon (a normal in-app action, not a raw DB
+delete) and re-published. Verified via Postgres both that the wrong block was gone and that
+Clients was correctly in afterward.
+
+**Process fix applied for the rest of this task**: stopped computing sidebar row coordinates
+via blind JS `getBoundingClientRect` math after a wheel-scroll; now always screenshot the
+scrolled sidebar first, read the row's y-position visually, then click — this is what actually
+worked for Clients (previous "no scroller found" / zero-rect JS attempts were the root cause of
+the misclick).
+
+Content order now: Header, Hero, TaglineStrip, FloatingActions, DisciplinesGrid, AboutSplit,
+OurBrands, ProjectGallery (Sectors), ProjectsSlider (Featured Projects), **ClientsGrid**,
+Footer.
+
+
+## 2026-09-24 — Featured Projects slider inserted + promoted to top-level category
+
+Same gap as Sectors/Brands: `ConstructionProjectsSlider` was built earlier but (a) buried
+inside the "Blog Posts" category alongside `ConstructionBlogPosts`/`ConstructionFeaturedProject`,
+and (b) never actually inserted onto the page. Split it into its own `featuredprojects` category
+("Featured Projects") in `typedCategories`, then inserted + Published. Content order now:
+Header, Hero, TaglineStrip, FloatingActions, DisciplinesGrid, AboutSplit, OurBrands,
+ProjectGallery (Sectors), **ProjectsSlider (Featured Projects)**, Footer — matches
+`index.html`'s real order. Verified via direct Postgres query, not just the UI (per the
+no-autosave lesson from the Our Brands work).
+
+**Pattern worth noting for next agent**: every "section missing" complaint from the user this
+session has had the same two-part cause — (1) the component's category was too generic/shared
+(user expects a distinct sidebar entry per section name, matching `index.html`'s own section
+names) and (2) the block was coded but never actually inserted+Published on their real page.
+If more sections come up missing, check both: does it need its own category, and is it actually
+in `builder_pages.data->'content'` for `cmteeef0m000f01nqqic19v17`.
+
+## 2026-09-24 — Sectors section inserted on home page + Brands promoted to top-level category
+
+Two quick follow-ups to the Our Brands work above:
+1. User wanted "Brands" as its own top-level sidebar entry (not nested inside "Services") —
+   moved `ConstructionOurBrands` out of the `services` category into a new `brands` category
+   (`packs/construction/index.tsx` `typedCategories`).
+2. Sectors (`ConstructionProjectGallery`, "Blog Posts" category) was built earlier this session
+   but never inserted onto the actual page either — same gap as Our Brands. Inserted + Published
+   via the same recipe (insert card click → Publish button → verify against Postgres directly).
+   Content order now: Header, Hero, TaglineStrip, FloatingActions, DisciplinesGrid, AboutSplit,
+   OurBrands, **ProjectGallery**, Footer — matches the marketing site's real order (Sectors
+   follows Our Brands there too).
+
+## 2026-09-24 — Our Brands: real logo images + actually inserted on the home page
+
+Two parts:
+
+1. **`ConstructionOurBrands` rewritten to use real vendor logo images** instead of text-chip
+   pills. Copied the full `assets/images/ourbrands/` tree from the marketing site into
+   `frontend/public/seed/subhadra/ourbrands/` (99 files; renamed the 3 category folders to
+   URL-safe kebab-case — original names had commas/`&`/spaces — file names kept as-is,
+   referenced with `encodeURIComponent`). `tab1Groups`/`tab2Groups`/`tab3Groups` format changed
+   from `Heading|Brand A, Brand B` to `Heading|Name1::url1;Name2::url2` (brand entries with no
+   real logo file, e.g. "Lithe Audio", "VU-Tech Screen", "Customized", stay name-only and render
+   as plain text — parser handles both). Card UI restyled to match the source site: light-gray
+   page bg, white cards, uppercase heading + underline rule, dark/black active tab pill (was
+   orange). Generated + verified every path with a throwaway Node script before writing the
+   TSX (`fs.existsSync` per file) — zero broken images.
+2. **Actually inserted the block onto the live home page** (`cmteeef0m000f01nqqic19v17`), not
+   just made it available in the picker — user flagged it was "missing" from the real page.
+   **Important finding for next agent**: this editor has **no autosave** — `edit/[id]/page.tsx`
+   only wires `onPublish` (no `onChange`/debounced save). Any insert/edit made via the canvas
+   is purely client-side Puck state until the **Publish** button (top-right) is clicked, which
+   fires `PUT /api/page-builder/:id`. Verified via direct Postgres query on `builder_pages.data`
+   (not just trusting the UI) before and after — first few attempts looked successful in the UI
+   but the DB still showed the old content array because Publish was never clicked. Final
+   content order now: Header, Hero, TaglineStrip, FloatingActions, DisciplinesGrid, AboutSplit,
+   **OurBrands**, Footer — matches the marketing site's real section order.
+
+## 2026-09-24 — Page-builder: real Content/Style tab split (Puck `AutoField`)
+
+Follow-up to the "quick wins only" round below — user came back and asked for the full split
+after seeing it live, so built it. Turned out cheaper than the earlier research implied: Puck
+exports `AutoField`/`FieldLabel` (confirmed: `require('@puckeditor/core')` → includes
+`AutoField`, `FieldLabel`), so a field can be rendered individually without reimplementing
+per-type input UI. `blocks-panel.tsx`:
+
+- New `isStyleField(key)` heuristic — exact match on `padding`/`background`/`align`/`variant`/
+  `spacing`/`gap`, or key ends in `Color`, or starts with `show`. Covers every pack component's
+  actual field-naming convention without touching any component's `fields` schema.
+- New `SplitFieldEditor({group: 'style'|'content'})` — reads `config.components[selectedType].fields`
+  directly (not through Puck's `children` render-prop, which is one opaque tree), filters by
+  `isStyleField`, renders each surviving field via `<FieldLabel label={key}><AutoField .../></FieldLabel>`.
+- New `useUpdateSelectedProp()` — commits edits via `dispatch({type:'replace', destinationIndex,
+  destinationZone, data: {...selectedItem, props: {...selectedItem.props, [key]: value}}})`,
+  same `replace` action + `getSelectorForId` lookup the Composer's "Edit in Composer" save path
+  already used (this file, ~line 388) — not a new mechanism.
+- Style tab renders `<SplitFieldEditor group="style"/>`; Content tab renders
+  `group="content"` + the `ThemeEngineLink` card underneath. Puck's own `children` field editor
+  is no longer rendered anywhere (prop kept in the type signature since Puck's `overrides.fields`
+  always passes it, just not destructured/used).
+
+**Verified live** (Playwright, headless, logged in as `admin@kdl.com`) — selected `ConstructionHero`
+(a pre-existing component, not one built this session, to prove the heuristic generalizes):
+Style tab showed exactly `variant`/`primaryColor`/`secondaryColor`; Content tab showed every
+`d1Slide1Image`/`d1Slide1Badge`/`d1Slide1Headline`/... field. Edited a Content field, switched to
+Style and back — value persisted, confirming the `replace` dispatch actually commits into Puck's
+real data store, not just local component state. No console errors beyond pre-existing unrelated
+noise (CSP font-loading warnings already present before this change).
+
+**Side effect, flagged**: verifying this needed a real login, and the documented default seed
+credentials (`admin@kdl.com` / `kdl-dev-seed-password`) returned "Invalid credentials" — this
+DB's admin row predates that default being pinned in `docker-compose.yml`. Per explicit user
+request, reset **only** that one `users` row's `password_hash` (bcrypt, 12 rounds, matching
+`backend/src/modules/auth/service.js`'s `SALT_ROUNDS`) to a new password. **Admin login is now
+`admin@kdl.com` / `kdl@123`** — not `kdl-dev-seed-password`. No other row touched, no project/page
+data affected. Next agent: don't assume the docker-compose default admin password works on this
+stack anymore; use `kdl@123` or ask the user if it's changed again.
+
+## 2026-09-24 — Page-builder: real image upload field + native slide add/remove
+
+Three "quick win" editor improvements (user explicitly declined the bigger ask — a genuine
+Content-tab/Style-tab split isn't possible without hand-building a replacement field-editor UI,
+since Puck's `overrides.fields` only hands you one opaque rendered tree, not per-field access —
+confirmed via Puck's `@puckeditor/core@0.23.0` types before starting):
+
+1. **Theme Engine link now shows under every block's Style tab**, not just its own tab
+   (`blocks-panel.tsx` — extracted `ThemeEngineLink` from `ThemeTab`, rendered after `{children}`
+   in the Style tab body). The "Theme" tab itself is unchanged/still there — out of scope this round.
+2. **New `packs/image-field.tsx`** — `imageField(label)`, a Puck `CustomField` (URL box + "Upload"
+   button opening the shared `MediaPicker`, same `/media/upload` flow already used by the Composer's
+   `ImageUrlField` in `packs/composer/atoms.tsx:787`). Wired into every image field on the components
+   touched this session: `ConstructionAboutSplit` (photo + 8 membership logos), `ConstructionDisciplinesGrid`
+   (6), `ConstructionProjectGallery`/Sectors (9), `ConstructionProductsShowcase` (8),
+   `ConstructionTaglineStrip` (logo). NOT yet rolled out to `ConstructionClientsGrid`'s 24 logo fields
+   or any pre-existing (non-Subhadra-session) pack component — still plain `{type:'text'}` there,
+   available on request.
+3. **`ConstructionProjectsSlider` and `ConstructionTestimonialsSlider` now use Puck's native
+   `type: 'array'` field** (`slides: {type:'array', arrayFields:{...}, defaultItemProps, getItemSummary,
+   min:0, max:8}`) instead of hardcoded `slide1Title`/`slide2Title`/`slide3Title`... fields — this
+   gives real add/remove/reorder-slide UI for free, built into Puck itself (confirmed shipped,
+   unused anywhere else in the repo before this). Per-slide `image`/`photo` field uses the new
+   `imageField()`.
+
+**⚠️ Breaking prop-shape change, flagged to user**: any already-placed `ConstructionProjectsSlider`
+or `ConstructionTestimonialsSlider` instance on a live page has its old data under
+`slide1Title`/`slide2Photo`/etc keys, which the new `slides` array prop doesn't read — those
+instances will render `defaultProps.slides` (the seed content) until re-inserted or manually
+re-populated via the new array UI. `ConstructionClientsGrid` was deliberately left on the old
+fixed-slot pattern (not literally a "slider" per the user's own wording) to avoid the same
+breakage for an already-configured 24-logo instance.
+
+## 2026-09-24 — Subhadra Group marketing site ported into construction pack (10 sections)
+
+Converted the remaining sections of `/Users/f9developer/Development/subhadra/index.html`
+(a client marketing site) into editable page-builder blocks in
+`frontend/src/app/admin/page-builder/packs/construction/index.tsx`, reusing existing
+components as new default content/variants where the shape already matched, and adding
+4 net-new components where it didn't. Real images/logos copied to
+`frontend/public/seed/subhadra/` (served at `/seed/subhadra/...`); photographic content
+that was already Unsplash-hosted in the source html was linked as-is, no copy needed.
+
+**Extended existing components** (new fields + Subhadra content as `defaultProps` —
+generic placeholder content is gone from these once picked from the inserter, by design,
+since the goal was a fast 1:1 port, not preserving generic-template neutrality):
+- `ConstructionAboutSplit` (`founder` category) — added 8 membership-badge logo fields
+- `ConstructionProjectGallery` (`blogpost`, "Sectors Grid") — 8→9 slots
+- `ConstructionProductsShowcase` (`services`) — added `image`/`brands` fields per card;
+  trimmed the site's 15 products down to 8 (2 per tab) to fit the existing 4-tab×8-card shape
+- `ConstructionClientsGrid` (`testimonials`) — 12→24 logo slots (site has 39; trimmed for
+  field-count sanity, pagination logic already generalizes if more are added later)
+- `ConstructionLeadFormFAQ`, `ConstructionTaglineStrip` (`cta`/`contact`) — copy swap only
+- `ConstructionFloatingActions` (`cta`) — was WhatsApp FAB + back-to-top; now WhatsApp FAB +
+  brochure-download FAB + a new "30 years of trust" ring badge (bottom-left, `md:` up)
+
+**New components** (no existing shape matched):
+- `ConstructionDisciplinesGrid` (`services`) — 6-card grid, image+title+description+brand+link
+- `ConstructionOurBrands` (`services`) — 3-tab brand catalogue; each tab's groups are a
+  `"Heading|Brand A, Brand B"` per-line textarea (no per-brand image — ~50 third-party vendor
+  logos across 3 tabs wasn't worth copying/maintaining as individual image fields; rendered
+  as text chips instead, still carries the real category+brand content)
+- `ConstructionProjectsSlider` (`blogpost`) — 3-slide case-study carousel, hand-rolled
+  (no carousel lib in the repo — dot-index `useState` pattern, same as `ConstructionClientsGrid`'s
+  pagination)
+- `ConstructionTestimonialsSlider` (`testimonials`) — 3-slide quote carousel + a real
+  video-testimonial modal (placeholder copy, matches the source site's own "recording soon" note)
+
+No backend changes — page-builder's backend schema only validates the page envelope, never
+individual block props (confirmed by architecture scan before starting).
+
+**Trims from the source site** (flagged, not silently dropped): Products 8/15 cards,
+Clients 24/39 logos, Our Brands renders category+brand names as chips rather than per-brand
+logo images. All are additive/backward-compatible — nothing existing was renamed or removed,
+so no risk to `backend/src/modules/template-engine/drivers/website-seed-content.js`'s own
+(separate, untouched) default content for these same block types.
+
+## 2026-09-24 — Tagline Strip section added to page-builder (general pack)
+
+New `TaglineStrip` component in `frontend/src/app/admin/page-builder/packs/general/index.tsx`,
+its own top-level "Tagline Strip" sidebar category (not folded into "Call to Action" — the
+pre-existing single-variant `ConstructionTaglineStrip` in that category was left untouched to
+avoid breaking pages already using it). 4 variants via the standard `variantField`/thumbnail
+pattern (matches Hero/NavBar/FeatureCards/Footer): **1** orange gradient banner (content/copy
+ported verbatim from the marketing site's `index.html` orange strip — brand/headline/subtext),
+**2** dark bg with a mark + text, **3** minimal rule bar with accent underline, **4** floating
+card with an optional CTA button (only renders if `ctaLabel` is filled in). All variants share
+one field set (`brand`, `headline`, `subtext`, `primaryColor`, `accentColor`, `ctaLabel`,
+`ctaHref`) edited through Puck's normal Style tab — no bespoke style-panel code, no backend
+changes (page-builder's backend schema only validates the page envelope, never individual block
+props). Registered in the pack's `variants` map so the insert-block modal shows all 4 preview
+cards.
+
+**Note for next agent**: this repo's `frontend` container in `docker-compose.yml` runs a built
+Next.js standalone image — no volume mount, no hot reload. Any page-builder / frontend code
+change requires `docker compose build frontend && docker compose up -d frontend` before it's
+visible at `localhost:3101`; editing source alone does nothing. This tripped up this session
+for several rounds before being diagnosed — worth surfacing early to whoever hits it next.
+
+
 ## 2026-07-08 — KDL-119 Media DAM Phase A: A8 frontend DAM extensions (Backend Architect)
 - Commit `59f16ce`: extended `media.types.ts` (checksum, scan_result, tags, meta_values, MediaTag, MediaMetaField, MediaCollection, MediaSearchResult). Created `DamExtensions.tsx` (~650 lines): SearchFacets (MeiliSearch faceted search with type+tag dropdowns, Enter trigger, result count, clear button), MediaTagChips, TagManager, CustomFieldEditor, SidebarNav (4 tabs), CollectionsPanel + CollectionItemsView, FavoritesView, RecentsView, ChunkedUploadDialog (5MB chunks, init→parts→complete, resume via chunkStatus.received, per-file progress bars, error state), FolderUploadButton (webkitdirectory), useClipboardPaste, FavoriteButton. All wired into admin/media/page.tsx: sidebar tabs, toolbar search/facets, collection/favorites/recents content panels, DetailDrawer tag+meta+favorite, clipboard paste routing to chunked dialog for files >50MB.
 - RTL gate: 10 tests in `DamExtensions.test.tsx` — SearchFacets (render selects+tags, Enter search calls onResults, result count shows, type filter triggers search, clear resets) + ChunkedUploadDialog (dialog render, init/part/complete call sequence, resume skips sent chunks, error state, allDone gate). All 80/80 frontend tests pass; tsc exit 0.
