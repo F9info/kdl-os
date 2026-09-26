@@ -2,7 +2,7 @@
 
 # STATUS — what is done, what is pending
 
-_Derived from code + GitHub + the board at master `cbd78ea` (latest commit 2026-08-20)._
+_Derived from code + GitHub + the board at master `197df27` (latest commit 2026-09-26)._
 _Regenerate: `node scripts/status-rollup.mjs`. Hand edits to this block are overwritten._
 
 Read this instead of counting board issues or PRs — both mislead. The board has 500+ done
@@ -10,7 +10,7 @@ issues with no aggregate view, and PR state under-reports what shipped (§3).
 
 ### 1. Backend module build state
 
-`backend/src/modules/*` — **22 modules: 20 built, 2 stubbed, 0 spec-only.**
+`backend/src/modules/*` — **27 modules: 25 built, 2 stubbed, 0 spec-only.**
 
 State is decided by what the directory actually contains (service + routes + controller),
 not by whether a spec or a board issue says the module is done.
@@ -18,29 +18,34 @@ not by whether a spec or a board issue says the module is done.
 | Module | State | Evidence (code on disk) | Tests | Purpose (module.json) |
 | --- | --- | --- | --- | --- |
 | `auth` | ✅ built | service + routes + controller | 3 | Authentication, registration, and session management |
-| `brand-kit` | ✅ built | service + routes + controller | 5 | Logo intake, OKLCH palette extraction, WCAG AA contrast report, and theme-token hand-off for Template Engine Mode A |
+| `brand-kit` | ✅ built | service + routes + controller | 6 | Logo intake, OKLCH palette extraction, WCAG AA contrast report, and theme-token hand-off for Template Engine Mode A |
 | `categories` | ✅ built | service + routes + controller | 1 | Taxonomy categories grouped under types |
-| `collateral` | ✅ built | service + routes + controller | 1 | Print-ready collateral render engine — visiting card, letterhead, t-shirt, ID card (COLLATERAL_SPEC.md §2). |
-| `credits` | ✅ built | service + routes + controller | 1 | Per-project internal metering ledger — hold lifecycle, ledger, reconciliation. |
-| `example` | ✅ built | service + routes + controller | **0** | Example module |
+| `collateral` | ✅ built | service + routes + controller | 2 | Print-ready collateral render engine — visiting card, letterhead, t-shirt, ID card (COLLATERAL_SPEC.md §2). |
+| `credits` | ✅ built | service + routes + controller | 2 | Per-project internal metering ledger — hold lifecycle, ledger, reconciliation. |
+| `custom-blocks` | ✅ built | service + routes + controller | 1 | Project-scoped reusable custom block templates for the page builder |
+| `e2e-fixture` | ✅ built | service + routes + controller | **0** | Disposable install/enable/disable target for the KDL-83 plugin-lifecycle E2E test (frontend/e2e/module-plugin.spec.ts) — not a real feature. |
+| `faq` | ✅ built | service + routes + controller | **0** | FAQ module |
 | `integrations` | ✅ built | service + routes + controller | 9 | Integrations module |
 | `media` | ✅ built | service + routes + controller | 30 | File upload and media library |
+| `menus` | ✅ built | service + routes + controller | **0** | Multi-level drag-and-drop navigation menus (header, footer, mobile) |
 | `modules` | ✅ built | service + routes + controller | 2 | Module plugin lifecycle management |
 | `notifications` | ✅ built | service + routes + controller | 3 | Notifications module |
 | `page-builder` | ✅ built | service + routes + controller | **0** | Visual block-based page builder engine — always-on |
-| `projects` | ✅ built | service + routes + controller | **0** | Project management — Studio hard-depends on this module to scope template-engine runs. |
+| `projects` | ✅ built | service + routes + controller | 1 | Project management — Studio hard-depends on this module to scope template-engine runs. |
+| `projects-content` | ✅ built | service + routes + controller | **0** | Real completed-work case studies shown in Featured Projects blocks |
 | `setting-fields` | ✅ built | service + routes + controller | 2 | Dynamic admin-defined setting field definitions |
 | `settings` | ✅ built | service + routes + controller | 2 | Application settings management |
 | `storage-settings` | ✅ built | service + routes + controller | 1 | (no module.json) |
-| `template-engine` | ✅ built | service + routes + controller | 6 | 9-stage DAG orchestrator — drives brand-kit, theme-engine, page-builder, collateral, and credits via their public APIs (Mode A / Studio). No rendering logic lives here. |
+| `team` | ✅ built | service + routes + controller | **0** | Team module |
+| `template-engine` | ✅ built | service + routes + controller | 8 | 9-stage DAG orchestrator — drives brand-kit, theme-engine, page-builder, collateral, and credits via their public APIs (Mode A / Studio). No rendering logic lives here. |
 | `theme-engine` | ✅ built | service + routes + controller | 4 | Design-system token compiler — always-on engine layer |
 | `types` | ✅ built | service + routes + controller | 1 | Taxonomy types for categories and setting fields |
 | `user-management` | ✅ built | service + routes + controller | 3 | RBAC roles, permissions matrix, and activity log |
 | `users` | ✅ built | service + routes + controller | 2 | User accounts, profile management, and soft-delete |
-| `page-builder-ui` | 🟡 stubbed | nav-only shell — empty Router, no service/controller | **0** | Admin nav and screens for Page Builder — toggleable |
+| `page-builder-ui` | 🟡 stubbed | nav-only shell — empty Router, no service/controller | **0** | Page Builder engine dependency shim for Template Engine, plus the Section Builder nav entry. Template Engine's own page-edit screen (imports blocks-panel.tsx/insert-block-modal.tsx/puck.config.tsx directly) is the only way to edit PAGES — a standalone 'Page Builder' nav entry duplicated that with a second, less-capable editor and was removed. Section Builder is a distinct, real feature (a from-scratch custom-section canvas) worth its own direct entry point. |
 | `theme-engine-ui` | 🟡 stubbed | nav-only shell — empty Router, no service/controller | **0** | Admin nav and screens for Theme Engine — toggleable |
 
-> ⚠ **3 built module(s) have no test file** in `backend/src/modules/<name>/` or `backend/tests/` matched by name: `example`, `page-builder`, `projects`. Built ≠ verified — a name-based scan can also miss suites filed elsewhere, so check before acting.
+> ⚠ **6 built module(s) have no test file** in `backend/src/modules/<name>/` or `backend/tests/` matched by name: `e2e-fixture`, `faq`, `menus`, `page-builder`, `projects-content`, `team`. Built ≠ verified — a name-based scan can also miss suites filed elsewhere, so check before acting.
 
 ### 2. Template-engine 9-stage driver reality
 
@@ -62,41 +67,34 @@ Parsed from `backend/src/modules/template-engine/drivers/index.js` — from the 
 
 ### 3. Pull requests — true merge state
 
-**0 open PR(s).**
+**14 open PR(s).**
 
-_No open PRs._
+| PR | Title | Branch | CI / merge state | Review |
+| --- | --- | --- | --- | --- |
+| [#304](https://github.com/F9info/kdl-os/pull/304) | chore(deps): bump the minor-and-patch group across 1 directory with 20 updates | `dependabot/npm_and_yarn/frontend/minor-and-patch-4a28a0c08b` | UNSTABLE | none |
+| [#303](https://github.com/F9info/kdl-os/pull/303) | chore(deps): bump the minor-and-patch group across 1 directory with 14 updates | `dependabot/npm_and_yarn/backend/minor-and-patch-7fd185136b` | CLEAN | none |
+| [#302](https://github.com/F9info/kdl-os/pull/302) | chore(deps): bump adm-zip from 0.6.0 to 0.6.1 in /backend | `dependabot/npm_and_yarn/backend/adm-zip-0.6.1` | CLEAN | none |
+| [#299](https://github.com/F9info/kdl-os/pull/299) | chore(deps): bump next from 15.5.23 to 15.5.24 in /frontend | `dependabot/npm_and_yarn/frontend/next-15.5.24` | UNSTABLE | none |
+| [#298](https://github.com/F9info/kdl-os/pull/298) | chore(deps): bump sharp from 0.35.3 to 0.35.4 in /backend | `dependabot/npm_and_yarn/backend/sharp-0.35.4` | CLEAN | none |
+| [#297](https://github.com/F9info/kdl-os/pull/297) | chore(deps): bump vitest from 3.2.7 to 4.1.11 in /frontend | `dependabot/npm_and_yarn/frontend/vitest-4.1.11` | UNSTABLE | none |
+| [#296](https://github.com/F9info/kdl-os/pull/296) | chore(deps): bump @vitest/mocker and vitest in /ai-services | `dependabot/npm_and_yarn/ai-services/multi-00f7b83f97` | UNSTABLE | none |
+| [#295](https://github.com/F9info/kdl-os/pull/295) | chore(deps): bump @vitest/mocker and vitest in /backend | `dependabot/npm_and_yarn/backend/multi-00f7b83f97` | UNSTABLE | none |
+| [#294](https://github.com/F9info/kdl-os/pull/294) | chore(deps): bump nodemailer from 9.0.5 to 9.1.1 in /backend | `dependabot/npm_and_yarn/backend/nodemailer-9.1.1` | CLEAN | none |
+| [#293](https://github.com/F9info/kdl-os/pull/293) | chore(deps): bump multer from 2.2.0 to 2.3.0 in /backend | `dependabot/npm_and_yarn/backend/multer-2.3.0` | CLEAN | none |
+| [#290](https://github.com/F9info/kdl-os/pull/290) | chore(deps): bump qs from 6.15.3 to 6.16.0 in /backend | `dependabot/npm_and_yarn/backend/qs-6.16.0` | CLEAN | none |
+| [#289](https://github.com/F9info/kdl-os/pull/289) | chore(deps): bump qs from 6.15.3 to 6.16.0 in /ai-services | `dependabot/npm_and_yarn/ai-services/qs-6.16.0` | CLEAN | none |
+| [#288](https://github.com/F9info/kdl-os/pull/288) | chore(deps): bump fast-uri from 3.1.5 to 3.1.7 in /backend | `dependabot/npm_and_yarn/backend/fast-uri-3.1.7` | CLEAN | none |
+| [#285](https://github.com/F9info/kdl-os/pull/285) | chore(deps): bump @anthropic-ai/sdk from 0.120.0 to 0.123.0 in /ai-services in the minor-and-patch group across 1 directory | `dependabot/npm_and_yarn/ai-services/minor-and-patch-a7a3856383` | CLEAN | none |
 
 #### Ghost merges — CLOSED on GitHub, but the code IS on master
 
-**1 of the last 40 closed PRs actually shipped.** This is the
-KDL-520 defect: pushing straight to master makes GitHub close the PR instead of merging it,
-so PR history under-reports what was delivered. Do not read these as abandoned work.
-
-| PR | Title | Evidence it landed |
-| --- | --- | --- |
-| [#169](https://github.com/F9info/kdl-os/pull/169) | feat(KDL-482): brand-kit Phase 1 — data model, OKLCH palette extraction, contrast report | squash commit "feat(KDL-482): brand-kit Phase 1 — data model, OKLCH palette, contrast report, state machine (#169)" |
+_None found in the last 40 closed PRs._
 
 _Scan window: the 40 most recent closed PRs. Older ghost merges are not covered._
 
 ### 4. Board state — blocked and in-flight
 
-**559 issues total: 553 done, 1 in progress, 3 blocked, 0 todo, 1 cancelled.**
-
-#### Blocked — every row needs a named unblock owner
-
-| Issue | Title | Unblock owner | Unblock action | Owner source |
-| --- | --- | --- | --- | --- |
-| KDL-558 | P1: walk the full 9-stage Studio flow as a user and report every dead end | **⚠ UNASSIGNED** | set `unblockDescriptor` on the board, or add KDL-558 to `.agents/unblock-owners.json` | — |
-| KDL-560 | P0: make Template Engine ONE install, and fix the sidebar lies (Studio label, Credits 404) | **⚠ UNASSIGNED** | set `unblockDescriptor` on the board, or add KDL-560 to `.agents/unblock-owners.json` | — |
-| KDL-567 | CEO: land the KDL-557 P0 set and close the loop with the user | **⚠ UNASSIGNED** | set `unblockDescriptor` on the board, or add KDL-567 to `.agents/unblock-owners.json` | — |
-
-> ⚠ 3 blocked issue(s) have no named unblock owner: KDL-558, KDL-560, KDL-567. A blocked issue without an owner never moves.
-
-#### In progress
-
-| Issue | Title |
-| --- | --- |
-| KDL-557 | i didnt understand what you built new template engine module |
+> ⚠ **Board data unavailable:** PAPERCLIP_API_URL / PAPERCLIP_API_KEY / PAPERCLIP_COMPANY_ID not set — board state could not be read (run this from a Paperclip agent run). Treat this section as UNKNOWN, not empty.
 
 ---
 
@@ -111,6 +109,22 @@ Recent per-issue detail is in the rolling changelog below; full history in
 <!-- ROLLING WINDOW: keep only the most recent entries here to minimise per-run context.
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
+
+- **2026-09-26 — Menus module: 3-level nav system, WordPress-style drag-drop admin UI**: new
+  `Menu`/`MenuItem` models (self-referencing adjacency list, depth capped at 3 in app logic),
+  full CRUD + public tree-read endpoint, WordPress-Menus-style two-pane admin UI at
+  `/admin/menus` using native HTML5 drag-and-drop (no new dependency) — drag onto a row to nest,
+  drag to an edge to reorder. Reusable by design: any future KDL Kit project configures its whole
+  nav through this UI alone. Phase-1 rendering: `ConstructionHeader` Design 1 desktop nav only
+  (CSS-only hover-dropdown/flyout, Tailwind named groups). 3 real bugs found+fixed: an off-by-one
+  in the depth check that rejected legitimate depth-3 items; a `javascript:`-URL stored-XSS hole
+  (Zod allowlist + render-side sanitizer); and the big one — `template-engine`'s website driver
+  never set `project_id` on any `BuilderPage` it created (any project, ever), so the public route
+  never had a `projectId` to fetch a menu by. Fixed the driver + `page-builder` service, backfilled
+  Subhadra's 17 existing pages directly in the dev DB. Verified via a live hover-dropdown
+  screenshot on the real `/p/...-about` page (temporary test item, cleaned up after). Footer/
+  mobile-nav/other header designs still on the flat-links fallback — deferred. See
+  `.agents/HANDOFF.md` same date.
 
 - **2026-09-26 — FAQ + Projects Content modules, Settings→Fields wired for simple text**:
   continues the Team module pattern. New `FaqEntry`/`ProjectCaseStudy` models + migrations +

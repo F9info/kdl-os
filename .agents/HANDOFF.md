@@ -1,3 +1,66 @@
+## 2026-09-26 — Menus module: 3-level nav system, WordPress-style drag-drop admin UI, ConstructionHeader dropdown
+
+User's ask: dynamic, fully-configurable navigation (3 levels: main/sub/sub-sub) manageable
+through a WordPress-Menus-style drag-drop admin UI, explicitly **reusable across future KDL Kit
+sites, not Subhadra-specific** — "the database structure should properly support the hierarchy."
+
+**Architecture**: `Menu` + `MenuItem` Prisma models (`backend/prisma/schema/menus.prisma`) — plain
+adjacency-list self-relation (`parent_id`), unique `(project_id, key)` per menu (e.g. "header"),
+cascade delete. Depth capped at 3 in application logic (both `_tree.ts` client-side and
+`service.js` server-side), not the DB — first hierarchical/self-referencing model in this schema.
+
+`backend/src/modules/menus/` — full CRUD + unauthenticated public tree-read
+(`GET /public?key=&project_id=`), plus a batch `reorder` endpoint that accepts the whole tree's
+flattened `{id, parent_id, order}[]` shape in one write (client sends the full new shape after any
+drag operation, rather than one request per move).
+
+`frontend/src/app/admin/menus/` — WordPress Menus-style two-pane UI (Pages/Custom-Link picker on
+the left, tree on the right). **Native HTML5 drag-and-drop, no new dependency** — drag onto a row
+nests it (up to 3 levels), drag to a row's top/bottom edge reorders as a sibling; cursor-Y-ratio
+in `rowDragOver` decides the zone. Expand/collapse, edit (label/URL/new-tab/enabled), delete, all
+wired to the same tree state, "Save changes" button batches the reorder call.
+
+**Phase-1 rendering scope**: `ConstructionHeader` (Design 1 desktop nav) only — Footer/mobile-nav/
+Designs 2-4 still use the flat `links` fallback, deliberately deferred. New
+`frontend/.../packs/header-nav-menu.tsx`: `useHeaderMenuTree(projectId)` hook (`null` = no menu
+configured yet → caller falls back to its own static field) + `HeaderNavMenu` — pure-CSS
+hover-dropdown/flyout via Tailwind named groups (`group/l1`, `group/l2`), no JS open/close state.
+
+**3 real bugs found and fixed during verification** (not just "compiles"):
+1. `createMenuItem`'s depth check was off-by-one (`parentDepth + 1 >= MAX_DEPTH` instead of `>`)
+   — rejected every legitimate depth-3 item. Caught by actually trying to build the user's own
+   example tree (About → Vision & Mission → Vision/Mission) via the API, not just unit-testing
+   the happy path.
+2. Menu item URLs accepted `javascript:`/`data:`/`vbscript:` — stored XSS, flagged by an
+   automated background security review mid-session. Fixed with an allowlist in the Zod schema
+   (write side: http/https/mailto/tel/relative-path/`#anchor`) plus a `safeHref` render-side
+   sanitizer in `header-nav-menu.tsx` (defense-in-depth for pre-existing rows).
+3. **The big one**: the live dropdown never rendered on the real public page at all. Root cause
+   traced through 3 layers: `page-builder`'s `getPublishedBySlug`/`listPages` never selected
+   `project_id`, `createPage` never accepted it, and — the actual origin —
+   `template-engine/drivers/index.js`'s `websiteDriver` never passed `run.projectId` into either
+   the create-page or reuse/patch-existing branch. Every page this driver has ever created
+   (any project, not just Subhadra) has `project_id: null`, so `puck.metadata.projectId` is
+   always `undefined` on the public route, so `useHeaderMenuTree`'s query never even fires. Fixed
+   all 3 layers (see the preceding `wip(template-engine)` commit for the driver fix). Backfilled
+   `project_id` on Subhadra's 17 existing pages directly in the dev DB via the deterministic
+   `template_engine_runs.projectId` → slug-prefix mapping (`te-<runId>-*`) — **this was a
+   client-specific data backfill, not wired into any generic seeder**; a fresh KDL install
+   creating new pages going forward gets `project_id` set correctly at creation time via the
+   driver fix, no backfill needed for future projects.
+
+**Verified end-to-end**: migration + module install/enable, public endpoint curl tests, nested
+create/reorder/depth-violation/XSS-rejection via direct API calls, admin UI screenshot (tree
+renders with correct indentation, Pages picker, add/edit/delete), and — the actual proof — a
+Playwright hover screenshot on the real live `/p/te-cmt18teqh000101rxwfzfndow-about` page showing
+the "About" dropdown chevron and "Company" flyout item, using a temporary test child (deleted
+after, menu restored to its real flat 5-item state: Home/Products & Services/Sectors/Contact/
+About).
+
+**Known limitation, not fixed** (out of scope this pass): Footer/NavBar/mobile-nav dropdown
+rendering — Design 1 desktop nav is the only consumer of the Menu tree so far; the other 3
+`ConstructionHeader` designs and the mobile hamburger panel still read the flat `links` field.
+
 ## 2026-09-26 — FAQ + Projects Content modules, Settings→Fields for simple text (continues Team)
 
 Continuation of the Team module work — same session, "yes, continue for all remaining
@@ -318,84 +381,3 @@ session's own earlier interactive Style-tab testing that apparently got persiste
 without an explicit Publish being noticed; reset both back to `true` (the correct default) via
 a scoped SQL patch, same pre-established pattern as the Footer fix.
 
-## 2026-09-24 — ConstructionHero Content tab: native array-based slide accordions + real content/images + resolveFields panel bug fix
-
-User asked for the Content tab's flat `d1Slide1Image`/`d1Slide1Badge`/... field wall to become
-per-slide accordions (like the screenshot: "slide 1, slide 2 etc") with an "add new slide"
-button after the last one and a remove option per slide, fixed (non-slide) content shown below
-the accordions, and all default content/images replaced with real Subhadra material from
-`/Users/f9developer/Development/subhadra/` — no more Unsplash placeholders.
-
-**Converted all 4 Hero designs from flat `d{n}SlideN{Field}` props to Puck's native `type:
-'array'` field** (same pattern as `ConstructionTestimonialsSlider`/`ConstructionProjectsSlider`,
-built earlier this session) — this *is* the accordion-with-add/remove UI the user described;
-no custom accordion component needed, Puck's ArrayField already renders each item collapsed
-(titled via `getItemSummary`), with a drag handle, a delete icon per item, and an "Add" button
-after the last one.
-- `d1Slides` (full-bleed slider): `{image, badge, headline, subheadline, ctaLabel, ctaHref}[]`
-- `d2Slides` (dark split hero, the currently-live design): `{dotLabel, image, lead, highlight,
-  description, brands}[]` — field names deliberately kept identical to the old per-slide object
-  shape already used inside the render function, so the entire ~250-line JSX body for all 4
-  variants needed **zero changes** beyond swapping the manual `[{...},{...},{...}].filter(...)`
-  construction for the incoming (now-array) prop, filtered the same way.
-- `d3Slides` (rotating quote): `{image, quote, author, role}[]`
-- `d4Slides` (fixed headline + feature slider): `{icon, title, description}[]` — `icon` reuses
-  the shared `DISCIPLINE_ICON_FIELD` select (snowflake/housegear/tv/plug/fire/lightbulb) instead
-  of the old one-off hardhat/shield/star options, so it matches `ConstructionDisciplinesGrid`'s
-  icon picker.
-Each design's own fixed/non-slide fields (d2's badge/CTA/avatars/trust-line/stats, d3/d4's
-eyebrow/headline/subheadline/CTA) were reordered to sit **after** their slide array in the
-`fields` object, so the panel shows accordions first, fixed content below — matching the
-screenshot ("below show the fixed content editable").
-
-**Real content, sourced only from the actual site** (`index.html`'s `.v2-hero` section — the
-6-slide dark-split hero is the *only* hero design that exists on the real site):
-- Copied the 6 real hero images from `subhadra/assets/images/hero-slider/*.{jpg,jpeg}` into
-  `frontend/public/seed/subhadra/hero-slider/` (this project's established real-asset
-  convention) — replaces the Unsplash stock photos on all 6 `d2Slides` items, and on 3 of
-  `d1Slides` (reused for the full-bleed design, which has no real-site equivalent of its own).
-  `d2Slides`' headline/description text already matched the site's `data-headline`/`data-desc`
-  attributes verbatim from earlier this session — only the images and a few incidental strings
-  needed fixing: `d2TrustText` was "1000+ businesses trust us", real copy is "1000+ businesses
-  **across Andhra Pradesh** trust us"; `d2CtaLabel` gained the real arrow ("Get a Quote →");
-  `d2Avatar1-3` were Unsplash headshots, now real client logos
-  (`/seed/subhadra/clients/client-01/14/21.png`) matching the real trustline's `<img>` set;
-  per-slide `brands` (blank before) now list the real brand names from each slide's
-  `.v2-hero-brands-track` (e.g. Home Theater → "Focal\nSony\nMarantz").
-- `d3Slides`/`d4Slides` have no real-site equivalent (the site only has ONE hero design) — reused
-  real content already sourced elsewhere this session rather than inventing new copy: `d3Slides`
-  reuses 3 of `ConstructionTestimonialsSlider`'s real client testimonials; `d4Slides` reuses 3 of
-  `ConstructionDisciplinesGrid`'s real discipline blurbs (Central AC/Home Automation/Home
-  Theater); `d3Headline`/`d3Subheadline` reuse the real Footer tagline ("...since 1996").
-- **Did not touch** `backend/.../drivers/website-seed-content.js`'s `CONSTRUCTION_HERO_HOME` —
-  that's the *generic* construction-template fallback used when scaffolding any brand-new
-  project, not Subhadra-specific; putting Subhadra's real content there would be the wrong layer.
-  Flagging this instead of silently skipping it, in case "make it seeder" meant something else.
-
-**Real bug found + fixed along the way**: `blocks-panel.tsx`'s `SplitFieldEditor` builds the
-Style/Content tabs by reading `config.components[type].fields` directly — it never called each
-component's own `resolveFields`, so a Design-1..4 component (Hero, and presumably
-Header/TopBar) showed **all 4 designs' fields at once** regardless of which `variant` was
-actually selected (this is exactly why an earlier screenshot showed `d1Slide1Image` etc. even
-though the selected instance was Design 2 — d1's fields just happen to be first in the object).
-Fixed by calling `component.resolveFields(selectedItem, { fields: staticFields })` when present,
-same as Puck's own field editor would. Verified: Content tab for the live (Design 2) instance
-now shows only `d2Slides` + d2's fixed fields — no `d1Slides`/`d3Slides`/`d4Slides` leaking in.
-
-**Migrated the live page's already-published Hero block** — its stored props still had the old
-flat `d2Slide1DotLabel`/etc. shape (Puck's defaultProps-merge fills *missing* keys for `render`,
-which is why the canvas already showed correct real content/images immediately after the code
-deploy, but the *editor panel* reads the raw unmerged `selectedItem.props`, so `d2Slides` showed
-as an empty array with no accordions until the real data existed there too). Wrote a small
-Node/`pg` script (`pg` is already a backend dependency), copied into the backend container and
-run once, merging the same real `d1-d4Slides` arrays + the `d2Avatar/TrustText/CtaLabel` fixes
-directly into `builder_pages.data->content` for this page's `ConstructionHero` block — same
-scoped-SQL-style approach as the earlier Footer fix, this time via a parameterized query (no
-manual string-escaping risk with the apostrophe in one of the real testimonial quotes). Verified
-via fresh page load (not just editor state) that the trustline/CTA/6 slide accordions are real.
-
-Verified end-to-end via Playwright: canvas renders the real Blue Star hero banner image, real
-"1000+ businesses across Andhra Pradesh trust us", real "Get a Quote →" with arrow; Content tab
-shows 6 accordion rows titled by real dot labels (Central AC, Electrical & Switchgear, Safety
-and Security, Home Automation, Home Theater, Premium Lighting) with a "+" add button below the
-last one, and the fixed d2 fields (badge/CTA/avatars/trust/stats) below that.
