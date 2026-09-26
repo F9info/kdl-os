@@ -287,7 +287,14 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
                   {
                     label: 'Sector detail',
                     count: sectorPages?.length ?? 0,
-                    href: `/admin/sectors?projectId=${run.projectId}`,
+                    // Backend orders sectors by `order asc` — the first one with a page is
+                    // this project's "template" instance: set the section layout there first,
+                    // then edit each sector's own content afterward (from /admin/sectors).
+                    href: sectorPages?.find((s) => s.detail_page_id)
+                      ? `/admin/template-engine/edit/${
+                          sectorPages.find((s) => s.detail_page_id)!.detail_page_id
+                        }?projectId=${run.projectId}`
+                      : `/admin/sectors?projectId=${run.projectId}`,
                   },
                 ]}
               />
