@@ -112,6 +112,17 @@ Recent per-issue detail is in the rolling changelog below; full history in
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+- **2026-09-26 — FAQ + Projects Content modules, Settings→Fields wired for simple text**:
+  continues the Team module pattern. New `FaqEntry`/`ProjectCaseStudy` models + migrations +
+  admin CRUD + public endpoints, both driving real Puck blocks (`ConstructionLeadFormFAQ`,
+  `ConstructionProjectsSlider`). No Blog module — reference site has no blog, verified by
+  checking the source HTML first. Gallery folded into Projects Content, not separate. Added a
+  public bulk-read endpoint to `setting-fields` (every route was auth-only before — blocked the
+  public site from ever reading a field) and seeded 10 Website-Content fields (Vision/Mission/
+  About/tagline) — 3 more Puck blocks now read from there. Asset audit: all 152 `/seed/...` paths
+  referenced by the live Home+About pages resolve to real files — zero dependency on
+  `after-delete-folder`, confirmed empirically. See `.agents/HANDOFF.md` same date.
+
 - **2026-09-26 — Team module: first real content module** (schema/migration/admin
   CRUD/Puck data-binding), proving the module→schema→migration→model→seeder→service→
   admin→frontend pattern the user asked for. New `TeamMember` model + migration, full CRUD

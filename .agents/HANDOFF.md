@@ -1,3 +1,61 @@
+## 2026-09-26 — FAQ + Projects Content modules, Settings→Fields for simple text (continues Team)
+
+Continuation of the Team module work — same session, "yes, continue for all remaining
+modules" approval. Also carried a new constraint: production must not depend on
+`after-delete-folder/` (user will delete it once verification is done). **Audited this first**:
+extracted every `/seed/...` path referenced in the live Home+About page JSON (152 unique,
+properly URL-decoded) and confirmed every one resolves to a real file under
+`frontend/public/seed/` — zero dependency on the source folder already, confirmed empirically
+not assumed. The only 2 repo references to `after-delete-folder` are code comments (this
+module's own `seed.js`, and 2 comments in Inner Banner's Design 1) — not read at runtime.
+
+**FAQ module** (`backend/src/modules/faq/`) — `FaqEntry` model, same shape as Team's module
+(migration, CRUD, `/api/faq/public`, `/admin/faq`, real 6-Q&A seed). `ConstructionLeadFormFAQ`
+now prefers the DB list over its own `faqs` field once a project has any entries — simpler
+pattern than Team's per-slot picker since FAQ is inherently a full list, not a single reference.
+
+**Projects Content module** (`backend/src/modules/projects-content/`) — `ProjectCaseStudy`
+model (named to avoid colliding with the existing tenancy `projects` module/table). Targets
+`ConstructionProjectsSlider` specifically — the ONE project-family component that already had
+real content (3 real case studies: CMR Family Shopping Mall, Novotel Visakhapatnam, The Amara
+Residency); `ConstructionProjectGallery`/`ProjectsGridCards`/`ProjectShowcaseSplit`/
+`ProjectMapStrip`/`FeaturedProject`/`CaseStudyGrid` are still static/generic, not converted this
+pass. Same DB-wins-if-non-empty pattern, **plus**: disabled the inline-canvas-edit affordance
+(`InlineEditableText`'s `isEditing`) on the per-slide fields whenever DB content is showing, so a
+canvas click can't silently edit the now-dead static `slides` prop instead of the case study
+actually on screen — same fix pattern as Team, but this component uses
+`InlineEditableText` (Team didn't), so needed its own explicit gate.
+
+**Skipped a dedicated Blog module** — checked `after-delete-folder/*.html` first: no blog page
+exists at all, "gallery" hits in sector/work pages are just photo lightboxes (Projects content,
+not articles). Nothing real to seed, so no module built — flagging the decision rather than
+fabricating placeholder blog posts. **Folded Gallery into Projects Content** rather than a
+separate module (a case study's own `image` field covers it at this scale) — per the user's own
+"don't create a dedicated module for every small piece" caution.
+
+**Settings→Fields** (`backend/src/modules/setting-fields/`) — real gap found: every existing
+route requires `authenticate`, including the read-by-slug endpoint — meaning the public
+`/p/[slug]` renderer could never read a field's value, only the logged-in editor could. Added
+`GET /public/values?slugs=a,b,c` (no auth, bulk, plain-value-only — no file/media resolution).
+New "Website Content" Type + 10 fields (Vision/Mission/About heading+paragraphs×2, tagline) via
+`prisma/seeders/website-content-fields.seed.js` — **field definitions** are wired into the
+generic `prisma/seed.js` pipeline (client-agnostic, mirrors `brand-profile-fields.seed.js`
+exactly), but the real Subhadra **values** are set by a separate function in the same file,
+invoked directly for this project — same split as every other client-specific seeder this pass.
+`ConstructionAboutSplit`/`ConstructionMissionVision`/`ConstructionTaglineStrip` now read these
+via a new shared `useSettingsFieldValues` hook (one bulk request per component, not one per
+field) — DB value wins over the block's own static prop, same pattern throughout.
+
+**Known limitation, not fixed** (out of scope, pre-existing architecture): `setting-fields` has
+no per-project concept at all (global `SettingField.value`, no `project_id` anywhere) — unlike
+Team/FAQ/Projects-Content. Fine for this single-tenant demo install; would need real work before
+two different client projects on the same KDL Kit instance could have different Vision/Mission
+text.
+
+**Verified live**, not just "compiles": both public pages reloaded after the docker rebuild —
+FAQ list, project slider, and all 4 pieces of Settings-Fields copy render from their new sources,
+zero console errors, no visual regression versus the previously-verified About/Home pages.
+
 ## 2026-09-26 — Team module: first proper content module (schema → migration → admin CRUD → Puck data-binding)
 
 User's ask: stop storing reusable content (Team, FAQ, Blog, Gallery, Projects) as JSON blobs
@@ -341,62 +399,3 @@ Verified end-to-end via Playwright: canvas renders the real Blue Star hero banne
 shows 6 accordion rows titled by real dot labels (Central AC, Electrical & Switchgear, Safety
 and Security, Home Automation, Home Theater, Premium Lighting) with a "+" add button below the
 last one, and the fixed d2 fields (badge/CTA/avatars/trust/stats) below that.
-## 2026-09-24 — ConstructionHero: Style-tab "Slider Settings" + "Typography" accordions (Slick-style controls)
-
-User asked (after reading the Slick carousel docs at kenwheeler.github.io/slick, which I
-fetched and summarized first) for the Hero slider's Style tab to expose slider behaviour
-controls (arrows show/hide, dots show/hide, autoplay + speed, loop, fade-vs-slide) plus a
-Typography group covering title/tagline/paragraph/button, matching Slick's settings table.
-
-**Scope**: `ConstructionHero` only (all 4 variants: full-bleed slider, dark split hero,
-rotating quote, fixed-headline slider) — the block shown in the screenshot. Not yet applied
-to the other carousel blocks (`ConstructionTestimonialsSlider`, `ConstructionProjectsSlider`,
-etc.); same pattern is reusable there if asked.
-
-**New fields on `ConstructionHero`** (variant-agnostic — no `d{n}` prefix, so `variantFields`
-shows them regardless of which design is selected):
-- `sliderShowArrows` / `sliderShowDots` — radio Show/Hide, gate the existing prev/next + dot
-  controls in all 4 variants.
-- `sliderAutoplay` (radio On/Off) + `sliderAutoplaySpeed` (number, ms) — drives a single
-  `setInterval` `useEffect` computed from a variant-aware `heroTotal`, called unconditionally
-  before any variant branch/early return (hooks-order safety — the 4 variants used to diverge
-  on `return` before any hook after `useState`, so the effect has to sit above that split).
-- `sliderLoop` (radio On/Off) — when off, prev/next buttons disable (`opacity-30
-  cursor-not-allowed`, `disabled` attr, guarded `onClick`) at the first/last slide instead of
-  wrapping.
-- `sliderTransition` (select Slide/Fade) — each variant now renders only the *active* slide
-  (previously variant 1 stacked all 3 slides absolutely and cross-faded via per-slide
-  `opacity`; simplified to match the other 3 variants, which already rendered only the active
-  slide) with `key={idx}` + a Tailwind keyframe class (`animate-hero-fade-in` /
-  `animate-hero-slide-in`, added to `tailwind.config.ts`) so switching slides replays the
-  animation.
-- `typoTitleSize/Weight/Color`, `typoTaglineSize/Weight/Color`, `typoParaSize/Weight/Color`,
-  `typoButtonSize/Weight/Color` (12 fields) — resolved via a `typoStyle()` helper into inline
-  `style` (not Tailwind classes — inline always wins over the component's own responsive
-  `text-3xl md:text-5xl`-style classes, which a same-specificity utility class can't reliably
-  override). Size/weight selects default to an empty string ("Default" option, added after
-  first pass looked wrong — an empty value with no matching `<option>` made the browser
-  visually show the *first* option ("Small") even though the real stored value was empty and
-  no override was actually applied); empty means "don't touch this element's own style."
-
-**blocks-panel.tsx**: `isStyleField()` gained `/^slider/` and `/^typo/` so these route to the
-Style tab (not Content). `SplitFieldEditor` (style group only) now splits into three buckets —
-general fields flat as before, then any `slider*`/`typo*` fields each in their own
-`<FieldAccordion>` (native `<details open>`, no new state/dependency) titled "Slider Settings"
-/ "Typography". Any block gets both accordions for free just by naming fields this way — no
-per-component panel wiring needed.
-
-Verified with a Playwright script driving the real editor (login → select Hero → Style tab):
-screenshotted both accordions rendering with the "Default" fix, then drove the actual radio/
-text inputs (Puck serializes radio option values as JSON strings like `{"value":true}`, so the
-click target is the `<label>` wrapping the input, not the value string) — toggling
-`sliderShowArrows`/`sliderShowDots` to Hide removed the prev/next buttons and dot row from the
-canvas (arrow button count 1→0), and setting `typoTitleColor` to `#00aa55` changed the live H1
-`getComputedStyle(...).color` to `rgb(0, 170, 85)`. Did not click Publish — nothing persisted
-to Postgres, this was editor-behavior verification only.
-
-**Housekeeping**: trimmed `.agents/HANDOFF.md`'s 2026-09-24 window from 14 entries down to 8
-(the instructed ~8-entry cap wasn't being enforced through the rest of this long session) —
-moved "Featured Projects slider inserted" through "Tagline Strip section added" (7 entries) into
-`.agents/HANDOFF_ARCHIVE.md`.
-

@@ -2,6 +2,65 @@
 
 > Moved out of `.agents/HANDOFF.md` on 2026-07-16 to cut per-run session-load tokens. The live file keeps only the most recent entries; full history is here and in git.
 
+## 2026-09-24 — ConstructionHero: Style-tab "Slider Settings" + "Typography" accordions (Slick-style controls)
+
+User asked (after reading the Slick carousel docs at kenwheeler.github.io/slick, which I
+fetched and summarized first) for the Hero slider's Style tab to expose slider behaviour
+controls (arrows show/hide, dots show/hide, autoplay + speed, loop, fade-vs-slide) plus a
+Typography group covering title/tagline/paragraph/button, matching Slick's settings table.
+
+**Scope**: `ConstructionHero` only (all 4 variants: full-bleed slider, dark split hero,
+rotating quote, fixed-headline slider) — the block shown in the screenshot. Not yet applied
+to the other carousel blocks (`ConstructionTestimonialsSlider`, `ConstructionProjectsSlider`,
+etc.); same pattern is reusable there if asked.
+
+**New fields on `ConstructionHero`** (variant-agnostic — no `d{n}` prefix, so `variantFields`
+shows them regardless of which design is selected):
+- `sliderShowArrows` / `sliderShowDots` — radio Show/Hide, gate the existing prev/next + dot
+  controls in all 4 variants.
+- `sliderAutoplay` (radio On/Off) + `sliderAutoplaySpeed` (number, ms) — drives a single
+  `setInterval` `useEffect` computed from a variant-aware `heroTotal`, called unconditionally
+  before any variant branch/early return (hooks-order safety — the 4 variants used to diverge
+  on `return` before any hook after `useState`, so the effect has to sit above that split).
+- `sliderLoop` (radio On/Off) — when off, prev/next buttons disable (`opacity-30
+  cursor-not-allowed`, `disabled` attr, guarded `onClick`) at the first/last slide instead of
+  wrapping.
+- `sliderTransition` (select Slide/Fade) — each variant now renders only the *active* slide
+  (previously variant 1 stacked all 3 slides absolutely and cross-faded via per-slide
+  `opacity`; simplified to match the other 3 variants, which already rendered only the active
+  slide) with `key={idx}` + a Tailwind keyframe class (`animate-hero-fade-in` /
+  `animate-hero-slide-in`, added to `tailwind.config.ts`) so switching slides replays the
+  animation.
+- `typoTitleSize/Weight/Color`, `typoTaglineSize/Weight/Color`, `typoParaSize/Weight/Color`,
+  `typoButtonSize/Weight/Color` (12 fields) — resolved via a `typoStyle()` helper into inline
+  `style` (not Tailwind classes — inline always wins over the component's own responsive
+  `text-3xl md:text-5xl`-style classes, which a same-specificity utility class can't reliably
+  override). Size/weight selects default to an empty string ("Default" option, added after
+  first pass looked wrong — an empty value with no matching `<option>` made the browser
+  visually show the *first* option ("Small") even though the real stored value was empty and
+  no override was actually applied); empty means "don't touch this element's own style."
+
+**blocks-panel.tsx**: `isStyleField()` gained `/^slider/` and `/^typo/` so these route to the
+Style tab (not Content). `SplitFieldEditor` (style group only) now splits into three buckets —
+general fields flat as before, then any `slider*`/`typo*` fields each in their own
+`<FieldAccordion>` (native `<details open>`, no new state/dependency) titled "Slider Settings"
+/ "Typography". Any block gets both accordions for free just by naming fields this way — no
+per-component panel wiring needed.
+
+Verified with a Playwright script driving the real editor (login → select Hero → Style tab):
+screenshotted both accordions rendering with the "Default" fix, then drove the actual radio/
+text inputs (Puck serializes radio option values as JSON strings like `{"value":true}`, so the
+click target is the `<label>` wrapping the input, not the value string) — toggling
+`sliderShowArrows`/`sliderShowDots` to Hide removed the prev/next buttons and dot row from the
+canvas (arrow button count 1→0), and setting `typoTitleColor` to `#00aa55` changed the live H1
+`getComputedStyle(...).color` to `rgb(0, 170, 85)`. Did not click Publish — nothing persisted
+to Postgres, this was editor-behavior verification only.
+
+**Housekeeping**: trimmed `.agents/HANDOFF.md`'s 2026-09-24 window from 14 entries down to 8
+(the instructed ~8-entry cap wasn't being enforced through the rest of this long session) —
+moved "Featured Projects slider inserted" through "Tagline Strip section added" (7 entries) into
+`.agents/HANDOFF_ARCHIVE.md`.
+
 ## 2026-09-24 — Full home-page audit vs index.html: found + fixed 3 real bugs
 
 User asked for a full compare-and-fix pass between the built home page and `index.html`.
