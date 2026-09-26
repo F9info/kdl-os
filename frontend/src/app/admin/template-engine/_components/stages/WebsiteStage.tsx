@@ -1071,11 +1071,13 @@ function LayoutSettingsPanel({
         <a href={editHref}>Create/Edit layout</a>
       </Button>
       {availableDetailTypes.map((t) => (
-        <Button key={t.label} size="sm" variant="outline" asChild>
-          <a href={t.href}>
-            {t.label} ({t.count})
-          </a>
-        </Button>
+        <a
+          key={t.label}
+          href={t.href}
+          className="rounded-full border border-gray-300 bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"
+        >
+          {t.label} ({t.count})
+        </a>
       ))}
       <WebsiteLayoutPreview projectId={projectId} />
     </div>
