@@ -58,6 +58,7 @@ const CATEGORY_ORDER = [
   'innerbanner',
   'taglinestrip',
   'founder',
+  'missionvision',
   'counters',
   'services',
   'video',

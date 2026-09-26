@@ -2,6 +2,7 @@ import type { Config } from '@puckeditor/core'
 import { useState, useEffect, useRef, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
+import { Eye, Rocket } from 'lucide-react'
 import type { ComponentPack } from '../types'
 import { imageField } from '../image-field'
 import { InlineEditableText } from '../inline-editable-text'
@@ -911,12 +912,25 @@ type ConstructionProps = {
     heading: string
     entry1Year: string
     entry1Text: string
+    entry1Image: string
     entry2Year: string
     entry2Text: string
+    entry2Image: string
     entry3Year: string
     entry3Text: string
+    entry3Image: string
     entry4Year: string
     entry4Text: string
+    entry4Image: string
+    entry5Year: string
+    entry5Text: string
+    entry5Image: string
+    entry6Year: string
+    entry6Text: string
+    entry6Image: string
+    entry7Year: string
+    entry7Text: string
+    entry7Image: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
   }
@@ -937,6 +951,33 @@ type ConstructionProps = {
     leader3Bio: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+  }
+  ConstructionFounderProfile: {
+    eyebrow: string
+    heading: string
+    person1Photo: string
+    person1Name: string
+    person1Role: string
+    person1Bio: string
+    person1LinkLabel: string
+    person1LinkHref: string
+    person2Photo: string
+    person2Name: string
+    person2Role: string
+    person2Bio: string
+    person2LinkLabel: string
+    person2LinkHref: string
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+  }
+  ConstructionMissionVision: {
+    visionHeading: string
+    visionParagraph1: string
+    visionParagraph2: string
+    missionHeading: string
+    missionParagraph1: string
+    missionParagraph2: string
+    padding: 'sm' | 'md' | 'lg'
   }
   ConstructionVideo: {
     sectionTitle: string
@@ -1202,6 +1243,16 @@ type ConstructionProps = {
     sector5Icon: IconKey
     sector5Label: string
     padding: 'sm' | 'md' | 'lg'
+  }
+  ConstructionSectorsRadial: {
+    eyebrow: string
+    heading: string
+    description: string
+    centerLogo: string
+    centerTagline: string
+    sectors: { label: string; href: string }[]
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
   }
   ConstructionSectorsSplitFeature: {
     featuredImage: string
@@ -9310,12 +9361,25 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       heading: { type: 'text' },
       entry1Year: { type: 'text' },
       entry1Text: { type: 'textarea' },
+      entry1Image: imageField('Image'),
       entry2Year: { type: 'text' },
       entry2Text: { type: 'textarea' },
+      entry2Image: imageField('Image'),
       entry3Year: { type: 'text' },
       entry3Text: { type: 'textarea' },
+      entry3Image: imageField('Image'),
       entry4Year: { type: 'text' },
       entry4Text: { type: 'textarea' },
+      entry4Image: imageField('Image'),
+      entry5Year: { type: 'text' },
+      entry5Text: { type: 'textarea' },
+      entry5Image: imageField('Image'),
+      entry6Year: { type: 'text' },
+      entry6Text: { type: 'textarea' },
+      entry6Image: imageField('Image'),
+      entry7Year: { type: 'text' },
+      entry7Text: { type: 'textarea' },
+      entry7Image: imageField('Image'),
       padding: {
         type: 'select',
         options: [
@@ -9333,63 +9397,106 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       },
     },
     defaultProps: {
-      eyebrow: 'Our History',
-      heading: 'Three Decades of Building Trust',
+      eyebrow: 'Our Journey',
+      heading: 'From 1996 to today',
       entry1Year: '1996',
       entry1Text:
-        'Subhadra Group opens its doors in Vijayawada, offering HVAC design and installation to the first wave of commercial clients.',
-      entry2Year: '2005',
+        'Subhadra Group is established in Visakhapatnam to bring every building-related engineering product & service under one roof — for residential, commercial and industrial customers.',
+      entry1Image: '/seed/subhadra/brand/shop.webp',
+      entry2Year: '2001',
       entry2Text:
-        'Expanded into Electricals and ELV systems, becoming one of the region’s few single-window building engineering contractors.',
-      entry3Year: '2015',
+        'Added electrical wiring, MCB/DB and switchgear installations to the roof, backed by world-class brands like Schneider Electric.',
+      entry2Image:
+        'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=700&h=525&fit=crop&q=80&auto=format',
+      entry3Year: '2006',
       entry3Text:
-        'Crossed 500 completed projects and opened a dedicated in-house engineering and training team for our field crews.',
-      entry4Year: '2026',
+        'Brought fire & life safety, CCTV and access control fully in-house — completing our ELV systems capability.',
+      entry3Image:
+        'https://images.unsplash.com/photo-1643123182527-3bd30840e7ed?w=700&h=525&fit=crop&q=80&auto=format',
+      entry4Year: '2011',
       entry4Text:
-        'Now 30+ years in, serving residential, commercial and industrial clients across Andhra Pradesh with a full-service model.',
+        'Started designing home automation and home theater systems for premium residences across the city.',
+      entry4Image: '/seed/subhadra/products/home-automation.jpg',
+      entry5Year: '2016',
+      entry5Text:
+        'Began delivering HVAC, electrical and automation as one coordinated scope for hotels, malls and hospitals — including landmark properties like Novotel Visakhapatnam.',
+      entry5Image: '/seed/subhadra/case-studies/novotel.jpg',
+      entry6Year: '2021',
+      entry6Text:
+        'Reached 25 years of technical expertise, with a dedicated service manager assigned to every discipline we install in.',
+      entry6Image:
+        'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=700&h=525&fit=crop&q=80&auto=format',
+      entry7Year: 'Today',
+      entry7Text:
+        '15 services under one roof, 1 Lakh+ trusted clients across Andhra Pradesh, and one accountable team behind every installation.',
+      entry7Image: '/seed/subhadra/inside.webp',
       padding: 'md',
       background: 'white',
     },
-    render: ({
+    render: function ConstructionTimelineHistoryRender({
       eyebrow,
       heading,
       entry1Year,
       entry1Text,
+      entry1Image,
       entry2Year,
       entry2Text,
+      entry2Image,
       entry3Year,
       entry3Text,
+      entry3Image,
       entry4Year,
       entry4Text,
+      entry4Image,
+      entry5Year,
+      entry5Text,
+      entry5Image,
+      entry6Year,
+      entry6Text,
+      entry6Image,
+      entry7Year,
+      entry7Text,
+      entry7Image,
       padding,
       background,
-    }) => {
+    }) {
       const entries = [
-        { year: entry1Year, text: entry1Text },
-        { year: entry2Year, text: entry2Text },
-        { year: entry3Year, text: entry3Text },
-        { year: entry4Year, text: entry4Text },
+        { year: entry1Year, text: entry1Text, image: entry1Image },
+        { year: entry2Year, text: entry2Text, image: entry2Image },
+        { year: entry3Year, text: entry3Text, image: entry3Image },
+        { year: entry4Year, text: entry4Text, image: entry4Image },
+        { year: entry5Year, text: entry5Text, image: entry5Image },
+        { year: entry6Year, text: entry6Text, image: entry6Image },
+        { year: entry7Year, text: entry7Text, image: entry7Image },
       ].filter((e) => e.year || e.text)
       return (
         <section
           className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
         >
           <div className={wrap}>
-            <div className="mb-10">
+            <div className="mx-auto mb-12 max-w-2xl text-center">
               {eyebrow && (
-                <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-orange-600">
                   {eyebrow}
                 </p>
               )}
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900">{heading}</h2>
+              <h2 className="text-2xl font-bold text-slate-900 md:text-4xl">{heading}</h2>
             </div>
-            <div className="max-w-2xl border-l-2 border-slate-200 pl-8">
+            <div className="mx-auto max-w-2xl border-l-2 border-slate-200 pl-8">
               {entries.map((e, i) => (
                 <div key={i} className="relative pb-10 last:pb-0">
-                  <span className="absolute -left-[41px] top-0 flex items-center justify-center rounded-full bg-orange-500 text-white text-xs font-bold px-3 py-1">
+                  <span className="absolute -left-[41px] top-0 flex items-center justify-center rounded-full bg-orange-500 px-3 py-1 text-xs font-bold text-white">
                     {e.year}
                   </span>
-                  <p className="text-slate-600 leading-relaxed pt-1">{e.text}</p>
+                  {e.image && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={e.image}
+                      alt=""
+                      className="mb-3 h-40 w-full rounded-xl object-cover"
+                    />
+                  )}
+                  <p className="pt-1 leading-relaxed text-slate-600">{e.text}</p>
                 </div>
               ))}
             </div>
@@ -9505,6 +9612,214 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   <p className="text-sm text-slate-600">{l.bio}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // ── Founder Profile — 2-person alternating photo/bio cards for About ───────
+  ConstructionFounderProfile: {
+    label: 'Founder Profile',
+    fields: {
+      eyebrow: { type: 'text' },
+      heading: { type: 'text' },
+      person1Photo: imageField('Photo'),
+      person1Name: { type: 'text' },
+      person1Role: { type: 'text' },
+      person1Bio: { type: 'textarea' },
+      person1LinkLabel: { type: 'text' },
+      person1LinkHref: { type: 'text' },
+      person2Photo: imageField('Photo'),
+      person2Name: { type: 'text' },
+      person2Role: { type: 'text' },
+      person2Bio: { type: 'textarea' },
+      person2LinkLabel: { type: 'text' },
+      person2LinkHref: { type: 'text' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'select',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      eyebrow: 'Leadership',
+      heading: 'The people behind Subhadra Group',
+      person1Photo: '/seed/subhadra/founder.png',
+      person1Name: 'K Leela Prasad',
+      person1Role: 'Founder, Subhadra Group',
+      person1Bio:
+        'A practicing MEP consultant since 1983, K Leela Prasad has planned electrical, HVAC, safety and building-engineering solutions across Visakhapatnam for over four decades — and founded Subhadra Group in 1996.',
+      person1LinkLabel: 'Read More →',
+      person1LinkHref: '/leadership#leela-prasad',
+      person2Photo: '/seed/subhadra/products/director.png',
+      person2Name: 'K N V Uday Kumar',
+      person2Role: 'Director, Subhadra Group',
+      person2Bio:
+        'A gold medalist engineering graduate from REC Warangal, K N V Uday Kumar brings 15+ years experience in HVAC, automation, AV and networking design to Subhadra Group.',
+      person2LinkLabel: 'Read More →',
+      person2LinkHref: '/leadership#uday-kumar',
+      padding: 'md',
+      background: 'muted',
+    },
+    render: ({
+      eyebrow,
+      heading,
+      person1Photo,
+      person1Name,
+      person1Role,
+      person1Bio,
+      person1LinkLabel,
+      person1LinkHref,
+      person2Photo,
+      person2Name,
+      person2Role,
+      person2Bio,
+      person2LinkLabel,
+      person2LinkHref,
+      padding,
+      background,
+    }) => (
+      <section
+        className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+      >
+        <div className={wrap}>
+          <div className="mx-auto mb-10 max-w-2xl text-center">
+            {eyebrow && (
+              <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-orange-600">
+                {eyebrow}
+              </p>
+            )}
+            <h2 className="text-2xl font-bold text-slate-900 md:text-4xl">{heading}</h2>
+          </div>
+          <div className="mx-auto flex max-w-4xl flex-col gap-10">
+            <div className="grid grid-cols-1 items-center gap-6 md:grid-cols-[220px_1fr] md:gap-10">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={person1Photo}
+                alt={person1Name}
+                className="h-56 w-full rounded-2xl object-cover md:h-full"
+              />
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">{person1Name}</h3>
+                <span className="text-sm font-semibold text-orange-600">{person1Role}</span>
+                <p className="mt-3 text-slate-600">{person1Bio}</p>
+                {person1LinkLabel && (
+                  <Link
+                    href={person1LinkHref || '#'}
+                    className="mt-4 inline-block text-sm font-semibold text-slate-900 hover:text-orange-600"
+                  >
+                    {person1LinkLabel}
+                  </Link>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 items-center gap-6 md:grid-cols-[1fr_220px] md:gap-10">
+              <div className="md:order-1">
+                <h3 className="text-xl font-bold text-slate-900">{person2Name}</h3>
+                <span className="text-sm font-semibold text-orange-600">{person2Role}</span>
+                <p className="mt-3 text-slate-600">{person2Bio}</p>
+                {person2LinkLabel && (
+                  <Link
+                    href={person2LinkHref || '#'}
+                    className="mt-4 inline-block text-sm font-semibold text-slate-900 hover:text-orange-600"
+                  >
+                    {person2LinkLabel}
+                  </Link>
+                )}
+              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={person2Photo}
+                alt={person2Name}
+                className="h-56 w-full rounded-2xl object-cover md:order-2 md:h-full"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+    ),
+  },
+
+  // ── Mission & Vision — 2 alternating text/badge cards ──────────────────────
+  // ponytail: badge is a plain icon circle, not the reference's decorative
+  // ring SVG (dashed dots + partial arc) — upgrade if the plain version reads
+  // as too bare next to the rest of the page.
+  ConstructionMissionVision: {
+    label: 'Mission & Vision',
+    fields: {
+      visionHeading: { type: 'text' },
+      visionParagraph1: { type: 'textarea' },
+      visionParagraph2: { type: 'textarea' },
+      missionHeading: { type: 'text' },
+      missionParagraph1: { type: 'textarea' },
+      missionParagraph2: { type: 'textarea' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+    },
+    defaultProps: {
+      visionHeading: 'The most trusted name in building engineering across Andhra Pradesh',
+      visionParagraph1:
+        'To become the most trusted & complete solution provider for Electrical, Air Conditioning, Security & Safety, Automation and Entertainment systems — for homes, commercial buildings, industries & departments across entire Andhra Pradesh.',
+      visionParagraph2:
+        'That means every new sector we enter — hospitality, healthcare, retail, education, industry — gets the same one-team accountability that built our reputation in Visakhapatnam, backed by brands and engineers our clients can rely on for decades, not just for the installation date.',
+      missionHeading: 'All building engineering, under one accountable roof',
+      missionParagraph1:
+        'To provide all building-related engineering products & services under one roof for residential, commercial buildings and industries — with perfect-engineered solutions, quality execution and on-time delivery, every single time.',
+      missionParagraph2:
+        'We do this by employing and training our own engineers rather than sub-contracting, by dealing only in world-class pioneer brands, and by assigning a dedicated service manager to every discipline we install — so support never falls through the cracks.',
+      padding: 'md',
+    },
+    render: function ConstructionMissionVisionRender({
+      visionHeading,
+      visionParagraph1,
+      visionParagraph2,
+      missionHeading,
+      missionParagraph1,
+      missionParagraph2,
+      padding,
+    }) {
+      return (
+        <section className={`${padY[padding]} bg-white`}>
+          <div className={`${wrap} flex flex-col gap-10`}>
+            <div className="grid grid-cols-1 items-center gap-8 rounded-2xl bg-slate-50 p-8 md:grid-cols-[1fr_180px] md:p-12">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 md:text-2xl">{visionHeading}</h3>
+                <p className="mt-4 text-slate-600">{visionParagraph1}</p>
+                <p className="mt-3 text-slate-600">{visionParagraph2}</p>
+              </div>
+              <div className="mx-auto flex h-36 w-36 flex-col items-center justify-center gap-2 rounded-full border-2 border-orange-200 bg-white text-center">
+                <Eye className="h-7 w-7 text-orange-600" strokeWidth={1.75} />
+                <span className="text-xs font-bold text-slate-700">Our Vision</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 items-center gap-8 rounded-2xl bg-slate-50 p-8 md:grid-cols-[180px_1fr] md:p-12">
+              <div className="order-2 mx-auto flex h-36 w-36 flex-col items-center justify-center gap-2 rounded-full border-2 border-orange-200 bg-white text-center md:order-1">
+                <Rocket className="h-7 w-7 text-orange-600" strokeWidth={1.75} />
+                <span className="text-xs font-bold text-slate-700">Our Mission</span>
+              </div>
+              <div className="order-1 md:order-2">
+                <h3 className="text-xl font-bold text-slate-900 md:text-2xl">{missionHeading}</h3>
+                <p className="mt-4 text-slate-600">{missionParagraph1}</p>
+                <p className="mt-3 text-slate-600">{missionParagraph2}</p>
+              </div>
             </div>
           </div>
         </section>
@@ -12105,6 +12420,118 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     },
   },
 
+  // Sectors — radial center logo + numbered chevron list, matches
+  // about.html's "One shop for all industries" section exactly.
+  ConstructionSectorsRadial: {
+    label: 'Sectors Radial',
+    fields: {
+      eyebrow: { type: 'text' },
+      heading: { type: 'text' },
+      description: { type: 'textarea' },
+      centerLogo: imageField('Center logo'),
+      centerTagline: { type: 'text' },
+      sectors: {
+        type: 'array',
+        min: 0,
+        max: 14,
+        getItemSummary: (item, index) => item.label || `Sector ${(index ?? 0) + 1}`,
+        defaultItemProps: { label: '', href: '/sectors' },
+        arrayFields: {
+          label: { type: 'text' },
+          href: { type: 'text' },
+        },
+      },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'select',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      eyebrow: 'One shop for all industries',
+      heading: 'Every sector, one accountable team',
+      description:
+        'Villas to industrial plants — the same one-roof team designs, supplies, installs and maintains it all. Tap a sector to see the full scope.',
+      centerLogo: '/seed/subhadra/brand/logo.png',
+      centerTagline: 'One-Stop Solution',
+      sectors: [
+        { label: 'Showrooms', href: '/sectors' },
+        { label: 'Hotel', href: '/sectors' },
+        { label: 'Hospital', href: '/sectors' },
+        { label: 'Convention Center', href: '/sectors' },
+        { label: 'Industry', href: '/sectors' },
+        { label: 'Education', href: '/sectors' },
+        { label: 'Government', href: '/sectors' },
+        { label: 'Builder', href: '/sectors' },
+        { label: 'Villa', href: '/sectors' },
+        { label: 'Premium Flats', href: '/sectors' },
+        { label: 'Gated Communities', href: '/sectors' },
+      ],
+      padding: 'lg',
+      background: 'white',
+    },
+    render: function ConstructionSectorsRadialRender({
+      eyebrow,
+      heading,
+      description,
+      centerLogo,
+      centerTagline,
+      sectors,
+      padding,
+      background,
+    }) {
+      const list = (sectors ?? []).filter((s) => s.label)
+      return (
+        <section
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={wrap}>
+            <div className="mx-auto mb-12 max-w-2xl text-center">
+              {eyebrow && (
+                <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-orange-600">
+                  {eyebrow}
+                </p>
+              )}
+              <h2 className="text-2xl font-bold text-slate-900 md:text-4xl">{heading}</h2>
+              {description && <p className="mt-3 text-slate-600">{description}</p>}
+            </div>
+            <div className="flex flex-col items-center gap-10 md:flex-row md:justify-center">
+              <div className="flex h-40 w-40 flex-none flex-col items-center justify-center gap-2 rounded-full border-2 border-orange-200 bg-orange-50 text-center md:h-48 md:w-48">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={centerLogo} alt="" className="h-10 w-auto object-contain" />
+                <span className="text-xs font-semibold text-slate-600">{centerTagline}</span>
+              </div>
+              <div className="grid w-full max-w-xl grid-cols-1 gap-2 sm:grid-cols-2">
+                {list.map((s, i) => (
+                  <Link
+                    key={i}
+                    href={s.href || '/sectors'}
+                    className="flex items-center gap-3 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:border-orange-300 hover:text-orange-600"
+                  >
+                    <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-slate-900 text-[11px] font-bold text-white">
+                      {i + 1}
+                    </span>
+                    {s.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
   // Sectors — one large featured sector (image + description) beside a
   // plain-text list of the other sectors, mirrors ConstructionFeaturedProject's
   // image/text split layout.
@@ -12474,7 +12901,12 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
       'ConstructionAboutSplit',
       'ConstructionTimelineHistory',
       'ConstructionLeadershipGrid',
+      'ConstructionFounderProfile',
     ],
+  },
+  missionvision: {
+    title: 'Mission & Vision',
+    components: ['ConstructionMissionVision'],
   },
   video: {
     title: 'Video',
@@ -12510,6 +12942,7 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
       'ConstructionSectorsTabbed',
       'ConstructionSectorsIconRow',
       'ConstructionSectorsSplitFeature',
+      'ConstructionSectorsRadial',
     ],
   },
   team: {
