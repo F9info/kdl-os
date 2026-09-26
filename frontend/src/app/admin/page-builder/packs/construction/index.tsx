@@ -12999,7 +12999,6 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
       'ConstructionAboutSplit',
       'ConstructionTimelineHistory',
       'ConstructionLeadershipGrid',
-      'ConstructionFounderProfile',
     ],
   },
   missionvision: {
@@ -13046,7 +13045,7 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
   team: {
     title: 'Team',
     components: [
-      'ConstructionTeamCrew',
+      'ConstructionFounderProfile',
       'ConstructionCertificationsBadges',
       'ConstructionOrgChart',
       'ConstructionTeamStats',
