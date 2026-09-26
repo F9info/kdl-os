@@ -2,6 +2,48 @@
 
 > Moved out of `.agents/HANDOFF.md` on 2026-07-16 to cut per-run session-load tokens. The live file keeps only the most recent entries; full history is here and in git.
 
+## 2026-09-26 — Inner Banner block: 4 designs, dynamic page-title via new Puck `metadata` wiring
+
+Added `ConstructionInnerBanner` (Section tab: "Inner Banner", placed right after "Welcome") —
+Design 1 is a pixel clone of the reference site's `.page-banner` (about.html et al: full-bleed
+photo, dark overlay, breadcrumb, `<h1>`, subtitle). Designs 2-4 are new alternates (split card /
+compact centered strip / frosted-glass-over-photo) — the real site only has one inner-banner
+design, so unlike Hero Slider there was no second/third/fourth reference to copy.
+
+The `<h1>` and breadcrumb "current" label are never a per-block field — they always read
+`puck.metadata.pageTitle`, the first use of Puck's `metadata` prop anywhere in this repo. Wired
+into both `template-engine/edit/[id]/page.tsx` (`<Puck metadata={{ pageTitle: page.title }}>`)
+and `p/[slug]/page.tsx` (`<Render metadata={{ pageTitle: page.title }}>`) — both already loaded
+`page.title` for other purposes (`headerTitle`), just hadn't threaded it into block props before.
+
+Insert-modal preview cards call `comp.render(props)` directly outside any `<Puck>`/`<Render>`
+tree (see `insert-block-modal.tsx` `BlockCard`), so `props.puck` is `undefined` there — the
+render function falls back to the literal string `'Page Title'` in that case (verified: modal
+cards show "Page Title", a real inserted block on the Home page showed "Home", a real inserted
+block on the About page showed "About" — both in the editor canvas and on the published
+`/p/<slug>` route).
+
+Verified live against the actual docker stack, not just `pnpm build`: the `frontend` container
+runs a standalone `next start` build baked into its image at `docker build` time — no source
+bind-mount, so **editing files here does nothing to `localhost:3101` until `docker compose
+build frontend && docker compose up -d frontend` is run.** Cost real time this session (first
+verification attempt showed the category missing entirely because the running container was
+still serving the pre-existing image). Test insertions used for verification (Home + About
+pages) were removed again via a direct `PUT /page-builder/:id` afterward — real project content
+is unchanged from before this task.
+
+Also found and fixed in passing: two `<a href="/">` in the new component tripped
+`@next/next/no-html-link-for-pages` (blocking, not a warning) — switched to `next/link`'s
+`Link`. First `git add` touching `packs/construction/index.tsx` and `edit/[id]/page.tsx` this
+session triggered a full `prettier --write`/`eslint --fix` reformat of those files via the
+pre-commit hook (they apparently were never run through it before) — large diffs, cosmetic
+only, verified via `tsc --noEmit` before and after. Both files also carried pre-existing
+uncommitted changes from earlier in this session that got swept into these same commits
+(nothing lost, just coarser commit attribution than the messages describe).
+
+Design spec: `docs/superpowers/specs/2026-09-26-inner-banner-design.md`.
+Plan: `docs/superpowers/plans/2026-09-26-inner-banner.md`.
+
 ## 2026-09-24 — Hero brand logos: nested array field (multi-upload + reorder), real logos from index.html
 
 User's screenshot showed the Hero's per-slide "Brands" row as plain text chips ("Schneider

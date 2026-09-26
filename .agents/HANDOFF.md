@@ -1,3 +1,45 @@
+## 2026-09-26 — Scalable sector detail-page architecture: /sectors/[slug], auto-provisioned pages
+
+User's ask: 5 sectors today, maybe 100+ later — sector detail pages (e.g. `sector-hotel.html`)
+must not become one hardcoded route/template per sector. One reusable architecture, admin-managed,
+no developer work per new sector.
+
+**`Sector.detail_page_id`** — loose reference to a `page-builder` `BuilderPage` (same non-relational
+cross-module convention as `MenuItem.page_id`). `createSector` now auto-creates and links a starter
+detail page for every new sector (zero manual page-creation step); backfilled the 11 existing
+sectors. Starter content reuses the SAME generic block library every other page uses (Inner Banner/
+Text/Lead Form+FAQ), pre-filled from the sector's own fields, plus whatever Header/Footer blocks
+already exist on any other real page in the project (`siteChrome()` helper) — so a brand-new
+sector's page looks like the rest of the site with zero brand-resolution logic duplicated.
+
+**New dynamic route `/sectors/[slug]`** (mirrors `/p/[slug]`, keyed by `Sector.slug` instead of
+`BuilderPage.slug`) — one route serves any number of sectors. Falls back to a plain render of the
+sector's own base fields if its page has no content/isn't published, so a new sector is never a
+dead link. Basic client-side SEO (title/meta description/canonical) from new `seo_title`/
+`seo_description`/`og_image`/`canonical_url` fields — full SSR-crawlable metadata would need a
+server-component conversion, flagged as deeper follow-up work, not done here.
+
+**Listing page now generates real links**: `ConstructionSectorDetailList`'s "Read more" computes
+`/sectors/{slug}` directly from the real slug for DB-sourced sectors, not a stored `cta_href`.
+Admin UI (`/admin/sectors`) gained SEO fields, stricter slug validation, an "Edit Content" action
+straight to the existing Puck editor for that sector's page (same editor as every other page — no
+new editing UI built), and "View live".
+
+**Real recurring bug root-caused (3rd occurrence this session, same class each time)**:
+`ConstructionFooter`'s "Company" links read a static `links` prop the template-engine driver's
+`patchNavLinks` periodically overwrites with a stale `navigationPages` snapshot — including
+leftover test-page names typed into the wizard days earlier. Cleaning the value each time it was
+found was a symptom fix. Root cause fixed here: Footer now reads the live Menu exactly the way
+`ConstructionHeader` Design 1 already does (static field is now only a project-with-no-menu
+fallback) — the exact gap flagged by the earlier "is anything hardcoded" audit ("Footer is a
+second, unconnected nav system"). Editing navigation once now updates Header **and** Footer
+everywhere, matching "global change propagates everywhere" for the whole site, not just sectors.
+Cleaned the stale field on all 5 real pages too.
+
+**Verified end-to-end**: migration + backfill, listing page links resolve to real `/sectors/{slug}`
+URLs, `/sectors/hotel` renders full real content (banner/body/lead-form/header/footer), zero broken
+images/console errors, Footer confirmed clean and live-Menu-driven on both a sector page and Home.
+
 ## 2026-09-26 — Sectors page: new module + 4-variant Section Builder block (sectors.html recreated)
 
 User's ask: recreate the approved `sectors.html` page exactly (content/images/UI/layout), fully
@@ -342,46 +384,4 @@ backend` if it starts blocking real logins) and an unrelated font-CSP warning.
   component's own comment.
 - `ConstructionFounderProfile`'s "Read More" links point to `#` — no leadership/bio page exists
   yet in this project to link to.
-
-## 2026-09-26 — Inner Banner block: 4 designs, dynamic page-title via new Puck `metadata` wiring
-
-Added `ConstructionInnerBanner` (Section tab: "Inner Banner", placed right after "Welcome") —
-Design 1 is a pixel clone of the reference site's `.page-banner` (about.html et al: full-bleed
-photo, dark overlay, breadcrumb, `<h1>`, subtitle). Designs 2-4 are new alternates (split card /
-compact centered strip / frosted-glass-over-photo) — the real site only has one inner-banner
-design, so unlike Hero Slider there was no second/third/fourth reference to copy.
-
-The `<h1>` and breadcrumb "current" label are never a per-block field — they always read
-`puck.metadata.pageTitle`, the first use of Puck's `metadata` prop anywhere in this repo. Wired
-into both `template-engine/edit/[id]/page.tsx` (`<Puck metadata={{ pageTitle: page.title }}>`)
-and `p/[slug]/page.tsx` (`<Render metadata={{ pageTitle: page.title }}>`) — both already loaded
-`page.title` for other purposes (`headerTitle`), just hadn't threaded it into block props before.
-
-Insert-modal preview cards call `comp.render(props)` directly outside any `<Puck>`/`<Render>`
-tree (see `insert-block-modal.tsx` `BlockCard`), so `props.puck` is `undefined` there — the
-render function falls back to the literal string `'Page Title'` in that case (verified: modal
-cards show "Page Title", a real inserted block on the Home page showed "Home", a real inserted
-block on the About page showed "About" — both in the editor canvas and on the published
-`/p/<slug>` route).
-
-Verified live against the actual docker stack, not just `pnpm build`: the `frontend` container
-runs a standalone `next start` build baked into its image at `docker build` time — no source
-bind-mount, so **editing files here does nothing to `localhost:3101` until `docker compose
-build frontend && docker compose up -d frontend` is run.** Cost real time this session (first
-verification attempt showed the category missing entirely because the running container was
-still serving the pre-existing image). Test insertions used for verification (Home + About
-pages) were removed again via a direct `PUT /page-builder/:id` afterward — real project content
-is unchanged from before this task.
-
-Also found and fixed in passing: two `<a href="/">` in the new component tripped
-`@next/next/no-html-link-for-pages` (blocking, not a warning) — switched to `next/link`'s
-`Link`. First `git add` touching `packs/construction/index.tsx` and `edit/[id]/page.tsx` this
-session triggered a full `prettier --write`/`eslint --fix` reformat of those files via the
-pre-commit hook (they apparently were never run through it before) — large diffs, cosmetic
-only, verified via `tsc --noEmit` before and after. Both files also carried pre-existing
-uncommitted changes from earlier in this session that got swept into these same commits
-(nothing lost, just coarser commit attribution than the messages describe).
-
-Design spec: `docs/superpowers/specs/2026-09-26-inner-banner-design.md`.
-Plan: `docs/superpowers/plans/2026-09-26-inner-banner.md`.
 

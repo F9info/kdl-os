@@ -2,7 +2,7 @@
 
 # STATUS — what is done, what is pending
 
-_Derived from code + GitHub + the board at master `5084b13` (latest commit 2026-09-26)._
+_Derived from code + GitHub + the board at master `656e616` (latest commit 2026-09-26)._
 _Regenerate: `node scripts/status-rollup.mjs`. Hand edits to this block are overwritten._
 
 Read this instead of counting board issues or PRs — both mislead. The board has 500+ done
@@ -110,6 +110,15 @@ Recent per-issue detail is in the rolling changelog below; full history in
 <!-- ROLLING WINDOW: keep only the most recent entries here to minimise per-run context.
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
+
+- **2026-09-26 — Scalable sector detail-page architecture (`/sectors/[slug]`)**: `Sector.
+  detail_page_id` links each sector to an auto-created `BuilderPage` (zero manual page-creation
+  per sector, works for 5 or 100+). New dynamic route serves any sector by slug, reusing the
+  generic block library + whatever Header/Footer already exists on the project. Listing page now
+  links via real computed slugs, not stored hrefs. Root-caused a recurring bug (3rd time this
+  session): `ConstructionFooter`'s nav was a second, static, driver-overwritable source — now reads
+  the live Menu like Header already does, so nav edits propagate to both everywhere, permanently.
+  See `.agents/HANDOFF.md` same date.
 
 - **2026-09-26 — Sectors page: new module + 4-variant Section Builder block**: recreates the
   approved `sectors.html` fully dynamically. New `Sector` module (model/migration/CRUD/admin UI,
