@@ -290,11 +290,12 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
                     // Backend orders sectors by `order asc` — the first one with a page is
                     // this project's "template" instance: set the section layout there first,
                     // then edit each sector's own content afterward (from /admin/sectors).
-                    href: sectorPages?.find((s) => s.detail_page_id)
+                    sectionHref: sectorPages?.find((s) => s.detail_page_id)
                       ? `/admin/template-engine/edit/${
                           sectorPages.find((s) => s.detail_page_id)!.detail_page_id
                         }?projectId=${run.projectId}`
                       : `/admin/sectors?projectId=${run.projectId}`,
+                    listHref: `/admin/sectors?projectId=${run.projectId}`,
                   },
                 ]}
               />
@@ -1062,7 +1063,7 @@ function LayoutSettingsPanel({
 }: {
   projectId: string
   editHref: string
-  detailPageTypes?: { label: string; count: number; href: string }[]
+  detailPageTypes?: { label: string; count: number; sectionHref: string; listHref: string }[]
 }) {
   const availableDetailTypes = detailPageTypes.filter((t) => t.count > 0)
 
@@ -1078,13 +1079,23 @@ function LayoutSettingsPanel({
         <a href={editHref}>Create/Edit layout</a>
       </Button>
       {availableDetailTypes.map((t) => (
-        <a
-          key={t.label}
-          href={t.href}
-          className="rounded-full border border-gray-300 bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"
-        >
-          Layout {t.label} ({t.count})
-        </a>
+        <div key={t.label} className="relative inline-block">
+          <a
+            href={t.sectionHref}
+            className="rounded-full border border-gray-300 bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"
+          >
+            Layout {t.label}
+          </a>
+          {/* Separate link from the pill text above — goes to the per-entry list
+              (/admin/sectors), not the section builder the pill itself opens. */}
+          <a
+            href={t.listHref}
+            title={`Manage all ${t.count} ${t.label} entries`}
+            className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground hover:bg-primary/90"
+          >
+            {t.count}
+          </a>
+        </div>
       ))}
       <WebsiteLayoutPreview projectId={projectId} />
     </div>
