@@ -8,6 +8,7 @@ import type { ComponentPack } from '../types'
 import { imageField } from '../image-field'
 import { InlineEditableText } from '../inline-editable-text'
 import { teamMemberField } from '../team-member-field'
+import { useSettingsFieldValues } from '../use-settings-field-values'
 
 // ── shared helpers ────────────────────────────────────────────────────────────
 
@@ -4641,9 +4642,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     render: function ConstructionAboutSplitRender({
       id,
       puck,
-      eyebrow,
-      heading,
-      paragraph,
+      eyebrow: eyebrowProp,
+      heading: headingProp,
+      paragraph: paragraphProp,
       photo,
       badgeNumber,
       badgeLabel,
@@ -4659,6 +4660,19 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
       const isEditing = puck?.isEditing ?? false
+      // About copy is simple website text, managed through Settings → Fields
+      // (/admin/settings/view/website-content) once it has a value there —
+      // eyebrow/heading/paragraph props are only the fallback for an install
+      // that hasn't set those fields yet. Disable inline-editing on whichever
+      // of the 3 currently comes from Settings, so a canvas click can't
+      // silently edit the now-unused static prop instead.
+      const sf = useSettingsFieldValues(['about-eyebrow', 'about-heading', 'about-paragraph'])
+      const eyebrow = sf['about-eyebrow'] || eyebrowProp
+      const heading = sf['about-heading'] || headingProp
+      const paragraph = sf['about-paragraph'] || paragraphProp
+      const eyebrowIsEditing = isEditing && !sf['about-eyebrow']
+      const headingIsEditing = isEditing && !sf['about-heading']
+      const paragraphIsEditing = isEditing && !sf['about-paragraph']
       const checks = [
         { text: check1Text, path: 'check1Text' },
         { text: check2Text, path: 'check2Text' },
@@ -4702,7 +4716,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     id={id}
                     path={['eyebrow']}
                     value={eyebrow ?? ''}
-                    isEditing={isEditing}
+                    isEditing={eyebrowIsEditing}
                   />
                 </p>
               )}
@@ -4711,7 +4725,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   id={id}
                   path={['heading']}
                   value={heading ?? ''}
-                  isEditing={isEditing}
+                  isEditing={headingIsEditing}
                 />
               </h2>
               {(isEditing || paragraph) && (
@@ -4720,7 +4734,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     id={id}
                     path={['paragraph']}
                     value={paragraph ?? ''}
-                    isEditing={isEditing}
+                    isEditing={paragraphIsEditing}
                     multiline
                   />
                 </p>
@@ -7840,11 +7854,24 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       const [openIndex, setOpenIndex] = useState<number | null>(0)
       const [contactPref, setContactPref] = useState<'whatsapp' | 'phone'>('whatsapp')
       const isEditing = puck?.isEditing ?? false
+      const projectId = puck?.metadata?.projectId as string | undefined
       const options = (interestOptions ?? '')
         .split('\n')
         .map((o) => o.trim())
         .filter(Boolean)
-      const faqs = (faqsRaw ?? []).map((f, n) => ({ ...f, n })).filter((f) => f.question)
+      // FAQ module is the source of truth once a project has any entries —
+      // the block's own `faqs` field is only a fallback for a project that
+      // hasn't been given real FAQ content yet.
+      const { data: dbFaqs } = useQuery({
+        queryKey: ['faq-entries-public', projectId],
+        queryFn: () =>
+          fetch(`/api/faq/public${projectId ? `?project_id=${projectId}` : ''}`)
+            .then((r) => r.json())
+            .then((json) => (json?.data?.items ?? []) as { question: string; answer: string }[]),
+        enabled: Boolean(projectId),
+      })
+      const faqSource = dbFaqs && dbFaqs.length > 0 ? dbFaqs : (faqsRaw ?? [])
+      const faqs = faqSource.map((f, n) => ({ ...f, n })).filter((f) => f.question)
       return (
         <section ref={ref} className={`${revealCls} ${padY[padding]} bg-slate-950`}>
           {/* Reference (v2-lead) wraps this in container-fluid, not a
@@ -8318,17 +8345,23 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       brand: 'Subhadra Group',
       tagline: 'Your one-stop solution for building engineering products & services.',
     },
-    render: ({ logoUrl, brand, tagline }) => (
-      <div className="bg-slate-900 text-white py-6">
-        <div className={`${wrap} flex items-center justify-center gap-3 text-center`}>
-          {logoUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoUrl} alt={brand} className="h-7 w-auto" />
-          )}
-          <p className="text-sm font-medium opacity-90">{tagline}</p>
+    render: function ConstructionTaglineStripRender({ logoUrl, brand, tagline: taglineProp }) {
+      // Simple website text, managed through Settings → Fields
+      // (/admin/settings/view/website-content) once it has a value there.
+      const sf = useSettingsFieldValues(['tagline-text'])
+      const tagline = sf['tagline-text'] || taglineProp
+      return (
+        <div className="bg-slate-900 text-white py-6">
+          <div className={`${wrap} flex items-center justify-center gap-3 text-center`}>
+            {logoUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoUrl} alt={brand} className="h-7 w-auto" />
+            )}
+            <p className="text-sm font-medium opacity-90">{tagline}</p>
+          </div>
         </div>
-      </div>
-    ),
+      )
+    },
   },
 
   // Floating WhatsApp + back-to-top
@@ -9873,14 +9906,33 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     },
     render: function ConstructionMissionVisionRender({
       variant,
-      visionHeading,
-      visionParagraph1,
-      visionParagraph2,
-      missionHeading,
-      missionParagraph1,
-      missionParagraph2,
+      visionHeading: visionHeadingProp,
+      visionParagraph1: visionParagraph1Prop,
+      visionParagraph2: visionParagraph2Prop,
+      missionHeading: missionHeadingProp,
+      missionParagraph1: missionParagraph1Prop,
+      missionParagraph2: missionParagraph2Prop,
       padding,
     }) {
+      // Vision/Mission copy is simple website text, managed through
+      // Settings → Fields (/admin/settings/view/website-content) once it has
+      // a value there — these props are only the fallback for an install
+      // that hasn't set those fields yet.
+      const sf = useSettingsFieldValues([
+        'vision-heading',
+        'vision-paragraph-1',
+        'vision-paragraph-2',
+        'mission-heading',
+        'mission-paragraph-1',
+        'mission-paragraph-2',
+      ])
+      const visionHeading = sf['vision-heading'] || visionHeadingProp
+      const visionParagraph1 = sf['vision-paragraph-1'] || visionParagraph1Prop
+      const visionParagraph2 = sf['vision-paragraph-2'] || visionParagraph2Prop
+      const missionHeading = sf['mission-heading'] || missionHeadingProp
+      const missionParagraph1 = sf['mission-paragraph-1'] || missionParagraph1Prop
+      const missionParagraph2 = sf['mission-paragraph-2'] || missionParagraph2Prop
+
       if (variant === '2') {
         return (
           <section className={`${padY[padding]} bg-white`}>
@@ -11996,13 +12048,58 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
       const isEditing = puck?.isEditing ?? false
+      const projectId = puck?.metadata?.projectId as string | undefined
+      // Projects Content module is the source of truth once a project has
+      // any case studies — the block's own `slides` field is only a
+      // fallback for a project that hasn't been given real content yet.
+      const { data: dbCaseStudies } = useQuery({
+        queryKey: ['project-case-studies-public', projectId],
+        queryFn: () =>
+          fetch(`/api/projects-content/public${projectId ? `?project_id=${projectId}` : ''}`)
+            .then((r) => r.json())
+            .then(
+              (json) =>
+                (json?.data?.items ?? []) as {
+                  title: string
+                  eyebrow: string | null
+                  tags: string | null
+                  image: string | null
+                  description: string | null
+                  cta_label: string | null
+                  cta_href: string | null
+                  link_label: string | null
+                  link_href: string | null
+                }[]
+            ),
+        enabled: Boolean(projectId),
+      })
+      const usingDb = Boolean(dbCaseStudies && dbCaseStudies.length > 0)
+      const dbSlides: ProjectSlide[] = usingDb
+        ? dbCaseStudies!.map((c) => ({
+            eyebrow: c.eyebrow ?? '',
+            image: c.image ?? '',
+            title: c.title,
+            description: c.description ?? '',
+            tags: c.tags ?? '',
+            linkLabel: c.link_label ?? '',
+            linkHref: c.link_href ?? '',
+            ctaLabel: c.cta_label ?? '',
+            ctaHref: c.cta_href ?? '',
+          }))
+        : []
       // `origIndex` keeps each slide's real position in the stored `slides`
       // array (before filtering) so InlineEditableText's `path` addresses the
       // same slide it's visually showing, even when an earlier slide has no
-      // title and gets filtered out.
-      const slides = (rawSlides ?? [])
+      // title and gets filtered out. Meaningless (and unused, `slideIsEditing`
+      // below is forced off) when sourced from the DB instead.
+      const slides = (usingDb ? dbSlides : (rawSlides ?? []))
         .map((s, origIndex) => ({ ...s, origIndex }))
         .filter((s) => s.title)
+      // DB-sourced content is managed at /admin/projects-content, not
+      // inline on this canvas — never offer the inline-edit affordance for
+      // it, so a click doesn't silently edit the now-unused static `slides`
+      // prop instead of the case study actually on screen.
+      const slideIsEditing = isEditing && !usingDb
       const [index, setIndex] = useState(0)
       const current = slides[index] ?? slides[0]
       const tags = (current?.tags ?? '')
@@ -12049,7 +12146,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                         id={id}
                         path={['slides', current.origIndex, 'eyebrow']}
                         value={current.eyebrow ?? ''}
-                        isEditing={isEditing}
+                        isEditing={slideIsEditing}
                       />
                     </p>
                   )}
@@ -12058,7 +12155,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       id={id}
                       path={['slides', current.origIndex, 'title']}
                       value={current.title ?? ''}
-                      isEditing={isEditing}
+                      isEditing={slideIsEditing}
                     />
                   </h3>
                   {(isEditing || current.description) && (
@@ -12067,7 +12164,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                         id={id}
                         path={['slides', current.origIndex, 'description']}
                         value={current.description ?? ''}
-                        isEditing={isEditing}
+                        isEditing={slideIsEditing}
                         multiline
                       />
                     </p>
@@ -12095,7 +12192,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                           id={id}
                           path={['slides', current.origIndex, 'linkLabel']}
                           value={current.linkLabel ?? ''}
-                          isEditing={isEditing}
+                          isEditing={slideIsEditing}
                         />
                       </a>
                     )}
@@ -12109,7 +12206,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                           id={id}
                           path={['slides', current.origIndex, 'ctaLabel']}
                           value={current.ctaLabel ?? ''}
-                          isEditing={isEditing}
+                          isEditing={slideIsEditing}
                         />
                       </a>
                     )}

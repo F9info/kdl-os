@@ -1,0 +1,19 @@
+// FAQ module schema.
+// Single source of truth for Q&A pairs shown across the site — the same
+// pattern as team.prisma: a page-builder block (ConstructionLeadFormFAQ)
+// fetches this project's active FAQs instead of storing them in its own
+// block props.
+
+model FaqEntry {
+  id         String   @id @default(cuid())
+  project_id String?
+  question   String
+  answer     String
+  order      Int      @default(0)
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([project_id])
+  @@map("faq_entries")
+}
