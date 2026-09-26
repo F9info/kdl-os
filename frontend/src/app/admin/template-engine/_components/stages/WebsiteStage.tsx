@@ -243,6 +243,7 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
           ) : webAppStep === 'navigation' ? (
             <NavigationStep
               projectId={run.projectId}
+              runId={run.id}
               onBack={() => setWebAppStep('fontSettings')}
               onNext={() => {
                 pendingRegenRef.current = true
@@ -1087,12 +1088,28 @@ function navFlattenLabels(nodes: NavNode[]): string[] {
   return nodes.flatMap((n) => [n.label, ...navFlattenLabels(n.children)])
 }
 
+// Mirrors backend/src/shared/utils/slug.js's `slugify` exactly — the
+// website driver derives every assembled page's slug this way
+// (`te-{runId}-{key}`), so a menu item created here for a page name needs
+// the identical algorithm to link to the real page instead of a dead `#`.
+function slugifyLikeBackend(input: string) {
+  return input
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
 function NavigationStep({
   projectId,
+  runId,
   onBack,
   onNext,
 }: {
   projectId: string
+  runId: string
   onBack: () => void
   onNext: () => void
 }) {
@@ -1130,7 +1147,15 @@ function NavigationStep({
 
   const createItemMutation = useMutation({
     mutationFn: (body: { label: string; order: number }) =>
-      api.post(`/menus/${menu!.id}/items`, { ...body, link_type: 'custom', url: null }),
+      api.post(`/menus/${menu!.id}/items`, {
+        ...body,
+        link_type: 'custom',
+        // Doesn't account for the resolveSeedPages dedup suffix
+        // (`-2`, `-3`, ...) the backend applies when the same label
+        // appears twice in one run — rare, and worth a wrong link over
+        // the complexity of replicating that counter here.
+        url: `/p/te-${runId}-${slugifyLikeBackend(body.label) || 'page'}`,
+      }),
     onSuccess: invalidate,
   })
   const deleteItemMutation = useMutation({
