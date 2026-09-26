@@ -36,5 +36,5 @@ export default function PublicPage() {
     )
   }
 
-  return <Render config={config} data={page.data} />
+  return <Render config={config} data={page.data} metadata={{ pageTitle: page.title }} />
 }
