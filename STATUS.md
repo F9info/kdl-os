@@ -112,6 +112,12 @@ Recent per-issue detail is in the rolling changelog below; full history in
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+- **2026-09-26 — Mission & Vision: 4 selectable designs**: audited every page-builder category
+  for "≥4 designs like Hero Slider" first — everything else already clears 4 (multiple distinct
+  components grouped per category, merged across packs by `compose.ts`). Mission & Vision was
+  the only real gap; added a `variant` field (1=existing layout kept as Current, 2-4 new). See
+  `.agents/HANDOFF.md` same date.
+
 - **2026-09-26 — About page rebuilt with real content (Phase 1 of full-site KDL-dynamic
   rebuild)**: real `about.html` content end to end — real header/footer (was generic `NavBar`),
   Inner Banner, real About-intro/stats copy, 2 new+1 new+1 extended components

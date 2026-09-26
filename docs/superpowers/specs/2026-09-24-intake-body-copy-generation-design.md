@@ -144,3 +144,20 @@ optional on top of it, never a required part of advancing the stage.
   keeps the first slice reviewable; same mechanism extends later.
 - Reuses the existing Claude-brain AI path brand-kit inference already uses, not a new provider
   or local-MLX path — this is client-facing generated content, same class of call.
+
+## Amendment (2026-09-24, during planning)
+
+**v1 scope corrected from "Hero, About, Disciplines" to "Hero, About" only.** Planning found
+`ConstructionDisciplinesGrid` is not part of the generic `template-engine` seed set at all —
+`website-seed-content.js` has no `CONSTRUCTION_DISCIPLINES`-equivalent constant. Disciplines Grid
+was added directly to the live Subhadra Group page this session as brand-specific work, never to
+the generic pipeline this feature patches. `ConstructionHero` and `ConstructionAboutSplit` are
+both confirmed present on every generated home page — the mechanism still extends to Disciplines
+(or any other component) later without new architecture, per the existing "same mechanism extends
+to them later" decision above; it's just not part of this first pass.
+
+Planning also surfaced a real prerequisite bug, unrelated to this feature but blocking its "still
+at default" comparison: `CONSTRUCTION_HERO_HOME` (and `genericConstructionHero`, used for every
+non-home page) still emit the old flat `d1SlideN*`/`d2SlideN*` Hero props from before this
+session's ArrayField refactor — every newly-seeded project currently gets an empty Hero slider.
+Fixed as Task 1 of the implementation plan, ahead of and independent of the AI-generation work.

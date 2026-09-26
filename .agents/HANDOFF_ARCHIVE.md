@@ -2,6 +2,19 @@
 
 > Moved out of `.agents/HANDOFF.md` on 2026-07-16 to cut per-run session-load tokens. The live file keeps only the most recent entries; full history is here and in git.
 
+## 2026-09-24 — Lead Form + FAQ: redesigned to match source site, inserted on home page
+
+`ConstructionLeadFormFAQ` was a plain light-theme card-list FAQ + basic form; source site's
+"Forms" section is dark-bg with a plain (no-card) FAQ list, orange plus/× toggle icons, and a
+white form card overlaid with a highlighted "Request a free quote" badge, 2-column name/phone,
+WhatsApp/Phone-Call pill toggle (not radios), and an orange-gradient submit button. Rewrote the
+render + added fields: `sectionEyebrow` ("FAQ"), `sectionIntroLinkLabel`/`Href` (the "Get in
+touch" inline link), `interestOptions` (newline-separated dropdown list, defaulted to the real
+Central AC/Home Automation/... list), `ctaLabel`, `formPrivacyNote`. Dropped the now-unused
+`background` field/prop — the redesign is dark-only, a white/muted toggle would break contrast.
+Inserted + published (verified via Postgres, single instance, no duplicates — used the
+canvas-text-check method from the Testimonials lesson above, not the Reorder tab).
+
 ## 2026-09-24 — Testimonials Slider: fixed layout to match source site (left photo / right text)
 
 User flagged the slider rendered as a centered/stacked layout (small circular avatar above

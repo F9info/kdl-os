@@ -1,3 +1,20 @@
+## 2026-09-26 — Mission & Vision given 4 selectable designs (audited every category first)
+
+User asked for "every section" to have 4 designs like Hero Slider, pointing at Mission & Vision's
+picker showing only 1 card as the broken example. Before touching code, audited every category in
+`typedCategories` (both packs — `compose.ts` auto-merges same-key categories across packs by
+concatenating their `components` arrays) against "reaches ≥4 selectable designs, whether via a
+`variant` field on one component or via ≥4 distinct components grouped under the category":
+everything else already clears 4 this way (e.g. Counters = 3 construction components + general's
+`StatsStrip` = 4; Footer = construction's `ConstructionFooter` + general's 4-variant `Footer` =
+5). **Mission & Vision was the only real gap** — one component, no `variant` field at all,
+confirmed exactly matching the user's own screenshot.
+
+Added a `variant` field to `ConstructionMissionVision` (1–4), same picker UX as Hero
+Slider/Inner Banner: Design 1 is the existing alternating-badge-card layout, untouched and kept
+as `Current`; 2 (side-by-side cards), 3 (centered minimal), 4 (dark split band) are new. Verified
+in the actual picker popup — all 4 render distinctly, Design 1 correctly marked Current.
+
 ## 2026-09-26 — About page fully rebuilt with real content (Phase 1 of the full-site KDL-dynamic rebuild)
 
 User's ask: rebuild the whole approved Subhadra Group HTML mockup (`after-delete-folder/`) inside
@@ -375,17 +392,4 @@ gradient-colored text. Rewrote the variant: added `logoUrl` (via `imageField`, n
 `highlightPhrase` fields, `render` now splits `headline` on `highlightPhrase` and wraps the
 match in a `bg-clip-text` gradient span. Not a live-page change — this variant isn't placed
 anywhere yet, only verified via the insert-modal's live preview (no DB/publish step needed).
-
-## 2026-09-24 — Lead Form + FAQ: redesigned to match source site, inserted on home page
-
-`ConstructionLeadFormFAQ` was a plain light-theme card-list FAQ + basic form; source site's
-"Forms" section is dark-bg with a plain (no-card) FAQ list, orange plus/× toggle icons, and a
-white form card overlaid with a highlighted "Request a free quote" badge, 2-column name/phone,
-WhatsApp/Phone-Call pill toggle (not radios), and an orange-gradient submit button. Rewrote the
-render + added fields: `sectionEyebrow` ("FAQ"), `sectionIntroLinkLabel`/`Href` (the "Get in
-touch" inline link), `interestOptions` (newline-separated dropdown list, defaulted to the real
-Central AC/Home Automation/... list), `ctaLabel`, `formPrivacyNote`. Dropped the now-unused
-`background` field/prop — the redesign is dark-only, a white/muted toggle would break contrast.
-Inserted + published (verified via Postgres, single instance, no duplicates — used the
-canvas-text-check method from the Testimonials lesson above, not the Reorder tab).
 
