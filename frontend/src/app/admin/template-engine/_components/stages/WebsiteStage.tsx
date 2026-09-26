@@ -17,9 +17,12 @@ import {
 import {
   MAX_DEPTH as NAV_MAX_DEPTH,
   moveNode as moveNavNode,
+  flattenForApi as flattenNavForApi,
   type DropZone as NavDropZone,
   type MenuItemNode as NavNode,
 } from '@/app/admin/menus/_tree'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import api from '@/lib/axios'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { MediaPicker } from '@/components/shared/MediaPicker'
@@ -1044,41 +1047,37 @@ const SUGGESTED_PAGES = [
   'Settings',
 ]
 
-function navNode(label: string, order: number): NavNode {
-  return {
-    id:
-      typeof crypto !== 'undefined' && crypto.randomUUID
-        ? crypto.randomUUID()
-        : `${label}-${Date.now()}-${order}`,
-    parent_id: null,
-    label,
-    link_type: 'custom',
-    page_id: null,
-    url: null,
-    open_in_new_tab: false,
-    is_active: true,
-    order,
-    children: [],
+// Same "header" Menu the Menus admin module (`/admin/menus`) and
+// `ConstructionHeader` read at render time — editing navigation in this
+// wizard step IS editing the live site's real nav, not a separate local
+// draft. (A previous version of this step only wrote a flat list to
+// localStorage and never touched the real Menu/MenuItem tables, so
+// changes made here never appeared on the actual header.)
+const NAV_MENU_KEY = 'header'
+const NAV_MENU_NAME = 'Header Navigation'
+
+interface WizardMenu {
+  id: string
+  project_id: string | null
+  key: string
+  name: string
+  items: NavNode[]
+}
+
+function navFindByLabel(nodes: NavNode[], label: string): NavNode | null {
+  for (const n of nodes) {
+    if (n.label === label) return n
+    const found = navFindByLabel(n.children, label)
+    if (found) return found
   }
+  return null
 }
 
 function navContainsLabel(nodes: NavNode[], label: string): boolean {
-  return nodes.some((n) => n.label === label || navContainsLabel(n.children, label))
+  return navFindByLabel(nodes, label) !== null
 }
 
-function navRemoveByLabel(nodes: NavNode[], label: string): NavNode[] {
-  return nodes
-    .filter((n) => n.label !== label)
-    .map((n) => ({ ...n, children: navRemoveByLabel(n.children, label) }))
-}
-
-function navRemoveById(nodes: NavNode[], id: string): NavNode[] {
-  return nodes
-    .filter((n) => n.id !== id)
-    .map((n) => ({ ...n, children: navRemoveById(n.children, id) }))
-}
-
-/** Depth-first labels, for the flat `navigationPages: string[]` the backend scaffolding contract expects — nesting here is presentational only. */
+/** Depth-first labels, for the flat `navigationPages: string[]` the backend scaffolding contract expects — nesting here is real-Menu-only. */
 function navFlattenLabels(nodes: NavNode[]): string[] {
   return nodes.flatMap((n) => [n.label, ...navFlattenLabels(n.children)])
 }
@@ -1093,14 +1092,47 @@ function NavigationStep({
   onNext: () => void
 }) {
   const storageKey = `te-website-ui:${projectId}:navigation`
-  const treeKey = `${storageKey}:tree`
-  const [tree, setTree] = useState<NavNode[]>(() => {
-    const savedTree = readLocal(treeKey, null as NavNode[] | null)
-    if (savedTree && savedTree.length > 0) return savedTree
-    // Migrates an older flat `selected: string[]` save into root-level nodes.
-    const flat = readLocal(storageKey, [] as string[])
-    return flat.map((label, i) => navNode(label, i))
+  const queryClient = useQueryClient()
+  const menuQueryKey = ['menu', projectId, NAV_MENU_KEY]
+
+  const { data: menu } = useQuery({
+    queryKey: menuQueryKey,
+    queryFn: () =>
+      api
+        .post('/menus/ensure', { project_id: projectId, key: NAV_MENU_KEY, name: NAV_MENU_NAME })
+        .then((r) => r.data.data.menu as WizardMenu),
+    enabled: Boolean(projectId),
   })
+
+  // Local, editable copy of the tree — drag-and-drop mutates this
+  // instantly for a responsive feel, `dirty` stops a background refetch
+  // from clobbering an in-flight edit before its own mutation resolves.
+  const [tree, setTree] = useState<NavNode[]>([])
+  const [dirty, setDirty] = useState(false)
+  useEffect(() => {
+    if (menu && !dirty) setTree(menu.items)
+  }, [menu, dirty])
+
+  const invalidate = () => {
+    setDirty(false)
+    queryClient.invalidateQueries({ queryKey: menuQueryKey })
+  }
+
+  const createItemMutation = useMutation({
+    mutationFn: (body: { label: string; order: number }) =>
+      api.post(`/menus/${menu!.id}/items`, { ...body, link_type: 'custom', url: null }),
+    onSuccess: invalidate,
+  })
+  const deleteItemMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/menus/items/${id}`),
+    onSuccess: invalidate,
+  })
+  const saveOrderMutation = useMutation({
+    mutationFn: (nodes: NavNode[]) =>
+      api.patch(`/menus/${menu!.id}/items/reorder`, { items: flattenNavForApi(nodes) }),
+    onSuccess: invalidate,
+  })
+
   const [customName, setCustomName] = useState('')
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [dragId, setDragId] = useState<string | null>(null)
@@ -1108,24 +1140,33 @@ function NavigationStep({
   const selectedLabels = navFlattenLabels(tree)
   const extras = selectedLabels.filter((n) => !SUGGESTED_PAGES.includes(n))
 
+  // navigationPages still has to be a flat string[] for the site-scaffolding
+  // driver's existing contract (which page rows get created) — that's
+  // separate from, and unaffected by, the real Menu's nesting above.
   useEffect(() => {
-    writeLocal(treeKey, tree)
-    writeLocal(storageKey, navFlattenLabels(tree))
-  }, [storageKey, treeKey, tree])
+    writeLocal(storageKey, selectedLabels)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey, tree])
 
   function togglePage(name: string) {
-    setTree((prev) =>
-      navContainsLabel(prev, name)
-        ? navRemoveByLabel(prev, name)
-        : [...prev, navNode(name, prev.length)]
-    )
+    if (!menu) return
+    const existing = navFindByLabel(tree, name)
+    setDirty(true)
+    if (existing) deleteItemMutation.mutate(existing.id)
+    else createItemMutation.mutate({ label: name, order: tree.length })
   }
 
   function addCustomPage() {
     const name = customName.trim()
-    if (!name || navContainsLabel(tree, name)) return
-    setTree((prev) => [...prev, navNode(name, prev.length)])
+    if (!name || !menu || navContainsLabel(tree, name)) return
+    setDirty(true)
+    createItemMutation.mutate({ label: name, order: tree.length })
     setCustomName('')
+  }
+
+  function removeNavNode(id: string) {
+    setDirty(true)
+    deleteItemMutation.mutate(id)
   }
 
   function toggleCollapse(id: string) {
@@ -1148,7 +1189,11 @@ function NavigationStep({
   function handleDrop(targetId: string, zone: NavDropZone) {
     if (!dragId) return
     const moved = moveNavNode(tree, dragId, targetId, zone)
-    if (moved) setTree(moved)
+    if (moved) {
+      setTree(moved)
+      setDirty(true)
+      saveOrderMutation.mutate(moved)
+    }
     setDragId(null)
     setDropTarget(null)
   }
@@ -1195,7 +1240,7 @@ function NavigationStep({
           <button
             type="button"
             aria-label={`Remove ${node.label}`}
-            onClick={() => setTree((prev) => navRemoveById(prev, node.id))}
+            onClick={() => removeNavNode(node.id)}
             className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full bg-white/25 leading-none"
           >
             ✕
