@@ -4,13 +4,22 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import {
   ArrowLeft,
   ArrowRight,
+  ChevronDown,
+  ChevronRight,
   Globe,
   ExternalLink,
+  GripVertical,
   Pencil,
   Plus,
   Upload as UploadIcon,
   X,
 } from 'lucide-react'
+import {
+  MAX_DEPTH as NAV_MAX_DEPTH,
+  moveNode as moveNavNode,
+  type DropZone as NavDropZone,
+  type MenuItemNode as NavNode,
+} from '@/app/admin/menus/_tree'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { MediaPicker } from '@/components/shared/MediaPicker'
@@ -24,6 +33,7 @@ import {
   useSkipStage,
 } from '@/hooks/useTemplateEngine'
 import { StageShell } from './StageShell'
+import { WebsiteLayoutPreview } from '../WebsiteLayoutPreview'
 import type { BrandKitTypography, TemplateEngineRun } from '@/types/template-engine.types'
 import type { Media } from '@/types/media.types'
 
@@ -231,6 +241,10 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
             />
           ) : pageCount > 0 ? (
             <div className="space-y-3">
+              <LayoutSettingsPanel
+                projectId={run.projectId}
+                editHref={`/admin/template-engine/projects/${run.projectId}/website/layout`}
+              />
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
                   <h3 className="text-base font-semibold">Web app · Pages</h3>
@@ -986,6 +1000,23 @@ function FontSettingsStep({
   )
 }
 
+function LayoutSettingsPanel({ projectId, editHref }: { projectId: string; editHref: string }) {
+  return (
+    <div className="flex flex-col items-center gap-3 rounded-lg border bg-card p-4 text-center">
+      <div>
+        <h3 className="text-sm font-semibold">Layout settings</h3>
+        <p className="text-xs text-muted-foreground">
+          Toggle the header/footer and pick a design for every assembled page.
+        </p>
+      </div>
+      <Button size="sm" asChild>
+        <a href={editHref}>Create/Edit layout</a>
+      </Button>
+      <WebsiteLayoutPreview projectId={projectId} />
+    </div>
+  )
+}
+
 // Mirrors the design prototype's Navigation step page suggestions.
 const SUGGESTED_PAGES = [
   'Home',
@@ -1013,6 +1044,45 @@ const SUGGESTED_PAGES = [
   'Settings',
 ]
 
+function navNode(label: string, order: number): NavNode {
+  return {
+    id:
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${label}-${Date.now()}-${order}`,
+    parent_id: null,
+    label,
+    link_type: 'custom',
+    page_id: null,
+    url: null,
+    open_in_new_tab: false,
+    is_active: true,
+    order,
+    children: [],
+  }
+}
+
+function navContainsLabel(nodes: NavNode[], label: string): boolean {
+  return nodes.some((n) => n.label === label || navContainsLabel(n.children, label))
+}
+
+function navRemoveByLabel(nodes: NavNode[], label: string): NavNode[] {
+  return nodes
+    .filter((n) => n.label !== label)
+    .map((n) => ({ ...n, children: navRemoveByLabel(n.children, label) }))
+}
+
+function navRemoveById(nodes: NavNode[], id: string): NavNode[] {
+  return nodes
+    .filter((n) => n.id !== id)
+    .map((n) => ({ ...n, children: navRemoveById(n.children, id) }))
+}
+
+/** Depth-first labels, for the flat `navigationPages: string[]` the backend scaffolding contract expects — nesting here is presentational only. */
+function navFlattenLabels(nodes: NavNode[]): string[] {
+  return nodes.flatMap((n) => [n.label, ...navFlattenLabels(n.children)])
+}
+
 function NavigationStep({
   projectId,
   onBack,
@@ -1023,23 +1093,122 @@ function NavigationStep({
   onNext: () => void
 }) {
   const storageKey = `te-website-ui:${projectId}:navigation`
-  const [selected, setSelected] = useState<string[]>(() => readLocal(storageKey, [] as string[]))
+  const treeKey = `${storageKey}:tree`
+  const [tree, setTree] = useState<NavNode[]>(() => {
+    const savedTree = readLocal(treeKey, null as NavNode[] | null)
+    if (savedTree && savedTree.length > 0) return savedTree
+    // Migrates an older flat `selected: string[]` save into root-level nodes.
+    const flat = readLocal(storageKey, [] as string[])
+    return flat.map((label, i) => navNode(label, i))
+  })
   const [customName, setCustomName] = useState('')
-  const extras = selected.filter((n) => !SUGGESTED_PAGES.includes(n))
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+  const [dragId, setDragId] = useState<string | null>(null)
+  const [dropTarget, setDropTarget] = useState<{ id: string; zone: NavDropZone } | null>(null)
+  const selectedLabels = navFlattenLabels(tree)
+  const extras = selectedLabels.filter((n) => !SUGGESTED_PAGES.includes(n))
 
   useEffect(() => {
-    writeLocal(storageKey, selected)
-  }, [storageKey, selected])
+    writeLocal(treeKey, tree)
+    writeLocal(storageKey, navFlattenLabels(tree))
+  }, [storageKey, treeKey, tree])
 
   function togglePage(name: string) {
-    setSelected((prev) => (prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]))
+    setTree((prev) =>
+      navContainsLabel(prev, name)
+        ? navRemoveByLabel(prev, name)
+        : [...prev, navNode(name, prev.length)]
+    )
   }
 
   function addCustomPage() {
     const name = customName.trim()
-    if (!name || selected.includes(name)) return
-    setSelected((prev) => [...prev, name])
+    if (!name || navContainsLabel(tree, name)) return
+    setTree((prev) => [...prev, navNode(name, prev.length)])
     setCustomName('')
+  }
+
+  function toggleCollapse(id: string) {
+    setCollapsed((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function rowDragOver(e: React.DragEvent, id: string) {
+    e.preventDefault()
+    const rect = e.currentTarget.getBoundingClientRect()
+    const ratio = (e.clientY - rect.top) / rect.height
+    const zone: NavDropZone = ratio < 0.25 ? 'before' : ratio > 0.75 ? 'after' : 'inside'
+    setDropTarget({ id, zone })
+  }
+
+  function handleDrop(targetId: string, zone: NavDropZone) {
+    if (!dragId) return
+    const moved = moveNavNode(tree, dragId, targetId, zone)
+    if (moved) setTree(moved)
+    setDragId(null)
+    setDropTarget(null)
+  }
+
+  function renderNavRow(node: NavNode, depth: number) {
+    const hasChildren = node.children.length > 0
+    const isCollapsed = collapsed.has(node.id)
+    const isDropBefore = dropTarget?.id === node.id && dropTarget.zone === 'before'
+    const isDropAfter = dropTarget?.id === node.id && dropTarget.zone === 'after'
+    const isDropInside = dropTarget?.id === node.id && dropTarget.zone === 'inside'
+    return (
+      <div key={node.id}>
+        {isDropBefore && <div className="mx-2 h-0.5 rounded bg-primary" />}
+        <div
+          draggable
+          onDragStart={() => setDragId(node.id)}
+          onDragOver={(e) => rowDragOver(e, node.id)}
+          onDragLeave={() => setDropTarget((t) => (t?.id === node.id ? null : t))}
+          onDrop={() => handleDrop(node.id, dropTarget?.zone ?? 'after')}
+          onDragEnd={() => {
+            setDragId(null)
+            setDropTarget(null)
+          }}
+          style={{ marginLeft: (depth - 1) * 24 }}
+          className={cn(
+            'flex items-center gap-1.5 rounded-md bg-primary py-1.5 pl-2 pr-1.5 text-xs font-semibold text-primary-foreground',
+            isDropInside && 'ring-2 ring-primary ring-offset-1',
+            dragId === node.id && 'opacity-40'
+          )}
+        >
+          <button
+            type="button"
+            onClick={() => toggleCollapse(node.id)}
+            className={cn('shrink-0', !hasChildren && 'invisible')}
+          >
+            {isCollapsed ? (
+              <ChevronRight className="h-3 w-3" />
+            ) : (
+              <ChevronDown className="h-3 w-3" />
+            )}
+          </button>
+          <GripVertical className="h-3.5 w-3.5 shrink-0 cursor-grab opacity-70" />
+          <span className="flex-1 truncate">{node.label}</span>
+          <button
+            type="button"
+            aria-label={`Remove ${node.label}`}
+            onClick={() => setTree((prev) => navRemoveById(prev, node.id))}
+            className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full bg-white/25 leading-none"
+          >
+            ✕
+          </button>
+        </div>
+        {isDropAfter && <div className="mx-2 h-0.5 rounded bg-primary" />}
+        {hasChildren && !isCollapsed && (
+          <div className="space-y-1.5 pt-1.5">
+            {node.children.map((c) => renderNavRow(c, depth + 1))}
+          </div>
+        )}
+      </div>
+    )
   }
 
   return (
@@ -1061,13 +1230,13 @@ function NavigationStep({
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold">Pages</span>
             <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-              {selected.length} selected
+              {selectedLabels.length} selected
             </span>
           </div>
           <p className="text-xs font-medium text-muted-foreground">Common pages — tap to add</p>
           <div className="flex flex-wrap gap-2">
             {[...SUGGESTED_PAGES, ...extras].map((name) => {
-              const on = selected.includes(name)
+              const on = selectedLabels.includes(name)
               return (
                 <button
                   key={name}
@@ -1104,25 +1273,14 @@ function NavigationStep({
               Live
             </span>
           </div>
-          {selected.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {selected.map((name) => (
-                <span
-                  key={name}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-primary py-1.5 pl-3 pr-1.5 text-xs font-semibold text-primary-foreground"
-                >
-                  {name}
-                  <button
-                    type="button"
-                    aria-label={`Remove ${name}`}
-                    onClick={() => togglePage(name)}
-                    className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-white/25 leading-none"
-                  >
-                    ✕
-                  </button>
-                </span>
-              ))}
-            </div>
+          {tree.length > 0 ? (
+            <>
+              <p className="text-[11px] text-muted-foreground">
+                Drag a page onto another to nest it (up to {NAV_MAX_DEPTH} levels); drag to the
+                top/bottom edge of a row to reorder instead.
+              </p>
+              <div className="space-y-1.5">{tree.map((n) => renderNavRow(n, 1))}</div>
+            </>
           ) : (
             <p className="text-xs text-muted-foreground">
               No pages yet — pick from the list or add your own.
