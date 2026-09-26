@@ -1,0 +1,25 @@
+// Team module schema.
+// Single source of truth for named people (founders, leadership, staff) shown
+// across the site — a page-builder block (e.g. ConstructionFounderProfile)
+// references a TeamMember by id instead of copying name/role/bio/photo into
+// its own block props, so editing a person here updates every block that
+// references them.
+
+model TeamMember {
+  id         String   @id @default(cuid())
+  project_id String?
+  name       String
+  role       String
+  bio        String?
+  // A plain URL/path, not a Media-table FK — matches every other image field
+  // in the page-builder packs (imageField in packs/image-field.tsx stores a
+  // plain URL too), not the Media DAM's upload/asset workflow.
+  photo_url  String?
+  order      Int      @default(0)
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([project_id])
+  @@map("team_members")
+}

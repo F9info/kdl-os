@@ -36,5 +36,11 @@ export default function PublicPage() {
     )
   }
 
-  return <Render config={config} data={page.data} metadata={{ pageTitle: page.title }} />
+  return (
+    <Render
+      config={config}
+      data={page.data}
+      metadata={{ pageTitle: page.title, projectId: page.projectId ?? undefined }}
+    />
+  )
 }

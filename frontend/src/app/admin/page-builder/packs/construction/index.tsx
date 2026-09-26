@@ -2,10 +2,12 @@ import type { Config } from '@puckeditor/core'
 import { useState, useEffect, useRef, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
+import { useQuery } from '@tanstack/react-query'
 import { Eye, Rocket } from 'lucide-react'
 import type { ComponentPack } from '../types'
 import { imageField } from '../image-field'
 import { InlineEditableText } from '../inline-editable-text'
+import { teamMemberField } from '../team-member-field'
 
 // ── shared helpers ────────────────────────────────────────────────────────────
 
@@ -956,12 +958,14 @@ type ConstructionProps = {
   ConstructionFounderProfile: {
     eyebrow: string
     heading: string
+    person1MemberId: string
     person1Photo: string
     person1Name: string
     person1Role: string
     person1Bio: string
     person1LinkLabel: string
     person1LinkHref: string
+    person2MemberId: string
     person2Photo: string
     person2Name: string
     person2Role: string
@@ -9634,13 +9638,17 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     fields: {
       eyebrow: { type: 'text' },
       heading: { type: 'text' },
-      person1Photo: imageField('Photo'),
+      // Pick a Team-module member to pull name/role/bio/photo from — leave
+      // unset to use this block's own text/photo fields below instead.
+      person1MemberId: teamMemberField('Person 1 — Team member (optional)'),
+      person1Photo: imageField('Person 1 — Photo (if no team member picked)'),
       person1Name: { type: 'text' },
       person1Role: { type: 'text' },
       person1Bio: { type: 'textarea' },
       person1LinkLabel: { type: 'text' },
       person1LinkHref: { type: 'text' },
-      person2Photo: imageField('Photo'),
+      person2MemberId: teamMemberField('Person 2 — Team member (optional)'),
+      person2Photo: imageField('Person 2 — Photo (if no team member picked)'),
       person2Name: { type: 'text' },
       person2Role: { type: 'text' },
       person2Bio: { type: 'textarea' },
@@ -9665,6 +9673,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     defaultProps: {
       eyebrow: 'Leadership',
       heading: 'The people behind Subhadra Group',
+      person1MemberId: '',
       person1Photo: '/seed/subhadra/founder.png',
       person1Name: 'K Leela Prasad',
       person1Role: 'Founder, Subhadra Group',
@@ -9672,6 +9681,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         'A practicing MEP consultant since 1983, K Leela Prasad has planned electrical, HVAC, safety and building-engineering solutions across Visakhapatnam for over four decades — and founded Subhadra Group in 1996.',
       person1LinkLabel: 'Read More →',
       person1LinkHref: '/leadership#leela-prasad',
+      person2MemberId: '',
       person2Photo: '/seed/subhadra/products/director.png',
       person2Name: 'K N V Uday Kumar',
       person2Role: 'Director, Subhadra Group',
@@ -9682,15 +9692,18 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding: 'md',
       background: 'muted',
     },
-    render: ({
+    render: function ConstructionFounderProfileRender({
+      puck,
       eyebrow,
       heading,
+      person1MemberId,
       person1Photo,
       person1Name,
       person1Role,
       person1Bio,
       person1LinkLabel,
       person1LinkHref,
+      person2MemberId,
       person2Photo,
       person2Name,
       person2Role,
@@ -9699,66 +9712,118 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       person2LinkHref,
       padding,
       background,
-    }) => (
-      <section
-        className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
-      >
-        <div className={wrap}>
-          <div className="mx-auto mb-10 max-w-2xl text-center">
-            {eyebrow && (
-              <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-orange-600">
-                {eyebrow}
-              </p>
-            )}
-            <h2 className="text-2xl font-bold text-slate-900 md:text-4xl">{heading}</h2>
-          </div>
-          <div className="mx-auto flex max-w-4xl flex-col gap-10">
-            <div className="grid grid-cols-1 items-center gap-6 md:grid-cols-[220px_1fr] md:gap-10">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={person1Photo}
-                alt={person1Name}
-                className="h-56 w-full rounded-2xl object-cover md:h-full"
-              />
-              <div>
-                <h3 className="text-xl font-bold text-slate-900">{person1Name}</h3>
-                <span className="text-sm font-semibold text-orange-600">{person1Role}</span>
-                <p className="mt-3 text-slate-600">{person1Bio}</p>
-                {person1LinkLabel && (
-                  <Link
-                    href={person1LinkHref || '#'}
-                    className="mt-4 inline-block text-sm font-semibold text-slate-900 hover:text-orange-600"
-                  >
-                    {person1LinkLabel}
-                  </Link>
-                )}
+    }) {
+      const projectId = puck?.metadata?.projectId as string | undefined
+      const needsLookup = Boolean(person1MemberId || person2MemberId)
+      // Public read (no auth) — same endpoint the Team admin page's picker
+      // reads via the authenticated one; this is the render-time path used
+      // by both the editor canvas and the real public /p/[slug] page.
+      const { data: members } = useQuery({
+        queryKey: ['team-members-public', projectId],
+        queryFn: () =>
+          fetch(`/api/team/public${projectId ? `?project_id=${projectId}` : ''}`)
+            .then((r) => r.json())
+            .then(
+              (json) =>
+                (json?.data?.items ?? []) as {
+                  id: string
+                  name: string
+                  role: string
+                  bio: string | null
+                  photo_url: string | null
+                }[]
+            ),
+        enabled: needsLookup,
+      })
+
+      const resolve = (
+        memberId: string,
+        fallback: { photo: string; name: string; role: string; bio: string }
+      ) => {
+        const member = memberId ? members?.find((m) => m.id === memberId) : undefined
+        if (!member) return fallback
+        return {
+          photo: member.photo_url || fallback.photo,
+          name: member.name,
+          role: member.role,
+          bio: member.bio || fallback.bio,
+        }
+      }
+
+      const p1 = resolve(person1MemberId, {
+        photo: person1Photo,
+        name: person1Name,
+        role: person1Role,
+        bio: person1Bio,
+      })
+      const p2 = resolve(person2MemberId, {
+        photo: person2Photo,
+        name: person2Name,
+        role: person2Role,
+        bio: person2Bio,
+      })
+
+      return (
+        <section
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={wrap}>
+            <div className="mx-auto mb-10 max-w-2xl text-center">
+              {eyebrow && (
+                <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-orange-600">
+                  {eyebrow}
+                </p>
+              )}
+              <h2 className="text-2xl font-bold text-slate-900 md:text-4xl">{heading}</h2>
+            </div>
+            <div className="mx-auto flex max-w-4xl flex-col gap-10">
+              <div className="grid grid-cols-1 items-center gap-6 md:grid-cols-[220px_1fr] md:gap-10">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={p1.photo}
+                  alt={p1.name}
+                  className="h-56 w-full rounded-2xl object-cover md:h-full"
+                />
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900">{p1.name}</h3>
+                  <span className="text-sm font-semibold text-orange-600">{p1.role}</span>
+                  <p className="mt-3 text-slate-600">{p1.bio}</p>
+                  {person1LinkLabel && (
+                    <Link
+                      href={person1LinkHref || '#'}
+                      className="mt-4 inline-block text-sm font-semibold text-slate-900 hover:text-orange-600"
+                    >
+                      {person1LinkLabel}
+                    </Link>
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 items-center gap-6 md:grid-cols-[1fr_220px] md:gap-10">
+                <div className="md:order-1">
+                  <h3 className="text-xl font-bold text-slate-900">{p2.name}</h3>
+                  <span className="text-sm font-semibold text-orange-600">{p2.role}</span>
+                  <p className="mt-3 text-slate-600">{p2.bio}</p>
+                  {person2LinkLabel && (
+                    <Link
+                      href={person2LinkHref || '#'}
+                      className="mt-4 inline-block text-sm font-semibold text-slate-900 hover:text-orange-600"
+                    >
+                      {person2LinkLabel}
+                    </Link>
+                  )}
+                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={p2.photo}
+                  alt={p2.name}
+                  className="h-56 w-full rounded-2xl object-cover md:order-2 md:h-full"
+                />
               </div>
             </div>
-            <div className="grid grid-cols-1 items-center gap-6 md:grid-cols-[1fr_220px] md:gap-10">
-              <div className="md:order-1">
-                <h3 className="text-xl font-bold text-slate-900">{person2Name}</h3>
-                <span className="text-sm font-semibold text-orange-600">{person2Role}</span>
-                <p className="mt-3 text-slate-600">{person2Bio}</p>
-                {person2LinkLabel && (
-                  <Link
-                    href={person2LinkHref || '#'}
-                    className="mt-4 inline-block text-sm font-semibold text-slate-900 hover:text-orange-600"
-                  >
-                    {person2LinkLabel}
-                  </Link>
-                )}
-              </div>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={person2Photo}
-                alt={person2Name}
-                className="h-56 w-full rounded-2xl object-cover md:order-2 md:h-full"
-              />
-            </div>
           </div>
-        </div>
-      </section>
-    ),
+        </section>
+      )
+    },
   },
 
   // ── Mission & Vision — 2 alternating text/badge cards ──────────────────────

@@ -189,7 +189,7 @@ export default function TemplateEngineEditPage() {
         <Puck
           config={editorConfig}
           data={editableData}
-          metadata={{ pageTitle: page.title }}
+          metadata={{ pageTitle: page.title, projectId: projectId ?? undefined }}
           plugins={[blocksPlugin()]}
           iframe={{ enabled: false }}
           viewports={[
