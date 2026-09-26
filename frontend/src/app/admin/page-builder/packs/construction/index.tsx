@@ -4163,21 +4163,42 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       }
 
       // Design 1 — pixel clone of the reference site's .page-banner
-      // (after-delete-folder/about.html and every other inner page).
+      // (after-delete-folder/about.html and every other inner page): CSS
+      // is `.page-banner{padding-block:96px}` (150px on lg), a 3-stop
+      // `linear-gradient(180deg, rgba(10,11,13,.72) 0%, rgba(10,11,13,.8)
+      // 60%, rgba(10,11,13,.92) 100%)` overlay, and fully centered text —
+      // not the bottom-left-anchored, fixed-height treatment this used to
+      // have (see after-delete-folder/assets/css/style.css `.page-banner`).
       return (
-        <section className="relative overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={backgroundImage}
-            alt={imageAlt}
-            style={{ objectPosition: 'center 72%' }}
-            className="h-[380px] w-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 px-6 pb-8 md:px-14">
-            {breadcrumb}
-            <h1 className="text-3xl font-extrabold text-white md:text-4xl">{title}</h1>
-            <div className="mt-2 max-w-xl text-[15px] text-white/85">{subtitleNode}</div>
+        <section className="relative overflow-hidden py-24 text-center text-white lg:py-[150px]">
+          <div className="absolute inset-0 z-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={backgroundImage} alt={imageAlt} className="h-full w-full object-cover" />
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  'linear-gradient(180deg, rgba(10,11,13,.72) 0%, rgba(10,11,13,.8) 60%, rgba(10,11,13,.92) 100%)',
+              }}
+            />
+          </div>
+          <div className="relative z-10 px-6 md:px-14">
+            <nav
+              className="mb-4 flex items-center justify-center gap-2 text-[13px] font-semibold text-white/60"
+              aria-label="Breadcrumb"
+            >
+              <Link href="/" className="text-white/85 hover:text-white">
+                Home
+              </Link>
+              <span className="opacity-50">/</span>
+              <span className="text-[#e8622c]">{title}</span>
+            </nav>
+            <h1 className="text-[clamp(2rem,6vw,3.2rem)] font-extrabold leading-[1.05] tracking-[-0.02em]">
+              {title}
+            </h1>
+            <div className="mx-auto mt-4 max-w-[640px] text-base leading-[1.65] text-white/80">
+              {subtitleNode}
+            </div>
           </div>
         </section>
       )
