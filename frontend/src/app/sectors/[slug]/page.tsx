@@ -112,10 +112,12 @@ export default function SectorDetailPage() {
   }
 
   return (
-    <Render
-      config={config}
-      data={page.data as never}
-      metadata={{ pageTitle: sector.name, projectId: sector.project_id ?? undefined }}
-    />
+    <div className="detail-page-inter">
+      <Render
+        config={config}
+        data={page.data as never}
+        metadata={{ pageTitle: sector.name, projectId: sector.project_id ?? undefined }}
+      />
+    </div>
   )
 }

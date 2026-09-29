@@ -1,0 +1,17 @@
+{
+  "footer": {
+    "tagline": "All building-related engineering products & services under one roof — residential, commercial and industrial, since 1996.",
+    "contactPhone": "0891-2722552",
+    "contactPhone2": "0891-2540676",
+    "contactEmail": "sepl@subhadragroup.in",
+    "contactEmail2": "info@subhadragroup.in",
+    "showroomAddress": "49-52-1/16, 1st Floor, Adusha Towers, Opp. Income Tax Office, Sankaramattam Road, Shanthipuram, Visakhapatnam - 530 016",
+    "regdOfficeAddress": "50-58-15, Rajendra Nagar, Visakhapatnam - 530 016",
+    "qrCaption": "Scan for directions →",
+    "copyright": "© 2026 Subhadra Group · Subhadra Engineering Pvt. Ltd."
+  },
+  "headerOverBanner": {
+    "transparent": true,
+    "lightText": true
+  }
+}

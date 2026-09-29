@@ -13,6 +13,32 @@ import { useHeaderMenuTree, HeaderNavMenu } from '../header-nav-menu'
 
 // ── shared helpers ────────────────────────────────────────────────────────────
 
+// Bootstrap Icons (the client-approved mockups use them) — served from
+// /vendor/bootstrap-icons, stylesheet injected once on first use.
+function BiIcon({ name, className = '' }: { name: string; className?: string }) {
+  useEffect(() => {
+    if (typeof document === 'undefined' || document.getElementById('bi-icons-css')) return
+    const l = document.createElement('link')
+    l.id = 'bi-icons-css'
+    l.rel = 'stylesheet'
+    l.href = '/vendor/bootstrap-icons/bootstrap-icons.css'
+    document.head.appendChild(l)
+  }, [])
+  return <i className={`bi ${name} ${className}`} aria-hidden="true" />
+}
+
+// "100%" -> 100 + orange %, as in the mockup's stat cards.
+function StatValue({ value }: { value: string }) {
+  return value.endsWith('%') ? (
+    <>
+      {value.slice(0, -1)}
+      <em className="not-italic text-[#e8622c]">%</em>
+    </>
+  ) : (
+    <>{value}</>
+  )
+}
+
 const padY = { sm: 'py-8', md: 'py-14', lg: 'py-24' } as const
 const wrap = 'mx-auto max-w-6xl px-4 md:px-8'
 
@@ -429,6 +455,9 @@ type ConstructionProps = {
     ctaSecondaryLabel: string
     ctaSecondaryHref: string
     headline?: string
+    currentLabel?: string
+    ctaTertiaryLabel?: string
+    ctaTertiaryHref?: string
   }
   ConstructionServicesGrid: {
     sectionTitle: string
@@ -449,6 +478,7 @@ type ConstructionProps = {
     background: 'white' | 'muted'
   }
   ConstructionProjectGallery: {
+    sectionEyebrow?: string
     sectionTitle: string
     sectionSubtitle: string
     items: {
@@ -462,6 +492,7 @@ type ConstructionProps = {
     padding: 'sm' | 'md' | 'lg'
   }
   ConstructionQuoteCTA: {
+    eyebrow?: string
     headline: string
     subtext: string
     ctaLabel: string
@@ -683,6 +714,7 @@ type ConstructionProps = {
     background: 'white' | 'muted'
   }
   ConstructionAboutSplit: {
+    useSettings?: boolean
     eyebrow: string
     heading: string
     paragraph: string
@@ -774,6 +806,8 @@ type ConstructionProps = {
       title: string
       description: string
       brands: string
+      href?: string
+      linkLabel?: string
     }[]
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
@@ -825,6 +859,9 @@ type ConstructionProps = {
     sectionIntroLinkLabel: string
     sectionIntroLinkHref: string
     faqs: { question: string; answer: string }[]
+    showFaqs?: boolean
+    faqSource?: 'module' | 'block'
+    introText?: string
     checklistItems: string
     trustStats: { number: string; label: string }[]
     formHeading: string
@@ -932,25 +969,33 @@ type ConstructionProps = {
   ConstructionTimelineHistory: {
     eyebrow: string
     heading: string
+    subtitle?: string
     entry1Year: string
+    entry1Title?: string
     entry1Text: string
     entry1Image: string
     entry2Year: string
+    entry2Title?: string
     entry2Text: string
     entry2Image: string
     entry3Year: string
+    entry3Title?: string
     entry3Text: string
     entry3Image: string
     entry4Year: string
+    entry4Title?: string
     entry4Text: string
     entry4Image: string
     entry5Year: string
+    entry5Title?: string
     entry5Text: string
     entry5Image: string
     entry6Year: string
+    entry6Title?: string
     entry6Text: string
     entry6Image: string
     entry7Year: string
+    entry7Title?: string
     entry7Text: string
     entry7Image: string
     padding: 'sm' | 'md' | 'lg'
@@ -1316,7 +1361,8 @@ type ConstructionProps = {
   ConstructionIconFeatureGrid: {
     sectionEyebrow: string
     sectionTitle: string
-    items: { icon: IconKey | ''; title: string; description: string }[]
+    items: { icon: IconKey | ''; biIcon?: string; title: string; description: string }[]
+    variant?: '1' | '2'
     background: 'white' | 'dark'
     padding: 'sm' | 'md' | 'lg'
   }
@@ -1348,9 +1394,11 @@ type ConstructionProps = {
     paragraph2: string
     photo: string
     highlight1Icon: IconKey | ''
+    highlight1BiIcon?: string
     highlight1Title: string
     highlight1Description: string
     highlight2Icon: IconKey | ''
+    highlight2BiIcon?: string
     highlight2Title: string
     highlight2Description: string
     stat1Value: string
@@ -1359,13 +1407,16 @@ type ConstructionProps = {
     stat2Label: string
     stat3Value: string
     stat3Label: string
+    variant?: '1' | '2'
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
   }
   ConstructionProcessSteps: {
     sectionEyebrow: string
     sectionTitle: string
+    sectionSubtitle?: string
     items: { stepLabel: string; title: string; description: string }[]
+    variant?: '1' | '2'
     padding: 'sm' | 'md' | 'lg'
   }
   ConstructionProjectPhotoSlider: {
@@ -1388,7 +1439,9 @@ type ConstructionProps = {
   }
   ConstructionBrandsCarousel: {
     sectionTitle: string
-    logos: BrandLogoItem[]
+    sectionEyebrow?: string
+    anchorId?: string
+    logos: (BrandLogoItem & { alt?: string })[]
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
   }
@@ -4535,6 +4588,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       // Optional H1 override — when set, replaces the page-title H1 (the
       // breadcrumb still shows the page title).
       headline: { type: 'text' },
+      // Optional last-breadcrumb label (defaults to the page title).
+      currentLabel: { type: 'text' },
+      ctaTertiaryLabel: { type: 'text' },
+      ctaTertiaryHref: { type: 'text' },
     },
     defaultProps: {
       variant: '1',
@@ -4569,18 +4626,21 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       ctaSecondaryLabel,
       ctaSecondaryHref,
       headline,
+      currentLabel,
+      ctaTertiaryLabel,
+      ctaTertiaryHref,
     }) {
       if (visible === false) return <></>
       const title = (puck?.metadata?.pageTitle as string | undefined) || 'Page Title'
       const isEditing = puck?.isEditing ?? false
-      const hasCta = Boolean(ctaPrimaryLabel || ctaSecondaryLabel)
+      const hasCta = Boolean(ctaPrimaryLabel || ctaSecondaryLabel || ctaTertiaryLabel)
 
       const ctaRow = hasCta ? (
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           {ctaPrimaryLabel && (
             <a
               href={ctaPrimaryHref || '#'}
-              className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+              className="rounded bg-[#e8622c] px-6 py-3 text-sm font-semibold text-white hover:bg-[#c94f1d]"
             >
               {ctaPrimaryLabel}
             </a>
@@ -4588,9 +4648,17 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           {ctaSecondaryLabel && (
             <a
               href={ctaSecondaryHref || '#'}
-              className="rounded-full border border-white/50 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10"
+              className="rounded border border-white/50 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10"
             >
               {ctaSecondaryLabel}
+            </a>
+          )}
+          {ctaTertiaryLabel && (
+            <a
+              href={ctaTertiaryHref || '#'}
+              className="rounded border border-white/50 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10"
+            >
+              {ctaTertiaryLabel}
             </a>
           )}
         </div>
@@ -4613,7 +4681,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               <span>/</span>
             </>
           )}
-          <span className="font-semibold text-white">{title}</span>
+          <span className="font-semibold text-white">{currentLabel || title}</span>
         </nav>
       )
 
@@ -4712,7 +4780,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   <span className="opacity-50">/</span>
                 </>
               )}
-              <span className="text-[#e8622c]">{title}</span>
+              <span className="text-[#e8622c]">{currentLabel || title}</span>
             </nav>
             {eyebrow && (
               <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-[#e8622c]">
@@ -5034,6 +5102,15 @@ const typedComponents: Config<ConstructionProps>['components'] = {
   ConstructionAboutSplit: {
     label: 'About (Split with Badge)',
     fields: {
+      // false = use this block's own eyebrow/heading/paragraph even when the
+      // Settings → Fields values exist.
+      useSettings: {
+        type: 'radio',
+        options: [
+          { label: 'Use Settings text', value: true },
+          { label: 'Use this block only', value: false },
+        ],
+      },
       eyebrow: { type: 'text' },
       heading: { type: 'text' },
       paragraph: { type: 'textarea' },
@@ -5107,6 +5184,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       eyebrow: eyebrowProp,
       heading: headingProp,
       paragraph: paragraphProp,
+      useSettings,
       photo,
       badgeNumber,
       badgeLabel,
@@ -5128,7 +5206,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       // that hasn't set those fields yet. Disable inline-editing on whichever
       // of the 3 currently comes from Settings, so a canvas click can't
       // silently edit the now-unused static prop instead.
-      const sf = useSettingsFieldValues(['about-eyebrow', 'about-heading', 'about-paragraph'])
+      const sfAll = useSettingsFieldValues(['about-eyebrow', 'about-heading', 'about-paragraph'])
+      const sf = useSettings === false ? ({} as typeof sfAll) : sfAll
       const eyebrow = sf['about-eyebrow'] || eyebrowProp
       const heading = sf['about-heading'] || headingProp
       const paragraph = sf['about-paragraph'] || paragraphProp
@@ -5275,6 +5354,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
   ConstructionProjectGallery: {
     label: 'Project Gallery (Sectors Grid)',
     fields: {
+      sectionEyebrow: { type: 'text' },
       sectionTitle: { type: 'text' },
       sectionSubtitle: { type: 'textarea' },
       items: {
@@ -5411,6 +5491,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     render: function ConstructionProjectGalleryRender({
       id,
       puck,
+      sectionEyebrow,
       sectionTitle,
       sectionSubtitle,
       items,
@@ -5426,6 +5507,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               cards edge-to-edge, unlike every other section on the page. */}
           <div className="w-full px-4 md:px-8">
             <div className="text-center mb-10">
+              {sectionEyebrow && (
+                <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-[#4b5058]">
+                  {sectionEyebrow}
+                </p>
+              )}
               <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">
                 <InlineEditableText
                   id={id}
@@ -5512,6 +5598,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
   ConstructionQuoteCTA: {
     label: 'Quote Request CTA',
     fields: {
+      eyebrow: { type: 'text' },
       headline: { type: 'text' },
       subtext: { type: 'textarea' },
       ctaLabel: { type: 'text' },
@@ -5544,6 +5631,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'dark',
     },
     render: ({
+      eyebrow,
       headline,
       subtext,
       ctaLabel,
@@ -5567,7 +5655,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       return (
         <section className={`${bgCls} py-16`}>
           <div className="mx-auto max-w-3xl px-4 md:px-8 text-center">
-            <h2 className="text-2xl md:text-4xl font-bold mb-4">{headline}</h2>
+            {eyebrow && (
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] opacity-70">
+                {eyebrow}
+              </p>
+            )}
+            {headline && <h2 className="text-2xl md:text-4xl font-bold mb-4">{headline}</h2>}
             {subtext && (
               <p
                 className={`mb-8 text-base md:text-lg ${background === 'muted' ? 'text-slate-600' : 'opacity-90'}`}
@@ -6184,6 +6277,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           title: '',
           description: '',
           brands: '',
+          href: '',
+          linkLabel: '',
         },
         arrayFields: {
           category: { type: 'text' },
@@ -6199,6 +6294,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           title: { type: 'text' },
           description: { type: 'textarea' },
           brands: { type: 'text' },
+          // Optional link under the card (e.g. "View details →" to its page).
+          href: { type: 'text' },
+          linkLabel: { type: 'text' },
         },
       },
       padding: {
@@ -6488,6 +6586,14 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                             isEditing={isEditing}
                           />
                         </p>
+                      )}
+                      {p.href && p.linkLabel && (
+                        <a
+                          href={p.href}
+                          className="mt-3 inline-block text-sm font-semibold text-orange-600 hover:text-orange-700"
+                        >
+                          {p.linkLabel}
+                        </a>
                       )}
                     </div>
                   </div>
@@ -8262,6 +8368,23 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           answer: { type: 'textarea' },
         },
       },
+      introText: { type: 'textarea' },
+      // 'module' (default): the project-wide FAQ module wins once it has
+      // entries. 'block': always show this block's own FAQs (page-specific).
+      faqSource: {
+        type: 'radio',
+        options: [
+          { label: 'FAQ module', value: 'module' },
+          { label: 'This block', value: 'block' },
+        ],
+      },
+      showFaqs: {
+        type: 'radio',
+        options: [
+          { label: 'Show FAQs', value: true },
+          { label: 'Hide FAQs', value: false },
+        ],
+      },
       checklistItems: { type: 'textarea' },
       trustStats: {
         type: 'array',
@@ -8343,6 +8466,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       sectionIntroLinkLabel,
       sectionIntroLinkHref,
       faqs: faqsRaw,
+      showFaqs,
+      faqSource: faqSourceMode,
+      introText,
       checklistItems,
       trustStats,
       formHeading,
@@ -8353,7 +8479,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding,
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
-      const [openIndex, setOpenIndex] = useState<number | null>(0)
+      const [openIndex, setOpenIndex] = useState<number | null>(null)
       const [contactPref, setContactPref] = useState<'whatsapp' | 'phone'>('whatsapp')
       const isEditing = puck?.isEditing ?? false
       const projectId = puck?.metadata?.projectId as string | undefined
@@ -8372,7 +8498,14 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             .then((json) => (json?.data?.items ?? []) as { question: string; answer: string }[]),
         enabled: Boolean(projectId),
       })
-      const faqSource = dbFaqs && dbFaqs.length > 0 ? dbFaqs : (faqsRaw ?? [])
+      const faqSource =
+        showFaqs === false
+          ? []
+          : faqSourceMode === 'block'
+            ? (faqsRaw ?? [])
+            : dbFaqs && dbFaqs.length > 0
+              ? dbFaqs
+              : (faqsRaw ?? [])
       const faqs = faqSource.map((f, n) => ({ ...f, n })).filter((f) => f.question)
       return (
         <section ref={ref} className={`${revealCls} ${padY[padding]} bg-slate-950`}>
@@ -8398,6 +8531,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   isEditing={isEditing}
                 />
               </h2>
+              {introText && <p className="text-slate-400 mb-6">{introText}</p>}
               {(isEditing || sectionIntroLinkLabel) && (
                 <p className="text-slate-400 mb-6">
                   Can&apos;t find what you&apos;re looking for?{' '}
@@ -8560,7 +8694,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   )}
                   <div>
                     <label className="mb-1.5 block text-sm font-semibold text-slate-900">
-                      Preferred contact
+                      Preferred Contact
                     </label>
                     <div className="flex gap-3">
                       <button
@@ -10099,25 +10233,33 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     fields: {
       eyebrow: { type: 'text' },
       heading: { type: 'text' },
+      subtitle: { type: 'textarea' },
       entry1Year: { type: 'text' },
+      entry1Title: { type: 'text' },
       entry1Text: { type: 'textarea' },
       entry1Image: imageField('Image'),
       entry2Year: { type: 'text' },
+      entry2Title: { type: 'text' },
       entry2Text: { type: 'textarea' },
       entry2Image: imageField('Image'),
       entry3Year: { type: 'text' },
+      entry3Title: { type: 'text' },
       entry3Text: { type: 'textarea' },
       entry3Image: imageField('Image'),
       entry4Year: { type: 'text' },
+      entry4Title: { type: 'text' },
       entry4Text: { type: 'textarea' },
       entry4Image: imageField('Image'),
       entry5Year: { type: 'text' },
+      entry5Title: { type: 'text' },
       entry5Text: { type: 'textarea' },
       entry5Image: imageField('Image'),
       entry6Year: { type: 'text' },
+      entry6Title: { type: 'text' },
       entry6Text: { type: 'textarea' },
       entry6Image: imageField('Image'),
       entry7Year: { type: 'text' },
+      entry7Title: { type: 'text' },
       entry7Text: { type: 'textarea' },
       entry7Image: imageField('Image'),
       padding: {
@@ -10176,38 +10318,46 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     render: function ConstructionTimelineHistoryRender({
       eyebrow,
       heading,
+      subtitle,
       entry1Year,
+      entry1Title,
       entry1Text,
       entry1Image,
       entry2Year,
+      entry2Title,
       entry2Text,
       entry2Image,
       entry3Year,
+      entry3Title,
       entry3Text,
       entry3Image,
       entry4Year,
+      entry4Title,
       entry4Text,
       entry4Image,
       entry5Year,
+      entry5Title,
       entry5Text,
       entry5Image,
       entry6Year,
+      entry6Title,
       entry6Text,
       entry6Image,
       entry7Year,
+      entry7Title,
       entry7Text,
       entry7Image,
       padding,
       background,
     }) {
       const entries = [
-        { year: entry1Year, text: entry1Text, image: entry1Image },
-        { year: entry2Year, text: entry2Text, image: entry2Image },
-        { year: entry3Year, text: entry3Text, image: entry3Image },
-        { year: entry4Year, text: entry4Text, image: entry4Image },
-        { year: entry5Year, text: entry5Text, image: entry5Image },
-        { year: entry6Year, text: entry6Text, image: entry6Image },
-        { year: entry7Year, text: entry7Text, image: entry7Image },
+        { year: entry1Year, title: entry1Title, text: entry1Text, image: entry1Image },
+        { year: entry2Year, title: entry2Title, text: entry2Text, image: entry2Image },
+        { year: entry3Year, title: entry3Title, text: entry3Text, image: entry3Image },
+        { year: entry4Year, title: entry4Title, text: entry4Text, image: entry4Image },
+        { year: entry5Year, title: entry5Title, text: entry5Text, image: entry5Image },
+        { year: entry6Year, title: entry6Title, text: entry6Text, image: entry6Image },
+        { year: entry7Year, title: entry7Title, text: entry7Text, image: entry7Image },
       ].filter((e) => e.year || e.text)
       return (
         <section
@@ -10221,6 +10371,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 </p>
               )}
               <h2 className="text-2xl font-bold text-slate-900 md:text-4xl">{heading}</h2>
+              {subtitle && <p className="mt-4 text-slate-600">{subtitle}</p>}
             </div>
             <div className="mx-auto max-w-2xl border-l-2 border-slate-200 pl-8">
               {entries.map((e, i) => (
@@ -10236,6 +10387,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       className="mb-3 h-40 w-full rounded-xl object-cover"
                     />
                   )}
+                  {e.title && <h4 className="pt-1 font-bold text-slate-900">{e.title}</h4>}
                   <p className="pt-1 leading-relaxed text-slate-600">{e.text}</p>
                 </div>
               ))}
@@ -14247,12 +14399,22 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         min: 0,
         max: 8,
         getItemSummary: (item, index) => item.title || `Feature ${(index ?? 0) + 1}`,
-        defaultItemProps: { icon: 'star', title: '', description: '' },
+        defaultItemProps: { icon: 'star', biIcon: '', title: '', description: '' },
         arrayFields: {
           icon: DISCIPLINE_ICON_FIELD,
+          // Optional Bootstrap Icons class (e.g. bi-house-heart-fill) —
+          // wins over `icon` when set.
+          biIcon: { type: 'text' },
           title: { type: 'text' },
           description: { type: 'textarea' },
         },
+      },
+      variant: {
+        type: 'select',
+        options: [
+          { label: 'Design 1 — Round icons', value: '1' },
+          { label: 'Design 2 — Square orange tiles', value: '2' },
+        ],
       },
       background: {
         type: 'radio',
@@ -14293,10 +14455,54 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
       padding: 'md',
     },
-    render: ({ sectionEyebrow, sectionTitle, items, background, padding }) => {
+    render: ({ sectionEyebrow, sectionTitle, items, background, padding, variant }) => {
       const dark = background === 'dark'
       const list = (items ?? []).filter((i) => i.title)
       if (list.length === 0) return <></>
+      if (variant === '2') {
+        return (
+          <section className={padY[padding]} style={{ background: '#fcf7f8' }}>
+            <div className="mx-auto max-w-[1240px] px-4 md:px-8">
+              {(sectionEyebrow || sectionTitle) && (
+                <div className="mb-11 text-center">
+                  {sectionEyebrow && (
+                    <p className="mb-3.5 text-xs font-bold uppercase tracking-[0.16em] text-[#4b5058]">
+                      {sectionEyebrow}
+                    </p>
+                  )}
+                  {sectionTitle && (
+                    <h2 className="text-[clamp(1.8rem,5vw,2.6rem)] font-bold leading-[1.1] tracking-[-0.02em] text-[#0d0f1c]">
+                      {sectionTitle}
+                    </h2>
+                  )}
+                </div>
+              )}
+              <div
+                className="grid gap-5"
+                style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))' }}
+              >
+                {list.map((item, i) => {
+                  const Icon = ICON_BY_KEY[(item.icon as IconKey) || 'star']
+                  return (
+                    <article
+                      key={i}
+                      className="flex flex-col items-center gap-3.5 border border-[rgba(20,22,26,0.10)] px-[22px] py-[26px] text-center"
+                    >
+                      <div className="flex h-[46px] w-[46px] items-center justify-center rounded-lg bg-[#e8622c] text-xl text-white">
+                        {item.biIcon ? <BiIcon name={item.biIcon} /> : <Icon />}
+                      </div>
+                      <h4 className="text-[1.05rem] font-extrabold text-[#14161a]">{item.title}</h4>
+                      {item.description && (
+                        <p className="text-sm leading-relaxed text-[#4b5058]">{item.description}</p>
+                      )}
+                    </article>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+        )
+      }
       return (
         <section className={`${padY[padding]} ${dark ? 'bg-slate-900 text-white' : 'bg-white'}`}>
           <div className={wrap}>
@@ -14647,9 +14853,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       paragraph2: { type: 'textarea' },
       photo: imageField('Photo'),
       highlight1Icon: DISCIPLINE_ICON_FIELD,
+      highlight1BiIcon: { type: 'text' },
       highlight1Title: { type: 'text' },
       highlight1Description: { type: 'textarea' },
       highlight2Icon: DISCIPLINE_ICON_FIELD,
+      highlight2BiIcon: { type: 'text' },
       highlight2Title: { type: 'text' },
       highlight2Description: { type: 'textarea' },
       stat1Value: { type: 'text' },
@@ -14658,6 +14866,13 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       stat2Label: { type: 'text' },
       stat3Value: { type: 'text' },
       stat3Label: { type: 'text' },
+      variant: {
+        type: 'select',
+        options: [
+          { label: 'Design 1 — Split with stats', value: '1' },
+          { label: 'Design 2 — Tall photo, highlight cards, stat cards', value: '2' },
+        ],
+      },
       padding: {
         type: 'select',
         options: [
@@ -14703,9 +14918,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       paragraph2,
       photo,
       highlight1Icon,
+      highlight1BiIcon,
       highlight1Title,
       highlight1Description,
       highlight2Icon,
+      highlight2BiIcon,
       highlight2Title,
       highlight2Description,
       stat1Value,
@@ -14714,18 +14931,98 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       stat2Label,
       stat3Value,
       stat3Label,
+      variant,
       padding,
       background,
     }) => {
       const highlights = [
-        { icon: highlight1Icon, title: highlight1Title, description: highlight1Description },
-        { icon: highlight2Icon, title: highlight2Title, description: highlight2Description },
+        {
+          icon: highlight1Icon,
+          biIcon: highlight1BiIcon,
+          title: highlight1Title,
+          description: highlight1Description,
+        },
+        {
+          icon: highlight2Icon,
+          biIcon: highlight2BiIcon,
+          title: highlight2Title,
+          description: highlight2Description,
+        },
       ].filter((h) => h.title)
       const stats = [
         { value: stat1Value, label: stat1Label },
         { value: stat2Value, label: stat2Label },
         { value: stat3Value, label: stat3Label },
       ].filter((s) => s.value)
+      if (variant === '2') {
+        return (
+          <section className="bg-white py-24">
+            <div className="grid w-full items-stretch gap-8 px-6 md:grid-cols-[4fr_8fr] md:gap-12 md:px-8">
+              <div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={photo}
+                  alt={heading}
+                  loading="lazy"
+                  className="h-full min-h-[520px] w-full rounded-[20px] object-cover shadow-[0_44px_90px_-28px_rgba(13,15,28,0.32)]"
+                />
+              </div>
+              <div className="flex flex-col justify-center">
+                {eyebrow && (
+                  <p className="text-[0.72rem] font-bold uppercase tracking-[0.16em] text-[#e8622c]">
+                    {eyebrow}
+                  </p>
+                )}
+                <h2 className="mt-1 text-2xl font-bold leading-tight text-[#0d0f1c] md:text-[1.75rem]">
+                  {heading}
+                </h2>
+                {paragraph1 && <p className="mt-4 leading-[1.7] text-[#4b5058]">{paragraph1}</p>}
+                {paragraph2 && <p className="mt-3 leading-[1.7] text-[#4b5058]">{paragraph2}</p>}
+                {highlights.length > 0 && (
+                  <div className="mt-[18px] flex flex-col gap-6 md:flex-row">
+                    {highlights.map((h, i) => {
+                      const Icon = ICON_BY_KEY[(h.icon as IconKey) || 'star']
+                      return (
+                        <div
+                          key={i}
+                          className="flex flex-1 items-start gap-3.5 rounded border border-[rgba(20,22,26,0.10)] bg-[#f5f4f2] p-[18px]"
+                        >
+                          <span className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-lg bg-[#e8622c] text-xl text-white">
+                            {h.biIcon ? <BiIcon name={h.biIcon} /> : <Icon />}
+                          </span>
+                          <div>
+                            <h4 className="text-base font-extrabold text-[#14161a]">{h.title}</h4>
+                            {h.description && (
+                              <p className="mt-1 text-[0.88rem] leading-normal text-[#4b5058]">
+                                {h.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+                {stats.length > 0 && (
+                  <div className="mt-[30px] flex flex-wrap gap-8 pt-2">
+                    {stats.map((st, i) => (
+                      <div
+                        key={i}
+                        className="flex flex-[0_1_170px] flex-col items-center rounded-[14px] bg-white px-5 py-[22px] text-center shadow-[0_12px_32px_rgba(20,22,26,0.12)]"
+                      >
+                        <b className="block text-[2.1rem] font-extrabold leading-tight text-[#14161a]">
+                          <StatValue value={st.value} />
+                        </b>
+                        <span className="text-[0.78rem] text-[#71767e]">{st.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )
+      }
       return (
         <section
           className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
@@ -14791,6 +15088,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     fields: {
       sectionEyebrow: { type: 'text' },
       sectionTitle: { type: 'text' },
+      sectionSubtitle: { type: 'textarea' },
       items: {
         type: 'array',
         min: 0,
@@ -14802,6 +15100,13 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           title: { type: 'text' },
           description: { type: 'textarea' },
         },
+      },
+      variant: {
+        type: 'select',
+        options: [
+          { label: 'Design 1 — Plain columns', value: '1' },
+          { label: 'Design 2 — Shadow cards with badge', value: '2' },
+        ],
       },
       padding: {
         type: 'select',
@@ -14839,9 +15144,57 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       ],
       padding: 'md',
     },
-    render: ({ sectionEyebrow, sectionTitle, items, padding }) => {
+    render: ({ sectionEyebrow, sectionTitle, sectionSubtitle, items, padding, variant }) => {
       const list = (items ?? []).filter((i) => i.title)
       if (list.length === 0) return <></>
+      if (variant === '2') {
+        return (
+          <section className={`${padY[padding]} bg-white`}>
+            <div className="mx-auto max-w-[1240px] px-4 md:px-8">
+              {(sectionEyebrow || sectionTitle) && (
+                <div className="mb-12 text-center">
+                  {sectionEyebrow && (
+                    <p className="mb-3.5 text-xs font-bold uppercase tracking-[0.16em] text-[#4b5058]">
+                      {sectionEyebrow}
+                    </p>
+                  )}
+                  {sectionTitle && (
+                    <h2 className="text-[clamp(1.8rem,5vw,2.6rem)] font-bold leading-[1.1] tracking-[-0.02em] text-[#0d0f1c]">
+                      {sectionTitle}
+                    </h2>
+                  )}
+                  {sectionSubtitle && (
+                    <p className="mx-auto mt-4 max-w-2xl text-[#4b5058]">{sectionSubtitle}</p>
+                  )}
+                </div>
+              )}
+              <div
+                className="grid gap-8"
+                style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))' }}
+              >
+                {list.map((step, i) => (
+                  <div
+                    key={i}
+                    className="bg-white p-[30px] text-center shadow-[0_12px_32px_rgba(20,22,26,0.12)]"
+                  >
+                    {step.stepLabel && (
+                      <span className="inline-block rounded-full bg-[#fdf1ec] px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-[0.08em] text-[#e8622c]">
+                        {step.stepLabel}
+                      </span>
+                    )}
+                    <h4 className="mt-2 text-lg font-extrabold text-[#14161a]">{step.title}</h4>
+                    {step.description && (
+                      <p className="mt-1.5 text-sm leading-relaxed text-[#4b5058]">
+                        {step.description}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )
+      }
       return (
         <section className={`${padY[padding]} bg-white`}>
           <div className={wrap}>
@@ -14854,6 +15207,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 )}
                 {sectionTitle && (
                   <h2 className="text-2xl md:text-4xl font-bold text-slate-900">{sectionTitle}</h2>
+                )}
+                {sectionSubtitle && (
+                  <p className="mx-auto mt-4 max-w-2xl text-slate-600">{sectionSubtitle}</p>
                 )}
               </div>
             )}
@@ -15053,17 +15409,22 @@ const typedComponents: Config<ConstructionProps>['components'] = {
   ConstructionBrandsCarousel: {
     label: 'Brands Carousel',
     fields: {
+      sectionEyebrow: { type: 'text' },
       sectionTitle: { type: 'text' },
+      // Optional DOM id so in-page links (e.g. "#brands") can scroll here.
+      anchorId: { type: 'text' },
       logos: {
         type: 'array',
         min: 0,
-        max: 10,
-        getItemSummary: (item, index) => `Logo ${(index ?? 0) + 1}`,
+        max: 24,
+        getItemSummary: (item, index) => item.alt || `Logo ${(index ?? 0) + 1}`,
         defaultItemProps: {
           logo: '',
+          alt: '',
         },
         arrayFields: {
           logo: imageField('Logo'),
+          alt: { type: 'text' },
         },
       },
       padding: {
@@ -15096,6 +15457,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     },
     render: function ConstructionBrandsCarouselRender({
       sectionTitle,
+      sectionEyebrow,
+      anchorId,
       logos,
       padding,
       background,
@@ -15104,9 +15467,15 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       return (
         <section
           ref={ref}
+          id={anchorId || undefined}
           className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
         >
           <div className={wrap}>
+            {sectionEyebrow && (
+              <p className="mb-2 text-center text-xs font-bold uppercase tracking-[0.16em] text-[#4b5058]">
+                {sectionEyebrow}
+              </p>
+            )}
             {sectionTitle && (
               <h2 className="text-center text-2xl md:text-3xl font-bold text-slate-900 mb-10">
                 {sectionTitle}
@@ -15119,7 +15488,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   <img
                     key={i}
                     src={item.logo}
-                    alt=""
+                    alt={item.alt ?? ''}
                     className="h-10 max-w-[140px] object-contain"
                   />
                 ) : null

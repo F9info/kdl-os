@@ -75,10 +75,12 @@ export default function CatalogDetailPage() {
   }
 
   return (
-    <Render
-      config={config}
-      data={page.data as never}
-      metadata={{ pageTitle: item.name, projectId: item.project_id ?? undefined }}
-    />
+    <div className="detail-page-inter">
+      <Render
+        config={config}
+        data={page.data as never}
+        metadata={{ pageTitle: item.name, projectId: item.project_id ?? undefined }}
+      />
+    </div>
   )
 }

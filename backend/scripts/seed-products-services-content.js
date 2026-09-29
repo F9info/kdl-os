@@ -2,7 +2,7 @@
 /**
  * Re-apply the client-approved Subhadra Group "Products & Services" page
  * content (seed-data/products-services-content.json, extracted once from
- * after-delete-folder/products-services.html — not re-parsed at runtime)
+ * after-delete-folder/products.html — not re-parsed at runtime)
  * onto the project's real BuilderPage. Idempotent — safe to re-run any time
  * the content JSON changes. Keeps that page's own Header/Footer blocks
  * untouched (first/last content entries), replaces everything in between.
@@ -18,15 +18,15 @@ import path from 'node:path';
 import { prisma } from '../src/config/database.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PAGE_ID = 'cmub9kp3c001c01p9k1cqkrdg';
+const SLUG = 'te-cmt18teqh000101rxwfzfndow-products-services';
 
 const middleBlocks = JSON.parse(
   readFileSync(path.join(__dirname, 'seed-data/products-services-content.json'), 'utf8')
 );
 
-const page = await prisma.builderPage.findUnique({ where: { id: PAGE_ID } });
+const page = await prisma.builderPage.findUnique({ where: { slug: SLUG } });
 if (!page) {
-  throw new Error(`BuilderPage ${PAGE_ID} not found`);
+  throw new Error(`BuilderPage ${SLUG} not found`);
 }
 
 const content = page.data?.content ?? [];
@@ -36,9 +36,9 @@ const footer = content.find((b) => b.type === 'ConstructionFooter');
 const newContent = [...(header ? [header] : []), ...middleBlocks, ...(footer ? [footer] : [])];
 
 await prisma.builderPage.update({
-  where: { id: PAGE_ID },
+  where: { id: page.id },
   data: { data: { ...page.data, content: newContent } },
 });
 
-console.log(`Updated BuilderPage ${PAGE_ID}: ${newContent.length} blocks.`);
+console.log(`Updated BuilderPage ${SLUG}: ${newContent.length} blocks.`);
 await prisma.$disconnect();

@@ -58,12 +58,12 @@ export async function starterPageContent(item) {
       },
       {
         type: 'ConstructionIconFeatureGrid',
-        props: { id: id('applications'), sectionEyebrow: '', sectionTitle: '', items: [], background: 'white', padding: 'md' },
+        props: { id: id('applications'), sectionEyebrow: '', sectionTitle: '', items: [], background: 'white', padding: 'md', variant: '2' },
       },
-      { type: 'ConstructionApproachSplit', props: { id: id('why'), padding: 'md', background: 'muted' } },
+      { type: 'ConstructionApproachSplit', props: { id: id('why'), padding: 'md', background: 'white', variant: '2' } },
       {
         type: 'ConstructionProcessSteps',
-        props: { id: id('process'), sectionEyebrow: '', sectionTitle: '', items: [], padding: 'md' },
+        props: { id: id('process'), sectionEyebrow: '', sectionTitle: '', items: [], padding: 'md', variant: '2' },
       },
       {
         type: 'ConstructionLeadFormFAQ',

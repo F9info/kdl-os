@@ -1,0 +1,91 @@
+[
+  {
+    "type": "ConstructionInnerBanner",
+    "props": {
+      "id": "products-services-banner",
+      "variant": "1",
+      "visible": true,
+      "backgroundImage": "/seed/subhadra/inside.webp",
+      "imageAlt": "Subhadra Group showroom interior with AC display wall",
+      "subtitle": "We deal only in world-class brands that are pioneers in their fields — Schneider Electric, Blue Star, Polycab, RR Kabel, Crompton, Cummins and more. Walk in, compare on the shelf, and take it away or have our engineers install and maintain it.",
+      "homeHref": "/",
+      "eyebrow": "",
+      "parentLabel": "",
+      "parentHref": "",
+      "ctaPrimaryLabel": "",
+      "ctaPrimaryHref": "",
+      "ctaSecondaryLabel": "",
+      "ctaSecondaryHref": ""
+    }
+  },
+  {
+    "type": "ConstructionProductsShowcase",
+    "props": {
+      "id": "products-services-showcase",
+      "sectionEyebrow": "",
+      "sectionTitle": "",
+      "sectionSubtitle": "",
+      "category1Label": "Electrical products",
+      "category2Label": "Climate & refrigeration",
+      "category3Label": "Safety & systems",
+      "category4Label": "Automation & entertainment",
+      "padding": "md",
+      "background": "white",
+      "items": [
+        { "category": "Electrical products", "icon": "hardhat", "image": "https://images.unsplash.com/photo-1590954661619-df8fe69b08a0?w=480&h=360&fit=crop&q=75&auto=format", "title": "Switches & wiring devices", "description": "Livia, Zencelo, Unica Pure, Clipsal X, Avatar On, Cube Series.", "brands": "Schneider Electric · Norisys" },
+        { "category": "Electrical products", "icon": "shield", "image": "https://images.unsplash.com/photo-1635335874521-7987db781153?w=480&h=360&fit=crop&q=75&auto=format", "title": "Wires", "description": "FR, FR-LSH and LSOH house wiring in all standard sizes.", "brands": "RR Kabel" },
+        { "category": "Electrical products", "icon": "star", "image": "/seed/subhadra/products/cables.png", "title": "Cables", "description": "Flexible LT/HT cables, 0.50 to 1000 sq.mm class-5 copper.", "brands": "Polycab · RR Kabel" },
+        { "category": "Electrical products", "icon": "hardhat", "image": "https://images.unsplash.com/photo-1602223876473-c37ee6c2a4e2?w=480&h=360&fit=crop&q=75&auto=format", "title": "Lights", "description": "COB spots, panels, street and flood lighting.", "brands": "Wipro · Crompton · Halonix" },
+        { "category": "Electrical products", "icon": "shield", "image": "https://images.unsplash.com/photo-1609519479841-5fd3b2884e17?w=480&h=360&fit=crop&q=75&auto=format", "title": "Fans & ventilation", "description": "Designer ceiling fans, ventilation and fresh-air fans.", "brands": "Crompton · WadBros" },
+        { "category": "Electrical products", "icon": "star", "image": "/seed/subhadra/products/mcb1.jpg", "title": "MCB, DB & switchgear", "description": "Distribution boards, MCB/MCCB, ACB and panel boards.", "brands": "Schneider Electric" },
+        { "category": "Electrical products", "icon": "hardhat", "image": "/seed/subhadra/products/generators.png", "title": "Generators", "description": "15 KVA to 3750 KVA silent diesel generators.", "brands": "Cummins · Jakson" },
+        { "category": "Electrical products", "icon": "shield", "image": "/seed/subhadra/products/transformers.png", "title": "Transformers", "description": "Distribution 100 KVA–2 MVA · power up to 220 kV class.", "brands": "Onan · Drytype · OCTC · OLTC" },
+        { "category": "Electrical products", "icon": "star", "image": "/seed/subhadra/products/servo-stabilizers.png", "title": "Servo stabilizers", "description": "Servo control voltage stabilizers for machines and retail.", "brands": "Servomax · Powertex · Fuji" },
+        { "category": "Electrical products", "icon": "hardhat", "image": "/seed/subhadra/products/ups.png", "title": "UPS", "description": "Online UPS from 1 KVA onwards for homes and offices.", "brands": "APC · Fuji Electric" },
+        { "category": "Electrical products", "icon": "shield", "image": "/seed/subhadra/products/load-break-switch.png", "title": "Load break switch", "description": "12 / 24 / 36 kV, 630 A, 25 kA outdoor LBS panels.", "brands": "Transguard · Megawin" },
+
+        { "category": "Climate & refrigeration", "icon": "star", "image": "/seed/subhadra/products/blue-star-ducted-ac.jpg", "title": "Central & VRF AC", "description": "Centralized AC, chillers, VRF and cassette units for offices, hotels and retail.", "brands": "Blue Star" },
+        { "category": "Climate & refrigeration", "icon": "hardhat", "image": "https://images.unsplash.com/photo-1584568694244-14fbdf83bd30?w=480&h=360&fit=crop&q=75&auto=format", "title": "Refrigeration", "description": "Visi coolers, deep freezers, water coolers and ice-cube machines for retail & F&B.", "brands": "Blue Star" },
+
+        { "category": "Safety & systems", "icon": "shield", "image": "https://images.unsplash.com/photo-1643123182527-3bd30840e7ed?w=480&h=360&fit=crop&q=75&auto=format", "title": "CCTV", "description": "Dome, bullet, PTZ, number-plate and face-recognition cameras.", "brands": "CP Plus · Honeywell · Matrix" },
+        { "category": "Safety & systems", "icon": "star", "image": "https://images.unsplash.com/photo-1508817172652-4be4be2795cb?w=480&h=360&fit=crop&q=75&auto=format", "title": "Fire alarm", "description": "Conventional/addressable panels, smoke & heat detectors, hooters, MCPs.", "brands": "Honeywell · Agni · Ravel" },
+        { "category": "Safety & systems", "icon": "hardhat", "image": "https://images.unsplash.com/photo-1585367437379-e0b71bb18156?w=480&h=360&fit=crop&q=75&auto=format", "title": "Fire fighting", "description": "Sprinkler systems, booster pumps, extinguishers and pump houses.", "brands": "NewAge · Minimax · Tyco" },
+        { "category": "Safety & systems", "icon": "shield", "image": "https://images.unsplash.com/photo-1630965764686-159c575031b3?w=480&h=360&fit=crop&q=75&auto=format", "title": "PA system", "description": "Public address for showrooms, malls, hotels, hospitals and industries.", "brands": "Ahuja · Honeywell · Bosch" },
+        { "category": "Safety & systems", "icon": "star", "image": "https://images.unsplash.com/photo-1585079374502-415f8516dcc3?w=480&h=360&fit=crop&q=75&auto=format", "title": "Access control", "description": "Biometric & proximity access, attendance systems for offices and IT parks.", "brands": "Matrix" },
+
+        { "category": "Automation & entertainment", "icon": "hardhat", "image": "/seed/subhadra/products/home-automation.jpg", "title": "Home automation", "description": "Retrofit and centralized control of lighting, curtains, AC and appliances.", "brands": "Schneider · Toyama · Bticino" },
+        { "category": "Automation & entertainment", "icon": "shield", "image": "https://images.unsplash.com/photo-1631702825172-a9a848c473ad?w=480&h=360&fit=crop&q=75&auto=format", "title": "Home theater", "description": "Dolby Atmos rooms, 4K projection, acoustic design and multiroom audio.", "brands": "Focal · Sony · Denon" }
+      ]
+    }
+  },
+  {
+    "type": "ConstructionOurBrands",
+    "props": {
+      "id": "products-services-brands",
+      "sectionTitle": "Backed by the names you already trust",
+      "sectionSubtitle": "Every discipline is built on certified, industry-leading brands — sourced, installed and serviced by our own engineers.",
+      "tab1Label": "Design, Execution & Maintenance",
+      "tab1Groups": "Air Conditioning|Blue Star::/seed/subhadra/ourbrands/design-execution-maintenance/Blue_Star_primary_logo.png\nRefrigeration|Blue Star::/seed/subhadra/ourbrands/design-execution-maintenance/Blue_Star_primary_logo.png\nEPABX|Matrix::/seed/subhadra/ourbrands/design-execution-maintenance/Matrix.jpg\nFire Fighting|Newage::/seed/subhadra/ourbrands/design-execution-maintenance/Newage.jpg;Safex::/seed/subhadra/ourbrands/design-execution-maintenance/Safex.png;Tyco::/seed/subhadra/ourbrands/design-execution-maintenance/tyco_logo_v1.png\nCCTV|CP Plus::/seed/subhadra/ourbrands/design-execution-maintenance/CP%20Plus.jpg;Matrix::/seed/subhadra/ourbrands/design-execution-maintenance/Matrix.jpg;Honeywell::/seed/subhadra/ourbrands/design-execution-maintenance/Honeywell%20CCTV.jpg;Prama::/seed/subhadra/ourbrands/design-execution-maintenance/Prama.jpg\nAccess Control|Matrix::/seed/subhadra/ourbrands/design-execution-maintenance/Matrix.jpg;Essl::/seed/subhadra/ourbrands/design-execution-maintenance/esslogo.png\nPublic Address System|JBL::/seed/subhadra/ourbrands/design-execution-maintenance/JBL.png;Bosch::/seed/subhadra/ourbrands/design-execution-maintenance/Bosch.jpg;Ahuja::/seed/subhadra/ourbrands/design-execution-maintenance/Ahuja.jpg;Studio Master::/seed/subhadra/ourbrands/design-execution-maintenance/Studio%20Master.jpg;Crown::/seed/subhadra/ourbrands/design-execution-maintenance/Crown.jpg;Sound Craft::/seed/subhadra/ourbrands/design-execution-maintenance/Sound%20Craft.svg\nFire Alarm|Ravel::/seed/subhadra/ourbrands/design-execution-maintenance/Ravel.png;Honeywell::/seed/subhadra/ourbrands/design-execution-maintenance/hon-honeywell-technologies-logo-full-horizontal.svg;Agni::/seed/subhadra/ourbrands/design-execution-maintenance/Agni.jpg;Bosch::/seed/subhadra/ourbrands/design-execution-maintenance/Bosch.jpg\nProfessional Audio|JBL::/seed/subhadra/ourbrands/design-execution-maintenance/JBL.png;Bose::/seed/subhadra/ourbrands/design-execution-maintenance/bose-logo.jpg;Electro-Voice::/seed/subhadra/ourbrands/design-execution-maintenance/Electro-Voice.png;QSC::/seed/subhadra/ourbrands/design-execution-maintenance/qsc.png\nNetwork Solutions|TP-Link::/seed/subhadra/ourbrands/design-execution-maintenance/TP-Link-Logo.wine.svg;Grandstream::/seed/subhadra/ourbrands/design-execution-maintenance/logo-grandstream-low-web.webp;Netgear::/seed/subhadra/ourbrands/design-execution-maintenance/Net%20Gare%20brand-logo.svg;Netfox::/seed/subhadra/ourbrands/design-execution-maintenance/Netfox-logo-WO-TM.png;D-Link::/seed/subhadra/ourbrands/design-execution-maintenance/D-link.svg;Syrotech::/seed/subhadra/ourbrands/design-execution-maintenance/Syro%20Tech.png;Honeywell::/seed/subhadra/ourbrands/design-execution-maintenance/hon-honeywell-technologies-logo-full-horizontal.svg",
+      "tab2Label": "Electrical Products",
+      "tab2Groups": "Fans|Crompton::/seed/subhadra/ourbrands/electrical-products/Crompton.avif\nDesigner Fans|WadBros::/seed/subhadra/ourbrands/electrical-products/Wadbros.png\nExhaust Fans|WadBros::/seed/subhadra/ourbrands/electrical-products/Wadbros.png\nWires|RR Kabel::/seed/subhadra/ourbrands/electrical-products/RRKabel.jpg\nFresh Air System|WadBros::/seed/subhadra/ourbrands/electrical-products/Wadbros.png\nMCB, DB & Switchgear|Schneider Electric::/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png\nLighting|Futura::/seed/subhadra/ourbrands/electrical-products/Futura%20-1.svg;Wipro::/seed/subhadra/ourbrands/electrical-products/Wipro.png;Crompton::/seed/subhadra/ourbrands/electrical-products/Crompton.avif;Philips::/seed/subhadra/ourbrands/electrical-products/lighting-philips-logo.jpg\nSwitches|Schneider Electric::/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png;Norisys::/seed/subhadra/ourbrands/electrical-products/Norisys.png;Legrand::/seed/subhadra/ourbrands/electrical-products/Legrand-Logo.png\nPanel Boards|Customized\nGenerators|Cummins::/seed/subhadra/ourbrands/electrical-products/Cunnins.png;Jackson::/seed/subhadra/ourbrands/electrical-products/Jakson.png;Mahindra::/seed/subhadra/ourbrands/electrical-products/Mahindra.png\nLoad Break Switch|Transgard::/seed/subhadra/ourbrands/electrical-products/Transguard-Logo-white.png;Megawin::/seed/subhadra/ourbrands/electrical-products/Megawin.jpg\nServo Stabilizer|Powertex::/seed/subhadra/ourbrands/electrical-products/Power%20Tex.jpg;Servomax::/seed/subhadra/ourbrands/electrical-products/Servomax-logo-2048x471.webp\nUPS|APC::/seed/subhadra/ourbrands/electrical-products/LogoAPC.svg;Fuji Electric::/seed/subhadra/ourbrands/electrical-products/Fuji-Electric-Logo.jpg",
+      "tab3Label": "Lifestyle Residential Products",
+      "tab3Groups": "Gate Automation|Beninca::/seed/subhadra/ourbrands/lifestyle-residential-products/beninca-logo.png;Veer::/seed/subhadra/ourbrands/lifestyle-residential-products/veer-logo-.png\nVideo Door Phone|One Touch::/seed/subhadra/ourbrands/lifestyle-residential-products/One%20Touch_logo.svg;Legrand Bticino::/seed/subhadra/ourbrands/lifestyle-residential-products/BTicino-IME.jpg\nSmart Lock|Yale::/seed/subhadra/ourbrands/lifestyle-residential-products/yale_logo.avif;Onetouch::/seed/subhadra/ourbrands/lifestyle-residential-products/One%20Touch_logo.svg;Ezviz::/seed/subhadra/ourbrands/lifestyle-residential-products/ezviz-logo_.png\nHome Automation — Retrofit|Schneider Electric::/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png;Legrand::/seed/subhadra/ourbrands/electrical-products/Legrand-Logo.png;Toyama::/seed/subhadra/ourbrands/lifestyle-residential-products/Toyama%20logo-768.webp\nHome Automation — Centralized|Schneider Electric::/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png;Legrand::/seed/subhadra/ourbrands/electrical-products/Legrand-Logo.png;Moorgen::/seed/subhadra/ourbrands/lifestyle-residential-products/Moorgen.jpg;Eelectron::/seed/subhadra/ourbrands/lifestyle-residential-products/eelectron.png\nIntrusion Alarm|Ajax::/seed/subhadra/ourbrands/lifestyle-residential-products/Ajax%20logo.jpg;Texecom::/seed/subhadra/ourbrands/lifestyle-residential-products/Texecom.png\nMulti-Room Audio|Xscase::/seed/subhadra/ourbrands/lifestyle-residential-products/Xscase.png;Sonos::/seed/subhadra/ourbrands/lifestyle-residential-products/Sonos.png;RTI::/seed/subhadra/ourbrands/lifestyle-residential-products/RTI.png;Lithe Audio\nLiving Room Audio|Devialet::/seed/subhadra/ourbrands/lifestyle-residential-products/devialet-logo.png;Sonos::/seed/subhadra/ourbrands/lifestyle-residential-products/Sonos.png\nHome Theater — Amplifiers|Denon::/seed/subhadra/ourbrands/lifestyle-residential-products/Denon%20logo.svg;Marantz::/seed/subhadra/ourbrands/lifestyle-residential-products/Marantz%20logo.svg;JBL::/seed/subhadra/ourbrands/lifestyle-residential-products/jbl-logo.svg;Integra::/seed/subhadra/ourbrands/lifestyle-residential-products/Integra-Logo-White.svg;Onkyo::/seed/subhadra/ourbrands/lifestyle-residential-products/Logo%20-%20Onkyo%20Med%20Wht.svg;Emotiva::/seed/subhadra/ourbrands/lifestyle-residential-products/emotiva%401x.svg\nHome Theater — Speakers|Focal::/seed/subhadra/ourbrands/lifestyle-residential-products/focal-logo.png;M&K Sound::/seed/subhadra/ourbrands/lifestyle-residential-products/M%26K%20Sound%20logo.png;Artcoustic::/seed/subhadra/ourbrands/lifestyle-residential-products/Artcoustic-logo.webp;JBL::/seed/subhadra/ourbrands/lifestyle-residential-products/jbl-logo.svg;Klipsch::/seed/subhadra/ourbrands/lifestyle-residential-products/Klipsch_script_logo.svg;KEF::/seed/subhadra/ourbrands/lifestyle-residential-products/Kef%20logo.png;Polk::/seed/subhadra/ourbrands/lifestyle-residential-products/Polk-logo.webp;Dali::/seed/subhadra/ourbrands/lifestyle-residential-products/Dali.png\nHome Theater — Subwoofers|Ascendo::/seed/subhadra/ourbrands/lifestyle-residential-products/Acendo%20Sub%20logo.jpeg;SVS::/seed/subhadra/ourbrands/lifestyle-residential-products/SVS%20sub%20logo.png\nHome Theater — Projectors|Optoma::/seed/subhadra/ourbrands/lifestyle-residential-products/Optoma%20logo.jpeg;Sony::/seed/subhadra/ourbrands/lifestyle-residential-products/Sony%20logo.png;JVC::/seed/subhadra/ourbrands/lifestyle-residential-products/jvc_logo.svg;BenQ::/seed/subhadra/ourbrands/lifestyle-residential-products/benq-logo.png;Epson::/seed/subhadra/ourbrands/lifestyle-residential-products/Epson%20logo.png\nHome Theater — Screens|Euroscreen::/seed/subhadra/ourbrands/lifestyle-residential-products/Eurros%20Screen.svg;Liberty Screen::/seed/subhadra/ourbrands/lifestyle-residential-products/Liberty%20-logo.gif;Elite Screen::/seed/subhadra/ourbrands/lifestyle-residential-products/Elite%20screen.jpeg;VU-Tech Screen\nHeat Pump|A. O. Smith::/seed/subhadra/ourbrands/lifestyle-residential-products/Ao%20smith.jpeg",
+      "padding": "md"
+    }
+  },
+  {
+    "type": "ConstructionQuoteCTA",
+    "props": {
+      "id": "products-services-final-cta",
+      "headline": "Talk to our engineers before you buy",
+      "subtext": "Walk in to our Visakhapatnam showroom, or call us — we'll size the right system for your space and budget.",
+      "ctaLabel": "Visit Our Showroom →",
+      "ctaHref": "/p/te-cmt18teqh000101rxwfzfndow-contact",
+      "secondaryCtaLabel": "Download Brochure ↓",
+      "secondaryCtaHref": "#brochure",
+      "phoneNumber": "",
+      "phoneLabel": "",
+      "background": "muted"
+    }
+  }
+]

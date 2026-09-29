@@ -99,3 +99,10 @@
     outline-offset: 2px;
   }
 }
+
+/* Detail pages (catalog / sectors / work): the approved mockups set section
+   headings in Inter (style.css), not the theme's display font. Header and
+   footer keep their own fonts. */
+.detail-page-inter section :is(h1, h2, h3, h4) {
+  font-family: var(--font-inter), Inter, sans-serif;
+}

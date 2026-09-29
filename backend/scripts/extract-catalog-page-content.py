@@ -38,6 +38,10 @@ ICONS = [  # first substring match wins; the builder only has 9 icon keys
     ('tools', 'hardhat'), ('gear', 'hardhat'), ('rulers', 'hardhat'), ('clipboard', 'hardhat'),
     ('briefcase', 'hardhat'), ('cup', 'hardhat'), ('diagram', 'hardhat'), ('calculator', 'hardhat'),
 ]
+def bi(el):
+    """The mockup's own Bootstrap Icons class, e.g. bi-house-heart-fill."""
+    i = el.find('i') if el else None
+    return next((c for c in (i['class'] if i else []) if c.startswith('bi-')), '')
 def icon(el):
     cls = ' '.join(el.find('i')['class']) if el and el.find('i') else ''
     for k, v in ICONS:
@@ -72,6 +76,7 @@ def extract(path):
     banner = {
         'eyebrow': t(ban.select_one('.eyebrow')),
         'headline': t(ban.h1),
+        'currentLabel': t(ban.select_one('.breadcrumb .current')),
         'imageAlt': ban.select_one('img')['alt'],
         'backgroundImage': asset(ban.select_one('img')['src']),
         'subtitle': t(ban.select('.container-fluid > p')[-1]),
@@ -82,6 +87,9 @@ def extract(path):
         banner['ctaPrimaryLabel'], banner['ctaPrimaryHref'] = t(ctas[0]), '#get-quote'
     if len(ctas) > 1:
         banner['ctaSecondaryLabel'], banner['ctaSecondaryHref'] = t(ctas[1]), '/products-services'
+    if len(ctas) > 2:
+        # mockup links "See Our Work" to work-<x>.html; kept as the site's /work section
+        banner['ctaTertiaryLabel'], banner['ctaTertiaryHref'] = t(ctas[2]), '/work'
 
     ov = s.select_one('#overview')
     body = ov.select_one('.sector-detail-body')
@@ -109,7 +117,7 @@ def extract(path):
     app = s.select_one('#applications')
     applications = {
         'sectionEyebrow': t(app.select_one('.eyebrow')), 'sectionTitle': t(app.h2),
-        'items': [{'icon': icon(c.select_one('.why-icon')), 'title': t(c.h4), 'description': t(c.p)}
+        'items': [{'icon': icon(c.select_one('.why-icon')), 'biIcon': bi(c.select_one('.why-icon')), 'title': t(c.h4), 'description': t(c.p)}
                   for c in app.select('.why-card')],
     }
 
@@ -123,10 +131,11 @@ def extract(path):
     }
     for i, h in enumerate(hl[:2], 1):
         approach[f'highlight{i}Icon'] = icon(h.select_one('.why-icon'))
+        approach[f'highlight{i}BiIcon'] = bi(h.select_one('.why-icon'))
         approach[f'highlight{i}Title'] = t(h.h4)
         approach[f'highlight{i}Description'] = t(h.p)
     for i, x in enumerate(st[:3], 1):
-        approach[f'stat{i}Value'] = re.sub(r'\D', '', t(x.b)) or t(x.b)
+        approach[f'stat{i}Value'] = t(x.b).replace(' ', '')
         approach[f'stat{i}Label'] = t(x.span)
 
     steps = s.select('.journey-point')
@@ -140,6 +149,8 @@ def extract(path):
     leadForm = {
         'sectionEyebrow': t(lead.select_one('.lead-copy .eyebrow')),
         'sectionTitle': t(lead.select_one('.lead-copy h2')),
+        'introText': t(lead.select_one('.lead-copy > p:not(.eyebrow)')),
+        'showFaqs': False,
         'checklistItems': '\n'.join(t(li) for li in lead.select('.lead-points li')),
         'trustStats': [{'number': t(d.b), 'label': t(d.span)} for d in lead.select('.lead-trust > div')],
         'formHeading': t(lead.select_one('.lead-form-card h3')),

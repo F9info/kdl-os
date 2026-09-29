@@ -1,0 +1,23 @@
+{
+  "slug": "catalog",
+  "name": "Catalog",
+  "version": "1.0.0",
+  "description": "Individual product/service catalog entries shown on the Products & Services page",
+  "core": false,
+  "apiPrefix": "/api/catalog",
+  "permissions": [
+    "catalog"
+  ],
+  "nav": [
+    {
+      "label": "Catalog",
+      "path": "/admin/catalog",
+      "icon": "Package",
+      "permission": "catalog:view"
+    }
+  ],
+  "navSuppressedByPeer": ["template-engine"],
+  "dependsOn": [],
+  "queues": [],
+  "env": []
+}

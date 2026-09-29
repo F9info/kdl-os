@@ -1,0 +1,391 @@
+[
+  {
+    "type": "ConstructionInnerBanner",
+    "props": {
+      "id": "about-banner",
+      "variant": "1",
+      "visible": true,
+      "homeHref": "/p/te-cmt18teqh000101rxwfzfndow-home",
+      "imageAlt": "Subhadra Group showroom building exterior",
+      "subtitle": "Your one-stop solution for building engineering products & services — 30 years of trust, one accountable team.",
+      "backgroundImage": "/seed/subhadra/brand/shop.webp",
+      "headline": "About Us",
+      "currentLabel": "About"
+    }
+  },
+  {
+    "type": "ConstructionFloatingActions",
+    "props": {
+      "id": "about-ConstructionFloatingActions",
+      "badgeLabel": "years of Trust",
+      "badgeNumber": "30",
+      "brochureHref": "/seed/subhadra/Subhadra-Group-30-Years-Brochure.pdf",
+      "whatsappHref": "https://wa.me/918897224466",
+      "badgeYearLabel": "Estd. 1996"
+    }
+  },
+  {
+    "type": "ConstructionAboutSplit",
+    "props": {
+      "id": "about-split",
+      "photo": "/seed/subhadra/about.webp",
+      "eyebrow": "Who we are",
+      "heading": "Engineering comfort, safety & automation since 1996",
+      "members": [],
+      "padding": "md",
+      "paragraph": "Subhadra Group was founded in the year 1996 with the aim to provide all building related engineering products & services under one roof for residential, commercial buildings and industries.\n\nWe provide complete solutions home theaters, home automation, safety and security solutions, fire protection solutions for residential, commercial and industrial applications. With 30+ years of technical expertise in these fields, our team strives to give perfect-engineered solutions for every application. Our team has experience of executing projects with leading MNCs and international groups with quality execution and on time delivery.\n\nWe deal with world-class brands that are pioneers in their respective fields to give the best solution to our clients. We have dedicated service managers for each field of services that we provide to give 24x7 support for all our installations.",
+      "background": "white",
+      "badgeLabel": "Years of Trust",
+      "check1Text": "",
+      "check2Text": "",
+      "check3Text": "",
+      "badgeNumber": "30",
+      "brochureHref": "",
+      "brochureLabel": "",
+      "membershipLabel": ""
+    }
+  },
+  {
+    "type": "ConstructionStatsStrip",
+    "props": {
+      "id": "about-stats",
+      "padding": "md",
+      "background": "dark",
+      "stat1Label": "Years of Trust",
+      "stat1Value": "30+",
+      "stat2Label": "Services Under One Roof",
+      "stat2Value": "15",
+      "stat3Label": "Trusted Clients",
+      "stat3Value": "1 Lakh+",
+      "stat4Label": "Support on Installations",
+      "stat4Value": "24×7"
+    }
+  },
+  {
+    "type": "ConstructionFounderProfile",
+    "props": {
+      "id": "about-leadership",
+      "eyebrow": "Leadership",
+      "heading": "The people behind Subhadra Group",
+      "person1MemberId": "",
+      "person1Photo": "/seed/subhadra/founder.png",
+      "person1Name": "K Leela Prasad",
+      "person1Role": "Founder, Subhadra Group",
+      "person1Quote": "",
+      "person1Bio": "A practicing MEP consultant since 1983, K Leela Prasad has planned electrical, HVAC, safety and building-engineering solutions across Visakhapatnam for over four decades — and founded Subhadra Group in 1996.",
+      "person1Facts": [],
+      "person1LinkLabel": "Read More →",
+      "person1LinkHref": "/p/te-cmt18teqh000101rxwfzfndow-leadership",
+      "person1Variant": "light",
+      "person2MemberId": "",
+      "person2Photo": "/seed/subhadra/products/director.png",
+      "person2Name": "K N V Uday Kumar",
+      "person2Role": "Director, Subhadra Group",
+      "person2Bio": "A gold medalist engineering graduate from REC Warangal, K N V Uday Kumar brings 15+ years experience in HVAC, automation, AV and networking design to Subhadra Group.",
+      "person2Ctas": [],
+      "person2LinkLabel": "Read More →",
+      "person2LinkHref": "/p/te-cmt18teqh000101rxwfzfndow-leadership",
+      "person2Variant": "light",
+      "person2Facts": [],
+      "person2MembershipLabel": "",
+      "person2Memberships": [],
+      "padding": "md",
+      "background": "muted"
+    }
+  },
+  {
+    "type": "ConstructionSectorsRadial",
+    "props": {
+      "id": "about-sectors",
+      "eyebrow": "One shop for all industries",
+      "heading": "Every sector, one accountable team",
+      "padding": "lg",
+      "sectors": [
+        {
+          "href": "/p/te-cmt18teqh000101rxwfzfndow-sectors",
+          "label": "Showrooms"
+        },
+        {
+          "href": "/p/te-cmt18teqh000101rxwfzfndow-sectors",
+          "label": "Hotel"
+        },
+        {
+          "href": "/p/te-cmt18teqh000101rxwfzfndow-sectors",
+          "label": "Hospital"
+        },
+        {
+          "href": "/p/te-cmt18teqh000101rxwfzfndow-sectors",
+          "label": "Convention Center"
+        },
+        {
+          "href": "/p/te-cmt18teqh000101rxwfzfndow-sectors",
+          "label": "Industry"
+        },
+        {
+          "href": "/p/te-cmt18teqh000101rxwfzfndow-sectors",
+          "label": "Education"
+        },
+        {
+          "href": "/p/te-cmt18teqh000101rxwfzfndow-sectors",
+          "label": "Government"
+        },
+        {
+          "href": "/p/te-cmt18teqh000101rxwfzfndow-sectors",
+          "label": "Builder"
+        },
+        {
+          "href": "/p/te-cmt18teqh000101rxwfzfndow-sectors",
+          "label": "Villa"
+        },
+        {
+          "href": "/p/te-cmt18teqh000101rxwfzfndow-sectors",
+          "label": "Premium Flats"
+        },
+        {
+          "href": "/p/te-cmt18teqh000101rxwfzfndow-sectors",
+          "label": "Gated Communities"
+        }
+      ],
+      "background": "white",
+      "centerLogo": "/seed/subhadra/brand/logo.png",
+      "description": "Villas to industrial plants — the same one-roof team designs, supplies, installs and maintains it all. Tap a sector to see the full scope.",
+      "centerTagline": "One-Stop Solution"
+    }
+  },
+  {
+    "type": "ConstructionMissionVision",
+    "props": {
+      "id": "about-mission-vision",
+      "padding": "md",
+      "variant": "1",
+      "visionHeading": "The most trusted name in building engineering across Andhra Pradesh",
+      "missionHeading": "All building engineering, under one accountable roof",
+      "visionParagraph1": "To become the most trusted & complete solution provider for Electrical, Air Conditioning, Security & Safety, Automation and Entertainment systems — for homes, commercial buildings, industries & departments across entire Andhra Pradesh.",
+      "visionParagraph2": "That means every new sector we enter — hospitality, healthcare, retail, education, industry — gets the same one-team accountability that built our reputation in Visakhapatnam, backed by brands and engineers our clients can rely on for decades, not just for the installation date.",
+      "missionParagraph1": "To provide all building-related engineering products & services under one roof for residential, commercial buildings and industries — with perfect-engineered solutions, quality execution and on-time delivery, every single time.",
+      "missionParagraph2": "We do this by employing and training our own engineers rather than sub-contracting, by dealing only in world-class pioneer brands, and by assigning a dedicated service manager to every discipline we install — so support never falls through the cracks."
+    }
+  },
+  {
+    "type": "ConstructionTimelineHistory",
+    "props": {
+      "id": "about-timeline",
+      "eyebrow": "Our Journey",
+      "heading": "From 1996 to today",
+      "padding": "md",
+      "background": "muted",
+      "entry1Text": "Subhadra Group is established in Visakhapatnam to bring every building-related engineering product & service under one roof — for residential, commercial and industrial customers.",
+      "entry1Year": "1996",
+      "entry2Text": "Added electrical wiring, MCB/DB and switchgear installations to the roof, backed by world-class brands like Schneider Electric.",
+      "entry2Year": "2001",
+      "entry3Text": "Brought fire & life safety, CCTV and access control fully in-house — completing our ELV systems capability.",
+      "entry3Year": "2006",
+      "entry4Text": "Started designing home automation and home theater systems for premium residences across the city.",
+      "entry4Year": "2011",
+      "entry5Text": "Began delivering HVAC, electrical and automation as one coordinated scope for hotels, malls and hospitals — including landmark properties like Novotel Visakhapatnam.",
+      "entry5Year": "2016",
+      "entry6Text": "Reached 25 years of technical expertise, with a dedicated service manager assigned to every discipline we install in.",
+      "entry6Year": "2021",
+      "entry7Text": "15 services under one roof, 1 Lakh+ trusted clients across Andhra Pradesh, and one accountable team behind every installation.",
+      "entry7Year": "Today",
+      "entry1Image": "/seed/subhadra/brand/shop.webp",
+      "entry2Image": "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=700&h=525&fit=crop&q=80&auto=format",
+      "entry3Image": "https://images.unsplash.com/photo-1643123182527-3bd30840e7ed?w=700&h=525&fit=crop&q=80&auto=format",
+      "entry4Image": "/seed/subhadra/products/home-automation.jpg",
+      "entry5Image": "/seed/subhadra/case-studies/novotel.jpg",
+      "entry6Image": "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=700&h=525&fit=crop&q=80&auto=format",
+      "entry7Image": "/seed/subhadra/inside.webp"
+    }
+  },
+  {
+    "type": "ConstructionLeadFormFAQ",
+    "props": {
+      "id": "about-lead",
+      "faqs": [],
+      "padding": "md",
+      "ctaLabel": "Get My Free Quote →",
+      "formHeading": "Request a free quote",
+      "formSubtext": "Fill this in and we'll call you back.",
+      "sectionTitle": "Let's talk about your building",
+      "sectionEyebrow": "Get a Quote",
+      "formPrivacyNote": "We'll only use these details to respond to your enquiry.",
+      "interestOptions": "Central AC\nHome Automation\nHome Theater\nCCTV & Security\nFire Safety\nElectrical\nSomething else",
+      "sectionIntroLinkHref": "",
+      "sectionIntroLinkLabel": "",
+      "introText": "Share a few details and our engineers will get back to you with the right solution and a quote — usually within 24 hours.",
+      "checklistItems": "No-obligation site visit & quote\n30 years of trusted installations\nWorld-class brands, our own engineers",
+      "trustStats": [],
+      "showFaqs": false,
+      "faqSource": "block"
+    }
+  },
+  {
+    "type": "ConstructionClientsGrid",
+    "props": {
+      "id": "about-clients",
+      "items": [
+        {
+          "logo": "/seed/subhadra/clients/client-01.png",
+          "name": "Marriott"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-02.png",
+          "name": "Novotel Hotels"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-03.png",
+          "name": "Best Western"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-04.png",
+          "name": "Fortune — Member ITC's Hotel Group"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-05.png",
+          "name": "Radisson Blu"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-06.png",
+          "name": "ABC Hospitals"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-07.png",
+          "name": "Medicover"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-08.png",
+          "name": "Apollo Hospitals"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-09.png",
+          "name": "Lotus Multispeciality Hospital"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-10.png",
+          "name": "Ikya Hospital"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-11.png",
+          "name": "Vaibhav Jewellers"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-12.png",
+          "name": "Lifestyle"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-13.png",
+          "name": "Kankatala"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-14.png",
+          "name": "South India Shopping Mall"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-15.png",
+          "name": "KLM Fashion Mall"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-16.png",
+          "name": "Lucky Shopping Mall"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-17.png",
+          "name": "Kalamandir"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-18.png",
+          "name": "SR Shopping Mall"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-19.png",
+          "name": "Bothra Group"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-20.png",
+          "name": "Visakha Dairy"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-21.png",
+          "name": "Varun Group"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-22.png",
+          "name": "Lakshmi Group"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-23.png",
+          "name": "PVR"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-24.png",
+          "name": "Cinépolis"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-25.png",
+          "name": "Vizag Steel (RINL)"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-26.png",
+          "name": "ANITS"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-27.png",
+          "name": "GITAM"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-28.png",
+          "name": "Vizag Conventions"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-29.png",
+          "name": "Chenna's The Convention"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-30.png",
+          "name": "A1 Grand — The Convention"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-31.png",
+          "name": "Laurus Labs"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-32.png",
+          "name": "Asian Paints"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-33.png",
+          "name": "Yokohama"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-34.png",
+          "name": "NCL Group"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-35.png",
+          "name": "GVMC"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-36.png",
+          "name": "Visakhapatnam Port Authority"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-37.png",
+          "name": "Lansum Properties LLP"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-38.png",
+          "name": "MK Builders & Developers"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-39.png",
+          "name": "FAME Realty"
+        }
+      ],
+      "padding": "md",
+      "background": "muted",
+      "sectionTitle": "Trusted by businesses & institutions",
+      "sectionEyebrow": "Our Clients",
+      "sectionSubtitle": "From retail malls to hospitality and healthcare — brands across Andhra Pradesh trust us to keep their buildings running."
+    }
+  }
+]
