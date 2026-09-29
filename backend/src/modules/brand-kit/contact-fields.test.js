@@ -86,35 +86,54 @@ describe('saveContactFields', () => {
   });
 });
 
+// getCompanyInfo() deliberately does NOT read the per-project
+// brand-intake.${projectId} rows above — it reads the global `brand-profile-*`
+// SettingField rows the Studio Intake stage's "Logo & Contact Details" form
+// (IntakeStage.tsx) actually writes to, via GET/POST /setting-fields/*. The
+// per-project rows were dead: nothing ever called their /contact routes, so
+// every consumer (resolveWebsiteBrand, resolveBrandKit) silently fell back to
+// "Your Brand" / no company info regardless of what the wizard saved.
 describe('getCompanyInfo', () => {
-  it('maps stored field values onto the shape collateral render layouts expect', async () => {
-    mockEmptyState();
-    const fields = CONTACT_FIELD_CATALOGUE.map((c, i) => ({ id: `field-${i}`, slug: `brand-intake.${PROJECT_A}.${c.key}` }));
-    prisma.type.findUnique = vi.fn().mockResolvedValue({ id: 'type-1', slug: `brand-intake.${PROJECT_A}` });
-    prisma.settingField.findMany = vi.fn().mockResolvedValue(fields);
-    prisma.settingValue.findMany = vi.fn().mockResolvedValue([
-      { field_id: 'field-0', value: 'Acme Pvt Ltd' }, // company_name
-      { field_id: 'field-1', value: 'hello@acme.com' }, // primary_email
-      { field_id: 'field-3', value: '+91-1234567890' }, // primary_phone
-      { field_id: 'field-5', value: '221B Baker Street' }, // address1
-      { field_id: 'field-6', value: 'Mumbai' }, // address2
-    ]);
+  it('maps the global brand-profile SettingField values onto the shape collateral/template-engine expect', async () => {
+    prisma.settingField = {
+      findMany: vi.fn().mockResolvedValue([
+        { slug: 'brand-profile-company-name', value: 'Acme Pvt Ltd' },
+        { slug: 'brand-profile-primary-email', value: 'hello@acme.com' },
+        { slug: 'brand-profile-primary-phone', value: '+91-1234567890' },
+        { slug: 'brand-profile-address-1', value: '221B Baker Street' },
+        { slug: 'brand-profile-address-2', value: 'Mumbai' },
+      ]),
+    };
 
     const info = await getCompanyInfo(PROJECT_A);
 
+    expect(prisma.settingField.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { slug: { in: expect.arrayContaining(['brand-profile-company-name']) } },
+      })
+    );
     expect(info).toEqual({
       company_name: 'Acme Pvt Ltd',
       email: 'hello@acme.com',
       phone: '+91-1234567890',
+      secondaryEmail: null,
+      secondaryPhone: null,
       addressLines: ['221B Baker Street', 'Mumbai'],
     });
   });
 
-  it('returns nulls/empty array when nothing has been saved yet', async () => {
-    mockEmptyState();
+  it('returns nulls/empty array when the brand-profile fields have never been filled in', async () => {
+    prisma.settingField = { findMany: vi.fn().mockResolvedValue([]) };
 
     const info = await getCompanyInfo(PROJECT_A);
 
-    expect(info).toEqual({ company_name: null, email: null, phone: null, addressLines: [] });
+    expect(info).toEqual({
+      company_name: null,
+      email: null,
+      phone: null,
+      secondaryEmail: null,
+      secondaryPhone: null,
+      addressLines: [],
+    });
   });
 });

@@ -1,0 +1,22 @@
+{
+  "slug": "projects-content",
+  "name": "Projects Content",
+  "version": "1.0.0",
+  "description": "Real completed-work case studies shown in Featured Projects blocks",
+  "core": false,
+  "apiPrefix": "/api/projects-content",
+  "permissions": [
+    "projects-content"
+  ],
+  "nav": [
+    {
+      "label": "Case Studies",
+      "path": "/admin/projects-content",
+      "icon": "Package",
+      "permission": "projects-content:view"
+    }
+  ],
+  "dependsOn": [],
+  "queues": [],
+  "env": []
+}

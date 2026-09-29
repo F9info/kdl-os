@@ -1,9 +1,10 @@
 'use client'
 
+import { useMemo } from 'react'
 import Link from 'next/link'
 import { useParams, useSearchParams } from 'next/navigation'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Puck, blocksPlugin, type Data } from '@puckeditor/core'
+import { Puck, blocksPlugin, type Data, type ComponentData } from '@puckeditor/core'
 import '@puckeditor/core/puck.css'
 import '../../../page-builder/puck-overrides.css'
 import { ArrowLeft } from 'lucide-react'
@@ -13,6 +14,48 @@ import { BlocksPanel } from '../../../page-builder/blocks-panel'
 import { InsertBlockButton } from '../../../page-builder/insert-block-modal'
 import { config } from '../../../page-builder/puck.config'
 import { getPage, savePage } from '../../../page-builder/store'
+import { useLayoutChrome } from '@/hooks/useLayoutChrome'
+
+// Top Header/Header/Footer are layout-managed — every page gets the same
+// one, picked once on the Layout page (website/layout), not per page here.
+// Editing/removing them from an individual page's canvas would silently
+// drift that one page away from the shared layout, defeating the point of
+// having a single layout choice. So this editor never shows them: they're
+// stripped out of the content it hands to Puck, the categories that would
+// let someone manually add a duplicate are hidden from "Add a section",
+// and on save they're spliced back in unchanged around whatever Puck
+// actually edited.
+const LAYOUT_START_BLOCK_TYPES = new Set([
+  'ConstructionTopBar',
+  'ConstructionHeader',
+  'NavBar',
+  'MedicalTopNav',
+])
+const LAYOUT_END_BLOCK_TYPES = new Set(['ConstructionFooter', 'Footer'])
+const LAYOUT_MANAGED_CATEGORY_KEYS = ['top-bar', 'header', 'bottombar']
+
+function splitLayoutBlocks(content: ComponentData[]) {
+  const startBlocks = content.filter((b) => LAYOUT_START_BLOCK_TYPES.has(b.type))
+  const endBlocks = content.filter((b) => LAYOUT_END_BLOCK_TYPES.has(b.type))
+  const editableContent = content.filter(
+    (b) => !LAYOUT_START_BLOCK_TYPES.has(b.type) && !LAYOUT_END_BLOCK_TYPES.has(b.type)
+  )
+  return { startBlocks, endBlocks, editableContent }
+}
+
+// Hides the "Top Header"/"Header"/"Footer" categories from this editor's
+// "Add a section" panel and Insert-block modal — both read `config` via
+// Puck's own usePuck(), so a locally-derived config (not the shared
+// module-level one other surfaces still import unfiltered) is enough to
+// keep this scoped to the template-engine edit page.
+const editorConfig = {
+  ...config,
+  categories: Object.fromEntries(
+    Object.entries(config.categories ?? {}).filter(
+      ([key]) => !LAYOUT_MANAGED_CATEGORY_KEYS.includes(key)
+    )
+  ),
+}
 
 /**
  * "Edit" destination for a template-engine seeded page — reuses Puck's own
@@ -34,6 +77,7 @@ export default function TemplateEngineEditPage() {
     ? `/admin/template-engine/projects/${projectId}/website`
     : '/admin/template-engine'
   const qc = useQueryClient()
+  const { topHeaderNode, headerNode, footerNode } = useLayoutChrome(projectId)
 
   const {
     data: page,
@@ -58,6 +102,14 @@ export default function TemplateEngineEditPage() {
       }),
   })
 
+  // Split out once per page load — `onPublish` below closes over this to
+  // splice the layout-managed blocks back in around whatever Puck actually
+  // edited, since Puck itself never saw them.
+  const layoutSplit = useMemo(
+    () => splitLayoutBlocks(page?.data.content ?? []),
+    [page?.data.content]
+  )
+
   if (isLoading) return <div className="p-8 text-muted-foreground">Loading editor…</div>
 
   if (isError || !page) {
@@ -71,39 +123,73 @@ export default function TemplateEngineEditPage() {
     )
   }
 
+  const editableData: Data = { ...page.data, content: layoutSplit.editableContent }
+
+  function handlePublish(data: Data) {
+    const finalContent = [...layoutSplit.startBlocks, ...data.content, ...layoutSplit.endBlocks]
+    saveMutation.mutate({ ...data, content: finalContent })
+  }
+
   return (
     <ModuleGuard slug="template-engine">
-      <div className="te-outline-right h-screen [&_[class*=PuckLayout-nav]]:hidden">
-        {/* Puck hardwires Outline to grid-area "left" / Fields to "right" — no
-            public prop for this. Swap by moving the area tokens to the
-            opposite physical column (and the matching width var with them)
-            instead of forcing grid-area on the content, so each sidebar's
-            resize handle (sibling-selector-bound to the same area name)
-            still tracks its panel. Known gap: the desktop "outline only,
-            fields hidden" state isn't in puck.css at all (falls back to
-            both-hidden) so there's nothing to mirror for it. */}
+      <div className="te-fields-left fixed inset-0 z-[100] [&_[class*=PuckLayout-nav]]:hidden">
+        {/* No Outline panel — it only duplicated the Section tab's own
+            Reorder list. Puck hardwires Fields to grid-area "right" with no
+            public prop to move it — pin the "left" area (Outline's slot,
+            now empty since overrides.outline renders null) to 0 width so
+            Fields is the only real column, instead of leaving a dead
+            190px gap where Outline used to sit. */}
         <style>{`
-          .te-outline-right [class*="PuckLayout-inner_"] {
+          .te-fields-left [class*="PuckLayout-inner_"] {
             --puck-pluginbar-width: 0px !important;
           }
-          .te-outline-right [class*="SidebarSection-heading_"] [class*="Heading_"] {
+          .te-fields-left [class*="SidebarSection-heading_"] [class*="Heading_"] {
             font-size: 13px !important;
           }
           @media (min-width: 638px) {
-            .te-outline-right [class*="PuckLayout-inner_"] {
+            .te-fields-left [class*="PuckLayout-inner_"] {
               grid-template-areas: "header header header header" "sidenav right editor left" !important;
-            }
-            .te-outline-right [class*="PuckLayout--rightSideBarVisible_"] [class*="PuckLayout-inner_"] {
               grid-template-columns: var(--puck-pluginbar-width) var(--puck-sidebar-right-width) var(--puck-frame-width) 0 !important;
             }
-            .te-outline-right [class*="PuckLayout--leftSideBarVisible_"][class*="PuckLayout--rightSideBarVisible_"] [class*="PuckLayout-inner_"] {
-              grid-template-columns: var(--puck-pluginbar-width) var(--puck-sidebar-right-width) var(--puck-frame-width) var(--puck-sidebar-left-width) !important;
-            }
+          }
+          /* Puck's no-iframe canvas root (@puckeditor/core Canvas/index.tsx)
+             inline-styles itself \`position: absolute; top: 0; bottom: 0;
+             height: zoomConfig.rootHeight; overflow: auto\` — rootHeight
+             comes from measuring the WRAPPER's own contentBox once (never
+             recomputed off content height), so it freezes at roughly the
+             visible pane's height, not the page's real height.
+             Overriding position/top/bottom/height/overflow (all four —
+             inline height+overflow beat a plain class, \`height: auto\`
+             alone isn't enough either) still wasn't sufficient: root's
+             PARENT (\`.PuckCanvas-inner\`) is \`display: flex\` with the
+             default row direction, so \`align-items: stretch\` (the flex
+             default) forces root to the parent's cross-axis height
+             regardless of root's own \`height\` value — a separate sizing
+             mechanism \`height: auto\` doesn't opt out of on its own.
+             Net effect: root stayed pinned to the pane's height no matter
+             what, so the real footer (appended after \`{children}\` in
+             \`overrides.preview\` below) rendered inside that cramped box
+             right under whatever little content fit, instead of after the
+             full page (reported: footer showing directly under the hero
+             slider — and later, mid-scroll, appearing to repeat before
+             more sections — instead of after the FAQ section at the true
+             end of the page). \`align-self: flex-start\` opts root out of
+             the stretch so height:auto can finally take effect, sizing
+             root to its real children with the already-scrollable
+             \`PuckCanvas\` ancestor doing the one real scroll. */
+          .te-fields-left [class*="PuckCanvas-root_"] {
+            position: static !important;
+            top: auto !important;
+            bottom: auto !important;
+            height: auto !important;
+            overflow: visible !important;
+            align-self: flex-start !important;
           }
         `}</style>
         <Puck
-          config={config}
-          data={page.data}
+          config={editorConfig}
+          data={editableData}
+          metadata={{ pageTitle: page.title, projectId: projectId ?? undefined }}
           plugins={[blocksPlugin()]}
           iframe={{ enabled: false }}
           viewports={[
@@ -113,8 +199,28 @@ export default function TemplateEngineEditPage() {
           ]}
           headerTitle={page.title}
           headerPath={`/p/${page.slug}`}
-          onPublish={(data: Data) => saveMutation.mutate(data)}
+          onPublish={handlePublish}
           overrides={{
+            outline: () => <></>,
+            // The canvas area (root render + all DropZone content) — wraps
+            // it with the project's actual Top Header/Header/Footer as
+            // plain, `pointer-events-none` React nodes (not Puck blocks),
+            // so they show exactly what the real page will look like
+            // without being draggable/selectable/deletable from here.
+            preview: ({ children }) => (
+              <>
+                {topHeaderNode && (
+                  <div className="pointer-events-none relative select-none">{topHeaderNode}</div>
+                )}
+                {headerNode && (
+                  <div className="pointer-events-none relative select-none">{headerNode}</div>
+                )}
+                {children}
+                {footerNode && (
+                  <div className="pointer-events-none relative select-none">{footerNode}</div>
+                )}
+              </>
+            ),
             headerActions: ({ children }) => (
               <>
                 <Link

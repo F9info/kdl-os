@@ -115,6 +115,17 @@ export const getValueBySlug = async (req, res, next) => {
   }
 };
 
+// Public — no auth. Read-only, plain-value only (no file/media resolution).
+export const getPublicValues = async (req, res, next) => {
+  try {
+    const slugs = req.validated.query.slugs.split(',').map((s) => s.trim()).filter(Boolean);
+    const values = await fieldService.getValuesBySlugs(slugs);
+    return successResponse(res, { values });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const uploadFile = async (req, res, next) => {
   try {
     if (!req.file) return errorResponse(res, 'No file uploaded', 400);

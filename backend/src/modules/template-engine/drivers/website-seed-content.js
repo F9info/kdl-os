@@ -27,8 +27,10 @@ function block(pageKey, type, props) {
 }
 
 // Inline SVG data URI — no network call, so it always renders regardless of
-// CSP img-src or internet access, unlike the placehold.co URLs this replaced.
-function dummyImage(w, h, label) {
+// CSP img-src or internet access. Used for LOGO/QR-style slots specifically
+// (a stock photo would look wrong there) — see dummyImage() below for
+// everything else. 'data:' needs no CSP img-src allowlist entry.
+function dummyLogo(w, h, label) {
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">` +
     `<rect width="100%" height="100%" fill="#e2e8f0"/>` +
@@ -36,6 +38,44 @@ function dummyImage(w, h, label) {
     `fill="#64748b" text-anchor="middle" dominant-baseline="middle">${label || `${w}×${h}`}</text>` +
     `</svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+// Real Unsplash stock photos for everything that reads as actual page
+// content (projects, offerings, team/doctor photos, avatars) — the flat SVG
+// gray boxes this replaced looked obviously fake. images.unsplash.com is
+// allowlisted in next.config.ts's img-src (driven by NEXT_PUBLIC_IMAGE_HOSTS).
+// Bucketed by aspect ratio so exact-square crops (headshots/avatars) read as
+// portraits and
+// everything else as a building/site photo; `label` only picks the "team"
+// bucket, it's not printed on the image (there's no text overlay to size for).
+const DUMMY_BUILDING_PHOTOS = [
+  '1541888946425-d81bb19240f5',
+  '1486406146926-c627a92ad1ab',
+  '1503387762-592deb58ef4e',
+  '1479839672679-a46483c0e7c8',
+  '1560518883-ce09059eeffa',
+];
+const DUMMY_PORTRAIT_PHOTOS = [
+  '1507003211169-0a1dd7228f2d',
+  '1494790108377-be9c29b29330',
+  '1500648767791-00dcc994a43e',
+  '1519085360753-af0119f7cbe7',
+];
+const DUMMY_TEAM_PHOTO = '1522202176988-66273c2fd55f';
+let dummyPhotoIndex = { building: 0, portrait: 0 };
+
+function dummyImage(w, h, label = '') {
+  let photoId;
+  if (/team/i.test(label)) {
+    photoId = DUMMY_TEAM_PHOTO;
+  } else if (w === h) {
+    photoId = DUMMY_PORTRAIT_PHOTOS[dummyPhotoIndex.portrait % DUMMY_PORTRAIT_PHOTOS.length];
+    dummyPhotoIndex.portrait += 1;
+  } else {
+    photoId = DUMMY_BUILDING_PHOTOS[dummyPhotoIndex.building % DUMMY_BUILDING_PHOTOS.length];
+    dummyPhotoIndex.building += 1;
+  }
+  return `https://images.unsplash.com/photo-${photoId}?w=${w}&h=${h}&fit=crop&auto=format`;
 }
 
 const DEFAULT_NAV_LINKS = ['Home|#', 'About|#', 'Contact|#'].join('\n');
@@ -86,6 +126,438 @@ export function patchNavLinks(data, pages) {
     if (!propName || block.props?.[propName] === links) return block;
     changed = true;
     return { ...block, props: { ...block.props, [propName]: links } };
+  });
+  return changed ? { ...data, content } : null;
+}
+
+// Every nav/header/footer block type that carries the brand kit's
+// name/logo — always as `brand`/`logoUrl`, same prop names across packs.
+const BRAND_LOGO_BLOCK_TYPES = new Set([
+  'NavBar',
+  'Footer',
+  'MedicalTopNav',
+  'ConstructionHeader',
+  'ConstructionFooter',
+  'ConstructionTaglineStrip',
+]);
+
+// Brand kit fields (logo, company name) change independently of page
+// content — re-uploading a logo or editing contact details in Studio's
+// Intake stage happens long after a page was first seeded. Existing pages
+// are never re-seeded wholesale (see patchNavLinks above for why), so
+// without this the `brand`/`logoUrl` props stay frozen at whatever value
+// existed the moment the page was first created — reported as "I uploaded a
+// new logo but the site still shows the old one". Same surgical-patch
+// pattern as patchNavLinks: touch only the two brand props on brand-carrying
+// blocks, leave everything else (including manual edits) untouched.
+export function patchBrand(data, brand = {}) {
+  if (!data?.content) return null;
+  const brandName = brand.companyName || 'Your Brand';
+  const logoUrl = brand.logoUrl || '';
+  let changed = false;
+  const content = data.content.map((block) => {
+    if (!BRAND_LOGO_BLOCK_TYPES.has(block.type)) return block;
+    if (block.props?.brand === brandName && block.props?.logoUrl === logoUrl) return block;
+    changed = true;
+    return { ...block, props: { ...block.props, brand: brandName, logoUrl } };
+  });
+  return changed ? { ...data, content } : null;
+}
+
+// Same reasoning as patchBrand, for the construction pack's own
+// phone/email/address carriers — the footer's "Contact"/"Showroom" blocks
+// and the floating WhatsApp button. These aren't in BRAND_LOGO_BLOCK_TYPES
+// since they don't use the brand/logoUrl prop pair.
+export function patchConstructionContact(data, brand = {}) {
+  if (!data?.content) return null;
+  const addressLines = Array.isArray(brand.addressLines) ? brand.addressLines : [];
+  const contactPhone = brand.phone || '+91-98765-43210';
+  const contactEmail =
+    brand.email ||
+    `info@${(brand.companyName || 'Your Brand').toLowerCase().replace(/\s+/g, '')}.com`;
+  const contactAddress = addressLines[0] || '123 Business Avenue\nCity, State 000000';
+  const showroomAddress = addressLines[1] || '456 Showroom Road\nCity, State 000000';
+  const whatsappHref = constructionFloatingActionsProps(brand).whatsappHref;
+
+  let changed = false;
+  const content = data.content.map((block) => {
+    if (block.type === 'ConstructionFooter') {
+      if (
+        block.props?.contactPhone === contactPhone &&
+        block.props?.contactEmail === contactEmail &&
+        block.props?.contactAddress === contactAddress &&
+        block.props?.showroomAddress === showroomAddress
+      ) {
+        return block;
+      }
+      changed = true;
+      return {
+        ...block,
+        props: { ...block.props, contactPhone, contactEmail, contactAddress, showroomAddress },
+      };
+    }
+    if (block.type === 'ConstructionFloatingActions') {
+      if (block.props?.whatsappHref === whatsappHref) return block;
+      changed = true;
+      return { ...block, props: { ...block.props, whatsappHref } };
+    }
+    return block;
+  });
+  return changed ? { ...data, content } : null;
+}
+
+// Header block types a page might already carry from its original seed
+// (general/medical packs) — none of these have the Design 1-4 `variant`
+// prop the Layout picker's header designs need, so they're not patched in
+// place; applyHeaderSection() below swaps them out for ConstructionHeader
+// (the Layout picker's only header design family) the first time a header
+// design is applied. ConstructionHeader itself is the current/target type
+// once that's happened.
+const HEADER_LEGACY_BLOCK_TYPES = new Set(['NavBar', 'MedicalTopNav']);
+const HEADER_TARGET_BLOCK_TYPE = 'ConstructionHeader';
+// Same legacy-swap story as HEADER_LEGACY_BLOCK_TYPES above: a page's
+// original seed carries the general pack's plain Footer, which has no
+// Design 1-4 variant of its own — applyFooterSection() swaps it for
+// ConstructionFooter (the Layout picker's only footer design family) the
+// first time a footer design is applied.
+const FOOTER_LEGACY_BLOCK_TYPES = new Set(['Footer']);
+const FOOTER_TARGET_BLOCK_TYPE = 'ConstructionFooter';
+// The construction pack's ConstructionTopBar (utility bar — contact/social/
+// promo strip above the main nav) is the only block with a distinct "top
+// header" identity and its own Design 1-4 variant. It isn't part of any
+// seeder's normal output (SEEDER_BY_PACK never builds one) — the Layout
+// picker is the only way a page gets one, same insert/remove/re-style
+// mechanism as header/footer.
+const TOP_HEADER_BLOCK_TYPES = new Set(['ConstructionTopBar']);
+
+// Layout picker's own header prop builder — separate from
+// constructionHeaderProps() below (used by the construction pack's own
+// seedConstructionPageData home content) so Design 1's transparent/
+// light-text floating-over-hero treatment doesn't change that unrelated
+// seed path. Matches the frontend's ConstructionHeader defaultProps.
+//
+// `transparent`/`lightText` false here (not true): this builder is what
+// every generically-scaffolded page (Contact, About Us, Leadership, any
+// new nav page) gets its header from — a white header floating
+// transparently with white nav text only reads correctly over a real
+// dark photo hero (Home's own dedicated seed path handles that itself,
+// unaffected by this function). A page whose next block is the plain
+// light-background generic `Hero`/`Text` placeholder made its own nav
+// invisible (white-on-white) — solid + dark text is the safe default for
+// a page with unknown/generic content below it; a page that DOES want
+// the floating-over-hero look can still opt in via the Style panel.
+function layoutHeaderProps(brand, pages) {
+  return {
+    ...constructionHeaderProps(brand, pages),
+    visible: true,
+    loginLabel: '',
+    ctaLabel: 'Download Brochure ↓',
+    ctaHref: '#brochure',
+    transparent: false,
+    lightText: false,
+  };
+}
+
+function buildHeaderBlock(pageKey, brand, pages, variant) {
+  return block(pageKey, 'ConstructionHeader', { ...layoutHeaderProps(brand, pages), variant });
+}
+
+function buildFooterBlock(pageKey, brand, pages, variant) {
+  return block(pageKey, 'ConstructionFooter', { ...layoutFooterProps(brand, pages), variant });
+}
+
+// Mirrors ConstructionTopBar's own defaultProps (frontend/src/app/admin/
+// page-builder/packs/construction/index.tsx) — same generic placeholder
+// copy for the fields each of its 4 designs doesn't share, with the
+// contact-ish fields every design does share (address/phone/email/tagline)
+// pulled from the brand kit the same way constructionFooterProps does.
+// Field reuse note (KDL-558 top-header redesign): fields are shared across
+// all 4 designs (Puck has no per-variant field scoping), and got reassigned
+// by content fit when Designs 2/3/4 were redesigned to match new reference
+// screenshots, rather than renamed — see the matching comment + variant
+// render blocks in frontend/.../packs/construction/index.tsx for the full
+// mapping. d2TrackHref was dropped entirely (no longer read by any design).
+function constructionTopBarProps(brand = {}) {
+  const name = brand.companyName || 'Your Brand';
+  const phone = brand.phone || '+91 98765 43210';
+  const email = brand.email || `hello@${name.toLowerCase().replace(/\s+/g, '')}.com`;
+  const addressLines = Array.isArray(brand.addressLines) ? brand.addressLines : [];
+  const tagline = 'Building with integrity, delivering with precision.';
+  return {
+    visible: true,
+    d1Address: addressLines[0] || '123 Business Street, Mumbai, India',
+    d1Phone: phone,
+    d1Email: email,
+    d1Link1Label: 'Careers',
+    d1Link1Href: '#careers',
+    d1Link2Label: 'Support',
+    d1Link2Href: '#support',
+    d1Link3Label: 'Blog',
+    d1Link3Href: '#blog',
+    d1Social1Href: '#',
+    d1Social2Href: '#',
+    d1Social3Href: '#',
+    d1Social4Href: '#',
+    d2Item1Text: "Let's build something amazing together!",
+    d2Item2Text: '24/7 Support',
+    d2Item3Text: 'On-Time Delivery',
+    d2TrackLabel: 'Secure & Trusted',
+    d2Language: 'EN',
+    d3Tagline: tagline,
+    d3Phone: phone,
+    d3Email: email,
+    d3CtaLabel: 'Start Your Project',
+    d3CtaHref: '#quote',
+    d4Tagline: 'Transforming Ideas into Digital Solutions',
+    d4Social1Href: '#',
+    d4Social2Href: '#',
+    d4Social3Href: '#',
+    d4Social4Href: '#',
+    d4HelpLabel: 'Login',
+    d4HelpHref: '#login',
+    d4FaqLabel: 'Sign Up',
+    d4FaqHref: '#signup',
+    d4Language: 'Get 10% Off on Your First Project!',
+  };
+}
+
+function buildTopHeaderBlock(pageKey, brand, variant) {
+  return block(pageKey, 'ConstructionTopBar', { ...constructionTopBarProps(brand), variant });
+}
+
+// One section's worth of patchLayout's insert/remove/re-style logic — shared
+// by the top-header/header/footer buckets below so the toggle+variant
+// semantics only need to be right once. `insertIndex(content)` picks where a
+// newly-enabled block lands; `section` is the caller's
+// `{enabled?, variant?}` for this bucket, or undefined to leave it alone.
+function applySection(content, blockTypes, section, buildBlock, insertIndex) {
+  if (!section) return { content, changed: false };
+  const enabled = section.enabled !== false;
+  const variant = section.variant;
+  const has = content.some((b) => blockTypes.has(b.type));
+
+  if (!enabled && has) {
+    return { content: content.filter((b) => !blockTypes.has(b.type)), changed: true };
+  }
+  if (enabled && !has) {
+    const idx = insertIndex(content);
+    const next = [...content.slice(0, idx), buildBlock(variant ?? '1'), ...content.slice(idx)];
+    return { content: next, changed: true };
+  }
+  if (enabled && variant) {
+    let changed = false;
+    const next = content.map((b) => {
+      if (!blockTypes.has(b.type) || b.props?.variant === variant) return b;
+      changed = true;
+      return { ...b, props: { ...b.props, variant } };
+    });
+    return { content: next, changed };
+  }
+  return { content, changed: false };
+}
+
+// Header-only variant of applySection: a page's existing header may be a
+// legacy type (NavBar/MedicalTopNav from its original seed) that doesn't
+// share ConstructionHeader's shape or `variant` prop, so it can't just be
+// variant-patched in place like top-header/footer can — the first time a
+// header design is actually applied, it's swapped out for a fresh
+// ConstructionHeader at the same position; after that it behaves like any
+// other design bucket (toggle/re-style in place).
+function applyHeaderSection(content, section, pageKey, brand, pages) {
+  if (!section) return { content, changed: false };
+  const enabled = section.enabled !== false;
+  const variant = section.variant;
+  const legacy = content.find((b) => HEADER_LEGACY_BLOCK_TYPES.has(b.type));
+  const current = content.find((b) => b.type === HEADER_TARGET_BLOCK_TYPE);
+
+  if (!enabled) {
+    if (!legacy && !current) return { content, changed: false };
+    const next = content.filter(
+      (b) => !HEADER_LEGACY_BLOCK_TYPES.has(b.type) && b.type !== HEADER_TARGET_BLOCK_TYPE
+    );
+    return { content: next, changed: true };
+  }
+
+  // A page can end up with both a legacy block AND a target block already
+  // present (e.g. a run that mixed seeders, or a since-fixed patch bug) —
+  // drop the orphaned legacy one instead of leaving it stranded forever,
+  // which the legacy-swap branch below never does since it only fires when
+  // `current` is absent.
+  if (legacy && current) {
+    const next = content.filter((b) => !HEADER_LEGACY_BLOCK_TYPES.has(b.type));
+    return { content: next, changed: true };
+  }
+
+  if (legacy && !current) {
+    const idx = content.indexOf(legacy);
+    const next = [
+      ...content.slice(0, idx),
+      buildHeaderBlock(pageKey, brand, pages, variant ?? '1'),
+      ...content.slice(idx + 1),
+    ];
+    return { content: next, changed: true };
+  }
+
+  if (!current) {
+    const i = content.findIndex((b) => !TOP_HEADER_BLOCK_TYPES.has(b.type));
+    const idx = i === -1 ? content.length : i;
+    const next = [
+      ...content.slice(0, idx),
+      buildHeaderBlock(pageKey, brand, pages, variant ?? '1'),
+      ...content.slice(idx),
+    ];
+    return { content: next, changed: true };
+  }
+
+  if (variant && current.props?.variant !== variant) {
+    const next = content.map((b) =>
+      b === current ? { ...b, props: { ...b.props, variant } } : b
+    );
+    return { content: next, changed: true };
+  }
+
+  return { content, changed: false };
+}
+
+// Footer-only variant of applySection, same reasoning as
+// applyHeaderSection above: a page's existing footer may be the general
+// pack's plain Footer (from its original seed), which shares no shape or
+// `variant` prop with ConstructionFooter, so it's swapped in place the
+// first time a footer design is applied rather than variant-patched.
+function applyFooterSection(content, section, pageKey, brand, pages) {
+  if (!section) return { content, changed: false };
+  const enabled = section.enabled !== false;
+  const variant = section.variant;
+  const legacy = content.find((b) => FOOTER_LEGACY_BLOCK_TYPES.has(b.type));
+  const current = content.find((b) => b.type === FOOTER_TARGET_BLOCK_TYPE);
+
+  if (!enabled) {
+    if (!legacy && !current) return { content, changed: false };
+    const next = content.filter(
+      (b) => !FOOTER_LEGACY_BLOCK_TYPES.has(b.type) && b.type !== FOOTER_TARGET_BLOCK_TYPE
+    );
+    return { content: next, changed: true };
+  }
+
+  // Same orphaned-legacy-block guard as applyHeaderSection above.
+  if (legacy && current) {
+    const next = content.filter((b) => !FOOTER_LEGACY_BLOCK_TYPES.has(b.type));
+    return { content: next, changed: true };
+  }
+
+  if (legacy && !current) {
+    const idx = content.indexOf(legacy);
+    const next = [
+      ...content.slice(0, idx),
+      buildFooterBlock(pageKey, brand, pages, variant ?? '1'),
+      ...content.slice(idx + 1),
+    ];
+    return { content: next, changed: true };
+  }
+
+  if (!current) {
+    const next = [...content, buildFooterBlock(pageKey, brand, pages, variant ?? '1')];
+    return { content: next, changed: true };
+  }
+
+  if (variant && current.props?.variant !== variant) {
+    const next = content.map((b) =>
+      b === current ? { ...b, props: { ...b.props, variant } } : b
+    );
+    return { content: next, changed: true };
+  }
+
+  return { content, changed: false };
+}
+
+// Layout picker page — toggle the top-header/header/footer block on/off and
+// pick its design variant. Same surgical-patch convention as
+// patchNavLinks/patchBrand: touches only those blocks, leaves everything
+// else (including manual edits) untouched. Re-enabling a previously-removed
+// section rebuilds it fresh (current brand/nav — there is nothing saved to
+// restore, it was removed). Top-header sits above header, which sits above
+// the rest of the page's content — inserting either finds its slot relative
+// to what's already there rather than assuming index 0.
+//
+// Opt-in per section: `layout.topHeader`/`layout.header`/`layout.footer`
+// only apply when the caller actually sends that key. No `layout` at all
+// (every pre-existing caller, and every non-general seeder's page) is a full
+// no-op — otherwise every plain re-run would silently snap an
+// already-customised variant back to '1', and construction/medical pages
+// (whose header/footer block types aren't in HEADER_BLOCK_TYPES/
+// FOOTER_BLOCK_TYPES) would grow a stray NavBar/Footer pair with no way to
+// turn it off.
+export function patchLayout(data, layout, pageKey, brand, pages) {
+  if (!data?.content || !layout) return null;
+
+  let content = data.content;
+  let changed = false;
+
+  const topHeader = applySection(
+    content,
+    TOP_HEADER_BLOCK_TYPES,
+    layout.topHeader,
+    (variant) => buildTopHeaderBlock(pageKey, brand, variant),
+    () => 0
+  );
+  content = topHeader.content;
+  changed = changed || topHeader.changed;
+
+  const header = applyHeaderSection(content, layout.header, pageKey, brand, pages);
+  content = header.content;
+  changed = changed || header.changed;
+
+  const footer = applyFooterSection(content, layout.footer, pageKey, brand, pages);
+  content = footer.content;
+  changed = changed || footer.changed;
+
+  return changed ? { ...data, content } : null;
+}
+
+// A custom block built in the standalone Section Builder is copied into a
+// page's own Puck data at insert time (`type: 'CustomComposedBlock'`,
+// `props.config` = the block's ComposedBlockConfig) — not a live reference
+// back to the block library. Its 'logo' atoms (frontend's Branding &
+// Navigation group) are prefilled from the same brand kit at drop time, but
+// without this patch they'd go stale the same way NavBar/Footer would
+// without patchBrand above. Same unconditional-overwrite convention: a
+// composed block's logo atom always tracks the current brand, same as
+// ConstructionHeader's brand/logoUrl props have no manual-override path.
+function patchLogoAtoms(atoms, brandName, logoUrl) {
+  let changed = false;
+  const next = atoms.map((atom) => {
+    let updated = atom;
+    if (atom.type === 'logo' && (atom.src !== logoUrl || atom.text !== brandName)) {
+      changed = true;
+      updated = { ...atom, src: logoUrl, text: brandName };
+    }
+    if (Array.isArray(atom.children) && atom.children.length > 0) {
+      const [childNext, childChanged] = patchLogoAtoms(atom.children, brandName, logoUrl);
+      if (childChanged) {
+        changed = true;
+        updated = { ...updated, children: childNext };
+      }
+    }
+    return updated;
+  });
+  return [next, changed];
+}
+
+export function patchComposerLogos(data, brand = {}) {
+  if (!data?.content) return null;
+  const brandName = brand.companyName || 'Your Brand';
+  const logoUrl = brand.logoUrl || '';
+  let changed = false;
+  const content = data.content.map((block) => {
+    const atoms = block.props?.config?.atoms;
+    if (block.type !== 'CustomComposedBlock' || !Array.isArray(atoms)) return block;
+    const [nextAtoms, atomsChanged] = patchLogoAtoms(atoms, brandName, logoUrl);
+    if (!atomsChanged) return block;
+    changed = true;
+    return {
+      ...block,
+      props: { ...block.props, config: { ...block.props.config, atoms: nextAtoms } },
+    };
   });
   return changed ? { ...data, content } : null;
 }
@@ -383,11 +855,11 @@ const MEDICAL_INSURANCE_STRIP = {
   variant: '3',
   heading: 'We Accept All Major Insurers',
   logos: [
-    `${dummyImage(120, 48, 'Star Health')} | Star Health`,
-    `${dummyImage(120, 48, 'HDFC Ergo')} | HDFC Ergo`,
-    `${dummyImage(120, 48, 'Bajaj Allianz')} | Bajaj Allianz`,
-    `${dummyImage(120, 48, 'New India')} | New India Assurance`,
-    `${dummyImage(120, 48, 'Care Health')} | Care Health`,
+    `${dummyLogo(120, 48, 'Star Health')} | Star Health`,
+    `${dummyLogo(120, 48, 'HDFC Ergo')} | HDFC Ergo`,
+    `${dummyLogo(120, 48, 'Bajaj Allianz')} | Bajaj Allianz`,
+    `${dummyLogo(120, 48, 'New India')} | New India Assurance`,
+    `${dummyLogo(120, 48, 'Care Health')} | Care Health`,
   ].join('\n'),
   note: "Don't see your insurer? Call us and we'll help.",
 };
@@ -896,29 +1368,29 @@ const CONSTRUCTION_WHY_CHOOSE_US = {
 const CONSTRUCTION_CLIENTS_GRID = {
   sectionTitle: 'Trusted By',
   sectionSubtitle: 'A selection of clients we have partnered with.',
-  client1Logo: dummyImage(200, 100, 'Client 1'),
+  client1Logo: dummyLogo(200, 100, 'Client 1'),
   client1Name: 'Client 1',
-  client2Logo: dummyImage(200, 100, 'Client 2'),
+  client2Logo: dummyLogo(200, 100, 'Client 2'),
   client2Name: 'Client 2',
-  client3Logo: dummyImage(200, 100, 'Client 3'),
+  client3Logo: dummyLogo(200, 100, 'Client 3'),
   client3Name: 'Client 3',
-  client4Logo: dummyImage(200, 100, 'Client 4'),
+  client4Logo: dummyLogo(200, 100, 'Client 4'),
   client4Name: 'Client 4',
-  client5Logo: dummyImage(200, 100, 'Client 5'),
+  client5Logo: dummyLogo(200, 100, 'Client 5'),
   client5Name: 'Client 5',
-  client6Logo: dummyImage(200, 100, 'Client 6'),
+  client6Logo: dummyLogo(200, 100, 'Client 6'),
   client6Name: 'Client 6',
-  client7Logo: dummyImage(200, 100, 'Client 7'),
+  client7Logo: dummyLogo(200, 100, 'Client 7'),
   client7Name: 'Client 7',
-  client8Logo: dummyImage(200, 100, 'Client 8'),
+  client8Logo: dummyLogo(200, 100, 'Client 8'),
   client8Name: 'Client 8',
-  client9Logo: dummyImage(200, 100, 'Client 9'),
+  client9Logo: dummyLogo(200, 100, 'Client 9'),
   client9Name: 'Client 9',
-  client10Logo: dummyImage(200, 100, 'Client 10'),
+  client10Logo: dummyLogo(200, 100, 'Client 10'),
   client10Name: 'Client 10',
-  client11Logo: dummyImage(200, 100, 'Client 11'),
+  client11Logo: dummyLogo(200, 100, 'Client 11'),
   client11Name: 'Client 11',
-  client12Logo: dummyImage(200, 100, 'Client 12'),
+  client12Logo: dummyLogo(200, 100, 'Client 12'),
   client12Name: 'Client 12',
   padding: 'md',
   background: 'white',
@@ -944,9 +1416,14 @@ const CONSTRUCTION_LEAD_FORM_FAQ = {
   background: 'white',
 };
 
-const CONSTRUCTION_FLOATING_ACTIONS = {
-  whatsappHref: 'https://wa.me/919876543210',
-};
+function phoneDigitsOnly(value) {
+  return String(value ?? '').replace(/[^\d]/g, '');
+}
+
+function constructionFloatingActionsProps(brand = {}) {
+  const digits = phoneDigitsOnly(brand.phone);
+  return { whatsappHref: digits ? `https://wa.me/${digits}` : 'https://wa.me/919876543210' };
+}
 
 function constructionHeaderProps(brand = {}, pages) {
   return {
@@ -958,6 +1435,13 @@ function constructionHeaderProps(brand = {}, pages) {
     ctaLabel: 'Get a Quote',
     ctaHref: '#quote',
     primaryColor: brand.primaryHex || '',
+    secondaryColor: brand.secondaryHex || '',
+    phoneNumber: brand.phone || '+91 98765 43210',
+    email: brand.email || `hello@${(brand.companyName || 'yourdomain').toLowerCase().replace(/\s+/g, '')}.com`,
+    social1Href: '#',
+    social2Href: '#',
+    social3Href: '#',
+    social4Href: '#',
   };
 }
 
@@ -972,6 +1456,7 @@ function constructionTaglineStripProps(brand = {}) {
 function constructionFooterProps(brand = {}, pages) {
   const name = brand.companyName || 'Your Brand';
   const lastUpdated = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const addressLines = Array.isArray(brand.addressLines) ? brand.addressLines : [];
   return {
     logoUrl: brand.logoUrl || '',
     brand: name,
@@ -984,19 +1469,42 @@ function constructionFooterProps(brand = {}, pages) {
     social3Href: '#',
     social4Label: 'x',
     social4Href: '#',
-    newsletterPlaceholder: 'Your email address',
-    newsletterButtonLabel: 'Subscribe',
     companyLinksTitle: 'Company',
     links: navLinksFor(pages),
     contactTitle: 'Contact',
-    contactPhone: '+91-98765-43210',
-    contactEmail: `info@${name.toLowerCase().replace(/\s+/g, '')}.com`,
-    contactAddress: '123 Business Avenue\nCity, State 000000',
+    contactPhone: brand.phone || '+91-98765-43210',
+    contactEmail: brand.email || `info@${name.toLowerCase().replace(/\s+/g, '')}.com`,
+    // Address 1 in Studio's Intake form (Logo & Contact Details) — usually
+    // the main/showroom address — is the "Contact" block's address; Address
+    // 2 (often a registered-office address) becomes the separate "Showroom"
+    // block below, same two-slot mapping either way round.
+    contactAddress: addressLines[0] || '123 Business Avenue\nCity, State 000000',
     showroomTitle: 'Showroom',
-    showroomAddress: '456 Showroom Road\nCity, State 000000',
-    qrImage: dummyImage(160, 160, 'QR Code'),
+    showroomAddress: addressLines[1] || '456 Showroom Road\nCity, State 000000',
+    qrImage: dummyLogo(160, 160, 'QR Code'),
     qrCaption: 'Scan for directions',
     copyright: `© ${new Date().getFullYear()} ${name}. All rights reserved. · Last updated ${lastUpdated}`,
+  };
+}
+
+// Layout picker's own footer prop builder — separate from
+// constructionFooterProps() above (used by the construction pack's own
+// seedConstructionPageData home content, which has its own tests pinned to
+// that function's original two-slot address mapping) so this design's
+// richer field set (two phones/emails, a distinct "Regd. Office" block)
+// doesn't change that unrelated seed path. Matches the frontend's
+// ConstructionFooter defaultProps/field set.
+function layoutFooterProps(brand, pages) {
+  const addressLines = Array.isArray(brand.addressLines) ? brand.addressLines : [];
+  return {
+    ...constructionFooterProps(brand, pages),
+    variant: '1',
+    contactPhone2: brand.secondaryPhone || '',
+    contactEmail2: brand.secondaryEmail || '',
+    showroomAddress: addressLines[0] || '456 Showroom Road\nCity, State 000000',
+    regdOfficeTitle: 'Regd. Office',
+    regdOfficeAddress: addressLines[1] || '',
+    estdYear: '',
   };
 }
 
@@ -1017,7 +1525,7 @@ function constructionHomeContent(pageKey, brand, pages) {
     block(pageKey, 'ConstructionLeadFormFAQ', CONSTRUCTION_LEAD_FORM_FAQ),
     block(pageKey, 'ConstructionTaglineStrip', constructionTaglineStripProps(brand)),
     block(pageKey, 'ConstructionFooter', constructionFooterProps(brand, pages)),
-    block(pageKey, 'ConstructionFloatingActions', CONSTRUCTION_FLOATING_ACTIONS),
+    block(pageKey, 'ConstructionFloatingActions', constructionFloatingActionsProps(brand)),
   ];
 }
 

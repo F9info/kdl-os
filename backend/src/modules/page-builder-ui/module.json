@@ -2,12 +2,17 @@
   "slug": "page-builder-ui",
   "name": "Page Builder UI",
   "version": "1.0.0",
-  "description": "Admin nav and screens for Page Builder — toggleable",
+  "description": "Page Builder engine dependency shim for Template Engine, plus the Section Builder nav entry. Template Engine's own page-edit screen (imports blocks-panel.tsx/insert-block-modal.tsx/puck.config.tsx directly) is the only way to edit PAGES — a standalone 'Page Builder' nav entry duplicated that with a second, less-capable editor and was removed. Section Builder is a distinct, real feature (a from-scratch custom-section canvas) worth its own direct entry point.",
   "core": false,
   "apiPrefix": "/api/page-builder-ui",
   "permissions": [],
   "nav": [
-    { "label": "Page Builder", "path": "/admin/page-builder", "icon": "LayoutTemplate", "permission": "page-builder:view" }
+    {
+      "label": "Section Builder",
+      "path": "/admin/page-builder/section-builder",
+      "icon": "LayoutTemplate",
+      "permission": "page-builder:view"
+    }
   ],
   "dependsOn": ["page-builder"],
   "conflictsWith": [],

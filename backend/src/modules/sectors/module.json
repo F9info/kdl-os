@@ -1,0 +1,23 @@
+{
+  "slug": "sectors",
+  "name": "Sectors",
+  "version": "1.0.0",
+  "description": "Real client-segment/space-type entries shown in the Sector Detail List block",
+  "core": false,
+  "apiPrefix": "/api/sectors",
+  "permissions": [
+    "sectors"
+  ],
+  "nav": [
+    {
+      "label": "Sectors",
+      "path": "/admin/sectors",
+      "icon": "Package",
+      "permission": "sectors:view"
+    }
+  ],
+  "navSuppressedByPeer": ["template-engine"],
+  "dependsOn": [],
+  "queues": [],
+  "env": []
+}

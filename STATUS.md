@@ -2,7 +2,7 @@
 
 # STATUS — what is done, what is pending
 
-_Derived from code + GitHub + the board at master `cbd78ea` (latest commit 2026-08-20)._
+_Derived from code + GitHub + the board at master `656e616` (latest commit 2026-09-26)._
 _Regenerate: `node scripts/status-rollup.mjs`. Hand edits to this block are overwritten._
 
 Read this instead of counting board issues or PRs — both mislead. The board has 500+ done
@@ -10,7 +10,7 @@ issues with no aggregate view, and PR state under-reports what shipped (§3).
 
 ### 1. Backend module build state
 
-`backend/src/modules/*` — **22 modules: 20 built, 2 stubbed, 0 spec-only.**
+`backend/src/modules/*` — **28 modules: 26 built, 2 stubbed, 0 spec-only.**
 
 State is decided by what the directory actually contains (service + routes + controller),
 not by whether a spec or a board issue says the module is done.
@@ -18,29 +18,35 @@ not by whether a spec or a board issue says the module is done.
 | Module | State | Evidence (code on disk) | Tests | Purpose (module.json) |
 | --- | --- | --- | --- | --- |
 | `auth` | ✅ built | service + routes + controller | 3 | Authentication, registration, and session management |
-| `brand-kit` | ✅ built | service + routes + controller | 5 | Logo intake, OKLCH palette extraction, WCAG AA contrast report, and theme-token hand-off for Template Engine Mode A |
+| `brand-kit` | ✅ built | service + routes + controller | 6 | Logo intake, OKLCH palette extraction, WCAG AA contrast report, and theme-token hand-off for Template Engine Mode A |
 | `categories` | ✅ built | service + routes + controller | 1 | Taxonomy categories grouped under types |
-| `collateral` | ✅ built | service + routes + controller | 1 | Print-ready collateral render engine — visiting card, letterhead, t-shirt, ID card (COLLATERAL_SPEC.md §2). |
-| `credits` | ✅ built | service + routes + controller | 1 | Per-project internal metering ledger — hold lifecycle, ledger, reconciliation. |
-| `example` | ✅ built | service + routes + controller | **0** | Example module |
+| `collateral` | ✅ built | service + routes + controller | 2 | Print-ready collateral render engine — visiting card, letterhead, t-shirt, ID card (COLLATERAL_SPEC.md §2). |
+| `credits` | ✅ built | service + routes + controller | 2 | Per-project internal metering ledger — hold lifecycle, ledger, reconciliation. |
+| `custom-blocks` | ✅ built | service + routes + controller | 1 | Project-scoped reusable custom block templates for the page builder |
+| `e2e-fixture` | ✅ built | service + routes + controller | **0** | Disposable install/enable/disable target for the KDL-83 plugin-lifecycle E2E test (frontend/e2e/module-plugin.spec.ts) — not a real feature. |
+| `faq` | ✅ built | service + routes + controller | **0** | FAQ module |
 | `integrations` | ✅ built | service + routes + controller | 9 | Integrations module |
 | `media` | ✅ built | service + routes + controller | 30 | File upload and media library |
+| `menus` | ✅ built | service + routes + controller | **0** | Multi-level drag-and-drop navigation menus (header, footer, mobile) |
 | `modules` | ✅ built | service + routes + controller | 2 | Module plugin lifecycle management |
 | `notifications` | ✅ built | service + routes + controller | 3 | Notifications module |
 | `page-builder` | ✅ built | service + routes + controller | **0** | Visual block-based page builder engine — always-on |
-| `projects` | ✅ built | service + routes + controller | **0** | Project management — Studio hard-depends on this module to scope template-engine runs. |
+| `projects` | ✅ built | service + routes + controller | 1 | Project management — Studio hard-depends on this module to scope template-engine runs. |
+| `projects-content` | ✅ built | service + routes + controller | **0** | Real completed-work case studies shown in Featured Projects blocks |
+| `sectors` | ✅ built | service + routes + controller | **0** | Real client-segment/space-type entries shown in the Sector Detail List block |
 | `setting-fields` | ✅ built | service + routes + controller | 2 | Dynamic admin-defined setting field definitions |
 | `settings` | ✅ built | service + routes + controller | 2 | Application settings management |
 | `storage-settings` | ✅ built | service + routes + controller | 1 | (no module.json) |
-| `template-engine` | ✅ built | service + routes + controller | 6 | 9-stage DAG orchestrator — drives brand-kit, theme-engine, page-builder, collateral, and credits via their public APIs (Mode A / Studio). No rendering logic lives here. |
+| `team` | ✅ built | service + routes + controller | **0** | Team module |
+| `template-engine` | ✅ built | service + routes + controller | 8 | 9-stage DAG orchestrator — drives brand-kit, theme-engine, page-builder, collateral, and credits via their public APIs (Mode A / Studio). No rendering logic lives here. |
 | `theme-engine` | ✅ built | service + routes + controller | 4 | Design-system token compiler — always-on engine layer |
 | `types` | ✅ built | service + routes + controller | 1 | Taxonomy types for categories and setting fields |
 | `user-management` | ✅ built | service + routes + controller | 3 | RBAC roles, permissions matrix, and activity log |
 | `users` | ✅ built | service + routes + controller | 2 | User accounts, profile management, and soft-delete |
-| `page-builder-ui` | 🟡 stubbed | nav-only shell — empty Router, no service/controller | **0** | Admin nav and screens for Page Builder — toggleable |
+| `page-builder-ui` | 🟡 stubbed | nav-only shell — empty Router, no service/controller | **0** | Page Builder engine dependency shim for Template Engine, plus the Section Builder nav entry. Template Engine's own page-edit screen (imports blocks-panel.tsx/insert-block-modal.tsx/puck.config.tsx directly) is the only way to edit PAGES — a standalone 'Page Builder' nav entry duplicated that with a second, less-capable editor and was removed. Section Builder is a distinct, real feature (a from-scratch custom-section canvas) worth its own direct entry point. |
 | `theme-engine-ui` | 🟡 stubbed | nav-only shell — empty Router, no service/controller | **0** | Admin nav and screens for Theme Engine — toggleable |
 
-> ⚠ **3 built module(s) have no test file** in `backend/src/modules/<name>/` or `backend/tests/` matched by name: `example`, `page-builder`, `projects`. Built ≠ verified — a name-based scan can also miss suites filed elsewhere, so check before acting.
+> ⚠ **7 built module(s) have no test file** in `backend/src/modules/<name>/` or `backend/tests/` matched by name: `e2e-fixture`, `faq`, `menus`, `page-builder`, `projects-content`, `sectors`, `team`. Built ≠ verified — a name-based scan can also miss suites filed elsewhere, so check before acting.
 
 ### 2. Template-engine 9-stage driver reality
 
@@ -62,41 +68,34 @@ Parsed from `backend/src/modules/template-engine/drivers/index.js` — from the 
 
 ### 3. Pull requests — true merge state
 
-**0 open PR(s).**
+**14 open PR(s).**
 
-_No open PRs._
+| PR | Title | Branch | CI / merge state | Review |
+| --- | --- | --- | --- | --- |
+| [#304](https://github.com/F9info/kdl-os/pull/304) | chore(deps): bump the minor-and-patch group across 1 directory with 20 updates | `dependabot/npm_and_yarn/frontend/minor-and-patch-4a28a0c08b` | UNSTABLE | none |
+| [#303](https://github.com/F9info/kdl-os/pull/303) | chore(deps): bump the minor-and-patch group across 1 directory with 14 updates | `dependabot/npm_and_yarn/backend/minor-and-patch-7fd185136b` | CLEAN | none |
+| [#302](https://github.com/F9info/kdl-os/pull/302) | chore(deps): bump adm-zip from 0.6.0 to 0.6.1 in /backend | `dependabot/npm_and_yarn/backend/adm-zip-0.6.1` | CLEAN | none |
+| [#299](https://github.com/F9info/kdl-os/pull/299) | chore(deps): bump next from 15.5.23 to 15.5.24 in /frontend | `dependabot/npm_and_yarn/frontend/next-15.5.24` | UNSTABLE | none |
+| [#298](https://github.com/F9info/kdl-os/pull/298) | chore(deps): bump sharp from 0.35.3 to 0.35.4 in /backend | `dependabot/npm_and_yarn/backend/sharp-0.35.4` | CLEAN | none |
+| [#297](https://github.com/F9info/kdl-os/pull/297) | chore(deps): bump vitest from 3.2.7 to 4.1.11 in /frontend | `dependabot/npm_and_yarn/frontend/vitest-4.1.11` | UNSTABLE | none |
+| [#296](https://github.com/F9info/kdl-os/pull/296) | chore(deps): bump @vitest/mocker and vitest in /ai-services | `dependabot/npm_and_yarn/ai-services/multi-00f7b83f97` | UNSTABLE | none |
+| [#295](https://github.com/F9info/kdl-os/pull/295) | chore(deps): bump @vitest/mocker and vitest in /backend | `dependabot/npm_and_yarn/backend/multi-00f7b83f97` | UNSTABLE | none |
+| [#294](https://github.com/F9info/kdl-os/pull/294) | chore(deps): bump nodemailer from 9.0.5 to 9.1.1 in /backend | `dependabot/npm_and_yarn/backend/nodemailer-9.1.1` | CLEAN | none |
+| [#293](https://github.com/F9info/kdl-os/pull/293) | chore(deps): bump multer from 2.2.0 to 2.3.0 in /backend | `dependabot/npm_and_yarn/backend/multer-2.3.0` | CLEAN | none |
+| [#290](https://github.com/F9info/kdl-os/pull/290) | chore(deps): bump qs from 6.15.3 to 6.16.0 in /backend | `dependabot/npm_and_yarn/backend/qs-6.16.0` | CLEAN | none |
+| [#289](https://github.com/F9info/kdl-os/pull/289) | chore(deps): bump qs from 6.15.3 to 6.16.0 in /ai-services | `dependabot/npm_and_yarn/ai-services/qs-6.16.0` | CLEAN | none |
+| [#288](https://github.com/F9info/kdl-os/pull/288) | chore(deps): bump fast-uri from 3.1.5 to 3.1.7 in /backend | `dependabot/npm_and_yarn/backend/fast-uri-3.1.7` | CLEAN | none |
+| [#285](https://github.com/F9info/kdl-os/pull/285) | chore(deps): bump @anthropic-ai/sdk from 0.120.0 to 0.123.0 in /ai-services in the minor-and-patch group across 1 directory | `dependabot/npm_and_yarn/ai-services/minor-and-patch-a7a3856383` | CLEAN | none |
 
 #### Ghost merges — CLOSED on GitHub, but the code IS on master
 
-**1 of the last 40 closed PRs actually shipped.** This is the
-KDL-520 defect: pushing straight to master makes GitHub close the PR instead of merging it,
-so PR history under-reports what was delivered. Do not read these as abandoned work.
-
-| PR | Title | Evidence it landed |
-| --- | --- | --- |
-| [#169](https://github.com/F9info/kdl-os/pull/169) | feat(KDL-482): brand-kit Phase 1 — data model, OKLCH palette extraction, contrast report | squash commit "feat(KDL-482): brand-kit Phase 1 — data model, OKLCH palette, contrast report, state machine (#169)" |
+_None found in the last 40 closed PRs._
 
 _Scan window: the 40 most recent closed PRs. Older ghost merges are not covered._
 
 ### 4. Board state — blocked and in-flight
 
-**559 issues total: 553 done, 1 in progress, 3 blocked, 0 todo, 1 cancelled.**
-
-#### Blocked — every row needs a named unblock owner
-
-| Issue | Title | Unblock owner | Unblock action | Owner source |
-| --- | --- | --- | --- | --- |
-| KDL-558 | P1: walk the full 9-stage Studio flow as a user and report every dead end | **⚠ UNASSIGNED** | set `unblockDescriptor` on the board, or add KDL-558 to `.agents/unblock-owners.json` | — |
-| KDL-560 | P0: make Template Engine ONE install, and fix the sidebar lies (Studio label, Credits 404) | **⚠ UNASSIGNED** | set `unblockDescriptor` on the board, or add KDL-560 to `.agents/unblock-owners.json` | — |
-| KDL-567 | CEO: land the KDL-557 P0 set and close the loop with the user | **⚠ UNASSIGNED** | set `unblockDescriptor` on the board, or add KDL-567 to `.agents/unblock-owners.json` | — |
-
-> ⚠ 3 blocked issue(s) have no named unblock owner: KDL-558, KDL-560, KDL-567. A blocked issue without an owner never moves.
-
-#### In progress
-
-| Issue | Title |
-| --- | --- |
-| KDL-557 | i didnt understand what you built new template engine module |
+> ⚠ **Board data unavailable:** PAPERCLIP_API_URL / PAPERCLIP_API_KEY / PAPERCLIP_COMPANY_ID not set — board state could not be read (run this from a Paperclip agent run). Treat this section as UNKNOWN, not empty.
 
 ---
 
@@ -111,6 +110,189 @@ Recent per-issue detail is in the rolling changelog below; full history in
 <!-- ROLLING WINDOW: keep only the most recent entries here to minimise per-run context.
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
+
+- **2026-09-26 — Web app · Pages wizard grid now lists all 11 real Sector Detail pages**: stray
+  recurring "Sector Detail" test-debris page/nav-item cleaned up (again — 3rd occurrence, root
+  cause is the Navigation wizard's custom-add field always auto-scaffolding a real page). Added a
+  `sectorPages` query to the wizard's Pages grid so all 11 real Sector Detail pages (Showrooms,
+  Hotel, Hospital, ...) show as their own orange-badged cards next to the purple Page cards, each
+  linking to the same real per-sector editor `/admin/sectors` already used — placement chosen by
+  the user via an `AskUserQuestion` clarification. Also fixed `/admin/sectors` (+Team/FAQ/Case-
+  Studies/Menus) dead-ending on "Add ?projectId= to the URL" when opened from the sidebar (new
+  shared `useDefaultProjectId()` hook), a hardcoded transparent/lightText header bug causing
+  white-on-white nav on non-hero pages, the Navigation step never applying the chosen Header/
+  Footer layout at all, nav-created pages always getting a dead `url: null` link, and a missing
+  "Saving…" indicator that made in-flight nav edits look lost on a mistimed refresh. See
+  `.agents/HANDOFF.md` same date.
+
+- **2026-09-26 — Scalable sector detail-page architecture (`/sectors/[slug]`)**: `Sector.
+  detail_page_id` links each sector to an auto-created `BuilderPage` (zero manual page-creation
+  per sector, works for 5 or 100+). New dynamic route serves any sector by slug, reusing the
+  generic block library + whatever Header/Footer already exists on the project. Listing page now
+  links via real computed slugs, not stored hrefs. Root-caused a recurring bug (3rd time this
+  session): `ConstructionFooter`'s nav was a second, static, driver-overwritable source — now reads
+  the live Menu like Header already does, so nav edits propagate to both everywhere, permanently.
+  See `.agents/HANDOFF.md` same date.
+
+- **2026-09-26 — Sectors page: new module + 4-variant Section Builder block**: recreates the
+  approved `sectors.html` fully dynamically. New `Sector` module (model/migration/CRUD/admin UI,
+  same shape as Team/FAQ/Projects-Content) + new `ConstructionSectorDetailList` block (4 variants —
+  Design 1 exact reference clone, 2-4 original alternatives), DB-wins-if-non-empty like every other
+  content block. Extended `ConstructionLeadFormFAQ` with optional checklist/trust-stats fields
+  (additive, existing pages unaffected). Real bug found+fixed: `useScrollReveal`'s 0.15 intersection
+  threshold can never be satisfied by an ~4500px-tall single-ref section — it silently never
+  revealed at all; fixed with a new per-row reveal helper, applied to all 4 variants. Seeded all 11
+  real sectors verbatim from the reference; 3 keep the reference's own Unsplash stock photos (no
+  local asset exists). See `.agents/HANDOFF.md` same date.
+
+- **2026-09-26 — Menus module: 3-level nav system, WordPress-style drag-drop admin UI**: new
+  `Menu`/`MenuItem` models (self-referencing adjacency list, depth capped at 3 in app logic),
+  full CRUD + public tree-read endpoint, WordPress-Menus-style two-pane admin UI at
+  `/admin/menus` using native HTML5 drag-and-drop (no new dependency) — drag onto a row to nest,
+  drag to an edge to reorder. Reusable by design: any future KDL Kit project configures its whole
+  nav through this UI alone. Phase-1 rendering: `ConstructionHeader` Design 1 desktop nav only
+  (CSS-only hover-dropdown/flyout, Tailwind named groups). 3 real bugs found+fixed: an off-by-one
+  in the depth check that rejected legitimate depth-3 items; a `javascript:`-URL stored-XSS hole
+  (Zod allowlist + render-side sanitizer); and the big one — `template-engine`'s website driver
+  never set `project_id` on any `BuilderPage` it created (any project, ever), so the public route
+  never had a `projectId` to fetch a menu by. Fixed the driver + `page-builder` service, backfilled
+  Subhadra's 17 existing pages directly in the dev DB. Verified via a live hover-dropdown
+  screenshot on the real `/p/...-about` page (temporary test item, cleaned up after). Footer/
+  mobile-nav/other header designs still on the flat-links fallback — deferred. See
+  `.agents/HANDOFF.md` same date.
+
+- **2026-09-26 — FAQ + Projects Content modules, Settings→Fields wired for simple text**:
+  continues the Team module pattern. New `FaqEntry`/`ProjectCaseStudy` models + migrations +
+  admin CRUD + public endpoints, both driving real Puck blocks (`ConstructionLeadFormFAQ`,
+  `ConstructionProjectsSlider`). No Blog module — reference site has no blog, verified by
+  checking the source HTML first. Gallery folded into Projects Content, not separate. Added a
+  public bulk-read endpoint to `setting-fields` (every route was auth-only before — blocked the
+  public site from ever reading a field) and seeded 10 Website-Content fields (Vision/Mission/
+  About/tagline) — 3 more Puck blocks now read from there. Asset audit: all 152 `/seed/...` paths
+  referenced by the live Home+About pages resolve to real files — zero dependency on
+  `after-delete-folder`, confirmed empirically. See `.agents/HANDOFF.md` same date.
+
+- **2026-09-26 — Team module: first real content module** (schema/migration/admin
+  CRUD/Puck data-binding), proving the module→schema→migration→model→seeder→service→
+  admin→frontend pattern the user asked for. New `TeamMember` model + migration, full CRUD
+  at `/api/team` (+ unauthenticated `/api/team/public`), `/admin/team` screen, seeded with
+  the 2 real Subhadra founders. `ConstructionFounderProfile` can now bind to a `TeamMember`
+  by id instead of copying content into block props — verified end-to-end: edited a bio via
+  the Team API only, the public page picked it up with zero republish. FAQ/Blog/Gallery/
+  Projects modules and the Settings→Fields migration for Vision/Mission/taglines are still
+  open — Team was phase 1 by the user's own choice. See `.agents/HANDOFF.md` same date.
+
+- **2026-09-26 — Founder Profile moved: About category → Team category**: removed from About
+  (live page updated, 12→11 blocks), added to Team in place of `ConstructionTeamCrew` (kept
+  Team at 4 designs; TeamCrew's code untouched, just no longer in any picker). See
+  `.agents/HANDOFF.md` same date.
+
+- **2026-09-26 — Mission & Vision: 4 selectable designs**: audited every page-builder category
+  for "≥4 designs like Hero Slider" first — everything else already clears 4 (multiple distinct
+  components grouped per category, merged across packs by `compose.ts`). Mission & Vision was
+  the only real gap; added a `variant` field (1=existing layout kept as Current, 2-4 new). See
+  `.agents/HANDOFF.md` same date.
+
+- **2026-09-26 — About page rebuilt with real content (Phase 1 of full-site KDL-dynamic
+  rebuild)**: real `about.html` content end to end — real header/footer (was generic `NavBar`),
+  Inner Banner, real About-intro/stats copy, 2 new+1 new+1 extended components
+  (`ConstructionFounderProfile`, `ConstructionSectorsRadial`, `ConstructionMissionVision`,
+  `ConstructionTimelineHistory` 4→7 entries), reused Lead-form/Clients-grid. Fixed a real bug:
+  `ConstructionInnerBanner`'s breadcrumb Home link was hardcoded to `/` — this app serves pages
+  at generated `/p/<slug>` paths, so it 404'd; added a `homeHref` field. **Also corrected a
+  wrong "Puck merges defaultProps at render time" claim in the 2026-09-24 Testimonials Slider
+  entry** (archived) — verified empirically that's editor-canvas-only; the public `/p/<slug>`
+  render never backfills missing props. Contact/Sectors/Services/work-* pages, the
+  Fields/Theme/Palette/Layout audit, and the full pipeline review are still open — user
+  confirmed a phased approach, About was phase 1. See `.agents/HANDOFF.md` same date.
+
+- **2026-09-26 — Inner Banner block added**: `ConstructionInnerBanner`, 4 designs (Design 1 a
+  pixel clone of the reference `.page-banner`; 2-4 new alternates), category placed after
+  "Welcome". `<h1>`/breadcrumb are dynamic — first use of Puck's `metadata` prop in this repo,
+  wired through `template-engine/edit/[id]/page.tsx` and `p/[slug]/page.tsx`. Verified against
+  the actual docker stack (which runs a baked `next start` image, not a live-reloading dev
+  server — required `docker compose build frontend` to see the change). See
+  `.agents/HANDOFF.md` same date.
+
+- **2026-09-24 — Hero brand logos: nested array field, real logos from index.html**: `d2Slides[].
+  brands` converted from a plain-text textarea to a nested Puck array (`{name, logo}[]`), giving
+  multi-image-upload and native drag-reorder for free (same array pattern as the slide
+  accordions). Populated with the real per-slide brand logo sets matched against `index.html`'s
+  `.v2-hero-brands-track` markup (25 real files from `frontend/public/seed/subhadra/ourbrands/`,
+  all verified to exist on disk). Migrated the live page's data; also fixed an unrelated leftover
+  (`sliderShowArrows`/`sliderShowDots` had been left `false` from earlier session testing).
+
+- **2026-09-24 — ConstructionHero Content tab: array-based slide accordions + real content**:
+  converted all 4 Hero designs from flat `d{n}SlideN{Field}` props to Puck native `type: 'array'`
+  fields (same pattern as `ConstructionTestimonialsSlider`/`ConstructionProjectsSlider`) — gives
+  per-slide accordions with drag/remove and an "Add" button for free, fixed content reordered to
+  sit below. Real Subhadra hero images/copy from `index.html` replace Unsplash placeholders
+  (6 real `hero-slider/*` images copied to `frontend/public/seed/subhadra/hero-slider/`); d3/d4
+  (no real-site equivalent) reuse real content already sourced for Testimonials/Disciplines.
+  Fixed a real bug found along the way: `blocks-panel.tsx`'s Style/Content tabs never called a
+  component's `resolveFields`, so Design-1..4 components leaked all 4 designs' fields at once
+  regardless of selected variant. Migrated the live page's already-published Hero block via a
+  scoped Node/`pg` script so its Content tab shows real data immediately, not an empty array.
+
+- **2026-09-24 — ConstructionHero panel: hid variant/primaryColor/secondaryColor**: removed
+  from the Style tab (not from data/type — still needed for the 4-design branching and colour
+  fallback logic, and any already-published instance still carries real values) via a new
+  scoped `HIDDEN_FIELDS` map in `blocks-panel.tsx`, keyed by component type so it doesn't hide
+  `variant` on every other block's own design picker. Verified via Playwright: fields gone from
+  panel, hero still renders Design 2 with its real colors.
+
+- **2026-09-24 — ConstructionHero Style-tab "Slider Settings" + "Typography" accordions**:
+  Slick-inspired carousel controls (arrows/dots show-hide, autoplay+speed, loop, fade-vs-slide)
+  and per-element font size/weight/color (title/tagline/paragraph/button) added to all 4 Hero
+  variants. `blocks-panel.tsx`'s Style tab now groups any `slider*`/`typo*`-prefixed field into
+  its own collapsible accordion automatically — reusable by other slider blocks on request.
+  Verified live via Playwright (toggle Hide → arrows/dots actually disappear from canvas; set a
+  typo color → H1's computed color changes); not published, editor-behavior check only.
+
+- **2026-09-24 — Full home-page audit vs index.html**: found + fixed 3 real bugs — missing
+  Products section (inserted + reordered via native drag), all 6 Discipline card icons
+  showing the same generic hardhat (stale pre-icon-field instance, fixed via Content tab),
+  and Footer content badly wrong (generic copyright, swapped Showroom/Regd.Office addresses,
+  incomplete phone/email, extra social icons) — Footer isn't selectable in this Puck editor
+  at all (not root-caused), fixed via a scoped SQL merge after explicit user approval
+  (auto-mode blocked the raw write twice). All verified via Postgres + screenshots.
+
+- **2026-09-24 — Our Brands real logos + inserted on home page**: `ConstructionOurBrands` now
+  renders real vendor logo images (99 files copied to `frontend/public/seed/subhadra/ourbrands/`)
+  instead of text chips; UI restyled to match the source site exactly. Block is now actually on
+  the live home page (was built earlier but never inserted). **Found: this editor has no
+  autosave — only the Publish button persists changes** (`PUT /api/page-builder/:id`); verified
+  via direct Postgres query, not just the UI.
+
+- **2026-09-24 — Real Content/Style tab split**: Style tab now shows only padding/background/
+  align/variant/color-type fields, Content tab shows everything else (text/images/slide add-
+  remove), for every page-builder component, via Puck's exported `AutoField`/`FieldLabel` +
+  a field-name heuristic in `blocks-panel.tsx` (`isStyleField`) — no per-component schema
+  rewrite needed. Verified live with Playwright (login + edit + persistence check).
+  **Admin login password changed to `kdl@123`** (was rejecting the docs' default
+  `kdl-dev-seed-password` — that hash predates the current seed default) — one `users` row only.
+
+- **2026-09-24 — Page-builder: real image upload field + native slide add/remove**: Theme Engine
+  link moved under every block's Style tab; new `imageField()` custom field (URL box + Upload →
+  MediaPicker) wired into About/Disciplines/Sectors/Products/Tagline images; Featured Projects
+  and Testimonials sliders switched to Puck's native `type:'array'` field for real add/remove/
+  reorder-slide UI. Breaking prop-shape change for those 2 sliders — already-placed instances
+  need re-inserting.
+
+- **2026-09-24 — Subhadra site ported into page-builder**: 10 more sections from the client's
+  marketing site added to `packs/construction/index.tsx` — 6 existing components extended with
+  Subhadra content/fields (About logos, Sectors 9th card, Products image+brands, Clients 24
+  logos, Lead/FAQ + Tagline copy, Floating Actions gained a brochure FAB + trust-badge), 4 new
+  components (Disciplines Grid, Our Brands tabs, Featured Projects slider, Testimonials slider
+  + video modal). Real assets copied to `frontend/public/seed/subhadra/`. No backend changes.
+  Trims flagged in handoff: Products 8/15, Clients 24/39, brand logos shown as text chips.
+
+- **2026-09-24 — Tagline Strip page-builder section**: new `TaglineStrip` component + top-level
+  "Tagline Strip" sidebar category in `packs/general/index.tsx`, 4 variants (gradient banner /
+  dark mark+text / minimal rule bar / floating card w/ optional CTA), shared editable fields via
+  Puck's Style tab, no backend changes. Reminder logged for next agent: `frontend` runs as a
+  built Docker image (no volume mount/hot reload) — needs `docker compose build frontend && up -d`
+  after any frontend edit.
 
 - **2026-08-25 — KDL-558 row 1**: Studio's INTAKE stage gets a real "Logo & Contact Details" form
   (company name, primary/secondary email, primary/secondary phone, address1/2), backed by the

@@ -57,10 +57,11 @@ const config: NextConfig = {
       `img-src 'self' data: blob: ${imgSrc}`,
       "font-src 'self'",
       "connect-src 'self'",
+      "frame-src 'self' https://www.google.com",
       "frame-ancestors 'none'",
       "object-src 'none'",
       "base-uri 'self'",
-      "form-action 'self'",
+      "form-action 'self' mailto:",
     ].join('; ')
 
     return [

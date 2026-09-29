@@ -63,6 +63,10 @@ export const valueBySlugSchema = z.object({
   params: z.object({ slug: z.string().min(1) }),
 });
 
+export const valuesBySlugsSchema = z.object({
+  query: z.object({ slugs: z.string().min(1) }),
+});
+
 export const saveValuesSchema = z.object({
   body: z.object({
     type_id: z.string().min(1),

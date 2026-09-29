@@ -1,16 +1,34 @@
 import { prisma } from '../../config/database.js';
+import { resolveForEditor, stripEntityBindings } from '../../shared/detail-pages/resolve.js';
 import { writeActivityAsync } from '../user-management/shared/activity-logger.js';
 
 export const listPages = async () => {
   return prisma.builderPage.findMany({
     where: { deleted_at: null },
     orderBy: { updated_at: 'desc' },
-    select: { id: true, slug: true, title: true, status: true, updated_at: true },
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      status: true,
+      updated_at: true,
+      project_id: true,
+    },
   });
 };
 
+// A template-bound instance (see detail-pages.prisma) defers its structure
+// to the shared DetailPageTemplate row — the editor should show/edit that,
+// not this page's own frozen `data` copy. Transparent to every caller: a
+// page with no `template_id` behaves exactly as before.
 export const getPage = async (id) => {
-  return prisma.builderPage.findFirst({ where: { id, deleted_at: null } });
+  const page = await prisma.builderPage.findFirst({ where: { id, deleted_at: null } });
+  if (!page) return null;
+  if (page.template_id) {
+    const template = await prisma.detailPageTemplate.findUnique({ where: { id: page.template_id } });
+    if (template) return { ...page, data: await resolveForEditor(page, template) };
+  }
+  return page;
 };
 
 // Deliberately matches soft-deleted rows too — `slug` is globally @unique
@@ -25,11 +43,11 @@ export const getPageBySlug = async (slug) => {
 export const getPublishedBySlug = async (slug) => {
   return prisma.builderPage.findFirst({
     where: { slug, status: 'PUBLISHED', deleted_at: null },
-    select: { slug: true, title: true, data: true },
+    select: { slug: true, title: true, data: true, project_id: true },
   });
 };
 
-export const createPage = async ({ title, slug, data }, actorId) => {
+export const createPage = async ({ title, slug, data, project_id }, actorId) => {
   const page = await prisma.builderPage.create({
     data: {
       title,
@@ -37,6 +55,7 @@ export const createPage = async ({ title, slug, data }, actorId) => {
       status: 'DRAFT',
       data: data ?? { root: { props: { title } }, content: [], zones: {} },
       created_by: actorId,
+      project_id,
     },
   });
   writeActivityAsync({
@@ -51,6 +70,35 @@ export const createPage = async ({ title, slug, data }, actorId) => {
 };
 
 export const updatePage = async (id, patch, actorId) => {
+  // Same transparency as getPage above: a structural save on a
+  // template-bound instance writes through to the shared template (every
+  // sibling instance re-resolves from it on next load), not this page's own
+  // row — that's what makes the layout "always-live". `title`/`status`
+  // still belong to this page alone.
+  if (patch.data !== undefined) {
+    const existing = await prisma.builderPage.findFirst({ where: { id } });
+    if (existing?.template_id) {
+      const { data: incoming, ...rest } = patch;
+      const template = await prisma.detailPageTemplate.findUnique({ where: { id: existing.template_id } });
+      const data = await stripEntityBindings(existing, template, incoming);
+      await prisma.detailPageTemplate.update({
+        where: { id: existing.template_id },
+        data: { data },
+      });
+      const page = Object.keys(rest).length
+        ? await prisma.builderPage.update({ where: { id }, data: rest })
+        : existing;
+      writeActivityAsync({
+        actor: actorId,
+        module: 'page-builder',
+        action: rest.status === 'PUBLISHED' ? 'published' : 'updated',
+        subject_type: 'BuilderPage',
+        subject_id: id,
+        description: `Page "${page.title}" ${rest.status === 'PUBLISHED' ? 'published' : 'updated'} (shared template)`,
+      });
+      return { ...page, data };
+    }
+  }
   const page = await prisma.builderPage.update({ where: { id }, data: patch });
   writeActivityAsync({
     actor: actorId,

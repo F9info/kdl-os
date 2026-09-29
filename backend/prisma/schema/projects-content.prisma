@@ -1,0 +1,26 @@
+// Projects Content module schema.
+// Real completed-work case studies (e.g. "Novotel Visakhapatnam") shown in
+// blocks like ConstructionProjectsSlider — same pattern as team.prisma and
+// faq.prisma. Named "ProjectCaseStudy" (not "Project") to stay clearly
+// distinct from the tenancy `Project` model in projects.prisma.
+
+model ProjectCaseStudy {
+  id          String   @id @default(cuid())
+  project_id  String?
+  title       String
+  eyebrow     String?
+  tags        String?
+  image       String?
+  description String?
+  cta_label   String?
+  cta_href    String?
+  link_label  String?
+  link_href   String?
+  order       Int      @default(0)
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@index([project_id])
+  @@map("project_case_studies")
+}

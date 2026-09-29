@@ -159,6 +159,22 @@ export const getValueBySlug = async (slug) => {
   return withDisplayValue(field);
 };
 
+// Bulk read for the public site renderer (ConstructionAboutSplit,
+// ConstructionMissionVision, ConstructionTaglineStrip, etc. fetch several
+// slugs — e.g. vision-heading + vision-paragraph-1 + vision-paragraph-2 — in
+// one call instead of one request per field). Returns only { slug: value },
+// silently skipping unknown slugs — a typo'd slug shows as empty/fallback
+// content, never a 500.
+export const getValuesBySlugs = async (slugs) => {
+  const fields = await prisma.settingField.findMany({
+    where: { slug: { in: slugs } },
+    select: { slug: true, value: true },
+  });
+  const values = {};
+  for (const f of fields) values[f.slug] = f.value ?? '';
+  return values;
+};
+
 // Brand-kit (template-engine intake logo upload) writes straight into the
 // global `logo` field so the admin sidebar/dashboard immediately reflect
 // the active project's logo — see uploadLogo() in
