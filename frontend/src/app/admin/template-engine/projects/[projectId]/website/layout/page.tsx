@@ -87,7 +87,11 @@ const FOOTER_LABELS: Record<Variant, string> = {
   '4': 'Dark curve, 4 link columns + newsletter signup',
 }
 
-function sectionConfig(section: 'topHeader' | 'header' | 'footer', brand: BrandContext) {
+function sectionConfig(
+  section: 'topHeader' | 'header' | 'footer',
+  brand: BrandContext,
+  projectId: string
+) {
   if (section === 'topHeader') {
     return {
       title: 'Top header',
@@ -116,8 +120,12 @@ function sectionConfig(section: 'topHeader' | 'header' | 'footer', brand: BrandC
         // page) — fixed would escape this picker's tile entirely and pin
         // itself to the browser viewport. `puck.isEditing` makes it use
         // `sticky` instead, same as it already does inside the real editor
-        // canvas.
-        puck: { isEditing: true },
+        // canvas. `metadata.projectId` is what lets the header fetch the
+        // project's real live nav tree instead of falling back to
+        // defaultProps' frozen sample links (previously missing here —
+        // every design tile showed the same stale placeholder nav
+        // regardless of the project's actual Selected Navigation).
+        puck: { isEditing: true, metadata: { projectId } },
       }),
       label: (variant: Variant) => `Design ${variant} — ${HEADER_LABELS[variant]}`,
       tileScale: 0.9,
@@ -138,6 +146,10 @@ function sectionConfig(section: 'topHeader' | 'header' | 'footer', brand: BrandC
       ...FOOTER_CONFIG.defaultProps,
       ...footerOverrides(brand),
       variant,
+      // Same fix as Header above — without this the footer preview falls
+      // back to defaultProps' frozen sample links instead of the project's
+      // real live footer menu.
+      puck: { isEditing: true, metadata: { projectId } },
     }),
     label: (variant: Variant) => `Design ${variant} — ${FOOTER_LABELS[variant]}`,
     tileScale: 0.55,
@@ -165,7 +177,7 @@ function SectionPicker({
   editPageId: string | undefined
   projectId: string
 }) {
-  const cfg = sectionConfig(section, brand)
+  const cfg = sectionConfig(section, brand, projectId)
   const [viewingVariant, setViewingVariant] = useState<Variant | null>(null)
   const editHref = editPageId
     ? `/admin/template-engine/edit/${editPageId}?projectId=${projectId}`

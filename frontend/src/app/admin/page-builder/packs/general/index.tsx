@@ -2,6 +2,8 @@ import type { ReactNode } from 'react'
 import type { Config } from '@puckeditor/core'
 import type { ComponentPack } from '../types'
 import { variantField } from '../variant-field'
+import { imageField } from '../image-field'
+import { InlineEditableText } from '../inline-editable-text'
 
 type Align = 'left' | 'center' | 'right'
 
@@ -59,6 +61,18 @@ type GeneralProps = {
     links: string
     copyright: string
   }
+  TaglineStrip: {
+    variant: '1' | '2' | '3' | '4'
+    logoUrl: string
+    brand: string
+    headline: string
+    highlightPhrase: string
+    subtext: string
+    primaryColor: string
+    accentColor: string
+    ctaLabel: string
+    ctaHref: string
+  }
 }
 
 // Old 'layout'/'content' category cards are gone — Section/Columns/Spacer/
@@ -73,6 +87,7 @@ const typedCategories: NonNullable<Config<GeneralProps>['categories']> = {
   services: { title: 'Services', components: ['FeatureCards'] },
   bottombar: { title: 'Footer', components: ['Footer'] },
   counters: { title: 'Counters', components: ['StatsStrip'] },
+  taglinestrip: { title: 'Tagline Strip', components: ['TaglineStrip'] },
 }
 
 // ─── Shared helpers (mirrors the pipe-delimited-line pattern the medical/
@@ -329,6 +344,44 @@ function FooterVariantThumb({ variant }: { variant: string }) {
   )
 }
 
+const TAGLINE_STRIP_VARIANT_LABELS: Record<string, string> = {
+  '1': 'Gradient banner',
+  '2': 'Dark, mark + text',
+  '3': 'Minimal rule bar',
+  '4': 'Floating card',
+}
+function TaglineStripVariantThumb({ variant }: { variant: string }) {
+  if (variant === '2')
+    return (
+      <SketchBox className="flex items-center justify-center gap-1.5 bg-slate-900 p-2">
+        <div className="h-3 w-3 flex-none rounded-full bg-orange-400" />
+        <div className="h-1.5 w-16 rounded bg-white/70" />
+      </SketchBox>
+    )
+  if (variant === '3')
+    return (
+      <SketchBox className="flex flex-col items-center justify-center gap-1.5 border border-slate-200 bg-white p-2">
+        <div className="h-1.5 w-20 rounded bg-slate-700" />
+        <div className="h-0.5 w-4 rounded bg-orange-400" />
+      </SketchBox>
+    )
+  if (variant === '4')
+    return (
+      <SketchBox className="flex items-center justify-center bg-slate-100 p-2">
+        <div className="flex h-10 w-24 flex-col items-center justify-center gap-1 rounded-md border border-slate-200 bg-white shadow-sm">
+          <div className="h-1 w-14 rounded bg-slate-700" />
+          <div className="h-1.5 w-8 rounded bg-orange-400" />
+        </div>
+      </SketchBox>
+    )
+  return (
+    <SketchBox className="flex flex-col items-center justify-center gap-1 bg-gradient-to-r from-orange-600 to-orange-400 p-2">
+      <div className="h-1 w-10 rounded bg-white/70" />
+      <div className="h-1.5 w-20 rounded bg-white" />
+    </SketchBox>
+  )
+}
+
 const typedComponents: Config<GeneralProps>['components'] = {
   Hero: {
     label: 'Hero',
@@ -569,7 +622,11 @@ const typedComponents: Config<GeneralProps>['components'] = {
         ],
       },
     },
-    defaultProps: { src: 'https://placehold.co/1200x600', alt: '', rounded: true },
+    defaultProps: {
+      src: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=1200&h=600&fit=crop&auto=format',
+      alt: '',
+      rounded: true,
+    },
     render: ({ src, alt, rounded }) => (
       <div className="px-6">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -931,18 +988,21 @@ const typedComponents: Config<GeneralProps>['components'] = {
     },
     render: ({ variant, brand, logoUrl, tagline, links, copyright }) => {
       const rows = parsePipeLines(links, 2)
-      const logo = logoUrl ? (
+      // Logo image already carries the brand name/mark — show the text
+      // name only as a fallback when there's no logo, not alongside it.
+      const brandMark = logoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={logoUrl} alt={brand} className="h-7 w-7 rounded object-contain" />
-      ) : null
+      ) : (
+        <span>{brand}</span>
+      )
 
       if (variant === '2') {
         return (
-          <footer className="bg-slate-900 px-6 py-10 text-center text-slate-300">
-            <div className="mx-auto flex max-w-5xl flex-col items-center gap-3">
+          <footer className="bg-slate-900 px-4 py-10 text-center text-slate-300 md:px-8">
+            <div className="flex flex-col items-center gap-3">
               <div className="flex items-center gap-2 text-lg font-bold text-white">
-                {logo}
-                {brand}
+                {brandMark}
               </div>
               <p className="text-sm text-slate-400">{tagline}</p>
               <nav className="flex gap-6">
@@ -961,12 +1021,11 @@ const typedComponents: Config<GeneralProps>['components'] = {
       }
       if (variant === '3') {
         return (
-          <footer className="border-t border-slate-200 bg-slate-50 px-6 py-10 text-slate-600">
-            <div className="mx-auto flex max-w-5xl flex-wrap items-start justify-between gap-6">
+          <footer className="border-t border-slate-200 bg-slate-50 px-4 py-10 text-slate-600 md:px-8">
+            <div className="flex flex-wrap items-start justify-between gap-6">
               <div>
                 <div className="flex items-center gap-2 text-lg font-bold text-slate-900">
-                  {logo}
-                  {brand}
+                  {brandMark}
                 </div>
                 <p className="mt-1 text-sm text-slate-500">{tagline}</p>
               </div>
@@ -978,7 +1037,7 @@ const typedComponents: Config<GeneralProps>['components'] = {
                 ))}
               </nav>
             </div>
-            <div className="mx-auto mt-8 max-w-5xl border-t border-slate-200 pt-6 text-xs text-slate-400">
+            <div className="mt-8 border-t border-slate-200 pt-6 text-xs text-slate-400">
               {copyright}
             </div>
           </footer>
@@ -986,22 +1045,20 @@ const typedComponents: Config<GeneralProps>['components'] = {
       }
       if (variant === '4') {
         return (
-          <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-6 py-6 text-sm text-slate-500">
+          <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-4 py-6 text-sm text-slate-500 md:px-8">
             <span className="flex items-center gap-2 font-semibold text-slate-900">
-              {logo}
-              {brand}
+              {brandMark}
             </span>
             <span>{copyright}</span>
           </footer>
         )
       }
       return (
-        <footer className="bg-slate-900 px-6 py-10 text-slate-300">
-          <div className="mx-auto flex max-w-5xl flex-wrap items-start justify-between gap-6">
+        <footer className="bg-slate-900 px-4 py-10 text-slate-300 md:px-8">
+          <div className="flex flex-wrap items-start justify-between gap-6">
             <div>
               <div className="flex items-center gap-2 text-lg font-bold text-white">
-                {logo}
-                {brand}
+                {brandMark}
               </div>
               <p className="mt-1 text-sm text-slate-400">{tagline}</p>
             </div>
@@ -1013,10 +1070,176 @@ const typedComponents: Config<GeneralProps>['components'] = {
               ))}
             </nav>
           </div>
-          <div className="mx-auto mt-8 max-w-5xl border-t border-slate-800 pt-6 text-xs text-slate-500">
+          <div className="mt-8 border-t border-slate-800 pt-6 text-xs text-slate-500">
             {copyright}
           </div>
         </footer>
+      )
+    },
+  },
+  TaglineStrip: {
+    label: 'Tagline Strip',
+    fields: {
+      variant: variantField(TAGLINE_STRIP_VARIANT_LABELS, TaglineStripVariantThumb),
+      logoUrl: imageField('Logo'),
+      brand: { type: 'text' },
+      headline: { type: 'textarea' },
+      highlightPhrase: { type: 'text' },
+      subtext: { type: 'text' },
+      primaryColor: { type: 'text' },
+      accentColor: { type: 'text' },
+      ctaLabel: { type: 'text' },
+      ctaHref: { type: 'text' },
+    },
+    defaultProps: {
+      variant: '1',
+      logoUrl: '/seed/subhadra/brand/logo.png',
+      brand: 'Subhadra Group',
+      headline: 'Your one-stop solution for building engineering products & services.',
+      highlightPhrase: 'one-stop solution',
+      subtext: 'Design · Installation · Service · Maintenance',
+      primaryColor: '#ff4d1c',
+      accentColor: '#ff9a3c',
+      ctaLabel: '',
+      ctaHref: '#',
+    },
+    render: ({
+      id,
+      puck,
+      variant,
+      logoUrl,
+      brand,
+      headline,
+      highlightPhrase,
+      subtext,
+      primaryColor,
+      accentColor,
+      ctaLabel,
+      ctaHref,
+    }) => {
+      const isEditing = puck?.isEditing ?? false
+      if (variant === '2') {
+        const parts = highlightPhrase ? headline.split(highlightPhrase) : [headline]
+        return (
+          <section className="bg-[#eef1f6] px-6 py-14 text-center md:py-16">
+            {logoUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoUrl} alt={brand} className="mx-auto mb-6 h-9 w-auto" />
+            )}
+            <h2 className="mx-auto max-w-3xl text-2xl font-extrabold tracking-tight text-slate-900 md:text-3xl">
+              {isEditing ? (
+                <InlineEditableText
+                  id={id}
+                  path={['headline']}
+                  value={headline ?? ''}
+                  isEditing={isEditing}
+                  multiline
+                />
+              ) : parts.length > 1 ? (
+                <>
+                  {parts[0]}
+                  <span
+                    className="bg-clip-text text-transparent"
+                    style={{
+                      backgroundImage: `linear-gradient(90deg, ${primaryColor}, ${accentColor})`,
+                    }}
+                  >
+                    {highlightPhrase}
+                  </span>
+                  {parts[1]}
+                </>
+              ) : (
+                headline
+              )}
+            </h2>
+          </section>
+        )
+      }
+      if (variant === '3') {
+        return (
+          <section className="border-y border-slate-200 bg-white px-6 py-8 text-center">
+            {brand && (
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                {brand}
+              </p>
+            )}
+            <p className="mt-1 text-sm font-semibold text-slate-900 md:text-base">{headline}</p>
+            <span
+              className="mx-auto mt-3 block h-[3px] w-9 rounded-full"
+              style={{ backgroundColor: primaryColor }}
+            />
+            {subtext && (
+              <p className="mt-3 text-[11px] uppercase tracking-[0.15em] text-slate-500">
+                {subtext}
+              </p>
+            )}
+          </section>
+        )
+      }
+      if (variant === '4') {
+        return (
+          <section className="bg-slate-50 px-6 py-10 md:py-14">
+            <div className="mx-auto flex max-w-md flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-lg">
+              {brand && (
+                <span
+                  className="text-xs font-semibold uppercase tracking-[0.2em]"
+                  style={{ color: primaryColor }}
+                >
+                  {brand}
+                </span>
+              )}
+              <p className="text-base font-bold text-slate-900 md:text-lg">{headline}</p>
+              {subtext && <p className="text-xs text-slate-500">{subtext}</p>}
+              {ctaLabel && (
+                <a
+                  href={ctaHref}
+                  style={{ backgroundColor: primaryColor }}
+                  className="mt-2 inline-flex rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+                >
+                  {ctaLabel}
+                </a>
+              )}
+            </div>
+          </section>
+        )
+      }
+      return (
+        <section
+          className="px-6 py-14 text-center text-white md:py-16"
+          style={{ background: `linear-gradient(90deg, ${primaryColor}, ${accentColor})` }}
+        >
+          {(isEditing || brand) && (
+            <span className="text-xs font-semibold uppercase tracking-[0.25em] opacity-90 md:text-sm">
+              —{' '}
+              <InlineEditableText
+                id={id}
+                path={['brand']}
+                value={brand ?? ''}
+                isEditing={isEditing}
+              />{' '}
+              —
+            </span>
+          )}
+          <h2 className="mx-auto mt-3 max-w-3xl text-xl font-extrabold tracking-tight md:text-3xl">
+            <InlineEditableText
+              id={id}
+              path={['headline']}
+              value={headline ?? ''}
+              isEditing={isEditing}
+              multiline
+            />
+          </h2>
+          {(isEditing || subtext) && (
+            <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.2em] opacity-90 md:text-xs">
+              <InlineEditableText
+                id={id}
+                path={['subtext']}
+                value={subtext ?? ''}
+                isEditing={isEditing}
+              />
+            </p>
+          )}
+        </section>
       )
     },
   },
@@ -1037,5 +1260,6 @@ export const general: ComponentPack = {
     NavBar: ['1', '2', '3', '4'],
     FeatureCards: ['1', '2', '3', '4'],
     Footer: ['1', '2', '3', '4'],
+    TaglineStrip: ['1', '2', '3', '4'],
   },
 }

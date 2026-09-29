@@ -421,6 +421,14 @@ type ConstructionProps = {
     imageAlt: string
     subtitle: string
     homeHref: string
+    eyebrow: string
+    parentLabel: string
+    parentHref: string
+    ctaPrimaryLabel: string
+    ctaPrimaryHref: string
+    ctaSecondaryLabel: string
+    ctaSecondaryHref: string
+    headline?: string
   }
   ConstructionServicesGrid: {
     sectionTitle: string
@@ -458,6 +466,8 @@ type ConstructionProps = {
     subtext: string
     ctaLabel: string
     ctaHref: string
+    secondaryCtaLabel: string
+    secondaryCtaHref: string
     phoneNumber: string
     phoneLabel: string
     background: 'dark' | 'accent' | 'muted'
@@ -834,10 +844,15 @@ type ConstructionProps = {
     trustText: string
   }
   ConstructionContactSplitMap: {
+    eyebrow: string
     heading: string
+    subcopy: string
+    infoItems: { icon: string; label: string; lines: string; linkPrefix: string }[]
+    mapEmbedUrl: string
+    formEyebrow: string
+    formHeading: string
+    formAction: string
     submitLabel: string
-    address: string
-    businessHours: string
   }
   ConstructionTaglineStrip: {
     logoUrl: string
@@ -966,16 +981,24 @@ type ConstructionProps = {
     person1Photo: string
     person1Name: string
     person1Role: string
+    person1Quote: string
     person1Bio: string
+    person1Facts: { icon: string; label: string; value: string }[]
     person1LinkLabel: string
     person1LinkHref: string
+    person1Variant: 'dark' | 'light'
     person2MemberId: string
     person2Photo: string
     person2Name: string
     person2Role: string
     person2Bio: string
+    person2Ctas: { label: string; href: string }[]
     person2LinkLabel: string
     person2LinkHref: string
+    person2Variant: 'orange' | 'light'
+    person2Facts: { icon: string; label: string; value: string }[]
+    person2MembershipLabel: string
+    person2Memberships: { image: string; alt: string }[]
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
   }
@@ -1290,6 +1313,68 @@ type ConstructionProps = {
     }[]
     padding: 'sm' | 'md' | 'lg'
   }
+  ConstructionIconFeatureGrid: {
+    sectionEyebrow: string
+    sectionTitle: string
+    items: { icon: IconKey | ''; title: string; description: string }[]
+    background: 'white' | 'dark'
+    padding: 'sm' | 'md' | 'lg'
+  }
+  ConstructionDisciplineRows: {
+    sectionEyebrow: string
+    sectionTitle: string
+    sectionSubtitle: string
+    items: {
+      icon: IconKey | ''
+      eyebrow: string
+      heading: string
+      description: string
+      checklist: string
+      image: string
+      images: { src: string; alt: string; caption: string }[]
+      clients: { name: string; note: string; cities: string }[]
+      brandTag: string
+      brandLogos?: { src: string; alt: string }[]
+      ctaLabel: string
+      ctaHref: string
+    }[]
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+  }
+  ConstructionApproachSplit: {
+    eyebrow: string
+    heading: string
+    paragraph1: string
+    paragraph2: string
+    photo: string
+    highlight1Icon: IconKey | ''
+    highlight1Title: string
+    highlight1Description: string
+    highlight2Icon: IconKey | ''
+    highlight2Title: string
+    highlight2Description: string
+    stat1Value: string
+    stat1Label: string
+    stat2Value: string
+    stat2Label: string
+    stat3Value: string
+    stat3Label: string
+    padding: 'sm' | 'md' | 'lg'
+    background: 'white' | 'muted'
+  }
+  ConstructionProcessSteps: {
+    sectionEyebrow: string
+    sectionTitle: string
+    items: { stepLabel: string; title: string; description: string }[]
+    padding: 'sm' | 'md' | 'lg'
+  }
+  ConstructionProjectPhotoSlider: {
+    sectionEyebrow: string
+    sectionTitle: string
+    sectionSubtitle: string
+    items: { image: string; title: string; subtitle: string }[]
+    padding: 'sm' | 'md' | 'lg'
+  }
   ConstructionBrandsLogoGrid: {
     heading: string
     logo1: string
@@ -1394,6 +1479,133 @@ function CheckShieldIcon() {
         d="M12 3l7 3v5c0 5-3.5 9.74-7 11C8.5 20.74 5 16 5 11V6l7-3z"
       />
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4" />
+    </svg>
+  )
+}
+
+function GraduationCapIcon() {
+  return (
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M22 10L12 5 2 10l10 5 10-5z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 12v5c0 1.5 2.5 3 6 3s6-1.5 6-3v-5" />
+    </svg>
+  )
+}
+
+function BriefcaseIcon() {
+  return (
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <rect
+        x="2"
+        y="7"
+        width="20"
+        height="13"
+        rx="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" />
+    </svg>
+  )
+}
+
+function AwardIcon() {
+  return (
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="8" r="6" strokeLinecap="round" strokeLinejoin="round" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 13.5L7 22l5-3 5 3-1.5-8.5" />
+    </svg>
+  )
+}
+
+function EnvelopeIcon() {
+  return (
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <rect
+        x="3"
+        y="5"
+        width="18"
+        height="14"
+        rx="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.5 6.5l8.5 6 8.5-6" />
+    </svg>
+  )
+}
+
+function ShopIcon() {
+  return (
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4 10v10h16V10M2 6l2-4h16l2 4M2 6l1 4a2.5 2.5 0 005 0 2.5 2.5 0 005 0 2.5 2.5 0 005 0 2.5 2.5 0 005 0l1-4"
+      />
+    </svg>
+  )
+}
+
+function BuildingIcon() {
+  return (
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <rect
+        x="4"
+        y="2"
+        width="16"
+        height="20"
+        rx="1"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M8 6h1M8 10h1M8 14h1M15 6h1M15 10h1M15 14h1M9 22v-4h6v4"
+      />
     </svg>
   )
 }
@@ -1823,7 +2035,22 @@ function YoutubeIcon() {
 }
 
 type IconKey =
-  'hardhat' | 'shield' | 'star' | 'snowflake' | 'housegear' | 'tv' | 'plug' | 'fire' | 'lightbulb'
+  | 'hardhat'
+  | 'shield'
+  | 'star'
+  | 'snowflake'
+  | 'housegear'
+  | 'tv'
+  | 'plug'
+  | 'fire'
+  | 'lightbulb'
+  | 'graduationcap'
+  | 'briefcase'
+  | 'award'
+  | 'phone'
+  | 'envelope'
+  | 'shop'
+  | 'building'
 
 const ICON_BY_KEY: Record<IconKey, () => JSX.Element> = {
   hardhat: HardHatIcon,
@@ -1835,7 +2062,23 @@ const ICON_BY_KEY: Record<IconKey, () => JSX.Element> = {
   plug: PlugIcon,
   fire: FireIcon,
   lightbulb: LightbulbIcon,
+  graduationcap: GraduationCapIcon,
+  briefcase: BriefcaseIcon,
+  award: AwardIcon,
+  phone: PhoneIcon,
+  envelope: EnvelopeIcon,
+  shop: ShopIcon,
+  building: BuildingIcon,
 }
+
+const FOUNDER_FACT_ICON_FIELD = {
+  type: 'select',
+  options: [
+    { label: 'Graduation Cap (Qualification)', value: 'graduationcap' },
+    { label: 'Briefcase (Experience)', value: 'briefcase' },
+    { label: 'Award (Recognition)', value: 'award' },
+  ],
+} as const
 
 const DISCIPLINE_ICON_FIELD = {
   type: 'select',
@@ -1904,6 +2147,65 @@ function SectorRevealItem({
   return (
     <div ref={ref} id={id} className={`${revealCls} ${className ?? ''}`}>
       {children}
+    </div>
+  )
+}
+
+// One discipline row's media: a dot-nav slider when `images` has entries
+// (bottom-left caption overlay on the active slide, same hand-rolled dot
+// pattern as ConstructionTestimonialsSlider), falling back to the single
+// legacy `image` prop so existing rows (Sectors' pages) render unchanged.
+function DisciplineRowMedia({
+  images,
+  image,
+  heading,
+}: {
+  images?: { src: string; alt?: string; caption?: string }[]
+  image?: string
+  heading?: string
+}) {
+  const slides = (images ?? []).filter((s) => s.src)
+  const [index, setIndex] = useState(0)
+  if (slides.length === 0) {
+    if (!image) return null
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={image}
+        alt={heading}
+        loading="lazy"
+        className="rounded-2xl w-full h-full min-h-72 md:min-h-80 object-cover md:[direction:ltr]"
+      />
+    )
+  }
+  const current = slides[index] ?? slides[0]!
+  return (
+    <div className="relative rounded-2xl w-full h-full min-h-72 md:min-h-80 overflow-hidden md:[direction:ltr]">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={current.src}
+        alt={current.alt || heading}
+        loading="lazy"
+        className="h-full w-full object-cover"
+      />
+      {current.caption && (
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 pb-4 pt-10">
+          <span className="font-semibold text-white">{current.caption}</span>
+        </div>
+      )}
+      {slides.length > 1 && (
+        <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-1.5">
+          {slides.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              aria-label={`Show image ${i + 1}`}
+              onClick={() => setIndex(i)}
+              className={`h-2 rounded-full transition ${i === index ? 'w-5 bg-white' : 'w-2 bg-white/50'}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -2576,14 +2878,14 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               style={{ ['--hdr-accent' as string]: primaryColor || '#f5a623' }}
             >
               <div className="flex items-stretch">
-                <a href="#" className="flex shrink-0 items-center px-4 py-3 md:px-8">
+                <Link href="/" className="flex shrink-0 items-center px-4 py-3 md:px-8">
                   {logoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={logoUrl} alt={brand} className="h-9 w-auto" />
                   ) : (
                     <span className="font-bold">{brand}</span>
                   )}
-                </a>
+                </Link>
                 <div className="relative hidden flex-1 items-center md:flex">
                   <div
                     className="absolute inset-0"
@@ -2646,21 +2948,31 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 )}
                 {hamburgerBtn('text-slate-700 ml-auto md:hidden')}
               </div>
-              <nav className="hidden items-center justify-center gap-8 py-3 text-sm font-bold uppercase tracking-wide md:flex">
-                {navItems.map(([label, href], i) => (
-                  <a
-                    key={i}
-                    href={href || '#'}
-                    className={
-                      i === 0
-                        ? 'text-[var(--hdr-accent)]'
-                        : 'text-slate-800 hover:text-[var(--hdr-accent)] transition'
-                    }
-                  >
-                    {label}
-                  </a>
-                ))}
-              </nav>
+              <div className="hidden py-3 text-sm font-bold uppercase tracking-wide md:flex md:justify-center">
+                {menuTree ? (
+                  <HeaderNavMenu
+                    items={menuTree}
+                    linkClassName="text-slate-800 hover:text-[var(--hdr-accent)] transition"
+                    activeClassName="text-[var(--hdr-accent)]"
+                  />
+                ) : (
+                  <nav className="flex items-center gap-8">
+                    {navItems.map(([label, href], i) => (
+                      <a
+                        key={i}
+                        href={href || '#'}
+                        className={
+                          i === 0
+                            ? 'text-[var(--hdr-accent)]'
+                            : 'text-slate-800 hover:text-[var(--hdr-accent)] transition'
+                        }
+                      >
+                        {label}
+                      </a>
+                    ))}
+                  </nav>
+                )}
+              </div>
             </header>
             {mobilePanel}
           </>
@@ -2691,21 +3003,31 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               style={{ backgroundColor: barBg, color: barText }}
             >
               <div className="flex items-center justify-between px-4 py-3 md:px-8">
-                <a href="#" className="flex items-center">
+                <Link href="/" className="flex items-center">
                   {logoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={logoUrl} alt={brand} className="h-14 w-auto" />
                   ) : (
                     <span className="font-bold">{brand}</span>
                   )}
-                </a>
-                <nav className="hidden items-center gap-8 text-sm font-bold uppercase tracking-wide md:flex">
-                  {navItems.map(([label, href], i) => (
-                    <a key={i} href={href || '#'} className="hover:opacity-70 transition">
-                      {label}
-                    </a>
-                  ))}
-                </nav>
+                </Link>
+                <div className="hidden text-sm font-bold uppercase tracking-wide md:flex">
+                  {menuTree ? (
+                    <HeaderNavMenu
+                      items={menuTree}
+                      linkClassName="hover:opacity-70 transition px-2"
+                      activeClassName="hover:opacity-70 transition px-2"
+                    />
+                  ) : (
+                    <nav className="flex items-center gap-8">
+                      {navItems.map(([label, href], i) => (
+                        <a key={i} href={href || '#'} className="hover:opacity-70 transition">
+                          {label}
+                        </a>
+                      ))}
+                    </nav>
+                  )}
+                </div>
                 <div className="hidden items-center gap-4 md:flex">
                   {loginHref && (
                     <a
@@ -2749,14 +3071,14 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               style={{ ['--hdr-accent' as string]: primaryColor || '#f5a623' }}
             >
               <div className="flex flex-wrap items-center gap-4 px-4 py-3 md:px-8">
-                <a href="#" className="flex shrink-0 items-center">
+                <Link href="/" className="flex shrink-0 items-center">
                   {logoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={logoUrl} alt={brand} className="h-14 w-auto" />
                   ) : (
                     <span className="font-bold">{brand}</span>
                   )}
-                </a>
+                </Link>
                 <div className="hidden flex-1 items-center gap-6 md:flex">
                   {phoneNumber && (
                     <div className="flex items-center gap-3">
@@ -2808,18 +3130,28 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 </div>
                 {hamburgerBtn('text-slate-700')}
               </div>
-              <nav className="hidden items-center gap-8 border-t border-slate-100 px-4 py-3 text-sm font-semibold text-slate-800 md:flex md:px-8">
-                {navItems.map(([label, href], i) => (
-                  <a
-                    key={i}
-                    href={href || '#'}
-                    className="flex items-center gap-1 hover:text-[var(--hdr-accent)] transition"
-                  >
-                    {label}
-                    {i === 0 && <ChevronDownIcon />}
-                  </a>
-                ))}
-              </nav>
+              <div className="hidden border-t border-slate-100 px-4 py-3 text-sm font-semibold text-slate-800 md:flex md:px-8">
+                {menuTree ? (
+                  <HeaderNavMenu
+                    items={menuTree}
+                    linkClassName="flex items-center gap-1 hover:text-[var(--hdr-accent)] transition"
+                    activeClassName="flex items-center gap-1 hover:text-[var(--hdr-accent)] transition"
+                  />
+                ) : (
+                  <nav className="flex items-center gap-8">
+                    {navItems.map(([label, href], i) => (
+                      <a
+                        key={i}
+                        href={href || '#'}
+                        className="flex items-center gap-1 hover:text-[var(--hdr-accent)] transition"
+                      >
+                        {label}
+                        {i === 0 && <ChevronDownIcon />}
+                      </a>
+                    ))}
+                  </nav>
+                )}
+              </div>
             </header>
             {mobilePanel}
           </>
@@ -2874,7 +3206,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               style={{ ['--hdr-accent' as string]: primaryColor || '#f5a623' }}
             >
               <div className="flex items-center justify-between px-4 h-16 md:px-8">
-                <a href="#" className={`flex items-center gap-2 font-bold ${brandTextClass}`}>
+                <Link href="/" className={`flex items-center gap-2 font-bold ${brandTextClass}`}>
                   {logoUrl ? (
                     // Logo image already carries the brand name/mark — no
                     // separate text label next to it (was duplicating it).
@@ -2883,7 +3215,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   ) : (
                     <span>{brand}</span>
                   )}
-                </a>
+                </Link>
                 <div className="hidden md:flex items-center gap-7">
                   {menuTree ? (
                     <HeaderNavMenu
@@ -4190,6 +4522,19 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       // hardcoded (see docs/superpowers/plans/2026-09-26-inner-banner.md for
       // the pre-existing hardcoded version this replaces).
       homeHref: { type: 'text' },
+      // All optional — a page whose stored content predates these fields
+      // just renders the same as before (no eyebrow, no 3rd breadcrumb
+      // level, no CTA row). Design 1 only; other variants unaffected.
+      eyebrow: { type: 'text' },
+      parentLabel: { type: 'text' },
+      parentHref: { type: 'text' },
+      ctaPrimaryLabel: { type: 'text' },
+      ctaPrimaryHref: { type: 'text' },
+      ctaSecondaryLabel: { type: 'text' },
+      ctaSecondaryHref: { type: 'text' },
+      // Optional H1 override — when set, replaces the page-title H1 (the
+      // breadcrumb still shows the page title).
+      headline: { type: 'text' },
     },
     defaultProps: {
       variant: '1',
@@ -4199,6 +4544,13 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       subtitle:
         'Your one-stop solution for building engineering products & services — 30 years of trust, one accountable team.',
       homeHref: '/',
+      eyebrow: '',
+      parentLabel: '',
+      parentHref: '',
+      ctaPrimaryLabel: '',
+      ctaPrimaryHref: '',
+      ctaSecondaryLabel: '',
+      ctaSecondaryHref: '',
     },
     render: function ConstructionInnerBannerRender({
       id,
@@ -4209,10 +4561,40 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       imageAlt,
       subtitle,
       homeHref,
+      eyebrow,
+      parentLabel,
+      parentHref,
+      ctaPrimaryLabel,
+      ctaPrimaryHref,
+      ctaSecondaryLabel,
+      ctaSecondaryHref,
+      headline,
     }) {
       if (visible === false) return <></>
       const title = (puck?.metadata?.pageTitle as string | undefined) || 'Page Title'
       const isEditing = puck?.isEditing ?? false
+      const hasCta = Boolean(ctaPrimaryLabel || ctaSecondaryLabel)
+
+      const ctaRow = hasCta ? (
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          {ctaPrimaryLabel && (
+            <a
+              href={ctaPrimaryHref || '#'}
+              className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+            >
+              {ctaPrimaryLabel}
+            </a>
+          )}
+          {ctaSecondaryLabel && (
+            <a
+              href={ctaSecondaryHref || '#'}
+              className="rounded-full border border-white/50 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10"
+            >
+              {ctaSecondaryLabel}
+            </a>
+          )}
+        </div>
+      ) : null
 
       const breadcrumb = (
         <nav
@@ -4223,6 +4605,14 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             Home
           </Link>
           <span>/</span>
+          {parentLabel && (
+            <>
+              <Link href={parentHref || '#'} className="hover:text-white">
+                {parentLabel}
+              </Link>
+              <span>/</span>
+            </>
+          )}
           <span className="font-semibold text-white">{title}</span>
         </nav>
       )
@@ -4314,14 +4704,28 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 Home
               </Link>
               <span className="opacity-50">/</span>
+              {parentLabel && (
+                <>
+                  <Link href={parentHref || '#'} className="text-white/85 hover:text-white">
+                    {parentLabel}
+                  </Link>
+                  <span className="opacity-50">/</span>
+                </>
+              )}
               <span className="text-[#e8622c]">{title}</span>
             </nav>
+            {eyebrow && (
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-[#e8622c]">
+                {eyebrow}
+              </p>
+            )}
             <h1 className="text-[clamp(2rem,6vw,3.2rem)] font-extrabold leading-[1.05] tracking-[-0.02em]">
-              {title}
+              {headline || title}
             </h1>
             <div className="mx-auto mt-4 max-w-[640px] text-base leading-[1.65] text-white/80">
               {subtitleNode}
             </div>
+            {ctaRow}
           </div>
         </section>
       )
@@ -5112,6 +5516,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       subtext: { type: 'textarea' },
       ctaLabel: { type: 'text' },
       ctaHref: { type: 'text' },
+      // Optional — a page whose stored content predates this field just
+      // shows the single primary CTA as before.
+      secondaryCtaLabel: { type: 'text' },
+      secondaryCtaHref: { type: 'text' },
       phoneNumber: { type: 'text' },
       phoneLabel: { type: 'text' },
       background: {
@@ -5129,11 +5537,23 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         'Get a detailed, no-obligation quote within 48 hours. Our estimators will assess your site and deliver a comprehensive scope of work.',
       ctaLabel: 'Request a Free Quote',
       ctaHref: '#contact',
+      secondaryCtaLabel: '',
+      secondaryCtaHref: '',
       phoneNumber: '+91-98765-43210',
       phoneLabel: 'Or call us directly',
       background: 'dark',
     },
-    render: ({ headline, subtext, ctaLabel, ctaHref, phoneNumber, phoneLabel, background }) => {
+    render: ({
+      headline,
+      subtext,
+      ctaLabel,
+      ctaHref,
+      secondaryCtaLabel,
+      secondaryCtaHref,
+      phoneNumber,
+      phoneLabel,
+      background,
+    }) => {
       const bgCls =
         background === 'dark'
           ? 'bg-slate-900 text-white'
@@ -5162,6 +5582,14 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   className={`inline-flex rounded-lg px-8 py-3.5 font-semibold transition ${btnCls}`}
                 >
                   {ctaLabel}
+                </a>
+              )}
+              {secondaryCtaLabel && (
+                <a
+                  href={secondaryCtaHref || '#'}
+                  className="inline-flex rounded-lg border border-current px-8 py-3.5 font-semibold transition hover:bg-white/10"
+                >
+                  {secondaryCtaLabel}
                 </a>
               )}
               {phoneNumber && (
@@ -8334,107 +8762,251 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     },
   },
 
-  // Contact form + address/hours, map placeholder (no real map library)
+  // Contact info + real map (left) and a real mailto form (right) —
+  // matches the approved contact.html layout. No consumers of the old
+  // shape existed in this project, so this is a full rewrite rather than
+  // an additive extension.
   ConstructionContactSplitMap: {
     label: 'Contact + Map Split',
     fields: {
+      eyebrow: { type: 'text' },
       heading: { type: 'text' },
+      subcopy: { type: 'textarea' },
+      infoItems: {
+        type: 'array',
+        min: 0,
+        max: 6,
+        getItemSummary: (item) => item.label || 'Info item',
+        defaultItemProps: {
+          icon: 'phone',
+          label: '',
+          lines: '',
+          linkPrefix: '',
+        },
+        arrayFields: {
+          icon: {
+            type: 'select',
+            options: [
+              { label: 'Phone', value: 'phone' },
+              { label: 'Envelope', value: 'envelope' },
+              { label: 'Shop', value: 'shop' },
+              { label: 'Building', value: 'building' },
+            ],
+          },
+          label: { type: 'text' },
+          lines: { type: 'textarea' },
+          linkPrefix: {
+            type: 'select',
+            options: [
+              { label: 'None (plain text)', value: '' },
+              { label: 'tel:', value: 'tel:' },
+              { label: 'mailto:', value: 'mailto:' },
+            ],
+          },
+        },
+      },
+      mapEmbedUrl: { type: 'text' },
+      formEyebrow: { type: 'text' },
+      formHeading: { type: 'text' },
+      formAction: { type: 'text' },
       submitLabel: { type: 'text' },
-      address: { type: 'textarea' },
-      businessHours: { type: 'text' },
     },
     defaultProps: {
-      heading: 'Visit or Contact Us',
-      submitLabel: 'Send Message',
-      address: '12-6-8, Currency Nagar, Vijayawada, Andhra Pradesh 520008',
-      businessHours: 'Mon-Sat, 9am - 6pm',
+      eyebrow: 'Get in touch',
+      heading: "We're here to help",
+      subcopy:
+        'Have a project in mind, or just want to see the products in person? Reach us any of these ways.',
+      infoItems: [
+        {
+          icon: 'phone',
+          label: 'Phone',
+          lines: '0891-2722552\n0891-2540676',
+          linkPrefix: 'tel:',
+        },
+        {
+          icon: 'envelope',
+          label: 'Email',
+          lines: 'sepl@subhadragroup.in\ninfo@subhadragroup.in',
+          linkPrefix: 'mailto:',
+        },
+        {
+          icon: 'shop',
+          label: 'Showroom',
+          lines:
+            '49-52-1/16, 1st Floor, Adusha Towers, Opp. Income Tax Office, Sankaramattam Road, Shanthipuram, Visakhapatnam - 530 016',
+          linkPrefix: '',
+        },
+        {
+          icon: 'building',
+          label: 'Registered Office',
+          lines: '50-58-15, Rajendra Nagar, Visakhapatnam - 530 016',
+          linkPrefix: '',
+        },
+      ],
+      mapEmbedUrl:
+        'https://www.google.com/maps?q=49-52-1/16%20Sankaramattam%20Road%20Shanthipuram%20Visakhapatnam%20530016&output=embed',
+      formEyebrow: 'Send a message',
+      formHeading: 'Tell us what you need',
+      formAction: 'mailto:sepl@subhadragroup.in',
+      submitLabel: 'Send Message →',
     },
     render: function ConstructionContactSplitMapRender({
+      eyebrow,
       heading,
+      subcopy,
+      infoItems,
+      mapEmbedUrl,
+      formEyebrow,
+      formHeading,
+      formAction,
       submitLabel,
-      address,
-      businessHours,
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
       return (
         <section ref={ref} className={`${revealCls} ${padY.md} bg-white`}>
           <div className={wrap}>
-            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-10 text-center">
-              {heading}
-            </h2>
-            <div className="md:flex gap-12">
-              <div className="md:w-1/2 mb-10 md:mb-0">
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm">
-                  {/*
-                    Display-only: no lead-capture endpoint exists in this app
-                    yet. Plain div (not <form>) + type="button" submit so
-                    nothing navigates or posts on click — deliberate, not an
-                    oversight.
-                  */}
-                  <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              <div>
+                {eyebrow && (
+                  <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                    {eyebrow}
+                  </p>
+                )}
+                {heading && (
+                  <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-3">{heading}</h2>
+                )}
+                {subcopy && <p className="text-slate-600 leading-relaxed mb-6">{subcopy}</p>}
+                <div className="flex flex-col gap-5 mb-6">
+                  {(infoItems ?? []).map((item, i) => {
+                    const Icon = item.icon ? ICON_BY_KEY[item.icon as IconKey] : PhoneIcon
+                    const lines = (item.lines ?? '').split('\n').filter(Boolean)
+                    return (
+                      <div key={i} className="flex gap-3">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-50 text-orange-600">
+                          <Icon />
+                        </span>
+                        <div>
+                          {item.label && (
+                            <h4 className="font-semibold text-slate-900">{item.label}</h4>
+                          )}
+                          {lines.map((line, li) =>
+                            item.linkPrefix ? (
+                              <a
+                                key={li}
+                                href={`${item.linkPrefix}${line.replace(/\s+/g, '')}`}
+                                className="block text-sm text-slate-600 hover:text-orange-600 transition"
+                              >
+                                {line}
+                              </a>
+                            ) : (
+                              <p key={li} className="text-sm text-slate-600 leading-relaxed">
+                                {line}
+                              </p>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                {mapEmbedUrl && (
+                  <div className="rounded-2xl overflow-hidden border border-slate-200 h-64">
+                    <iframe
+                      src={mapEmbedUrl}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      title="Location"
+                      className="w-full h-full border-0"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <form
+                action={formAction}
+                method="get"
+                encType="text/plain"
+                className="flex flex-col gap-4"
+              >
+                {formEyebrow && (
+                  <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide">
+                    {formEyebrow}
+                  </p>
+                )}
+                {formHeading && (
+                  <h2 className="text-2xl md:text-3xl font-bold text-slate-900 -mt-2">
+                    {formHeading}
+                  </h2>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="cf-name" className="text-sm font-medium text-slate-700">
+                      Name
+                    </label>
                     <input
+                      id="cf-name"
+                      name="Name"
                       type="text"
-                      placeholder="Name"
+                      required
                       className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
                     />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="cf-phone" className="text-sm font-medium text-slate-700">
+                      Phone
+                    </label>
                     <input
-                      type="email"
-                      placeholder="Email"
-                      className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
-                    />
-                    <input
+                      id="cf-phone"
+                      name="Phone"
                       type="tel"
-                      placeholder="Phone"
+                      required
                       className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
                     />
-                    <textarea
-                      placeholder="Message"
-                      rows={4}
-                      className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
-                    />
-                    <button
-                      type="button"
-                      className="rounded-lg bg-orange-500 px-6 py-3 text-white font-semibold hover:bg-orange-600 transition text-sm"
-                    >
-                      {submitLabel}
-                    </button>
                   </div>
                 </div>
-              </div>
-              <div className="md:w-1/2 flex flex-col gap-6">
-                <div className="flex items-center justify-center rounded-2xl bg-slate-100 h-56">
-                  <svg
-                    className="w-10 h-10 text-slate-400"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="cf-email" className="text-sm font-medium text-slate-700">
+                    Email
+                  </label>
+                  <input
+                    id="cf-email"
+                    name="Email"
+                    type="email"
+                    required
+                    className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                  />
                 </div>
-                {address && (
-                  <div>
-                    <h3 className="font-semibold text-slate-900 mb-1">Address</h3>
-                    <p className="text-sm text-slate-600 whitespace-pre-line">{address}</p>
-                  </div>
-                )}
-                {businessHours && (
-                  <div>
-                    <h3 className="font-semibold text-slate-900 mb-1">Business Hours</h3>
-                    <p className="text-sm text-slate-600">{businessHours}</p>
-                  </div>
-                )}
-              </div>
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="cf-subject" className="text-sm font-medium text-slate-700">
+                    What do you need?
+                  </label>
+                  <input
+                    id="cf-subject"
+                    name="Subject"
+                    type="text"
+                    placeholder="e.g. Central AC for a 3BHK villa"
+                    className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="cf-message" className="text-sm font-medium text-slate-700">
+                    Message
+                  </label>
+                  <textarea
+                    id="cf-message"
+                    name="Message"
+                    required
+                    rows={4}
+                    className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="rounded-lg bg-orange-500 px-6 py-3 text-white font-semibold hover:bg-orange-600 transition text-sm w-fit"
+                >
+                  {submitLabel}
+                </button>
+              </form>
             </div>
           </div>
         </section>
@@ -8780,14 +9352,15 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           .map((line) => line.split('|'))
           .filter(([label]) => label)
       // Menus module is the source of truth once a project has a real
-      // "header" menu — same one ConstructionHeader Design 1 reads. `links`
-      // is only the fallback for a project with no menu configured yet.
-      // Reading the live menu here (instead of this static field) is what
-      // keeps Footer's nav in sync with Header's and immune to the
-      // template-engine driver's `patchNavLinks` occasionally rewriting
-      // this stored field with a stale snapshot.
+      // "footer" menu — its own independent Menu row, not a mirror of
+      // Header's (Header and Footer are separately editable, /admin/menus
+      // ?key=footer). `links` is only the fallback for a project with no
+      // footer menu configured yet. Reading the live menu here (instead of
+      // this static field) also keeps it immune to the template-engine
+      // driver's `patchNavLinks` occasionally rewriting this stored field
+      // with a stale snapshot.
       const footerProjectId = puck?.metadata?.projectId as string | undefined
-      const footerMenuTree = useHeaderMenuTree(footerProjectId)
+      const footerMenuTree = useHeaderMenuTree(footerProjectId, 'footer')
       const companyLinks = footerMenuTree
         ? footerMenuTree.map((m): [string, string] => [m.label, m.url || '#'])
         : parseLinkList(links)
@@ -9798,16 +10371,74 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       person1Photo: imageField('Person 1 — Photo (if no team member picked)'),
       person1Name: { type: 'text' },
       person1Role: { type: 'text' },
+      person1Quote: { type: 'textarea' },
       person1Bio: { type: 'textarea' },
+      person1Facts: {
+        type: 'array',
+        min: 0,
+        max: 6,
+        getItemSummary: (item) => item.label || 'Fact',
+        defaultItemProps: { icon: 'graduationcap', label: '', value: '' },
+        arrayFields: {
+          icon: FOUNDER_FACT_ICON_FIELD,
+          label: { type: 'text' },
+          value: { type: 'text' },
+        },
+      },
       person1LinkLabel: { type: 'text' },
       person1LinkHref: { type: 'text' },
+      person1Variant: {
+        type: 'select',
+        options: [
+          { label: 'Dark', value: 'dark' },
+          { label: 'Light', value: 'light' },
+        ],
+      },
       person2MemberId: teamMemberField('Person 2 — Team member (optional)'),
       person2Photo: imageField('Person 2 — Photo (if no team member picked)'),
       person2Name: { type: 'text' },
       person2Role: { type: 'text' },
       person2Bio: { type: 'textarea' },
+      person2Ctas: {
+        type: 'array',
+        min: 0,
+        max: 4,
+        getItemSummary: (item) => item.label || 'Button',
+        defaultItemProps: { label: '', href: '' },
+        arrayFields: { label: { type: 'text' }, href: { type: 'text' } },
+      },
       person2LinkLabel: { type: 'text' },
       person2LinkHref: { type: 'text' },
+      person2Variant: {
+        type: 'select',
+        options: [
+          { label: 'Orange', value: 'orange' },
+          { label: 'Light', value: 'light' },
+        ],
+      },
+      // Separate credentials panel below both heroes — matches the approved
+      // reference's "#uday-kumar-detail" section (facts + membership logos).
+      person2Facts: {
+        type: 'array',
+        min: 0,
+        max: 6,
+        getItemSummary: (item) => item.label || 'Fact',
+        defaultItemProps: { icon: 'graduationcap', label: '', value: '' },
+        arrayFields: {
+          icon: FOUNDER_FACT_ICON_FIELD,
+          label: { type: 'text' },
+          value: { type: 'text' },
+        },
+      },
+      person2MembershipLabel: { type: 'text' },
+      person2Memberships: {
+        type: 'array',
+        min: 0,
+        max: 12,
+        getItemSummary: (item) => item.alt || 'Logo',
+        defaultItemProps: { image: '', alt: '' },
+        arrayFields: { image: imageField('Logo'), alt: { type: 'text' } },
+      },
       padding: {
         type: 'select',
         options: [
@@ -9825,24 +10456,80 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       },
     },
     defaultProps: {
-      eyebrow: 'Leadership',
-      heading: 'The people behind Subhadra Group',
+      // Approved reference goes straight into the leader heroes, no intro
+      // heading — left blank rather than removing the (still-useful-
+      // elsewhere) eyebrow/heading fields.
+      eyebrow: '',
+      heading: '',
       person1MemberId: '',
       person1Photo: '/seed/subhadra/founder.png',
       person1Name: 'K Leela Prasad',
       person1Role: 'Founder, Subhadra Group',
+      person1Quote: 'Every building deserves one accountable team — not five contractors to chase.',
       person1Bio:
-        'A practicing MEP consultant since 1983, K Leela Prasad has planned electrical, HVAC, safety and building-engineering solutions across Visakhapatnam for over four decades — and founded Subhadra Group in 1996.',
-      person1LinkLabel: 'Read More →',
+        "A practicing MEP consultant since 1983, K Leela Prasad has planned electrical installations, air conditioning & refrigeration systems, building services, IBMS, plumbing and fire-fighting solutions across Visakhapatnam for over four decades — associated with most of the region's major projects, including Swarnabharathi Indoor Stadium, Fairfield by Marriott, Novotel Visakhapatnam and Pradhama Hospital (now Medicover, MVP). In 1996, the same year he founded Subhadra Group, he also set up the Bureau of Electrical Energy Conservation.",
+      person1Facts: [
+        {
+          icon: 'graduationcap',
+          label: 'Qualification:',
+          value: 'B.E. Electrical, Andhra University, Waltair',
+        },
+        {
+          icon: 'briefcase',
+          label: 'Experience:',
+          value: 'MEP Consultant since 1983 — 40+ years in Electrical, HVAC & Building Services',
+        },
+        {
+          icon: 'award',
+          label: 'Recognition:',
+          value:
+            'Founder President, ISHRAE, FSAI & IPA Visakhapatnam · Life Member, Institution of Engineers',
+        },
+      ],
+      person1LinkLabel: '',
       person1LinkHref: '/leadership#leela-prasad',
+      person1Variant: 'dark',
       person2MemberId: '',
       person2Photo: '/seed/subhadra/products/director.png',
       person2Name: 'K N V Uday Kumar',
       person2Role: 'Director, Subhadra Group',
       person2Bio:
-        'A gold medalist engineering graduate from REC Warangal, K N V Uday Kumar brings 15+ years experience in HVAC, automation, AV and networking design to Subhadra Group.',
-      person2LinkLabel: 'Read More →',
+        'A gold medalist engineering graduate from REC Warangal (now NIT Warangal), K N V Uday Kumar brings international experience across leading MNCs to Subhadra Group. He leads the design of air conditioning for comfort & industrial applications, surveillance and fire alarm, intrusion alarm systems, audio-video solutions, and automation for residences, offices and commercial establishments, along with networking solutions.',
+      person2Ctas: [
+        { label: 'View Credentials ↓', href: '#uday-kumar-credentials' },
+        { label: 'Get in Touch', href: '/contact' },
+      ],
+      person2LinkLabel: '',
       person2LinkHref: '/leadership#uday-kumar',
+      person2Variant: 'orange',
+      person2Facts: [
+        {
+          icon: 'graduationcap',
+          label: 'Qualification:',
+          value: 'Gold Medalist, B.Tech Engineering, REC Warangal',
+        },
+        {
+          icon: 'briefcase',
+          label: 'Experience:',
+          value: '15+ years experience in HVAC, automation, AV & networking design',
+        },
+        {
+          icon: 'award',
+          label: 'Affiliations:',
+          value: 'ISHRAE, FSAI, IIID, IGBC & IPA Visakhapatnam · BNI, CII & VCCI Visakhapatnam',
+        },
+      ],
+      person2MembershipLabel: 'Proud member of',
+      person2Memberships: [
+        { image: '/seed/subhadra/member/fsai.jpeg', alt: 'FSAI Visakhapatnam' },
+        { image: '/seed/subhadra/member/IIID.jpeg', alt: 'IIID Visakhapatnam' },
+        { image: '/seed/subhadra/member/IGBC.png', alt: 'IGBC Visakhapatnam' },
+        { image: '/seed/subhadra/member/IPA.png', alt: 'IPA Visakhapatnam' },
+        { image: '/seed/subhadra/member/ASHRAE.webp', alt: 'ASHRAE Deccan' },
+        { image: '/seed/subhadra/member/bni.svg', alt: 'BNI Visakhapatnam' },
+        { image: '/seed/subhadra/member/cii.svg', alt: 'CII Visakhapatnam' },
+        { image: '/seed/subhadra/member/VCCI.png', alt: 'VCCI Visakhapatnam' },
+      ],
       padding: 'md',
       background: 'muted',
     },
@@ -9854,18 +10541,25 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       person1Photo,
       person1Name,
       person1Role,
+      person1Quote,
       person1Bio,
+      person1Facts,
       person1LinkLabel,
       person1LinkHref,
+      person1Variant,
       person2MemberId,
       person2Photo,
       person2Name,
       person2Role,
       person2Bio,
+      person2Ctas,
       person2LinkLabel,
       person2LinkHref,
+      person2Variant,
+      person2Facts,
+      person2MembershipLabel,
+      person2Memberships,
       padding,
-      background,
     }) {
       const projectId = puck?.metadata?.projectId as string | undefined
       const needsLookup = Boolean(person1MemberId || person2MemberId)
@@ -9917,64 +10611,237 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         bio: person2Bio,
       })
 
+      const factRow = (
+        fact: { icon: string; label: string; value: string },
+        i: number,
+        light: boolean
+      ) => {
+        const Icon = fact.icon ? ICON_BY_KEY[fact.icon as IconKey] : GraduationCapIcon
+        return (
+          <li key={i} className="flex items-start gap-3">
+            <span
+              className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                light ? 'bg-slate-100 text-slate-700' : 'bg-white/15 text-white'
+              }`}
+            >
+              <Icon />
+            </span>
+            <span className={light ? 'text-slate-700' : 'text-white/85'}>
+              <b className={light ? 'text-slate-900' : 'text-white'}>{fact.label}</b> {fact.value}
+            </span>
+          </li>
+        )
+      }
+
       return (
-        <section
-          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
-        >
-          <div className={wrap}>
-            <div className="mx-auto mb-10 max-w-2xl text-center">
-              {eyebrow && (
-                <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-orange-600">
-                  {eyebrow}
-                </p>
-              )}
-              <h2 className="text-2xl font-bold text-slate-900 md:text-4xl">{heading}</h2>
+        <section className={eyebrow || heading ? padY[padding] : ''}>
+          {(eyebrow || heading) && (
+            <div className={wrap}>
+              <div className="mx-auto mb-10 max-w-2xl text-center">
+                {eyebrow && (
+                  <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-orange-600">
+                    {eyebrow}
+                  </p>
+                )}
+                {heading && (
+                  <h2 className="text-2xl font-bold text-slate-900 md:text-4xl">{heading}</h2>
+                )}
+              </div>
             </div>
-            <div className="mx-auto flex max-w-4xl flex-col gap-10">
-              <div className="grid grid-cols-1 items-center gap-6 md:grid-cols-[220px_1fr] md:gap-10">
+          )}
+
+          {/* Leader 1 — dark hero with quote + facts, photo right */}
+          <div
+            id="leela-prasad"
+            className={`relative overflow-hidden py-16 md:py-24 ${
+              person1Variant === 'light' ? 'bg-white' : 'bg-slate-950'
+            }`}
+          >
+            {person1Variant !== 'light' && (
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  backgroundImage:
+                    'radial-gradient(circle at 0% 100%, rgba(210,90,30,.55), transparent 60%), radial-gradient(circle at 88% 82%, rgba(255,255,255,.07), transparent 50%)',
+                }}
+              />
+            )}
+            <div
+              className={`${wrap} relative grid grid-cols-1 items-center gap-10 md:grid-cols-[1.05fr_.95fr] md:gap-16`}
+            >
+              <div>
+                <h3
+                  className={`text-2xl font-extrabold md:text-4xl ${
+                    person1Variant === 'light' ? 'text-slate-900' : 'text-orange-500'
+                  }`}
+                >
+                  {p1.name}
+                </h3>
+                <span
+                  className={`mt-2 inline-block rounded-full px-4 py-1.5 text-sm font-bold ${
+                    person1Variant === 'light'
+                      ? 'bg-slate-100 text-slate-700'
+                      : 'bg-white/15 text-white'
+                  }`}
+                >
+                  {p1.role}
+                </span>
+                {person1Quote && (
+                  <blockquote
+                    className={`mt-5 border-l-[3px] pl-4 text-lg font-bold italic leading-snug ${
+                      person1Variant === 'light'
+                        ? 'border-slate-300 text-slate-800'
+                        : 'border-white/55 text-white'
+                    }`}
+                  >
+                    &quot;{person1Quote}&quot;
+                  </blockquote>
+                )}
+                <p
+                  className={`mt-4 ${person1Variant === 'light' ? 'text-slate-600' : 'text-white/80'}`}
+                >
+                  {p1.bio}
+                </p>
+                {(person1Facts ?? []).length > 0 && (
+                  <ul className="mt-6 flex max-w-lg flex-col gap-3">
+                    {person1Facts.map((f, i) => factRow(f, i, person1Variant === 'light'))}
+                  </ul>
+                )}
+                {person1LinkLabel && (
+                  <Link
+                    href={person1LinkHref || '#'}
+                    className={`mt-6 inline-block text-sm font-semibold ${
+                      person1Variant === 'light'
+                        ? 'text-slate-900 hover:text-orange-600'
+                        : 'text-white hover:text-orange-400'
+                    }`}
+                  >
+                    {person1LinkLabel}
+                  </Link>
+                )}
+              </div>
+              <div className="relative mx-auto w-full">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={p1.photo}
                   alt={p1.name}
-                  className="h-56 w-full rounded-2xl object-cover md:h-full"
-                />
-                <div>
-                  <h3 className="text-xl font-bold text-slate-900">{p1.name}</h3>
-                  <span className="text-sm font-semibold text-orange-600">{p1.role}</span>
-                  <p className="mt-3 text-slate-600">{p1.bio}</p>
-                  {person1LinkLabel && (
-                    <Link
-                      href={person1LinkHref || '#'}
-                      className="mt-4 inline-block text-sm font-semibold text-slate-900 hover:text-orange-600"
-                    >
-                      {person1LinkLabel}
-                    </Link>
-                  )}
-                </div>
-              </div>
-              <div className="grid grid-cols-1 items-center gap-6 md:grid-cols-[1fr_220px] md:gap-10">
-                <div className="md:order-1">
-                  <h3 className="text-xl font-bold text-slate-900">{p2.name}</h3>
-                  <span className="text-sm font-semibold text-orange-600">{p2.role}</span>
-                  <p className="mt-3 text-slate-600">{p2.bio}</p>
-                  {person2LinkLabel && (
-                    <Link
-                      href={person2LinkHref || '#'}
-                      className="mt-4 inline-block text-sm font-semibold text-slate-900 hover:text-orange-600"
-                    >
-                      {person2LinkLabel}
-                    </Link>
-                  )}
-                </div>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={p2.photo}
-                  alt={p2.name}
-                  className="h-56 w-full rounded-2xl object-cover md:order-2 md:h-full"
+                  className="aspect-[4/4.6] w-full rounded-3xl object-cover object-top shadow-2xl"
                 />
               </div>
             </div>
           </div>
+
+          {/* Leader 2 — orange hero, CTAs, photo left (reversed) */}
+          <div
+            id="uday-kumar"
+            className={`relative py-16 md:py-24 ${
+              person2Variant === 'light'
+                ? 'bg-white'
+                : 'bg-gradient-to-br from-[#f0895d] via-orange-600 to-orange-800'
+            }`}
+          >
+            <div
+              className={`${wrap} grid grid-cols-1 items-center gap-10 md:grid-cols-[.95fr_1.05fr] md:gap-16`}
+            >
+              <div className="relative order-2 mx-auto w-full max-w-[420px] md:order-1">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={p2.photo}
+                  alt={p2.name}
+                  className="aspect-[4/4.6] w-full rounded-3xl object-cover shadow-2xl"
+                />
+              </div>
+              <div className="order-1 md:order-2">
+                <span
+                  className={`inline-block rounded-full px-4 py-1.5 text-sm font-bold ${
+                    person2Variant === 'light'
+                      ? 'bg-slate-100 text-slate-700'
+                      : 'bg-white/15 text-white'
+                  }`}
+                >
+                  {p2.role}
+                </span>
+                <h3
+                  className={`mt-4 text-2xl font-extrabold md:text-4xl ${
+                    person2Variant === 'light' ? 'text-slate-900' : 'text-white'
+                  }`}
+                >
+                  {p2.name}
+                </h3>
+                <p
+                  className={`mt-4 ${person2Variant === 'light' ? 'text-slate-600' : 'text-white/85'}`}
+                >
+                  {p2.bio}
+                </p>
+                {(person2Ctas ?? []).length > 0 && (
+                  <div className="mt-6 flex flex-wrap gap-3">
+                    {person2Ctas.map((cta, i) => (
+                      <Link
+                        key={i}
+                        href={cta.href || '#'}
+                        className={`inline-block rounded-lg px-5 py-2.5 text-sm font-semibold transition ${
+                          person2Variant === 'light'
+                            ? 'bg-orange-600 text-white hover:bg-orange-700'
+                            : 'border border-white/50 text-white hover:bg-white/10'
+                        }`}
+                      >
+                        {cta.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+                {person2LinkLabel && (
+                  <Link
+                    href={person2LinkHref || '#'}
+                    className={`mt-6 inline-block text-sm font-semibold ${
+                      person2Variant === 'light'
+                        ? 'text-slate-900 hover:text-orange-600'
+                        : 'text-white hover:text-slate-900'
+                    }`}
+                  >
+                    {person2LinkLabel}
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Credentials panel — person 2's facts + membership logos */}
+          {((person2Facts ?? []).length > 0 || (person2Memberships ?? []).length > 0) && (
+            <div id="uday-kumar-credentials" className={`${wrap} py-12 md:py-16`}>
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-9">
+                {(person2Facts ?? []).length > 0 && (
+                  <ul className="flex flex-col gap-3">
+                    {person2Facts.map((f, i) => factRow(f, i, true))}
+                  </ul>
+                )}
+                {(person2Memberships ?? []).length > 0 && (
+                  <div
+                    className={
+                      (person2Facts ?? []).length > 0 ? 'mt-7 border-t border-slate-100 pt-7' : ''
+                    }
+                  >
+                    {person2MembershipLabel && (
+                      <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        {person2MembershipLabel}
+                      </span>
+                    )}
+                    <div className="mt-4 flex flex-wrap items-center gap-x-8 gap-y-4">
+                      {person2Memberships.map((logo, i) => (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          key={i}
+                          src={logo.image}
+                          alt={logo.alt}
+                          className="h-10 w-auto object-contain"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </section>
       )
     },
@@ -13365,6 +14232,740 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     },
   },
 
+  // Plain N-card icon+title+paragraph grid — no images, no split layout.
+  // Covers both a light "floating highlight bar" use (few cards, right
+  // below a hero) and a dark "why choose us" use (more cards) via the same
+  // component + a background toggle, matching the reference site's own
+  // reuse of one `.why-grid` pattern in both places.
+  ConstructionIconFeatureGrid: {
+    label: 'Icon Feature Grid',
+    fields: {
+      sectionEyebrow: { type: 'text' },
+      sectionTitle: { type: 'text' },
+      items: {
+        type: 'array',
+        min: 0,
+        max: 8,
+        getItemSummary: (item, index) => item.title || `Feature ${(index ?? 0) + 1}`,
+        defaultItemProps: { icon: 'star', title: '', description: '' },
+        arrayFields: {
+          icon: DISCIPLINE_ICON_FIELD,
+          title: { type: 'text' },
+          description: { type: 'textarea' },
+        },
+      },
+      background: {
+        type: 'radio',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Dark', value: 'dark' },
+        ],
+      },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+    },
+    defaultProps: {
+      sectionEyebrow: '',
+      sectionTitle: '',
+      items: [
+        {
+          icon: 'star',
+          title: '25+ Years of Expertise',
+          description: 'Deep technical experience across building engineering disciplines.',
+        },
+        {
+          icon: 'shield',
+          title: 'Complete Solutions',
+          description: 'Every engineering requirement from one accountable partner.',
+        },
+        {
+          icon: 'hardhat',
+          title: 'Design • Execution • Maintenance',
+          description: 'Engineered, installed and supported end-to-end.',
+        },
+      ],
+      background: 'white',
+      padding: 'md',
+    },
+    render: ({ sectionEyebrow, sectionTitle, items, background, padding }) => {
+      const dark = background === 'dark'
+      const list = (items ?? []).filter((i) => i.title)
+      if (list.length === 0) return <></>
+      return (
+        <section className={`${padY[padding]} ${dark ? 'bg-slate-900 text-white' : 'bg-white'}`}>
+          <div className={wrap}>
+            {(sectionEyebrow || sectionTitle) && (
+              <div className="mb-10 text-center">
+                {sectionEyebrow && (
+                  <p
+                    className={`text-sm font-semibold uppercase tracking-wide mb-2 ${dark ? 'text-orange-400' : 'text-orange-600'}`}
+                  >
+                    {sectionEyebrow}
+                  </p>
+                )}
+                {sectionTitle && <h2 className="text-2xl md:text-4xl font-bold">{sectionTitle}</h2>}
+              </div>
+            )}
+            <div
+              className="grid gap-6"
+              style={{ gridTemplateColumns: `repeat(auto-fit, minmax(220px, 1fr))` }}
+            >
+              {list.map((item, i) => {
+                const Icon = ICON_BY_KEY[(item.icon as IconKey) || 'star']
+                return (
+                  <article
+                    key={i}
+                    className={`rounded-2xl p-6 text-center ${dark ? 'bg-white/5' : 'border border-slate-200'}`}
+                  >
+                    <div
+                      className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full ${dark ? 'bg-white/10 text-orange-400' : 'bg-orange-50 text-orange-600'}`}
+                    >
+                      <Icon />
+                    </div>
+                    <h4 className="font-semibold mb-1.5">{item.title}</h4>
+                    {item.description && (
+                      <p
+                        className={`text-sm leading-relaxed ${dark ? 'text-white/70' : 'text-slate-600'}`}
+                      >
+                        {item.description}
+                      </p>
+                    )}
+                  </article>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // Alternating image/text discipline rows — icon-eyebrow, checklist, an
+  // optional per-row brand tag and CTA. Distinct from
+  // ConstructionSectorDetailList (DB-bound to the Sector model, no
+  // checklist/brand-tag) — this is a static array for a single sector
+  // detail page's own "what we cover" rows.
+  ConstructionDisciplineRows: {
+    label: 'Discipline Rows',
+    fields: {
+      sectionEyebrow: { type: 'text' },
+      sectionTitle: { type: 'text' },
+      sectionSubtitle: { type: 'textarea' },
+      items: {
+        type: 'array',
+        min: 0,
+        max: 12,
+        getItemSummary: (item, index) => item.heading || `Row ${(index ?? 0) + 1}`,
+        defaultItemProps: {
+          icon: '',
+          eyebrow: '',
+          heading: '',
+          description: '',
+          checklist: '',
+          image: '',
+          images: [],
+          clients: [],
+          brandTag: '',
+          brandLogos: [],
+          ctaLabel: '',
+          ctaHref: '',
+        },
+        arrayFields: {
+          // Left blank for a row with a plain-text eyebrow and no icon
+          // (matches the reference's simpler "Areas We Serve" rows).
+          icon: {
+            type: 'select',
+            options: [{ label: 'None', value: '' }, ...DISCIPLINE_ICON_FIELD.options],
+          },
+          eyebrow: { type: 'text' },
+          heading: { type: 'text' },
+          description: { type: 'textarea' },
+          checklist: { type: 'textarea' },
+          image: imageField('Image'),
+          // Multiple client-showcase photos for this row, dot-nav slider —
+          // used instead of `image` when a row needs more than one photo
+          // (e.g. Work module's client-showcase cards). Empty by default so
+          // existing single-`image` rows (Sectors) are unaffected.
+          images: {
+            type: 'array',
+            min: 0,
+            max: 12,
+            getItemSummary: (item, index) => item.caption || `Image ${(index ?? 0) + 1}`,
+            defaultItemProps: { src: '', alt: '', caption: '' },
+            arrayFields: {
+              src: imageField('Image'),
+              alt: { type: 'text' },
+              caption: { type: 'text' },
+            },
+          },
+          // Structured client/city list (name + optional note + city pills) —
+          // used instead of `checklist` when a row is showcasing named
+          // clients across locations. Empty by default so existing plain
+          // checklist rows (Sectors) are unaffected.
+          clients: {
+            type: 'array',
+            min: 0,
+            max: 20,
+            getItemSummary: (item, index) => item.name || `Client ${(index ?? 0) + 1}`,
+            defaultItemProps: { name: '', note: '', cities: '' },
+            arrayFields: {
+              name: { type: 'text' },
+              note: { type: 'text' },
+              cities: { type: 'text' },
+            },
+          },
+          brandTag: { type: 'text' },
+          // Brand logo images shown beside the CTA (instead of the plain
+          // brandTag text) — empty by default so existing rows are unaffected.
+          brandLogos: {
+            type: 'array',
+            min: 0,
+            max: 8,
+            getItemSummary: (item, index) => item.alt || `Logo ${(index ?? 0) + 1}`,
+            defaultItemProps: { src: '', alt: '' },
+            arrayFields: { src: imageField('Logo'), alt: { type: 'text' } },
+          },
+          ctaLabel: { type: 'text' },
+          ctaHref: { type: 'text' },
+        },
+      },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'radio',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      sectionEyebrow: '',
+      sectionTitle: '',
+      sectionSubtitle: '',
+      items: [
+        {
+          icon: 'snowflake',
+          eyebrow: 'HVAC & Air Conditioning',
+          heading: 'Comfortable environments, engineered room by room',
+          description: 'Professionally engineered air-conditioning solutions sized to your space.',
+          checklist: 'Air Conditioning\nRefrigeration\nHeat Pump',
+          image: '',
+          images: [],
+          clients: [],
+          brandTag: 'Blue Star',
+          ctaLabel: 'Enquire →',
+          ctaHref: '#get-quote',
+        },
+      ],
+      padding: 'md',
+      background: 'white',
+    },
+    render: function ConstructionDisciplineRowsRender({
+      sectionEyebrow,
+      sectionTitle,
+      sectionSubtitle,
+      items,
+      padding,
+      background,
+    }) {
+      const list = (items ?? []).filter((i) => i.heading)
+      if (list.length === 0) return <></>
+      return (
+        <section
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className={wrap}>
+            {(sectionEyebrow || sectionTitle || sectionSubtitle) && (
+              <div className="mb-12 max-w-2xl mx-auto text-center">
+                {sectionEyebrow && (
+                  <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                    {sectionEyebrow}
+                  </p>
+                )}
+                {sectionTitle && (
+                  <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">
+                    {sectionTitle}
+                  </h2>
+                )}
+                {sectionSubtitle && (
+                  <p className="text-slate-600 leading-relaxed">{sectionSubtitle}</p>
+                )}
+              </div>
+            )}
+            <div className="space-y-16">
+              {list.map((row, i) => {
+                const Icon = row.icon ? ICON_BY_KEY[row.icon as IconKey] : null
+                const checklistItems = (row.checklist ?? '')
+                  .split('\n')
+                  .map((c) => c.trim())
+                  .filter(Boolean)
+                const clients = (row.clients ?? []).filter((c) => c.name)
+                return (
+                  <SectorRevealItem key={i}>
+                    <div
+                      className={`grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch ${i % 2 === 1 ? 'md:[direction:rtl]' : ''}`}
+                    >
+                      <DisciplineRowMedia
+                        images={row.images}
+                        image={row.image}
+                        heading={row.heading}
+                      />
+                      <div className="md:[direction:ltr]">
+                        {row.eyebrow && (
+                          <p className="flex items-center gap-2 text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                            {Icon && (
+                              <span className="inline-flex h-5 w-5">
+                                <Icon />
+                              </span>
+                            )}
+                            {row.eyebrow}
+                          </p>
+                        )}
+                        <h2 className="text-2xl font-bold text-slate-900 mb-3">{row.heading}</h2>
+                        {row.description && (
+                          <p className="text-slate-600 leading-relaxed mb-3">{row.description}</p>
+                        )}
+                        {clients.length > 0 ? (
+                          <div className="mb-4 divide-y divide-slate-100">
+                            {clients.map((c, ci) => {
+                              const cities = (c.cities ?? '')
+                                .split(/[,\n]/)
+                                .map((city) => city.trim())
+                                .filter(Boolean)
+                              return (
+                                <div key={ci} className="py-3 first:pt-0 last:pb-0">
+                                  <p className="font-semibold text-slate-900">{c.name}</p>
+                                  {c.note && <p className="text-sm text-slate-500">{c.note}</p>}
+                                  {cities.length > 0 && (
+                                    <div className="mt-2 flex flex-wrap gap-2">
+                                      {cities.map((city, cityI) => (
+                                        <span
+                                          key={cityI}
+                                          className="rounded-full bg-orange-50 px-3 py-1 text-xs font-medium text-orange-700"
+                                        >
+                                          {city}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        ) : (
+                          checklistItems.length > 0 && (
+                            <ul className="flex flex-col gap-2 mb-4">
+                              {checklistItems.map((c, ci) => (
+                                <li
+                                  key={ci}
+                                  className="flex items-center gap-2 text-slate-700 text-sm"
+                                >
+                                  <span className="text-green-600 flex-shrink-0">
+                                    <CheckShieldIcon />
+                                  </span>
+                                  {c}
+                                </li>
+                              ))}
+                            </ul>
+                          )
+                        )}
+                        {(row.ctaLabel || row.brandTag || row.brandLogos?.length) && (
+                          <div
+                            className={
+                              row.brandLogos?.length
+                                ? 'mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4'
+                                : 'flex flex-wrap items-center gap-3 mt-2'
+                            }
+                          >
+                            {row.brandLogos?.length ? (
+                              <div className="flex flex-wrap items-center gap-3">
+                                {row.brandLogos.map((l, li) => (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    key={li}
+                                    src={l.src}
+                                    alt={l.alt}
+                                    loading="lazy"
+                                    className="h-9 w-auto max-w-[120px] object-contain"
+                                  />
+                                ))}
+                              </div>
+                            ) : (
+                              row.brandTag && (
+                                <span className="text-xs font-medium text-slate-500">
+                                  {row.brandTag}
+                                </span>
+                              )
+                            )}
+                            {row.ctaLabel && (
+                              <a
+                                href={row.ctaHref || '#'}
+                                className="inline-block rounded-lg bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 transition"
+                              >
+                                {row.ctaLabel}
+                              </a>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </SectorRevealItem>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // Simple two-column approach section — photo, copy, a pair of
+  // point-highlight cards (icon+title+paragraph) and a row of stat cards.
+  // Deliberately NOT built on ConstructionAboutSplit, which reads its
+  // eyebrow/heading/paragraph from the global Settings → Fields
+  // `about-*` keys — reusing it here would show the About page's own
+  // copy on every sector page instead of sector-specific content.
+  ConstructionApproachSplit: {
+    label: 'Approach Split (Highlights + Stats)',
+    fields: {
+      eyebrow: { type: 'text' },
+      heading: { type: 'text' },
+      paragraph1: { type: 'textarea' },
+      paragraph2: { type: 'textarea' },
+      photo: imageField('Photo'),
+      highlight1Icon: DISCIPLINE_ICON_FIELD,
+      highlight1Title: { type: 'text' },
+      highlight1Description: { type: 'textarea' },
+      highlight2Icon: DISCIPLINE_ICON_FIELD,
+      highlight2Title: { type: 'text' },
+      highlight2Description: { type: 'textarea' },
+      stat1Value: { type: 'text' },
+      stat1Label: { type: 'text' },
+      stat2Value: { type: 'text' },
+      stat2Label: { type: 'text' },
+      stat3Value: { type: 'text' },
+      stat3Label: { type: 'text' },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+      background: {
+        type: 'radio',
+        options: [
+          { label: 'White', value: 'white' },
+          { label: 'Muted', value: 'muted' },
+        ],
+      },
+    },
+    defaultProps: {
+      eyebrow: 'How we handle it',
+      heading: 'Expert engineering. One accountable team, start to finish.',
+      paragraph1: '',
+      paragraph2: '',
+      photo: '/seed/subhadra/brand/shop.webp',
+      highlight1Icon: 'star',
+      highlight1Title: 'Engineering Expertise',
+      highlight1Description: 'Every system is sized and specified by our own qualified engineers.',
+      highlight2Icon: 'shield',
+      highlight2Title: 'One Point of Accountability',
+      highlight2Description:
+        'A single Subhadra Group team owns the project — no subcontractors, no gaps.',
+      stat1Value: '100%',
+      stat1Label: 'Genuine, brand-sourced products',
+      stat2Value: '0',
+      stat2Label: 'Work outsourced to subcontractors',
+      stat3Value: '30',
+      stat3Label: 'Years of industry experience',
+      padding: 'md',
+      background: 'muted',
+    },
+    render: ({
+      eyebrow,
+      heading,
+      paragraph1,
+      paragraph2,
+      photo,
+      highlight1Icon,
+      highlight1Title,
+      highlight1Description,
+      highlight2Icon,
+      highlight2Title,
+      highlight2Description,
+      stat1Value,
+      stat1Label,
+      stat2Value,
+      stat2Label,
+      stat3Value,
+      stat3Label,
+      padding,
+      background,
+    }) => {
+      const highlights = [
+        { icon: highlight1Icon, title: highlight1Title, description: highlight1Description },
+        { icon: highlight2Icon, title: highlight2Title, description: highlight2Description },
+      ].filter((h) => h.title)
+      const stats = [
+        { value: stat1Value, label: stat1Label },
+        { value: stat2Value, label: stat2Label },
+        { value: stat3Value, label: stat3Label },
+      ].filter((s) => s.value)
+      return (
+        <section
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        >
+          <div className="w-full px-6 md:px-10 lg:px-16 md:flex gap-14 items-center">
+            <div className="md:w-2/5 mb-10 md:mb-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={photo} alt={heading} className="rounded-2xl w-full h-96 object-cover" />
+            </div>
+            <div className="md:w-3/5">
+              {eyebrow && (
+                <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                  {eyebrow}
+                </p>
+              )}
+              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-4">{heading}</h2>
+              {paragraph1 && <p className="text-slate-600 leading-relaxed mb-6">{paragraph1}</p>}
+              {highlights.length > 0 && (
+                <div className="grid sm:grid-cols-2 gap-5 mb-6">
+                  {highlights.map((h, i) => {
+                    const Icon = ICON_BY_KEY[(h.icon as IconKey) || 'star']
+                    return (
+                      <div key={i} className="flex gap-3">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-50 text-orange-600">
+                          <Icon />
+                        </span>
+                        <div>
+                          <h4 className="font-semibold text-slate-900 mb-1">{h.title}</h4>
+                          {h.description && (
+                            <p className="text-sm text-slate-600 leading-relaxed">
+                              {h.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+              {paragraph2 && <p className="text-slate-600 leading-relaxed mb-6">{paragraph2}</p>}
+              {stats.length > 0 && (
+                <div className="grid grid-cols-3 gap-4">
+                  {stats.map((s, i) => (
+                    <div key={i} className="rounded-xl border border-slate-200 p-4 text-center">
+                      <b className="block text-2xl font-extrabold text-slate-900">{s.value}</b>
+                      <span className="text-xs text-slate-500">{s.label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // Simple horizontal N-step process — no per-step images, distinct from
+  // ConstructionProcessTimeline (vertical, plain 1/2/3 numbering, used
+  // elsewhere already).
+  ConstructionProcessSteps: {
+    label: 'Process Steps (Horizontal)',
+    fields: {
+      sectionEyebrow: { type: 'text' },
+      sectionTitle: { type: 'text' },
+      items: {
+        type: 'array',
+        min: 0,
+        max: 6,
+        getItemSummary: (item, index) => item.title || `Step ${(index ?? 0) + 1}`,
+        defaultItemProps: { stepLabel: '', title: '', description: '' },
+        arrayFields: {
+          stepLabel: { type: 'text' },
+          title: { type: 'text' },
+          description: { type: 'textarea' },
+        },
+      },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+    },
+    defaultProps: {
+      sectionEyebrow: 'How we work',
+      sectionTitle: 'From design to maintenance',
+      items: [
+        {
+          stepLabel: '01 — Design',
+          title: 'Design',
+          description: 'Understand the requirements and develop engineered solutions.',
+        },
+        {
+          stepLabel: '02 — Supply',
+          title: 'Supply',
+          description: 'Provide products and systems from world-class brands.',
+        },
+        {
+          stepLabel: '03 — Execution',
+          title: 'Execution',
+          description: 'Professional installation and project execution.',
+        },
+        {
+          stepLabel: '04 — Maintenance',
+          title: 'Maintenance',
+          description: 'Ongoing service and support for installed systems.',
+        },
+      ],
+      padding: 'md',
+    },
+    render: ({ sectionEyebrow, sectionTitle, items, padding }) => {
+      const list = (items ?? []).filter((i) => i.title)
+      if (list.length === 0) return <></>
+      return (
+        <section className={`${padY[padding]} bg-white`}>
+          <div className={wrap}>
+            {(sectionEyebrow || sectionTitle) && (
+              <div className="mb-12 text-center">
+                {sectionEyebrow && (
+                  <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                    {sectionEyebrow}
+                  </p>
+                )}
+                {sectionTitle && (
+                  <h2 className="text-2xl md:text-4xl font-bold text-slate-900">{sectionTitle}</h2>
+                )}
+              </div>
+            )}
+            <div
+              className="grid gap-8"
+              style={{ gridTemplateColumns: `repeat(auto-fit, minmax(200px, 1fr))` }}
+            >
+              {list.map((step, i) => (
+                <div key={i} className="text-center md:text-left">
+                  <span className="text-xs font-bold uppercase tracking-wide text-orange-600">
+                    {step.stepLabel}
+                  </span>
+                  <h4 className="mt-1 font-semibold text-slate-900 text-lg mb-1.5">{step.title}</h4>
+                  {step.description && (
+                    <p className="text-sm text-slate-600 leading-relaxed">{step.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
+  // Simple photo + title + subtitle slide, static array — distinct from
+  // ConstructionProjectsSlider (bound to the real projects-content module,
+  // heavier story-card shape). For sector-specific project photos that
+  // aren't necessarily real case-study rows.
+  ConstructionProjectPhotoSlider: {
+    label: 'Project Photo Slider',
+    fields: {
+      sectionEyebrow: { type: 'text' },
+      sectionTitle: { type: 'text' },
+      sectionSubtitle: { type: 'textarea' },
+      items: {
+        type: 'array',
+        min: 0,
+        max: 10,
+        getItemSummary: (item, index) => item.title || `Photo ${(index ?? 0) + 1}`,
+        defaultItemProps: { image: '', title: '', subtitle: '' },
+        arrayFields: {
+          image: imageField('Image'),
+          title: { type: 'text' },
+          subtitle: { type: 'text' },
+        },
+      },
+      padding: {
+        type: 'select',
+        options: [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ],
+      },
+    },
+    defaultProps: {
+      sectionEyebrow: 'Our work',
+      sectionTitle: 'Solutions Designed Around Your Project',
+      sectionSubtitle: '',
+      items: [],
+      padding: 'md',
+    },
+    render: ({ sectionEyebrow, sectionTitle, sectionSubtitle, items, padding }) => {
+      const list = (items ?? []).filter((i) => i.image)
+      if (list.length === 0) return <></>
+      return (
+        <section className={`${padY[padding]} bg-white`}>
+          <div className={wrap}>
+            {(sectionEyebrow || sectionTitle || sectionSubtitle) && (
+              <div className="mb-10 max-w-2xl mx-auto text-center">
+                {sectionEyebrow && (
+                  <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                    {sectionEyebrow}
+                  </p>
+                )}
+                {sectionTitle && (
+                  <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">
+                    {sectionTitle}
+                  </h2>
+                )}
+                {sectionSubtitle && (
+                  <p className="text-slate-600 leading-relaxed">{sectionSubtitle}</p>
+                )}
+              </div>
+            )}
+            <div className="flex gap-5 overflow-x-auto snap-x snap-mandatory pb-2">
+              {list.map((p, i) => (
+                <div
+                  key={i}
+                  className="snap-start shrink-0 w-72 rounded-2xl overflow-hidden border border-slate-200"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={p.image}
+                    alt={p.title}
+                    loading="lazy"
+                    className="h-48 w-full object-cover"
+                  />
+                  <div className="p-4">
+                    <h3 className="font-bold text-slate-900">{p.title}</h3>
+                    {p.subtitle && <p className="text-sm text-slate-500">{p.subtitle}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    },
+  },
+
   // Brands — 6-logo grid using real logo images (imageField), distinct
   // from ConstructionOurBrands' text-name tabbed groups.
   ConstructionBrandsLogoGrid: {
@@ -13693,6 +15294,11 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
       'ConstructionSectorsSplitFeature',
       'ConstructionSectorsRadial',
       'ConstructionSectorDetailList',
+      'ConstructionIconFeatureGrid',
+      'ConstructionDisciplineRows',
+      'ConstructionApproachSplit',
+      'ConstructionProcessSteps',
+      'ConstructionProjectPhotoSlider',
     ],
   },
   team: {
@@ -13791,11 +15397,27 @@ export const construction: ComponentPack = {
   label: 'Construction',
   components: typedComponents as NonNullable<Config['components']>,
   categories: typedCategories,
+  // ConstructionFooter and ConstructionSectorDetailList each have 4 real
+  // render branches (see their `variant` field above — Footer's 4 options
+  // are also confirmed structurally distinct by FOOTER_LABELS in
+  // website/layout/page.tsx) but neither was ever registered here — same
+  // class of bug general/index.tsx documents fixing for Hero/NavBar/
+  // FeatureCards/Footer/TaglineStrip: the Insert-a-block modal's and
+  // SectionPickerPopup's per-variant card grid read this map directly
+  // (blockVariants[componentKey]), so without an entry a component silently
+  // falls back to a single, variant-less card despite 4 designs existing.
+  // ConstructionSectorDetailList is inserted through the ordinary "Sectors"
+  // category (typedCategories.sectors) exactly like any other block — the
+  // separate detail-page-types registry (backend/src/shared/detail-pages/)
+  // only governs which entity a bound page renders, not how this picker
+  // shows it, so it needs its variants registered too.
   variants: {
     ConstructionTopBar: ['1', '2', '3', '4'],
     ConstructionHeader: ['1', '2', '3', '4'],
     ConstructionHero: ['1', '2', '3', '4'],
     ConstructionInnerBanner: ['1', '2', '3', '4'],
+    ConstructionFooter: ['1', '2', '3', '4'],
+    ConstructionSectorDetailList: ['1', '2', '3', '4'],
     ConstructionMissionVision: ['1', '2', '3', '4'],
   },
 }

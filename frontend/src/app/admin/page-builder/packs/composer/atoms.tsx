@@ -1,6 +1,9 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import DOMPurify from 'dompurify'
+import { Button } from '@/components/ui/button'
+import { MediaPicker } from '@/components/shared/MediaPicker'
 import {
   Heading as HeadingIcon,
   Pilcrow,
@@ -15,7 +18,6 @@ import {
   Share2,
   Video as VideoIcon,
   Zap,
-  Columns,
   LayoutGrid,
   List as ListIcon,
   Square,
@@ -24,15 +26,108 @@ import {
   BarChart3,
   ClipboardList,
   Code2,
+  GalleryHorizontal,
+  Upload,
 } from 'lucide-react'
 
 export type Align = 'left' | 'center' | 'right'
+
+/** Generic per-atom visual styling — an Elementor-style "Style" tab that
+ *  applies to ANY atom regardless of type, layered on top of that atom's own
+ *  content fields rather than replacing them. */
+export interface AtomStyle {
+  textColor?: string
+  bgColor?: string
+  borderWidth?: 'none' | 'thin' | 'medium' | 'thick'
+  borderColor?: string
+  borderRadius?: 'none' | 'sm' | 'md' | 'lg' | 'full'
+  shadow?: 'none' | 'sm' | 'md' | 'lg'
+  padding?: 'none' | 'sm' | 'md' | 'lg'
+  /** CSS font-family — inherited by child text since this lands on the
+   *  atom's own wrapper div (see atomStyleProps), no per-render-fn wiring
+   *  needed for Heading/Paragraph. */
+  fontFamily?: string
+}
 
 export interface ComposerAtom {
   id: string
   type: string
   hideMobile?: boolean
+  /** Only meaningful on a 'layout' atom — its nested content. */
+  children?: ComposerAtom[]
+  /** Only meaningful on a direct child of a grid-mode 'layout' atom. */
+  colSpan?: number
+  /** Bootstrap-style column offset — 0/unset means auto-flow (no offset). */
+  colStart?: number
+  /** Generic per-atom Style tab settings (color/background/border/shadow/padding). */
+  style?: AtomStyle
   [prop: string]: unknown
+}
+
+// Matches Theme Engine's own font choices (webapp.typography.*.typography_scale
+// setting-field's `options.choices`) so a hand-picked font here stays inside
+// the same set the rest of the platform already uses.
+const FONT_FAMILY_CHOICES = [
+  'Inter',
+  'Sora',
+  'Roboto',
+  'Poppins',
+  'Poppins, Sora',
+  'Open Sans',
+  'Lato',
+  'Montserrat',
+  'Source Sans 3',
+  'SF Pro',
+  'System UI',
+]
+
+const BORDER_WIDTH_PX: Record<NonNullable<AtomStyle['borderWidth']>, string> = {
+  none: '0',
+  thin: '1px',
+  medium: '2px',
+  thick: '4px',
+}
+const BORDER_RADIUS_PX: Record<NonNullable<AtomStyle['borderRadius']>, string> = {
+  none: '0',
+  sm: '4px',
+  md: '8px',
+  lg: '16px',
+  full: '9999px',
+}
+const SHADOW_CSS: Record<NonNullable<AtomStyle['shadow']>, string> = {
+  none: 'none',
+  sm: '0 1px 3px rgba(0,0,0,0.12)',
+  md: '0 4px 10px rgba(0,0,0,0.15)',
+  lg: '0 12px 24px rgba(0,0,0,0.18)',
+}
+const STYLE_PADDING_PX: Record<NonNullable<AtomStyle['padding']>, string> = {
+  none: '0',
+  sm: '8px',
+  md: '16px',
+  lg: '28px',
+}
+
+/** Wrapper style for the Style tab's settings — used identically by the
+ *  interactive canvas and the public/plain renderer so what you see while
+ *  editing is exactly what publishes. No-op (empty object) when nothing in
+ *  the Style tab has been touched, so existing atoms/pages are unaffected. */
+export function atomStyleProps(atom: ComposerAtom): { style: React.CSSProperties } {
+  const s = atom.style
+  if (!s) return { style: {} }
+  const style: React.CSSProperties = {}
+  if (s.textColor) style.color = s.textColor
+  if (s.bgColor) style.backgroundColor = s.bgColor
+  if (s.borderWidth && s.borderWidth !== 'none') {
+    style.borderWidth = BORDER_WIDTH_PX[s.borderWidth]
+    style.borderStyle = 'solid'
+    style.borderColor = s.borderColor || '#e2e8f0'
+  }
+  if (s.borderRadius && s.borderRadius !== 'none')
+    style.borderRadius = BORDER_RADIUS_PX[s.borderRadius]
+  if (s.shadow && s.shadow !== 'none') style.boxShadow = SHADOW_CSS[s.shadow]
+  if (s.padding && s.padding !== 'none') style.padding = STYLE_PADDING_PX[s.padding]
+  if (s.fontFamily) style.fontFamily = s.fontFamily
+  return { style }
 }
 
 /** Matches sectionBuilder.html's ELEMENT_GROUPS exactly — the left palette
@@ -95,12 +190,23 @@ function buttonRender(atom: ComposerAtom) {
   const label = String(atom.label ?? 'Click me')
   const href = String(atom.href ?? '#')
   const variant = atom.variant === 'secondary' ? 'secondary' : 'primary'
+  // A custom bg/text color (Style tab — same fields the brand-color prefill
+  // writes to on drop) overrides the variant's own Tailwind fill, since that
+  // fill is opaque and would otherwise hide a color set on the outer wrapper.
+  const custom = atom.style as AtomStyle | undefined
+  const customStyle: React.CSSProperties | undefined =
+    variant === 'primary' && (custom?.bgColor || custom?.textColor)
+      ? { backgroundColor: custom.bgColor || undefined, color: custom.textColor || undefined }
+      : undefined
   return (
     <a
       href={href}
+      style={customStyle}
       className={`inline-flex rounded-lg px-5 py-2.5 font-medium transition ${
         variant === 'primary'
-          ? 'bg-blue-600 text-white hover:bg-blue-700'
+          ? customStyle
+            ? ''
+            : 'bg-blue-600 text-white hover:bg-blue-700'
           : 'border border-slate-300 text-slate-800 hover:bg-slate-100'
       }`}
     >
@@ -110,9 +216,17 @@ function buttonRender(atom: ComposerAtom) {
 }
 
 function imageRender(atom: ComposerAtom) {
-  const src = String(atom.src ?? 'https://placehold.co/1200x600')
+  const src = String(atom.src ?? '')
   const alt = String(atom.alt ?? '')
   const rounded = Boolean(atom.rounded)
+  if (!src)
+    return (
+      <div
+        className={`grid aspect-video w-full place-items-center bg-gradient-to-br from-slate-100 to-slate-200 text-sm text-slate-400 ${rounded ? 'rounded-xl' : ''}`}
+      >
+        No image yet
+      </div>
+    )
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
@@ -139,9 +253,18 @@ function badgeRender(atom: ComposerAtom) {
       : tone === 'neutral'
         ? 'bg-slate-800 text-white'
         : 'bg-blue-100 text-blue-700'
+  // Same override convention as buttonRender — a custom Style-tab color
+  // beats the tone's own Tailwind fill instead of sitting invisibly on the
+  // (differently-shaped) wrapper behind it.
+  const custom = atom.style as AtomStyle | undefined
+  const customStyle: React.CSSProperties | undefined =
+    tone === 'primary' && (custom?.bgColor || custom?.textColor)
+      ? { backgroundColor: custom.bgColor || undefined, color: custom.textColor || undefined }
+      : undefined
   return (
     <span
-      className={`inline-block rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${cls}`}
+      style={customStyle}
+      className={`inline-block rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${customStyle ? '' : cls}`}
     >
       {text}
     </span>
@@ -185,10 +308,20 @@ function navRender(atom: ComposerAtom) {
   const align = String(atom.align ?? 'center') as Align
   const justify =
     align === 'center' ? 'justify-center' : align === 'right' ? 'justify-end' : 'justify-start'
+  // A dark/transparent row (Style tab background) needs light nav text —
+  // the hardcoded text-slate-800 class would otherwise win over any color
+  // set on the row's own wrapper, since inherited color never overrides a
+  // descendant's own class. Same override convention as buttonRender/
+  // badgeRender: a custom Style-tab text color replaces the default class.
+  const textColor = (atom.style as AtomStyle | undefined)?.textColor
   return (
     <nav className={`flex flex-wrap gap-6 ${justify}`}>
       {items.map((item, i) => (
-        <span key={i} className="text-sm font-semibold text-slate-800">
+        <span
+          key={i}
+          style={textColor ? { color: textColor } : undefined}
+          className={`text-sm font-semibold ${textColor ? '' : 'text-slate-800'}`}
+        >
           {item}
         </span>
       ))}
@@ -253,31 +386,216 @@ function icontextRender(atom: ComposerAtom) {
   )
 }
 
-function columnsRender(atom: ComposerAtom) {
-  const left = String(atom.left ?? 'First column text.')
-  const right = String(atom.right ?? 'Second column text.')
+// The one real nested-layout primitive — Grid, Flex and Stack all render
+// through this same container + recursive-children path (Stack is just Flex
+// with fewer knobs shown in its Field), so there's a single layout engine
+// instead of three parallel ones. Gap uses the Theme Engine's CSS custom
+// properties (falls back to a fixed value if the token isn't defined yet)
+// rather than a hardcoded px value.
+const GAP_VALUE: Record<string, string> = {
+  sm: 'var(--space-sm, 0.5rem)',
+  md: 'var(--space-md, 1rem)',
+  lg: 'var(--space-lg, 1.5rem)',
+  xl: 'var(--space-xl, 2rem)',
+}
+const ALIGN_ITEMS: Record<string, string> = {
+  start: 'flex-start',
+  center: 'center',
+  end: 'flex-end',
+  stretch: 'stretch',
+}
+const JUSTIFY_CONTENT: Record<string, string> = {
+  start: 'flex-start',
+  center: 'center',
+  end: 'flex-end',
+  between: 'space-between',
+}
+
+export function layoutContainerStyle(atom: ComposerAtom): {
+  className: string
+  style: React.CSSProperties
+} {
+  const mode = String(atom.mode ?? 'grid')
+  const gap = GAP_VALUE[String(atom.gap ?? 'md')] ?? GAP_VALUE.md
+  const align = ALIGN_ITEMS[String(atom.align ?? 'stretch')] ?? 'stretch'
+  if (mode === 'grid') {
+    const columns = Math.max(1, Math.min(12, Number(atom.columns ?? 2)))
+    return {
+      className: 'grid w-full',
+      style: { gridTemplateColumns: `repeat(${columns}, 1fr)`, gap, alignItems: align },
+    }
+  }
+  const direction =
+    mode === 'stack'
+      ? atom.direction === 'horizontal'
+        ? 'row'
+        : 'column'
+      : atom.direction === 'column'
+        ? 'column'
+        : 'row'
+  return {
+    className: 'flex w-full',
+    style: {
+      flexDirection: direction as React.CSSProperties['flexDirection'],
+      flexWrap: mode === 'flex' && atom.wrap ? 'wrap' : 'nowrap',
+      gap,
+      alignItems: align,
+      justifyContent: JUSTIFY_CONTENT[String(atom.justify ?? 'start')] ?? 'flex-start',
+    },
+  }
+}
+
+/** Grid-cell placement for a direct child of a grid-mode 'layout' atom — a
+ *  no-op outside a grid parent. `colStart` is the Bootstrap-offset
+ *  equivalent (0/unset = auto-flow, same as no offset class). */
+export function childWrapStyle(
+  parent: ComposerAtom,
+  child: ComposerAtom
+): React.CSSProperties | undefined {
+  if (parent.type !== 'layout' || String(parent.mode ?? 'grid') !== 'grid') return undefined
+  const columns = Math.max(1, Math.min(12, Number(parent.columns ?? 2)))
+  const span = Math.max(1, Math.min(columns, Number(child.colSpan ?? 1)))
+  const start = Number(child.colStart ?? 0)
+  const gridColumn = start > 0 ? `${Math.min(columns, start)} / span ${span}` : `span ${span}`
+  return { gridColumn }
+}
+
+/** Grid rows start at 1 column (full width) so a single element fills the row.
+ *  When a sibling lands in that same row (via its persistent "+" or a drop),
+ *  the row must widen or the new child just wraps to a second grid line and
+ *  stacks under the first — never sitting beside it. Grows columns to fit,
+ *  never shrinks (removing a child leaves the row's column count alone). */
+export function normalizeGridColumns(atoms: ComposerAtom[]): ComposerAtom[] {
+  return atoms.map((atom) => {
+    if (atom.type !== 'layout') return atom
+    const children = normalizeGridColumns(
+      Array.isArray(atom.children) ? (atom.children as ComposerAtom[]) : []
+    )
+    const mode = String(atom.mode ?? 'grid')
+    let columns = atom.columns
+    if (mode === 'grid' && children.length > 0) {
+      const current = Math.max(1, Math.min(12, Number(atom.columns ?? 1)))
+      if (children.length > current) columns = Math.min(12, children.length)
+    }
+    return { ...atom, columns, children }
+  })
+}
+
+/** Plain (non-interactive) recursive render — used for the public site and
+ *  as this atom type's own `Render`. The interactive canvas builds its own
+ *  parallel recursion (selection/drag chrome per node) in ComposerCanvas. */
+function layoutRender(atom: ComposerAtom) {
+  const children = Array.isArray(atom.children) ? (atom.children as ComposerAtom[]) : []
+  const { className, style } = layoutContainerStyle(atom)
   return (
-    <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2">
-      <p className="leading-relaxed text-slate-700">{left}</p>
-      <p className="leading-relaxed text-slate-700">{right}</p>
+    <div className={className} style={style}>
+      {children.map((child) => {
+        const def = ATOM_BY_TYPE[child.type]
+        if (!def) return null
+        return (
+          <div
+            key={child.id}
+            style={childWrapStyle(atom, child)}
+            className={child.hideMobile ? 'hidden md:block' : undefined}
+          >
+            <div style={atomStyleProps(child).style}>{def.Render(child)}</div>
+          </div>
+        )
+      })}
     </div>
   )
 }
 
-function gridRender(atom: ComposerAtom) {
-  const cols = Math.max(2, Math.min(6, Number(atom.cols ?? 3)))
-  const items = (Array.isArray(atom.items) ? (atom.items as string[]) : []).slice(0, cols)
-  while (items.length < cols) items.push('Column text.')
+function layoutField({
+  atom,
+  onChange,
+}: {
+  atom: ComposerAtom
+  onChange: (patch: Record<string, unknown>) => void
+}) {
+  const mode = String(atom.mode ?? 'grid')
   return (
-    <div className="grid w-full gap-4" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
-      {items.map((t, i) => (
-        <div
-          key={i}
-          className="rounded-lg border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700"
-        >
-          {t}
-        </div>
-      ))}
+    <div className="flex flex-col gap-3.5">
+      <ChipRow
+        label="Layout type"
+        value={mode}
+        options={[
+          { label: 'Grid', value: 'grid' },
+          { label: 'Flex', value: 'flex' },
+          { label: 'Stack', value: 'stack' },
+        ]}
+        onChange={(nextMode) => onChange({ mode: nextMode })}
+      />
+      {mode === 'grid' ? (
+        <ChipRow
+          label="Columns"
+          value={String(atom.columns ?? 12)}
+          options={[2, 3, 4, 6, 12].map((n) => ({ label: `${n}`, value: String(n) }))}
+          onChange={(v) => onChange({ columns: Number(v) })}
+        />
+      ) : (
+        <ChipRow
+          label="Direction"
+          value={String(atom.direction ?? (mode === 'stack' ? 'vertical' : 'row'))}
+          options={
+            mode === 'stack'
+              ? [
+                  { label: 'Vertical', value: 'vertical' },
+                  { label: 'Horizontal', value: 'horizontal' },
+                ]
+              : [
+                  { label: 'Row', value: 'row' },
+                  { label: 'Column', value: 'column' },
+                ]
+          }
+          onChange={(direction) => onChange({ direction })}
+        />
+      )}
+      <ChipRow
+        label="Gap"
+        value={String(atom.gap ?? 'md')}
+        options={[
+          { label: 'S', value: 'sm' },
+          { label: 'M', value: 'md' },
+          { label: 'L', value: 'lg' },
+          { label: 'XL', value: 'xl' },
+        ]}
+        onChange={(gap) => onChange({ gap })}
+      />
+      <ChipRow
+        label="Align"
+        value={String(atom.align ?? 'stretch')}
+        options={[
+          { label: 'Start', value: 'start' },
+          { label: 'Center', value: 'center' },
+          { label: 'End', value: 'end' },
+          { label: 'Stretch', value: 'stretch' },
+        ]}
+        onChange={(align) => onChange({ align })}
+      />
+      {mode !== 'stack' ? (
+        <ChipRow
+          label="Justify"
+          value={String(atom.justify ?? 'start')}
+          options={[
+            { label: 'Start', value: 'start' },
+            { label: 'Center', value: 'center' },
+            { label: 'End', value: 'end' },
+            { label: 'Between', value: 'between' },
+          ]}
+          onChange={(justify) => onChange({ justify })}
+        />
+      ) : null}
+      {mode === 'flex' ? (
+        <label className="flex items-center gap-2 text-[11.5px] text-slate-300">
+          <input
+            type="checkbox"
+            checked={Boolean(atom.wrap)}
+            onChange={(e) => onChange({ wrap: e.target.checked })}
+          />
+          Wrap items
+        </label>
+      ) : null}
     </div>
   )
 }
@@ -462,6 +780,60 @@ function TextareaInput({
   )
 }
 
+/** Image URL field with an "Upload" trigger into the shared media library —
+ *  same MediaPicker + upload-to-/media/upload flow as BrandingFileControl,
+ *  reused here instead of a bespoke uploader. Typing/pasting a URL directly
+ *  still works; Upload is the alternative, not a replacement. */
+function ImageUrlField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+}) {
+  const [pickerOpen, setPickerOpen] = useState(false)
+  return (
+    <div>
+      <span className="mb-1.5 block text-[10.5px] font-bold uppercase tracking-wide text-slate-400">
+        {label}
+      </span>
+      <div className="flex gap-2">
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="https://…"
+          className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setPickerOpen(true)}
+          className="shrink-0 gap-1.5"
+          title="Upload or choose from media library"
+        >
+          <Upload className="h-3.5 w-3.5" />
+          Upload
+        </Button>
+      </div>
+      {pickerOpen && (
+        <MediaPicker
+          open
+          onClose={() => setPickerOpen(false)}
+          onSelect={(media) => {
+            const url = media[0]?.url
+            if (url) onChange(url)
+            setPickerOpen(false)
+          }}
+          typeFilter="IMAGE"
+        />
+      )}
+    </div>
+  )
+}
+
 /** Swatch-row color picker — matches sectionBuilder.html's colourPicker():
  *  a row of preset swatches (brand primary/secondary + 3 neutrals) plus a
  *  native colour input as the "anything else" escape hatch. */
@@ -507,7 +879,7 @@ function ColorInput({
   )
 }
 
-function ChipRow<T extends string>({
+export function ChipRow<T extends string>({
   label,
   options,
   value,
@@ -523,7 +895,7 @@ function ChipRow<T extends string>({
       <span className="mb-1.5 block text-[10.5px] font-bold uppercase tracking-wide text-slate-400">
         {label}
       </span>
-      <div className="flex gap-1.5">
+      <div className="flex flex-wrap gap-1.5">
         {options.map((o) => (
           <button
             key={o.value}
@@ -539,6 +911,461 @@ function ChipRow<T extends string>({
           </button>
         ))}
       </div>
+    </div>
+  )
+}
+
+/** The "Style" tab — Elementor-style generic visual settings that apply to
+ *  ANY atom regardless of type, separate from that atom's own content Field.
+ *  Reads/writes the single `atom.style` object; `atomStyleProps()` above is
+ *  what actually renders these values. */
+export function AtomStyleField({
+  atom,
+  onChange,
+}: {
+  atom: ComposerAtom
+  onChange: (patch: Record<string, unknown>) => void
+}) {
+  const s: AtomStyle = atom.style ?? {}
+  function patchStyle(next: Partial<AtomStyle>) {
+    onChange({ style: { ...s, ...next } })
+  }
+  return (
+    <div className="flex flex-col gap-3.5">
+      <ColorInput
+        label="Text color"
+        value={s.textColor ?? ''}
+        fallback="#0f172a"
+        onChange={(textColor) => patchStyle({ textColor })}
+      />
+      <ColorInput
+        label="Background color"
+        value={s.bgColor ?? ''}
+        fallback="#ffffff"
+        onChange={(bgColor) => patchStyle({ bgColor })}
+      />
+      <ChipRow
+        label="Border width"
+        value={s.borderWidth ?? 'none'}
+        options={[
+          { label: 'None', value: 'none' },
+          { label: 'Thin', value: 'thin' },
+          { label: 'Medium', value: 'medium' },
+          { label: 'Thick', value: 'thick' },
+        ]}
+        onChange={(borderWidth) => patchStyle({ borderWidth })}
+      />
+      {s.borderWidth && s.borderWidth !== 'none' ? (
+        <ColorInput
+          label="Border color"
+          value={s.borderColor ?? ''}
+          fallback="#e2e8f0"
+          onChange={(borderColor) => patchStyle({ borderColor })}
+        />
+      ) : null}
+      <ChipRow
+        label="Border radius"
+        value={s.borderRadius ?? 'none'}
+        options={[
+          { label: 'None', value: 'none' },
+          { label: 'S', value: 'sm' },
+          { label: 'M', value: 'md' },
+          { label: 'L', value: 'lg' },
+          { label: 'Full', value: 'full' },
+        ]}
+        onChange={(borderRadius) => patchStyle({ borderRadius })}
+      />
+      <ChipRow
+        label="Box shadow"
+        value={s.shadow ?? 'none'}
+        options={[
+          { label: 'None', value: 'none' },
+          { label: 'S', value: 'sm' },
+          { label: 'M', value: 'md' },
+          { label: 'L', value: 'lg' },
+        ]}
+        onChange={(shadow) => patchStyle({ shadow })}
+      />
+      <ChipRow
+        label="Padding"
+        value={s.padding ?? 'none'}
+        options={[
+          { label: 'None', value: 'none' },
+          { label: 'S', value: 'sm' },
+          { label: 'M', value: 'md' },
+          { label: 'L', value: 'lg' },
+        ]}
+        onChange={(padding) => patchStyle({ padding })}
+      />
+      <label className="block">
+        <span className="mb-1.5 block text-[10.5px] font-bold uppercase tracking-wide text-slate-400">
+          Font family
+        </span>
+        <select
+          value={s.fontFamily ?? ''}
+          onChange={(e) => patchStyle({ fontFamily: e.target.value || undefined })}
+          className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100"
+        >
+          <option value="">Default</option>
+          {FONT_FAMILY_CHOICES.map((f) => (
+            <option key={f} value={f}>
+              {f}
+            </option>
+          ))}
+        </select>
+      </label>
+    </div>
+  )
+}
+
+// ── Hero Slider ────────────────────────────────────────────────────────────
+// A self-contained atom (no `children` tree — like Card/Testimonial), one
+// image+text pair per slide, each independently image-left or image-right.
+// Arrows/dots/autoplay are plain React state — no carousel library needed
+// for a prev/next + dot-indicator slider.
+
+interface SliderSlide {
+  id: string
+  image: string
+  heading: string
+  text: string
+  buttonLabel: string
+  buttonHref: string
+  imagePosition: 'left' | 'right'
+  textAlign: 'left' | 'center' | 'right'
+  bgImage: string
+  bgColor: string
+  bgGradient: string
+}
+
+function newSlide(n: number, imagePosition: 'left' | 'right'): SliderSlide {
+  return {
+    id: `slide-${crypto.randomUUID()}`,
+    image: '',
+    heading: `Slide ${n} heading`,
+    text: 'Supporting text for this slide.',
+    buttonLabel: 'Learn more',
+    buttonHref: '#',
+    imagePosition,
+    textAlign: 'left',
+    bgImage: '',
+    bgColor: '',
+    bgGradient: 'none',
+  }
+}
+
+const SLIDE_GRADIENTS: Record<string, string> = {
+  none: '',
+  blue: 'linear-gradient(135deg, #1d4ed8, #38bdf8)',
+  sunset: 'linear-gradient(135deg, #f97316, #db2777)',
+  dark: 'linear-gradient(135deg, #0f172a, #1e293b)',
+  purple: 'linear-gradient(135deg, #7c3aed, #c026d3)',
+}
+
+const SLIDE_TEXT_ALIGN_CLASS: Record<SliderSlide['textAlign'], string> = {
+  left: 'items-start text-left',
+  center: 'items-center text-center',
+  right: 'items-end text-right',
+}
+
+function SliderCarousel({ atom }: { atom: ComposerAtom }) {
+  const slides = Array.isArray(atom.slides) ? (atom.slides as SliderSlide[]) : []
+  const count = slides.length
+  const [index, setIndex] = useState(0)
+  const current = Math.min(index, Math.max(0, count - 1))
+
+  useEffect(() => {
+    if (!atom.autoplay || count <= 1) return
+    const ms = Number(atom.interval ?? 5000)
+    const id = setInterval(() => setIndex((i) => (i + 1) % count), ms)
+    return () => clearInterval(id)
+  }, [atom.autoplay, atom.interval, count])
+
+  if (count === 0) {
+    return (
+      <div className="grid h-64 place-items-center rounded-xl border-2 border-dashed border-slate-200 text-sm text-slate-400">
+        No slides yet — add one from the Settings panel.
+      </div>
+    )
+  }
+
+  const slide = slides[current]!
+  const alignCls = SLIDE_TEXT_ALIGN_CLASS[slide.textAlign ?? 'left']
+
+  // Background precedence: image > gradient > solid color > none (transparent,
+  // shows the canvas white through — same as before these fields existed).
+  const bgStyle: React.CSSProperties = {}
+  let hasBgImage = false
+  if (slide.bgImage) {
+    bgStyle.backgroundImage = `url(${slide.bgImage})`
+    bgStyle.backgroundSize = 'cover'
+    bgStyle.backgroundPosition = 'center'
+    hasBgImage = true
+  } else if (slide.bgGradient && slide.bgGradient !== 'none' && SLIDE_GRADIENTS[slide.bgGradient]) {
+    bgStyle.backgroundImage = SLIDE_GRADIENTS[slide.bgGradient]
+  } else if (slide.bgColor) {
+    bgStyle.backgroundColor = slide.bgColor
+  }
+  const onDarkBg =
+    hasBgImage || (slide.bgGradient && slide.bgGradient !== 'none') || Boolean(slide.bgColor)
+
+  const imageBlock = (
+    <div className="aspect-video w-full overflow-hidden rounded-lg bg-gradient-to-br from-slate-100 to-slate-200">
+      {slide.image ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={slide.image} alt="" className="h-full w-full object-cover" />
+      ) : null}
+    </div>
+  )
+  const textBlock = (
+    <div className={`flex flex-col ${alignCls}`}>
+      <h3
+        className={`mb-3 text-2xl font-bold md:text-3xl ${onDarkBg ? 'text-white' : 'text-slate-900'}`}
+      >
+        {slide.heading}
+      </h3>
+      <p className={`mb-5 leading-relaxed ${onDarkBg ? 'text-white/85' : 'text-slate-600'}`}>
+        {slide.text}
+      </p>
+      {slide.buttonLabel ? (
+        <a
+          href={slide.buttonHref || '#'}
+          className="inline-flex rounded-lg bg-blue-600 px-5 py-2.5 font-medium text-white hover:bg-blue-700"
+        >
+          {slide.buttonLabel}
+        </a>
+      ) : null}
+    </div>
+  )
+
+  return (
+    <div className="w-full">
+      <div className="relative overflow-hidden rounded-xl p-8" style={bgStyle}>
+        {hasBgImage ? <div className="absolute inset-0 bg-black/35" /> : null}
+        <div className="relative grid items-center gap-8 md:grid-cols-2">
+          {slide.imagePosition === 'left' ? (
+            <>
+              {imageBlock}
+              {textBlock}
+            </>
+          ) : (
+            <>
+              {textBlock}
+              {imageBlock}
+            </>
+          )}
+          {count > 1 ? (
+            <>
+              <button
+                type="button"
+                aria-label="Previous slide"
+                onClick={() => setIndex((i) => (i - 1 + count) % count)}
+                className="absolute left-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-slate-700 shadow hover:bg-white"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                aria-label="Next slide"
+                onClick={() => setIndex((i) => (i + 1) % count)}
+                className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-slate-700 shadow hover:bg-white"
+              >
+                ›
+              </button>
+            </>
+          ) : null}
+        </div>
+      </div>
+      {count > 1 ? (
+        <div className="mt-4 flex justify-center gap-1.5">
+          {slides.map((s, i) => (
+            <button
+              key={s.id}
+              type="button"
+              aria-label={`Go to slide ${i + 1}`}
+              onClick={() => setIndex(i)}
+              className={`h-2 w-2 rounded-full transition ${
+                i === current ? 'bg-blue-600' : 'bg-slate-300'
+              }`}
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function sliderRender(atom: ComposerAtom) {
+  return <SliderCarousel atom={atom} />
+}
+
+function SliderField({
+  atom,
+  onChange,
+}: {
+  atom: ComposerAtom
+  onChange: (patch: Record<string, unknown>) => void
+}) {
+  const slides = Array.isArray(atom.slides) ? (atom.slides as SliderSlide[]) : []
+  const [activeIdx, setActiveIdx] = useState(0)
+  const idx = Math.min(activeIdx, Math.max(0, slides.length - 1))
+  const slide: SliderSlide | undefined = slides[idx]
+
+  function patchSlide(patch: Partial<SliderSlide>) {
+    onChange({ slides: slides.map((s, i) => (i === idx ? { ...s, ...patch } : s)) })
+  }
+  function addSlide() {
+    const next = [
+      ...slides,
+      newSlide(slides.length + 1, slides.length % 2 === 0 ? 'right' : 'left'),
+    ]
+    onChange({ slides: next })
+    setActiveIdx(next.length - 1)
+  }
+  function removeSlide(i: number) {
+    const next = slides.filter((_, si) => si !== i)
+    onChange({ slides: next })
+    setActiveIdx((prev) => Math.max(0, Math.min(prev, next.length - 1)))
+  }
+
+  return (
+    <div className="flex flex-col gap-3.5">
+      <div>
+        <span className="mb-1.5 block text-[10.5px] font-bold uppercase tracking-wide text-slate-400">
+          Slides
+        </span>
+        <div className="flex flex-wrap gap-1.5">
+          {slides.map((s, i) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => setActiveIdx(i)}
+              className={`rounded-md border px-2.5 py-1.5 text-xs font-semibold ${
+                i === idx
+                  ? 'border-blue-500 bg-blue-500/15 text-blue-300'
+                  : 'border-slate-700 text-slate-300 hover:bg-slate-800'
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={addSlide}
+            className="rounded-md border border-dashed border-slate-700 px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:border-blue-500 hover:text-blue-300"
+          >
+            + Slide
+          </button>
+        </div>
+      </div>
+
+      {slide ? (
+        <>
+          <div className="flex items-center justify-between">
+            <span className="text-[10.5px] font-bold uppercase tracking-wide text-slate-400">
+              Slide {idx + 1}
+            </span>
+            {slides.length > 1 ? (
+              <button
+                type="button"
+                onClick={() => removeSlide(idx)}
+                className="text-[11px] font-bold text-red-400 hover:text-red-300"
+              >
+                Remove
+              </button>
+            ) : null}
+          </div>
+          <ChipRow
+            label="Image position"
+            value={slide.imagePosition}
+            options={[
+              { label: 'Left', value: 'left' },
+              { label: 'Right', value: 'right' },
+            ]}
+            onChange={(imagePosition) => patchSlide({ imagePosition })}
+          />
+          <ImageUrlField
+            label="Image URL"
+            value={slide.image}
+            onChange={(image) => patchSlide({ image })}
+          />
+          <TextInput
+            label="Heading"
+            value={slide.heading}
+            onChange={(heading) => patchSlide({ heading })}
+          />
+          <TextareaInput
+            label="Text"
+            rows={3}
+            value={slide.text}
+            onChange={(text) => patchSlide({ text })}
+          />
+          <ChipRow
+            label="Text position"
+            value={slide.textAlign ?? 'left'}
+            options={[
+              { label: 'Left', value: 'left' },
+              { label: 'Center', value: 'center' },
+              { label: 'Right', value: 'right' },
+            ]}
+            onChange={(textAlign) => patchSlide({ textAlign })}
+          />
+          <TextInput
+            label="Button label"
+            value={slide.buttonLabel}
+            onChange={(buttonLabel) => patchSlide({ buttonLabel })}
+          />
+          <TextInput
+            label="Button URL"
+            value={slide.buttonHref}
+            onChange={(buttonHref) => patchSlide({ buttonHref })}
+          />
+          <div className="border-t border-slate-800 pt-3.5">
+            <span className="mb-2.5 block text-[10.5px] font-bold uppercase tracking-wide text-slate-400">
+              Slide background
+            </span>
+            <div className="flex flex-col gap-3.5">
+              <ImageUrlField
+                label="Background image"
+                value={slide.bgImage ?? ''}
+                onChange={(bgImage) => patchSlide({ bgImage })}
+              />
+              <ChipRow
+                label="Background gradient"
+                value={slide.bgGradient ?? 'none'}
+                options={[
+                  { label: 'None', value: 'none' },
+                  { label: 'Blue', value: 'blue' },
+                  { label: 'Sunset', value: 'sunset' },
+                  { label: 'Dark', value: 'dark' },
+                  { label: 'Purple', value: 'purple' },
+                ]}
+                onChange={(bgGradient) => patchSlide({ bgGradient })}
+              />
+              <ColorInput
+                label="Background color"
+                value={slide.bgColor ?? ''}
+                fallback="#ffffff"
+                onChange={(bgColor) => patchSlide({ bgColor })}
+              />
+              <p className="text-[11px] leading-relaxed text-slate-500">
+                Background image wins over gradient, gradient wins over color. A background image
+                adds a dark overlay automatically so text stays readable.
+              </p>
+            </div>
+          </div>
+        </>
+      ) : null}
+
+      <ChipRow
+        label="Autoplay"
+        value={atom.autoplay ? 'on' : 'off'}
+        options={[
+          { label: 'Off', value: 'off' },
+          { label: 'On', value: 'on' },
+        ]}
+        onChange={(v) => onChange({ autoplay: v === 'on' })}
+      />
     </div>
   )
 }
@@ -789,11 +1616,11 @@ export const ATOM_CATALOGUE: AtomDefinition[] = [
     label: 'Image',
     group: 'Media',
     icon: ImageIcon,
-    defaultProps: { src: 'https://placehold.co/1200x600', alt: '', rounded: true },
+    defaultProps: { src: '', alt: '', rounded: true },
     Render: imageRender,
     Field: ({ atom, onChange }) => (
       <div className="flex flex-col gap-3.5">
-        <TextInput
+        <ImageUrlField
           label="Image URL"
           value={String(atom.src ?? '')}
           onChange={(src) => onChange({ src })}
@@ -864,69 +1691,35 @@ export const ATOM_CATALOGUE: AtomDefinition[] = [
     ),
   },
   {
-    type: 'columns',
-    label: '2 Columns',
+    type: 'slider',
+    label: 'Hero Slider',
     group: 'Content',
-    icon: Columns,
-    defaultProps: { left: 'First column text.', right: 'Second column text.' },
-    Render: columnsRender,
-    Field: ({ atom, onChange }) => (
-      <div className="flex flex-col gap-3.5">
-        <TextareaInput
-          label="Left column"
-          value={String(atom.left ?? '')}
-          onChange={(left) => onChange({ left })}
-        />
-        <TextareaInput
-          label="Right column"
-          value={String(atom.right ?? '')}
-          onChange={(right) => onChange({ right })}
-        />
-      </div>
-    ),
+    icon: GalleryHorizontal,
+    defaultProps: {
+      slides: [newSlide(1, 'right'), newSlide(2, 'left')],
+      autoplay: false,
+      interval: 5000,
+    },
+    Render: sliderRender,
+    Field: SliderField,
   },
   {
-    type: 'grid',
-    label: 'Grid',
+    type: 'layout',
+    label: 'Layout',
     group: 'Content',
     icon: LayoutGrid,
     defaultProps: {
-      cols: 3,
-      items: ['First column text.', 'Second column text.', 'Third column text.'],
+      mode: 'grid',
+      columns: 12,
+      direction: 'row',
+      gap: 'md',
+      align: 'stretch',
+      justify: 'start',
+      wrap: false,
+      children: [],
     },
-    Render: gridRender,
-    Field: ({ atom, onChange }) => {
-      const items = Array.isArray(atom.items) ? (atom.items as string[]) : []
-      const cols = Number(atom.cols ?? 3)
-      return (
-        <div className="flex flex-col gap-3.5">
-          <ChipRow
-            label="Columns"
-            value={String(cols)}
-            options={[2, 3, 4, 5, 6].map((n) => ({ label: `${n}`, value: String(n) }))}
-            onChange={(v) => {
-              const n = Number(v)
-              const next = [...items]
-              while (next.length < n) next.push('Column text.')
-              onChange({ cols: n, items: next.slice(0, n) })
-            }}
-          />
-          {items.slice(0, cols).map((t, i) => (
-            <TextareaInput
-              key={i}
-              label={`Column ${i + 1}`}
-              rows={2}
-              value={t}
-              onChange={(v) => {
-                const next = [...items]
-                next[i] = v
-                onChange({ items: next })
-              }}
-            />
-          ))}
-        </div>
-      )
-    },
+    Render: layoutRender,
+    Field: layoutField,
   },
   {
     type: 'list',

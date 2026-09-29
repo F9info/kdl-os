@@ -28,6 +28,9 @@ model Sector {
   cta_label        String?
   cta_href         String?
   detail_page_id   String?
+  // Per-sector section copy keyed by the shared template block's id (minus its
+  // slug prefix) — overlaid by resolveSectorBindings; see seed-content.js.
+  content          Json?
   seo_title        String?
   seo_description  String?
   og_image         String?

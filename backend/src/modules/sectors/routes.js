@@ -18,6 +18,20 @@ import {
   updateSector,
   deleteSector,
 } from './controller.js';
+import { listSectors as listSectorEntities, resolveSectorBindings } from './service.js';
+import { registerDetailPageType } from '../../shared/detail-pages/registry.js';
+
+// Module load time (this file is always imported once by the module loader
+// at boot, per shared/modules/module-loader.js) is this module's one and
+// only registration point — no separate "entrypoint" file needed.
+registerDetailPageType('sectors', {
+  label: 'Sector detail',
+  navParentLabel: 'Sectors',
+  listEntities: (projectId) => listSectorEntities({ project_id: projectId }),
+  publicPathFor: (sector) => `/sectors/${sector.slug}`,
+  adminListPath: (projectId) => `/admin/sectors?projectId=${projectId}`,
+  resolveEntityBindings: resolveSectorBindings,
+});
 
 const router = Router();
 

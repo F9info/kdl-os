@@ -16,6 +16,7 @@
       "permission": "sectors:view"
     }
   ],
+  "navSuppressedByPeer": ["template-engine"],
   "dependsOn": [],
   "queues": [],
   "env": []

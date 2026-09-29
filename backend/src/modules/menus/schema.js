@@ -69,6 +69,7 @@ export const createMenuItemSchema = z.object({
     url: safeUrl,
     open_in_new_tab: z.boolean().default(false),
     is_active: z.boolean().default(true),
+    no_page: z.boolean().default(false),
     order: z.number().int().default(0),
   }),
 });
@@ -82,6 +83,7 @@ export const updateMenuItemSchema = z.object({
     url: safeUrl,
     open_in_new_tab: z.boolean().optional(),
     is_active: z.boolean().optional(),
+    no_page: z.boolean().optional(),
   }),
 });
 

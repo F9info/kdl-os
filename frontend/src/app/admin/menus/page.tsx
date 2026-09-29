@@ -1,9 +1,18 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useDefaultProjectId } from '@/hooks/useDefaultProjectId'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { GripVertical, ChevronDown, ChevronRight, Pencil, Trash2, ExternalLink } from 'lucide-react'
+import {
+  GripVertical,
+  ChevronDown,
+  ChevronRight,
+  Pencil,
+  Trash2,
+  ExternalLink,
+  Link2Off,
+} from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -19,8 +28,13 @@ import { listPages } from '@/app/admin/page-builder/store'
 import { cn } from '@/lib/utils'
 import { MAX_DEPTH, moveNode, flattenForApi, type MenuItemNode, type DropZone } from './_tree'
 
-const MENU_KEY = 'header'
-const MENU_NAME = 'Header Navigation'
+// Header and Footer (and any future key) are genuinely separate Menu rows —
+// switching `key` here switches which one this whole page edits, it's never
+// two views onto the same data.
+const KNOWN_MENUS = [
+  { key: 'header', label: 'Header Navigation' },
+  { key: 'footer', label: 'Footer Navigation' },
+]
 
 interface Menu {
   id: string
@@ -33,12 +47,16 @@ interface Menu {
 function MenusPageContent() {
   const { projectId, isLoading: projectResolving } = useDefaultProjectId()
   const queryClient = useQueryClient()
+  const menuKey = useSearchParams().get('key') || 'header'
+  const menuName =
+    KNOWN_MENUS.find((m) => m.key === menuKey)?.label ??
+    `${menuKey.charAt(0).toUpperCase()}${menuKey.slice(1)} Navigation`
 
   const { data: menu, isLoading } = useQuery({
-    queryKey: ['menu', projectId, MENU_KEY],
+    queryKey: ['menu', projectId, menuKey],
     queryFn: () =>
       api
-        .post('/menus/ensure', { project_id: projectId, key: MENU_KEY, name: MENU_NAME })
+        .post('/menus/ensure', { project_id: projectId, key: menuKey, name: menuName })
         .then((r) => r.data.data.menu as Menu),
     enabled: Boolean(projectId),
   })
@@ -66,12 +84,14 @@ function MenusPageContent() {
   const projectPages = projectMatchedPages.length > 0 ? projectMatchedPages : allPages
 
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ['menu', projectId, MENU_KEY] })
+    queryClient.invalidateQueries({ queryKey: ['menu', projectId, menuKey] })
     // `useHeaderMenuTree` (ConstructionHeader, WebsiteLayoutPreview,
     // useLayoutChrome) reads this same Menu under its own cache key —
     // without invalidating it too, those previews keep showing whatever
     // they last fetched until an unrelated remount happens to refire it.
-    queryClient.invalidateQueries({ queryKey: ['menu-public-header', projectId] })
+    // Broad prefix match — invalidates every key's public cache
+    // (header/footer/...), not just the one being edited here.
+    queryClient.invalidateQueries({ queryKey: ['menu-public'] })
   }
 
   const createItemMutation = useMutation({
@@ -245,6 +265,26 @@ function MenusPageContent() {
           <Button
             variant="ghost"
             size="icon"
+            className={cn(node.no_page && 'text-primary')}
+            title={
+              node.no_page
+                ? 'Label only — click to make it a link again'
+                : 'Keep in nav (and its dropdown, if any) but make the label non-clickable'
+            }
+            onClick={() =>
+              updateItemMutation.mutate({ id: node.id, body: { no_page: !node.no_page } })
+            }
+            aria-label={
+              node.no_page
+                ? `Make ${node.label} clickable again`
+                : `Make ${node.label} a non-clickable label`
+            }
+          >
+            <Link2Off className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setEditing(node)}
             aria-label={`Edit ${node.label}`}
           >
@@ -302,10 +342,29 @@ function MenusPageContent() {
           ) : undefined
         }
       />
-      <p className="mb-4 text-sm text-muted-foreground">
+      <p className="mb-2 text-sm text-muted-foreground">
         Drag a row onto another to nest it as a sub-item (up to {MAX_DEPTH} levels); drag to the top
         or bottom edge of a row to reorder as a sibling instead.
       </p>
+
+      {/* Header and Footer are independent Menu rows — this switches which
+          one the whole page below is editing, not a filter on one shared list. */}
+      <div className="mb-4 flex gap-2">
+        {KNOWN_MENUS.map((m) => (
+          <a
+            key={m.key}
+            href={`/admin/menus?key=${m.key}${projectId ? `&projectId=${projectId}` : ''}`}
+            className={cn(
+              'rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors',
+              m.key === menuKey
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'text-muted-foreground hover:bg-accent'
+            )}
+          >
+            {m.label}
+          </a>
+        ))}
+      </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1.4fr]">
         <div className="space-y-4">
@@ -345,7 +404,7 @@ function MenusPageContent() {
 
         <div className="rounded-lg border bg-card p-4">
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-semibold">Header Navigation</h3>
+            <h3 className="text-sm font-semibold">{menuName}</h3>
           </div>
           {isLoading || !tree ? (
             <p className="text-sm text-muted-foreground">Loading…</p>

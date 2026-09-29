@@ -1,5 +1,6 @@
 import { prisma } from '../../config/database.js';
-import { createPage, deletePage } from '../page-builder/service.js';
+import { deletePage } from '../page-builder/service.js';
+import { ensureDetailPageTemplate, createDetailPageInstance } from '../../shared/detail-pages/templates.js';
 
 export const listSectors = (query) => {
   const where = {};
@@ -105,8 +106,17 @@ export const createSector = async (data, actorId) => {
   // globally unique. Namespaced by project so the same sector slug in two
   // different projects doesn't collide.
   const pageSlug = `sector-detail-${sector.project_id ?? 'global'}-${sector.slug}`;
-  const page = await createPage(
-    { title: sector.name, slug: pageSlug, data: await starterPageContent(sector), project_id: sector.project_id },
+  const page = await createDetailPageInstance(
+    {
+      projectId: sector.project_id,
+      typeKey: 'sectors',
+      entityId: sector.id,
+      title: sector.name,
+      slug: pageSlug,
+      // Only used the very first time a project has no sectors template yet
+      // — every sector after that shares the same template row.
+      seedContentFn: () => starterPageContent(sector),
+    },
     actorId
   );
   return prisma.sector.update({ where: { id: sector.id }, data: { detail_page_id: page.id } });
@@ -135,12 +145,14 @@ export const backfillDetailPages = async (actorId) => {
   const missing = await prisma.sector.findMany({ where: { detail_page_id: null } });
   for (const sector of missing) {
     const pageSlug = `sector-detail-${sector.project_id ?? 'global'}-${sector.slug}`;
-    const page = await createPage(
+    const page = await createDetailPageInstance(
       {
+        projectId: sector.project_id,
+        typeKey: 'sectors',
+        entityId: sector.id,
         title: sector.name,
         slug: pageSlug,
-        data: await starterPageContent(sector),
-        project_id: sector.project_id,
+        seedContentFn: () => starterPageContent(sector),
       },
       actorId
     );
@@ -148,6 +160,30 @@ export const backfillDetailPages = async (actorId) => {
   }
   return missing.length;
 };
+
+// The one place Sector's own field names enter the generic Details Page
+// system (see registerDetailPageType's `resolveEntityBindings` below) —
+// given the shared template's raw data and one sector, swaps that sector's
+// own name/description/image into the known bindable spots. Pure: never
+// mutates `templateData`.
+export function resolveSectorBindings(templateData, sector) {
+  const data = JSON.parse(JSON.stringify(templateData));
+  if (data.root?.props) data.root.props.title = sector.name;
+  const firstParagraph = (sector.description ?? '').split('\n\n')[0]?.trim() ?? '';
+  for (const block of data.content ?? []) {
+    if (block.type === 'ConstructionInnerBanner') {
+      block.props.imageAlt = sector.name;
+      block.props.subtitle = firstParagraph || block.props.subtitle;
+      block.props.backgroundImage = sector.image || block.props.backgroundImage;
+    } else if (block.type === 'ConstructionLeadFormFAQ') {
+      block.props.sectionTitle = `Talk to us about ${sector.name}`;
+    }
+    // Sector's approved copy for this block (keyed by id minus slug prefix).
+    const id = block.props?.id;
+    if (id) Object.assign(block.props, sector.content?.[id.slice(id.indexOf('-') + 1)]);
+  }
+  return data;
+}
 
 // Public read for the dynamic `/sectors/[slug]` route — one request
 // returns both the sector's own base fields (name/description/SEO/etc.)
@@ -159,12 +195,22 @@ export const getPublicSectorBySlug = async (slug, projectId) => {
   const sector = await prisma.sector.findFirst({ where: { ...where, is_active: true } });
   if (!sector) return null;
 
-  const page = sector.detail_page_id
+  const pageRow = sector.detail_page_id
     ? await prisma.builderPage.findFirst({
         where: { id: sector.detail_page_id, status: 'PUBLISHED', deleted_at: null },
-        select: { data: true, title: true },
+        select: { data: true, title: true, template_id: true },
       })
     : null;
+  if (!pageRow) return { sector, page: null };
 
-  return { sector, page };
+  // Structure/design comes from the shared template (live — every sector
+  // reads the same row); this sector's own name/description/image are
+  // resolved in here, never baked back into the template itself.
+  let data = pageRow.data;
+  if (pageRow.template_id) {
+    const template = await prisma.detailPageTemplate.findUnique({ where: { id: pageRow.template_id } });
+    if (template) data = resolveSectorBindings(template.data, sector);
+  }
+
+  return { sector, page: { data, title: pageRow.title } };
 };

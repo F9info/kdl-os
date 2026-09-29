@@ -9,6 +9,7 @@ export interface MenuItemNode {
   url: string | null
   open_in_new_tab: boolean
   is_active: boolean
+  no_page: boolean
   order: number
   children: MenuItemNode[]
 }

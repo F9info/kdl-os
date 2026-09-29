@@ -33,6 +33,7 @@ import {
 import { getMediaById } from '../../media/service.js';
 
 import { createPage, updatePage, getPage, getPageBySlug } from '../../page-builder/service.js';
+import { listDetailPageTypes } from '../../../shared/detail-pages/registry.js';
 import {
   seedWebsitePageData,
   seedMedicalPageData,
@@ -298,6 +299,20 @@ const WEBSITE_SEED_PAGES = [
 // WEBSITE_SEED_PAGES uses, deriving each page's key from its title so pages
 // stay stable across a crash-recovery re-run of the same stage. Falls back
 // to the default 3-page set when the caller sends no selection at all.
+// A registered detail-page-type (sectors, work, ...) already gives each of
+// its entities a real page of its own (see backend/src/shared/detail-pages).
+// The Navigation step's nav-sync nests those entities' names as real nav
+// labels (e.g. "Sectors" > "Hotel") — without this filter, this generic
+// scaffolder would blindly create a SECOND, unrelated page for "Hotel" too.
+async function excludeDetailPageEntityLabels(navigationPages, projectId) {
+  const entityNames = new Set();
+  for (const [, config] of listDetailPageTypes()) {
+    const entities = await config.listEntities(projectId).catch(() => []);
+    for (const e of entities) entityNames.add(e.name.toLowerCase());
+  }
+  return navigationPages.filter((title) => !entityNames.has(title.toLowerCase()));
+}
+
 function resolveSeedPages(navigationPages) {
   if (!Array.isArray(navigationPages) || navigationPages.length === 0) {
     return WEBSITE_SEED_PAGES;
@@ -346,7 +361,11 @@ const websiteDriver = {
     // Real hrefs (not '#') so nav/footer links actually navigate on the
     // public /p/[slug] route — slugs are deterministic per run+key, so this
     // can be computed upfront, before any page actually exists yet.
-    const seedPages = resolveSeedPages(navigationPages).map(({ key, title }) => ({
+    const filteredNavigationPages = await excludeDetailPageEntityLabels(
+      Array.isArray(navigationPages) ? navigationPages : [],
+      run.projectId
+    );
+    const seedPages = resolveSeedPages(filteredNavigationPages).map(({ key, title }) => ({
       key,
       title,
       slug: `te-${run.id}-${key}`,

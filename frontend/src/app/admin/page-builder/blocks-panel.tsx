@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { usePuck } from '@puckeditor/core'
+import { usePuck, AutoField, FieldLabel } from '@puckeditor/core'
+import type { Field } from '@puckeditor/core'
 import {
   Plus,
   ArrowUpDown,
@@ -99,19 +100,23 @@ function BlocksTab({ onOpenCategory }: { onOpenCategory: (categoryKey: string) =
         {categories.map(([key, cat]) => {
           const Icon = categoryIcon(cat.title ?? key)
           const label = cat.title ?? key
-          const used = (cat.components ?? []).some((compKey) => usedTypes.has(compKey))
+          // Every insert (insertBlockComponent) always appends a brand-new
+          // block with its own id — never replaces an existing one — so
+          // there's no technical reason a section can only be added once
+          // per page. This used to gray out (and block) a category once
+          // any instance of it existed, which made it impossible to add a
+          // second copy of the same block/slider on one page.
+          const usedOnPage = (cat.components ?? []).some((compKey) => usedTypes.has(compKey))
           return (
             <button
               key={key}
-              onClick={() => !used && onOpenCategory(key)}
-              disabled={used}
+              onClick={() => onOpenCategory(key)}
               title={label}
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-left disabled:cursor-default"
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-left"
               style={{
-                background: used ? '#1c1e24' : OD.tile,
+                background: OD.tile,
                 border: `1px solid ${OD.tileBd}`,
                 color: '#c7ccd3',
-                opacity: used ? 0.55 : 1,
               }}
             >
               <Icon size={16} color={TAB_ACCENT.section} strokeWidth={1.75} className="shrink-0" />
@@ -123,7 +128,9 @@ function BlocksTab({ onOpenCategory }: { onOpenCategory: (categoryKey: string) =
                   className="block truncate text-[10px] leading-tight"
                   style={{ color: OD.muted }}
                 >
-                  {used ? 'Already added' : `Choose a ${label.toLowerCase()} design`}
+                  {usedOnPage
+                    ? `Add another ${label.toLowerCase()}`
+                    : `Choose a ${label.toLowerCase()} design`}
                 </span>
               </span>
             </button>
@@ -249,11 +256,11 @@ function ReorderTab() {
   )
 }
 
-function ThemeTab() {
+function ThemeEngineLink() {
   return (
     <div
       style={{ background: OD.panel, color: '#e5e7eb' }}
-      className="rounded-b-xl p-4 text-center text-[11px] leading-relaxed"
+      className="p-4 text-center text-[11px] leading-relaxed"
     >
       <Settings size={18} color={OD.muted} className="mx-auto mb-2" />
       <p style={{ color: OD.muted }}>
@@ -271,23 +278,259 @@ function ThemeTab() {
 }
 
 /**
- * Odoo-style Section / Reorder / Style / Theme tab chrome for Puck's
+ * A field key counts as "Style" (appearance/behaviour, not what it says) if
+ * it's one of these exact names or ends in "Color" / starts with "show" —
+ * every pack component in this app names its padding/background/align/
+ * variant/colour/visibility-toggle fields this way, so this one heuristic
+ * covers Style vs Content for every block without rewriting each
+ * component's `fields` schema. Puck's own field editor (`children`, used by
+ * the old single Style tab) can't be split by tag — it hands back one
+ * opaque rendered tree — so this renders each field itself via Puck's
+ * exported `AutoField`/`FieldLabel` instead, keyed straight off the
+ * component's own `Config.components[type].fields`.
+ *
+ * Two more prefixes route to Style but render in their own collapsible
+ * group instead of the flat list: `slider*` (arrows/dots/autoplay/loop/
+ * fade-or-slide — the Slick-style carousel knobs) and `typo*` (per-element
+ * font size/weight/color for title/tagline/paragraph/button). A block only
+ * needs to name its fields this way — see `ConstructionHero` — to get both
+ * accordions for free.
+ */
+/** Fields kept in a component's `fields` schema (Puck requires an entry per
+ *  prop — dropping one there breaks type-checking and any already-published
+ *  page still carrying that prop's saved value) but hidden from both panel
+ *  tabs for that one component — `variant`/`primaryColor`/`secondaryColor`
+ *  on `ConstructionHero` are redundant now that the Slider Settings/
+ *  Typography accordions cover styling, per explicit request. Scoped by
+ *  component type so hiding `variant` here doesn't hide every other
+ *  block's own design picker. */
+const HIDDEN_FIELDS: Record<string, Set<string>> = {
+  ConstructionHero: new Set(['variant', 'primaryColor', 'secondaryColor']),
+}
+
+const STYLE_FIELD_KEYS = new Set(['padding', 'background', 'align', 'variant', 'spacing', 'gap'])
+function isStyleField(key: string): boolean {
+  return (
+    STYLE_FIELD_KEYS.has(key) ||
+    /Color$/.test(key) ||
+    /^show[A-Z]/.test(key) ||
+    /^slider/.test(key) ||
+    /^typo/.test(key)
+  )
+}
+
+/** Direct-dispatch prop update for one field on the selected item — same
+ *  `replace` action the Composer's "Edit in Composer" save path already
+ *  uses (below), just merging one prop instead of swapping `config`. */
+function useUpdateSelectedProp() {
+  const { selectedItem, dispatch, getSelectorForId } = usePuck()
+  return (key: string, value: unknown) => {
+    if (!selectedItem) return
+    const id = selectedItem.props?.id as string | undefined
+    const selector = id ? getSelectorForId(id) : null
+    if (!selector) return
+    dispatch({
+      type: 'replace',
+      destinationIndex: selector.index,
+      destinationZone: selector.zone,
+      data: { ...selectedItem, props: { ...selectedItem.props, [key]: value } },
+    })
+  }
+}
+
+/** Collapsible field group for the Style tab (native `<details>` — no extra
+ *  state, no dependency). Open by default: with only two possible groups
+ *  (Slider Settings, Typography) hiding them by default costs an extra
+ *  click for no real space saved. */
+function FieldAccordion({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <details open className="group border-t border-slate-100">
+      <summary className="flex cursor-pointer list-none select-none items-center justify-between px-3 py-2.5 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+        {title}
+        <span className="text-slate-400 transition-transform group-open:rotate-180">▾</span>
+      </summary>
+      <div className="flex flex-col gap-3 p-3 pt-0">{children}</div>
+    </details>
+  )
+}
+
+/** Best-effort human label for a slide/card array item, tried in the order
+ *  the real components actually use these keys. */
+function slideItemLabel(item: Record<string, unknown>, index: number): string {
+  const candidate = item.dotLabel ?? item.title ?? item.headline ?? item.lead ?? item.name
+  return typeof candidate === 'string' && candidate.trim() ? candidate : `Slide ${index + 1}`
+}
+
+/** Puck's own array-field expand/collapse UI has no externally-readable
+ *  "which item is open" id (it's a random `useId()` per AutoField mount,
+ *  invisible outside Puck's internals) — so clicking an array item there
+ *  can't drive the canvas preview. This is a separate, dedicated picker
+ *  row that writes a plain `activeSlideIndex` prop instead (read by the
+ *  slide/slider components' own render functions to pick which slide to
+ *  show), so "select a slide here, see it on the canvas" has a real,
+ *  reliable target to click. */
+function SlidePreviewPicker({
+  slides,
+  activeIndex,
+  onSelect,
+}: {
+  slides: Record<string, unknown>[]
+  activeIndex: number
+  onSelect: (index: number) => void
+}) {
+  return (
+    <div className="mb-2 flex flex-wrap gap-1.5">
+      {slides.map((item, i) => (
+        <button
+          key={i}
+          type="button"
+          onClick={() => onSelect(i)}
+          className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${
+            i === activeIndex
+              ? 'border-blue-500 bg-blue-50 text-blue-700'
+              : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+          }`}
+        >
+          {slideItemLabel(item, i)}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function FieldList({
+  entries,
+  values,
+  update,
+}: {
+  entries: [string, Field][]
+  values: Record<string, unknown>
+  update: (key: string, value: unknown) => void
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      {entries.map(([key, field]) => {
+        const arrayValue = values[key]
+        const showSlidePicker =
+          field.type === 'array' &&
+          /slides$/i.test(key) &&
+          Array.isArray(arrayValue) &&
+          arrayValue.length > 0
+        return (
+          <FieldLabel key={key} label={key}>
+            {showSlidePicker && (
+              <SlidePreviewPicker
+                slides={arrayValue as Record<string, unknown>[]}
+                activeIndex={
+                  typeof values.activeSlideIndex === 'number' ? values.activeSlideIndex : 0
+                }
+                onSelect={(i) => update('activeSlideIndex', i)}
+              />
+            )}
+            <AutoField field={field} value={values[key]} onChange={(value) => update(key, value)} />
+          </FieldLabel>
+        )
+      })}
+    </div>
+  )
+}
+
+function SplitFieldEditor({ group }: { group: 'style' | 'content' }) {
+  const { config, selectedItem } = usePuck()
+  const update = useUpdateSelectedProp()
+  if (!selectedItem) {
+    return (
+      <div className="p-4 text-center text-[12px] text-slate-400">Select a section to edit.</div>
+    )
+  }
+  const component = (
+    config.components as
+      | Record<
+          string,
+          {
+            fields?: Record<string, Field>
+            resolveFields?: (
+              data: unknown,
+              params: { fields: Record<string, Field> }
+            ) => Record<string, Field>
+          }
+        >
+      | undefined
+  )?.[selectedItem.type as string]
+  const staticFields = component?.fields ?? {}
+  // Components with a Design-1..4-style `variant` picker (Hero, Header,
+  // TopBar, ...) declare `resolveFields` to hide every other variant's own
+  // fields — call it here too, not just static `fields`, otherwise this
+  // panel shows all 4 designs' fields (and all 4 designs' slide arrays)
+  // stacked at once regardless of which design is selected.
+  const fields = component?.resolveFields
+    ? component.resolveFields(selectedItem, { fields: staticFields })
+    : staticFields
+  const hidden = HIDDEN_FIELDS[selectedItem.type as string]
+  const entries = Object.entries(fields).filter(
+    ([key]) => !hidden?.has(key) && isStyleField(key) === (group === 'style')
+  )
+  if (entries.length === 0) {
+    return (
+      <div className="p-4 text-center text-[12px] text-slate-400">
+        No {group} settings on this block.
+      </div>
+    )
+  }
+  const values = selectedItem.props as Record<string, unknown>
+  if (group === 'content') {
+    return (
+      <div className="p-3">
+        <FieldList entries={entries} values={values} update={update} />
+      </div>
+    )
+  }
+  const generalEntries = entries.filter(([key]) => !/^slider/.test(key) && !/^typo/.test(key))
+  const sliderEntries = entries.filter(([key]) => /^slider/.test(key))
+  const typoEntries = entries.filter(([key]) => /^typo/.test(key))
+  return (
+    <div className="flex flex-col">
+      {generalEntries.length > 0 && (
+        <div className="p-3">
+          <FieldList entries={generalEntries} values={values} update={update} />
+        </div>
+      )}
+      {sliderEntries.length > 0 && (
+        <FieldAccordion title="Slider Settings">
+          <FieldList entries={sliderEntries} values={values} update={update} />
+        </FieldAccordion>
+      )}
+      {typoEntries.length > 0 && (
+        <FieldAccordion title="Typography">
+          <FieldList entries={typoEntries} values={values} update={update} />
+        </FieldAccordion>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Odoo-style Section / Reorder / Style / Content tab chrome for Puck's
  * `overrides.fields` slot — matches the reference design's 4-tab editor
- * shell exactly (Section/Reorder/Style/Settings; "Theme" here since this
- * app's 4th tab is a real link out to Theme Engine, not the reference's
- * per-block settings panel, which needs a background/padding/shadow data
- * model this app's Puck components don't carry). Section tab is real
- * (category rows open the Insert-a-block modal pre-filtered; Inner Content
- * atoms insert directly). Reorder tab is a flat list of the page's own
- * top-level blocks, independent of Section's picker. Style tab shows
- * Puck's own field editor for the selected block.
+ * shell (Section/Reorder/Style/Settings). Section tab is real (category
+ * rows open the Insert-a-block modal pre-filtered; Inner Content atoms
+ * insert directly). Reorder tab is a flat list of the page's own top-level
+ * blocks, independent of Section's picker. Style and Content both render
+ * the selected block's own fields (via `SplitFieldEditor`, split by
+ * `isStyleField`) — Style gets padding/background/align/variant/colour/
+ * visibility-toggle fields, Content gets everything else (text, images,
+ * slide add/remove, ...). A Theme Engine link sits under Content since
+ * site-wide colours/typography live there, not on the block.
  */
 export function BlocksPanel({
-  children,
   itemSelector,
   projectId,
 }: {
-  children: React.ReactNode
+  /** Puck's own field editor — no longer rendered; Style/Content each build
+   *  their own view from the selected block's `fields` schema instead (see
+   *  `SplitFieldEditor`). Still accepted since Puck's `overrides.fields`
+   *  slot always passes it. */
+  children?: React.ReactNode
   /** Puck's `ItemSelector` isn't publicly exported — only truthiness matters here. */
   itemSelector?: unknown
   projectId?: string
@@ -325,7 +568,7 @@ export function BlocksPanel({
         {tabBtn('section', 'Section', Plus)}
         {tabBtn('reorder', 'Reorder', ArrowUpDown)}
         {tabBtn('style', 'Style', Pencil)}
-        {tabBtn('theme', 'Theme', Settings)}
+        {tabBtn('theme', 'Content', Settings)}
       </div>
       <div className="flex-1 overflow-auto">
         {tab === 'section' && <BlocksTab onOpenCategory={setModalCategory} />}
@@ -340,8 +583,22 @@ export function BlocksPanel({
             </button>
           </div>
         ) : null}
-        {tab === 'style' && !isCustomBlock && <div className="bg-white">{children}</div>}
-        {tab === 'theme' && <ThemeTab />}
+        {tab === 'style' && !isCustomBlock && (
+          <div className="bg-white">
+            <SplitFieldEditor group="style" />
+          </div>
+        )}
+        {tab === 'theme' &&
+          (isCustomBlock ? (
+            <div className="rounded-b-xl overflow-hidden">
+              <ThemeEngineLink />
+            </div>
+          ) : (
+            <div className="bg-white">
+              <SplitFieldEditor group="content" />
+              <ThemeEngineLink />
+            </div>
+          ))}
       </div>
       {modalCategory ? (
         <SectionPickerPopup

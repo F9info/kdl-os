@@ -70,6 +70,7 @@ export function WebsiteLayoutPreview({ projectId }: { projectId: string }) {
             ...FOOTER_CONFIG.defaultProps,
             ...footerOverrides(brand),
             variant: selection.footer.variant,
+            puck: { isEditing: true, metadata: { projectId } },
           })}
         </div>
       )}

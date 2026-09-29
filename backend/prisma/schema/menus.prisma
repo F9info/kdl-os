@@ -43,6 +43,11 @@ model MenuItem {
   url             String?
   open_in_new_tab Boolean          @default(false)
   is_active       Boolean          @default(true)
+  // Item stays in the menu and its dropdown/children (if any) still work —
+  // only its own label stops being a clickable link. For a parent that
+  // exists purely to group children (e.g. "About Us" over "About"/
+  // "Leadership") with no real page of its own to land on.
+  no_page         Boolean          @default(false)
   order           Int              @default(0)
   created_at      DateTime         @default(now())
   updated_at      DateTime         @updatedAt

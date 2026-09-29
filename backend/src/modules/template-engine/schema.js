@@ -49,6 +49,33 @@ export const advanceStageSchema = z.object({
       brandKitVersion: z.number().int().positive().optional(),
       templatePack: z.enum(['general', 'medical', 'construction']).optional(),
       navigationPages: z.array(z.string().min(1)).optional(),
+      // Layout settings (the dedicated Layout picker page) — toggle and pick
+      // a design variant ('1'-'4', same variant scale as every other Puck
+      // block) for the top-header/header/footer blocks on every assembled
+      // page. Each section is independently optional (see patchLayout in
+      // drivers/website-seed-content.js) — omitted keys are left untouched.
+      layout: z
+        .object({
+          topHeader: z
+            .object({
+              enabled: z.boolean().optional(),
+              variant: z.enum(['1', '2', '3', '4']).optional(),
+            })
+            .optional(),
+          header: z
+            .object({
+              enabled: z.boolean().optional(),
+              variant: z.enum(['1', '2', '3', '4']).optional(),
+            })
+            .optional(),
+          footer: z
+            .object({
+              enabled: z.boolean().optional(),
+              variant: z.enum(['1', '2', '3', '4']).optional(),
+            })
+            .optional(),
+        })
+        .optional(),
     })
     .optional(),
 });

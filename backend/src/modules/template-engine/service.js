@@ -252,6 +252,7 @@ export async function advanceStage(runId, stageSlug, userId, projectId, options 
       projectId,
       templatePack: options.templatePack,
       navigationPages: options.navigationPages,
+      layout: options.layout,
     });
 
     updated = await prisma.templateEngineStage.update({
