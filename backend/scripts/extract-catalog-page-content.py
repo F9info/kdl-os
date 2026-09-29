@@ -81,15 +81,15 @@ def extract(path):
         'backgroundImage': asset(ban.select_one('img')['src']),
         'subtitle': t(ban.select('.container-fluid > p')[-1]),
         'parentLabel': t(crumbs[1]) if len(crumbs) > 1 else '',
-        'parentHref': '/products-services',
+        'parentHref': 'products.html',
     }
     if ctas:
         banner['ctaPrimaryLabel'], banner['ctaPrimaryHref'] = t(ctas[0]), '#get-quote'
     if len(ctas) > 1:
-        banner['ctaSecondaryLabel'], banner['ctaSecondaryHref'] = t(ctas[1]), '/products-services'
+        banner['ctaSecondaryLabel'], banner['ctaSecondaryHref'] = t(ctas[1]), ctas[1]['href']
     if len(ctas) > 2:
-        # mockup links "See Our Work" to work-<x>.html; kept as the site's /work section
-        banner['ctaTertiaryLabel'], banner['ctaTertiaryHref'] = t(ctas[2]), '/work'
+        # e.g. work-safety-security.html; scripts/fix-internal-links.js maps it to /work/<slug>
+        banner['ctaTertiaryLabel'], banner['ctaTertiaryHref'] = t(ctas[2]), ctas[2]['href']
 
     ov = s.select_one('#overview')
     body = ov.select_one('.sector-detail-body')
