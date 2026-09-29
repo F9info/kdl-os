@@ -1367,6 +1367,7 @@ type ConstructionProps = {
     padding: 'sm' | 'md' | 'lg'
   }
   ConstructionDisciplineRows: {
+    anchorId?: string
     sectionEyebrow: string
     sectionTitle: string
     sectionSubtitle: string
@@ -8508,7 +8509,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               : (faqsRaw ?? [])
       const faqs = faqSource.map((f, n) => ({ ...f, n })).filter((f) => f.question)
       return (
-        <section ref={ref} className={`${revealCls} ${padY[padding]} bg-slate-950`}>
+        <section id="get-quote" ref={ref} className={`${revealCls} ${padY[padding]} bg-slate-950`}>
           {/* Reference (v2-lead) wraps this in container-fluid, not a
               max-width container. */}
           <div className="w-full px-4 md:px-8 md:flex gap-12">
@@ -14560,6 +14561,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
   ConstructionDisciplineRows: {
     label: 'Discipline Rows',
     fields: {
+      // Optional DOM id so in-page links (e.g. "#solutions") can scroll here.
+      anchorId: { type: 'text' },
       sectionEyebrow: { type: 'text' },
       sectionTitle: { type: 'text' },
       sectionSubtitle: { type: 'textarea' },
@@ -14680,6 +14683,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: function ConstructionDisciplineRowsRender({
+      anchorId,
       sectionEyebrow,
       sectionTitle,
       sectionSubtitle,
@@ -14691,6 +14695,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       if (list.length === 0) return <></>
       return (
         <section
+          id={anchorId || undefined}
           className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
         >
           <div className={wrap}>
