@@ -18,15 +18,15 @@ import path from 'node:path';
 import { prisma } from '../src/config/database.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PAGE_ID = 'cmui6bxri001401o8w8ug3yiz';
+const SLUG = 'te-cmt18teqh000101rxwfzfndow-leadership';
 
 const middleBlocks = JSON.parse(
   readFileSync(path.join(__dirname, 'seed-data/leadership-content.json'), 'utf8')
 );
 
-const page = await prisma.builderPage.findUnique({ where: { id: PAGE_ID } });
+const page = await prisma.builderPage.findUnique({ where: { slug: SLUG } });
 if (!page) {
-  throw new Error(`BuilderPage ${PAGE_ID} not found`);
+  throw new Error(`BuilderPage ${SLUG} not found`);
 }
 
 const content = page.data?.content ?? [];
@@ -36,9 +36,9 @@ const footer = content.find((b) => b.type === 'ConstructionFooter');
 const newContent = [...(header ? [header] : []), ...middleBlocks, ...(footer ? [footer] : [])];
 
 await prisma.builderPage.update({
-  where: { id: PAGE_ID },
+  where: { id: page.id },
   data: { data: { ...page.data, content: newContent } },
 });
 
-console.log(`Updated BuilderPage ${PAGE_ID}: ${newContent.length} blocks.`);
+console.log(`Updated BuilderPage ${SLUG}: ${newContent.length} blocks.`);
 await prisma.$disconnect();

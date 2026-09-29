@@ -71,10 +71,12 @@ export default function WorkDetailPage() {
   }
 
   return (
-    <Render
-      config={config}
-      data={page.data as never}
-      metadata={{ pageTitle: work.name, projectId: work.project_id ?? undefined }}
-    />
+    <div className="detail-page-inter">
+      <Render
+        config={config}
+        data={page.data as never}
+        metadata={{ pageTitle: work.name, projectId: work.project_id ?? undefined }}
+      />
+    </div>
   )
 }

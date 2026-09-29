@@ -25,7 +25,7 @@ function rewriteBlockId(oldId, oldSlug, newSlug) {
 // page's Puck `data` — Header/Footer/OurBrands (the site-wide brand
 // catalog) pass through untouched; every other block's content/images are
 // replaced with that sector's own approved copy.
-function buildDataForSector(templateData, templateSlug, slug, sectorName, parsed) {
+function buildDataForSector(templateData, templateSlug, slug, sectorName, parsed, parentHref) {
   const data = structuredClone(templateData);
   data.root.props.title = sectorName;
 
@@ -45,6 +45,12 @@ function buildDataForSector(templateData, templateSlug, slug, sectorName, parsed
       case 'ConstructionInnerBanner':
         props.imageAlt = banner.imageAlt || sectorName;
         props.subtitle = banner.subtitle || props.subtitle;
+        props.eyebrow = banner.eyebrow || props.eyebrow;
+        props.headline = banner.headline || props.headline;
+        props.parentLabel = 'Sectors';
+        if (parentHref) props.parentHref = parentHref;
+        if (banner.ctaPrimaryHref) props.ctaPrimaryHref = banner.ctaPrimaryHref;
+        if (banner.ctaSecondaryHref) props.ctaSecondaryHref = banner.ctaSecondaryHref;
         props.backgroundImage = banner.backgroundImage || props.backgroundImage;
         if (banner.ctaPrimaryLabel) props.ctaPrimaryLabel = banner.ctaPrimaryLabel;
         if (banner.ctaSecondaryLabel) props.ctaSecondaryLabel = banner.ctaSecondaryLabel;
@@ -110,6 +116,7 @@ function buildDataForSector(templateData, templateSlug, slug, sectorName, parsed
         props.sectionTitle = leadFormFaq.sectionTitle || props.sectionTitle;
         props.sectionEyebrow = leadFormFaq.sectionEyebrow || props.sectionEyebrow;
         props.formHeading = leadFormFaq.formHeading || props.formHeading;
+        props.faqSource = 'block'; // this sector's own approved FAQs, not the project-wide FAQ module
         props.formSubtext = leadFormFaq.formSubtext || props.formSubtext;
         props.formPrivacyNote = leadFormFaq.formPrivacyNote || props.formPrivacyNote;
         props.ctaLabel = leadFormFaq.ctaLabel || props.ctaLabel;
@@ -162,6 +169,18 @@ export async function seedSubhadraSectorContent(
     return;
   }
 
+  // Breadcrumb parent link: the site's own Sectors page, taken from the
+  // template header's nav links so no run-specific slug is hard-coded here.
+  const header = template.data.content.find((b) => b.type === 'ConstructionHeader');
+  const parentHref = header?.props?.links?.match(/^Sectors\|(.+)$/m)?.[1];
+
+  // Shared (not per-sector) approved copy in the brands strip heading.
+  const brands = template.data.content.find((b) => b.type === 'ConstructionOurBrands');
+  if (brands && brands.props.sectionTitle !== 'Trusted brands, professionally installed') {
+    brands.props.sectionTitle = 'Trusted brands, professionally installed';
+    await prismaClient.detailPageTemplate.update({ where: { id: template.id }, data: { data: template.data } });
+  }
+
   const sectors = await prismaClient.sector.findMany({ where: { project_id: projectId } });
   for (const sector of sectors) {
     const parsed = CONTENT_BY_SLUG[sector.slug];
@@ -169,7 +188,7 @@ export async function seedSubhadraSectorContent(
       console.log(`sectors.seed-content: skipping "${sector.name}" (no approved content for slug "${sector.slug}")`);
       continue;
     }
-    const built = buildDataForSector(template.data, templateSlug, sector.slug, sector.name, parsed);
+    const built = buildDataForSector(template.data, templateSlug, sector.slug, sector.name, parsed, parentHref);
     const content = {};
     template.data.content.forEach((tplBlock, i) => {
       if (SITE_WIDE.has(tplBlock.type) || !tplBlock.props?.id) return;

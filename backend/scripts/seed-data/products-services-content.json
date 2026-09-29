@@ -15,7 +15,9 @@
       "ctaPrimaryLabel": "",
       "ctaPrimaryHref": "",
       "ctaSecondaryLabel": "",
-      "ctaSecondaryHref": ""
+      "ctaSecondaryHref": "",
+      "headline": "Everything for your building, in stock",
+      "currentLabel": "Products"
     }
   },
   {
@@ -32,29 +34,206 @@
       "padding": "md",
       "background": "white",
       "items": [
-        { "category": "Electrical products", "icon": "hardhat", "image": "https://images.unsplash.com/photo-1590954661619-df8fe69b08a0?w=480&h=360&fit=crop&q=75&auto=format", "title": "Switches & wiring devices", "description": "Livia, Zencelo, Unica Pure, Clipsal X, Avatar On, Cube Series.", "brands": "Schneider Electric · Norisys" },
-        { "category": "Electrical products", "icon": "shield", "image": "https://images.unsplash.com/photo-1635335874521-7987db781153?w=480&h=360&fit=crop&q=75&auto=format", "title": "Wires", "description": "FR, FR-LSH and LSOH house wiring in all standard sizes.", "brands": "RR Kabel" },
-        { "category": "Electrical products", "icon": "star", "image": "/seed/subhadra/products/cables.png", "title": "Cables", "description": "Flexible LT/HT cables, 0.50 to 1000 sq.mm class-5 copper.", "brands": "Polycab · RR Kabel" },
-        { "category": "Electrical products", "icon": "hardhat", "image": "https://images.unsplash.com/photo-1602223876473-c37ee6c2a4e2?w=480&h=360&fit=crop&q=75&auto=format", "title": "Lights", "description": "COB spots, panels, street and flood lighting.", "brands": "Wipro · Crompton · Halonix" },
-        { "category": "Electrical products", "icon": "shield", "image": "https://images.unsplash.com/photo-1609519479841-5fd3b2884e17?w=480&h=360&fit=crop&q=75&auto=format", "title": "Fans & ventilation", "description": "Designer ceiling fans, ventilation and fresh-air fans.", "brands": "Crompton · WadBros" },
-        { "category": "Electrical products", "icon": "star", "image": "/seed/subhadra/products/mcb1.jpg", "title": "MCB, DB & switchgear", "description": "Distribution boards, MCB/MCCB, ACB and panel boards.", "brands": "Schneider Electric" },
-        { "category": "Electrical products", "icon": "hardhat", "image": "/seed/subhadra/products/generators.png", "title": "Generators", "description": "15 KVA to 3750 KVA silent diesel generators.", "brands": "Cummins · Jakson" },
-        { "category": "Electrical products", "icon": "shield", "image": "/seed/subhadra/products/transformers.png", "title": "Transformers", "description": "Distribution 100 KVA–2 MVA · power up to 220 kV class.", "brands": "Onan · Drytype · OCTC · OLTC" },
-        { "category": "Electrical products", "icon": "star", "image": "/seed/subhadra/products/servo-stabilizers.png", "title": "Servo stabilizers", "description": "Servo control voltage stabilizers for machines and retail.", "brands": "Servomax · Powertex · Fuji" },
-        { "category": "Electrical products", "icon": "hardhat", "image": "/seed/subhadra/products/ups.png", "title": "UPS", "description": "Online UPS from 1 KVA onwards for homes and offices.", "brands": "APC · Fuji Electric" },
-        { "category": "Electrical products", "icon": "shield", "image": "/seed/subhadra/products/load-break-switch.png", "title": "Load break switch", "description": "12 / 24 / 36 kV, 630 A, 25 kA outdoor LBS panels.", "brands": "Transguard · Megawin" },
-
-        { "category": "Climate & refrigeration", "icon": "star", "image": "/seed/subhadra/products/blue-star-ducted-ac.jpg", "title": "Central & VRF AC", "description": "Centralized AC, chillers, VRF and cassette units for offices, hotels and retail.", "brands": "Blue Star" },
-        { "category": "Climate & refrigeration", "icon": "hardhat", "image": "https://images.unsplash.com/photo-1584568694244-14fbdf83bd30?w=480&h=360&fit=crop&q=75&auto=format", "title": "Refrigeration", "description": "Visi coolers, deep freezers, water coolers and ice-cube machines for retail & F&B.", "brands": "Blue Star" },
-
-        { "category": "Safety & systems", "icon": "shield", "image": "https://images.unsplash.com/photo-1643123182527-3bd30840e7ed?w=480&h=360&fit=crop&q=75&auto=format", "title": "CCTV", "description": "Dome, bullet, PTZ, number-plate and face-recognition cameras.", "brands": "CP Plus · Honeywell · Matrix" },
-        { "category": "Safety & systems", "icon": "star", "image": "https://images.unsplash.com/photo-1508817172652-4be4be2795cb?w=480&h=360&fit=crop&q=75&auto=format", "title": "Fire alarm", "description": "Conventional/addressable panels, smoke & heat detectors, hooters, MCPs.", "brands": "Honeywell · Agni · Ravel" },
-        { "category": "Safety & systems", "icon": "hardhat", "image": "https://images.unsplash.com/photo-1585367437379-e0b71bb18156?w=480&h=360&fit=crop&q=75&auto=format", "title": "Fire fighting", "description": "Sprinkler systems, booster pumps, extinguishers and pump houses.", "brands": "NewAge · Minimax · Tyco" },
-        { "category": "Safety & systems", "icon": "shield", "image": "https://images.unsplash.com/photo-1630965764686-159c575031b3?w=480&h=360&fit=crop&q=75&auto=format", "title": "PA system", "description": "Public address for showrooms, malls, hotels, hospitals and industries.", "brands": "Ahuja · Honeywell · Bosch" },
-        { "category": "Safety & systems", "icon": "star", "image": "https://images.unsplash.com/photo-1585079374502-415f8516dcc3?w=480&h=360&fit=crop&q=75&auto=format", "title": "Access control", "description": "Biometric & proximity access, attendance systems for offices and IT parks.", "brands": "Matrix" },
-
-        { "category": "Automation & entertainment", "icon": "hardhat", "image": "/seed/subhadra/products/home-automation.jpg", "title": "Home automation", "description": "Retrofit and centralized control of lighting, curtains, AC and appliances.", "brands": "Schneider · Toyama · Bticino" },
-        { "category": "Automation & entertainment", "icon": "shield", "image": "https://images.unsplash.com/photo-1631702825172-a9a848c473ad?w=480&h=360&fit=crop&q=75&auto=format", "title": "Home theater", "description": "Dolby Atmos rooms, 4K projection, acoustic design and multiroom audio.", "brands": "Focal · Sony · Denon" }
+        {
+          "category": "Electrical products",
+          "icon": "hardhat",
+          "image": "https://images.unsplash.com/photo-1565049981953-379c9c2a5d48?w=480&h=360&fit=crop&q=75&auto=format",
+          "title": "Switches & wiring devices",
+          "description": "Livia, Zencelo, Unica Pure, Clipsal X, Avatar On, Cube Series.",
+          "brands": "Schneider Electric · Norisys",
+          "href": "/catalog/switches-wiring-devices",
+          "linkLabel": "View details →"
+        },
+        {
+          "category": "Electrical products",
+          "icon": "shield",
+          "image": "https://images.unsplash.com/photo-1635335874521-7987db781153?w=480&h=360&fit=crop&q=75&auto=format",
+          "title": "Wires",
+          "description": "FR, FR-LSH and LSOH house wiring in all standard sizes.",
+          "brands": "RR Kabel",
+          "href": "/catalog/wires",
+          "linkLabel": "View details →"
+        },
+        {
+          "category": "Electrical products",
+          "icon": "star",
+          "image": "/seed/subhadra/products/cables.png",
+          "title": "Cables",
+          "description": "Flexible LT/HT cables, 0.50 to 1000 sq.mm class-5 copper.",
+          "brands": "Polycab · RR Kabel",
+          "href": "/catalog/cables",
+          "linkLabel": "View details →"
+        },
+        {
+          "category": "Electrical products",
+          "icon": "hardhat",
+          "image": "https://images.unsplash.com/photo-1602223876473-c37ee6c2a4e2?w=480&h=360&fit=crop&q=75&auto=format",
+          "title": "Lights",
+          "description": "COB spots, panels, street and flood lighting.",
+          "brands": "Wipro · Crompton · Halonix",
+          "href": "/catalog/lights",
+          "linkLabel": "View details →"
+        },
+        {
+          "category": "Electrical products",
+          "icon": "shield",
+          "image": "https://images.unsplash.com/photo-1609519479841-5fd3b2884e17?w=480&h=360&fit=crop&q=75&auto=format",
+          "title": "Fans & ventilation",
+          "description": "Designer ceiling fans, ventilation and fresh-air fans.",
+          "brands": "Crompton · WadBros",
+          "href": "/catalog/fans-ventilation",
+          "linkLabel": "View details →"
+        },
+        {
+          "category": "Electrical products",
+          "icon": "star",
+          "image": "/seed/subhadra/products/mcb1.jpg",
+          "title": "MCB, DB & switchgear",
+          "description": "Distribution boards, MCB/MCCB, ACB and panel boards.",
+          "brands": "Schneider Electric",
+          "href": "/catalog/mcb-db-switchgear",
+          "linkLabel": "View details →"
+        },
+        {
+          "category": "Electrical products",
+          "icon": "hardhat",
+          "image": "/seed/subhadra/products/generators.png",
+          "title": "Generators",
+          "description": "15 KVA to 3750 KVA silent diesel generators.",
+          "brands": "Cummins · Jakson",
+          "href": "/catalog/generators",
+          "linkLabel": "View details →"
+        },
+        {
+          "category": "Electrical products",
+          "icon": "shield",
+          "image": "/seed/subhadra/products/transformers.png",
+          "title": "Transformers",
+          "description": "Distribution 100 KVA–2 MVA · power up to 220 kV class.",
+          "brands": "Onan · Drytype · OCTC · OLTC",
+          "href": "/catalog/transformers",
+          "linkLabel": "View details →"
+        },
+        {
+          "category": "Electrical products",
+          "icon": "star",
+          "image": "/seed/subhadra/products/servo-stabilizers.png",
+          "title": "Servo stabilizers",
+          "description": "Servo control voltage stabilizers for machines and retail.",
+          "brands": "Servomax · Powertex · Fuji",
+          "href": "/catalog/servo-stabilizers",
+          "linkLabel": "View details →"
+        },
+        {
+          "category": "Electrical products",
+          "icon": "hardhat",
+          "image": "/seed/subhadra/products/ups.png",
+          "title": "UPS",
+          "description": "Online UPS from 1 KVA onwards for homes and offices.",
+          "brands": "APC · Fuji Electric",
+          "href": "/catalog/ups",
+          "linkLabel": "View details →"
+        },
+        {
+          "category": "Electrical products",
+          "icon": "shield",
+          "image": "/seed/subhadra/products/load-break-switch.png",
+          "title": "Load break switch",
+          "description": "12 / 24 / 36 kV, 630 A, 25 kA outdoor LBS panels.",
+          "brands": "Transguard · Megawin",
+          "href": "/catalog/load-break-switch",
+          "linkLabel": "View details →"
+        },
+        {
+          "category": "Climate & refrigeration",
+          "icon": "star",
+          "image": "/seed/subhadra/products/blue-star-ducted-ac.jpg",
+          "title": "Central & VRF AC",
+          "description": "Centralized AC, chillers, VRF and cassette units for offices, hotels and retail.",
+          "brands": "Blue Star",
+          "href": "/work/central-ac",
+          "linkLabel": "View details →"
+        },
+        {
+          "category": "Climate & refrigeration",
+          "icon": "hardhat",
+          "image": "https://images.unsplash.com/photo-1584568694244-14fbdf83bd30?w=480&h=360&fit=crop&q=75&auto=format",
+          "title": "Refrigeration",
+          "description": "Visi coolers, deep freezers, water coolers and ice-cube machines for retail & F&B.",
+          "brands": "Blue Star",
+          "href": "/catalog/refrigeration",
+          "linkLabel": "View details →"
+        },
+        {
+          "category": "Safety & systems",
+          "icon": "shield",
+          "image": "https://images.unsplash.com/photo-1643123182527-3bd30840e7ed?w=480&h=360&fit=crop&q=75&auto=format",
+          "title": "CCTV",
+          "description": "Dome, bullet, PTZ, number-plate and face-recognition cameras.",
+          "brands": "CP Plus · Honeywell · Matrix",
+          "href": "/catalog/cctv",
+          "linkLabel": "View details →"
+        },
+        {
+          "category": "Safety & systems",
+          "icon": "star",
+          "image": "https://images.unsplash.com/photo-1508817172652-4be4be2795cb?w=480&h=360&fit=crop&q=75&auto=format",
+          "title": "Fire alarm",
+          "description": "Conventional/addressable panels, smoke & heat detectors, hooters, MCPs.",
+          "brands": "Honeywell · Agni · Ravel",
+          "href": "/catalog/fire-alarm",
+          "linkLabel": "View details →"
+        },
+        {
+          "category": "Safety & systems",
+          "icon": "hardhat",
+          "image": "https://images.unsplash.com/photo-1595306394931-b35768661692?w=480&h=360&fit=crop&q=75&auto=format",
+          "title": "Fire fighting",
+          "description": "Sprinkler systems, booster pumps, extinguishers and pump houses.",
+          "brands": "NewAge · Minimax · Tyco",
+          "href": "/catalog/fire-fighting",
+          "linkLabel": "View details →"
+        },
+        {
+          "category": "Safety & systems",
+          "icon": "shield",
+          "image": "https://images.unsplash.com/photo-1510766315117-0f791eb90af7?w=480&h=360&fit=crop&q=75&auto=format",
+          "title": "PA system",
+          "description": "Public address for showrooms, malls, hotels, hospitals and industries.",
+          "brands": "Ahuja · Honeywell · Bosch",
+          "href": "/catalog/pa-system",
+          "linkLabel": "View details →"
+        },
+        {
+          "category": "Safety & systems",
+          "icon": "star",
+          "image": "https://images.unsplash.com/photo-1585079374502-415f8516dcc3?w=480&h=360&fit=crop&q=75&auto=format",
+          "title": "Access control",
+          "description": "Biometric & proximity access, attendance systems for offices and IT parks.",
+          "brands": "Matrix",
+          "href": "/catalog/access-control",
+          "linkLabel": "View details →"
+        },
+        {
+          "category": "Automation & entertainment",
+          "icon": "hardhat",
+          "image": "/seed/subhadra/products/home-automation.jpg",
+          "title": "Home automation",
+          "description": "Retrofit and centralized control of lighting, curtains, AC and appliances.",
+          "brands": "Schneider · Toyama · Bticino",
+          "href": "/work/home-automation",
+          "linkLabel": "View details →"
+        },
+        {
+          "category": "Automation & entertainment",
+          "icon": "shield",
+          "image": "https://images.unsplash.com/photo-1631702825172-a9a848c473ad?w=480&h=360&fit=crop&q=75&auto=format",
+          "title": "Home theater",
+          "description": "Dolby Atmos rooms, 4K projection, acoustic design and multiroom audio.",
+          "brands": "Focal · Sony · Denon",
+          "href": "/work/home-theater",
+          "linkLabel": "View details →"
+        }
       ]
     }
   },
@@ -85,7 +264,8 @@
       "secondaryCtaHref": "#brochure",
       "phoneNumber": "",
       "phoneLabel": "",
-      "background": "muted"
+      "background": "muted",
+      "eyebrow": "Need help choosing?"
     }
   }
 ]

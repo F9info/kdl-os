@@ -1,0 +1,995 @@
+[
+  {
+    "type": "ConstructionHero",
+    "props": {
+      "id": "ConstructionHero-3118c774-5f22-4a60-8cff-45dad6e84d38",
+      "variant": "2",
+      "visible": true,
+      "d1Slides": [
+        {
+          "badge": "Central AC",
+          "image": "/seed/subhadra/hero-slider/center-ac.jpeg",
+          "ctaHref": "#quote",
+          "ctaLabel": "Get a Quote",
+          "headline": "Cool comfort, engineered precisely.",
+          "subheadline": "Centralized air-conditioning sized, supplied and installed by our own engineers — from single rooms to full commercial buildings, backed by annual maintenance and genuine spares on call."
+        },
+        {
+          "badge": "Electrical & Switchgear",
+          "image": "/seed/subhadra/hero-slider/complete-electrical.jpg",
+          "ctaHref": "#quote",
+          "ctaLabel": "Get a Quote",
+          "headline": "Electrical products, engineered to last.",
+          "subheadline": "We supply complete range of Switches, Wires, MCBs, Distribution Boards, Cables, Switchgear, Panel Boards, Generators, Transformers, UPS, Stabilizers."
+        },
+        {
+          "badge": "Safety and Security",
+          "image": "/seed/subhadra/hero-slider/safety-security.jpg",
+          "ctaHref": "work-safety-security.html",
+          "ctaLabel": "See Our Work",
+          "headline": "Safety and security systems, engineered to protect.",
+          "subheadline": "CCTV, video analytics, access control, fire alarm, intrusion alarm and fire-fighting systems designed and installed by our own team — so every entry point is covered and safety never waits."
+        }
+      ],
+      "d2Slides": [
+        {
+          "lead": "Cool comfort,",
+          "image": "/seed/subhadra/hero-slider/center-ac.jpeg",
+          "brands": [
+            {
+              "logo": "/seed/subhadra/ourbrands/design-execution-maintenance/Blue_Star_primary_logo.png",
+              "name": "Blue Star"
+            }
+          ],
+          "dotLabel": "Central AC",
+          "workHref": "work-central-ac.html",
+          "highlight": "engineered precisely.",
+          "description": "Centralized air-conditioning sized, supplied and installed by our own engineers — from single rooms to full commercial buildings, backed by annual maintenance and genuine spares on call."
+        },
+        {
+          "lead": "Electrical products,",
+          "image": "/seed/subhadra/hero-slider/complete-electrical.jpg",
+          "brands": [
+            {
+              "logo": "/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png",
+              "name": "Schneider Electric"
+            },
+            {
+              "logo": "/seed/subhadra/ourbrands/electrical-products/RRKabel.jpg",
+              "name": "RR Kabel"
+            },
+            {
+              "logo": "/seed/subhadra/ourbrands/electrical-products/Crompton.avif",
+              "name": "Crompton"
+            },
+            {
+              "logo": "/seed/subhadra/ourbrands/electrical-products/Norisys.png",
+              "name": "Norisys"
+            },
+            {
+              "logo": "/seed/subhadra/ourbrands/electrical-products/Cunnins.png",
+              "name": "Cummins"
+            },
+            {
+              "logo": "/seed/subhadra/ourbrands/electrical-products/LogoAPC.svg",
+              "name": "APC"
+            }
+          ],
+          "dotLabel": "Electrical & Switchgear",
+          "workHref": "",
+          "highlight": "engineered to last.",
+          "description": "We supply complete range of Switches, Wires, MCBs, Distribution Boards, Cables, Switchgear, Panel Boards, Generators, Transformers, UPS, Stabilizers."
+        },
+        {
+          "lead": "Safety and security systems,",
+          "image": "/seed/subhadra/hero-slider/safety-security.jpg",
+          "brands": [
+            {
+              "logo": "/seed/subhadra/ourbrands/design-execution-maintenance/CP%20Plus.jpg",
+              "name": "CP Plus"
+            },
+            {
+              "logo": "/seed/subhadra/ourbrands/design-execution-maintenance/Honeywell%20CCTV.jpg",
+              "name": "Honeywell"
+            },
+            {
+              "logo": "/seed/subhadra/ourbrands/design-execution-maintenance/Ravel.png",
+              "name": "Ravel"
+            },
+            {
+              "logo": "/seed/subhadra/ourbrands/design-execution-maintenance/Bosch.jpg",
+              "name": "Bosch"
+            },
+            {
+              "logo": "/seed/subhadra/ourbrands/lifestyle-residential-products/Ajax%20logo.jpg",
+              "name": "Ajax"
+            },
+            {
+              "logo": "/seed/subhadra/ourbrands/design-execution-maintenance/Matrix.jpg",
+              "name": "Matrix"
+            }
+          ],
+          "dotLabel": "Safety and Security",
+          "workHref": "work-safety-security.html",
+          "highlight": "engineered to protect.",
+          "description": "CCTV, video analytics, access control, fire alarm, intrusion alarm and fire-fighting systems designed and installed by our own team — so every entry point is covered and safety never waits."
+        },
+        {
+          "lead": "Smart homes,",
+          "image": "/seed/subhadra/hero-slider/home-automation.jpg",
+          "brands": [
+            {
+              "logo": "/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png",
+              "name": "Schneider Electric"
+            },
+            {
+              "logo": "/seed/subhadra/ourbrands/lifestyle-residential-products/BTicino-IME.jpg",
+              "name": "Bticino"
+            },
+            {
+              "logo": "/seed/subhadra/ourbrands/lifestyle-residential-products/RTI.png",
+              "name": "RTI"
+            },
+            {
+              "logo": "/seed/subhadra/ourbrands/lifestyle-residential-products/Toyama%20logo-768.webp",
+              "name": "Toyama"
+            },
+            {
+              "logo": "/seed/subhadra/ourbrands/lifestyle-residential-products/eelectron.png",
+              "name": "eelectron"
+            }
+          ],
+          "dotLabel": "Home Automation",
+          "workHref": "work-home-automation.html",
+          "highlight": "engineered as one.",
+          "description": "Lighting, AC, curtains and appliances — retrofit or centralized, all on one interface you control from anywhere, with voice control and scheduled scenes for everyday comfort."
+        },
+        {
+          "lead": "Home theaters,",
+          "image": "/seed/subhadra/hero-slider/home-theater.jpg",
+          "brands": [
+            {
+              "logo": "/seed/subhadra/ourbrands/lifestyle-residential-products/M%26K%20Sound%20logo.png",
+              "name": "M&K Sound"
+            },
+            {
+              "logo": "/seed/subhadra/ourbrands/lifestyle-residential-products/focal-logo.png",
+              "name": "Focal"
+            },
+            {
+              "logo": "/seed/subhadra/ourbrands/lifestyle-residential-products/Sony%20logo.png",
+              "name": "Sony"
+            },
+            {
+              "logo": "/seed/subhadra/ourbrands/lifestyle-residential-products/Optoma%20logo.jpeg",
+              "name": "Optoma"
+            },
+            {
+              "logo": "/seed/subhadra/ourbrands/lifestyle-residential-products/SVS%20sub%20logo.png",
+              "name": "SVS"
+            },
+            {
+              "logo": "/seed/subhadra/ourbrands/lifestyle-residential-products/Marantz%20logo.svg",
+              "name": "Marantz"
+            }
+          ],
+          "dotLabel": "Home Theater",
+          "workHref": "work-home-theater.html",
+          "highlight": "engineered for sound.",
+          "description": "Dolby Atmos rooms, 4K projection and multiroom audio — custom-built and installed by our own team, with acoustic treatment and calibration for true cinema-grade sound."
+        },
+        {
+          "lead": "Premium lighting,",
+          "image": "/seed/subhadra/hero-slider/premium-lighting.jpg",
+          "brands": [
+            {
+              "logo": "/seed/subhadra/ourbrands/electrical-products/Futura%20-1.svg",
+              "name": "Futura"
+            },
+            {
+              "logo": "/seed/subhadra/ourbrands/electrical-products/Wipro.png",
+              "name": "Wipro"
+            }
+          ],
+          "dotLabel": "Premium Lighting",
+          "workHref": "work-premium-lighting.html",
+          "highlight": "engineered to impress.",
+          "description": "Designer, architectural and smart-dimmable lighting — specified, supplied and installed to elevate every room, with layered scenes for ambience, task and accent lighting."
+        }
+      ],
+      "d3Slides": [
+        {
+          "role": "Hospitality group, Visakhapatnam",
+          "image": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&h=200&fit=crop&crop=faces&q=80&auto=format",
+          "quote": "One team handled our entire HVAC and electrical fit-out — no coordination headaches between contractors, and the AMC support since handover has been excellent.",
+          "author": "Operations Manager"
+        },
+        {
+          "role": "Healthcare facility, Andhra Pradesh",
+          "image": "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&h=200&fit=crop&crop=faces&q=80&auto=format",
+          "quote": "Critical-area AC and fire safety were sized and installed to code without a single delay to our opening date. Their service manager still checks in every quarter.",
+          "author": "Facilities Head"
+        },
+        {
+          "role": "Shopping mall, Visakhapatnam",
+          "image": "https://images.unsplash.com/photo-1607746882042-944635dfe10e?w=200&h=200&fit=crop&crop=faces&q=80&auto=format",
+          "quote": "We compared three vendors for our showroom's cooling and CCTV — Subhadra Group was the only one that could design, supply and install everything themselves.",
+          "author": "Retail Operations Lead"
+        }
+      ],
+      "d4Slides": [
+        {
+          "icon": "snowflake",
+          "title": "Central AC",
+          "description": "Premium centralized air-conditioning providing consistent comfort, efficient climate control and a refined indoor environment — sized and installed by our own engineers."
+        },
+        {
+          "icon": "housegear",
+          "title": "Home Automation",
+          "description": "Complete integration of lighting, A/V, curtains, AC and appliances — retrofit or centralized, all on one interface you control from anywhere."
+        },
+        {
+          "icon": "tv",
+          "title": "Home Theater",
+          "description": "Customized rooms with Dolby Atmos, 4K projection, acoustic design and recliners — plus multiroom audio across the rest of the home."
+        }
+      ],
+      "d2Avatar1": "/seed/subhadra/clients/client-01.png",
+      "d2Avatar2": "/seed/subhadra/clients/client-14.png",
+      "d2Avatar3": "/seed/subhadra/clients/client-21.png",
+      "d2CtaHref": "#quote",
+      "d2CtaLabel": "Get a Quote →",
+      "sliderLoop": true,
+      "d2BadgeText": "",
+      "d2TrustText": "1000+ businesses across Andhra Pradesh trust us",
+      "d2Stat1Label": "Years of Trust",
+      "d2Stat1Value": "30+",
+      "d2Stat2Label": "Trusted Clients",
+      "d2Stat2Value": "1 Lakh+",
+      "d2Stat3Label": "Support On Installations",
+      "d2Stat3Value": "24×7",
+      "primaryColor": "",
+      "d2BrandsLabel": "Brands",
+      "d2Slide1Image": "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=1200&h=900&fit=crop&auto=format",
+      "d2Slide2Image": "https://images.unsplash.com/photo-1753272691001-4d68806ac590?w=1200&h=900&fit=crop&auto=format",
+      "d2Slide3Image": "https://images.unsplash.com/photo-1643123182527-3bd30840e7ed?w=1200&h=900&fit=crop&auto=format",
+      "d2Slide4Image": "https://images.unsplash.com/photo-1545259741-2ea3ebf61fa3?w=1200&h=900&fit=crop&auto=format",
+      "d2Slide5Image": "https://images.unsplash.com/photo-1631702825172-a9a848c473ad?w=1200&h=900&fit=crop&auto=format",
+      "d2Slide6Image": "https://images.unsplash.com/photo-1524634126442-357e0eac3c14?w=1200&h=900&fit=crop&auto=format",
+      "d2Slide1Brands": "",
+      "d2Slide2Brands": "",
+      "d2Slide3Brands": "",
+      "d2Slide4Brands": "",
+      "d2Slide5Brands": "",
+      "d2Slide6Brands": "",
+      "secondaryColor": "",
+      "sliderAutoplay": true,
+      "sliderShowDots": true,
+      "d2SecondaryHref": "work-central-ac.html",
+      "activeSlideIndex": 0,
+      "d2SecondaryLabel": "See Our Work",
+      "d2Slide1DotLabel": "Central AC",
+      "d2Slide2DotLabel": "Electrical & Switchgear",
+      "d2Slide3DotLabel": "Safety and Security",
+      "d2Slide4DotLabel": "Home Automation",
+      "d2Slide5DotLabel": "Home Theater",
+      "d2Slide6DotLabel": "Premium Lighting",
+      "sliderShowArrows": false,
+      "sliderTransition": "fade",
+      "d2Slide1Description": "Centralized air-conditioning sized, supplied and installed by our own engineers — from single rooms to full commercial buildings, backed by annual maintenance and genuine spares on call.",
+      "d2Slide2Description": "We supply complete range of Switches, Wires, MCBs, Distribution Boards, Cables, Switchgear, Panel Boards, Generators, Transformers, UPS, Stabilizers.",
+      "d2Slide3Description": "CCTV, video analytics, access control, fire alarm, intrusion alarm and fire-fighting systems designed and installed by our own team — so every entry point is covered and safety never waits.",
+      "d2Slide4Description": "Lighting, AC, curtains and appliances — retrofit or centralized, all on one interface you control from anywhere, with voice control and scheduled scenes for everyday comfort.",
+      "d2Slide5Description": "Dolby Atmos rooms, 4K projection and multiroom audio — custom-built and installed by our own team, with acoustic treatment and calibration for true cinema-grade sound.",
+      "d2Slide6Description": "Designer, architectural and smart-dimmable lighting — specified, supplied and installed to elevate every room, with layered scenes for ambience, task and accent lighting.",
+      "sliderAutoplaySpeed": 30000,
+      "d2Slide1HeadlineLead": "Cool comfort,",
+      "d2Slide2HeadlineLead": "Electrical products,",
+      "d2Slide3HeadlineLead": "Safety and security systems,",
+      "d2Slide4HeadlineLead": "Smart homes,",
+      "d2Slide5HeadlineLead": "Home theaters,",
+      "d2Slide6HeadlineLead": "Premium lighting,",
+      "d2Slide1HeadlineHighlight": "engineered precisely.",
+      "d2Slide2HeadlineHighlight": "engineered to last.",
+      "d2Slide3HeadlineHighlight": "engineered to protect.",
+      "d2Slide4HeadlineHighlight": "engineered as one.",
+      "d2Slide5HeadlineHighlight": "engineered for sound.",
+      "d2Slide6HeadlineHighlight": "engineered to impress."
+    }
+  },
+  {
+    "type": "TaglineStrip",
+    "props": {
+      "id": "TaglineStrip-b49e2a88-c061-4deb-9caa-031fc12a4ed3",
+      "brand": "Subhadra Group",
+      "ctaHref": "#",
+      "subtext": "Design · Installation · Service · Maintenance",
+      "variant": "1",
+      "ctaLabel": "",
+      "headline": "One-stop solution for building engineering products & services.",
+      "accentColor": "#ff9a3c",
+      "primaryColor": "#ff4d1c"
+    }
+  },
+  {
+    "type": "ConstructionFloatingActions",
+    "props": {
+      "id": "home-ConstructionFloatingActions",
+      "badgeLabel": "years of Trust",
+      "badgeNumber": "30",
+      "brochureHref": "/seed/subhadra/Subhadra-Group-30-Years-Brochure.pdf",
+      "whatsappHref": "https://wa.me/918897224466",
+      "badgeYearLabel": "Estd. 1996"
+    }
+  },
+  {
+    "type": "ConstructionDisciplinesGrid",
+    "props": {
+      "id": "ConstructionDisciplinesGrid-32bf2ef8-7b3d-4bf9-9217-be95563ca5b9",
+      "items": [
+        {
+          "href": "#products",
+          "icon": "snowflake",
+          "image": "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=800&h=600&fit=crop&q=80&auto=format",
+          "title": "Central AC",
+          "brands": "Blue Star",
+          "description": "Centralized air-conditioning sized, supplied and installed by our own engineers — from single rooms to full commercial buildings, backed by annual maintenance and genuine spares on call."
+        },
+        {
+          "href": "#products",
+          "icon": "plug",
+          "image": "/seed/subhadra/products/mcb1.jpg",
+          "title": "Electrical & Switchgear",
+          "brands": "Schneider Electric",
+          "description": "We supply complete range of Switches, Wires, MCBs, Distribution Boards, Cables, Switchgear, Panel Boards, Generators, Transformers, UPS, Stabilizers."
+        },
+        {
+          "href": "#products",
+          "icon": "shield",
+          "image": "https://images.unsplash.com/photo-1643123182527-3bd30840e7ed?w=900&h=675&fit=crop&q=80&auto=format",
+          "title": "Safety and Security Solutions",
+          "brands": "Honeywell · Minimax · Tyco",
+          "description": "CCTV, video analytics, access control, fire alarm, intrusion alarm and fire-fighting systems designed and installed by our own team — so every entry point is covered and safety never waits."
+        },
+        {
+          "href": "#products",
+          "icon": "housegear",
+          "image": "/seed/subhadra/products/home-automation.jpg",
+          "title": "Home Automation",
+          "brands": "Schneider · RTI · Bticino",
+          "description": "Lighting, AC, curtains and appliances — retrofit or centralized, all on one interface you control from anywhere, with voice control and scheduled scenes for everyday comfort."
+        },
+        {
+          "href": "#products",
+          "icon": "tv",
+          "image": "https://images.unsplash.com/photo-1631702825172-a9a848c473ad?w=900&h=675&fit=crop&q=80&auto=format",
+          "title": "Home Theater",
+          "brands": "Focal · Sony · Denon",
+          "description": "Dolby Atmos rooms, 4K projection and multiroom audio — custom-built and installed by our own team, with acoustic treatment and calibration for true cinema-grade sound."
+        },
+        {
+          "href": "#products",
+          "icon": "lightbulb",
+          "image": "https://images.unsplash.com/photo-1524634126442-357e0eac3c14?w=900&h=675&fit=crop&q=80&auto=format",
+          "title": "Premium Lighting",
+          "brands": "Wipro · Crompton · Philips",
+          "description": "Designer, architectural and smart-dimmable lighting — specified, supplied and installed to elevate every room, with layered scenes for ambience, task and accent lighting."
+        }
+      ],
+      "padding": "md",
+      "background": "white",
+      "sectionTitle": "Six disciplines, engineered as one system",
+      "sectionEyebrow": "What we're known for",
+      "sectionSubtitle": "Designed, supplied, installed and maintained by one accountable team — with a dedicated service manager for every discipline."
+    }
+  },
+  {
+    "type": "ConstructionAboutSplit",
+    "props": {
+      "id": "ConstructionAboutSplit-046c2412-e27d-49cf-8e97-fe76c9f3314b",
+      "photo": "/seed/subhadra/about.webp",
+      "eyebrow": "About Us",
+      "heading": "Your one-stop solution for building engineering",
+      "members": [
+        {
+          "logo": "/seed/subhadra/member/fsai.jpeg",
+          "title": ""
+        },
+        {
+          "logo": "/seed/subhadra/member/IIID.jpeg",
+          "title": ""
+        },
+        {
+          "logo": "/seed/subhadra/member/IGBC.png",
+          "title": ""
+        },
+        {
+          "logo": "/seed/subhadra/member/IPA.png",
+          "title": ""
+        },
+        {
+          "logo": "/seed/subhadra/member/ASHRAE.webp",
+          "title": ""
+        },
+        {
+          "logo": "/seed/subhadra/member/bni.svg",
+          "title": ""
+        },
+        {
+          "logo": "/seed/subhadra/member/cii.svg",
+          "title": ""
+        },
+        {
+          "logo": "/seed/subhadra/member/VCCI.png",
+          "title": ""
+        }
+      ],
+      "padding": "md",
+      "paragraph": "Subhadra Group was founded in 1996 to provide all building-related engineering products & services under one roof for residential, commercial buildings and industries. With 30+ years of technical expertise across HVAC, Electricals and ELV systems, our team delivers perfect-engineered solutions for every application.",
+      "background": "muted",
+      "badgeLabel": "Years of Trust",
+      "check1Text": "World-class, pioneer brands only",
+      "check2Text": "Our own trained engineers, no sub-contracting",
+      "check3Text": "A dedicated service manager per discipline, 24×7",
+      "badgeNumber": "30",
+      "brochureHref": "about.html",
+      "brochureLabel": "Read More →",
+      "membershipLabel": "Proud member of"
+    }
+  },
+  {
+    "type": "ConstructionOurBrands",
+    "props": {
+      "id": "ConstructionOurBrands-202380ef-e049-4d74-9a7d-2977c033e2e6",
+      "padding": "md",
+      "tab1Label": "Design, Execution & Maintenance",
+      "tab2Label": "Electrical Products",
+      "tab3Label": "Lifestyle Residential Products",
+      "tab1Groups": "Air Conditioning|Blue Star::/seed/subhadra/ourbrands/design-execution-maintenance/Blue_Star_primary_logo.png\nRefrigeration|Blue Star::/seed/subhadra/ourbrands/design-execution-maintenance/Blue_Star_primary_logo.png\nEPABX|Matrix::/seed/subhadra/ourbrands/design-execution-maintenance/Matrix.jpg\nFire Fighting|Newage::/seed/subhadra/ourbrands/design-execution-maintenance/Newage.jpg;Safex::/seed/subhadra/ourbrands/design-execution-maintenance/Safex.png;Tyco::/seed/subhadra/ourbrands/design-execution-maintenance/tyco_logo_v1.png\nCCTV|CP Plus::/seed/subhadra/ourbrands/design-execution-maintenance/CP%20Plus.jpg;Matrix::/seed/subhadra/ourbrands/design-execution-maintenance/Matrix.jpg;Honeywell::/seed/subhadra/ourbrands/design-execution-maintenance/Honeywell%20CCTV.jpg;Prama::/seed/subhadra/ourbrands/design-execution-maintenance/Prama.jpg\nAccess Control|Matrix::/seed/subhadra/ourbrands/design-execution-maintenance/Matrix.jpg;Essl::/seed/subhadra/ourbrands/design-execution-maintenance/esslogo.png\nPublic Address System|JBL::/seed/subhadra/ourbrands/design-execution-maintenance/JBL.png;Bosch::/seed/subhadra/ourbrands/design-execution-maintenance/Bosch.jpg;Ahuja::/seed/subhadra/ourbrands/design-execution-maintenance/Ahuja.jpg;Studio Master::/seed/subhadra/ourbrands/design-execution-maintenance/Studio%20Master.jpg;Crown::/seed/subhadra/ourbrands/design-execution-maintenance/Crown.jpg;Sound Craft::/seed/subhadra/ourbrands/design-execution-maintenance/Sound%20Craft.svg\nFire Alarm|Ravel::/seed/subhadra/ourbrands/design-execution-maintenance/Ravel.png;Honeywell::/seed/subhadra/ourbrands/design-execution-maintenance/hon-honeywell-technologies-logo-full-horizontal.svg;Agni::/seed/subhadra/ourbrands/design-execution-maintenance/Agni.jpg;Bosch::/seed/subhadra/ourbrands/design-execution-maintenance/Bosch.jpg\nProfessional Audio|JBL::/seed/subhadra/ourbrands/design-execution-maintenance/JBL.png;Bose::/seed/subhadra/ourbrands/design-execution-maintenance/bose-logo.jpg;Electro-Voice::/seed/subhadra/ourbrands/design-execution-maintenance/Electro-Voice.png;QSC::/seed/subhadra/ourbrands/design-execution-maintenance/qsc.png\nNetwork Solutions|TP-Link::/seed/subhadra/ourbrands/design-execution-maintenance/TP-Link-Logo.wine.svg;Grandstream::/seed/subhadra/ourbrands/design-execution-maintenance/logo-grandstream-low-web.webp;Netgear::/seed/subhadra/ourbrands/design-execution-maintenance/Net%20Gare%20brand-logo.svg;Netfox::/seed/subhadra/ourbrands/design-execution-maintenance/Netfox-logo-WO-TM.png;D-Link::/seed/subhadra/ourbrands/design-execution-maintenance/D-link.svg;Syrotech::/seed/subhadra/ourbrands/design-execution-maintenance/Syro%20Tech.png;Honeywell::/seed/subhadra/ourbrands/design-execution-maintenance/hon-honeywell-technologies-logo-full-horizontal.svg",
+      "tab2Groups": "Fans|Crompton::/seed/subhadra/ourbrands/electrical-products/Crompton.avif\nDesigner Fans|WadBros::/seed/subhadra/ourbrands/electrical-products/Wadbros.png\nExhaust Fans|WadBros::/seed/subhadra/ourbrands/electrical-products/Wadbros.png\nWires|RR Kabel::/seed/subhadra/ourbrands/electrical-products/RRKabel.jpg\nFresh Air System|WadBros::/seed/subhadra/ourbrands/electrical-products/Wadbros.png\nMCB, DB & Switchgear|Schneider Electric::/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png\nLighting|Futura::/seed/subhadra/ourbrands/electrical-products/Futura%20-1.svg;Wipro::/seed/subhadra/ourbrands/electrical-products/Wipro.png;Crompton::/seed/subhadra/ourbrands/electrical-products/Crompton.avif;Philips::/seed/subhadra/ourbrands/electrical-products/lighting-philips-logo.jpg\nSwitches|Schneider Electric::/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png;Norisys::/seed/subhadra/ourbrands/electrical-products/Norisys.png;Legrand::/seed/subhadra/ourbrands/electrical-products/Legrand-Logo.png\nPanel Boards|Customized\nGenerators|Cummins::/seed/subhadra/ourbrands/electrical-products/Cunnins.png;Jackson::/seed/subhadra/ourbrands/electrical-products/Jakson.png;Mahindra::/seed/subhadra/ourbrands/electrical-products/Mahindra.png\nLoad Break Switch|Transgard::/seed/subhadra/ourbrands/electrical-products/Transguard-Logo-white.png;Megawin::/seed/subhadra/ourbrands/electrical-products/Megawin.jpg\nServo Stabilizer|Powertex::/seed/subhadra/ourbrands/electrical-products/Power%20Tex.jpg;Servomax::/seed/subhadra/ourbrands/electrical-products/Servomax-logo-2048x471.webp\nUPS|APC::/seed/subhadra/ourbrands/electrical-products/LogoAPC.svg;Fuji Electric::/seed/subhadra/ourbrands/electrical-products/Fuji-Electric-Logo.jpg",
+      "tab3Groups": "Gate Automation|Beninca::/seed/subhadra/ourbrands/lifestyle-residential-products/beninca-logo.png;Veer::/seed/subhadra/ourbrands/lifestyle-residential-products/veer-logo-.png\nVideo Door Phone|One Touch::/seed/subhadra/ourbrands/lifestyle-residential-products/One%20Touch_logo.svg;Legrand Bticino::/seed/subhadra/ourbrands/lifestyle-residential-products/BTicino-IME.jpg\nSmart Lock|Yale::/seed/subhadra/ourbrands/lifestyle-residential-products/yale_logo.avif;Onetouch::/seed/subhadra/ourbrands/lifestyle-residential-products/One%20Touch_logo.svg;Ezviz::/seed/subhadra/ourbrands/lifestyle-residential-products/ezviz-logo_.png\nHome Automation — Retrofit|Schneider Electric::/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png;Legrand::/seed/subhadra/ourbrands/electrical-products/Legrand-Logo.png;Toyama::/seed/subhadra/ourbrands/lifestyle-residential-products/Toyama%20logo-768.webp\nHome Automation — Centralized|Schneider Electric::/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png;Legrand::/seed/subhadra/ourbrands/electrical-products/Legrand-Logo.png;Moorgen::/seed/subhadra/ourbrands/lifestyle-residential-products/Moorgen.jpg;Eelectron::/seed/subhadra/ourbrands/lifestyle-residential-products/eelectron.png\nIntrusion Alarm|Ajax::/seed/subhadra/ourbrands/lifestyle-residential-products/Ajax%20logo.jpg;Texecom::/seed/subhadra/ourbrands/lifestyle-residential-products/Texecom.png\nMulti-Room Audio|Xscase::/seed/subhadra/ourbrands/lifestyle-residential-products/Xscase.png;Sonos::/seed/subhadra/ourbrands/lifestyle-residential-products/Sonos.png;RTI::/seed/subhadra/ourbrands/lifestyle-residential-products/RTI.png;Lithe Audio\nLiving Room Audio|Devialet::/seed/subhadra/ourbrands/lifestyle-residential-products/devialet-logo.png;Sonos::/seed/subhadra/ourbrands/lifestyle-residential-products/Sonos.png\nHome Theater — Amplifiers|Denon::/seed/subhadra/ourbrands/lifestyle-residential-products/Denon%20logo.svg;Marantz::/seed/subhadra/ourbrands/lifestyle-residential-products/Marantz%20logo.svg;JBL::/seed/subhadra/ourbrands/lifestyle-residential-products/jbl-logo.svg;Integra::/seed/subhadra/ourbrands/lifestyle-residential-products/Integra-Logo-White.svg;Onkyo::/seed/subhadra/ourbrands/lifestyle-residential-products/Logo%20-%20Onkyo%20Med%20Wht.svg;Emotiva::/seed/subhadra/ourbrands/lifestyle-residential-products/emotiva%401x.svg\nHome Theater — Speakers|Focal::/seed/subhadra/ourbrands/lifestyle-residential-products/focal-logo.png;M&K Sound::/seed/subhadra/ourbrands/lifestyle-residential-products/M%26K%20Sound%20logo.png;Artcoustic::/seed/subhadra/ourbrands/lifestyle-residential-products/Artcoustic-logo.webp;JBL::/seed/subhadra/ourbrands/lifestyle-residential-products/jbl-logo.svg;Klipsch::/seed/subhadra/ourbrands/lifestyle-residential-products/Klipsch_script_logo.svg;KEF::/seed/subhadra/ourbrands/lifestyle-residential-products/Kef%20logo.png;Polk::/seed/subhadra/ourbrands/lifestyle-residential-products/Polk-logo.webp;Dali::/seed/subhadra/ourbrands/lifestyle-residential-products/Dali.png\nHome Theater — Subwoofers|Ascendo::/seed/subhadra/ourbrands/lifestyle-residential-products/Acendo%20Sub%20logo.jpeg;SVS::/seed/subhadra/ourbrands/lifestyle-residential-products/SVS%20sub%20logo.png\nHome Theater — Projectors|Optoma::/seed/subhadra/ourbrands/lifestyle-residential-products/Optoma%20logo.jpeg;Sony::/seed/subhadra/ourbrands/lifestyle-residential-products/Sony%20logo.png;JVC::/seed/subhadra/ourbrands/lifestyle-residential-products/jvc_logo.svg;BenQ::/seed/subhadra/ourbrands/lifestyle-residential-products/benq-logo.png;Epson::/seed/subhadra/ourbrands/lifestyle-residential-products/Epson%20logo.png\nHome Theater — Screens|Euroscreen::/seed/subhadra/ourbrands/lifestyle-residential-products/Eurros%20Screen.svg;Liberty Screen::/seed/subhadra/ourbrands/lifestyle-residential-products/Liberty%20-logo.gif;Elite Screen::/seed/subhadra/ourbrands/lifestyle-residential-products/Elite%20screen.jpeg;VU-Tech Screen\nHeat Pump|A. O. Smith::/seed/subhadra/ourbrands/lifestyle-residential-products/Ao%20smith.jpeg",
+      "sectionTitle": "Backed by the names you already trust",
+      "sectionSubtitle": "Every discipline is built on certified, industry-leading brands — sourced, installed and serviced by our own engineers."
+    }
+  },
+  {
+    "type": "ConstructionProjectGallery",
+    "props": {
+      "id": "ConstructionProjectGallery-77a9cdfc-c8c1-48ac-b29f-eaa5d271a3a6",
+      "items": [
+        {
+          "href": "#showrooms",
+          "image": "/seed/subhadra/sectors/showrooms.jpg",
+          "title": "Showrooms",
+          "category": "",
+          "numberTag": "01",
+          "description": "Cooling, lighting and access control for retail floors."
+        },
+        {
+          "href": "#hotel",
+          "image": "/seed/subhadra/case-studies/novotel.jpg",
+          "title": "Hotel",
+          "category": "",
+          "numberTag": "02",
+          "description": "Guest-room comfort that runs all day, every day."
+        },
+        {
+          "href": "#hospital",
+          "image": "https://images.unsplash.com/photo-1626315869436-d6781ba69d6e?w=600&h=800&fit=crop&q=75&auto=format",
+          "title": "Hospital",
+          "category": "",
+          "numberTag": "03",
+          "description": "Critical-area AC, fire safety and power backup, built to compliance."
+        },
+        {
+          "href": "#convention-center",
+          "image": "/seed/subhadra/sectors/convention-center.jpg",
+          "title": "Convention Center",
+          "category": "",
+          "numberTag": "04",
+          "description": "High-load cooling and professional audio."
+        },
+        {
+          "href": "#industry",
+          "image": "/seed/subhadra/sectors/industry.jpg",
+          "title": "Industry",
+          "category": "",
+          "numberTag": "05",
+          "description": "Transformers, switchgear and plant maintenance."
+        },
+        {
+          "href": "#educational-institute",
+          "image": "/seed/subhadra/sectors/educational-institute.jpg",
+          "title": "Education",
+          "category": "",
+          "numberTag": "06",
+          "description": "Campus electrical, networking and safety."
+        },
+        {
+          "href": "#government",
+          "image": "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=600&h=800&fit=crop&q=75&auto=format",
+          "title": "Government",
+          "category": "",
+          "numberTag": "07",
+          "description": "Compliant electrical, safety and power backup for public buildings."
+        },
+        {
+          "href": "#builder",
+          "image": "/seed/subhadra/sectors/builder.jpg",
+          "title": "Builder",
+          "category": "",
+          "numberTag": "08",
+          "description": "Turnkey MEP packages, block after block, on schedule."
+        },
+        {
+          "href": "#villa",
+          "image": "/seed/subhadra/sectors/villa.jpg",
+          "title": "Villa",
+          "category": "",
+          "numberTag": "09",
+          "description": "Comfort, control and cinema for private residences."
+        },
+        {
+          "href": "#premium-flats",
+          "image": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=800&fit=crop&q=75&auto=format",
+          "title": "Premium Flats",
+          "category": "",
+          "numberTag": "10",
+          "description": "Snag-free AC, electrical and automation fit-outs for apartments."
+        },
+        {
+          "href": "#gated-communities",
+          "image": "https://images.unsplash.com/photo-1580216643062-cf460548a66a?w=600&h=800&fit=crop&q=75&auto=format",
+          "title": "Gated Communities",
+          "category": "",
+          "numberTag": "11",
+          "description": "Gate automation, security and electrical for entire townships."
+        }
+      ],
+      "padding": "md",
+      "sectionTitle": "Solutions for every space",
+      "sectionSubtitle": "From showrooms to hotels, hospitals, industrial plants, campuses, villas, premium flats and gated communities — scroll to explore."
+    }
+  },
+  {
+    "type": "ConstructionProjectsSlider",
+    "props": {
+      "id": "ConstructionProjectsSlider-e2db3a16-e8fa-4313-9d46-668e181aece0",
+      "slides": [
+        {
+          "tags": "Central & Split AC, Home Automation, Home Theater, CCTV",
+          "image": "/seed/subhadra/sectors/villa.jpg",
+          "title": "The Amara Residency",
+          "ctaHref": "#quote",
+          "eyebrow": "09 · Residential",
+          "ctaLabel": "Get a Similar Quote →",
+          "linkHref": "#villa",
+          "linkLabel": "Read the full project scope →",
+          "description": "Private residences deserve comfort that stays out of sight until you need it. We size central or split AC room-by-room, wire the home from day one, and layer in automation, home theater, multi-room audio and CCTV — all on one interface, backed by one service team for the life of the home."
+        },
+        {
+          "tags": "Central AC, Electrical & Switchgear, Fire & Life Safety, Guest Room Automation, Power Backup",
+          "image": "/seed/subhadra/case-studies/novotel.jpg",
+          "title": "Novotel Visakhapatnam",
+          "ctaHref": "#quote",
+          "eyebrow": "02 · Hotel",
+          "ctaLabel": "Get a Similar Quote →",
+          "linkHref": "#hotel",
+          "linkLabel": "Read the full project scope →",
+          "description": "Advanced HVAC and automation solutions designed and delivered by Subhadra Group for a premium guest experience at Novotel Visakhapatnam — central AC across guest rooms and the banquet hall, electrical and switchgear, fire and life safety, guest-room automation and diesel power backup, all as one coordinated scope, by one team."
+        },
+        {
+          "tags": "Central & VRF AC, LED Display Lighting, CCTV & Face Recognition, Fire Alarm & Fighting",
+          "image": "/seed/subhadra/sectors/showrooms.jpg",
+          "title": "CMR Family Shopping Mall",
+          "ctaHref": "#quote",
+          "eyebrow": "01 · Retail",
+          "ctaLabel": "Get a Similar Quote →",
+          "linkHref": "#showrooms",
+          "linkLabel": "Read the full project scope →",
+          "description": "A showroom floor lives or dies on how it feels the moment someone walks in. We size central and VRF AC to footfall and display heat load, fit LED lighting tuned for retail, and layer in CCTV, PA and fire safety — built into the fit-out from day one, not added after."
+        }
+      ],
+      "padding": "md",
+      "sectionTitle": "Real projects, every sector",
+      "sectionEyebrow": "Subhadra Group"
+    }
+  },
+  {
+    "type": "ConstructionProductsShowcase",
+    "props": {
+      "id": "ConstructionProductsShowcase-d210ee97-f593-4f81-9316-9d7e2ea74d9c",
+      "items": [
+        {
+          "icon": "hardhat",
+          "image": "https://images.unsplash.com/photo-1623707430101-9e74cefe05e2?w=700&h=525&fit=crop&q=75&auto=format",
+          "title": "Switches & wiring devices",
+          "brands": "Schneider Electric · Norisys",
+          "category": "Electrical",
+          "description": "Livia, Zencelo, Unica Pure, Clipsal X, Avatar On, Cube Series."
+        },
+        {
+          "icon": "shield",
+          "image": "https://images.unsplash.com/photo-1753272691001-4d68806ac590?w=700&h=525&fit=crop&q=75&auto=format",
+          "title": "MCB, DB & switchgear",
+          "brands": "Schneider Electric",
+          "category": "Electrical",
+          "description": "Distribution boards, MCB/MCCB, ACB and panel boards."
+        },
+        {
+          "icon": "star",
+          "image": "https://images.unsplash.com/photo-1718203862467-c33159fdc504?w=700&h=525&fit=crop&q=75&auto=format",
+          "title": "Central & VRF AC",
+          "brands": "Blue Star",
+          "category": "Climate & refrigeration",
+          "description": "Centralized AC, chillers, VRF and cassette units for offices, hotels and retail."
+        },
+        {
+          "icon": "hardhat",
+          "image": "https://images.unsplash.com/photo-1564998115952-368e7d4969ea?w=700&h=525&fit=crop&q=75&auto=format",
+          "title": "Refrigeration",
+          "brands": "Blue Star",
+          "category": "Climate & refrigeration",
+          "description": "Visi coolers, deep freezers, water coolers and ice-cube machines."
+        },
+        {
+          "icon": "shield",
+          "image": "https://images.unsplash.com/photo-1643123182527-3bd30840e7ed?w=700&h=525&fit=crop&q=75&auto=format",
+          "title": "CCTV",
+          "brands": "CP Plus · Honeywell · Matrix",
+          "category": "Safety & systems",
+          "description": "Dome, bullet, PTZ, number-plate and face-recognition cameras."
+        },
+        {
+          "icon": "star",
+          "image": "https://images.unsplash.com/photo-1508817172652-4be4be2795cb?w=700&h=525&fit=crop&q=75&auto=format",
+          "title": "Fire alarm & fighting",
+          "brands": "Honeywell · Minimax · Tyco",
+          "category": "Safety & systems",
+          "description": "Panels, detectors, sprinklers, booster pumps and extinguishers."
+        },
+        {
+          "icon": "hardhat",
+          "image": "/seed/subhadra/products/home-automation.jpg",
+          "title": "Home automation",
+          "brands": "Schneider · Toyama · Bticino",
+          "category": "Automation",
+          "description": "Retrofit and centralized control of lighting, curtains and AC."
+        },
+        {
+          "icon": "shield",
+          "image": "https://images.unsplash.com/photo-1773867567872-3ad1fa481082?w=700&h=525&fit=crop&q=75&auto=format",
+          "title": "Home theater",
+          "brands": "Focal · Sony · Denon",
+          "category": "Automation",
+          "description": "Dolby Atmos rooms, 4K projection, acoustic design and multiroom audio."
+        },
+        {
+          "icon": "star",
+          "image": "https://images.unsplash.com/photo-1775714351784-51e93e4c12a7?w=700&h=525&fit=crop&q=75&auto=format",
+          "title": "Cables & wires",
+          "brands": "Polycab · RR Kabel",
+          "category": "Electrical",
+          "description": "Flexible LT/HT cables and FR/FR-LSH/LSOH house wiring, all sizes."
+        },
+        {
+          "icon": "hardhat",
+          "image": "https://images.unsplash.com/photo-1780445392484-38a4852a1fd8?w=700&h=525&fit=crop&q=75&auto=format",
+          "title": "Generators & UPS",
+          "brands": "Cummins · APC",
+          "category": "Electrical",
+          "description": "15 KVA to 3750 KVA silent diesel generators, online UPS from 1 KVA."
+        },
+        {
+          "icon": "shield",
+          "image": "https://images.unsplash.com/photo-1758448755856-01d3add0177b?w=700&h=525&fit=crop&q=75&auto=format",
+          "title": "Lights",
+          "brands": "Wipro · Crompton · Halonix",
+          "category": "Electrical",
+          "description": "COB spots, panels, street and flood lighting."
+        },
+        {
+          "icon": "star",
+          "image": "https://images.unsplash.com/photo-1698653223542-3319103c425b?w=700&h=525&fit=crop&q=75&auto=format",
+          "title": "Fans & ventilation",
+          "brands": "Crompton · WadBros",
+          "category": "Electrical",
+          "description": "Designer ceiling fans, ventilation and fresh-air fans."
+        },
+        {
+          "icon": "hardhat",
+          "image": "https://images.unsplash.com/photo-1585079374502-415f8516dcc3?w=700&h=525&fit=crop&q=75&auto=format",
+          "title": "Access control",
+          "brands": "Matrix",
+          "category": "Safety & systems",
+          "description": "Biometric & proximity access, attendance systems."
+        },
+        {
+          "icon": "shield",
+          "image": "https://images.unsplash.com/photo-1630965764686-159c575031b3?w=700&h=525&fit=crop&q=75&auto=format",
+          "title": "PA system",
+          "brands": "Ahuja · Honeywell · Bosch",
+          "category": "Safety & systems",
+          "description": "Public address for showrooms, malls, hotels, hospitals and industries."
+        },
+        {
+          "icon": "star",
+          "image": "https://images.unsplash.com/photo-1682559736721-c2e77ff4c650?w=700&h=525&fit=crop&q=75&auto=format",
+          "title": "Networking solutions",
+          "brands": "Matrix",
+          "category": "Automation",
+          "description": "Structured cabling, switches and enterprise Wi-Fi for offices and campuses."
+        }
+      ],
+      "padding": "md",
+      "background": "white",
+      "sectionTitle": "Everything for your building, in stock",
+      "category1Label": "Electrical",
+      "category2Label": "Climate & refrigeration",
+      "category3Label": "Safety & systems",
+      "category4Label": "Automation",
+      "sectionEyebrow": "In our showroom",
+      "sectionSubtitle": "We deal only in world-class brands that are pioneers in their fields — Schneider Electric, Blue Star, Polycab, RR Kabel, Crompton, Cummins and more."
+    }
+  },
+  {
+    "type": "ConstructionClientsGrid",
+    "props": {
+      "id": "ConstructionClientsGrid-a48453c1-34b0-4f89-af2a-a66743a35af2",
+      "items": [
+        {
+          "logo": "/seed/subhadra/clients/client-01.png",
+          "name": "Marriott"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-02.png",
+          "name": "Novotel Hotels"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-03.png",
+          "name": "Best Western"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-04.png",
+          "name": "Fortune — Member ITC's Hotel Group"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-05.png",
+          "name": "Radisson Blu"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-06.png",
+          "name": "ABC Hospitals"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-07.png",
+          "name": "Medicover"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-08.png",
+          "name": "Apollo Hospitals"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-09.png",
+          "name": "Lotus Multispeciality Hospital"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-10.png",
+          "name": "Ikya Hospital"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-11.png",
+          "name": "Vaibhav Jewellers"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-12.png",
+          "name": "Lifestyle"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-13.png",
+          "name": "Kankatala"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-14.png",
+          "name": "South India Shopping Mall"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-15.png",
+          "name": "KLM Fashion Mall"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-16.png",
+          "name": "Lucky Shopping Mall"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-17.png",
+          "name": "Kalamandir"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-18.png",
+          "name": "SR Shopping Mall"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-19.png",
+          "name": "Bothra Group"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-20.png",
+          "name": "Visakha Dairy"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-21.png",
+          "name": "Varun Group"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-22.png",
+          "name": "Lakshmi Group"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-23.png",
+          "name": "PVR"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-24.png",
+          "name": "Cinépolis"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-25.png",
+          "name": "Vizag Steel (RINL)"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-26.png",
+          "name": "ANITS"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-27.png",
+          "name": "GITAM"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-28.png",
+          "name": "Vizag Conventions"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-29.png",
+          "name": "Chenna's The Convention"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-30.png",
+          "name": "A1 Grand — The Convention"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-31.png",
+          "name": "Laurus Labs"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-32.png",
+          "name": "Asian Paints"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-33.png",
+          "name": "Yokohama"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-34.png",
+          "name": "NCL Group"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-35.png",
+          "name": "GVMC"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-36.png",
+          "name": "Visakhapatnam Port Authority"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-37.png",
+          "name": "Lansum Properties LLP"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-38.png",
+          "name": "MK Builders & Developers"
+        },
+        {
+          "logo": "/seed/subhadra/clients/client-39.png",
+          "name": "FAME Realty"
+        }
+      ],
+      "padding": "md",
+      "background": "muted",
+      "sectionTitle": "Trusted by businesses & institutions",
+      "sectionEyebrow": "Our Clients",
+      "sectionSubtitle": "From retail malls to hospitality and healthcare — brands across Andhra Pradesh trust us to keep their buildings running."
+    }
+  },
+  {
+    "type": "ConstructionTestimonialsSlider",
+    "props": {
+      "id": "ConstructionTestimonialsSlider-e5fe985e-4ff0-4dcc-a7a6-897335035b52",
+      "slides": [
+        {
+          "name": "Operations Manager",
+          "role": "Hospitality group, Visakhapatnam",
+          "photo": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=440&h=550&fit=crop&crop=faces&q=80&auto=format",
+          "quote": "One team handled our entire HVAC and electrical fit-out — no coordination headaches between contractors, and the AMC support since handover has been excellent.",
+          "videoLabel": "Video Testimonial"
+        },
+        {
+          "name": "Facilities Head",
+          "role": "Healthcare facility, Andhra Pradesh",
+          "photo": "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=440&h=550&fit=crop&crop=faces&q=80&auto=format",
+          "quote": "Critical-area AC and fire safety were sized and installed to code without a single delay to our opening date. Their service manager still checks in every quarter.",
+          "videoLabel": "Video Testimonial"
+        },
+        {
+          "name": "Retail Operations Lead",
+          "role": "Shopping mall, Visakhapatnam",
+          "photo": "https://images.unsplash.com/photo-1607746882042-944635dfe10e?w=440&h=550&fit=crop&crop=faces&q=80&auto=format",
+          "quote": "We compared three vendors for our showroom's cooling and CCTV — Subhadra Group was the only one that could design, supply and install everything themselves.",
+          "videoLabel": "Video Testimonial"
+        }
+      ],
+      "padding": "md",
+      "background": "white",
+      "sectionTitle": "What our clients say",
+      "sectionEyebrow": "Happy clients"
+    }
+  },
+  {
+    "type": "ConstructionLeadFormFAQ",
+    "props": {
+      "id": "ConstructionLeadFormFAQ-8e6ce967-3505-418d-901e-c4949cc63a9c",
+      "faqs": [
+        {
+          "answer": "We're based in Visakhapatnam, but our engineering teams design, install and maintain systems for clients across Andhra Pradesh — including plants, hospitals and retail groups outside the city.",
+          "question": "Do you only work in Visakhapatnam, or across Andhra Pradesh?"
+        },
+        {
+          "answer": "Share your requirement through the quote form on this page or visit our showroom — our engineers typically respond with a sized solution and quote within 24 hours.",
+          "question": "How fast can I get a quote?"
+        },
+        {
+          "answer": "Both, always. Every product we stock is designed, supplied, installed and maintained by our own trained engineers — never subcontracted — with a dedicated service manager for ongoing support.",
+          "question": "Do you only sell products, or also install and maintain them?"
+        },
+        {
+          "answer": "Only world-class, pioneer brands in each category — Schneider Electric, Blue Star, Polycab, RR Kabel, Crompton, Cummins, Honeywell and more — so spares and service are never a problem.",
+          "question": "What brands do you deal in?"
+        },
+        {
+          "answer": "Yes — walk into our Visakhapatnam showroom to compare products on the shelf before you decide, or have our engineers visit your site directly for a free assessment.",
+          "question": "Can I see products in person before buying?"
+        },
+        {
+          "answer": "24×7 support with a dedicated service manager for every discipline we install in — from AMC contracts to emergency call-outs.",
+          "question": "What kind of after-sales support do you offer?"
+        }
+      ],
+      "padding": "md",
+      "ctaLabel": "Get My Free Quote →",
+      "formHeading": "Request a free quote",
+      "formSubtext": "Fill this in and we'll call you back.",
+      "sectionTitle": "Questions, answered",
+      "sectionEyebrow": "FAQ",
+      "formPrivacyNote": "We'll only use these details to respond to your enquiry.",
+      "interestOptions": "Central AC\nHome Automation\nHome Theater\nCCTV & Security\nFire Safety\nElectrical\nSomething else",
+      "sectionIntroLinkHref": "#quote",
+      "sectionIntroLinkLabel": "Get in touch"
+    }
+  },
+  {
+    "type": "TaglineStrip",
+    "props": {
+      "id": "TaglineStrip-7b05e4c9-4118-474e-8f23-e1d34308efa6",
+      "brand": "Subhadra Group",
+      "ctaHref": "#",
+      "logoUrl": "/seed/subhadra/brand/logo.png",
+      "subtext": "Design · Installation · Service · Maintenance",
+      "variant": "2",
+      "ctaLabel": "",
+      "headline": "Your one-stop solution for building engineering products & services.",
+      "accentColor": "#ff9a3c",
+      "primaryColor": "#ff4d1c",
+      "highlightPhrase": "one-stop solution"
+    }
+  }
+]

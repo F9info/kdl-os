@@ -75,5 +75,27 @@ export async function seedCatalogItems(prisma, projectId, actorId) {
       data: { data: await starterPageContent(rep) },
     });
   }
+
+  // Design variants matching the approved product-page look (square orange
+  // icon tiles, tall-photo "why" split, shadow step cards). Only fills a
+  // variant that was never chosen, so an admin's own design pick stays.
+  const tpl = await prisma.detailPageTemplate.findUnique({
+    where: { project_id_type_key: { project_id: projectId, type_key: 'catalog' } },
+  });
+  if (tpl) {
+    const data = structuredClone(tpl.data);
+    let changed = false;
+    for (const b of data.content ?? []) {
+      if (
+        ['ConstructionIconFeatureGrid', 'ConstructionApproachSplit', 'ConstructionProcessSteps'].includes(b.type) &&
+        b.props.variant === undefined
+      ) {
+        b.props.variant = '2';
+        if (b.type === 'ConstructionApproachSplit') b.props.background = 'white';
+        changed = true;
+      }
+    }
+    if (changed) await prisma.detailPageTemplate.update({ where: { id: tpl.id }, data: { data } });
+  }
   return created;
 }

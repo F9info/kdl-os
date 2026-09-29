@@ -1,0 +1,58 @@
+{
+  "projectId": "cmt15bmts000401s6fn5ydhzp",
+  "pages": {
+    "central-ac": {
+      "banner": { "eyebrow": "Our Work", "headline": "Cool comfort, engineered precisely.", "currentLabel": "Central AC" },
+      "gallery": { "sectionEyebrow": "Central AC", "sectionTitle": "Trusted With Central AC Across Andhra Pradesh", "sectionSubtitle": "" },
+      "brandsTitle": "Brands",
+      "brands": [{ "src": "/seed/subhadra/ourbrands/design-execution-maintenance/Blue_Star_primary_logo.png" }]
+    },
+    "home-automation": {
+      "banner": { "eyebrow": "Our Work", "headline": "Smart homes, engineered as one.", "currentLabel": "Home Automation" },
+      "stub": { "headline": "Project gallery coming soon", "subtext": "We're putting together real project photos, specs and client stories for our home automation installations. Meanwhile, tell us about your project and we'll walk you through similar work we've completed." },
+      "brandsTitle": "Certified brands behind this service",
+      "brands": [
+        { "src": "/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png" },
+        { "src": "/seed/subhadra/ourbrands/lifestyle-residential-products/BTicino-IME.jpg" },
+        { "src": "/seed/subhadra/ourbrands/lifestyle-residential-products/RTI.png" },
+        { "src": "/seed/subhadra/ourbrands/lifestyle-residential-products/Toyama logo-768.webp" },
+        { "src": "/seed/subhadra/ourbrands/lifestyle-residential-products/eelectron.png" }
+      ]
+    },
+    "home-theater": {
+      "banner": { "eyebrow": "Our Work", "headline": "Home theaters, engineered for sound.", "currentLabel": "Home Theater" },
+      "stub": { "headline": "Project gallery coming soon", "subtext": "We're putting together real project photos, specs and client stories for our home theater installations. Meanwhile, tell us about your project and we'll walk you through similar work we've completed." },
+      "brandsTitle": "Certified brands behind this service",
+      "brands": [
+        { "src": "/seed/subhadra/ourbrands/lifestyle-residential-products/M%26K Sound logo.png" },
+        { "src": "/seed/subhadra/ourbrands/lifestyle-residential-products/focal-logo.png" },
+        { "src": "/seed/subhadra/ourbrands/lifestyle-residential-products/Sony logo.png" },
+        { "src": "/seed/subhadra/ourbrands/lifestyle-residential-products/Optoma logo.jpeg" },
+        { "src": "/seed/subhadra/ourbrands/lifestyle-residential-products/SVS sub logo.png" },
+        { "src": "/seed/subhadra/ourbrands/lifestyle-residential-products/Marantz logo.svg" }
+      ]
+    },
+    "premium-lighting": {
+      "banner": { "eyebrow": "Our Work", "headline": "Premium lighting, engineered to impress.", "currentLabel": "Premium Lighting" },
+      "stub": { "headline": "Project gallery coming soon", "subtext": "We're putting together real project photos, specs and client stories for our premium lighting installations. Meanwhile, tell us about your project and we'll walk you through similar work we've completed." },
+      "brandsTitle": "Certified brands behind this service",
+      "brands": [
+        { "src": "/seed/subhadra/ourbrands/electrical-products/Futura -1.svg" },
+        { "src": "/seed/subhadra/ourbrands/electrical-products/Wipro.png" }
+      ]
+    },
+    "safety-security": {
+      "banner": { "eyebrow": "Our Work", "headline": "Safety and security systems, engineered to protect.", "currentLabel": "Safety & Security" },
+      "stub": { "headline": "Project gallery coming soon", "subtext": "We're putting together real project photos, specs and client stories for our safety and security installations. Meanwhile, tell us about your project and we'll walk you through similar work we've completed." },
+      "brandsTitle": "Certified brands behind this service",
+      "brands": [
+        { "src": "/seed/subhadra/ourbrands/design-execution-maintenance/CP Plus.jpg" },
+        { "src": "/seed/subhadra/ourbrands/design-execution-maintenance/Honeywell CCTV.jpg" },
+        { "src": "/seed/subhadra/ourbrands/design-execution-maintenance/Ravel.png" },
+        { "src": "/seed/subhadra/ourbrands/design-execution-maintenance/Bosch.jpg" },
+        { "src": "/seed/subhadra/ourbrands/lifestyle-residential-products/Ajax logo.jpg" },
+        { "src": "/seed/subhadra/ourbrands/design-execution-maintenance/Matrix.jpg" }
+      ]
+    }
+  }
+}
