@@ -30,6 +30,7 @@ import { withCreditHold } from '../credits/service.js';
 import { aiServicesConfigured, requestBrandInference } from './ai-client.js';
 import { buildGuidelinesPdf } from './guidelines.js';
 import { setGlobalLogo } from '../setting-fields/service.js';
+import { enqueueSiteBuild } from '../template-engine/site/queue.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -336,6 +337,7 @@ export const extractPaletteForKit = async (projectId) => {
     },
   });
 
+  enqueueSiteBuild(projectId);
   return updated;
 };
 
@@ -464,6 +466,7 @@ export const inferBrandKit = async (
     },
   });
 
+  enqueueSiteBuild(projectId);
   return updated;
 };
 
@@ -489,6 +492,7 @@ export const patchKit = async (projectId, overrides) => {
     data: { ...safeData, overridden_fields: overriddenFields },
   });
 
+  enqueueSiteBuild(projectId);
   return updated;
 };
 
@@ -522,6 +526,7 @@ export const approveKit = async (projectId, { acknowledgedAdjustmentIds = [] } =
     },
   });
 
+  enqueueSiteBuild(projectId);
   return updated;
 };
 

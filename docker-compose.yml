@@ -105,7 +105,18 @@ services:
     build: ./backend
     restart: unless-stopped
     env_file: .env
+    volumes:
+      # Generated per-project Next.js apps (template-engine site generator).
+      - ./frontend/projects:/app/generated-sites
+      # Admin frontend source, read-only: the generator copies the page-builder
+      # code (import closure) into each generated site so both render alike.
+      - ./frontend/src:/app/frontend-src/src:ro
+      - ./frontend/package.json:/app/frontend-src/package.json:ro
+      - ./frontend/tailwind.config.ts:/app/frontend-src/tailwind.config.ts:ro
+      - ./frontend/postcss.config.js:/app/frontend-src/postcss.config.js:ro
     environment:
+      SITES_DIR: /app/generated-sites
+      FRONTEND_SRC_DIR: /app/frontend-src
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       # Route all direct-SMTP email (password reset fallback etc.) to mailhog —
@@ -179,6 +190,27 @@ services:
       backend:
         condition: service_healthy
 
+  # Live preview of a generated project site (frontend/projects/<slug>) — the
+  # "Frontend view" button in the Web app flow opens this. One project at a
+  # time: set SITE_SLUG in .env to switch. Waits until the folder is generated.
+  site-preview:
+    image: node:22-alpine
+    restart: unless-stopped
+    working_dir: /sites/${SITE_SLUG:-default}
+    volumes:
+      - ./frontend/projects:/sites
+      - site_preview_modules:/sites/${SITE_SLUG:-default}/node_modules
+    environment:
+      NEXT_PUBLIC_API_URL: /api
+      BACKEND_INTERNAL_URL: http://backend:4000
+      FRONTEND_INTERNAL_URL: http://frontend:3000
+      NEXT_PUBLIC_IMAGE_HOSTS: http:localhost:9002
+    command: >
+      sh -c "until [ -f package.json ]; do sleep 3; done;
+      npm install --no-audit --no-fund && npx next dev -p 3000"
+    ports:
+      - "127.0.0.1:3300:3000"
+
   ai-services:
     build: ./ai-services
     restart: unless-stopped
@@ -219,6 +251,7 @@ services:
         condition: service_healthy
 
 volumes:
+  site_preview_modules:
   pgdata:
   miniodata:
   meilidata:

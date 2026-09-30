@@ -2,11 +2,33 @@ import { successResponse, errorResponse } from '../../shared/utils/response.js';
 import { writeActivityAsync, getClientIp } from '../user-management/shared/activity-logger.js';
 import { resolvePermissions } from '../user-management/shared/permission-resolver.js';
 import * as service from './service.js';
+import { buildSite } from './site/generator.js';
 
 // Project scope (req.projectId) is injected by the requireProject shared middleware
 // (backend/src/middleware/project.js) on every route that reads X-Project-Id — see
 // routes.js.  That middleware validates project existence (404) and caller access (403)
 // against the projects module before this controller runs.
+
+// Creates (or refreshes) the project's generated Next.js app folder. After
+// this, enqueueSiteBuild keeps it in sync with admin edits.
+export const createSite = async (req, res, next) => {
+  try {
+    const result = await buildSite(req.projectId);
+    writeActivityAsync({
+      actor: req.user.id,
+      module: 'template-engine',
+      action: 'site_generated',
+      subject_type: 'Project',
+      subject_id: req.projectId,
+      description: `Generated site folder "${result.slug}" (${result.pages} pages)`,
+      properties: { projectId: req.projectId },
+      ip_address: getClientIp(req),
+    });
+    return successResponse(res, { slug: result.slug, pages: result.pages }, 201);
+  } catch (err) {
+    next(err);
+  }
+};
 
 export const createRun = async (req, res, next) => {
   try {

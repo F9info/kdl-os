@@ -4,6 +4,7 @@ import { getPaginationParams } from '../../shared/utils/pagination.js';
 import { uniqueSlug } from '../../shared/utils/slug.js';
 import * as storageService from '../../shared/services/storage.service.js';
 import { FILE_INPUT_TYPES } from '../../shared/constants/inputTypes.js';
+import { enqueueAllSiteBuilds } from '../template-engine/site/queue.js';
 
 const SORTABLE = ['field_name', 'created_at', 'sort'];
 const FIELD_INCLUDE = {
@@ -148,7 +149,10 @@ export const saveValues = async (typeId, values) => {
       })
     );
   }
-  if (updates.length) await prisma.$transaction(updates);
+  if (updates.length) {
+    await prisma.$transaction(updates);
+    enqueueAllSiteBuilds(); // brand profile / content fields feed every generated site
+  }
   return updates.length;
 };
 

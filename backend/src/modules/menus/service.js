@@ -1,6 +1,14 @@
 import { prisma } from '../../config/database.js';
+import { enqueueSiteBuild } from '../template-engine/site/queue.js';
 
 const MAX_DEPTH = 3;
+
+// A menu edit changes the generated site of the menu's project.
+const touchMenu = async (menuId) => {
+  if (!menuId) return;
+  const m = await prisma.menu.findUnique({ where: { id: menuId }, select: { project_id: true } });
+  enqueueSiteBuild(m?.project_id);
+};
 
 function buildTree(flatItems) {
   const byId = new Map(flatItems.map((i) => [i.id, { ...i, children: [] }]));
@@ -58,11 +66,14 @@ export const ensureMenu = async ({ project_id, key, name }) => {
 export const updateMenu = async (id, data) => {
   const { count } = await prisma.menu.updateMany({ where: { id }, data });
   if (count === 0) return null;
+  touchMenu(id);
   return getMenuById(id);
 };
 
 export const deleteMenu = async (id) => {
+  const project_id = (await prisma.menu.findUnique({ where: { id }, select: { project_id: true } }))?.project_id;
   const { count } = await prisma.menu.deleteMany({ where: { id } });
+  enqueueSiteBuild(project_id);
   return count > 0;
 };
 
@@ -95,7 +106,9 @@ export const createMenuItem = async (menuId, data) => {
       );
     }
   }
-  return prisma.menuItem.create({ data: { ...data, menu_id: menuId } });
+  const item = await prisma.menuItem.create({ data: { ...data, menu_id: menuId } });
+  touchMenu(menuId);
+  return item;
 };
 
 export const getMenuItemById = (id) => prisma.menuItem.findUnique({ where: { id } });
@@ -103,11 +116,15 @@ export const getMenuItemById = (id) => prisma.menuItem.findUnique({ where: { id 
 export const updateMenuItem = async (id, data) => {
   const { count } = await prisma.menuItem.updateMany({ where: { id }, data });
   if (count === 0) return null;
-  return getMenuItemById(id);
+  const item = await getMenuItemById(id);
+  touchMenu(item.menu_id);
+  return item;
 };
 
 export const deleteMenuItem = async (id) => {
+  const menuId = (await getMenuItemById(id))?.menu_id;
   const { count } = await prisma.menuItem.deleteMany({ where: { id } });
+  touchMenu(menuId);
   return count > 0;
 };
 
@@ -145,5 +162,6 @@ export const reorderMenuItems = async (menuId, items) => {
       })
     )
   );
+  touchMenu(menuId);
   return getMenuById(menuId);
 };

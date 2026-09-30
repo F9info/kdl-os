@@ -35,6 +35,7 @@ import { websiteLayoutStorageKey, mergeLayoutSelection } from '@/lib/website-lay
 import {
   useAdvanceStage,
   useBrandKit,
+  useCreateSite,
   usePatchTypography,
   useRetryStage,
   useSkipStage,
@@ -65,6 +66,49 @@ interface DetailPageType {
 // shown disabled — nothing to click through to yet.
 const BRAND_CARDS = [{ key: 'webapp', name: 'Web app' }] as const
 
+// Placeholder platform cards (text + button only, no flow yet) — each gets
+// wired one at a time as its flow is specified. "Web app" above is the live one.
+const PLATFORM_GROUPS: { label: string; note: string; items: string[] }[] = [
+  {
+    label: 'Web',
+    note: 'Responsive Web + WCAG',
+    items: ['Website', 'Landing Page', 'Admin Dashboard', 'Progressive Web App (PWA)'],
+  },
+  {
+    label: 'Mobile',
+    note: 'Material Design 3 / Apple HIG',
+    items: ['Android Native', 'iOS Native'],
+  },
+  {
+    label: 'Tablet',
+    note: 'MD3 / Apple HIG — large screens',
+    items: ['Android Tablet', 'iPad (iPadOS)'],
+  },
+  {
+    label: 'Desktop',
+    note: 'Multi-window + keyboard navigation',
+    items: ['Windows Desktop', 'macOS Desktop', 'Linux Desktop'],
+  },
+  {
+    label: 'TV',
+    note: '10-foot UI · remote / D-Pad focus',
+    items: [
+      'Android TV',
+      'Google TV',
+      'Apple TV (tvOS)',
+      'Samsung Smart TV (Tizen)',
+      'LG Smart TV (webOS)',
+      'Roku TV',
+      'Amazon Fire TV',
+    ],
+  },
+  {
+    label: 'Wearables',
+    note: 'Compact glanceable layouts',
+    items: ['Wear OS', 'watchOS (Apple Watch)', 'Samsung Galaxy Watch'],
+  },
+]
+
 // Curated starter sets matching the prototype's Web app Typography screen.
 const HEADING_FONTS = ['Poppins', 'Inter', 'Manrope', 'Space Grotesk']
 const BODY_FONTS = ['Inter', 'Roboto', 'Open Sans', 'Work Sans']
@@ -94,11 +138,19 @@ function writeLocal(key: string, value: unknown) {
   }
 }
 
+// Served by the compose `site-preview` service (generated project app).
+function sitePreviewUrl() {
+  return typeof window === 'undefined'
+    ? '#'
+    : `${window.location.protocol}//${window.location.hostname}:3300/`
+}
+
 export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'WEBSITE')
   const advance = useAdvanceStage(run.id, run.projectId)
   const retry = useRetryStage(run.id, run.projectId)
   const skip = useSkipStage(run.id, run.projectId)
+  const createSite = useCreateSite(run.projectId)
   const { data: brandKit } = useBrandKit(run.projectId)
   const patchTypography = usePatchTypography(run.projectId)
   const uiStateKey = `te-website-ui:${run.projectId}`
@@ -169,6 +221,9 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
     })
 
   function openWebApp() {
+    // Fire-and-continue: the folder is (re)generated in the background while
+    // the user moves on to Typography.
+    createSite.mutate()
     setOpenBrand('webapp')
     setWebAppStep('typography')
   }
@@ -231,18 +286,46 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
                 key={b.key}
                 type="button"
                 onClick={openWebApp}
-                className="rounded-lg border bg-card p-4 text-left transition-colors hover:bg-accent"
+                className="rounded-lg border-2 border-primary bg-primary/5 p-4 text-left transition-colors hover:bg-primary/10"
               >
                 <div className="text-sm font-semibold">{b.name}</div>
-                <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                  Open <ArrowRight className="h-3 w-3" />
+                <div className="mt-1 flex items-center gap-1 text-xs font-medium text-primary">
+                  Active · Open <ArrowRight className="h-3 w-3" />
                 </div>
               </button>
             ))}
           </div>
+          {PLATFORM_GROUPS.map((g) => (
+            <div key={g.label} className="space-y-2 pt-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {g.label} — <span className="font-normal normal-case">{g.note}</span>
+              </p>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {g.items.map((name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    className="rounded-lg border bg-card p-4 text-left transition-colors hover:bg-accent"
+                  >
+                    <div className="text-sm font-semibold">{name}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <div className="space-y-3">
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => window.open(sitePreviewUrl(), '_blank', 'noopener,noreferrer')}
+            >
+              <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+              Frontend view
+            </Button>
+          </div>
           {webAppStep === 'typography' ? (
             <Button
               type="button"
@@ -1672,11 +1755,12 @@ function NavigationStep({
             }
             onClick={() => toggleNoPage(node)}
             className={cn(
-              'flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full leading-none',
+              'flex h-4.5 shrink-0 items-center justify-center gap-1 rounded-full px-1.5 text-[10px] leading-none',
               node.no_page ? 'bg-white text-primary' : 'bg-white/25'
             )}
           >
             <Link2Off className="h-3 w-3" />
+            No page
           </button>
           <button
             type="button"
