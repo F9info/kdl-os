@@ -158,7 +158,15 @@ async function copyDir(src, dest) {
 export const frontendDir = () =>
   path.resolve(process.env.FRONTEND_SRC_DIR || path.join(process.cwd(), '..', 'frontend'));
 
-const ROOT_FILES = ['src/app/layout.tsx', 'src/app/admin/page-builder/puck.config.tsx'];
+// Root layout + Puck config, plus the admin's public detail routes (/work/<slug>,
+// /catalog/<slug>, /sectors/<slug>) that block links such as "See Our Work" point at.
+const ROOT_FILES = [
+  'src/app/layout.tsx',
+  'src/app/admin/page-builder/puck.config.tsx',
+  'src/app/work/[slug]/page.tsx',
+  'src/app/catalog/[slug]/page.tsx',
+  'src/app/sectors/[slug]/page.tsx',
+];
 const CONFIG_FILES = ['tailwind.config.ts', 'postcss.config.js'];
 const IMPORT_RE =
   /(?:import|export)\s+(?:[^'"()]*?\s+from\s+)?['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]\s*\)/g;
