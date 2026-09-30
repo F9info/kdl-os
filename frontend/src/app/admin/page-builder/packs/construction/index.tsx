@@ -2943,7 +2943,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               style={{ ['--hdr-accent' as string]: primaryColor || '#f5a623' }}
             >
               <div className="flex items-stretch">
-                <Link href="/" className="flex shrink-0 items-center px-4 py-3 md:px-8">
+                <Link
+                  href="/"
+                  suppressHydrationWarning
+                  className="flex shrink-0 items-center px-4 py-3 md:px-8"
+                >
                   {logoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={logoUrl} alt={brand} className="h-9 w-auto" />
@@ -3068,7 +3072,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               style={{ backgroundColor: barBg, color: barText }}
             >
               <div className="flex items-center justify-between px-4 py-3 md:px-8">
-                <Link href="/" className="flex items-center">
+                <Link href="/" suppressHydrationWarning className="flex items-center">
                   {logoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={logoUrl} alt={brand} className="h-14 w-auto" />
@@ -3136,7 +3140,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               style={{ ['--hdr-accent' as string]: primaryColor || '#f5a623' }}
             >
               <div className="flex flex-wrap items-center gap-4 px-4 py-3 md:px-8">
-                <Link href="/" className="flex shrink-0 items-center">
+                <Link href="/" suppressHydrationWarning className="flex shrink-0 items-center">
                   {logoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={logoUrl} alt={brand} className="h-14 w-auto" />
@@ -3271,7 +3275,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               style={{ ['--hdr-accent' as string]: primaryColor || '#f5a623' }}
             >
               <div className="flex items-center justify-between px-4 h-16 md:px-8">
-                <Link href="/" className={`flex items-center gap-2 font-bold ${brandTextClass}`}>
+                <Link
+                  href="/"
+                  suppressHydrationWarning
+                  className={`flex items-center gap-2 font-bold ${brandTextClass}`}
+                >
                   {logoUrl ? (
                     // Logo image already carries the brand name/mark — no
                     // separate text label next to it (was duplicating it).
