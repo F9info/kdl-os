@@ -110,10 +110,9 @@ services:
       - ./frontend/projects:/app/generated-sites
       # Admin frontend source, read-only: the generator copies the page-builder
       # code (import closure) into each generated site so both render alike.
-      - ./frontend/src:/app/frontend-src/src:ro
-      - ./frontend/package.json:/app/frontend-src/package.json:ro
-      - ./frontend/tailwind.config.ts:/app/frontend-src/tailwind.config.ts:ro
-      - ./frontend/postcss.config.js:/app/frontend-src/postcss.config.js:ro
+      # Whole directory (not single files): a single-file bind mount goes stale when git
+      # or an editor replaces the file, breaking the generator with ENOENT.
+      - ./frontend:/app/frontend-src:ro
     environment:
       SITES_DIR: /app/generated-sites
       FRONTEND_SRC_DIR: /app/frontend-src
