@@ -309,6 +309,7 @@ type ConstructionProps = {
     loginHref: string
     ctaLabel: string
     ctaHref: string
+    ctaNewTab: boolean
     phoneNumber: string
     email: string
     primaryColor: string
@@ -2127,6 +2128,20 @@ const ICON_BY_KEY: Record<IconKey, () => JSX.Element> = {
   building: BuildingIcon,
 }
 
+// Header CTA "Open in" picker. Unset (older pages) = new window for any non-# link.
+const OPEN_IN_FIELD = {
+  type: 'radio',
+  options: [
+    { label: 'New window', value: true },
+    { label: 'Same window', value: false },
+  ],
+} as const
+
+function ctaTarget(ctaHref: string | undefined, ctaNewTab: boolean | undefined) {
+  const newTab = ctaNewTab ?? Boolean(ctaHref && !ctaHref.startsWith('#'))
+  return newTab ? ({ target: '_blank', rel: 'noopener noreferrer' } as const) : {}
+}
+
 // Left/Right picker for the Floating Actions block (trust badge + WhatsApp/brochure buttons).
 const SIDE_FIELD = {
   type: 'radio',
@@ -2743,6 +2758,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       loginHref: { type: 'text' },
       ctaLabel: { type: 'text' },
       ctaHref: { type: 'text' },
+      ctaNewTab: OPEN_IN_FIELD,
       phoneNumber: { type: 'text' },
       email: { type: 'text' },
       primaryColor: { type: 'text' },
@@ -2792,6 +2808,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       loginHref: '#login',
       ctaLabel: 'Download Brochure ↓',
       ctaHref: '#brochure',
+      ctaNewTab: false,
       phoneNumber: '+91 98765 43210',
       email: 'hello@yourdomain.com',
       primaryColor: '',
@@ -2816,6 +2833,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       loginHref,
       ctaLabel,
       ctaHref,
+      ctaNewTab,
       phoneNumber,
       email,
       primaryColor,
@@ -2897,6 +2915,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 {ctaLabel && (
                   <a
                     href={ctaHref}
+                    {...ctaTarget(ctaHref, ctaNewTab)}
                     style={ctaStyle}
                     className="inline-flex items-center justify-center rounded-lg bg-orange-500 px-4 py-3 text-sm font-semibold text-white"
                   >
@@ -3190,6 +3209,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   </div>
                   <a
                     href={ctaHref}
+                    {...ctaTarget(ctaHref, ctaNewTab)}
                     className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold"
                     style={{ backgroundColor: accent, color: accentText }}
                   >
@@ -3327,6 +3347,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     {(isEditingInPuck || ctaLabel) && (
                       <a
                         href={ctaHref}
+                        {...ctaTarget(ctaHref, ctaNewTab)}
                         onClick={isEditingInPuck ? (e) => e.preventDefault() : undefined}
                         // A hardcoded `bg-gradient-to-r from-orange-500
                         // to-red-500` class previously painted over
