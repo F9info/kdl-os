@@ -13,9 +13,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WebsiteStage } from '@/app/admin/template-engine/_components/stages/WebsiteStage'
 import type { TemplateEngineRun, BrandKit } from '@/types/template-engine.types'
 
-const { mockPatchTypography, mockUseBrandKit } = vi.hoisted(() => ({
+const { mockPatchTypography, mockUseBrandKit, mockCreateSite } = vi.hoisted(() => ({
   mockPatchTypography: vi.fn(),
   mockUseBrandKit: vi.fn(),
+  mockCreateSite: vi.fn(),
 }))
 
 vi.mock('@/hooks/useTemplateEngine', () => ({
@@ -24,6 +25,7 @@ vi.mock('@/hooks/useTemplateEngine', () => ({
   useSkipStage: () => ({ mutate: vi.fn(), isPending: false }),
   useBrandKit: mockUseBrandKit,
   usePatchTypography: () => ({ mutate: mockPatchTypography, isPending: false }),
+  useCreateSite: () => ({ mutate: mockCreateSite, isPending: false }),
 }))
 
 vi.mock('@/components/shared/MediaPicker', () => ({
@@ -102,6 +104,14 @@ describe('WebsiteStage — Brands cards grid (KDL-558)', () => {
     fireEvent.click(screen.getByRole('button', { name: /back to brands/i }))
     expect(screen.getByText('Brands')).toBeInTheDocument()
     expect(screen.getByText('Web app')).toBeInTheDocument()
+  })
+
+  it('generates the project site folder when the Web app card is clicked', () => {
+    renderWithQC(<WebsiteStage run={makeRun()} />)
+    expect(mockCreateSite).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByText('Web app'))
+    expect(mockCreateSite).toHaveBeenCalledTimes(1)
   })
 })
 
