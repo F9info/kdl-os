@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Render } from '@puckeditor/core'
 import { config } from '@/app/admin/page-builder/puck.config'
 import api from '@/lib/axios'
+import { siteProjectId } from '@/lib/site-project'
 
 interface PublicCatalogItem {
   id: string
@@ -22,7 +23,7 @@ interface PublicCatalogItem {
  */
 export default function CatalogDetailPage() {
   const params = useParams<{ slug: string }>()
-  const projectId = useSearchParams().get('projectId')
+  const projectId = siteProjectId(useSearchParams().get('projectId'))
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['public-catalog-item', params.slug, projectId],
