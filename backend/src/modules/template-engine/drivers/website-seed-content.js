@@ -262,6 +262,8 @@ function layoutHeaderProps(brand, pages) {
     loginLabel: '',
     ctaLabel: 'Download Brochure ↓',
     ctaHref: '#brochure',
+    // A brochure/file link opens in a new window (editable in the Section Builder).
+    ctaNewTab: true,
     transparent: false,
     lightText: false,
   };
@@ -1449,6 +1451,7 @@ function constructionHeaderProps(brand = {}, pages) {
     loginHref: '#login',
     ctaLabel: 'Get a Quote',
     ctaHref: '#quote',
+    ctaNewTab: false,
     primaryColor: brand.primaryHex || '',
     secondaryColor: brand.secondaryHex || '',
     phoneNumber: brand.phone || '+91 98765 43210',
