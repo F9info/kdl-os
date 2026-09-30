@@ -23,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           variable (next/font-optimised Inter) is the pre-hydration fallback
           so the correct font renders before the TE provider's first fetch. */}
       <body
+        suppressHydrationWarning
         style={{
           fontFamily:
             'var(--th-typo-body-family, var(--font-inter)), ui-sans-serif, system-ui, sans-serif',
