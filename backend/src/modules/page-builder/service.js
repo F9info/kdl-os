@@ -1,6 +1,7 @@
 import { prisma } from '../../config/database.js';
 import { resolveForEditor, stripEntityBindings } from '../../shared/detail-pages/resolve.js';
 import { writeActivityAsync } from '../user-management/shared/activity-logger.js';
+import { enqueueSiteBuild } from '../template-engine/site/queue.js';
 
 export const listPages = async () => {
   return prisma.builderPage.findMany({
@@ -66,6 +67,7 @@ export const createPage = async ({ title, slug, data, project_id }, actorId) => 
     subject_id: page.id,
     description: `Page "${page.title}" created`,
   });
+  enqueueSiteBuild(page.project_id);
   return page;
 };
 
@@ -96,6 +98,7 @@ export const updatePage = async (id, patch, actorId) => {
         subject_id: id,
         description: `Page "${page.title}" ${rest.status === 'PUBLISHED' ? 'published' : 'updated'} (shared template)`,
       });
+      enqueueSiteBuild(existing.project_id);
       return { ...page, data };
     }
   }
@@ -108,6 +111,7 @@ export const updatePage = async (id, patch, actorId) => {
     subject_id: page.id,
     description: `Page "${page.title}" ${patch.status === 'PUBLISHED' ? 'published' : 'updated'}`,
   });
+  enqueueSiteBuild(page.project_id);
   return page;
 };
 
@@ -124,5 +128,6 @@ export const deletePage = async (id, actorId) => {
     subject_id: id,
     description: `Page "${page.title}" deleted`,
   });
+  enqueueSiteBuild(page.project_id);
   return page;
 };
