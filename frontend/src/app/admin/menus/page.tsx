@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useDefaultProjectId } from '@/hooks/useDefaultProjectId'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -12,6 +12,7 @@ import {
   Trash2,
   ExternalLink,
   Link2Off,
+  ArrowRight,
 } from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
@@ -151,6 +152,8 @@ function MenusPageContent() {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [editing, setEditing] = useState<MenuItemNode | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const router = useRouter()
+  const [customPageName, setCustomPageName] = useState('')
   const [customLabel, setCustomLabel] = useState('')
   const [customUrl, setCustomUrl] = useState('')
 
@@ -184,6 +187,15 @@ function MenusPageContent() {
       parent_id: null,
       order: tree?.length ?? 0,
     } as never)
+  }
+
+  // Same call the website wizard's Navigation step makes for "Add a custom
+  // page": a label-only item, the backend scaffolds the page for it.
+  function addCustomPage() {
+    const label = customPageName.trim()
+    if (!label) return
+    createItemMutation.mutate({ label, order: tree?.length ?? 0 })
+    setCustomPageName('')
   }
 
   function addCustomLink() {
@@ -263,9 +275,9 @@ function MenusPageContent() {
             }
           />
           <Button
-            variant="ghost"
-            size="icon"
-            className={cn(node.no_page && 'text-primary')}
+            variant={node.no_page ? 'secondary' : 'ghost'}
+            size="sm"
+            className={cn('gap-1 px-2 text-xs', node.no_page && 'text-primary')}
             title={
               node.no_page
                 ? 'Label only — click to make it a link again'
@@ -281,6 +293,7 @@ function MenusPageContent() {
             }
           >
             <Link2Off className="h-3.5 w-3.5" />
+            No page
           </Button>
           <Button
             variant="ghost"
@@ -386,6 +399,17 @@ function MenusPageContent() {
                 <p className="text-xs text-muted-foreground">No pages found for this project.</p>
               )}
             </div>
+            <div className="mt-3 flex items-center gap-2 border-t pt-3">
+              <Input
+                placeholder="Add a custom page (e.g. Case studies)"
+                value={customPageName}
+                onChange={(e) => setCustomPageName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addCustomPage()}
+              />
+              <Button type="button" onClick={addCustomPage}>
+                Add
+              </Button>
+            </div>
           </div>
 
           <div className="rounded-lg border bg-card p-4 space-y-3">
@@ -416,6 +440,17 @@ function MenusPageContent() {
             <div className="space-y-1">{tree.map((node) => renderRow(node, 1))}</div>
           )}
         </div>
+      </div>
+
+      <div className="mt-4 flex justify-end">
+        <Button
+          type="button"
+          disabled={dirty || saveOrderMutation.isPending}
+          onClick={() => router.push(`/admin/template-engine/projects/${projectId}/website`)}
+        >
+          Next
+          <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+        </Button>
       </div>
 
       <EditItemModal
