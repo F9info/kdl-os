@@ -42,7 +42,7 @@
     "meilisearch": "^0.60.0",
     "minio": "^8.0.0",
     "multer": "^2.2.0",
-    "nodemailer": "^9.0.5",
+    "nodemailer": "^9.1.1",
     "pdf-lib": "^1.17.1",
     "pg": "^8.23.0",
     "prisma": "^7.9.1",
