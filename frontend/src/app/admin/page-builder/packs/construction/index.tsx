@@ -9212,7 +9212,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       badgeNumber: '30',
       badgeLabel: 'years of Trust',
       badgeSide: 'right',
-      actionsSide: 'right',
+      actionsSide: 'left',
     },
     render: ({
       id,
@@ -9221,9 +9221,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       badgeYearLabel,
       badgeNumber,
       badgeLabel,
-      // Pages seeded before these options existed have neither prop → right.
+      // Pages seeded before these options existed have neither prop → badge right, buttons left.
       badgeSide = 'right',
-      actionsSide = 'right',
+      actionsSide = 'left',
       puck,
     }) => {
       const isEditing = puck?.isEditing ?? false
