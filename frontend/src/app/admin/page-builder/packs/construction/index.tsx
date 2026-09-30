@@ -14186,7 +14186,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               // sector, not the stored `cta_href` — that field only still
               // exists for the static-fallback path below (a project with
               // no real sectors yet has no /sectors/[slug] to link to).
-              ctaHref: `/sectors/${s.slug}${projectId ? `?projectId=${projectId}` : ''}`,
+              // Friendly URL: no ?projectId= (project scope comes from the site, see lib/site-project.ts)
+              ctaHref: `/sectors/${s.slug}`,
             }))
           : (rawSectors ?? []).map((s) => ({
               ...s,

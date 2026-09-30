@@ -254,6 +254,11 @@ export async function writeSite(model) {
   for (const p of model.pages) {
     await writeJson(path.join(root, 'content', 'pages', `${p.file}.json`), p.json);
   }
+  // Public detail routes read their project scope from here, not from ?projectId=.
+  await fs.writeFile(
+    path.join(root, '.env.local'),
+    `NEXT_PUBLIC_SITE_PROJECT_ID=${model.site.projectId}\n`
+  );
   await writeJson(path.join(root, MARKER), {
     projectId: model.site.projectId,
     generatedAt: model.site.generatedAt,
