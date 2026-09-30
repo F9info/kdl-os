@@ -12,6 +12,7 @@ import {
 } from './schema.js';
 import {
   createRun,
+  createSite,
   listRuns,
   getRun,
   resumeRun,
@@ -30,6 +31,9 @@ router.use(authenticate);
 router.post('/runs', requirePermission('template-engine', 'run'), validate(createRunBodySchema), requireProject('body'), createRun);
 router.get('/runs', requirePermission('template-engine', 'view'), validate(listRunsQuerySchema), requireProject('query'), listRuns);
 router.get('/runs/:runId', requirePermission('template-engine', 'view'), validate(runParamSchema), requireProject(), getRun);
+
+// Generate the project's standalone Next.js site folder (frontend/projects/<slug>).
+router.post('/site', requirePermission('template-engine', 'run'), validate(createRunBodySchema), requireProject('body'), createSite);
 
 // Crash-recovery: call at startup to flip RUNNING → FAILED(INTERRUPTED).
 router.post('/runs/:runId/resume', requirePermission('template-engine', 'run'), validate(runParamSchema), requireProject(), resumeRun);

@@ -4,6 +4,7 @@ import { getPaginationParams } from '../../shared/utils/pagination.js';
 import { uniqueSlug } from '../../shared/utils/slug.js';
 import * as storageService from '../../shared/services/storage.service.js';
 import { FILE_INPUT_TYPES } from '../../shared/constants/inputTypes.js';
+import { enqueueAllSiteBuilds } from '../template-engine/site/queue.js';
 
 const SORTABLE = ['field_name', 'created_at', 'sort'];
 const FIELD_INCLUDE = {
@@ -148,7 +149,10 @@ export const saveValues = async (typeId, values) => {
       })
     );
   }
-  if (updates.length) await prisma.$transaction(updates);
+  if (updates.length) {
+    await prisma.$transaction(updates);
+    enqueueAllSiteBuilds(); // brand profile / content fields feed every generated site
+  }
   return updates.length;
 };
 
@@ -157,6 +161,22 @@ export const getValueBySlug = async (slug) => {
   const field = await prisma.settingField.findUnique({ where: { slug } });
   if (!field) return null;
   return withDisplayValue(field);
+};
+
+// Bulk read for the public site renderer (ConstructionAboutSplit,
+// ConstructionMissionVision, ConstructionTaglineStrip, etc. fetch several
+// slugs — e.g. vision-heading + vision-paragraph-1 + vision-paragraph-2 — in
+// one call instead of one request per field). Returns only { slug: value },
+// silently skipping unknown slugs — a typo'd slug shows as empty/fallback
+// content, never a 500.
+export const getValuesBySlugs = async (slugs) => {
+  const fields = await prisma.settingField.findMany({
+    where: { slug: { in: slugs } },
+    select: { slug: true, value: true },
+  });
+  const values = {};
+  for (const f of fields) values[f.slug] = f.value ?? '';
+  return values;
 };
 
 // Brand-kit (template-engine intake logo upload) writes straight into the

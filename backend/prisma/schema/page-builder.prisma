@@ -19,8 +19,15 @@ model BuilderPage {
   created_at DateTime   @default(now())
   updated_at DateTime   @updatedAt
   project_id String?
+  // Set only for a Details Page instance (e.g. one sector's page) whose
+  // structure/design is governed by a shared DetailPageTemplate instead of
+  // this row's own `data` — see detail-pages.prisma. `entity_id` is the
+  // specific record (e.g. Sector.id) this instance renders.
+  template_id String?
+  entity_id   String?
 
   @@index([status])
   @@index([project_id])
+  @@index([template_id])
   @@map("builder_pages")
 }

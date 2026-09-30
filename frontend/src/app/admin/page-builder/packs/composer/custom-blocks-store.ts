@@ -75,6 +75,79 @@ export async function getDefaultProjectId(): Promise<string> {
   return found.id
 }
 
+export interface BrandDefaults {
+  logoUrl: string
+  companyName: string
+  /** CSV of the site's currently-selected navigation pages (Studio's
+   *  Navigation step), e.g. "Home, About, Services, Products" — empty when
+   *  the WEBSITE stage hasn't seeded pages yet. */
+  navigationItems: string
+  primaryColor: string
+  secondaryColor: string
+  /** Type scale's "H1 (Title)" row's font family (Theme Engine's Typography
+   *  settings) — falls back to '' (caller keeps the atom's own default). */
+  headingFamily: string
+  /** Type scale's "Body" row's font family. */
+  bodyFamily: string
+}
+
+interface TypeScaleRow {
+  name?: string
+  family?: string
+}
+
+function parseTypeScale(raw: unknown): TypeScaleRow[] {
+  if (typeof raw !== 'string') return []
+  try {
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+// The single global brand's logo, company name, live navigation, colour
+// palette and typography — this KDL instance has no per-project brand (see
+// "no projects concept" removal), so a single combined fetch covers every
+// project. Used to prefill a freshly-dropped atom (Logo/Navigation/Heading/
+// Paragraph/Button/Badge) instead of static placeholders; callers only apply
+// a field if the atom is still untouched, since a custom block built here
+// can be reused on a different site later — "dynamic on drop", not a live
+// binding (see backend's patchComposerLogos for the one atom type, Logo,
+// that DOES stay live after insertion via the WEBSITE stage re-sync).
+export async function getBrandDefaults(projectId: string): Promise<BrandDefaults> {
+  const [logoRes, nameRes, runsRes, kitRes, scaleRes] = await Promise.all([
+    api.get('/setting-fields/value/logo').catch(() => null),
+    api.get('/setting-fields/value/brand-profile-company-name').catch(() => null),
+    api.get('/template-engine/runs', { params: { projectId } }).catch(() => null),
+    api.get(`/brand-kit/${projectId}`).catch(() => null),
+    api
+      .get('/setting-fields/value/webapp.typography.desktop.typography_scale.typography_scale')
+      .catch(() => null),
+  ])
+
+  const websiteStage = runsRes?.data?.data?.[0]?.stages?.find(
+    (s: { stage: string }) => s.stage === 'WEBSITE'
+  )
+  const pageKeyToTitle = websiteStage?.outputRef?.pageKeyToTitle as
+    Record<string, string> | undefined
+
+  const colors = kitRes?.data?.data?.palette?.colors
+  const scale = parseTypeScale(scaleRes?.data?.data?.field?.value)
+  const headingRow = scale.find((r) => r.name?.startsWith('H1'))
+  const bodyRow = scale.find((r) => r.name === 'Body' || r.name === 'Paragraph')
+
+  return {
+    logoUrl: logoRes?.data?.data?.field?.value_url ?? '',
+    companyName: nameRes?.data?.data?.field?.value ?? '',
+    navigationItems: pageKeyToTitle ? Object.values(pageKeyToTitle).join(', ') : '',
+    primaryColor: colors?.primary?.hex ?? '',
+    secondaryColor: colors?.secondary?.hex ?? '',
+    headingFamily: headingRow?.family ?? '',
+    bodyFamily: bodyRow?.family ?? '',
+  }
+}
+
 export async function createCustomBlock(input: {
   projectId: string
   categoryKey: string

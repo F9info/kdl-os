@@ -68,6 +68,28 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
     })
   }, [fields])
 
+  const websiteStage = run.stages.find((s) => s.stage === 'WEBSITE')
+
+  // Website pages bake the brand name/logo in as static props at generation
+  // time — they're never live-fetched — so editing contact details or
+  // uploading a new logo here had no visible effect on an already-built site
+  // until someone separately reran the Website stage. Silently re-sync any
+  // already-built pages so "I changed the company name / uploaded a new logo
+  // but the site still shows the old one" stops being a thing. No-ops until
+  // the Website stage has actually run once (nothing to sync yet).
+  function resyncWebsitePagesIfBuilt() {
+    if (websiteStage?.status !== 'DONE') return
+    let navigationPages: string[] = []
+    try {
+      const raw = window.localStorage.getItem(`te-website-ui:${run.projectId}:navigation`)
+      navigationPages = raw ? (JSON.parse(raw) as string[]) : []
+    } catch {
+      // localStorage unavailable/corrupt — advance falls back to the
+      // default Home/About/Contact set, same as a fresh run would.
+    }
+    advance.mutate({ stage: 'WEBSITE', body: { navigationPages } })
+  }
+
   const saveMutation = useMutation({
     mutationFn: () => {
       const values = fields
@@ -78,6 +100,7 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['setting-fields-by-type', BRAND_PROFILE_TYPE_SLUG] })
       toast({ title: 'Contact details saved' })
+      resyncWebsitePagesIfBuilt()
     },
     onError: () => toast({ title: 'Could not save contact details', variant: 'destructive' }),
   })
@@ -96,7 +119,7 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    uploadLogo.mutate(file)
+    uploadLogo.mutate(file, { onSuccess: resyncWebsitePagesIfBuilt })
     e.target.value = ''
   }
 

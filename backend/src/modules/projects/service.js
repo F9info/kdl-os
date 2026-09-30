@@ -83,6 +83,21 @@ export async function getProjectForAccessCheck(id) {
 }
 
 export async function createProject({ name, slug, is_default, actorId }) {
+  // This app is single-project by design (KDL open-source self-host model —
+  // one clone = one site, not a multi-tenant "projects" workspace). The
+  // Project/ProjectMember scaffolding stays as an internal scoping key for
+  // brand-kit/custom-blocks/collateral/credits (removing it means migrating
+  // 6 tables' FKs for zero user-visible benefit — see the "only one project"
+  // decision this guards), but a second row must never be creatable. Seeding
+  // (seed.js) writes the one default project directly via prisma, bypassing
+  // this guard entirely, so this only ever blocks a SECOND project.
+  const anyExisting = await prisma.project.findFirst({ where: { deleted_at: null } });
+  if (anyExisting) {
+    const err = new Error('Only one project is supported — the default project already exists');
+    err.status = 409;
+    throw err;
+  }
+
   const existing = await prisma.project.findUnique({ where: { slug } });
   if (existing) {
     const err = new Error(`A project with slug "${slug}" already exists`);

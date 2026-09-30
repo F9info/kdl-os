@@ -168,6 +168,32 @@ describe('(c) balance > 0 after createProject', () => {
   });
 });
 
+// ─── (e) single-project guard: this app is self-hosted, single-site ──────────
+
+describe('(e) createProject refuses a second project', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setupNewProject();
+  });
+
+  it('throws 409 when a project already exists', async () => {
+    mockPrisma.project.findFirst.mockResolvedValue({ id: 'proj-existing' });
+
+    await expect(
+      service.createProject({ name: 'Second', slug: 'second', actorId: 'user-1' })
+    ).rejects.toMatchObject({ status: 409 });
+    expect(mockTx.project.create).not.toHaveBeenCalled();
+  });
+
+  it('allows creation when no project exists yet', async () => {
+    mockPrisma.project.findFirst.mockResolvedValue(null);
+
+    await expect(
+      service.createProject({ name: 'Test', slug: 'test', actorId: 'user-1' })
+    ).resolves.toMatchObject({ id: 'proj-1' });
+  });
+});
+
 // ─── (d) regression: seed default covers full golden-path spend ───────────────
 //
 // Keeps the 10-credit dead-end (KDL-611/KDL-613) from silently regressing.

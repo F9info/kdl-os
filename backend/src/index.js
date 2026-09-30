@@ -12,6 +12,7 @@ import { redis } from './config/redis.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { successResponse, errorResponse } from './shared/utils/response.js';
 import { logger } from './shared/utils/logger.js';
+import { enqueueAllSiteBuilds, startSiteBuildWorker } from './modules/template-engine/site/queue.js';
 import { ensureBucketExists } from './shared/services/storage.service.js';
 
 import { emailWorker } from './shared/workers/email.worker.js';
@@ -39,6 +40,7 @@ import themeEngineRoutes from './modules/theme-engine/routes.js';
 import pageBuilderRoutes from './modules/page-builder/routes.js';
 import customBlocksRoutes from './modules/custom-blocks/routes.js';
 import projectRoutes from './modules/projects/routes.js';
+import detailPageTypesRoutes from './modules/detail-page-types/routes.js';
 import { verifyLocalPresignToken } from './shared/services/storage/drivers/local.driver.js';
 import { loadModules, checkDependencyIntegrity } from './shared/modules/module-loader.js';
 
@@ -80,6 +82,20 @@ const limiter = rateLimit({
   legacyHeaders: false,
 });
 app.use('/api', limiter);
+
+// Any successful admin write (content, settings, theme, uploads, pages, ...)
+// refreshes every generated project site — rebuilds are debounced per project
+// and skipped for projects without a generated folder.
+// Not content: login, the site-generate call itself, vitals, and the 30s notification-stream polling.
+const SITE_SYNC_SKIP = ['/auth', '/template-engine/site', '/vitals', '/notifications'];
+app.use('/api', (req, res, next) => {
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return next();
+  if (SITE_SYNC_SKIP.some((p) => req.path.startsWith(p))) return next();
+  res.on('finish', () => {
+    if (res.statusCode < 400) enqueueAllSiteBuilds().catch(() => {});
+  });
+  next();
+});
 
 app.get('/health', (req, res) => {
   successResponse(res, { status: 'ok', uptime: process.uptime() });
@@ -137,6 +153,7 @@ app.use('/api/theme-engine', themeEngineRoutes);
 app.use('/api/page-builder', pageBuilderRoutes);
 app.use('/api/custom-blocks', customBlocksRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/api/detail-page-types', detailPageTypesRoutes);
 
 // Mount plugin modules (those with module.json + routes.js) behind moduleGate
 await loadModules(app);
@@ -163,6 +180,7 @@ await loadModules(app);
 
 // Start background jobs
 startProcessingWorker();
+startSiteBuildWorker().catch((err) => logger.error(`Site-build worker init failed: ${err.message}`));
 startRetentionJob().catch((err) => logger.error(`Retention job init failed: ${err.message}`));
 startExpiryJob().catch((err) => logger.error(`Expiry job init failed: ${err.message}`));
 startBrandKitExpiryJob().catch((err) => logger.error(`Brand-kit expiry job init failed: ${err.message}`));

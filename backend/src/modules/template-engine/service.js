@@ -1,6 +1,7 @@
 // TEMPLATE_ENGINE_ARCH.md §3 (DAG), §4 (data model), §4.1 (crash recovery), §5 (gating).
 import { prisma } from '../../config/database.js';
 import { getDriver } from './drivers/index.js';
+import { enqueueSiteBuild } from './site/queue.js';
 
 // ── Enum helpers (avoids importing the Prisma enum at runtime) ────────────────
 
@@ -252,6 +253,7 @@ export async function advanceStage(runId, stageSlug, userId, projectId, options 
       projectId,
       templatePack: options.templatePack,
       navigationPages: options.navigationPages,
+      layout: options.layout,
     });
 
     updated = await prisma.templateEngineStage.update({
@@ -262,6 +264,7 @@ export async function advanceStage(runId, stageSlug, userId, projectId, options 
         completedAt: new Date(),
       },
     });
+    if (stageEnum === 'WEBSITE') enqueueSiteBuild(run.projectId);
   } catch (driverErr) {
     // Never echo raw messages — only the named code (§10, §5).
     const errorCode = driverErr.code ?? 'DRIVER_ERROR';

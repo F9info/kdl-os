@@ -46,3 +46,13 @@ frontend/test-results/
 # misc
 *.pem
 .gstack/
+
+.superpowers/
+
+# macOS / cloud-sync "name 2.ext" conflict copies — never source
+* [0-9].*
+* [0-9]
+
+# Generated per-project Next.js apps (template-engine site generator)
+frontend/projects/*
+!frontend/projects/.gitkeep
