@@ -22,8 +22,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Inline style beats any class-level font-family. The --font-inter
           variable (next/font-optimised Inter) is the pre-hydration fallback
           so the correct font renders before the TE provider's first fetch. */}
+      {/* data-gramm* / data-enable-grammarly: opt out of Grammarly, which decorates
+          arbitrary elements (contenteditable, cursor styles) before hydration and
+          triggers dev-only hydration-mismatch overlays. */}
       <body
         suppressHydrationWarning
+        data-gramm="false"
+        data-gramm_editor="false"
+        data-enable-grammarly="false"
         style={{
           fontFamily:
             'var(--th-typo-body-family, var(--font-inter)), ui-sans-serif, system-ui, sans-serif',
