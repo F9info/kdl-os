@@ -850,6 +850,7 @@ describe('website driver — construction pack seeding (KDL-558 homepage)', () =
     expect(footer.props.contactAddress).toBe('Showroom, Visakhapatnam - 530 016');
     expect(footer.props.showroomAddress).toBe('Registered Office, Visakhapatnam - 530 016');
     expect(floatingActions.props.whatsappHref).toBe('https://wa.me/918897224466');
+    expect(floatingActions.props).toMatchObject({ badgeSide: 'right', actionsSide: 'left' });
   });
 
   it('re-syncs an already-seeded page\'s footer contact info and WhatsApp button when brand contact details change, without touching unrelated content', async () => {
@@ -898,6 +899,8 @@ describe('website driver — construction pack seeding (KDL-558 homepage)', () =
     expect(footer.props.contactAddress).toBe('Showroom address');
     expect(footer.props.showroomAddress).toBe('Registered office address');
     expect(floatingActions.props.whatsappHref).toBe('https://wa.me/918897224466');
+    // Pre-existing pages get the side options back-filled (badge right, buttons left).
+    expect(floatingActions.props).toMatchObject({ badgeSide: 'right', actionsSide: 'left' });
     // Non-contact content is untouched.
     expect(footer.props.copyright).toBe('stale copyright text');
     expect(patch.data.content.find((b) => b.type === 'FeatureCards').props.sectionTitle).toBe(
