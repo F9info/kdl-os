@@ -1708,13 +1708,17 @@ function NavigationStep({
             }
             title={
               node.is_active
-                ? 'Visible in nav — click to hide (page stays reachable by URL)'
-                : 'Hidden from nav — click to show'
+                ? 'Shown in the main menu — click to hide it (and its sub-items) from the main menu; the page stays reachable by URL'
+                : 'Hidden from the main menu — click to show it again'
             }
             onClick={() => toggleVisibility(node)}
-            className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full bg-white/25 leading-none"
+            className={cn(
+              'flex h-4.5 shrink-0 items-center justify-center gap-1 rounded-full px-1.5 text-[10px] leading-none',
+              node.is_active ? 'bg-white text-primary' : 'bg-white/25'
+            )}
           >
             {node.is_active ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+            Main menu
           </button>
           {(() => {
             const mirrored = Boolean(findFooterMirror(node))
@@ -1733,11 +1737,12 @@ function NavigationStep({
                 }
                 onClick={() => toggleFooterMirror(node)}
                 className={cn(
-                  'flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full leading-none',
+                  'flex h-4.5 shrink-0 items-center justify-center gap-1 rounded-full px-1.5 text-[10px] leading-none',
                   mirrored ? 'bg-white text-primary' : 'bg-white/25'
                 )}
               >
                 <Globe className="h-3 w-3" />
+                Footer
               </button>
             )
           })()}
