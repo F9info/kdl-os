@@ -28,6 +28,14 @@ vi.mock('../../collateral/service.js', () => ({
   renderAsset:   vi.fn(),
 }));
 
+vi.mock('../../brand-kit/contact-fields.js', () => ({
+  getCompanyInfo: vi.fn(),
+}));
+
+vi.mock('../../media/service.js', () => ({
+  getMediaById: vi.fn(),
+}));
+
 vi.mock('../../page-builder/service.js', () => ({
   createPage:    vi.fn(),
   updatePage:    vi.fn(),
@@ -63,6 +71,9 @@ import {
   preflightAsset,
   renderAsset,
 } from '../../collateral/service.js';
+
+import { getCompanyInfo } from '../../brand-kit/contact-fields.js';
+import { getMediaById } from '../../media/service.js';
 
 import { createPage, updatePage, getPage, getPageBySlug } from '../../page-builder/service.js';
 
@@ -528,13 +539,13 @@ describe('website driver — crash recovery (§4.1)', () => {
     expect(result.outputRef.pageIds).toEqual(['page-home', 'page-about', 'page-contact']);
   });
 
-  it('patches a reused page\'s nav links to the current selection without touching the rest of its content (KDL bug repro)', async () => {
+  it('patches a reused page\'s nav links to the current selection without touching unrelated content (KDL bug repro)', async () => {
     // 'home' already exists from a much earlier run whose page set was just
     // Home/About/Contact — its stored NavBar still says so. This run picks
     // a different, larger set; 'home' must be reused (not re-seeded, or a
     // user's manual edits to it would be destroyed) but its nav must catch up.
     const staleContent = [
-      { type: 'MedicalTopNav', props: { navLinks: 'Home|#\nAbout|#\nContact|#', brand: 'Custom edited brand' } },
+      { type: 'MedicalTopNav', props: { navLinks: 'Home|#\nAbout|#\nContact|#', brand: 'Your Brand' } },
       { type: 'FeatureCards', props: { sectionTitle: 'A user hand-edited this section' } },
     ];
     const priorMap = { home: 'page-home' };
@@ -555,16 +566,152 @@ describe('website driver — crash recovery (§4.1)', () => {
     expect(updatedId).toBe('page-home');
     const patchedNav = patch.data.content.find((b) => b.type === 'MedicalTopNav');
     expect(patchedNav.props.navLinks).toBe('Home|/p/te-run-1-home\nBlog|/p/te-run-1-blog');
-    // The hand-edited brand name and the unrelated content block survive untouched.
-    expect(patchedNav.props.brand).toBe('Custom edited brand');
+    // The unrelated content block survives untouched — only nav/brand props patch.
     expect(patch.data.content.find((b) => b.type === 'FeatureCards').props.sectionTitle).toBe(
       'A user hand-edited this section',
     );
     expect(result.outputRef.pageKeyToId).toMatchObject({ home: 'page-home', blog: 'page-blog' });
   });
 
+  it('re-uploading a logo or editing brand contact details syncs an already-seeded page\'s nav/footer (KDL bug repro: "I upload a new logo but the site still shows the old one")', async () => {
+    // 'home' was seeded long ago with an older brand kit's name/logo — the
+    // brand kit has since changed (new logo uploaded, company name edited in
+    // Studio's Intake stage). Brand identity is centrally sourced, unlike
+    // page content: it must always track the current brand kit, even on a
+    // page that's otherwise reused as-is.
+    const staleContent = [
+      { type: 'NavBar', props: { links: 'Home|#', brand: 'Old Company Name', logoUrl: 'https://old-logo.example/old.png' } },
+      { type: 'Footer', props: { links: 'Home|#', brand: 'Old Company Name', logoUrl: 'https://old-logo.example/old.png', copyright: 'stale copyright text' } },
+      { type: 'FeatureCards', props: { sectionTitle: 'A user hand-edited this section' } },
+    ];
+    getKit.mockResolvedValueOnce({ logo_media_id: 'media-new-logo', palette: { colors: {} } });
+    getMediaById.mockResolvedValueOnce({ url: 'https://cdn.example/new-logo.png' });
+    getCompanyInfo.mockResolvedValueOnce({
+      company_name: 'Kalam Dream Labs',
+      email: null,
+      phone: null,
+      addressLines: [],
+    });
+    const priorMap = { home: 'page-home' };
+    getPage.mockResolvedValueOnce({ id: 'page-home', data: { content: staleContent } });
+    updatePage.mockResolvedValueOnce({ id: 'page-home' });
+
+    const result = await getDriver('website').execute({
+      run: makeRun(),
+      stageRecord: makeStageRecord({ pageKeyToId: priorMap }),
+      userId: 'user-1',
+      projectId: 'proj-A',
+      navigationPages: ['Home'],
+    });
+
+    expect(updatePage).toHaveBeenCalledTimes(1);
+    const [, patch] = updatePage.mock.calls[0];
+    const nav = patch.data.content.find((b) => b.type === 'NavBar');
+    const footer = patch.data.content.find((b) => b.type === 'Footer');
+    expect(nav.props.brand).toBe('Kalam Dream Labs');
+    expect(nav.props.logoUrl).toBe('https://cdn.example/new-logo.png');
+    expect(footer.props.brand).toBe('Kalam Dream Labs');
+    expect(footer.props.logoUrl).toBe('https://cdn.example/new-logo.png');
+    // Non-brand content (footer copyright, unrelated block) is untouched.
+    expect(footer.props.copyright).toBe('stale copyright text');
+    expect(patch.data.content.find((b) => b.type === 'FeatureCards').props.sectionTitle).toBe(
+      'A user hand-edited this section',
+    );
+    expect(result.outputRef.pageKeyToId).toMatchObject({ home: 'page-home' });
+  });
+
   it('does not call updatePage when a reused page\'s nav links already match (no pointless write)', async () => {
-    const upToDateContent = [{ type: 'NavBar', props: { links: 'Home|/p/te-run-1-home' } }];
+    const upToDateContent = [
+      { type: 'NavBar', props: { links: 'Home|/p/te-run-1-home', brand: 'Your Brand', logoUrl: '' } },
+    ];
+    getPage.mockResolvedValueOnce({ id: 'page-home', data: { content: upToDateContent } });
+
+    await getDriver('website').execute({
+      run: makeRun(),
+      stageRecord: makeStageRecord({ pageKeyToId: { home: 'page-home' } }),
+      userId: 'user-1',
+      projectId: 'proj-A',
+      navigationPages: ['Home'],
+    });
+
+    expect(updatePage).not.toHaveBeenCalled();
+    expect(createPage).not.toHaveBeenCalled();
+  });
+
+  it('re-uploading a logo also syncs a "logo" atom nested inside a Section Builder custom block, leaving sibling atoms untouched', async () => {
+    // A custom block built in Section Builder is copied into the page's own
+    // Puck data at insert time (type: 'CustomComposedBlock') — its 'logo'
+    // atom was prefilled from the brand kit at drop time but, like
+    // NavBar/Footer, goes stale the moment the brand kit changes again.
+    const staleContent = [
+      {
+        type: 'CustomComposedBlock',
+        props: {
+          id: 'blk-1',
+          config: {
+            category: 'header',
+            settings: { container: 'full', padding: 'md', align: 'left', bg: '' },
+            atoms: [
+              {
+                id: 'layout-1',
+                type: 'layout',
+                mode: 'grid',
+                columns: 2,
+                children: [
+                  { id: 'logo-1', type: 'logo', src: 'https://old-logo.example/old.png', text: 'Old Company Name', size: 'md' },
+                  { id: 'heading-1', type: 'heading', text: 'A user hand-edited this heading', level: 'h2' },
+                ],
+              },
+            ],
+          },
+        },
+      },
+    ];
+    getKit.mockResolvedValueOnce({ logo_media_id: 'media-new-logo', palette: { colors: {} } });
+    getMediaById.mockResolvedValueOnce({ url: 'https://cdn.example/new-logo.png' });
+    getCompanyInfo.mockResolvedValueOnce({
+      company_name: 'Kalam Dream Labs',
+      email: null,
+      phone: null,
+      addressLines: [],
+    });
+    getPage.mockResolvedValueOnce({ id: 'page-home', data: { content: staleContent } });
+    updatePage.mockResolvedValueOnce({ id: 'page-home' });
+
+    await getDriver('website').execute({
+      run: makeRun(),
+      stageRecord: makeStageRecord({ pageKeyToId: { home: 'page-home' } }),
+      userId: 'user-1',
+      projectId: 'proj-A',
+      navigationPages: ['Home'],
+    });
+
+    expect(updatePage).toHaveBeenCalledTimes(1);
+    const [, patch] = updatePage.mock.calls[0];
+    const block = patch.data.content.find((b) => b.type === 'CustomComposedBlock');
+    const [layout] = block.props.config.atoms;
+    const logoAtom = layout.children.find((a) => a.type === 'logo');
+    const headingAtom = layout.children.find((a) => a.type === 'heading');
+    expect(logoAtom.src).toBe('https://cdn.example/new-logo.png');
+    expect(logoAtom.text).toBe('Kalam Dream Labs');
+    expect(headingAtom.text).toBe('A user hand-edited this heading');
+  });
+
+  it('does not call updatePage when a custom block\'s nested logo atom already matches the current brand', async () => {
+    const upToDateContent = [
+      { type: 'NavBar', props: { links: 'Home|/p/te-run-1-home', brand: 'Your Brand', logoUrl: '' } },
+      {
+        type: 'CustomComposedBlock',
+        props: {
+          id: 'blk-1',
+          config: {
+            category: 'header',
+            settings: { container: 'full', padding: 'md', align: 'left', bg: '' },
+            atoms: [{ id: 'logo-1', type: 'logo', src: '', text: 'Your Brand', size: 'md' }],
+          },
+        },
+      },
+    ];
     getPage.mockResolvedValueOnce({ id: 'page-home', data: { content: upToDateContent } });
 
     await getDriver('website').execute({
@@ -675,6 +822,88 @@ describe('website driver — construction pack seeding (KDL-558 homepage)', () =
     expect(sectors.props.project8Title).toBe('Sector Eight');
     expect(sectors.props.project1NumberTag).toBe('01');
     expect(sectors.props.project1Href).toBe('#sector-1');
+  });
+
+  it('Footer contact fields and the WhatsApp button use the real brand-kit phone/email/address instead of dummy placeholders (KDL bug repro: "why does it show dummy contact info")', async () => {
+    createPage.mockResolvedValueOnce({ id: 'page-home' });
+    getCompanyInfo.mockResolvedValueOnce({
+      company_name: 'Subhadra Group',
+      email: 'sales@subhadragroup.in',
+      phone: '+91 88972 24466',
+      addressLines: ['Showroom, Visakhapatnam - 530 016', 'Registered Office, Visakhapatnam - 530 016'],
+    });
+
+    await getDriver('website').execute({
+      run: makeRun(),
+      stageRecord: makeStageRecord(),
+      userId: 'user-1',
+      projectId: 'proj-A',
+      templatePack: 'construction',
+      navigationPages: ['Home'],
+    });
+
+    const call = createPage.mock.calls[0][0];
+    const footer = call.data.content.find((b) => b.type === 'ConstructionFooter');
+    const floatingActions = call.data.content.find((b) => b.type === 'ConstructionFloatingActions');
+    expect(footer.props.contactPhone).toBe('+91 88972 24466');
+    expect(footer.props.contactEmail).toBe('sales@subhadragroup.in');
+    expect(footer.props.contactAddress).toBe('Showroom, Visakhapatnam - 530 016');
+    expect(footer.props.showroomAddress).toBe('Registered Office, Visakhapatnam - 530 016');
+    expect(floatingActions.props.whatsappHref).toBe('https://wa.me/918897224466');
+  });
+
+  it('re-syncs an already-seeded page\'s footer contact info and WhatsApp button when brand contact details change, without touching unrelated content', async () => {
+    const staleContent = [
+      {
+        type: 'ConstructionFooter',
+        props: {
+          links: 'Home|#',
+          contactPhone: '+91-98765-43210',
+          contactEmail: 'info@yourbrand.com',
+          contactAddress: '123 Business Avenue\nCity, State 000000',
+          showroomAddress: '456 Showroom Road\nCity, State 000000',
+          copyright: 'stale copyright text',
+        },
+      },
+      {
+        type: 'ConstructionFloatingActions',
+        props: { whatsappHref: 'https://wa.me/919876543210' },
+      },
+      { type: 'FeatureCards', props: { sectionTitle: 'A user hand-edited this section' } },
+    ];
+    getKit.mockResolvedValueOnce({ palette: { colors: {} } });
+    getCompanyInfo.mockResolvedValueOnce({
+      company_name: 'Subhadra Group',
+      email: 'sales@subhadragroup.in',
+      phone: '+91 88972 24466',
+      addressLines: ['Showroom address', 'Registered office address'],
+    });
+    getPage.mockResolvedValueOnce({ id: 'page-home', data: { content: staleContent } });
+    updatePage.mockResolvedValueOnce({ id: 'page-home' });
+
+    const result = await getDriver('website').execute({
+      run: makeRun(),
+      stageRecord: makeStageRecord({ pageKeyToId: { home: 'page-home' } }),
+      userId: 'user-1',
+      projectId: 'proj-A',
+      navigationPages: ['Home'],
+    });
+
+    expect(updatePage).toHaveBeenCalledTimes(1);
+    const [, patch] = updatePage.mock.calls[0];
+    const footer = patch.data.content.find((b) => b.type === 'ConstructionFooter');
+    const floatingActions = patch.data.content.find((b) => b.type === 'ConstructionFloatingActions');
+    expect(footer.props.contactPhone).toBe('+91 88972 24466');
+    expect(footer.props.contactEmail).toBe('sales@subhadragroup.in');
+    expect(footer.props.contactAddress).toBe('Showroom address');
+    expect(footer.props.showroomAddress).toBe('Registered office address');
+    expect(floatingActions.props.whatsappHref).toBe('https://wa.me/918897224466');
+    // Non-contact content is untouched.
+    expect(footer.props.copyright).toBe('stale copyright text');
+    expect(patch.data.content.find((b) => b.type === 'FeatureCards').props.sectionTitle).toBe(
+      'A user hand-edited this section',
+    );
+    expect(result.outputRef.pageKeyToId).toMatchObject({ home: 'page-home' });
   });
 
   it('Header and Footer nav links reflect the real selected page set, not a hardcoded default', async () => {

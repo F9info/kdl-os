@@ -1,0 +1,2536 @@
+{
+  "switches-wiring-devices": {
+    "ConstructionInnerBanner": {
+      "eyebrow": "Electrical Products",
+      "headline": "Modular switches, built for every interior",
+      "currentLabel": "Switches & Wiring Devices",
+      "imageAlt": "Modern modular electrical wall switch and socket plate",
+      "backgroundImage": "/seed/subhadra/catalog/bd602e97b483.jpg",
+      "subtitle": "Livia, Zencelo, Unica Pure, Clipsal X, Avatar On and Cube Series — modular switch ranges to match every interior, sized and wired by our own electricians, not a subcontractor.",
+      "parentLabel": "Products & Services",
+      "parentHref": "products.html",
+      "ctaPrimaryLabel": "Enquire Now →",
+      "ctaPrimaryHref": "#get-quote",
+      "ctaSecondaryLabel": "← Back to Products",
+      "ctaSecondaryHref": "products.html"
+    },
+    "ConstructionDisciplineRows": {
+      "sectionEyebrow": "",
+      "sectionTitle": "",
+      "sectionSubtitle": "",
+      "items": [
+        {
+          "icon": "",
+          "eyebrow": "Overview",
+          "heading": "A finish and rating for every room",
+          "description": "Switches are the one electrical fitting a customer touches every single day, so we plan them at the same time as the interior — matte, glossy or metal finish, 6A general points and 16A/20A for AC and geysers, and combination plates that mix switches, sockets and USB charging in one frame.\n\nEvery plate is wired to a properly sized DB and circuit, not just clipped onto whatever wiring already exists — so nothing trips, nothing overheats, and everything is labelled for the next electrician who opens the box.",
+          "checklist": "6A, 16A & 20A modular ranges in matte, glossy and metal finishes\nChild-safety shutters and anti-flicker LED indicators as standard\nCombination plates with USB-A / USB-C fast-charge sockets\nPoint wiring and circuit sizing planned with your electrical layout\nGenuine product with manufacturer warranty and original invoice",
+          "image": "/seed/subhadra/catalog/1521f8b5bcec.jpg",
+          "images": [],
+          "clients": [],
+          "brandTag": "Schneider Electric · Norisys",
+          "brandLogos": [
+            {
+              "src": "/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png",
+              "alt": "Schneider Electric"
+            },
+            {
+              "src": "/seed/subhadra/ourbrands/electrical-products/Norisys.png",
+              "alt": "Norisys"
+            }
+          ],
+          "ctaLabel": "Enquire →",
+          "ctaHref": "#get-quote"
+        }
+      ]
+    },
+    "ConstructionIconFeatureGrid": {
+      "sectionEyebrow": "Where it's used",
+      "sectionTitle": "Specified for homes, offices and hospitality",
+      "items": [
+        {
+          "icon": "housegear",
+          "biIcon": "bi-house-heart-fill",
+          "title": "Villas & Homes",
+          "description": "Matte and metal-finish plates coordinated with your interior designer, room by room."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-buildings",
+          "title": "Premium Flats",
+          "description": "Combination plates that fit tight conduit boxes without compromising on finish."
+        },
+        {
+          "icon": "hardhat",
+          "biIcon": "bi-briefcase-fill",
+          "title": "Offices & Corporate",
+          "description": "Durable commercial-grade switches rated for high daily-use cycles."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-building",
+          "title": "Hotels & Hospitality",
+          "description": "Guest-room plates paired with our automation scenes for one-touch control."
+        }
+      ]
+    },
+    "ConstructionApproachSplit": {
+      "photo": "/seed/subhadra/brand/shop.webp",
+      "eyebrow": "Why buy from us",
+      "heading": "See it, feel it, before you buy it",
+      "paragraph1": "Walk into our Visakhapatnam showroom and compare finishes on the shelf before you decide — every switch we sell is genuine, invoiced and backed by the manufacturer's warranty, fitted by our own trained electricians.",
+      "paragraph2": "",
+      "highlight1Icon": "shield",
+      "highlight1BiIcon": "bi-eye-fill",
+      "highlight1Title": "Compare In Person",
+      "highlight1Description": "Every finish and range is on display at our showroom — no guessing from a catalogue photo.",
+      "highlight2Icon": "shield",
+      "highlight2BiIcon": "bi-person-check-fill",
+      "highlight2Title": "Our Own Electricians",
+      "highlight2Description": "Fitted by our own trained team, coordinated with your interior schedule — no subcontractors.",
+      "stat1Value": "100%",
+      "stat1Label": "Genuine, brand-sourced products",
+      "stat2Value": "0",
+      "stat2Label": "Work outsourced to subcontractors",
+      "stat3Value": "30",
+      "stat3Label": "Years of industry experience"
+    },
+    "ConstructionProcessSteps": {
+      "sectionEyebrow": "How we work",
+      "sectionTitle": "From design to maintenance",
+      "items": [
+        {
+          "stepLabel": "01 — Consult",
+          "title": "Consult",
+          "description": "Site visit and load assessment to understand your exact requirement."
+        },
+        {
+          "stepLabel": "02 — Supply",
+          "title": "Supply",
+          "description": "Genuine, brand-sourced products with original invoice and warranty."
+        },
+        {
+          "stepLabel": "03 — Install",
+          "title": "Install",
+          "description": "Fitted by our own trained engineers — never sub-contracted."
+        },
+        {
+          "stepLabel": "04 — Maintain",
+          "title": "Maintain",
+          "description": "Ongoing AMC and a dedicated service manager on call."
+        }
+      ]
+    },
+    "ConstructionLeadFormFAQ": {
+      "sectionEyebrow": "Get a Quote",
+      "sectionTitle": "Tell us about your requirement",
+      "introText": "Share a few details and our engineers will get back to you with the right specification and a quote — usually within 24 hours.",
+      "showFaqs": false,
+      "checklistItems": "No-obligation site visit & quote\n30 years of trusted installations\nWorld-class brands, our own engineers",
+      "trustStats": [
+        {
+          "number": "30",
+          "label": "Years of trust"
+        },
+        {
+          "number": "15",
+          "label": "Services under one roof"
+        },
+        {
+          "number": "24×7",
+          "label": "Support"
+        }
+      ],
+      "formHeading": "Request a free quote",
+      "formSubtext": "Fill this in and we'll call you back.",
+      "interestOptions": "Electrical — Switches & Wiring\nCentral AC\nHome Automation\nHome Theater\nCCTV & Security\nFire Safety\nElectrical\nSomething else",
+      "ctaLabel": "Get My Free Quote →",
+      "formPrivacyNote": "We'll only use these details to respond to your enquiry."
+    }
+  },
+  "wires": {
+    "ConstructionInnerBanner": {
+      "eyebrow": "Electrical Products",
+      "headline": "House wiring cable, sized and colour-coded right",
+      "currentLabel": "House Wiring Cables",
+      "imageAlt": "Coloured house wiring cable coiled in a switch box",
+      "backgroundImage": "/seed/subhadra/catalog/dad5a9f8d984.jpg",
+      "subtitle": "Flame-retardant house wiring cable in every standard size — sized to your load, colour-coded to Indian wiring convention, and drawn by our own electricians.",
+      "parentLabel": "Products & Services",
+      "parentHref": "products.html",
+      "ctaPrimaryLabel": "Enquire Now →",
+      "ctaPrimaryHref": "#get-quote",
+      "ctaSecondaryLabel": "← Back to Products",
+      "ctaSecondaryHref": "products.html"
+    },
+    "ConstructionDisciplineRows": {
+      "sectionEyebrow": "",
+      "sectionTitle": "",
+      "sectionSubtitle": "",
+      "items": [
+        {
+          "icon": "",
+          "eyebrow": "Overview",
+          "heading": "The wire behind every switch and point",
+          "description": "Good wiring is invisible once the walls are closed — which is exactly why it has to be right the first time. We size every circuit to its connected load, run FR (flame-retardant), FR-LSH (low smoke and halogen) or LSOH cable depending on the occupancy, and colour-code phase, neutral and earth to IS 694 so any electrician can trace a fault years later.\n\nRuns are looped through junction boxes, not spliced mid-wall, and every DB is labelled circuit-by-circuit before handover — so your snag list is a formality, not a scramble.",
+          "checklist": "FR, FR-LSH & LSOH insulation for homes, offices and public buildings\nIS 694 colour-coded phase, neutral and earth conductors\nSized to connected load — not a flat gauge across the whole flat\nLooped, labelled circuits with as-built wiring diagrams on handover\nGenuine RR Kabel product, correctly earthed and megger-tested",
+          "image": "/seed/subhadra/catalog/9004d5323fa1.jpg",
+          "images": [],
+          "clients": [],
+          "brandTag": "RR Kabel",
+          "brandLogos": [
+            {
+              "src": "/seed/subhadra/ourbrands/electrical-products/RRKabel.jpg",
+              "alt": "RR Kabel"
+            }
+          ],
+          "ctaLabel": "Enquire →",
+          "ctaHref": "#get-quote"
+        }
+      ]
+    },
+    "ConstructionIconFeatureGrid": {
+      "sectionEyebrow": "Where it's used",
+      "sectionTitle": "From a single villa to a full tower",
+      "items": [
+        {
+          "icon": "housegear",
+          "biIcon": "bi-house-fill",
+          "title": "Villas & Homes",
+          "description": "Complete point wiring planned alongside your electrical layout, before the walls close."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-buildings",
+          "title": "Premium Flats & Builders",
+          "description": "The same wiring standard applied block after block, on the builder's handover schedule."
+        },
+        {
+          "icon": "hardhat",
+          "biIcon": "bi-briefcase-fill",
+          "title": "Commercial Fit-outs",
+          "description": "Higher-duty circuits for server rooms, pantries and shared office equipment."
+        },
+        {
+          "icon": "hardhat",
+          "biIcon": "bi-gear-fill",
+          "title": "Industrial Panels",
+          "description": "Control and power wiring inside panels, sized to protection-device ratings."
+        }
+      ]
+    },
+    "ConstructionApproachSplit": {
+      "photo": "/seed/subhadra/brand/shop.webp",
+      "eyebrow": "Why buy from us",
+      "heading": "Wiring you never have to think about again",
+      "paragraph1": "Wiring is the one part of a building nobody sees again after handover — so we test every circuit before the walls close and hand over a labelled DB and as-built diagram, not just a working switchboard.",
+      "paragraph2": "",
+      "highlight1Icon": "hardhat",
+      "highlight1BiIcon": "bi-clipboard-check-fill",
+      "highlight1Title": "Megger-Tested Before Handover",
+      "highlight1Description": "Every circuit is insulation-tested, not just switched on and left.",
+      "highlight2Icon": "hardhat",
+      "highlight2BiIcon": "bi-diagram-3-fill",
+      "highlight2Title": "Labelled, As-Built DBs",
+      "highlight2Description": "Every DB is circuit-labelled with a diagram, so the next electrician isn't guessing.",
+      "stat1Value": "100%",
+      "stat1Label": "Genuine, brand-sourced products",
+      "stat2Value": "0",
+      "stat2Label": "Work outsourced to subcontractors",
+      "stat3Value": "30",
+      "stat3Label": "Years of industry experience"
+    },
+    "ConstructionProcessSteps": {
+      "sectionEyebrow": "How we work",
+      "sectionTitle": "From design to maintenance",
+      "items": [
+        {
+          "stepLabel": "01 — Consult",
+          "title": "Consult",
+          "description": "Site visit and load assessment to understand your exact requirement."
+        },
+        {
+          "stepLabel": "02 — Supply",
+          "title": "Supply",
+          "description": "Genuine, brand-sourced products with original invoice and warranty."
+        },
+        {
+          "stepLabel": "03 — Install",
+          "title": "Install",
+          "description": "Fitted by our own trained engineers — never sub-contracted."
+        },
+        {
+          "stepLabel": "04 — Maintain",
+          "title": "Maintain",
+          "description": "Ongoing AMC and a dedicated service manager on call."
+        }
+      ]
+    },
+    "ConstructionLeadFormFAQ": {
+      "sectionEyebrow": "Get a Quote",
+      "sectionTitle": "Tell us about your requirement",
+      "introText": "Share a few details and our engineers will get back to you with the right specification and a quote — usually within 24 hours.",
+      "showFaqs": false,
+      "checklistItems": "No-obligation site visit & quote\n30 years of trusted installations\nWorld-class brands, our own engineers",
+      "trustStats": [
+        {
+          "number": "30",
+          "label": "Years of trust"
+        },
+        {
+          "number": "15",
+          "label": "Services under one roof"
+        },
+        {
+          "number": "24×7",
+          "label": "Support"
+        }
+      ],
+      "formHeading": "Request a free quote",
+      "formSubtext": "Fill this in and we'll call you back.",
+      "interestOptions": "Electrical — Wires & Cables\nCentral AC\nHome Automation\nHome Theater\nCCTV & Security\nFire Safety\nElectrical\nSomething else",
+      "ctaLabel": "Get My Free Quote →",
+      "formPrivacyNote": "We'll only use these details to respond to your enquiry."
+    }
+  },
+  "cables": {
+    "ConstructionInnerBanner": {
+      "eyebrow": "Electrical Products",
+      "headline": "LT/HT power and control cable, for every run",
+      "currentLabel": "Power & Control Cables",
+      "imageAlt": "Coiled power and control cables",
+      "backgroundImage": "/seed/subhadra/products/cables.png",
+      "subtitle": "Flexible LT/HT power and control cable from 0.50 to 1000 sq.mm, class-5 copper — sized for panel feeders, DG runs and underground HT distribution.",
+      "parentLabel": "Products & Services",
+      "parentHref": "products.html",
+      "ctaPrimaryLabel": "Enquire Now →",
+      "ctaPrimaryHref": "#get-quote",
+      "ctaSecondaryLabel": "← Back to Products",
+      "ctaSecondaryHref": "products.html"
+    },
+    "ConstructionDisciplineRows": {
+      "sectionEyebrow": "",
+      "sectionTitle": "",
+      "sectionSubtitle": "",
+      "items": [
+        {
+          "icon": "",
+          "eyebrow": "Overview",
+          "heading": "The backbone between your panels",
+          "description": "Beyond the wiring inside a wall lies the heavier cable that actually carries the load — from a DG set to the main panel, from a transformer to a distribution board, or underground between buildings on a campus. We supply XLPE and PVC insulated, armoured and unarmoured cable in copper and aluminium, sized to the run length and fault current, not just the nameplate rating.\n\nTermination is done with proper glanding and lugging at both ends, cable trays and routes are planned before the cable is pulled, and every HT run is tested and certified before it's energised.",
+          "checklist": "0.50 to 1000 sq.mm, class-5 flexible copper and aluminium conductors\nXLPE/PVC insulated, armoured cable for underground and tray runs\nSized to run length and fault current — not just nameplate rating\nProper glanding, lugging and termination at panels and equipment\nHT cable testing and certification before energisation",
+          "image": "/seed/subhadra/products/cables.png",
+          "images": [],
+          "clients": [],
+          "brandTag": "RR Kabel",
+          "brandLogos": [
+            {
+              "src": "/seed/subhadra/ourbrands/electrical-products/RRKabel.jpg",
+              "alt": "RR Kabel"
+            }
+          ],
+          "ctaLabel": "Enquire →",
+          "ctaHref": "#get-quote"
+        }
+      ]
+    },
+    "ConstructionIconFeatureGrid": {
+      "sectionEyebrow": "Where it's used",
+      "sectionTitle": "Wherever power has to travel",
+      "items": [
+        {
+          "icon": "hardhat",
+          "biIcon": "bi-gear-fill",
+          "title": "Industrial Plants",
+          "description": "Panel-to-panel and machine feeder cable sized to sustained industrial loads."
+        },
+        {
+          "icon": "plug",
+          "biIcon": "bi-lightning-charge-fill",
+          "title": "DG & Transformer Runs",
+          "description": "Heavy-duty cable between generators, transformers and main distribution panels."
+        },
+        {
+          "icon": "star",
+          "biIcon": "bi-signpost-split-fill",
+          "title": "Underground HT Feeders",
+          "description": "Armoured HT cable laid and tested for campus and township distribution."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-building",
+          "title": "Commercial Buildings",
+          "description": "Riser and feeder cable sized for present and future floor-wise loads."
+        }
+      ]
+    },
+    "ConstructionApproachSplit": {
+      "photo": "/seed/subhadra/brand/shop.webp",
+      "eyebrow": "Why buy from us",
+      "heading": "Sized by engineers, not a rule of thumb",
+      "paragraph1": "A cable that's undersized fails quietly for years before it fails badly. Every run we supply is sized on paper first — voltage drop, fault current and derating all accounted for — before a single length is ordered.",
+      "paragraph2": "",
+      "highlight1Icon": "hardhat",
+      "highlight1BiIcon": "bi-rulers",
+      "highlight1Title": "Engineered Cable Sizing",
+      "highlight1Description": "Voltage drop and fault-current calculations before we quote, not after.",
+      "highlight2Icon": "star",
+      "highlight2BiIcon": "bi-award-fill",
+      "highlight2Title": "Tested Before Energising",
+      "highlight2Description": "HT and heavy LT runs are insulation-tested and certified before go-live.",
+      "stat1Value": "100%",
+      "stat1Label": "Genuine, brand-sourced products",
+      "stat2Value": "0",
+      "stat2Label": "Work outsourced to subcontractors",
+      "stat3Value": "30",
+      "stat3Label": "Years of industry experience"
+    },
+    "ConstructionProcessSteps": {
+      "sectionEyebrow": "How we work",
+      "sectionTitle": "From design to maintenance",
+      "items": [
+        {
+          "stepLabel": "01 — Consult",
+          "title": "Consult",
+          "description": "Site visit and load assessment to understand your exact requirement."
+        },
+        {
+          "stepLabel": "02 — Supply",
+          "title": "Supply",
+          "description": "Genuine, brand-sourced products with original invoice and warranty."
+        },
+        {
+          "stepLabel": "03 — Install",
+          "title": "Install",
+          "description": "Fitted by our own trained engineers — never sub-contracted."
+        },
+        {
+          "stepLabel": "04 — Maintain",
+          "title": "Maintain",
+          "description": "Ongoing AMC and a dedicated service manager on call."
+        }
+      ]
+    },
+    "ConstructionLeadFormFAQ": {
+      "sectionEyebrow": "Get a Quote",
+      "sectionTitle": "Tell us about your requirement",
+      "introText": "Share a few details and our engineers will get back to you with the right specification and a quote — usually within 24 hours.",
+      "showFaqs": false,
+      "checklistItems": "No-obligation site visit & quote\n30 years of trusted installations\nWorld-class brands, our own engineers",
+      "trustStats": [
+        {
+          "number": "30",
+          "label": "Years of trust"
+        },
+        {
+          "number": "15",
+          "label": "Services under one roof"
+        },
+        {
+          "number": "24×7",
+          "label": "Support"
+        }
+      ],
+      "formHeading": "Request a free quote",
+      "formSubtext": "Fill this in and we'll call you back.",
+      "interestOptions": "Electrical — Power & Control Cables\nCentral AC\nHome Automation\nHome Theater\nCCTV & Security\nFire Safety\nElectrical\nSomething else",
+      "ctaLabel": "Get My Free Quote →",
+      "formPrivacyNote": "We'll only use these details to respond to your enquiry."
+    }
+  },
+  "lights": {
+    "ConstructionInnerBanner": {
+      "eyebrow": "Electrical Products",
+      "headline": "LED lighting, indoors and out",
+      "currentLabel": "LED Lighting",
+      "imageAlt": "Close-up of a bright LED light cluster",
+      "backgroundImage": "/seed/subhadra/catalog/d1295ba4033e.jpg",
+      "subtitle": "COB spots, recessed panels, and outdoor street and flood lighting — specified by colour temperature and lux level for the space, not just watts.",
+      "parentLabel": "Products & Services",
+      "parentHref": "products.html",
+      "ctaPrimaryLabel": "Enquire Now →",
+      "ctaPrimaryHref": "#get-quote",
+      "ctaSecondaryLabel": "← Back to Products",
+      "ctaSecondaryHref": "products.html",
+      "ctaTertiaryLabel": "See Our Work →",
+      "ctaTertiaryHref": "work-premium-lighting.html"
+    },
+    "ConstructionDisciplineRows": {
+      "sectionEyebrow": "",
+      "sectionTitle": "",
+      "sectionSubtitle": "",
+      "items": [
+        {
+          "icon": "",
+          "eyebrow": "Overview",
+          "heading": "Everyday LED lighting, done to spec",
+          "description": "General lighting is the fixture count nobody notices until it's wrong — too warm in an office, too dim in a warehouse, or a street light that fails within a year. We specify COB spots and panels by CCT (3000K–6500K) and lux level for the actual task, and outdoor street/flood fixtures rated IP65 and above for our coastal humidity.\n\nCircuits are sized for the fixture count, and every install includes a lux-level check on handover — not just a visual walk-through.",
+          "checklist": "COB spots and recessed panels in 3000K–6500K colour temperature\nIP65+ rated street and flood lighting for outdoor and coastal use\nLux-level checked at handover, not left to a visual walk-through\nCircuits and DBs sized for present fixture count with headroom\nGenuine product with manufacturer warranty on every fixture",
+          "image": "/seed/subhadra/catalog/ebd327e003c2.jpg",
+          "images": [],
+          "clients": [],
+          "brandTag": "Wipro · Crompton",
+          "brandLogos": [
+            {
+              "src": "/seed/subhadra/ourbrands/electrical-products/Wipro.png",
+              "alt": "Wipro"
+            },
+            {
+              "src": "/seed/subhadra/ourbrands/electrical-products/Crompton.avif",
+              "alt": "Crompton"
+            }
+          ],
+          "ctaLabel": "Enquire →",
+          "ctaHref": "#get-quote"
+        }
+      ]
+    },
+    "ConstructionIconFeatureGrid": {
+      "sectionEyebrow": "Where it's used",
+      "sectionTitle": "Lit right for the space and the task",
+      "items": [
+        {
+          "icon": "hardhat",
+          "biIcon": "bi-briefcase-fill",
+          "title": "Offices & Workspaces",
+          "description": "Task-appropriate panel lighting sized to desk-level lux, not just ceiling count."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-shop",
+          "title": "Retail & Showrooms",
+          "description": "COB spotlighting that puts light on the merchandise, not the ceiling."
+        },
+        {
+          "icon": "star",
+          "biIcon": "bi-signpost-2-fill",
+          "title": "Streets & Campuses",
+          "description": "IP65+ street and flood lighting for roads, parking and open grounds."
+        },
+        {
+          "icon": "hardhat",
+          "biIcon": "bi-gear-fill",
+          "title": "Industrial Sheds",
+          "description": "High-bay and flood fixtures sized for warehouse and shop-floor lux targets."
+        }
+      ]
+    },
+    "ConstructionApproachSplit": {
+      "photo": "/seed/subhadra/brand/shop.webp",
+      "eyebrow": "Why buy from us",
+      "heading": "Checked with a lux meter, not just by eye",
+      "paragraph1": "We specify lighting the way an engineer would — by lux level and colour temperature for the task — and verify it on handover with a lux meter, so what you approved on paper is what you actually get on site.",
+      "paragraph2": "",
+      "highlight1Icon": "lightbulb",
+      "highlight1BiIcon": "bi-brightness-high-fill",
+      "highlight1Title": "Lux-Level Verified",
+      "highlight1Description": "Handover includes a measured lux check, not just a visual sign-off.",
+      "highlight2Icon": "snowflake",
+      "highlight2BiIcon": "bi-droplet-fill",
+      "highlight2Title": "Rated For Coastal Humidity",
+      "highlight2Description": "Outdoor fixtures specified IP65+ for Visakhapatnam's coastal conditions.",
+      "stat1Value": "100%",
+      "stat1Label": "Genuine, brand-sourced products",
+      "stat2Value": "0",
+      "stat2Label": "Work outsourced to subcontractors",
+      "stat3Value": "30",
+      "stat3Label": "Years of industry experience"
+    },
+    "ConstructionProcessSteps": {
+      "sectionEyebrow": "How we work",
+      "sectionTitle": "From design to maintenance",
+      "items": [
+        {
+          "stepLabel": "01 — Consult",
+          "title": "Consult",
+          "description": "Site visit and load assessment to understand your exact requirement."
+        },
+        {
+          "stepLabel": "02 — Supply",
+          "title": "Supply",
+          "description": "Genuine, brand-sourced products with original invoice and warranty."
+        },
+        {
+          "stepLabel": "03 — Install",
+          "title": "Install",
+          "description": "Fitted by our own trained engineers — never sub-contracted."
+        },
+        {
+          "stepLabel": "04 — Maintain",
+          "title": "Maintain",
+          "description": "Ongoing AMC and a dedicated service manager on call."
+        }
+      ]
+    },
+    "ConstructionLeadFormFAQ": {
+      "sectionEyebrow": "Get a Quote",
+      "sectionTitle": "Tell us about your requirement",
+      "introText": "Share a few details and our engineers will get back to you with the right specification and a quote — usually within 24 hours.",
+      "showFaqs": false,
+      "checklistItems": "No-obligation site visit & quote\n30 years of trusted installations\nWorld-class brands, our own engineers",
+      "trustStats": [
+        {
+          "number": "30",
+          "label": "Years of trust"
+        },
+        {
+          "number": "15",
+          "label": "Services under one roof"
+        },
+        {
+          "number": "24×7",
+          "label": "Support"
+        }
+      ],
+      "formHeading": "Request a free quote",
+      "formSubtext": "Fill this in and we'll call you back.",
+      "interestOptions": "Electrical — LED Lighting\nCentral AC\nHome Automation\nHome Theater\nCCTV & Security\nFire Safety\nElectrical\nSomething else",
+      "ctaLabel": "Get My Free Quote →",
+      "formPrivacyNote": "We'll only use these details to respond to your enquiry."
+    }
+  },
+  "fans-ventilation": {
+    "ConstructionInnerBanner": {
+      "eyebrow": "Electrical Products",
+      "headline": "Fans and ventilation, sized to the room",
+      "currentLabel": "Fans & Ventilation",
+      "imageAlt": "White ceiling fan mounted on a room ceiling",
+      "backgroundImage": "/seed/subhadra/catalog/698877875e86.jpg",
+      "subtitle": "Designer ceiling fans, kitchen and bathroom exhaust, and fresh-air ventilation systems — sized to room volume and air-change requirement, not guesswork.",
+      "parentLabel": "Products & Services",
+      "parentHref": "products.html",
+      "ctaPrimaryLabel": "Enquire Now →",
+      "ctaPrimaryHref": "#get-quote",
+      "ctaSecondaryLabel": "← Back to Products",
+      "ctaSecondaryHref": "products.html"
+    },
+    "ConstructionDisciplineRows": {
+      "sectionEyebrow": "",
+      "sectionTitle": "",
+      "sectionSubtitle": "",
+      "items": [
+        {
+          "icon": "",
+          "eyebrow": "Overview",
+          "heading": "Air movement that's actually sized right",
+          "description": "A fan or exhaust system is only as good as its sizing — undersized and a kitchen stays smoky, oversized in a bedroom and it's just noise. We size ceiling fans (including energy-saving BLDC motors) to room area, and exhaust/fresh-air systems to the required air changes per hour for kitchens, bathrooms and basements.\n\nDucting for fresh-air systems is routed and sealed properly rather than left as an afterthought, so airflow matches what was actually specified.",
+          "checklist": "Designer ceiling fans, including energy-saving BLDC motor options\nKitchen and bathroom exhaust sized to required air changes per hour\nBasement and parking fresh-air ventilation with properly sealed ducting\nRoom-area based sizing — not a single fan size for every room\nGenuine product with manufacturer warranty",
+          "image": "/seed/subhadra/catalog/f09a448c8151.jpg",
+          "images": [],
+          "clients": [],
+          "brandTag": "Crompton · WadBros",
+          "brandLogos": [
+            {
+              "src": "/seed/subhadra/ourbrands/electrical-products/Crompton.avif",
+              "alt": "Crompton"
+            },
+            {
+              "src": "/seed/subhadra/ourbrands/electrical-products/Wadbros.png",
+              "alt": "WadBros"
+            }
+          ],
+          "ctaLabel": "Enquire →",
+          "ctaHref": "#get-quote"
+        }
+      ]
+    },
+    "ConstructionIconFeatureGrid": {
+      "sectionEyebrow": "Where it's used",
+      "sectionTitle": "From bedrooms to basements",
+      "items": [
+        {
+          "icon": "housegear",
+          "biIcon": "bi-house-heart-fill",
+          "title": "Homes & Villas",
+          "description": "Designer and BLDC ceiling fans sized to each room, not a flat standard."
+        },
+        {
+          "icon": "hardhat",
+          "biIcon": "bi-cup-hot-fill",
+          "title": "Restaurants & Kitchens",
+          "description": "Exhaust systems sized to actual cooking-line air-change requirements."
+        },
+        {
+          "icon": "hardhat",
+          "biIcon": "bi-briefcase-fill",
+          "title": "Offices",
+          "description": "Washroom and pantry exhaust integrated with the building's ventilation plan."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-p-square-fill",
+          "title": "Basements & Parking",
+          "description": "Fresh-air systems that actually clear enclosed parking levels, ducted and sealed."
+        }
+      ]
+    },
+    "ConstructionApproachSplit": {
+      "photo": "/seed/subhadra/brand/shop.webp",
+      "eyebrow": "Why buy from us",
+      "heading": "Sized to air changes, not a catalogue guess",
+      "paragraph1": "We calculate the air changes a space actually needs before specifying a fan or exhaust unit, so a kitchen clears smoke and a basement clears fumes — not just spins a motor.",
+      "paragraph2": "",
+      "highlight1Icon": "snowflake",
+      "highlight1BiIcon": "bi-wind",
+      "highlight1Title": "Air-Change Calculations",
+      "highlight1Description": "Kitchen, bathroom and basement systems sized to required ACH, not a standard SKU.",
+      "highlight2Icon": "hardhat",
+      "highlight2BiIcon": "bi-tools",
+      "highlight2Title": "Properly Sealed Ducting",
+      "highlight2Description": "Fresh-air ducting is routed and sealed, so specified airflow reaches the room.",
+      "stat1Value": "100%",
+      "stat1Label": "Genuine, brand-sourced products",
+      "stat2Value": "0",
+      "stat2Label": "Work outsourced to subcontractors",
+      "stat3Value": "30",
+      "stat3Label": "Years of industry experience"
+    },
+    "ConstructionProcessSteps": {
+      "sectionEyebrow": "How we work",
+      "sectionTitle": "From design to maintenance",
+      "items": [
+        {
+          "stepLabel": "01 — Consult",
+          "title": "Consult",
+          "description": "Site visit and load assessment to understand your exact requirement."
+        },
+        {
+          "stepLabel": "02 — Supply",
+          "title": "Supply",
+          "description": "Genuine, brand-sourced products with original invoice and warranty."
+        },
+        {
+          "stepLabel": "03 — Install",
+          "title": "Install",
+          "description": "Fitted by our own trained engineers — never sub-contracted."
+        },
+        {
+          "stepLabel": "04 — Maintain",
+          "title": "Maintain",
+          "description": "Ongoing AMC and a dedicated service manager on call."
+        }
+      ]
+    },
+    "ConstructionLeadFormFAQ": {
+      "sectionEyebrow": "Get a Quote",
+      "sectionTitle": "Tell us about your requirement",
+      "introText": "Share a few details and our engineers will get back to you with the right specification and a quote — usually within 24 hours.",
+      "showFaqs": false,
+      "checklistItems": "No-obligation site visit & quote\n30 years of trusted installations\nWorld-class brands, our own engineers",
+      "trustStats": [
+        {
+          "number": "30",
+          "label": "Years of trust"
+        },
+        {
+          "number": "15",
+          "label": "Services under one roof"
+        },
+        {
+          "number": "24×7",
+          "label": "Support"
+        }
+      ],
+      "formHeading": "Request a free quote",
+      "formSubtext": "Fill this in and we'll call you back.",
+      "interestOptions": "Electrical — Fans & Ventilation\nCentral AC\nHome Automation\nHome Theater\nCCTV & Security\nFire Safety\nElectrical\nSomething else",
+      "ctaLabel": "Get My Free Quote →",
+      "formPrivacyNote": "We'll only use these details to respond to your enquiry."
+    }
+  },
+  "mcb-db-switchgear": {
+    "ConstructionInnerBanner": {
+      "eyebrow": "Electrical Products",
+      "headline": "Switchgear sized to your load, not a shelf part number",
+      "currentLabel": "MCB, DB & Switchgear",
+      "imageAlt": "Electrical MCB and switchgear panel",
+      "backgroundImage": "/seed/subhadra/products/mcb1.jpg",
+      "subtitle": "MCB, MCCB and ACB protection, SPN/TPN distribution boards and custom-built panel boards — sized to your connected load and fault level, to IS/IEC standards.",
+      "parentLabel": "Products & Services",
+      "parentHref": "products.html",
+      "ctaPrimaryLabel": "Enquire Now →",
+      "ctaPrimaryHref": "#get-quote",
+      "ctaSecondaryLabel": "← Back to Products",
+      "ctaSecondaryHref": "products.html"
+    },
+    "ConstructionDisciplineRows": {
+      "sectionEyebrow": "",
+      "sectionTitle": "",
+      "sectionSubtitle": "",
+      "items": [
+        {
+          "icon": "",
+          "eyebrow": "Overview",
+          "heading": "The protection layer that keeps everything else safe",
+          "description": "Every circuit downstream of a switchgear panel is only as safe as its protection device — an MCB rated too high won't trip when it should, one rated too low nuisance-trips under normal load. We calculate connected load, diversity and short-circuit current before selecting MCB, MCCB or ACB ratings, and build SPN/TPN distribution boards and custom panel boards to match.\n\nEvery panel is single-line diagrammed, labelled circuit-by-circuit, and tested before handover — so a fault years later is a five-minute fix, not a guessing game.",
+          "checklist": "MCB, MCCB and ACB protection sized to connected load and fault current\nSPN/TPN distribution boards and custom-built panel boards\nSingle-line diagram and circuit labelling on every panel, on handover\nIS/IEC compliant selectivity between upstream and downstream devices\nGenuine Schneider Electric product with manufacturer warranty",
+          "image": "/seed/subhadra/products/mcb1.jpg",
+          "images": [],
+          "clients": [],
+          "brandTag": "Schneider Electric",
+          "brandLogos": [
+            {
+              "src": "/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png",
+              "alt": "Schneider Electric"
+            }
+          ],
+          "ctaLabel": "Enquire →",
+          "ctaHref": "#get-quote"
+        }
+      ]
+    },
+    "ConstructionIconFeatureGrid": {
+      "sectionEyebrow": "Where it's used",
+      "sectionTitle": "From a flat's DB to a plant's main panel",
+      "items": [
+        {
+          "icon": "housegear",
+          "biIcon": "bi-house-fill",
+          "title": "Homes & Premium Flats",
+          "description": "Correctly sized DBs with RCD/RCCB protection on wet-area and AC circuits."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-building",
+          "title": "Commercial Buildings",
+          "description": "Floor-wise TPN boards and riser panels sized for present and future load."
+        },
+        {
+          "icon": "hardhat",
+          "biIcon": "bi-gear-fill",
+          "title": "Industrial Plants",
+          "description": "Custom panel boards with selective MCCB/ACB coordination for process loads."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-bank",
+          "title": "Government & Institutions",
+          "description": "Documented, audit-ready switchgear to government procurement standards."
+        }
+      ]
+    },
+    "ConstructionApproachSplit": {
+      "photo": "/seed/subhadra/brand/shop.webp",
+      "eyebrow": "Why buy from us",
+      "heading": "Load calculations before the order, not after",
+      "paragraph1": "We size every panel on a load and fault-current calculation before we quote — so the MCB that trips, trips for the right reason, and the one that shouldn't, doesn't.",
+      "paragraph2": "",
+      "highlight1Icon": "hardhat",
+      "highlight1BiIcon": "bi-calculator-fill",
+      "highlight1Title": "Load & Fault Calculated",
+      "highlight1Description": "Ratings selected on connected load and fault current, not a rule of thumb.",
+      "highlight2Icon": "hardhat",
+      "highlight2BiIcon": "bi-diagram-3-fill",
+      "highlight2Title": "Documented On Handover",
+      "highlight2Description": "Single-line diagram and circuit labels handed over with every panel.",
+      "stat1Value": "100%",
+      "stat1Label": "Genuine, brand-sourced products",
+      "stat2Value": "0",
+      "stat2Label": "Work outsourced to subcontractors",
+      "stat3Value": "30",
+      "stat3Label": "Years of industry experience"
+    },
+    "ConstructionProcessSteps": {
+      "sectionEyebrow": "How we work",
+      "sectionTitle": "From design to maintenance",
+      "items": [
+        {
+          "stepLabel": "01 — Consult",
+          "title": "Consult",
+          "description": "Site visit and load assessment to understand your exact requirement."
+        },
+        {
+          "stepLabel": "02 — Supply",
+          "title": "Supply",
+          "description": "Genuine, brand-sourced products with original invoice and warranty."
+        },
+        {
+          "stepLabel": "03 — Install",
+          "title": "Install",
+          "description": "Fitted by our own trained engineers — never sub-contracted."
+        },
+        {
+          "stepLabel": "04 — Maintain",
+          "title": "Maintain",
+          "description": "Ongoing AMC and a dedicated service manager on call."
+        }
+      ]
+    },
+    "ConstructionLeadFormFAQ": {
+      "sectionEyebrow": "Get a Quote",
+      "sectionTitle": "Tell us about your requirement",
+      "introText": "Share a few details and our engineers will get back to you with the right specification and a quote — usually within 24 hours.",
+      "showFaqs": false,
+      "checklistItems": "No-obligation site visit & quote\n30 years of trusted installations\nWorld-class brands, our own engineers",
+      "trustStats": [
+        {
+          "number": "30",
+          "label": "Years of trust"
+        },
+        {
+          "number": "15",
+          "label": "Services under one roof"
+        },
+        {
+          "number": "24×7",
+          "label": "Support"
+        }
+      ],
+      "formHeading": "Request a free quote",
+      "formSubtext": "Fill this in and we'll call you back.",
+      "interestOptions": "Electrical — MCB, DB & Switchgear\nCentral AC\nHome Automation\nHome Theater\nCCTV & Security\nFire Safety\nElectrical\nSomething else",
+      "ctaLabel": "Get My Free Quote →",
+      "formPrivacyNote": "We'll only use these details to respond to your enquiry."
+    }
+  },
+  "generators": {
+    "ConstructionInnerBanner": {
+      "eyebrow": "Electrical Products",
+      "headline": "Diesel generators that carry the load when the grid doesn't",
+      "currentLabel": "Diesel Generators",
+      "imageAlt": "Cummins diesel generator power backup unit",
+      "backgroundImage": "/seed/subhadra/products/generators.png",
+      "subtitle": "15 KVA to 3750 KVA silent diesel generators — sized to your critical and non-critical load split, with AMF panels for automatic changeover.",
+      "parentLabel": "Products & Services",
+      "parentHref": "products.html",
+      "ctaPrimaryLabel": "Enquire Now →",
+      "ctaPrimaryHref": "#get-quote",
+      "ctaSecondaryLabel": "← Back to Products",
+      "ctaSecondaryHref": "products.html"
+    },
+    "ConstructionDisciplineRows": {
+      "sectionEyebrow": "",
+      "sectionTitle": "",
+      "sectionSubtitle": "",
+      "items": [
+        {
+          "icon": "",
+          "eyebrow": "Overview",
+          "heading": "Backup power sized to what actually matters",
+          "description": "Not every load in a building needs to run on a generator during an outage — sizing a DG to everything wastes fuel and money, sizing it to too little leaves critical equipment down. We split your load into essential and non-essential, size the DG set to the essential load with realistic diversity, and configure the AMF panel to changeover automatically without operator intervention.\n\nAcoustic enclosures and exhaust routing are specified for your site's noise and emission norms, and every installation includes load-bank testing before handover.",
+          "checklist": "15 KVA to 3750 KVA sets, sized to essential-load split with diversity\nAMF panels for automatic, unattended changeover on grid failure\nAcoustic enclosures sized to site noise norms\nCPCB-compliant emission and exhaust routing\nLoad-bank tested before handover, with AMC for ongoing service",
+          "image": "/seed/subhadra/products/generators.png",
+          "images": [],
+          "clients": [],
+          "brandTag": "Cummins · Jakson · Mahindra",
+          "brandLogos": [
+            {
+              "src": "/seed/subhadra/ourbrands/electrical-products/Cunnins.png",
+              "alt": "Cummins"
+            },
+            {
+              "src": "/seed/subhadra/ourbrands/electrical-products/Jakson.png",
+              "alt": "Jakson"
+            },
+            {
+              "src": "/seed/subhadra/ourbrands/electrical-products/Mahindra.png",
+              "alt": "Mahindra"
+            }
+          ],
+          "ctaLabel": "Enquire →",
+          "ctaHref": "#get-quote"
+        }
+      ]
+    },
+    "ConstructionIconFeatureGrid": {
+      "sectionEyebrow": "Where it's used",
+      "sectionTitle": "Where downtime isn't an option",
+      "items": [
+        {
+          "icon": "housegear",
+          "biIcon": "bi-building",
+          "title": "Hotels & Hospitals",
+          "description": "Critical-load backup for guest rooms, OTs, ICUs and life-safety systems."
+        },
+        {
+          "icon": "hardhat",
+          "biIcon": "bi-gear-fill",
+          "title": "Industry & Plants",
+          "description": "Production-line backup sized to keep process equipment running through outages."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-buildings",
+          "title": "Commercial Buildings",
+          "description": "Lift, lighting and IT-load backup sized to essential building services."
+        },
+        {
+          "icon": "star",
+          "biIcon": "bi-signpost-split-fill",
+          "title": "Gated Communities",
+          "description": "Common-area and lift backup sized for the whole township, on one AMC."
+        }
+      ]
+    },
+    "ConstructionApproachSplit": {
+      "photo": "/seed/subhadra/brand/shop.webp",
+      "eyebrow": "Why buy from us",
+      "heading": "Load-bank tested before you ever need it",
+      "paragraph1": "A generator that hasn't been load-bank tested is a guess. We test every set at rated load before handover, so the first real outage isn't the first time it's actually been proven.",
+      "paragraph2": "",
+      "highlight1Icon": "hardhat",
+      "highlight1BiIcon": "bi-clipboard-check-fill",
+      "highlight1Title": "Load-Bank Tested",
+      "highlight1Description": "Every set is tested at rated load before handover, not just started and idled.",
+      "highlight2Icon": "star",
+      "highlight2BiIcon": "bi-headset",
+      "highlight2Title": "AMC & 24×7 Service",
+      "highlight2Description": "A dedicated service manager for ongoing maintenance, not a one-time install.",
+      "stat1Value": "100%",
+      "stat1Label": "Genuine, brand-sourced products",
+      "stat2Value": "0",
+      "stat2Label": "Work outsourced to subcontractors",
+      "stat3Value": "30",
+      "stat3Label": "Years of industry experience"
+    },
+    "ConstructionProcessSteps": {
+      "sectionEyebrow": "How we work",
+      "sectionTitle": "From design to maintenance",
+      "items": [
+        {
+          "stepLabel": "01 — Consult",
+          "title": "Consult",
+          "description": "Site visit and load assessment to understand your exact requirement."
+        },
+        {
+          "stepLabel": "02 — Supply",
+          "title": "Supply",
+          "description": "Genuine, brand-sourced products with original invoice and warranty."
+        },
+        {
+          "stepLabel": "03 — Install",
+          "title": "Install",
+          "description": "Fitted by our own trained engineers — never sub-contracted."
+        },
+        {
+          "stepLabel": "04 — Maintain",
+          "title": "Maintain",
+          "description": "Ongoing AMC and a dedicated service manager on call."
+        }
+      ]
+    },
+    "ConstructionLeadFormFAQ": {
+      "sectionEyebrow": "Get a Quote",
+      "sectionTitle": "Tell us about your requirement",
+      "introText": "Share a few details and our engineers will get back to you with the right specification and a quote — usually within 24 hours.",
+      "showFaqs": false,
+      "checklistItems": "No-obligation site visit & quote\n30 years of trusted installations\nWorld-class brands, our own engineers",
+      "trustStats": [
+        {
+          "number": "30",
+          "label": "Years of trust"
+        },
+        {
+          "number": "15",
+          "label": "Services under one roof"
+        },
+        {
+          "number": "24×7",
+          "label": "Support"
+        }
+      ],
+      "formHeading": "Request a free quote",
+      "formSubtext": "Fill this in and we'll call you back.",
+      "interestOptions": "Electrical — Diesel Generators\nCentral AC\nHome Automation\nHome Theater\nCCTV & Security\nFire Safety\nElectrical\nSomething else",
+      "ctaLabel": "Get My Free Quote →",
+      "formPrivacyNote": "We'll only use these details to respond to your enquiry."
+    }
+  },
+  "transformers": {
+    "ConstructionInnerBanner": {
+      "eyebrow": "Electrical Products",
+      "headline": "Transformers, sized from 100 KVA to 220 kV class",
+      "currentLabel": "Distribution & Power Transformers",
+      "imageAlt": "Oil-cooled distribution transformer",
+      "backgroundImage": "/seed/subhadra/products/transformers.png",
+      "subtitle": "Distribution transformers from 100 KVA to 2 MVA, and power transformers up to 220 kV class — oil-cooled (ONAN) or dry-type, with off-load (OCTC) or on-load (OLTC) tap changers.",
+      "parentLabel": "Products & Services",
+      "parentHref": "products.html",
+      "ctaPrimaryLabel": "Enquire Now →",
+      "ctaPrimaryHref": "#get-quote",
+      "ctaSecondaryLabel": "← Back to Products",
+      "ctaSecondaryHref": "products.html"
+    },
+    "ConstructionDisciplineRows": {
+      "sectionEyebrow": "",
+      "sectionTitle": "",
+      "sectionSubtitle": "",
+      "items": [
+        {
+          "icon": "",
+          "eyebrow": "Overview",
+          "heading": "The step-down that everything else depends on",
+          "description": "A transformer is a decades-long asset, so we size it on the plant or building's actual demand curve, not just today's connected load — with headroom for growth built in from day one. We supply oil-cooled (ONAN) transformers for outdoor substations and dry-type for indoor/basement installations where oil isn't permitted, with off-load (OCTC) or on-load (OLTC) tap changers depending on how tightly voltage needs to be regulated.\n\nEvery transformer is commissioned with oil/insulation testing (for oil-cooled units) and megger/ratio testing before it's energised, to IS 2026.",
+          "checklist": "Distribution transformers 100 KVA–2 MVA, power up to 220 kV class\nOil-cooled (ONAN) for outdoor substations, dry-type for indoor installs\nOff-load (OCTC) or on-load (OLTC) tap changers as required\nSized with headroom for future load growth, not just today's demand\nIS 2026 compliant testing and commissioning before energisation",
+          "image": "/seed/subhadra/products/transformers.png",
+          "images": [],
+          "clients": [],
+          "brandTag": "",
+          "brandLogos": [],
+          "ctaLabel": "Enquire →",
+          "ctaHref": "#get-quote"
+        }
+      ]
+    },
+    "ConstructionIconFeatureGrid": {
+      "sectionEyebrow": "Where it's used",
+      "sectionTitle": "From a single substation to a full campus",
+      "items": [
+        {
+          "icon": "hardhat",
+          "biIcon": "bi-gear-fill",
+          "title": "Industry & Plants",
+          "description": "Power transformers sized to process load with headroom for expansion."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-buildings",
+          "title": "Builders & Townships",
+          "description": "Distribution transformers sized block-by-block for the full development."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-bank",
+          "title": "Government & Utilities",
+          "description": "Substation transformers documented to procurement and audit standards."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-hospital-fill",
+          "title": "Hospitals & Critical Infra",
+          "description": "Reliable step-down power backing critical-care electrical infrastructure."
+        }
+      ]
+    },
+    "ConstructionApproachSplit": {
+      "photo": "/seed/subhadra/brand/shop.webp",
+      "eyebrow": "Why buy from us",
+      "heading": "Sized for the demand curve, not just the nameplate",
+      "paragraph1": "A transformer sized to today's load alone is undersized the day the building grows. We size on the projected demand curve, and commission every unit with the full battery of IS 2026 tests before it carries a single load.",
+      "paragraph2": "",
+      "highlight1Icon": "star",
+      "highlight1BiIcon": "bi-graph-up-arrow",
+      "highlight1Title": "Sized For Growth",
+      "highlight1Description": "Demand-curve based sizing, not just a snapshot of today's connected load.",
+      "highlight2Icon": "hardhat",
+      "highlight2BiIcon": "bi-clipboard-check-fill",
+      "highlight2Title": "Fully Commissioned",
+      "highlight2Description": "Oil, ratio and megger tested to IS 2026 before energisation.",
+      "stat1Value": "100%",
+      "stat1Label": "Genuine, brand-sourced products",
+      "stat2Value": "0",
+      "stat2Label": "Work outsourced to subcontractors",
+      "stat3Value": "30",
+      "stat3Label": "Years of industry experience"
+    },
+    "ConstructionProcessSteps": {
+      "sectionEyebrow": "How we work",
+      "sectionTitle": "From design to maintenance",
+      "items": [
+        {
+          "stepLabel": "01 — Consult",
+          "title": "Consult",
+          "description": "Site visit and load assessment to understand your exact requirement."
+        },
+        {
+          "stepLabel": "02 — Supply",
+          "title": "Supply",
+          "description": "Genuine, brand-sourced products with original invoice and warranty."
+        },
+        {
+          "stepLabel": "03 — Install",
+          "title": "Install",
+          "description": "Fitted by our own trained engineers — never sub-contracted."
+        },
+        {
+          "stepLabel": "04 — Maintain",
+          "title": "Maintain",
+          "description": "Ongoing AMC and a dedicated service manager on call."
+        }
+      ]
+    },
+    "ConstructionLeadFormFAQ": {
+      "sectionEyebrow": "Get a Quote",
+      "sectionTitle": "Tell us about your requirement",
+      "introText": "Share a few details and our engineers will get back to you with the right specification and a quote — usually within 24 hours.",
+      "showFaqs": false,
+      "checklistItems": "No-obligation site visit & quote\n30 years of trusted installations\nWorld-class brands, our own engineers",
+      "trustStats": [
+        {
+          "number": "30",
+          "label": "Years of trust"
+        },
+        {
+          "number": "15",
+          "label": "Services under one roof"
+        },
+        {
+          "number": "24×7",
+          "label": "Support"
+        }
+      ],
+      "formHeading": "Request a free quote",
+      "formSubtext": "Fill this in and we'll call you back.",
+      "interestOptions": "Electrical — Transformers\nCentral AC\nHome Automation\nHome Theater\nCCTV & Security\nFire Safety\nElectrical\nSomething else",
+      "ctaLabel": "Get My Free Quote →",
+      "formPrivacyNote": "We'll only use these details to respond to your enquiry."
+    }
+  },
+  "servo-stabilizers": {
+    "ConstructionInnerBanner": {
+      "eyebrow": "Electrical Products",
+      "headline": "Servo stabilizers that protect what voltage swings destroy",
+      "currentLabel": "Servo Voltage Stabilizers",
+      "imageAlt": "Servo voltage stabilizer unit",
+      "backgroundImage": "/seed/subhadra/products/servo-stabilizers.png",
+      "subtitle": "Servo-controlled voltage stabilizers, single and three-phase — protecting CNC machines, medical equipment and cold-storage from the voltage swings that damage them.",
+      "parentLabel": "Products & Services",
+      "parentHref": "products.html",
+      "ctaPrimaryLabel": "Enquire Now →",
+      "ctaPrimaryHref": "#get-quote",
+      "ctaSecondaryLabel": "← Back to Products",
+      "ctaSecondaryHref": "products.html"
+    },
+    "ConstructionDisciplineRows": {
+      "sectionEyebrow": "",
+      "sectionTitle": "",
+      "sectionSubtitle": "",
+      "items": [
+        {
+          "icon": "",
+          "eyebrow": "Overview",
+          "heading": "Regulation tight enough to protect sensitive loads",
+          "description": "CNC machines, medical imaging equipment and cold-storage compressors don't fail because of a power cut — they fail from the voltage swing right before or after one. Servo-controlled stabilizers correct voltage with roughly ±1% regulation accuracy, far tighter than a static or relay-type stabilizer, and we size them to the connected equipment's inrush current, not just its running load.\n\nEvery unit is installed with proper bypass arrangement so maintenance never means downtime, and we commission with a load test before handover.",
+          "checklist": "Single-phase and three-phase servo-controlled units\n≈±1% output regulation accuracy — tighter than static/relay types\nSized to equipment inrush current, not just steady-state load\nBypass arrangement fitted so maintenance doesn't mean downtime\nLoad-tested at commissioning before handover",
+          "image": "/seed/subhadra/products/servo-stabilizers.png",
+          "images": [],
+          "clients": [],
+          "brandTag": "Servomax · Powertex · Fuji",
+          "brandLogos": [
+            {
+              "src": "/seed/subhadra/ourbrands/electrical-products/Servomax-logo-2048x471.webp",
+              "alt": "Servomax"
+            },
+            {
+              "src": "/seed/subhadra/ourbrands/electrical-products/Power Tex.jpg",
+              "alt": "Powertex"
+            },
+            {
+              "src": "/seed/subhadra/ourbrands/electrical-products/Fuji-Electric-Logo.jpg",
+              "alt": "Fuji"
+            }
+          ],
+          "ctaLabel": "Enquire →",
+          "ctaHref": "#get-quote"
+        }
+      ]
+    },
+    "ConstructionIconFeatureGrid": {
+      "sectionEyebrow": "Where it's used",
+      "sectionTitle": "Wherever a voltage swing means a costly failure",
+      "items": [
+        {
+          "icon": "hardhat",
+          "biIcon": "bi-gear-fill",
+          "title": "Industry & CNC Machines",
+          "description": "Protects precision machine tools from voltage swings on the plant supply."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-hospital-fill",
+          "title": "Hospitals",
+          "description": "Stabilized supply for imaging and other voltage-sensitive medical equipment."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-shop",
+          "title": "Retail & Showrooms",
+          "description": "Protects AC, refrigeration and lighting loads from local grid fluctuation."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-building",
+          "title": "Hotels",
+          "description": "Stable voltage for kitchen, laundry and guest-room equipment."
+        }
+      ]
+    },
+    "ConstructionApproachSplit": {
+      "photo": "/seed/subhadra/brand/shop.webp",
+      "eyebrow": "Why buy from us",
+      "heading": "Sized to inrush current, not just running load",
+      "paragraph1": "A stabilizer sized only to running load trips or fails the moment your equipment starts up. We size on inrush current and fit a bypass, so servicing the stabilizer never means shutting down your equipment.",
+      "paragraph2": "",
+      "highlight1Icon": "plug",
+      "highlight1BiIcon": "bi-lightning-fill",
+      "highlight1Title": "Inrush-Rated Sizing",
+      "highlight1Description": "Sized to equipment start-up current, not just its steady running load.",
+      "highlight2Icon": "star",
+      "highlight2BiIcon": "bi-arrow-repeat",
+      "highlight2Title": "Bypass Fitted",
+      "highlight2Description": "Maintenance and servicing without interrupting the protected equipment.",
+      "stat1Value": "100%",
+      "stat1Label": "Genuine, brand-sourced products",
+      "stat2Value": "0",
+      "stat2Label": "Work outsourced to subcontractors",
+      "stat3Value": "30",
+      "stat3Label": "Years of industry experience"
+    },
+    "ConstructionProcessSteps": {
+      "sectionEyebrow": "How we work",
+      "sectionTitle": "From design to maintenance",
+      "items": [
+        {
+          "stepLabel": "01 — Consult",
+          "title": "Consult",
+          "description": "Site visit and load assessment to understand your exact requirement."
+        },
+        {
+          "stepLabel": "02 — Supply",
+          "title": "Supply",
+          "description": "Genuine, brand-sourced products with original invoice and warranty."
+        },
+        {
+          "stepLabel": "03 — Install",
+          "title": "Install",
+          "description": "Fitted by our own trained engineers — never sub-contracted."
+        },
+        {
+          "stepLabel": "04 — Maintain",
+          "title": "Maintain",
+          "description": "Ongoing AMC and a dedicated service manager on call."
+        }
+      ]
+    },
+    "ConstructionLeadFormFAQ": {
+      "sectionEyebrow": "Get a Quote",
+      "sectionTitle": "Tell us about your requirement",
+      "introText": "Share a few details and our engineers will get back to you with the right specification and a quote — usually within 24 hours.",
+      "showFaqs": false,
+      "checklistItems": "No-obligation site visit & quote\n30 years of trusted installations\nWorld-class brands, our own engineers",
+      "trustStats": [
+        {
+          "number": "30",
+          "label": "Years of trust"
+        },
+        {
+          "number": "15",
+          "label": "Services under one roof"
+        },
+        {
+          "number": "24×7",
+          "label": "Support"
+        }
+      ],
+      "formHeading": "Request a free quote",
+      "formSubtext": "Fill this in and we'll call you back.",
+      "interestOptions": "Electrical — Servo Stabilizers\nCentral AC\nHome Automation\nHome Theater\nCCTV & Security\nFire Safety\nElectrical\nSomething else",
+      "ctaLabel": "Get My Free Quote →",
+      "formPrivacyNote": "We'll only use these details to respond to your enquiry."
+    }
+  },
+  "ups": {
+    "ConstructionInnerBanner": {
+      "eyebrow": "Electrical Products",
+      "headline": "Online UPS, sized to your actual critical load",
+      "currentLabel": "Online UPS Systems",
+      "imageAlt": "Online UPS battery backup cabinet",
+      "backgroundImage": "/seed/subhadra/products/ups.png",
+      "subtitle": "Online double-conversion UPS from 1 KVA upward — sized to your critical load and required backup runtime, for homes, offices and server rooms.",
+      "parentLabel": "Products & Services",
+      "parentHref": "products.html",
+      "ctaPrimaryLabel": "Enquire Now →",
+      "ctaPrimaryHref": "#get-quote",
+      "ctaSecondaryLabel": "← Back to Products",
+      "ctaSecondaryHref": "products.html"
+    },
+    "ConstructionDisciplineRows": {
+      "sectionEyebrow": "",
+      "sectionTitle": "",
+      "sectionSubtitle": "",
+      "items": [
+        {
+          "icon": "",
+          "eyebrow": "Overview",
+          "heading": "Zero-transfer-time backup for what can't blink",
+          "description": "A UPS is only as good as its sizing — too small and it can't hold the runtime you need, too small on battery bank and a five-minute grid dip becomes a hard shutdown. We size online double-conversion UPS to your actual critical load (server racks, POS systems, medical devices, essential lighting) and the runtime you actually need, not a generic VA figure.\n\nBattery banks are sized and housed correctly for ventilation and life expectancy, and every installation is load-tested before handover.",
+          "checklist": "Online double-conversion UPS from 1 KVA upward\nZero transfer time — critical loads never see a power blink\nBattery bank sized to actual required runtime, not a generic figure\nCorrectly ventilated battery housing for rated battery life\nLoad-tested at commissioning, with AMC available",
+          "image": "/seed/subhadra/products/ups.png",
+          "images": [],
+          "clients": [],
+          "brandTag": "APC · Fuji Electric",
+          "brandLogos": [
+            {
+              "src": "/seed/subhadra/ourbrands/electrical-products/LogoAPC.svg",
+              "alt": "APC"
+            },
+            {
+              "src": "/seed/subhadra/ourbrands/electrical-products/Fuji-Electric-Logo.jpg",
+              "alt": "Fuji Electric"
+            }
+          ],
+          "ctaLabel": "Enquire →",
+          "ctaHref": "#get-quote"
+        }
+      ]
+    },
+    "ConstructionIconFeatureGrid": {
+      "sectionEyebrow": "Where it's used",
+      "sectionTitle": "Wherever a power blink can't be tolerated",
+      "items": [
+        {
+          "icon": "plug",
+          "biIcon": "bi-server",
+          "title": "Server Rooms & IT",
+          "description": "Zero-transfer-time backup for servers, networking racks and IT loads."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-house-fill",
+          "title": "Homes & Offices",
+          "description": "Backup sized for essential lighting, Wi-Fi and workstation continuity."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-hospital-fill",
+          "title": "Hospitals",
+          "description": "Critical-care equipment backup with runtime sized to your requirement."
+        },
+        {
+          "icon": "plug",
+          "biIcon": "bi-credit-card-fill",
+          "title": "Retail & POS Systems",
+          "description": "Keeps billing and POS systems running through short grid interruptions."
+        }
+      ]
+    },
+    "ConstructionApproachSplit": {
+      "photo": "/seed/subhadra/brand/shop.webp",
+      "eyebrow": "Why buy from us",
+      "heading": "Sized to your runtime, not a generic VA number",
+      "paragraph1": "We ask what has to stay running and for how long, then size the UPS and battery bank to that answer — so your backup actually covers the outage, instead of running out five minutes in.",
+      "paragraph2": "",
+      "highlight1Icon": "plug",
+      "highlight1BiIcon": "bi-battery-charging",
+      "highlight1Title": "Runtime-Based Sizing",
+      "highlight1Description": "Battery bank sized to your actual required backup duration.",
+      "highlight2Icon": "snowflake",
+      "highlight2BiIcon": "bi-thermometer-half",
+      "highlight2Title": "Correctly Ventilated",
+      "highlight2Description": "Battery housing built for the ventilation your battery bank's lifespan needs.",
+      "stat1Value": "100%",
+      "stat1Label": "Genuine, brand-sourced products",
+      "stat2Value": "0",
+      "stat2Label": "Work outsourced to subcontractors",
+      "stat3Value": "30",
+      "stat3Label": "Years of industry experience"
+    },
+    "ConstructionProcessSteps": {
+      "sectionEyebrow": "How we work",
+      "sectionTitle": "From design to maintenance",
+      "items": [
+        {
+          "stepLabel": "01 — Consult",
+          "title": "Consult",
+          "description": "Site visit and load assessment to understand your exact requirement."
+        },
+        {
+          "stepLabel": "02 — Supply",
+          "title": "Supply",
+          "description": "Genuine, brand-sourced products with original invoice and warranty."
+        },
+        {
+          "stepLabel": "03 — Install",
+          "title": "Install",
+          "description": "Fitted by our own trained engineers — never sub-contracted."
+        },
+        {
+          "stepLabel": "04 — Maintain",
+          "title": "Maintain",
+          "description": "Ongoing AMC and a dedicated service manager on call."
+        }
+      ]
+    },
+    "ConstructionLeadFormFAQ": {
+      "sectionEyebrow": "Get a Quote",
+      "sectionTitle": "Tell us about your requirement",
+      "introText": "Share a few details and our engineers will get back to you with the right specification and a quote — usually within 24 hours.",
+      "showFaqs": false,
+      "checklistItems": "No-obligation site visit & quote\n30 years of trusted installations\nWorld-class brands, our own engineers",
+      "trustStats": [
+        {
+          "number": "30",
+          "label": "Years of trust"
+        },
+        {
+          "number": "15",
+          "label": "Services under one roof"
+        },
+        {
+          "number": "24×7",
+          "label": "Support"
+        }
+      ],
+      "formHeading": "Request a free quote",
+      "formSubtext": "Fill this in and we'll call you back.",
+      "interestOptions": "Electrical — UPS Systems\nCentral AC\nHome Automation\nHome Theater\nCCTV & Security\nFire Safety\nElectrical\nSomething else",
+      "ctaLabel": "Get My Free Quote →",
+      "formPrivacyNote": "We'll only use these details to respond to your enquiry."
+    }
+  },
+  "load-break-switch": {
+    "ConstructionInnerBanner": {
+      "eyebrow": "Electrical Products",
+      "headline": "Load break switches for safe HT isolation",
+      "currentLabel": "Load Break Switch (LBS)",
+      "imageAlt": "Outdoor load break switch panel",
+      "backgroundImage": "/seed/subhadra/products/load-break-switch.png",
+      "subtitle": "12 / 24 / 36 kV, 630 A, 25 kA outdoor load break switch panels — the safe isolation point between an HT feeder and your distribution network.",
+      "parentLabel": "Products & Services",
+      "parentHref": "products.html",
+      "ctaPrimaryLabel": "Enquire Now →",
+      "ctaPrimaryHref": "#get-quote",
+      "ctaSecondaryLabel": "← Back to Products",
+      "ctaSecondaryHref": "products.html"
+    },
+    "ConstructionDisciplineRows": {
+      "sectionEyebrow": "",
+      "sectionTitle": "",
+      "sectionSubtitle": "",
+      "items": [
+        {
+          "icon": "",
+          "eyebrow": "Overview",
+          "heading": "The switch that safely isolates HT power",
+          "description": "Before anyone can safely work on downstream HT equipment, there has to be a load break switch that can isolate it under load, cleanly and visibly. We supply and install 12/24/36 kV, 630 A, 25 kA rated outdoor LBS panels and ring-main units, positioned and interlocked so isolation sequences can't be done in the wrong order.\n\nEvery panel is commissioned with insulation and mechanical interlock testing, and documented for the utility or plant's electrical safety records.",
+          "checklist": "12 / 24 / 36 kV rated, 630 A, 25 kA outdoor panels\nRing-main unit configurations for looped HT distribution\nMechanical interlocks that prevent an unsafe isolation sequence\nInsulation and interlock tested at commissioning\nDocumented for utility, plant and audit electrical safety records",
+          "image": "/seed/subhadra/products/load-break-switch.png",
+          "images": [],
+          "clients": [],
+          "brandTag": "Transguard · Megawin",
+          "brandLogos": [
+            {
+              "src": "/seed/subhadra/ourbrands/electrical-products/Transguard-Logo-white.png",
+              "alt": "Transguard"
+            },
+            {
+              "src": "/seed/subhadra/ourbrands/electrical-products/Megawin.jpg",
+              "alt": "Megawin"
+            }
+          ],
+          "ctaLabel": "Enquire →",
+          "ctaHref": "#get-quote"
+        }
+      ]
+    },
+    "ConstructionIconFeatureGrid": {
+      "sectionEyebrow": "Where it's used",
+      "sectionTitle": "Where HT networks need safe isolation points",
+      "items": [
+        {
+          "icon": "hardhat",
+          "biIcon": "bi-gear-fill",
+          "title": "Industry & Plants",
+          "description": "Safe isolation points on plant HT distribution before maintenance work."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-bank",
+          "title": "Government & Utility Substations",
+          "description": "LBS and RMU panels documented to utility and audit standards."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-buildings",
+          "title": "Builders & Townships",
+          "description": "Ring-main distribution for multi-block developments on one HT feeder."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-mortarboard-fill",
+          "title": "Educational Campuses",
+          "description": "Safe HT isolation across multiple blocks on one campus network."
+        }
+      ]
+    },
+    "ConstructionApproachSplit": {
+      "photo": "/seed/subhadra/brand/shop.webp",
+      "eyebrow": "Why buy from us",
+      "heading": "Interlocked so isolation can't go wrong",
+      "paragraph1": "HT isolation mistakes are the ones that hurt someone. Every LBS we install is mechanically interlocked and tested, and every isolation procedure is documented for your safety records.",
+      "paragraph2": "",
+      "highlight1Icon": "shield",
+      "highlight1BiIcon": "bi-shield-lock-fill",
+      "highlight1Title": "Mechanically Interlocked",
+      "highlight1Description": "Interlocks that physically prevent an unsafe isolation sequence.",
+      "highlight2Icon": "star",
+      "highlight2BiIcon": "bi-file-earmark-check-fill",
+      "highlight2Title": "Documented For Audit",
+      "highlight2Description": "Testing and isolation procedures recorded for your safety compliance file.",
+      "stat1Value": "100%",
+      "stat1Label": "Genuine, brand-sourced products",
+      "stat2Value": "0",
+      "stat2Label": "Work outsourced to subcontractors",
+      "stat3Value": "30",
+      "stat3Label": "Years of industry experience"
+    },
+    "ConstructionProcessSteps": {
+      "sectionEyebrow": "How we work",
+      "sectionTitle": "From design to maintenance",
+      "items": [
+        {
+          "stepLabel": "01 — Consult",
+          "title": "Consult",
+          "description": "Site visit and load assessment to understand your exact requirement."
+        },
+        {
+          "stepLabel": "02 — Supply",
+          "title": "Supply",
+          "description": "Genuine, brand-sourced products with original invoice and warranty."
+        },
+        {
+          "stepLabel": "03 — Install",
+          "title": "Install",
+          "description": "Fitted by our own trained engineers — never sub-contracted."
+        },
+        {
+          "stepLabel": "04 — Maintain",
+          "title": "Maintain",
+          "description": "Ongoing AMC and a dedicated service manager on call."
+        }
+      ]
+    },
+    "ConstructionLeadFormFAQ": {
+      "sectionEyebrow": "Get a Quote",
+      "sectionTitle": "Tell us about your requirement",
+      "introText": "Share a few details and our engineers will get back to you with the right specification and a quote — usually within 24 hours.",
+      "showFaqs": false,
+      "checklistItems": "No-obligation site visit & quote\n30 years of trusted installations\nWorld-class brands, our own engineers",
+      "trustStats": [
+        {
+          "number": "30",
+          "label": "Years of trust"
+        },
+        {
+          "number": "15",
+          "label": "Services under one roof"
+        },
+        {
+          "number": "24×7",
+          "label": "Support"
+        }
+      ],
+      "formHeading": "Request a free quote",
+      "formSubtext": "Fill this in and we'll call you back.",
+      "interestOptions": "Electrical — Load Break Switch\nCentral AC\nHome Automation\nHome Theater\nCCTV & Security\nFire Safety\nElectrical\nSomething else",
+      "ctaLabel": "Get My Free Quote →",
+      "formPrivacyNote": "We'll only use these details to respond to your enquiry."
+    }
+  },
+  "refrigeration": {
+    "ConstructionInnerBanner": {
+      "eyebrow": "Climate & Refrigeration",
+      "headline": "Commercial refrigeration for retail and F&B",
+      "currentLabel": "Commercial Refrigeration",
+      "imageAlt": "Commercial refrigeration display unit",
+      "backgroundImage": "/seed/subhadra/catalog/4ac371315476.jpg",
+      "subtitle": "Visi coolers, deep freezers, water coolers and ice-cube machines — sized and installed for retail, F&B and cold-chain applications.",
+      "parentLabel": "Products & Services",
+      "parentHref": "products.html",
+      "ctaPrimaryLabel": "Enquire Now →",
+      "ctaPrimaryHref": "#get-quote",
+      "ctaSecondaryLabel": "← Back to Products",
+      "ctaSecondaryHref": "products.html"
+    },
+    "ConstructionDisciplineRows": {
+      "sectionEyebrow": "",
+      "sectionTitle": "",
+      "sectionSubtitle": "",
+      "items": [
+        {
+          "icon": "",
+          "eyebrow": "Overview",
+          "heading": "Cold-chain equipment that holds its temperature",
+          "description": "Retail and food-service refrigeration lives or dies on consistent temperature — a visi cooler cycling too warm spoils stock quietly, before anyone notices. We size deep freezers, visi coolers, water coolers and ice-cube machines to actual storage volume and ambient conditions, and install condensing units with proper airflow clearance so they run at rated efficiency.\n\nFor pharma and hospital cold-chain, we additionally fit temperature logging so compliance records are automatic, not a manual clipboard entry.",
+          "checklist": "Visi coolers, deep freezers, water coolers and ice-cube machines\nSized to actual storage volume and site ambient conditions\nCondensing units installed with correct airflow clearance\nOptional temperature logging for pharma and hospital cold-chain\nGenuine Blue Star product with manufacturer warranty",
+          "image": "/seed/subhadra/catalog/3bbb1f155bc7.jpg",
+          "images": [],
+          "clients": [],
+          "brandTag": "Blue Star",
+          "brandLogos": [
+            {
+              "src": "/seed/subhadra/ourbrands/design-execution-maintenance/Blue_Star_primary_logo.png",
+              "alt": "Blue Star"
+            }
+          ],
+          "ctaLabel": "Enquire →",
+          "ctaHref": "#get-quote"
+        }
+      ]
+    },
+    "ConstructionIconFeatureGrid": {
+      "sectionEyebrow": "Where it's used",
+      "sectionTitle": "Wherever the cold chain can't break",
+      "items": [
+        {
+          "icon": "housegear",
+          "biIcon": "bi-shop",
+          "title": "Retail & Supermarkets",
+          "description": "Visi coolers and freezers sized to display volume and footfall."
+        },
+        {
+          "icon": "hardhat",
+          "biIcon": "bi-cup-hot-fill",
+          "title": "Restaurants & F&B",
+          "description": "Kitchen-line refrigeration sized to daily prep and storage volume."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-hospital-fill",
+          "title": "Hospitals & Pharma",
+          "description": "Cold-chain storage with optional automatic temperature logging."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-building",
+          "title": "Hotels & Banquets",
+          "description": "Kitchen and banquet-hall refrigeration sized for full-house events."
+        }
+      ]
+    },
+    "ConstructionApproachSplit": {
+      "photo": "/seed/subhadra/brand/shop.webp",
+      "eyebrow": "Why buy from us",
+      "heading": "Installed for rated efficiency, not just power-on",
+      "paragraph1": "A condensing unit installed without airflow clearance runs hot and inefficient from day one. We install to the manufacturer's clearance spec and verify running temperatures at handover.",
+      "paragraph2": "",
+      "highlight1Icon": "snowflake",
+      "highlight1BiIcon": "bi-thermometer-snow",
+      "highlight1Title": "Handover Temperature Check",
+      "highlight1Description": "Running temperatures verified at commissioning, not assumed.",
+      "highlight2Icon": "star",
+      "highlight2BiIcon": "bi-headset",
+      "highlight2Title": "AMC & Genuine Spares",
+      "highlight2Description": "Ongoing maintenance and genuine spares on call, all from one team.",
+      "stat1Value": "100%",
+      "stat1Label": "Genuine, brand-sourced products",
+      "stat2Value": "0",
+      "stat2Label": "Work outsourced to subcontractors",
+      "stat3Value": "30",
+      "stat3Label": "Years of industry experience"
+    },
+    "ConstructionProcessSteps": {
+      "sectionEyebrow": "How we work",
+      "sectionTitle": "From design to maintenance",
+      "items": [
+        {
+          "stepLabel": "01 — Consult",
+          "title": "Consult",
+          "description": "Site visit and load assessment to understand your exact requirement."
+        },
+        {
+          "stepLabel": "02 — Supply",
+          "title": "Supply",
+          "description": "Genuine, brand-sourced products with original invoice and warranty."
+        },
+        {
+          "stepLabel": "03 — Install",
+          "title": "Install",
+          "description": "Fitted by our own trained engineers — never sub-contracted."
+        },
+        {
+          "stepLabel": "04 — Maintain",
+          "title": "Maintain",
+          "description": "Ongoing AMC and a dedicated service manager on call."
+        }
+      ]
+    },
+    "ConstructionLeadFormFAQ": {
+      "sectionEyebrow": "Get a Quote",
+      "sectionTitle": "Tell us about your requirement",
+      "introText": "Share a few details and our engineers will get back to you with the right specification and a quote — usually within 24 hours.",
+      "showFaqs": false,
+      "checklistItems": "No-obligation site visit & quote\n30 years of trusted installations\nWorld-class brands, our own engineers",
+      "trustStats": [
+        {
+          "number": "30",
+          "label": "Years of trust"
+        },
+        {
+          "number": "15",
+          "label": "Services under one roof"
+        },
+        {
+          "number": "24×7",
+          "label": "Support"
+        }
+      ],
+      "formHeading": "Request a free quote",
+      "formSubtext": "Fill this in and we'll call you back.",
+      "interestOptions": "Central AC — Refrigeration\nCentral AC\nHome Automation\nHome Theater\nCCTV & Security\nFire Safety\nElectrical\nSomething else",
+      "ctaLabel": "Get My Free Quote →",
+      "formPrivacyNote": "We'll only use these details to respond to your enquiry."
+    }
+  },
+  "cctv": {
+    "ConstructionInnerBanner": {
+      "eyebrow": "Safety & Systems",
+      "headline": "CCTV that actually covers what matters",
+      "currentLabel": "CCTV & Video Surveillance",
+      "imageAlt": "CCTV security camera mounted on a ceiling",
+      "backgroundImage": "/seed/subhadra/catalog/ccd7af938529.jpg",
+      "subtitle": "Dome, bullet and PTZ cameras, with number-plate (ANPR) and face-recognition analytics — placed on a coverage plan, not just wherever a wall exists.",
+      "parentLabel": "Products & Services",
+      "parentHref": "products.html",
+      "ctaPrimaryLabel": "Enquire Now →",
+      "ctaPrimaryHref": "#get-quote",
+      "ctaSecondaryLabel": "← Back to Products",
+      "ctaSecondaryHref": "products.html",
+      "ctaTertiaryLabel": "See Our Work →",
+      "ctaTertiaryHref": "work-safety-security.html"
+    },
+    "ConstructionDisciplineRows": {
+      "sectionEyebrow": "",
+      "sectionTitle": "",
+      "sectionSubtitle": "",
+      "items": [
+        {
+          "icon": "",
+          "eyebrow": "Overview",
+          "heading": "Coverage planned, not just cameras mounted",
+          "description": "A camera pointed at the wrong angle is worse than no camera — it gives false confidence. We start with a coverage plan for entrances, aisles, cash counters, perimeters and blind spots, then select dome, bullet or PTZ cameras and ANPR/face-recognition analytics for the specific need, sized to the NVR storage duration your compliance or insurance requires.\n\nEvery installation includes a walk-through verifying actual camera coverage against the plan, and remote mobile viewing set up before we leave site.",
+          "checklist": "Dome, bullet and PTZ cameras selected to the specific coverage need\nNumber-plate recognition (ANPR) and face-recognition analytics\nNVR/DVR storage sized to your required retention period\nCoverage verified on a walk-through against the original plan\nRemote mobile viewing configured before handover",
+          "image": "/seed/subhadra/catalog/41ffa914eed6.jpg",
+          "images": [],
+          "clients": [],
+          "brandTag": "CP Plus · Honeywell · Matrix",
+          "brandLogos": [
+            {
+              "src": "/seed/subhadra/ourbrands/design-execution-maintenance/CP Plus.jpg",
+              "alt": "CP Plus"
+            },
+            {
+              "src": "/seed/subhadra/ourbrands/design-execution-maintenance/hon-honeywell-technologies-logo-full-horizontal.svg",
+              "alt": "Honeywell"
+            },
+            {
+              "src": "/seed/subhadra/ourbrands/design-execution-maintenance/Matrix.jpg",
+              "alt": "Matrix"
+            }
+          ],
+          "ctaLabel": "Enquire →",
+          "ctaHref": "#get-quote"
+        }
+      ]
+    },
+    "ConstructionIconFeatureGrid": {
+      "sectionEyebrow": "Where it's used",
+      "sectionTitle": "Covering entrances, aisles and perimeters",
+      "items": [
+        {
+          "icon": "housegear",
+          "biIcon": "bi-shop",
+          "title": "Retail & Showrooms",
+          "description": "Entrance, aisle and billing-counter coverage with ANPR at parking entries."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-building",
+          "title": "Hotels & Hospitality",
+          "description": "Lobby, corridor and perimeter coverage integrated with access control."
+        },
+        {
+          "icon": "hardhat",
+          "biIcon": "bi-gear-fill",
+          "title": "Industry & Campuses",
+          "description": "Perimeter and gate coverage across multi-building industrial sites."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-house-door-fill",
+          "title": "Gated Communities",
+          "description": "Township-wide coverage across gates, clubhouse and common areas."
+        }
+      ]
+    },
+    "ConstructionApproachSplit": {
+      "photo": "/seed/subhadra/brand/shop.webp",
+      "eyebrow": "Why buy from us",
+      "heading": "Verified on a walk-through, not left to chance",
+      "paragraph1": "We check every camera's actual field of view against the original coverage plan before handover — so a blind spot is caught on day one, not discovered after an incident.",
+      "paragraph2": "",
+      "highlight1Icon": "shield",
+      "highlight1BiIcon": "bi-camera-video-fill",
+      "highlight1Title": "Coverage-Plan Verified",
+      "highlight1Description": "A physical walk-through confirms every camera covers what it was placed for.",
+      "highlight2Icon": "star",
+      "highlight2BiIcon": "bi-phone-fill",
+      "highlight2Title": "Remote Viewing Set Up",
+      "highlight2Description": "Mobile access configured and tested before we leave site.",
+      "stat1Value": "100%",
+      "stat1Label": "Genuine, brand-sourced products",
+      "stat2Value": "0",
+      "stat2Label": "Work outsourced to subcontractors",
+      "stat3Value": "30",
+      "stat3Label": "Years of industry experience"
+    },
+    "ConstructionProcessSteps": {
+      "sectionEyebrow": "How we work",
+      "sectionTitle": "From design to maintenance",
+      "items": [
+        {
+          "stepLabel": "01 — Consult",
+          "title": "Consult",
+          "description": "Site visit and load assessment to understand your exact requirement."
+        },
+        {
+          "stepLabel": "02 — Supply",
+          "title": "Supply",
+          "description": "Genuine, brand-sourced products with original invoice and warranty."
+        },
+        {
+          "stepLabel": "03 — Install",
+          "title": "Install",
+          "description": "Fitted by our own trained engineers — never sub-contracted."
+        },
+        {
+          "stepLabel": "04 — Maintain",
+          "title": "Maintain",
+          "description": "Ongoing AMC and a dedicated service manager on call."
+        }
+      ]
+    },
+    "ConstructionLeadFormFAQ": {
+      "sectionEyebrow": "Get a Quote",
+      "sectionTitle": "Tell us about your requirement",
+      "introText": "Share a few details and our engineers will get back to you with the right specification and a quote — usually within 24 hours.",
+      "showFaqs": false,
+      "checklistItems": "No-obligation site visit & quote\n30 years of trusted installations\nWorld-class brands, our own engineers",
+      "trustStats": [
+        {
+          "number": "30",
+          "label": "Years of trust"
+        },
+        {
+          "number": "15",
+          "label": "Services under one roof"
+        },
+        {
+          "number": "24×7",
+          "label": "Support"
+        }
+      ],
+      "formHeading": "Request a free quote",
+      "formSubtext": "Fill this in and we'll call you back.",
+      "interestOptions": "CCTV & Security\nCentral AC\nHome Automation\nHome Theater\nCCTV & Security\nFire Safety\nElectrical\nSomething else",
+      "ctaLabel": "Get My Free Quote →",
+      "formPrivacyNote": "We'll only use these details to respond to your enquiry."
+    }
+  },
+  "fire-alarm": {
+    "ConstructionInnerBanner": {
+      "eyebrow": "Safety & Systems",
+      "headline": "Fire alarm systems, engineered to compliance",
+      "currentLabel": "Fire Alarm Systems",
+      "imageAlt": "Fire alarm strobe and horn device mounted on a wall",
+      "backgroundImage": "/seed/subhadra/catalog/118101f30d61.jpg",
+      "subtitle": "Conventional and addressable fire alarm panels, smoke and heat detectors, manual call points and hooters — designed to NBC and TAC norms.",
+      "parentLabel": "Products & Services",
+      "parentHref": "products.html",
+      "ctaPrimaryLabel": "Enquire Now →",
+      "ctaPrimaryHref": "#get-quote",
+      "ctaSecondaryLabel": "← Back to Products",
+      "ctaSecondaryHref": "products.html",
+      "ctaTertiaryLabel": "See Our Work →",
+      "ctaTertiaryHref": "work-safety-security.html"
+    },
+    "ConstructionDisciplineRows": {
+      "sectionEyebrow": "",
+      "sectionTitle": "",
+      "sectionSubtitle": "",
+      "items": [
+        {
+          "icon": "",
+          "eyebrow": "Overview",
+          "heading": "Detection that's zoned right, and actually tested",
+          "description": "A fire alarm system is only as reliable as its zoning and its detector selection — a heat detector where a smoke detector was needed delays warning by critical minutes. We design zone-wise detector placement (smoke, heat or multi-sensor as the space needs), select conventional or addressable panels based on building size and reporting needs, and route manual call points and hooters per NBC/TAC guidelines.\n\nEvery zone is function-tested at commissioning, and we hand over a zone chart so any future fault is located immediately.",
+          "checklist": "Conventional and addressable panels selected to building size\nZone-wise smoke, heat and multi-sensor detector placement\nManual call points and hooters routed to NBC/TAC guidelines\nEvery zone function-tested at commissioning\nZone chart handed over for immediate future fault-finding",
+          "image": "/seed/subhadra/catalog/4251cecef668.jpg",
+          "images": [],
+          "clients": [],
+          "brandTag": "Honeywell · Agni · Ravel",
+          "brandLogos": [
+            {
+              "src": "/seed/subhadra/ourbrands/design-execution-maintenance/hon-honeywell-technologies-logo-full-horizontal.svg",
+              "alt": "Honeywell"
+            },
+            {
+              "src": "/seed/subhadra/ourbrands/design-execution-maintenance/Agni.jpg",
+              "alt": "Agni"
+            },
+            {
+              "src": "/seed/subhadra/ourbrands/design-execution-maintenance/Ravel.png",
+              "alt": "Ravel"
+            }
+          ],
+          "ctaLabel": "Enquire →",
+          "ctaHref": "#get-quote"
+        }
+      ]
+    },
+    "ConstructionIconFeatureGrid": {
+      "sectionEyebrow": "Where it's used",
+      "sectionTitle": "Wherever early warning saves lives",
+      "items": [
+        {
+          "icon": "housegear",
+          "biIcon": "bi-building",
+          "title": "Hotels",
+          "description": "Guest-room and corridor zoning integrated with evacuation procedures."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-hospital-fill",
+          "title": "Hospitals",
+          "description": "Ward and OT zoning designed around patient-safe evacuation routes."
+        },
+        {
+          "icon": "hardhat",
+          "biIcon": "bi-gear-fill",
+          "title": "Industry & Factories",
+          "description": "Process-area detection selected for the specific fire risk profile."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-mortarboard-fill",
+          "title": "Educational Institutes",
+          "description": "Same-code detection across academic blocks and hostels alike."
+        }
+      ]
+    },
+    "ConstructionApproachSplit": {
+      "photo": "/seed/subhadra/brand/shop.webp",
+      "eyebrow": "Why buy from us",
+      "heading": "Function-tested zone by zone, not just powered on",
+      "paragraph1": "We test every zone individually at commissioning — not just power up the panel and call it done — and leave you a zone chart so a fault is found in minutes, not hours.",
+      "paragraph2": "",
+      "highlight1Icon": "hardhat",
+      "highlight1BiIcon": "bi-clipboard-check-fill",
+      "highlight1Title": "Zone-By-Zone Testing",
+      "highlight1Description": "Every detector and call point function-tested before handover.",
+      "highlight2Icon": "star",
+      "highlight2BiIcon": "bi-map-fill",
+      "highlight2Title": "Zone Chart Provided",
+      "highlight2Description": "A documented zone chart for fast fault-finding, years down the line.",
+      "stat1Value": "100%",
+      "stat1Label": "Genuine, brand-sourced products",
+      "stat2Value": "0",
+      "stat2Label": "Work outsourced to subcontractors",
+      "stat3Value": "30",
+      "stat3Label": "Years of industry experience"
+    },
+    "ConstructionProcessSteps": {
+      "sectionEyebrow": "How we work",
+      "sectionTitle": "From design to maintenance",
+      "items": [
+        {
+          "stepLabel": "01 — Consult",
+          "title": "Consult",
+          "description": "Site visit and load assessment to understand your exact requirement."
+        },
+        {
+          "stepLabel": "02 — Supply",
+          "title": "Supply",
+          "description": "Genuine, brand-sourced products with original invoice and warranty."
+        },
+        {
+          "stepLabel": "03 — Install",
+          "title": "Install",
+          "description": "Fitted by our own trained engineers — never sub-contracted."
+        },
+        {
+          "stepLabel": "04 — Maintain",
+          "title": "Maintain",
+          "description": "Ongoing AMC and a dedicated service manager on call."
+        }
+      ]
+    },
+    "ConstructionLeadFormFAQ": {
+      "sectionEyebrow": "Get a Quote",
+      "sectionTitle": "Tell us about your requirement",
+      "introText": "Share a few details and our engineers will get back to you with the right specification and a quote — usually within 24 hours.",
+      "showFaqs": false,
+      "checklistItems": "No-obligation site visit & quote\n30 years of trusted installations\nWorld-class brands, our own engineers",
+      "trustStats": [
+        {
+          "number": "30",
+          "label": "Years of trust"
+        },
+        {
+          "number": "15",
+          "label": "Services under one roof"
+        },
+        {
+          "number": "24×7",
+          "label": "Support"
+        }
+      ],
+      "formHeading": "Request a free quote",
+      "formSubtext": "Fill this in and we'll call you back.",
+      "interestOptions": "Fire Safety — Fire Alarm\nCentral AC\nHome Automation\nHome Theater\nCCTV & Security\nFire Safety\nElectrical\nSomething else",
+      "ctaLabel": "Get My Free Quote →",
+      "formPrivacyNote": "We'll only use these details to respond to your enquiry."
+    }
+  },
+  "fire-fighting": {
+    "ConstructionInnerBanner": {
+      "eyebrow": "Safety & Systems",
+      "headline": "Fire fighting systems, sized to occupancy",
+      "currentLabel": "Fire Fighting Systems",
+      "imageAlt": "Fire fighting extinguisher and hose reel",
+      "backgroundImage": "/seed/subhadra/catalog/b3f3bc8c1e12.jpg",
+      "subtitle": "Sprinkler networks, hydrant systems, fire pump houses and portable extinguishers — sized to occupancy classification, per NBC 2016 and TAC norms.",
+      "parentLabel": "Products & Services",
+      "parentHref": "products.html",
+      "ctaPrimaryLabel": "Enquire Now →",
+      "ctaPrimaryHref": "#get-quote",
+      "ctaSecondaryLabel": "← Back to Products",
+      "ctaSecondaryHref": "products.html",
+      "ctaTertiaryLabel": "See Our Work →",
+      "ctaTertiaryHref": "work-safety-security.html"
+    },
+    "ConstructionDisciplineRows": {
+      "sectionEyebrow": "",
+      "sectionTitle": "",
+      "sectionSubtitle": "",
+      "items": [
+        {
+          "icon": "",
+          "eyebrow": "Overview",
+          "heading": "Suppression sized to occupancy, not a flat spec",
+          "description": "Fire suppression requirements differ sharply by occupancy — a warehouse, a hospital ward and a hotel banquet hall each need a different sprinkler density and hydrant coverage. We design sprinkler networks and hydrant systems to the building's occupancy classification, size jockey, main and standby pumps to the resulting demand, and place portable extinguishers and hose reels per code, not just at the fire-safety officer's guess.\n\nEvery system is hydro-tested and flow-tested at commissioning, with documentation ready for fire-NOC and insurance audits.",
+          "checklist": "Sprinkler networks and hydrant systems sized to occupancy class\nJockey, main and standby pump houses sized to hydraulic demand\nPortable extinguishers and hose reels placed to code, not guesswork\nHydro-tested and flow-tested at commissioning\nDocumentation ready for fire-NOC and insurance audit",
+          "image": "/seed/subhadra/catalog/a5faa32beadc.jpg",
+          "images": [],
+          "clients": [],
+          "brandTag": "NewAge · Tyco",
+          "brandLogos": [
+            {
+              "src": "/seed/subhadra/ourbrands/design-execution-maintenance/Newage.jpg",
+              "alt": "NewAge"
+            },
+            {
+              "src": "/seed/subhadra/ourbrands/design-execution-maintenance/tyco_logo_v1.png",
+              "alt": "Tyco"
+            }
+          ],
+          "ctaLabel": "Enquire →",
+          "ctaHref": "#get-quote"
+        }
+      ]
+    },
+    "ConstructionIconFeatureGrid": {
+      "sectionEyebrow": "Where it's used",
+      "sectionTitle": "Sized for the occupancy that matters most",
+      "items": [
+        {
+          "icon": "housegear",
+          "biIcon": "bi-building",
+          "title": "Hotels & Convention Centers",
+          "description": "Sprinkler and hydrant coverage sized for public-assembly occupancy."
+        },
+        {
+          "icon": "hardhat",
+          "biIcon": "bi-gear-fill",
+          "title": "Industry & Warehouses",
+          "description": "Higher sprinkler density engineered for storage and process fire loads."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-hospital-fill",
+          "title": "Hospitals",
+          "description": "Ward and OT-zone suppression designed around patient-safe egress."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-bank",
+          "title": "Government Buildings",
+          "description": "Code-compliant systems documented for statutory fire-safety audit."
+        }
+      ]
+    },
+    "ConstructionApproachSplit": {
+      "photo": "/seed/subhadra/brand/shop.webp",
+      "eyebrow": "Why buy from us",
+      "heading": "Hydro-tested, with your NOC paperwork ready",
+      "paragraph1": "We hydro-test and flow-test every system we install, and hand over the documentation your fire-NOC and insurance audit will actually ask for — not just a working sprinkler head.",
+      "paragraph2": "",
+      "highlight1Icon": "snowflake",
+      "highlight1BiIcon": "bi-droplet-half",
+      "highlight1Title": "Hydro & Flow Tested",
+      "highlight1Description": "Every sprinkler and hydrant line tested to its designed flow rate.",
+      "highlight2Icon": "star",
+      "highlight2BiIcon": "bi-file-earmark-check-fill",
+      "highlight2Title": "NOC-Ready Documentation",
+      "highlight2Description": "Design and test records handed over for statutory audit and insurance.",
+      "stat1Value": "100%",
+      "stat1Label": "Genuine, brand-sourced products",
+      "stat2Value": "0",
+      "stat2Label": "Work outsourced to subcontractors",
+      "stat3Value": "30",
+      "stat3Label": "Years of industry experience"
+    },
+    "ConstructionProcessSteps": {
+      "sectionEyebrow": "How we work",
+      "sectionTitle": "From design to maintenance",
+      "items": [
+        {
+          "stepLabel": "01 — Consult",
+          "title": "Consult",
+          "description": "Site visit and load assessment to understand your exact requirement."
+        },
+        {
+          "stepLabel": "02 — Supply",
+          "title": "Supply",
+          "description": "Genuine, brand-sourced products with original invoice and warranty."
+        },
+        {
+          "stepLabel": "03 — Install",
+          "title": "Install",
+          "description": "Fitted by our own trained engineers — never sub-contracted."
+        },
+        {
+          "stepLabel": "04 — Maintain",
+          "title": "Maintain",
+          "description": "Ongoing AMC and a dedicated service manager on call."
+        }
+      ]
+    },
+    "ConstructionLeadFormFAQ": {
+      "sectionEyebrow": "Get a Quote",
+      "sectionTitle": "Tell us about your requirement",
+      "introText": "Share a few details and our engineers will get back to you with the right specification and a quote — usually within 24 hours.",
+      "showFaqs": false,
+      "checklistItems": "No-obligation site visit & quote\n30 years of trusted installations\nWorld-class brands, our own engineers",
+      "trustStats": [
+        {
+          "number": "30",
+          "label": "Years of trust"
+        },
+        {
+          "number": "15",
+          "label": "Services under one roof"
+        },
+        {
+          "number": "24×7",
+          "label": "Support"
+        }
+      ],
+      "formHeading": "Request a free quote",
+      "formSubtext": "Fill this in and we'll call you back.",
+      "interestOptions": "Fire Safety — Fire Fighting\nCentral AC\nHome Automation\nHome Theater\nCCTV & Security\nFire Safety\nElectrical\nSomething else",
+      "ctaLabel": "Get My Free Quote →",
+      "formPrivacyNote": "We'll only use these details to respond to your enquiry."
+    }
+  },
+  "pa-system": {
+    "ConstructionInnerBanner": {
+      "eyebrow": "Safety & Systems",
+      "headline": "PA systems that reach every zone clearly",
+      "currentLabel": "Public Address (PA) System",
+      "imageAlt": "Public address speaker system mounted on a ceiling",
+      "backgroundImage": "/seed/subhadra/catalog/8fe0cc44c282.jpg",
+      "subtitle": "Zone-wise public address for announcements and background music, with emergency voice-evacuation (EVAC) for life-safety compliance.",
+      "parentLabel": "Products & Services",
+      "parentHref": "products.html",
+      "ctaPrimaryLabel": "Enquire Now →",
+      "ctaPrimaryHref": "#get-quote",
+      "ctaSecondaryLabel": "← Back to Products",
+      "ctaSecondaryHref": "products.html"
+    },
+    "ConstructionDisciplineRows": {
+      "sectionEyebrow": "",
+      "sectionTitle": "",
+      "sectionSubtitle": "",
+      "items": [
+        {
+          "icon": "",
+          "eyebrow": "Overview",
+          "heading": "Audio that's intelligible, zone by zone",
+          "description": "A PA system that's just loud isn't the same as one that's intelligible — reverberant halls and long corridors both need speaker spacing and amplifier tap settings calculated for the space, not a single speaker type everywhere. We zone the system for independent announcements per area, add background music routing where needed, and integrate emergency voice-evacuation (EVAC) with the fire alarm panel where life-safety code requires it.\n\nEvery zone is speech-intelligibility checked at commissioning, and the EVAC integration is tested against the fire panel before handover.",
+          "checklist": "Zone-wise announcement and background-music routing\nSpeaker spacing and amplifier taps calculated per space, not uniform\nEmergency voice-evacuation (EVAC) integration with fire alarm panel\nSpeech-intelligibility checked per zone at commissioning\nEVAC-to-fire-panel integration tested before handover",
+          "image": "/seed/subhadra/catalog/6d38ce7df8c9.jpg",
+          "images": [],
+          "clients": [],
+          "brandTag": "Ahuja · Honeywell · Bosch",
+          "brandLogos": [
+            {
+              "src": "/seed/subhadra/ourbrands/design-execution-maintenance/Ahuja.jpg",
+              "alt": "Ahuja"
+            },
+            {
+              "src": "/seed/subhadra/ourbrands/design-execution-maintenance/hon-honeywell-technologies-logo-full-horizontal.svg",
+              "alt": "Honeywell"
+            },
+            {
+              "src": "/seed/subhadra/ourbrands/design-execution-maintenance/Bosch.jpg",
+              "alt": "Bosch"
+            }
+          ],
+          "ctaLabel": "Enquire →",
+          "ctaHref": "#get-quote"
+        }
+      ]
+    },
+    "ConstructionIconFeatureGrid": {
+      "sectionEyebrow": "Where it's used",
+      "sectionTitle": "Every zone, heard clearly",
+      "items": [
+        {
+          "icon": "housegear",
+          "biIcon": "bi-shop",
+          "title": "Malls & Showrooms",
+          "description": "Background music and announcement zoning across floors and departments."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-building",
+          "title": "Hotels & Convention Centers",
+          "description": "Independent zone control for banquets, lobbies and back-of-house."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-hospital-fill",
+          "title": "Hospitals",
+          "description": "Ward-wise paging integrated with life-safety voice evacuation."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-mortarboard-fill",
+          "title": "Educational Campuses",
+          "description": "Bell schedules and announcements carried consistently across every block."
+        }
+      ]
+    },
+    "ConstructionApproachSplit": {
+      "photo": "/seed/subhadra/brand/shop.webp",
+      "eyebrow": "Why buy from us",
+      "heading": "Checked for intelligibility, not just volume",
+      "paragraph1": "We check that announcements are actually understandable in every zone at commissioning — reverberant halls and long corridors get speaker layouts calculated for clarity, not just coverage.",
+      "paragraph2": "",
+      "highlight1Icon": "star",
+      "highlight1BiIcon": "bi-mic-fill",
+      "highlight1Title": "Intelligibility Checked",
+      "highlight1Description": "Every zone verified for clear, understandable announcements — not just loud ones.",
+      "highlight2Icon": "shield",
+      "highlight2BiIcon": "bi-shield-check",
+      "highlight2Title": "EVAC Integration Tested",
+      "highlight2Description": "Voice-evacuation tied to the fire panel and tested before handover.",
+      "stat1Value": "100%",
+      "stat1Label": "Genuine, brand-sourced products",
+      "stat2Value": "0",
+      "stat2Label": "Work outsourced to subcontractors",
+      "stat3Value": "30",
+      "stat3Label": "Years of industry experience"
+    },
+    "ConstructionProcessSteps": {
+      "sectionEyebrow": "How we work",
+      "sectionTitle": "From design to maintenance",
+      "items": [
+        {
+          "stepLabel": "01 — Consult",
+          "title": "Consult",
+          "description": "Site visit and load assessment to understand your exact requirement."
+        },
+        {
+          "stepLabel": "02 — Supply",
+          "title": "Supply",
+          "description": "Genuine, brand-sourced products with original invoice and warranty."
+        },
+        {
+          "stepLabel": "03 — Install",
+          "title": "Install",
+          "description": "Fitted by our own trained engineers — never sub-contracted."
+        },
+        {
+          "stepLabel": "04 — Maintain",
+          "title": "Maintain",
+          "description": "Ongoing AMC and a dedicated service manager on call."
+        }
+      ]
+    },
+    "ConstructionLeadFormFAQ": {
+      "sectionEyebrow": "Get a Quote",
+      "sectionTitle": "Tell us about your requirement",
+      "introText": "Share a few details and our engineers will get back to you with the right specification and a quote — usually within 24 hours.",
+      "showFaqs": false,
+      "checklistItems": "No-obligation site visit & quote\n30 years of trusted installations\nWorld-class brands, our own engineers",
+      "trustStats": [
+        {
+          "number": "30",
+          "label": "Years of trust"
+        },
+        {
+          "number": "15",
+          "label": "Services under one roof"
+        },
+        {
+          "number": "24×7",
+          "label": "Support"
+        }
+      ],
+      "formHeading": "Request a free quote",
+      "formSubtext": "Fill this in and we'll call you back.",
+      "interestOptions": "Fire Safety — PA System\nCentral AC\nHome Automation\nHome Theater\nCCTV & Security\nFire Safety\nElectrical\nSomething else",
+      "ctaLabel": "Get My Free Quote →",
+      "formPrivacyNote": "We'll only use these details to respond to your enquiry."
+    }
+  },
+  "access-control": {
+    "ConstructionInnerBanner": {
+      "eyebrow": "Safety & Systems",
+      "headline": "Access control that ties to attendance and visitor logs",
+      "currentLabel": "Access Control Systems",
+      "imageAlt": "Illuminated fingerprint biometric access scanner",
+      "backgroundImage": "/seed/subhadra/catalog/326e41cb0963.jpg",
+      "subtitle": "Biometric and RFID proximity access, time-attendance integration and visitor management — for offices, IT parks and restricted areas.",
+      "parentLabel": "Products & Services",
+      "parentHref": "products.html",
+      "ctaPrimaryLabel": "Enquire Now →",
+      "ctaPrimaryHref": "#get-quote",
+      "ctaSecondaryLabel": "← Back to Products",
+      "ctaSecondaryHref": "products.html",
+      "ctaTertiaryLabel": "See Our Work →",
+      "ctaTertiaryHref": "work-safety-security.html"
+    },
+    "ConstructionDisciplineRows": {
+      "sectionEyebrow": "",
+      "sectionTitle": "",
+      "sectionSubtitle": "",
+      "items": [
+        {
+          "icon": "",
+          "eyebrow": "Overview",
+          "heading": "One system for entry, attendance and visitors",
+          "description": "Access control is more useful when it isn't a standalone door lock — we integrate biometric fingerprint or face access and RFID proximity cards with time-attendance so HR gets clean data automatically, and add visitor management and door interlocks for server rooms, record rooms and other restricted areas.\n\nEvery access point is tested for both the legitimate-entry and the deny scenario before handover, and door hardware is selected to match your fire-egress requirements — access control should never trap someone during an evacuation.",
+          "checklist": "Biometric fingerprint/face and RFID proximity access\nTime-attendance integration for clean, automatic HR data\nVisitor management for front-desk and restricted-area logging\nDoor interlocks for server rooms and record rooms\nFire-egress compliant door hardware — never a trap during evacuation",
+          "image": "/seed/subhadra/catalog/2d23cc4d6d5a.jpg",
+          "images": [],
+          "clients": [],
+          "brandTag": "Matrix",
+          "brandLogos": [
+            {
+              "src": "/seed/subhadra/ourbrands/design-execution-maintenance/Matrix.jpg",
+              "alt": "Matrix"
+            }
+          ],
+          "ctaLabel": "Enquire →",
+          "ctaHref": "#get-quote"
+        }
+      ]
+    },
+    "ConstructionIconFeatureGrid": {
+      "sectionEyebrow": "Where it's used",
+      "sectionTitle": "Entry, attendance and restricted areas, in one system",
+      "items": [
+        {
+          "icon": "hardhat",
+          "biIcon": "bi-briefcase-fill",
+          "title": "Offices & IT Parks",
+          "description": "Biometric attendance integrated directly with payroll and HR systems."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-bank",
+          "title": "Government & Record Rooms",
+          "description": "Interlocked access for restricted and sensitive-document areas."
+        },
+        {
+          "icon": "housegear",
+          "biIcon": "bi-house-door-fill",
+          "title": "Gated Communities",
+          "description": "RFID gate and clubhouse access tied to resident visitor logs."
+        },
+        {
+          "icon": "hardhat",
+          "biIcon": "bi-gear-fill",
+          "title": "Industry & Factories",
+          "description": "Shift-wise biometric attendance across factory gates and shop floors."
+        }
+      ]
+    },
+    "ConstructionApproachSplit": {
+      "photo": "/seed/subhadra/brand/shop.webp",
+      "eyebrow": "Why buy from us",
+      "heading": "Tested for the deny case, not just the entry case",
+      "paragraph1": "We test every door for both a legitimate entry and a correctly denied one before handover, and make sure fire-egress hardware never leaves anyone locked in during an evacuation.",
+      "paragraph2": "",
+      "highlight1Icon": "housegear",
+      "highlight1BiIcon": "bi-door-open-fill",
+      "highlight1Title": "Fire-Egress Compliant",
+      "highlight1Description": "Door hardware selected so access control never blocks an evacuation route.",
+      "highlight2Icon": "hardhat",
+      "highlight2BiIcon": "bi-clipboard-check-fill",
+      "highlight2Title": "Entry & Deny Tested",
+      "highlight2Description": "Every access point verified for both correct entry and correct denial.",
+      "stat1Value": "100%",
+      "stat1Label": "Genuine, brand-sourced products",
+      "stat2Value": "0",
+      "stat2Label": "Work outsourced to subcontractors",
+      "stat3Value": "30",
+      "stat3Label": "Years of industry experience"
+    },
+    "ConstructionProcessSteps": {
+      "sectionEyebrow": "How we work",
+      "sectionTitle": "From design to maintenance",
+      "items": [
+        {
+          "stepLabel": "01 — Consult",
+          "title": "Consult",
+          "description": "Site visit and load assessment to understand your exact requirement."
+        },
+        {
+          "stepLabel": "02 — Supply",
+          "title": "Supply",
+          "description": "Genuine, brand-sourced products with original invoice and warranty."
+        },
+        {
+          "stepLabel": "03 — Install",
+          "title": "Install",
+          "description": "Fitted by our own trained engineers — never sub-contracted."
+        },
+        {
+          "stepLabel": "04 — Maintain",
+          "title": "Maintain",
+          "description": "Ongoing AMC and a dedicated service manager on call."
+        }
+      ]
+    },
+    "ConstructionLeadFormFAQ": {
+      "sectionEyebrow": "Get a Quote",
+      "sectionTitle": "Tell us about your requirement",
+      "introText": "Share a few details and our engineers will get back to you with the right specification and a quote — usually within 24 hours.",
+      "showFaqs": false,
+      "checklistItems": "No-obligation site visit & quote\n30 years of trusted installations\nWorld-class brands, our own engineers",
+      "trustStats": [
+        {
+          "number": "30",
+          "label": "Years of trust"
+        },
+        {
+          "number": "15",
+          "label": "Services under one roof"
+        },
+        {
+          "number": "24×7",
+          "label": "Support"
+        }
+      ],
+      "formHeading": "Request a free quote",
+      "formSubtext": "Fill this in and we'll call you back.",
+      "interestOptions": "CCTV & Security\nCentral AC\nHome Automation\nHome Theater\nCCTV & Security\nFire Safety\nElectrical\nSomething else",
+      "ctaLabel": "Get My Free Quote →",
+      "formPrivacyNote": "We'll only use these details to respond to your enquiry."
+    }
+  }
+}

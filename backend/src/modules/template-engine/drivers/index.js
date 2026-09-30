@@ -33,11 +33,16 @@ import {
 import { getMediaById } from '../../media/service.js';
 
 import { createPage, updatePage, getPage, getPageBySlug } from '../../page-builder/service.js';
+import { listDetailPageTypes } from '../../../shared/detail-pages/registry.js';
 import {
   seedWebsitePageData,
   seedMedicalPageData,
   seedConstructionPageData,
   patchNavLinks,
+  patchBrand,
+  patchConstructionContact,
+  patchComposerLogos,
+  patchLayout,
 } from './website-seed-content.js';
 
 import { prisma } from '../../../config/database.js';
@@ -55,8 +60,19 @@ async function resolveWebsiteBrand(projectId, userId) {
   }
 
   let companyName = null;
+  let email = null;
+  let phone = null;
+  let secondaryEmail = null;
+  let secondaryPhone = null;
+  let addressLines = [];
   try {
-    companyName = (await getCompanyInfo(projectId)).company_name;
+    const info = await getCompanyInfo(projectId);
+    companyName = info.company_name;
+    email = info.email;
+    phone = info.phone;
+    secondaryEmail = info.secondaryEmail;
+    secondaryPhone = info.secondaryPhone;
+    addressLines = info.addressLines;
   } catch {
     // contact fields not filled in yet
   }
@@ -75,6 +91,11 @@ async function resolveWebsiteBrand(projectId, userId) {
   return {
     companyName,
     logoUrl,
+    email,
+    phone,
+    secondaryEmail,
+    secondaryPhone,
+    addressLines,
     primaryHex: colors.primary?.hex ?? null,
     secondaryHex: colors.secondary?.hex ?? null,
     headingFont: kit?.typography?.heading?.family ?? null,
@@ -278,6 +299,20 @@ const WEBSITE_SEED_PAGES = [
 // WEBSITE_SEED_PAGES uses, deriving each page's key from its title so pages
 // stay stable across a crash-recovery re-run of the same stage. Falls back
 // to the default 3-page set when the caller sends no selection at all.
+// A registered detail-page-type (sectors, work, ...) already gives each of
+// its entities a real page of its own (see backend/src/shared/detail-pages).
+// The Navigation step's nav-sync nests those entities' names as real nav
+// labels (e.g. "Sectors" > "Hotel") — without this filter, this generic
+// scaffolder would blindly create a SECOND, unrelated page for "Hotel" too.
+async function excludeDetailPageEntityLabels(navigationPages, projectId) {
+  const entityNames = new Set();
+  for (const [, config] of listDetailPageTypes()) {
+    const entities = await config.listEntities(projectId).catch(() => []);
+    for (const e of entities) entityNames.add(e.name.toLowerCase());
+  }
+  return navigationPages.filter((title) => !entityNames.has(title.toLowerCase()));
+}
+
 function resolveSeedPages(navigationPages) {
   if (!Array.isArray(navigationPages) || navigationPages.length === 0) {
     return WEBSITE_SEED_PAGES;
@@ -308,7 +343,7 @@ const SEEDER_BY_PACK = {
  * Crash recovery: recorded pageKeyToId is checked on re-run; existing pages are reused.
  */
 const websiteDriver = {
-  async execute({ run, stageRecord, userId, templatePack, navigationPages }) {
+  async execute({ run, stageRecord, userId, templatePack, navigationPages, layout }) {
     const seed = SEEDER_BY_PACK[templatePack] ?? seedWebsitePageData;
     const brand = await resolveWebsiteBrand(run.projectId, userId);
 
@@ -326,7 +361,11 @@ const websiteDriver = {
     // Real hrefs (not '#') so nav/footer links actually navigate on the
     // public /p/[slug] route — slugs are deterministic per run+key, so this
     // can be computed upfront, before any page actually exists yet.
-    const seedPages = resolveSeedPages(navigationPages).map(({ key, title }) => ({
+    const filteredNavigationPages = await excludeDetailPageEntityLabels(
+      Array.isArray(navigationPages) ? navigationPages : [],
+      run.projectId
+    );
+    const seedPages = resolveSeedPages(filteredNavigationPages).map(({ key, title }) => ({
       key,
       title,
       slug: `te-${run.id}-${key}`,
@@ -363,14 +402,34 @@ const websiteDriver = {
         // since leaving it deleted would point outputRef at an invisible,
         // inaccessible row everywhere else in the app.
         if (existing.deleted_at != null) patch.deleted_at = null;
-        const patchedData = patchNavLinks(existing.data, seedPages);
+        let patchedData = patchNavLinks(existing.data, seedPages);
+        const brandPatched = patchBrand(patchedData ?? existing.data, brand);
+        if (brandPatched) patchedData = brandPatched;
+        const contactPatched = patchConstructionContact(patchedData ?? existing.data, brand);
+        if (contactPatched) patchedData = contactPatched;
+        const logoAtomsPatched = patchComposerLogos(patchedData ?? existing.data, brand);
+        if (logoAtomsPatched) patchedData = logoAtomsPatched;
+        const layoutPatched = patchLayout(patchedData ?? existing.data, layout, key, brand, seedPages);
+        if (layoutPatched) patchedData = layoutPatched;
         if (patchedData) patch.data = patchedData;
+        if (!existing.project_id) patch.project_id = run.projectId;
         page = Object.keys(patch).length > 0 ? await updatePage(existing.id, patch, userId) : existing;
       } else {
+        const seeded = seed(key, title, brand, seedPages);
+        const layoutApplied = patchLayout(seeded, layout, key, brand, seedPages);
         page = await createPage(
-          { title, slug, data: seed(key, title, brand, seedPages) },
+          { title, slug, data: layoutApplied ?? seeded, project_id: run.projectId },
           userId,
         );
+        // Every other assembled page's nav/footer links straight to this
+        // slug (seedPages, above) and "Demo all pages" opens it directly —
+        // a page that's only navigable once someone remembers to click
+        // Publish on it individually is a 404 waiting to happen the moment
+        // any real content is added. Auto-publish on first assembly only;
+        // the reuse branch above never touches an existing page's status,
+        // so an admin who deliberately unpublishes a page later stays in
+        // control of it.
+        page = await updatePage(page.id, { status: 'PUBLISHED' }, userId);
       }
 
       pageKeyToId[key] = page.id;

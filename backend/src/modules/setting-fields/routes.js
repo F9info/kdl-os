@@ -12,6 +12,7 @@ import {
   reorderFieldsSchema,
   byTypeSchema,
   valueBySlugSchema,
+  valuesBySlugsSchema,
   saveValuesSchema,
   removeGalleryItemSchema,
 } from './schema.js';
@@ -26,11 +27,20 @@ import {
   getFieldsByTypeSlug,
   saveValues,
   getValueBySlug,
+  getPublicValues,
   uploadFile,
   removeGalleryItem,
 } from './controller.js';
 
 const router = Router();
+
+// Public read of plain-text field values (consumed by page-builder blocks
+// like ConstructionAboutSplit/ConstructionMissionVision/
+// ConstructionTaglineStrip, on both the editor canvas and /p/[slug]) —
+// mirrors the /public convention used by the team/faq/projects-content
+// modules. Every other route below stays authenticated — this is the only
+// public one in this module.
+router.get('/public/values', validate(valuesBySlugsSchema), getPublicValues);
 
 router.use(authenticate);
 

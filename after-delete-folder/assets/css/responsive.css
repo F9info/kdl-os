@@ -1,0 +1,14 @@
+
+@media (max-width:1700px){
+
+    .v2-header .brand img{height: 50px ;}
+
+   .v2-hero-copy h1{font-size: 2.4rem ;}
+   .v2-hero-copy .lede{font-size: 0.9rem ;}
+   .v2-hero-copy{padding: 10px 0;}
+   .v2-stat .stat-number{font-size: 1.7rem ;}
+   .v2 .btn{    padding: 10px 25px;     font-size: .9rem; }
+   .v2-check-list .tick { width: 20px; height: 20px; }
+   .v2-check-list li{font-size: 0.75rem ;}
+   .v2-hero-stats{gap: 5px !important; margin-top: 10px !important; padding-top:10px !important; }
+}

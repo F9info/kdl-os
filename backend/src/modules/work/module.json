@@ -1,0 +1,23 @@
+{
+  "slug": "work",
+  "name": "Work",
+  "version": "1.0.0",
+  "description": "\"Our Work\" showcase categories shown in the homepage's See Our Work section",
+  "core": false,
+  "apiPrefix": "/api/work",
+  "permissions": [
+    "work"
+  ],
+  "nav": [
+    {
+      "label": "Work",
+      "path": "/admin/work",
+      "icon": "Package",
+      "permission": "work:view"
+    }
+  ],
+  "navSuppressedByPeer": ["template-engine"],
+  "dependsOn": [],
+  "queues": [],
+  "env": []
+}

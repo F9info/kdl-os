@@ -79,6 +79,24 @@ export function useCreateRun() {
 // Most callers just need `mutate('STAGE')`; the WEBSITE stage also needs to
 // send its Templates-step pack choice, so a `{ stage, body }` form is
 // accepted too — a bare DagStage stays the common case everywhere else.
+/** Creates/refreshes the project's generated Next.js folder (frontend/projects/<slug>); the backend keeps it in sync afterwards. */
+export function useCreateSite(projectId: string) {
+  return useMutation({
+    mutationFn: () =>
+      api
+        .post<{ success: boolean; data: { slug: string; pages: number } }>(`${BASE}/site`, {
+          projectId,
+        })
+        .then((r) => r.data.data),
+    onSuccess: (d) =>
+      toast({
+        title: `Project folder ready: frontend/projects/${d.slug}`,
+        description: `${d.pages} page(s) synced`,
+      }),
+    onError: (err) => toast({ title: extractErrorCode(err), variant: 'destructive' }),
+  })
+}
+
 type AdvanceStagePayload = DagStage | { stage: DagStage; body?: Record<string, unknown> }
 
 export function useAdvanceStage(runId: string, projectId: string) {

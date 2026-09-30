@@ -154,7 +154,10 @@ function medicalHeroBody(props: MedicalProps['MedicalHero']) {
         <div className="overflow-hidden rounded-2xl bg-slate-100">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={image || 'https://placehold.co/900x800'}
+            src={
+              image ||
+              'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=900&h=800&fit=crop&auto=format'
+            }
             alt=""
             className="h-full w-full object-cover"
           />
@@ -237,7 +240,8 @@ const MedicalHero: Config<MedicalProps>['components']['MedicalHero'] = {
         ctaHref: '#appointment',
         badge: 'NABH Accredited',
         align: 'center',
-        image: 'https://placehold.co/900x800',
+        image:
+          'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=900&h=800&fit=crop&auto=format',
       })
     ),
     headline: { type: 'text' },
@@ -263,7 +267,8 @@ const MedicalHero: Config<MedicalProps>['components']['MedicalHero'] = {
     ctaHref: '#appointment',
     badge: 'NABH Accredited',
     align: 'center',
-    image: 'https://placehold.co/900x800',
+    image:
+      'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=900&h=800&fit=crop&auto=format',
   },
   render: medicalHeroBody,
 }
@@ -411,10 +416,10 @@ const DOCTORS_FALLBACK = {
   sectionTitle: 'Meet Our Specialists',
   sectionSubtitle: 'Experienced, board-certified doctors dedicated to your care.',
   doctors: [
-    'Dr. Priya Sharma | MD, DM | Cardiologist | https://placehold.co/400x400',
-    'Dr. Rahul Mehta | MS, DNB | Orthopaedic Surgeon | https://placehold.co/400x400',
-    'Dr. Ananya Patel | MBBS, MD | Neurologist | https://placehold.co/400x400',
-    'Dr. Sunita Rao | MS, FMAS | Gynaecologist | https://placehold.co/400x400',
+    'Dr. Priya Sharma | MD, DM | Cardiologist | https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&auto=format',
+    'Dr. Rahul Mehta | MS, DNB | Orthopaedic Surgeon | https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop&auto=format',
+    'Dr. Ananya Patel | MBBS, MD | Neurologist | https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop&auto=format',
+    'Dr. Sunita Rao | MS, FMAS | Gynaecologist | https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=400&fit=crop&auto=format',
   ].join('\n'),
 }
 
@@ -445,7 +450,10 @@ function doctorProfilesBody(props: MedicalProps['MedicalDoctorProfiles']) {
               <div key={i} className="overflow-hidden rounded-xl bg-white/5">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={photo || 'https://placehold.co/400x400'}
+                  src={
+                    photo ||
+                    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&auto=format'
+                  }
                   alt={name}
                   className="h-36 w-full object-cover"
                 />
@@ -470,7 +478,10 @@ function doctorProfilesBody(props: MedicalProps['MedicalDoctorProfiles']) {
               <div key={i} className="flex items-center gap-4 py-4">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={photo || 'https://placehold.co/400x400'}
+                  src={
+                    photo ||
+                    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop&auto=format'
+                  }
                   alt={name}
                   className="h-16 w-16 shrink-0 rounded-full object-cover"
                 />
@@ -511,7 +522,10 @@ function doctorProfilesBody(props: MedicalProps['MedicalDoctorProfiles']) {
             <div key={i} className="flex flex-col items-center text-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={photo || 'https://placehold.co/400x400'}
+                src={
+                  photo ||
+                  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop&auto=format'
+                }
                 alt={name}
                 className="w-28 h-28 rounded-full object-cover border-4 border-teal-100"
               />
@@ -1955,7 +1969,8 @@ const MedicalHeroSplit: Config<MedicalProps>['components']['MedicalHeroSplit'] =
     primaryHref: '#services',
     secondaryLabel: 'Contact Us',
     secondaryHref: '#contact',
-    image: 'https://placehold.co/900x800',
+    image:
+      'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=900&h=800&fit=crop&auto=format',
     primaryColor: '',
   },
   render: (props) => heroVariantBody(props.variant, props),
@@ -2029,33 +2044,12 @@ export const medical: ComponentPack = {
   key: 'medical',
   label: 'Medical',
   components: typedComponents as NonNullable<Config['components']>,
-  categories: {
-    'medical-nav-hero': {
-      title: 'Medical — Clinic Template',
-      components: ['MedicalTopNav', 'MedicalHeroSplit', 'MedicalContactInfoCards'],
-    },
-    'medical-hero': { title: 'Medical — Hero', components: ['MedicalHero'] },
-    'medical-services': {
-      title: 'Medical — Services & Departments',
-      components: ['MedicalServicesList', 'MedicalDepartmentCards'],
-    },
-    'medical-team': {
-      title: 'Medical — Team',
-      components: ['MedicalDoctorProfiles'],
-    },
-    'medical-patient': {
-      title: 'Medical — Patient',
-      components: ['MedicalPatientTestimonials', 'MedicalFAQ'],
-    },
-    'medical-cta': {
-      title: 'Medical — Calls to Action',
-      components: ['MedicalAppointmentCTA'],
-    },
-    'medical-info': {
-      title: 'Medical — Info',
-      components: ['MedicalInsuranceStrip', 'MedicalContactHours'],
-    },
-  },
+  // All 'Medical — *' category cards removed from the Insert-a-block picker —
+  // this pack's components stay registered (existing pages using them still
+  // render) but aren't offered as choices under the 16-category taxonomy
+  // from templateEnginesections.html, since their placeholder content
+  // (doctor names, clinic copy) doesn't fit a construction-company site.
+  categories: {},
   variants: {
     MedicalTopNav: ['1', '2', '3', '4'],
     MedicalHeroSplit: ['1', '2', '3', '4'],

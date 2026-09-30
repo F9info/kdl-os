@@ -1,0 +1,45 @@
+// Sectors module schema.
+// Real client-segment/space-type entries (e.g. "Hotel", "Hospital", "Villa")
+// shown on the Sectors page's detail-card list — same pattern as
+// projects-content.prisma. `description` holds 2 paragraphs joined by a
+// blank line (matches the reference sectors.html markup); the render layer
+// splits on it, same convention as other multi-paragraph text fields in
+// this codebase.
+//
+// `detail_page_id` is a loose (non-relational) reference to a
+// `page-builder` module `BuilderPage` row — same cross-module convention
+// as `MenuItem.page_id` (no Prisma `@relation`, modules stay decoupled).
+// One BuilderPage is auto-created per Sector (backend/src/modules/sectors/
+// service.js `createSector`) so every sector gets a real, admin-editable
+// detail page — composed from the SAME reusable Puck block library every
+// other page uses, not a sector-specific template — with zero manual
+// page-creation step. `/sectors/[slug]` (frontend) resolves a sector by
+// slug and renders whatever that linked page's content is.
+
+model Sector {
+  id               String   @id @default(cuid())
+  project_id       String?
+  eyebrow          String?
+  name             String
+  slug             String
+  category         String?
+  description      String?
+  image            String?
+  cta_label        String?
+  cta_href         String?
+  detail_page_id   String?
+  // Per-sector section copy keyed by the shared template block's id (minus its
+  // slug prefix) — overlaid by resolveSectorBindings; see seed-content.js.
+  content          Json?
+  seo_title        String?
+  seo_description  String?
+  og_image         String?
+  canonical_url    String?
+  order            Int      @default(0)
+  is_active        Boolean  @default(true)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  @@index([project_id])
+  @@map("sectors")
+}

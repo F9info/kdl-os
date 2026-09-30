@@ -1,6 +1,6 @@
 'use client'
 
-import { ATOM_BY_TYPE, type ComposerAtom } from './atoms'
+import { ATOM_BY_TYPE, atomStyleProps, type ComposerAtom } from './atoms'
 
 export interface ComposedBlockSettings {
   container: 'full' | 'boxed'
@@ -53,7 +53,7 @@ export function renderComposedBlock(
         {atoms.map((atom) => {
           const def = ATOM_BY_TYPE[atom.type]
           if (!def) return null
-          const node = def.Render(atom)
+          const node = <div style={atomStyleProps(atom).style}>{def.Render(atom)}</div>
           const hideMobileCls = atom.hideMobile ? 'hidden md:block' : ''
           if (!interactive)
             return (

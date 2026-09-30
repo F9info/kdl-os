@@ -1,0 +1,22 @@
+{
+  "slug": "team",
+  "name": "Team",
+  "version": "1.0.0",
+  "description": "Team module",
+  "core": false,
+  "apiPrefix": "/api/team",
+  "permissions": [
+    "team"
+  ],
+  "nav": [
+    {
+      "label": "Team",
+      "path": "/admin/team",
+      "icon": "Package",
+      "permission": "team:view"
+    }
+  ],
+  "dependsOn": [],
+  "queues": [],
+  "env": []
+}

@@ -1,16 +1,12 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { usePuck } from '@puckeditor/core'
 import type { AppState, Config } from '@puckeditor/core'
-import { Plus, Search, X } from 'lucide-react'
+import { Check, Plus, Search, X } from 'lucide-react'
 import { blockVariants } from './puck.config'
-import { BlockComposer } from './packs/composer/BlockComposer'
-import {
-  listCustomBlocks,
-  getDefaultProjectId,
-  type CustomBlockRecord,
-} from './packs/composer/custom-blocks-store'
+import { listCustomBlocks, type CustomBlockRecord } from './packs/composer/custom-blocks-store'
 import { renderComposedBlock } from './packs/composer/render-composed-block'
 
 /**
@@ -54,6 +50,43 @@ function carryOverBrandProps(content: AppState['data']['content'], componentType
     if (existing.props[field] !== undefined) carried[field] = existing.props[field]
   }
   return carried
+}
+
+export type BlockCardEntry = {
+  key: string
+  variant: string | null
+  index: number
+  total: number
+}
+
+type MinimalContentBlock = { type: string; props?: Record<string, unknown> }
+
+const cardIdentity = (key: string, variant: string | null) => `${key}::${variant ?? 'null'}`
+
+/**
+ * Annotates each card with whether a block of that exact type+variant
+ * already exists in the page's current content, and pins any such card(s)
+ * to the very front of the whole list — a popup category can mix several
+ * unrelated component types (e.g. "Feature Cards" + "Services Grid" +
+ * "Core Offerings" all under one "Services" category), so the design
+ * that's actually live on the page needs to lead the grid regardless of
+ * which of those types it belongs to, not just rise within its own type's
+ * variants.
+ */
+export function withCurrentSelection<T extends BlockCardEntry>(
+  cards: T[],
+  content: MinimalContentBlock[] | null | undefined
+): (T & { isCurrent: boolean })[] {
+  const present = new Set(
+    (content ?? []).map((block) =>
+      cardIdentity(block.type, (block.props?.variant as string | undefined) ?? null)
+    )
+  )
+  const annotated = cards.map((card) => ({
+    ...card,
+    isCurrent: present.has(cardIdentity(card.key, card.variant)),
+  }))
+  return [...annotated.filter((c) => c.isCurrent), ...annotated.filter((c) => !c.isCurrent)]
 }
 
 export function insertBlockComponent(
@@ -112,6 +145,14 @@ const TOP_OF_PAGE_CATEGORIES = new Set(['top-bar', 'header'])
 /** Component types a Hero insert should land right after, not at page's end. */
 const TOP_OF_PAGE_TYPES = new Set(['ConstructionTopBar', 'ConstructionHeader'])
 
+/**
+ * Every popup shows at most this many cards by default (current design
+ * first, per withCurrentSelection) — a category can have far more designs
+ * across all its component types than fit on screen at once. "Show all"
+ * reveals the rest.
+ */
+const MAX_VISIBLE_CARDS = 4
+
 /** Placeholder for a `type: 'slot'` field's content when previewing outside
  *  Puck's own render pipeline — Puck normally swaps a slot's raw `[]` for a
  *  renderable component before calling `.render()`; skipping that step and
@@ -142,41 +183,48 @@ function previewProps(comp: PuckComponentConfig, variant: string | null) {
   return props
 }
 
-// Short, bar-shaped components (sticky headers, top bars) render to only a
-// sliver of the default 210px preview box — leaving most of the card (and,
-// on hover, the dark "Insert" gradient overlay, which is sized to the whole
-// card) as dead empty space. Give these a shorter preview box instead.
-const COMPACT_PREVIEW_HEIGHT: Record<string, number> = {
-  ConstructionHeader: 110,
-  ConstructionTopBar: 110,
-  // Layout primitives ship with empty slots (a "Content" placeholder is the
-  // only thing rendered) — same dead-space problem as the bar-shaped
-  // components above, just worse: default 320px next to ~30-50px of actual
-  // content.
-  Section: 110,
-  Columns: 110,
-  Spacer: 60,
-}
-const DEFAULT_PREVIEW_HEIGHT = 320
-
 function BlockCard({
   componentKey,
   variant,
   index,
   total,
+  isCurrent,
   onInsert,
 }: {
   componentKey: string
   variant: string | null
   index: number
   total: number
+  isCurrent: boolean
   onInsert: (componentKey: string, variant: string | null) => void
 }) {
   const { config } = usePuck()
   const comp = (config.components as Record<string, PuckComponentConfig>)[componentKey]
+  const wrapRef = useRef<HTMLDivElement>(null)
+  // A fixed-width (1200px) canvas guarantees the component's own internal
+  // flex/grid layout always computes as if shown at a real desktop width,
+  // regardless of how wide this card actually is — a narrow card showing
+  // e.g. a 4-column grid unscaled would cram all 4 columns into a sliver.
+  // Scale (via `zoom`, not `transform: scale` — same reasoning as
+  // RenderPreview in website/layout/page.tsx: `transform` only shrinks the
+  // paint, not the box) to the card's OWN measured width instead of a
+  // hardcoded 0.55 — hardcoding assumed the old 2-column ~350px-wide card;
+  // once the grid went to 1 column (full modal width), that same 0.55 left
+  // most of the now much-wider card as blank space.
+  const [scale, setScale] = useState(0.55)
+  useEffect(() => {
+    const el = wrapRef.current
+    if (!el) return
+    const update = () => {
+      if (el.clientWidth > 0) setScale(el.clientWidth / 1200)
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
   if (!comp?.render) return null
   const props = previewProps(comp, variant)
-  const previewHeight = COMPACT_PREVIEW_HEIGHT[componentKey] ?? DEFAULT_PREVIEW_HEIGHT
 
   return (
     <div
@@ -186,17 +234,17 @@ function BlockCard({
       onKeyDown={(e) => e.key === 'Enter' && onInsert(componentKey, variant)}
       className="group relative self-start cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md"
     >
-      <span className="absolute right-2.5 top-2.5 z-[2] rounded-md bg-slate-900 px-2.5 py-1 text-[11px] font-extrabold text-white">
+      <span className="absolute right-2.5 top-2.5 z-[2] rounded-md bg-slate-900 px-2 py-0.5 text-[10px] font-extrabold text-white">
         {comp.label ?? componentKey}
         {total > 1 ? ` · ${index + 1}` : ''}
       </span>
-      <div
-        style={{ height: previewHeight }}
-        className="overflow-hidden bg-white pointer-events-none"
-      >
-        <div style={{ width: 1200, transform: 'scale(0.55)', transformOrigin: 'top left' }}>
-          {comp.render(props)}
-        </div>
+      {isCurrent ? (
+        <span className="absolute left-2.5 top-2.5 z-[2] flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-0.5 text-[10px] font-extrabold text-white">
+          <Check size={12} /> Current
+        </span>
+      ) : null}
+      <div ref={wrapRef} className="overflow-hidden bg-white pointer-events-none">
+        <div style={{ width: 1200, zoom: scale }}>{comp.render(props)}</div>
       </div>
       <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-slate-900/55 to-transparent p-4 opacity-0 transition group-hover:opacity-100">
         <span className="rounded-lg bg-white px-5 py-2 text-[13px] font-extrabold text-blue-600 shadow-lg">
@@ -217,6 +265,7 @@ export function InsertBlockModal({
   projectId?: string
 }) {
   const { appState, config, dispatch } = usePuck()
+  const router = useRouter()
 
   const categories = useMemo(
     () =>
@@ -229,20 +278,25 @@ export function InsertBlockModal({
   const [query, setQuery] = useState('')
   const q = query.trim().toLowerCase()
   const [customBlocks, setCustomBlocks] = useState<CustomBlockRecord[]>([])
-  const [composerOpen, setComposerOpen] = useState<{ editing?: CustomBlockRecord } | null>(null)
-  // Save target for a block created with no project context (legacy Page
-  // Builder) — resolved on demand rather than eagerly, since most opens of
-  // this modal never touch "Create new".
-  const [createProjectId, setCreateProjectId] = useState<string | null>(null)
+  // Collapsed back to the default 4-card view whenever the category (or
+  // search) changes — "show all" shouldn't carry over to a different list.
+  const [showAll, setShowAll] = useState(false)
+  useEffect(() => {
+    setShowAll(false)
+  }, [activeCat, q])
 
-  async function openComposer() {
-    if (projectId) {
-      setComposerOpen({})
-      return
-    }
-    const id = createProjectId ?? (await getDefaultProjectId())
-    setCreateProjectId(id)
-    setComposerOpen({})
+  // "Create new" leaves this modal (and this page) entirely for the real
+  // Section Builder screen — a full page, not another overlay stacked on
+  // top of this one. projectId is carried through transparently (falls back
+  // to the single default project when this modal has none in scope, e.g.
+  // opened with no project context); the operator never sees or picks it.
+  function openComposer() {
+    const params = new URLSearchParams({
+      category: activeCat,
+      returnTo: window.location.pathname + window.location.search,
+    })
+    if (projectId) params.set('projectId', projectId)
+    router.push(`/admin/page-builder/section-builder?${params.toString()}`)
   }
 
   useEffect(() => {
@@ -270,10 +324,13 @@ export function InsertBlockModal({
         })
     : (categories.find(([key]) => key === activeCat)?.[1].components ?? [])
 
-  const cards = componentKeys.flatMap((key) => {
-    const variants = blockVariants[key] ?? [null]
-    return variants.map((variant, index) => ({ key, variant, index, total: variants.length }))
-  })
+  const cards = withCurrentSelection(
+    componentKeys.flatMap((key) => {
+      const variants = blockVariants[key] ?? [null]
+      return variants.map((variant, index) => ({ key, variant, index, total: variants.length }))
+    }),
+    appState.data.content
+  )
 
   function insertBlock(componentKey: string, variant: string | null) {
     // Top Bar / Header blocks belong above everything else on the page, not
@@ -328,9 +385,18 @@ export function InsertBlockModal({
       onKeyDown={(e) => e.key === 'Escape' && onClose()}
     >
       <div className="flex h-[min(82vh,780px)] w-[min(1120px,95vw)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center gap-3.5 border-b border-slate-200 px-5 py-3.5">
-          <b className="text-base">Insert a block</b>
-          <div className="relative max-w-[300px] flex-1">
+        <div className="relative border-b border-slate-200 px-5 py-4">
+          <h2 className="text-center text-xl font-extrabold sm:text-2xl">Insert a block</h2>
+          <button
+            onClick={onClose}
+            className="absolute right-3.5 top-3.5 rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+            aria-label="Close"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <div className="border-b border-slate-200 px-5 py-3">
+          <div className="relative max-w-[300px]">
             <Search
               size={14}
               className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
@@ -342,14 +408,6 @@ export function InsertBlockModal({
               className="w-full rounded-md border border-slate-200 py-2 pl-8 pr-3 text-sm"
             />
           </div>
-          <span className="flex-1" />
-          <button
-            onClick={onClose}
-            className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-            aria-label="Close"
-          >
-            <X size={20} />
-          </button>
         </div>
         <div className="flex flex-1 overflow-hidden">
           <div className="w-[210px] flex-none overflow-auto border-r border-slate-200 bg-white">
@@ -367,21 +425,32 @@ export function InsertBlockModal({
               </button>
             ))}
           </div>
-          <div className="grid flex-1 auto-rows-min grid-cols-1 gap-4 overflow-auto bg-slate-50 p-5">
+          <div className="grid flex-1 auto-rows-min grid-cols-2 gap-4 overflow-auto bg-slate-50 p-5">
             {cards.length === 0 ? (
               <div className="p-5 text-sm text-slate-400">No blocks match.</div>
             ) : (
-              cards.map(({ key, variant, index, total }) => (
-                <BlockCard
-                  key={`${key}-${variant ?? 'default'}`}
-                  componentKey={key}
-                  variant={variant}
-                  index={index}
-                  total={total}
-                  onInsert={insertBlock}
-                />
-              ))
+              (showAll ? cards : cards.slice(0, MAX_VISIBLE_CARDS)).map(
+                ({ key, variant, index, total, isCurrent }) => (
+                  <BlockCard
+                    key={`${key}-${variant ?? 'default'}`}
+                    componentKey={key}
+                    variant={variant}
+                    index={index}
+                    total={total}
+                    isCurrent={isCurrent}
+                    onInsert={insertBlock}
+                  />
+                )
+              )
             )}
+            {cards.length > MAX_VISIBLE_CARDS ? (
+              <button
+                onClick={() => setShowAll((v) => !v)}
+                className="col-span-2 rounded-lg border border-dashed border-slate-300 py-2 text-sm font-semibold text-blue-600 hover:border-blue-400 hover:bg-blue-50"
+              >
+                {showAll ? 'Show less' : `Show all ${cards.length} designs`}
+              </button>
+            ) : null}
             {!q
               ? customBlocks.map((block) => (
                   <div
@@ -409,30 +478,138 @@ export function InsertBlockModal({
                   </div>
                 ))
               : null}
-            {!q ? (
-              <button
-                onClick={openComposer}
-                className="flex min-h-[210px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 text-blue-600 hover:border-blue-400 hover:bg-blue-50"
-              >
-                <Plus size={22} />
-                <span className="text-sm font-bold">Create new</span>
-              </button>
-            ) : null}
           </div>
         </div>
+        {!q ? (
+          <div className="mt-4 border-t border-slate-200 p-4.5">
+            <button
+              onClick={openComposer}
+              className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-extrabold text-white hover:bg-blue-700"
+            >
+              + Create new
+            </button>
+          </div>
+        ) : null}
       </div>
-      {composerOpen ? (
-        <BlockComposer
-          projectId={projectId ?? createProjectId ?? ''}
-          categoryKey={activeCat}
-          editing={composerOpen.editing}
-          onClose={() => setComposerOpen(null)}
-          onSaved={() => {
-            setComposerOpen(null)
-            listCustomBlocks(projectId, activeCat).then(setCustomBlocks)
-          }}
-        />
-      ) : null}
+    </div>
+  )
+}
+
+/**
+ * Section-picker popup — the reference's `renderSectionPickerModal`: a small,
+ * single-category popup (just this section's own design cards + "Create
+ * new"), as opposed to InsertBlockModal's full category-sidebar + search
+ * browser. Opened from a Section-tab category card (blocks-panel.tsx).
+ */
+export function SectionPickerPopup({
+  categoryKey,
+  onClose,
+  projectId,
+}: {
+  categoryKey: string
+  onClose: () => void
+  projectId?: string
+}) {
+  const { appState, config, dispatch } = usePuck()
+  const router = useRouter()
+  const cat = (config.categories ?? {})[categoryKey]
+  const componentKeys = cat?.components ?? []
+  const [showAll, setShowAll] = useState(false)
+
+  const cards = withCurrentSelection(
+    componentKeys.flatMap((key) => {
+      const variants = blockVariants[key] ?? [null]
+      return variants.map((variant, index) => ({ key, variant, index, total: variants.length }))
+    }),
+    appState.data.content
+  )
+
+  function insertBlock(componentKey: string, variant: string | null) {
+    let destinationIndex: number | undefined
+    if (TOP_OF_PAGE_CATEGORIES.has(categoryKey)) {
+      destinationIndex = 0
+    } else if (categoryKey === 'hero') {
+      const content = appState.data.content ?? []
+      let i = 0
+      while (i < content.length && TOP_OF_PAGE_TYPES.has(content[i]?.type ?? '')) i++
+      destinationIndex = i
+    }
+    insertBlockComponent(
+      dispatch,
+      config,
+      appState.data.content,
+      componentKey,
+      variant,
+      destinationIndex
+    )
+    onClose()
+  }
+
+  function openComposer() {
+    const params = new URLSearchParams({
+      category: categoryKey,
+      returnTo: window.location.pathname + window.location.search,
+    })
+    if (projectId) params.set('projectId', projectId)
+    router.push(`/admin/page-builder/section-builder?${params.toString()}`)
+  }
+
+  return (
+    <div
+      role="presentation"
+      className="fixed inset-0 z-[2000] grid place-items-center bg-slate-900/50 p-7"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onKeyDown={(e) => e.key === 'Escape' && onClose()}
+    >
+      <div className="flex max-h-[85vh] w-[min(1100px,95vw)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div className="relative border-b border-slate-200 px-5 py-4">
+          <h2 className="text-center text-xl font-extrabold sm:text-2xl">
+            {cat?.title ?? categoryKey}
+          </h2>
+          <button
+            onClick={onClose}
+            className="absolute right-3.5 top-3.5 rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+            aria-label="Close"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <div className="grid auto-rows-min grid-cols-2 gap-3.5 overflow-auto p-4.5">
+          {cards.length === 0 ? (
+            <div className="p-5 text-sm text-slate-400">No designs yet.</div>
+          ) : (
+            (showAll ? cards : cards.slice(0, MAX_VISIBLE_CARDS)).map(
+              ({ key, variant, index, total, isCurrent }) => (
+                <BlockCard
+                  key={`${key}-${variant ?? 'default'}`}
+                  componentKey={key}
+                  variant={variant}
+                  index={index}
+                  total={total}
+                  isCurrent={isCurrent}
+                  onInsert={insertBlock}
+                />
+              )
+            )
+          )}
+          {cards.length > MAX_VISIBLE_CARDS ? (
+            <button
+              onClick={() => setShowAll((v) => !v)}
+              className="col-span-2 rounded-lg border border-dashed border-slate-300 py-2 text-sm font-semibold text-blue-600 hover:border-blue-400 hover:bg-blue-50"
+            >
+              {showAll ? 'Show less' : `Show all ${cards.length} designs`}
+            </button>
+          ) : null}
+        </div>
+        <div className="mt-4 border-t border-slate-200 p-4.5">
+          <button
+            onClick={openComposer}
+            className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-extrabold text-white hover:bg-blue-700"
+          >
+            + Create new
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

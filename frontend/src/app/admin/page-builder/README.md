@@ -1,8 +1,17 @@
-# Page Builder module (Puck) — proof-of-concept
+# Page Builder engine (Puck) — shared library for Template Engine
 
 A flexible, modern, drag-and-drop **visual page/site builder** (à la Wix / Lovable),
 integrated for the KDL stack. Author a page once; it renders fluidly on mobile,
 tablet, and desktop with no per-device code.
+
+**No standalone admin UI.** This app is a single-site, self-hosted open-source
+kit — Template Engine (`/admin/template-engine`) is the only page-editing
+entry point an operator ever sees; its own page-edit route
+(`frontend/src/app/admin/template-engine/edit/[id]/page.tsx`) imports the
+files below directly. The previous standalone `/admin/page-builder` list +
+editor + site-preview routes were a duplicate second way to edit the same
+pages and have been removed — the files in this directory are library code
+now, not a route tree of their own.
 
 ## Why Puck (`@puckeditor/core`)
 
@@ -20,14 +29,14 @@ Puck is just a React component: it drops into the existing Next 15 + Tailwind ap
 stores plain JSON you own (Prisma), and has zero runtime lock-in. Peer dep is
 `react ^18 || ^19` — matches the repo's React 18.
 
-## What's in the POC
+## What's here
 
 Frontend (`frontend/src/app/admin/page-builder/`)
 
-- `puck.config.tsx` — responsive block library (Hero, Heading, Text, Button, Image, Spacer, Columns, Section). Shared by editor + renderer.
-- `page.tsx` — page list / create.
-- `[id]/page.tsx` — the visual editor (`<Puck />`) with a built-in **mobile / tablet / desktop viewport switcher**.
-- `store.ts` — POC persistence (localStorage) so the builder works with no backend yet.
+- `puck.config.tsx` — the block library (composed from every pack under `packs/`). Shared by Template Engine's editor + the public renderer.
+- `blocks-panel.tsx`, `insert-block-modal.tsx` — the editor chrome and "Insert a block" modal, mounted inside Template Engine's `<Puck>` host.
+- `store.ts` — page CRUD against the real backend API (`GET/POST/PUT /api/page-builder`).
+- `frontend/src/app/admin/template-engine/edit/[id]/page.tsx` — the actual editor route (imports everything above).
 - `frontend/src/app/p/[slug]/page.tsx` — public responsive renderer (`<Render />`).
 
 Backend (`backend/src/modules/page-builder/`)
@@ -35,33 +44,6 @@ Backend (`backend/src/modules/page-builder/`)
 - Full KDL module: `module.json`, `routes.js`, `controller.js`, `service.js`, `schema.js`.
 - `backend/prisma/schema/page-builder.prisma` — `BuilderPage` model + `PageStatus` enum.
 - RBAC-gated CRUD (`page-builder:view/add/edit/delete`) + activity logging + a public `GET /api/page-builder/public/:slug`.
-
-## Run it
-
-```bash
-# 1. Install the engine (already added to frontend/package.json)
-cd frontend && pnpm install
-
-# 2. Create the table (infra is already up)
-cd ../backend && pnpm prisma migrate dev --name page_builder
-
-# 3. Start the app, then open:
-#    /admin/page-builder   → create + edit pages
-#    /p/<slug>             → public responsive view
-```
-
-## Promote to production (swap localStorage → API)
-
-The frontend `store.ts` functions map 1:1 onto the backend endpoints — replace the
-localStorage body with `api` (lib/axios) calls; the Puck `Data` shape is identical:
-
-- `listPages()` → `GET /api/page-builder`
-- `getPage(id)` → `GET /api/page-builder/:id`
-- `createPage()` → `POST /api/page-builder`
-- `savePage()` → `PUT /api/page-builder/:id` (send `status: 'PUBLISHED'` to publish)
-
-Then convert `/p/[slug]/page.tsx` into a server component that fetches from
-`GET /api/page-builder/public/:slug` and passes `data` straight to `<Render />`.
 
 ## Notes
 

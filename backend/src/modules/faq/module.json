@@ -1,0 +1,22 @@
+{
+  "slug": "faq",
+  "name": "FAQ",
+  "version": "1.0.0",
+  "description": "FAQ module",
+  "core": false,
+  "apiPrefix": "/api/faq",
+  "permissions": [
+    "faq"
+  ],
+  "nav": [
+    {
+      "label": "FAQ",
+      "path": "/admin/faq",
+      "icon": "Package",
+      "permission": "faq:view"
+    }
+  ],
+  "dependsOn": [],
+  "queues": [],
+  "env": []
+}

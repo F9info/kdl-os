@@ -98,15 +98,44 @@ export async function saveContactFields(projectId, values, userId) {
   return getContactFields(projectId);
 }
 
+// Slugs of the *actual* "Logo & Contact Details" form (Studio's IntakeStage.tsx,
+// KDL-558) — a global (not per-project) standalone SettingField Type seeded by
+// brand-profile-fields.seed.js, edited through the generic
+// GET/POST /setting-fields/by-type/brand-profile API. This module's own
+// per-project `brand-intake.${projectId}` Type/rows above (getContactFields/
+// saveContactFields) are dead: nothing in the frontend ever calls the
+// /brand-kit/:projectId/contact routes they back, so getCompanyInfo() always
+// found them empty and every consumer (template-engine's resolveWebsiteBrand,
+// collateral's resolveBrandKit) silently fell back to "Your Brand" / no
+// company info, regardless of what the user actually typed in the wizard.
+const BRAND_PROFILE_FIELD_SLUGS = {
+  company_name: 'brand-profile-company-name',
+  primary_email: 'brand-profile-primary-email',
+  primary_phone: 'brand-profile-primary-phone',
+  secondary_email: 'brand-profile-secondary-email',
+  secondary_phone: 'brand-profile-secondary-phone',
+  address1: 'brand-profile-address-1',
+  address2: 'brand-profile-address-2',
+};
+
 // Consumed by collateral's resolveBrandKit() to populate company.* for print
-// layouts (visiting card / letterhead) — see backend/src/modules/collateral/render/layouts.js.
-export async function getCompanyInfo(projectId) {
-  const fields = await getContactFields(projectId);
-  const byKey = Object.fromEntries(fields.map((f) => [f.key, f.value]));
+// layouts (visiting card / letterhead — see
+// backend/src/modules/collateral/render/layouts.js) and by template-engine's
+// resolveWebsiteBrand() to seed NavBar/Footer/Header defaults.
+export async function getCompanyInfo(_projectId) {
+  const fields = await prisma.settingField.findMany({
+    where: { slug: { in: Object.values(BRAND_PROFILE_FIELD_SLUGS) } },
+    select: { slug: true, value: true },
+  });
+  const bySlug = new Map(fields.map((f) => [f.slug, f.value]));
+  const get = (key) => bySlug.get(BRAND_PROFILE_FIELD_SLUGS[key]) || null;
+
   return {
-    company_name: byKey.company_name || null,
-    email: byKey.primary_email || null,
-    phone: byKey.primary_phone || null,
-    addressLines: [byKey.address1, byKey.address2].filter(Boolean),
+    company_name: get('company_name'),
+    email: get('primary_email'),
+    phone: get('primary_phone'),
+    secondaryEmail: get('secondary_email'),
+    secondaryPhone: get('secondary_phone'),
+    addressLines: [get('address1'), get('address2')].filter(Boolean),
   };
 }

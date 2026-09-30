@@ -21,9 +21,13 @@ export interface PageRecord {
   data: Data
   status: 'DRAFT' | 'PUBLISHED'
   updatedAt: string
+  projectId: string | null
 }
 
-type ListItem = Omit<PageRecord, 'data'> & { updated_at: string }
+type ListItem = Omit<PageRecord, 'data' | 'projectId'> & {
+  updated_at: string
+  project_id: string | null
+}
 
 function toRecord(raw: ListItem & { data?: Data }): PageRecord {
   return {
@@ -33,6 +37,7 @@ function toRecord(raw: ListItem & { data?: Data }): PageRecord {
     data: raw.data ?? ({ ...emptyData, root: { props: { title: raw.title } } } as Data),
     status: raw.status,
     updatedAt: raw.updated_at,
+    projectId: raw.project_id ?? null,
   }
 }
 

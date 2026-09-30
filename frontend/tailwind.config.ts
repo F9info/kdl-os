@@ -122,6 +122,14 @@ const config: Config = {
           from: { transform: 'translateX(0)' },
           to: { transform: 'translateX(-100%)' },
         },
+        'hero-fade-in': {
+          from: { opacity: '0' },
+          to: { opacity: '1' },
+        },
+        'hero-slide-in': {
+          from: { opacity: '0', transform: 'translateX(24px)' },
+          to: { opacity: '1', transform: 'translateX(0)' },
+        },
       },
       animation: {
         // Use B1 motion tokens; globals.css collapses them to 0ms under prefers-reduced-motion
@@ -140,6 +148,8 @@ const config: Config = {
           'sheet-slide-in-from-left var(--duration-slow, 0.2s) var(--ease-decelerate, ease-out)',
         'sheet-slide-out-to-left':
           'sheet-slide-out-to-left var(--duration-base, 0.15s) var(--ease-accelerate, ease-out)',
+        'hero-fade-in': 'hero-fade-in 500ms ease-out',
+        'hero-slide-in': 'hero-slide-in 500ms ease-out',
       },
     },
   },
