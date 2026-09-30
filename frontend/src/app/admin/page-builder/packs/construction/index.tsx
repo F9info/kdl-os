@@ -902,6 +902,8 @@ type ConstructionProps = {
     badgeYearLabel: string
     badgeNumber: string
     badgeLabel: string
+    badgeSide: 'left' | 'right'
+    actionsSide: 'left' | 'right'
   }
   ConstructionFooter: {
     variant: '1' | '2' | '3' | '4'
@@ -2124,6 +2126,15 @@ const ICON_BY_KEY: Record<IconKey, () => JSX.Element> = {
   shop: ShopIcon,
   building: BuildingIcon,
 }
+
+// Left/Right picker for the Floating Actions block (trust badge + WhatsApp/brochure buttons).
+const SIDE_FIELD = {
+  type: 'radio',
+  options: [
+    { label: 'Left', value: 'left' },
+    { label: 'Right', value: 'right' },
+  ],
+} as const
 
 const FOUNDER_FACT_ICON_FIELD = {
   type: 'select',
@@ -9190,6 +9201,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       badgeYearLabel: { type: 'text' },
       badgeNumber: { type: 'text' },
       badgeLabel: { type: 'text' },
+      badgeSide: SIDE_FIELD,
+      actionsSide: SIDE_FIELD,
     },
     defaultProps: {
       whatsappHref:
@@ -9198,12 +9211,86 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       badgeYearLabel: 'Estd. 1996',
       badgeNumber: '30',
       badgeLabel: 'years of Trust',
+      badgeSide: 'right',
+      actionsSide: 'right',
     },
-    render: ({ id, whatsappHref, brochureHref, badgeYearLabel, badgeNumber, badgeLabel, puck }) => {
+    render: ({
+      id,
+      whatsappHref,
+      brochureHref,
+      badgeYearLabel,
+      badgeNumber,
+      badgeLabel,
+      // Pages seeded before these options existed have neither prop → right.
+      badgeSide = 'right',
+      actionsSide = 'right',
+      puck,
+    }) => {
       const isEditing = puck?.isEditing ?? false
+      const sideClass = (side: string) => (side === 'left' ? 'left-6' : 'right-6')
+      const sameSide = badgeSide === actionsSide
+      const badgeEl = badgeNumber ? (
+        <div
+          className="relative z-40 hidden md:flex h-24 w-24 items-center justify-center rounded-full bg-slate-950 shadow-lg"
+          aria-hidden="true"
+        >
+          <svg className="absolute inset-0 h-full w-full" viewBox="0 0 200 200">
+            <defs>
+              <linearGradient id="fabGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#f6d876" />
+                <stop offset="50%" stopColor="#c9971f" />
+                <stop offset="100%" stopColor="#f6d876" />
+              </linearGradient>
+            </defs>
+            <circle
+              cx="100"
+              cy="100"
+              r="94"
+              fill="none"
+              stroke="url(#fabGoldGrad)"
+              strokeWidth="9"
+              strokeDasharray="4 9"
+              strokeLinecap="round"
+            />
+          </svg>
+          <div className="relative flex flex-col items-center text-center text-white">
+            {(isEditing || badgeYearLabel) && (
+              <span className="text-[9px] tracking-wide">
+                <InlineEditableText
+                  id={id}
+                  path={['badgeYearLabel']}
+                  value={badgeYearLabel ?? ''}
+                  isEditing={isEditing}
+                />
+              </span>
+            )}
+            <span className="text-2xl font-extrabold leading-none">
+              <InlineEditableText
+                id={id}
+                path={['badgeNumber']}
+                value={badgeNumber ?? ''}
+                isEditing={isEditing}
+              />
+            </span>
+            {(isEditing || badgeLabel) && (
+              <span className="text-[9px] leading-tight">
+                <InlineEditableText
+                  id={id}
+                  path={['badgeLabel']}
+                  value={badgeLabel ?? ''}
+                  isEditing={isEditing}
+                />
+              </span>
+            )}
+          </div>
+        </div>
+      ) : null
       return (
         <>
-          <div className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-3">
+          <div
+            className={`fixed bottom-6 ${sideClass(actionsSide)} z-50 flex flex-col items-center gap-3`}
+          >
+            {sameSide && badgeEl}
             {whatsappHref && (
               <a
                 href={whatsappHref}
@@ -9242,61 +9329,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               </a>
             )}
           </div>
-          {badgeNumber && (
-            <div
-              className="fixed bottom-6 left-6 z-40 hidden md:flex h-24 w-24 items-center justify-center rounded-full bg-slate-950 shadow-lg"
-              aria-hidden="true"
-            >
-              <svg className="absolute inset-0 h-full w-full" viewBox="0 0 200 200">
-                <defs>
-                  <linearGradient id="fabGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#f6d876" />
-                    <stop offset="50%" stopColor="#c9971f" />
-                    <stop offset="100%" stopColor="#f6d876" />
-                  </linearGradient>
-                </defs>
-                <circle
-                  cx="100"
-                  cy="100"
-                  r="94"
-                  fill="none"
-                  stroke="url(#fabGoldGrad)"
-                  strokeWidth="9"
-                  strokeDasharray="4 9"
-                  strokeLinecap="round"
-                />
-              </svg>
-              <div className="relative flex flex-col items-center text-center text-white">
-                {(isEditing || badgeYearLabel) && (
-                  <span className="text-[9px] tracking-wide">
-                    <InlineEditableText
-                      id={id}
-                      path={['badgeYearLabel']}
-                      value={badgeYearLabel ?? ''}
-                      isEditing={isEditing}
-                    />
-                  </span>
-                )}
-                <span className="text-2xl font-extrabold leading-none">
-                  <InlineEditableText
-                    id={id}
-                    path={['badgeNumber']}
-                    value={badgeNumber ?? ''}
-                    isEditing={isEditing}
-                  />
-                </span>
-                {(isEditing || badgeLabel) && (
-                  <span className="text-[9px] leading-tight">
-                    <InlineEditableText
-                      id={id}
-                      path={['badgeLabel']}
-                      value={badgeLabel ?? ''}
-                      isEditing={isEditing}
-                    />
-                  </span>
-                )}
-              </div>
-            </div>
+          {!sameSide && badgeEl && (
+            <div className={`fixed bottom-6 ${sideClass(badgeSide)} z-40`}>{badgeEl}</div>
           )}
         </>
       )
