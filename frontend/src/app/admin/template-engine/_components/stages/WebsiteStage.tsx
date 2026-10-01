@@ -138,11 +138,9 @@ function writeLocal(key: string, value: unknown) {
   }
 }
 
-// Served by the compose `site-preview` service (generated project app).
+// The generated site is served at `/` on this same origin (nginx routes it).
 function sitePreviewUrl() {
-  return typeof window === 'undefined'
-    ? '#'
-    : `${window.location.protocol}//${window.location.hostname}:3300/`
+  return typeof window === 'undefined' ? '#' : `${window.location.origin}/`
 }
 
 export function WebsiteStage({ run }: { run: TemplateEngineRun }) {

@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Eye, Rocket } from 'lucide-react'
 import type { ComponentPack } from '../types'
 import { imageField } from '../image-field'
+import { resolveItems, withNumberedFamilies } from '../numbered-families'
 import { InlineEditableText } from '../inline-editable-text'
 import { teamMemberField } from '../team-member-field'
 import { useSettingsFieldValues } from '../use-settings-field-values'
@@ -41,6 +42,100 @@ function StatValue({ value }: { value: string }) {
 
 const padY = { sm: 'py-8', md: 'py-14', lg: 'py-24' } as const
 const wrap = 'mx-auto max-w-6xl px-4 md:px-8'
+
+// ─── Our Brands: tabs → categories → brand logos ────────────────────────────
+export interface BrandLogo {
+  name: string
+  logo: string
+}
+export interface BrandCategory {
+  heading: string
+  brands: BrandLogo[]
+}
+export interface BrandTab {
+  label: string
+  categories: BrandCategory[]
+}
+
+/** Parses the original "Heading|Brand::logo;Brand2::logo\n…" text into categories. */
+function parseBrandCategories(raw: string | undefined): BrandCategory[] {
+  return (raw ?? '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [heading, brandsRaw] = line.split('|')
+      return {
+        heading: (heading ?? '').trim(),
+        brands: (brandsRaw ?? '')
+          .split(';')
+          .map((b) => b.trim())
+          .filter(Boolean)
+          .map((entry) => {
+            const [name, logo] = entry.split('::')
+            return { name: (name ?? '').trim(), logo: (logo ?? '').trim() }
+          })
+          .filter((b) => b.name),
+      }
+    })
+    .filter((c) => c.heading)
+}
+
+/** Pages saved before the tab accordion existed carry tab1Label/tab1Groups… — read them as tabs. */
+function brandTabsFromLegacy(p: Record<string, string | undefined>): BrandTab[] {
+  return [1, 2, 3]
+    .map((n) => ({
+      label: p[`tab${n}Label`] ?? '',
+      categories: parseBrandCategories(p[`tab${n}Groups`]),
+    }))
+    .filter((t) => t.label)
+}
+
+const DEFAULT_BRAND_TABS: BrandTab[] = brandTabsFromLegacy({
+  tab1Label: 'Design, Execution & Maintenance',
+  tab1Groups:
+    'Air Conditioning|Blue Star::/seed/subhadra/ourbrands/design-execution-maintenance/Blue_Star_primary_logo.png\n' +
+    'Refrigeration|Blue Star::/seed/subhadra/ourbrands/design-execution-maintenance/Blue_Star_primary_logo.png\n' +
+    'EPABX|Matrix::/seed/subhadra/ourbrands/design-execution-maintenance/Matrix.jpg\n' +
+    'Fire Fighting|Newage::/seed/subhadra/ourbrands/design-execution-maintenance/Newage.jpg;Safex::/seed/subhadra/ourbrands/design-execution-maintenance/Safex.png;Tyco::/seed/subhadra/ourbrands/design-execution-maintenance/tyco_logo_v1.png\n' +
+    'CCTV|CP Plus::/seed/subhadra/ourbrands/design-execution-maintenance/CP%20Plus.jpg;Matrix::/seed/subhadra/ourbrands/design-execution-maintenance/Matrix.jpg;Honeywell::/seed/subhadra/ourbrands/design-execution-maintenance/Honeywell%20CCTV.jpg;Prama::/seed/subhadra/ourbrands/design-execution-maintenance/Prama.jpg\n' +
+    'Access Control|Matrix::/seed/subhadra/ourbrands/design-execution-maintenance/Matrix.jpg;Essl::/seed/subhadra/ourbrands/design-execution-maintenance/esslogo.png\n' +
+    'Public Address System|JBL::/seed/subhadra/ourbrands/design-execution-maintenance/JBL.png;Bosch::/seed/subhadra/ourbrands/design-execution-maintenance/Bosch.jpg;Ahuja::/seed/subhadra/ourbrands/design-execution-maintenance/Ahuja.jpg;Studio Master::/seed/subhadra/ourbrands/design-execution-maintenance/Studio%20Master.jpg;Crown::/seed/subhadra/ourbrands/design-execution-maintenance/Crown.jpg;Sound Craft::/seed/subhadra/ourbrands/design-execution-maintenance/Sound%20Craft.svg\n' +
+    'Fire Alarm|Ravel::/seed/subhadra/ourbrands/design-execution-maintenance/Ravel.png;Honeywell::/seed/subhadra/ourbrands/design-execution-maintenance/hon-honeywell-technologies-logo-full-horizontal.svg;Agni::/seed/subhadra/ourbrands/design-execution-maintenance/Agni.jpg;Bosch::/seed/subhadra/ourbrands/design-execution-maintenance/Bosch.jpg\n' +
+    'Professional Audio|JBL::/seed/subhadra/ourbrands/design-execution-maintenance/JBL.png;Bose::/seed/subhadra/ourbrands/design-execution-maintenance/bose-logo.jpg;Electro-Voice::/seed/subhadra/ourbrands/design-execution-maintenance/Electro-Voice.png;QSC::/seed/subhadra/ourbrands/design-execution-maintenance/qsc.png\n' +
+    'Network Solutions|TP-Link::/seed/subhadra/ourbrands/design-execution-maintenance/TP-Link-Logo.wine.svg;Grandstream::/seed/subhadra/ourbrands/design-execution-maintenance/logo-grandstream-low-web.webp;Netgear::/seed/subhadra/ourbrands/design-execution-maintenance/Net%20Gare%20brand-logo.svg;Netfox::/seed/subhadra/ourbrands/design-execution-maintenance/Netfox-logo-WO-TM.png;D-Link::/seed/subhadra/ourbrands/design-execution-maintenance/D-link.svg;Syrotech::/seed/subhadra/ourbrands/design-execution-maintenance/Syro%20Tech.png;Honeywell::/seed/subhadra/ourbrands/design-execution-maintenance/hon-honeywell-technologies-logo-full-horizontal.svg',
+  tab2Label: 'Electrical Products',
+  tab2Groups:
+    'Fans|Crompton::/seed/subhadra/ourbrands/electrical-products/Crompton.avif\n' +
+    'Designer Fans|WadBros::/seed/subhadra/ourbrands/electrical-products/Wadbros.png\n' +
+    'Exhaust Fans|WadBros::/seed/subhadra/ourbrands/electrical-products/Wadbros.png\n' +
+    'Wires|RR Kabel::/seed/subhadra/ourbrands/electrical-products/RRKabel.jpg\n' +
+    'Fresh Air System|WadBros::/seed/subhadra/ourbrands/electrical-products/Wadbros.png\n' +
+    'MCB, DB & Switchgear|Schneider Electric::/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png\n' +
+    'Lighting|Futura::/seed/subhadra/ourbrands/electrical-products/Futura%20-1.svg;Wipro::/seed/subhadra/ourbrands/electrical-products/Wipro.png;Crompton::/seed/subhadra/ourbrands/electrical-products/Crompton.avif;Philips::/seed/subhadra/ourbrands/electrical-products/lighting-philips-logo.jpg\n' +
+    'Switches|Schneider Electric::/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png;Norisys::/seed/subhadra/ourbrands/electrical-products/Norisys.png;Legrand::/seed/subhadra/ourbrands/electrical-products/Legrand-Logo.png\n' +
+    'Panel Boards|Customized\n' +
+    'Generators|Cummins::/seed/subhadra/ourbrands/electrical-products/Cunnins.png;Jackson::/seed/subhadra/ourbrands/electrical-products/Jakson.png;Mahindra::/seed/subhadra/ourbrands/electrical-products/Mahindra.png\n' +
+    'Load Break Switch|Transgard::/seed/subhadra/ourbrands/electrical-products/Transguard-Logo-white.png;Megawin::/seed/subhadra/ourbrands/electrical-products/Megawin.jpg\n' +
+    'Servo Stabilizer|Powertex::/seed/subhadra/ourbrands/electrical-products/Power%20Tex.jpg;Servomax::/seed/subhadra/ourbrands/electrical-products/Servomax-logo-2048x471.webp\n' +
+    'UPS|APC::/seed/subhadra/ourbrands/electrical-products/LogoAPC.svg;Fuji Electric::/seed/subhadra/ourbrands/electrical-products/Fuji-Electric-Logo.jpg',
+  tab3Label: 'Lifestyle Residential Products',
+  tab3Groups:
+    'Gate Automation|Beninca::/seed/subhadra/ourbrands/lifestyle-residential-products/beninca-logo.png;Veer::/seed/subhadra/ourbrands/lifestyle-residential-products/veer-logo-.png\n' +
+    'Video Door Phone|One Touch::/seed/subhadra/ourbrands/lifestyle-residential-products/One%20Touch_logo.svg;Legrand Bticino::/seed/subhadra/ourbrands/lifestyle-residential-products/BTicino-IME.jpg\n' +
+    'Smart Lock|Yale::/seed/subhadra/ourbrands/lifestyle-residential-products/yale_logo.avif;Onetouch::/seed/subhadra/ourbrands/lifestyle-residential-products/One%20Touch_logo.svg;Ezviz::/seed/subhadra/ourbrands/lifestyle-residential-products/ezviz-logo_.png\n' +
+    'Home Automation — Retrofit|Schneider Electric::/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png;Legrand::/seed/subhadra/ourbrands/electrical-products/Legrand-Logo.png;Toyama::/seed/subhadra/ourbrands/lifestyle-residential-products/Toyama%20logo-768.webp\n' +
+    'Home Automation — Centralized|Schneider Electric::/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png;Legrand::/seed/subhadra/ourbrands/electrical-products/Legrand-Logo.png;Moorgen::/seed/subhadra/ourbrands/lifestyle-residential-products/Moorgen.jpg;Eelectron::/seed/subhadra/ourbrands/lifestyle-residential-products/eelectron.png\n' +
+    'Intrusion Alarm|Ajax::/seed/subhadra/ourbrands/lifestyle-residential-products/Ajax%20logo.jpg;Texecom::/seed/subhadra/ourbrands/lifestyle-residential-products/Texecom.png\n' +
+    'Multi-Room Audio|Xscase::/seed/subhadra/ourbrands/lifestyle-residential-products/Xscase.png;Sonos::/seed/subhadra/ourbrands/lifestyle-residential-products/Sonos.png;RTI::/seed/subhadra/ourbrands/lifestyle-residential-products/RTI.png;Lithe Audio\n' +
+    'Living Room Audio|Devialet::/seed/subhadra/ourbrands/lifestyle-residential-products/devialet-logo.png;Sonos::/seed/subhadra/ourbrands/lifestyle-residential-products/Sonos.png\n' +
+    'Home Theater — Amplifiers|Denon::/seed/subhadra/ourbrands/lifestyle-residential-products/Denon%20logo.svg;Marantz::/seed/subhadra/ourbrands/lifestyle-residential-products/Marantz%20logo.svg;JBL::/seed/subhadra/ourbrands/lifestyle-residential-products/jbl-logo.svg;Integra::/seed/subhadra/ourbrands/lifestyle-residential-products/Integra-Logo-White.svg;Onkyo::/seed/subhadra/ourbrands/lifestyle-residential-products/Logo%20-%20Onkyo%20Med%20Wht.svg;Emotiva::/seed/subhadra/ourbrands/lifestyle-residential-products/emotiva%401x.svg\n' +
+    'Home Theater — Speakers|Focal::/seed/subhadra/ourbrands/lifestyle-residential-products/focal-logo.png;M&K Sound::/seed/subhadra/ourbrands/lifestyle-residential-products/M%26K%20Sound%20logo.png;Artcoustic::/seed/subhadra/ourbrands/lifestyle-residential-products/Artcoustic-logo.webp;JBL::/seed/subhadra/ourbrands/lifestyle-residential-products/jbl-logo.svg;Klipsch::/seed/subhadra/ourbrands/lifestyle-residential-products/Klipsch_script_logo.svg;KEF::/seed/subhadra/ourbrands/lifestyle-residential-products/Kef%20logo.png;Polk::/seed/subhadra/ourbrands/lifestyle-residential-products/Polk-logo.webp;Dali::/seed/subhadra/ourbrands/lifestyle-residential-products/Dali.png\n' +
+    'Home Theater — Subwoofers|Ascendo::/seed/subhadra/ourbrands/lifestyle-residential-products/Acendo%20Sub%20logo.jpeg;SVS::/seed/subhadra/ourbrands/lifestyle-residential-products/SVS%20sub%20logo.png\n' +
+    'Home Theater — Projectors|Optoma::/seed/subhadra/ourbrands/lifestyle-residential-products/Optoma%20logo.jpeg;Sony::/seed/subhadra/ourbrands/lifestyle-residential-products/Sony%20logo.png;JVC::/seed/subhadra/ourbrands/lifestyle-residential-products/jvc_logo.svg;BenQ::/seed/subhadra/ourbrands/lifestyle-residential-products/benq-logo.png;Epson::/seed/subhadra/ourbrands/lifestyle-residential-products/Epson%20logo.png\n' +
+    'Home Theater — Screens|Euroscreen::/seed/subhadra/ourbrands/lifestyle-residential-products/Eurros%20Screen.svg;Liberty Screen::/seed/subhadra/ourbrands/lifestyle-residential-products/Liberty%20-logo.gif;Elite Screen::/seed/subhadra/ourbrands/lifestyle-residential-products/Elite%20screen.jpeg;VU-Tech Screen\n' +
+    'Heat Pump|A. O. Smith::/seed/subhadra/ourbrands/lifestyle-residential-products/Ao%20smith.jpeg',
+})
 
 // Text-badge fallback for platform indicators — no lucide-react social icons
 // (Facebook/Instagram/LinkedIn/YouTube) are imported anywhere in this file, so
@@ -318,6 +413,7 @@ type ConstructionProps = {
     quaternaryColor: string
     transparent: boolean
     lightText: boolean
+    solidOnScroll: boolean
     social1Href: string
     social2Href: string
     social3Href: string
@@ -477,6 +573,7 @@ type ConstructionProps = {
     service6Description: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    services?: Record<string, string>[]
   }
   ConstructionProjectGallery: {
     sectionEyebrow?: string
@@ -524,6 +621,7 @@ type ConstructionProps = {
     stat4Label: string
     background: 'dark' | 'accent' | 'muted'
     padding: 'sm' | 'md' | 'lg'
+    stats?: Record<string, string>[]
   }
   ConstructionTeamCrew: {
     sectionTitle: string
@@ -542,6 +640,7 @@ type ConstructionProps = {
     member4Image: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    members?: Record<string, string>[]
   }
   ConstructionCertificationsBadges: {
     sectionTitle: string
@@ -560,6 +659,7 @@ type ConstructionProps = {
     badge6Detail: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    badges?: Record<string, string>[]
   }
   ConstructionOrgChart: {
     padding: 'sm' | 'md' | 'lg'
@@ -577,6 +677,7 @@ type ConstructionProps = {
     report3Name: string
     report3Role: string
     report3Photo: string
+    reports?: Record<string, string>[]
   }
   ConstructionTeamStats: {
     padding: 'sm' | 'md' | 'lg'
@@ -596,6 +697,8 @@ type ConstructionProps = {
     crew3Photo: string
     crew3Name: string
     crew3YearsWithUs: string
+    stats?: Record<string, string>[]
+    crews?: Record<string, string>[]
   }
   ConstructionTestimonials: {
     sectionTitle: string
@@ -613,6 +716,7 @@ type ConstructionProps = {
     quote3Initials: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    quotes?: Record<string, string>[]
   }
   ConstructionTestimonialsCarousel: {
     sectionTitle: string
@@ -633,6 +737,7 @@ type ConstructionProps = {
     testimonial3Quote: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    testimonials?: Record<string, string>[]
   }
   ConstructionProcessTimeline: {
     sectionTitle: string
@@ -649,6 +754,7 @@ type ConstructionProps = {
     step5Description: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    steps?: Record<string, string>[]
   }
   ConstructionWhyChooseUs: {
     sectionTitle: string
@@ -665,6 +771,7 @@ type ConstructionProps = {
     ctaHref: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    points?: Record<string, string>[]
   }
   ConstructionSafetyRecord: {
     sectionTitle: string
@@ -689,6 +796,7 @@ type ConstructionProps = {
     milestone4Label: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    milestones?: Record<string, string>[]
   }
   ConstructionOfferingsRows: {
     sectionTitle: string
@@ -713,6 +821,7 @@ type ConstructionProps = {
     offering3Href: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    offerings?: Record<string, string>[]
   }
   ConstructionAboutSplit: {
     useSettings?: boolean
@@ -725,6 +834,7 @@ type ConstructionProps = {
     check1Text: string
     check2Text: string
     check3Text: string
+    checks?: Record<string, string>[]
     brochureLabel: string
     brochureHref: string
     membershipLabel: string
@@ -750,6 +860,7 @@ type ConstructionProps = {
     ctaHref: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    scopes?: Record<string, string>[]
   }
   ConstructionProjectsGridCards: {
     heading: string
@@ -767,6 +878,7 @@ type ConstructionProps = {
     project3Stat: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    projects?: Record<string, string>[]
   }
   ConstructionProjectShowcaseSplit: {
     image: string
@@ -778,6 +890,7 @@ type ConstructionProps = {
     stat2Label: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    stats?: Record<string, string>[]
   }
   ConstructionProjectMapStrip: {
     heading: string
@@ -791,6 +904,7 @@ type ConstructionProps = {
     location4City: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    locations?: Record<string, string>[]
   }
   ConstructionProductsShowcase: {
     sectionEyebrow: string
@@ -812,6 +926,7 @@ type ConstructionProps = {
     }[]
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    categories?: Record<string, string>[]
   }
   ConstructionClientsGrid: {
     sectionEyebrow: string
@@ -831,6 +946,7 @@ type ConstructionProps = {
     client3Quote: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    clients?: Record<string, string>[]
   }
   ConstructionClientsMarquee: {
     sectionTitle: string
@@ -842,6 +958,7 @@ type ConstructionProps = {
     logo6: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    logos?: Record<string, string>[]
   }
   ConstructionClientsCaseHighlight: {
     spotlightLogo: string
@@ -853,6 +970,7 @@ type ConstructionProps = {
     otherLogo4: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    otherLogos?: Record<string, string>[]
   }
   ConstructionLeadFormFAQ: {
     sectionEyebrow: string
@@ -1003,6 +1121,7 @@ type ConstructionProps = {
     entry7Image: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    entries?: Record<string, string>[]
   }
   ConstructionLeadershipGrid: {
     eyebrow: string
@@ -1021,6 +1140,7 @@ type ConstructionProps = {
     leader3Bio: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    leaders?: Record<string, string>[]
   }
   ConstructionFounderProfile: {
     eyebrow: string
@@ -1080,6 +1200,7 @@ type ConstructionProps = {
     video3Duration: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    videos?: Record<string, string>[]
   }
   ConstructionVideoSplitStats: {
     thumbnail: string
@@ -1093,6 +1214,7 @@ type ConstructionProps = {
     stat3Label: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    stats?: Record<string, string>[]
   }
   ConstructionVideoReel: {
     thumbnail: string
@@ -1116,6 +1238,7 @@ type ConstructionProps = {
     post3Title: string
     post3Date: string
     padding: 'sm' | 'md' | 'lg'
+    posts?: Record<string, string>[]
   }
   ConstructionNewsTicker: {
     eyebrow: string
@@ -1130,6 +1253,7 @@ type ConstructionProps = {
     news4Date: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    newss?: Record<string, string>[]
   }
   ConstructionCaseStudyGrid: {
     eyebrow: string
@@ -1154,6 +1278,7 @@ type ConstructionProps = {
     case3LinkHref: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    cases?: Record<string, string>[]
   }
   ConstructionSocialMedia: {
     sectionTitle: string
@@ -1177,6 +1302,7 @@ type ConstructionProps = {
     post3Platform: 'instagram' | 'facebook' | 'linkedin' | 'youtube'
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    posts?: Record<string, string>[]
   }
   ConstructionSocialFollowBanner: {
     heading: string
@@ -1201,6 +1327,7 @@ type ConstructionProps = {
     highlight3Caption: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    highlights?: Record<string, string>[]
   }
   ConstructionFAQ: {
     sectionTitle: string
@@ -1213,6 +1340,7 @@ type ConstructionProps = {
     faq4Question: string
     faq4Answer: string
     padding: 'sm' | 'md' | 'lg'
+    faqs?: Record<string, string>[]
   }
   ConstructionFAQAccordionCategories: {
     sectionTitle: string
@@ -1247,6 +1375,7 @@ type ConstructionProps = {
     faq6Question: string
     faq6Answer: string
     padding: 'sm' | 'md' | 'lg'
+    faqs?: Record<string, string>[]
   }
   ConstructionFAQWithContact: {
     sectionTitle: string
@@ -1260,6 +1389,7 @@ type ConstructionProps = {
     contactCtaLabel: string
     contactCtaHref: string
     padding: 'sm' | 'md' | 'lg'
+    faqs?: Record<string, string>[]
   }
   ConstructionDisciplinesGrid: {
     sectionEyebrow: string
@@ -1277,14 +1407,17 @@ type ConstructionProps = {
     background: 'white' | 'muted'
   }
   ConstructionOurBrands: {
+    sectionEyebrow?: string
     sectionTitle: string
     sectionSubtitle: string
-    tab1Label: string
-    tab1Groups: string
-    tab2Label: string
-    tab2Groups: string
-    tab3Label: string
-    tab3Groups: string
+    tabs?: BrandTab[]
+    // Legacy text-based tabs (pages saved before `tabs` existed) — still rendered, hidden in the panel.
+    tab1Label?: string
+    tab1Groups?: string
+    tab2Label?: string
+    tab2Groups?: string
+    tab3Label?: string
+    tab3Groups?: string
     padding: 'sm' | 'md' | 'lg'
   }
   ConstructionProjectsSlider: {
@@ -1310,6 +1443,7 @@ type ConstructionProps = {
     tab3Description: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    tabs?: Record<string, string>[]
   }
   ConstructionSectorsIconRow: {
     heading: string
@@ -1324,6 +1458,7 @@ type ConstructionProps = {
     sector5Icon: IconKey
     sector5Label: string
     padding: 'sm' | 'md' | 'lg'
+    sectors?: Record<string, string>[]
   }
   ConstructionSectorsRadial: {
     eyebrow: string
@@ -1344,6 +1479,7 @@ type ConstructionProps = {
     otherSector3: string
     otherSector4: string
     padding: 'sm' | 'md' | 'lg'
+    otherSectors?: Record<string, string>[]
   }
   ConstructionSectorDetailList: {
     variant: '1' | '2' | '3' | '4'
@@ -1414,6 +1550,8 @@ type ConstructionProps = {
     variant?: '1' | '2'
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    highlights?: Record<string, string>[]
+    stats?: Record<string, string>[]
   }
   ConstructionProcessSteps: {
     sectionEyebrow: string
@@ -1440,6 +1578,7 @@ type ConstructionProps = {
     logo6: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    logos?: Record<string, string>[]
   }
   ConstructionBrandsCarousel: {
     sectionTitle: string
@@ -1458,6 +1597,7 @@ type ConstructionProps = {
     otherLogo4: string
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
+    otherLogos?: Record<string, string>[]
   }
 }
 
@@ -2788,6 +2928,15 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           { label: 'On', value: true },
         ],
       },
+      // Theme-engine surface/text colours, so it follows the project's theme.
+      solidOnScroll: {
+        type: 'radio',
+        label: 'Solid background on scroll (Design 1, when transparent)',
+        options: [
+          { label: 'On', value: true },
+          { label: 'Off', value: false },
+        ],
+      },
       // Design 2's banner strip (Facebook/LinkedIn/Instagram/X) — a flat,
       // variant-agnostic field set like phoneNumber/primaryColor above
       // (this component doesn't use TopBar/Footer's per-design d1-d4 prefix
@@ -2817,6 +2966,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       quaternaryColor: '',
       transparent: true,
       lightText: true,
+      solidOnScroll: true,
       social1Href: '#',
       social2Href: '#',
       social3Href: '#',
@@ -2841,7 +2991,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       tertiaryColor,
       quaternaryColor,
       transparent,
-      lightText,
+      lightText: lightTextProp,
+      solidOnScroll = true,
       social1Href,
       social2Href,
       social3Href,
@@ -2849,6 +3000,19 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       puck,
     }) {
       const [mobileOpen, setMobileOpen] = useState(false)
+      // A floating (transparent) header turns solid once the page scrolls, so the nav
+      // stays readable over any section below the hero.
+      const [scrolled, setScrolled] = useState(false)
+      const floating = Boolean(transparent) && !(puck?.isEditing ?? false)
+      useEffect(() => {
+        if (!floating || !solidOnScroll) return
+        const onScroll = () => setScrolled(window.scrollY > 40)
+        onScroll()
+        window.addEventListener('scroll', onScroll, { passive: true })
+        return () => window.removeEventListener('scroll', onScroll)
+      }, [floating, solidOnScroll])
+      const solid = floating && solidOnScroll && scrolled
+      const lightText = solid ? false : lightTextProp
       // This admin canvas renders the page directly (no iframe), so a truly
       // `fixed` header escapes the canvas and overlaps the editor's own
       // toolbar (Back/Insert block/Publish) instead of just the hero below
@@ -3269,7 +3433,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               // legible; the real public page still gets a true transparent
               // float via the `fixed` branch below.
               'sticky top-0 z-40 bg-slate-900/95 backdrop-blur'
-            : 'fixed top-0 inset-x-0 z-40 bg-transparent'
+            : solid
+              ? 'fixed top-0 inset-x-0 z-40 bg-card text-card-foreground shadow-md transition-colors duration-200'
+              : 'fixed top-0 inset-x-0 z-40 bg-transparent transition-colors duration-200'
           : 'sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-100'
         const brandTextClass = lightText ? 'text-white' : 'text-slate-900'
         const navLinkClass = lightText
@@ -4901,6 +5067,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: ({
+      services: rows_services,
       sectionTitle,
       sectionSubtitle,
       service1Title,
@@ -4918,14 +5085,21 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding,
       background,
     }) => {
-      const services = [
-        { title: service1Title, description: service1Description },
-        { title: service2Title, description: service2Description },
-        { title: service3Title, description: service3Description },
-        { title: service4Title, description: service4Description },
-        { title: service5Title, description: service5Description },
-        { title: service6Title, description: service6Description },
-      ].filter((s) => s.title)
+      const services = resolveItems(
+        rows_services,
+        [
+          { title: service1Title, description: service1Description },
+          { title: service2Title, description: service2Description },
+          { title: service3Title, description: service3Description },
+          { title: service4Title, description: service4Description },
+          { title: service5Title, description: service5Description },
+          { title: service6Title, description: service6Description },
+        ],
+        (it) => ({
+          title: it.title as typeof service1Title,
+          description: it.description as typeof service1Description,
+        })
+      ).filter((s) => s.title)
       return (
         <section
           className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
@@ -5030,6 +5204,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: function ConstructionOfferingsRowsRender({
+      offerings: rows_offerings,
       sectionTitle,
       sectionSubtitle,
       offering1NumberTag,
@@ -5054,32 +5229,43 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background,
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
-      const offerings = [
-        {
-          numberTag: offering1NumberTag,
-          image: offering1Image,
-          heading: offering1Heading,
-          description: offering1Description,
-          brandNames: offering1BrandNames,
-          href: offering1Href,
-        },
-        {
-          numberTag: offering2NumberTag,
-          image: offering2Image,
-          heading: offering2Heading,
-          description: offering2Description,
-          brandNames: offering2BrandNames,
-          href: offering2Href,
-        },
-        {
-          numberTag: offering3NumberTag,
-          image: offering3Image,
-          heading: offering3Heading,
-          description: offering3Description,
-          brandNames: offering3BrandNames,
-          href: offering3Href,
-        },
-      ].filter((o) => o.heading)
+      const offerings = resolveItems(
+        rows_offerings,
+        [
+          {
+            numberTag: offering1NumberTag,
+            image: offering1Image,
+            heading: offering1Heading,
+            description: offering1Description,
+            brandNames: offering1BrandNames,
+            href: offering1Href,
+          },
+          {
+            numberTag: offering2NumberTag,
+            image: offering2Image,
+            heading: offering2Heading,
+            description: offering2Description,
+            brandNames: offering2BrandNames,
+            href: offering2Href,
+          },
+          {
+            numberTag: offering3NumberTag,
+            image: offering3Image,
+            heading: offering3Heading,
+            description: offering3Description,
+            brandNames: offering3BrandNames,
+            href: offering3Href,
+          },
+        ],
+        (it) => ({
+          numberTag: it.numberTag as typeof offering1NumberTag,
+          image: it.image as typeof offering1Image,
+          heading: it.heading as typeof offering1Heading,
+          description: it.description as typeof offering1Description,
+          brandNames: it.brandNames as typeof offering1BrandNames,
+          href: it.href as typeof offering1Href,
+        })
+      ).filter((o) => o.heading)
       const icons: (() => JSX.Element)[] = [HardHatIcon, CheckShieldIcon]
       const iconFor = (i: number) => icons[i % icons.length] ?? HardHatIcon
       return (
@@ -5229,6 +5415,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       photo,
       badgeNumber,
       badgeLabel,
+      checks: rows_checks,
       check1Text,
       check2Text,
       check3Text,
@@ -5255,11 +5442,18 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       const eyebrowIsEditing = isEditing && !sf['about-eyebrow']
       const headingIsEditing = isEditing && !sf['about-heading']
       const paragraphIsEditing = isEditing && !sf['about-paragraph']
-      const checks = [
-        { text: check1Text, path: 'check1Text' },
-        { text: check2Text, path: 'check2Text' },
-        { text: check3Text, path: 'check3Text' },
-      ].filter((c) => c.text)
+      const checks = resolveItems(
+        rows_checks,
+        [
+          { text: check1Text, path: ['check1Text'] },
+          { text: check2Text, path: ['check2Text'] },
+          { text: check3Text, path: ['check3Text'] },
+        ],
+        (c) => ({ text: c.text as string, path: ['checks', 0, 'text'] })
+      )
+        // each row edits its own slot in the array
+        .map((c, i) => (rows_checks ? { ...c, path: ['checks', i, 'text'] } : c))
+        .filter((c) => c.text)
       const memberLogos = (members ?? []).filter((m) => m.logo)
       return (
         <section
@@ -5330,7 +5524,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       </span>
                       <InlineEditableText
                         id={id}
-                        path={[c.path]}
+                        path={c.path}
                         value={c.text ?? ''}
                         isEditing={isEditing}
                       />
@@ -5906,6 +6100,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'muted',
     },
     render: function ConstructionFeaturedProjectRender({
+      scopes: rows_scopes,
       sectionTitle,
       image,
       paragraph,
@@ -5925,12 +6120,16 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background,
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
-      const scopes = [
-        { icon: scope1Icon, label: scope1Label },
-        { icon: scope2Icon, label: scope2Label },
-        { icon: scope3Icon, label: scope3Label },
-        { icon: scope4Icon, label: scope4Label },
-      ].filter((s) => s.label)
+      const scopes = resolveItems(
+        rows_scopes,
+        [
+          { icon: scope1Icon, label: scope1Label },
+          { icon: scope2Icon, label: scope2Label },
+          { icon: scope3Icon, label: scope3Label },
+          { icon: scope4Icon, label: scope4Label },
+        ],
+        (it) => ({ icon: it.icon as typeof scope1Icon, label: it.label as typeof scope1Label })
+      ).filter((s) => s.label)
       return (
         <section
           ref={ref}
@@ -6049,6 +6248,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: ({
+      projects: rows_projects,
       heading,
       project1Image,
       project1Title,
@@ -6065,26 +6265,35 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding,
       background,
     }) => {
-      const projects = [
-        {
-          image: project1Image,
-          title: project1Title,
-          category: project1Category,
-          stat: project1Stat,
-        },
-        {
-          image: project2Image,
-          title: project2Title,
-          category: project2Category,
-          stat: project2Stat,
-        },
-        {
-          image: project3Image,
-          title: project3Title,
-          category: project3Category,
-          stat: project3Stat,
-        },
-      ].filter((p) => p.title)
+      const projects = resolveItems(
+        rows_projects,
+        [
+          {
+            image: project1Image,
+            title: project1Title,
+            category: project1Category,
+            stat: project1Stat,
+          },
+          {
+            image: project2Image,
+            title: project2Title,
+            category: project2Category,
+            stat: project2Stat,
+          },
+          {
+            image: project3Image,
+            title: project3Title,
+            category: project3Category,
+            stat: project3Stat,
+          },
+        ],
+        (it) => ({
+          image: it.image as typeof project1Image,
+          title: it.title as typeof project1Title,
+          category: it.category as typeof project1Category,
+          stat: it.stat as typeof project1Stat,
+        })
+      ).filter((p) => p.title)
       return (
         <section
           className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
@@ -6155,6 +6364,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: ({
+      stats: rows_stats,
       image,
       title,
       description,
@@ -6165,10 +6375,14 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding,
       background,
     }) => {
-      const stats = [
-        { value: stat1Value, label: stat1Label },
-        { value: stat2Value, label: stat2Label },
-      ].filter((s) => s.value)
+      const stats = resolveItems(
+        rows_stats,
+        [
+          { value: stat1Value, label: stat1Label },
+          { value: stat2Value, label: stat2Label },
+        ],
+        (it) => ({ value: it.value as typeof stat1Value, label: it.label as typeof stat1Label })
+      ).filter((s) => s.value)
       return (
         <section
           className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
@@ -6245,6 +6459,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: ({
+      locations: rows_locations,
       heading,
       location1Thumbnail,
       location1City,
@@ -6257,12 +6472,19 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding,
       background,
     }) => {
-      const locations = [
-        { thumbnail: location1Thumbnail, city: location1City },
-        { thumbnail: location2Thumbnail, city: location2City },
-        { thumbnail: location3Thumbnail, city: location3City },
-        { thumbnail: location4Thumbnail, city: location4City },
-      ].filter((l) => l.city)
+      const locations = resolveItems(
+        rows_locations,
+        [
+          { thumbnail: location1Thumbnail, city: location1City },
+          { thumbnail: location2Thumbnail, city: location2City },
+          { thumbnail: location3Thumbnail, city: location3City },
+          { thumbnail: location4Thumbnail, city: location4City },
+        ],
+        (it) => ({
+          thumbnail: it.thumbnail as typeof location1Thumbnail,
+          city: it.city as typeof location1City,
+        })
+      ).filter((l) => l.city)
       return (
         <section
           className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
@@ -6507,6 +6729,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: function ConstructionProductsShowcaseRender({
+      categories: rows_categories,
       id,
       puck,
       sectionEyebrow,
@@ -6521,9 +6744,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background,
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
-      const categories = [category1Label, category2Label, category3Label, category4Label].filter(
-        Boolean
-      )
+      const categories = resolveItems(
+        rows_categories,
+        [category1Label, category2Label, category3Label, category4Label],
+        (it) => it.label as typeof category1Label
+      ).filter(Boolean)
       const products = (items ?? []).map((p, n) => ({ ...p, n })).filter((p) => p.title)
       const [activeTab, setActiveTab] = useState(categories[0] ?? '')
       const visible = products.filter((p) => p.category === activeTab)
@@ -6689,6 +6914,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding: 'md',
     },
     render: ({
+      stats: rows_stats,
       stat1Value,
       stat1Label,
       stat2Value,
@@ -6706,12 +6932,16 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           : background === 'accent'
             ? 'bg-orange-500 text-white'
             : 'bg-slate-100 text-slate-900'
-      const stats = [
-        { value: stat1Value, label: stat1Label },
-        { value: stat2Value, label: stat2Label },
-        { value: stat3Value, label: stat3Label },
-        { value: stat4Value, label: stat4Label },
-      ].filter((s) => s.value)
+      const stats = resolveItems(
+        rows_stats,
+        [
+          { value: stat1Value, label: stat1Label },
+          { value: stat2Value, label: stat2Label },
+          { value: stat3Value, label: stat3Label },
+          { value: stat4Value, label: stat4Label },
+        ],
+        (it) => ({ value: it.value as typeof stat1Value, label: it.label as typeof stat1Label })
+      ).filter((s) => s.value)
       return (
         <section className={`${bgCls} ${padY[padding]}`}>
           <div className={`${wrap} grid grid-cols-2 md:grid-cols-4 gap-8 text-center`}>
@@ -6793,6 +7023,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: ({
+      members: rows_members,
       sectionTitle,
       sectionSubtitle,
       member1Name,
@@ -6810,12 +7041,20 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding,
       background,
     }) => {
-      const members = [
-        { name: member1Name, role: member1Role, image: member1Image },
-        { name: member2Name, role: member2Role, image: member2Image },
-        { name: member3Name, role: member3Role, image: member3Image },
-        { name: member4Name, role: member4Role, image: member4Image },
-      ].filter((m) => m.name)
+      const members = resolveItems(
+        rows_members,
+        [
+          { name: member1Name, role: member1Role, image: member1Image },
+          { name: member2Name, role: member2Role, image: member2Image },
+          { name: member3Name, role: member3Role, image: member3Image },
+          { name: member4Name, role: member4Role, image: member4Image },
+        ],
+        (it) => ({
+          name: it.name as typeof member1Name,
+          role: it.role as typeof member1Role,
+          image: it.image as typeof member1Image,
+        })
+      ).filter((m) => m.name)
       return (
         <section
           className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
@@ -6901,6 +7140,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'muted',
     },
     render: ({
+      badges: rows_badges,
       sectionTitle,
       sectionSubtitle,
       badge1Label,
@@ -6918,14 +7158,21 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding,
       background,
     }) => {
-      const badges = [
-        { label: badge1Label, detail: badge1Detail },
-        { label: badge2Label, detail: badge2Detail },
-        { label: badge3Label, detail: badge3Detail },
-        { label: badge4Label, detail: badge4Detail },
-        { label: badge5Label, detail: badge5Detail },
-        { label: badge6Label, detail: badge6Detail },
-      ].filter((b) => b.label)
+      const badges = resolveItems(
+        rows_badges,
+        [
+          { label: badge1Label, detail: badge1Detail },
+          { label: badge2Label, detail: badge2Detail },
+          { label: badge3Label, detail: badge3Detail },
+          { label: badge4Label, detail: badge4Detail },
+          { label: badge5Label, detail: badge5Detail },
+          { label: badge6Label, detail: badge6Detail },
+        ],
+        (it) => ({
+          label: it.label as typeof badge1Label,
+          detail: it.detail as typeof badge1Detail,
+        })
+      ).filter((b) => b.label)
       return (
         <section
           className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
@@ -7012,6 +7259,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=300&h=300&fit=crop&crop=faces&auto=format',
     },
     render: ({
+      reports: rows_reports,
       padding,
       background,
       heading,
@@ -7028,11 +7276,19 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       report3Role,
       report3Photo,
     }) => {
-      const reports = [
-        { name: report1Name, role: report1Role, photo: report1Photo },
-        { name: report2Name, role: report2Role, photo: report2Photo },
-        { name: report3Name, role: report3Role, photo: report3Photo },
-      ].filter((r) => r.name)
+      const reports = resolveItems(
+        rows_reports,
+        [
+          { name: report1Name, role: report1Role, photo: report1Photo },
+          { name: report2Name, role: report2Role, photo: report2Photo },
+          { name: report3Name, role: report3Role, photo: report3Photo },
+        ],
+        (it) => ({
+          name: it.name as typeof report1Name,
+          role: it.role as typeof report1Role,
+          photo: it.photo as typeof report1Photo,
+        })
+      ).filter((r) => r.name)
       return (
         <section
           className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
@@ -7131,6 +7387,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       crew3YearsWithUs: '7 years with us',
     },
     render: ({
+      crews: rows_crews,
+      stats: rows_stats,
       padding,
       background,
       stat1Value,
@@ -7149,16 +7407,28 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       crew3Name,
       crew3YearsWithUs,
     }) => {
-      const stats = [
-        { value: stat1Value, label: stat1Label },
-        { value: stat2Value, label: stat2Label },
-        { value: stat3Value, label: stat3Label },
-      ].filter((s) => s.value)
-      const crew = [
-        { photo: crew1Photo, name: crew1Name, years: crew1YearsWithUs },
-        { photo: crew2Photo, name: crew2Name, years: crew2YearsWithUs },
-        { photo: crew3Photo, name: crew3Name, years: crew3YearsWithUs },
-      ].filter((c) => c.name)
+      const stats = resolveItems(
+        rows_stats,
+        [
+          { value: stat1Value, label: stat1Label },
+          { value: stat2Value, label: stat2Label },
+          { value: stat3Value, label: stat3Label },
+        ],
+        (it) => ({ value: it.value as typeof stat1Value, label: it.label as typeof stat1Label })
+      ).filter((s) => s.value)
+      const crew = resolveItems(
+        rows_crews,
+        [
+          { photo: crew1Photo, name: crew1Name, years: crew1YearsWithUs },
+          { photo: crew2Photo, name: crew2Name, years: crew2YearsWithUs },
+          { photo: crew3Photo, name: crew3Name, years: crew3YearsWithUs },
+        ],
+        (it) => ({
+          photo: it.photo as typeof crew1Photo,
+          name: it.name as typeof crew1Name,
+          years: it.yearsWithUs as typeof crew1YearsWithUs,
+        })
+      ).filter((c) => c.name)
       return (
         <section
           className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
@@ -7390,6 +7660,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: function ConstructionClientsTestimonialStripRender({
+      clients: rows_clients,
       sectionTitle,
       client1Logo,
       client1Quote,
@@ -7401,11 +7672,15 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background,
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
-      const clients = [
-        { logo: client1Logo, quote: client1Quote },
-        { logo: client2Logo, quote: client2Quote },
-        { logo: client3Logo, quote: client3Quote },
-      ].filter((c) => c.quote)
+      const clients = resolveItems(
+        rows_clients,
+        [
+          { logo: client1Logo, quote: client1Quote },
+          { logo: client2Logo, quote: client2Quote },
+          { logo: client3Logo, quote: client3Quote },
+        ],
+        (it) => ({ logo: it.logo as typeof client1Logo, quote: it.quote as typeof client1Quote })
+      ).filter((c) => c.quote)
       return (
         <section
           ref={ref}
@@ -7477,6 +7752,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: function ConstructionClientsMarqueeRender({
+      logos: rows_logos,
       sectionTitle,
       logo1,
       logo2,
@@ -7488,7 +7764,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background,
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
-      const logos = [logo1, logo2, logo3, logo4, logo5, logo6].filter(Boolean)
+      const logos = resolveItems(
+        rows_logos,
+        [logo1, logo2, logo3, logo4, logo5, logo6],
+        (it) => it.value as typeof logo1
+      ).filter(Boolean)
       return (
         <section
           ref={ref}
@@ -7553,6 +7833,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: function ConstructionClientsCaseHighlightRender({
+      otherLogos: rows_otherLogos,
       spotlightLogo,
       spotlightStat,
       spotlightQuote,
@@ -7564,7 +7845,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background,
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
-      const otherLogos = [otherLogo1, otherLogo2, otherLogo3, otherLogo4].filter(Boolean)
+      const otherLogos = resolveItems(
+        rows_otherLogos,
+        [otherLogo1, otherLogo2, otherLogo3, otherLogo4],
+        (it) => it.value as typeof otherLogo1
+      ).filter(Boolean)
       return (
         <section
           ref={ref}
@@ -7663,6 +7948,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: ({
+      quotes: rows_quotes,
       sectionTitle,
       quote1Text,
       quote1Author,
@@ -7679,26 +7965,35 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding,
       background,
     }) => {
-      const quotes = [
-        {
-          text: quote1Text,
-          author: quote1Author,
-          company: quote1Company,
-          initials: quote1Initials,
-        },
-        {
-          text: quote2Text,
-          author: quote2Author,
-          company: quote2Company,
-          initials: quote2Initials,
-        },
-        {
-          text: quote3Text,
-          author: quote3Author,
-          company: quote3Company,
-          initials: quote3Initials,
-        },
-      ].filter((q) => q.text)
+      const quotes = resolveItems(
+        rows_quotes,
+        [
+          {
+            text: quote1Text,
+            author: quote1Author,
+            company: quote1Company,
+            initials: quote1Initials,
+          },
+          {
+            text: quote2Text,
+            author: quote2Author,
+            company: quote2Company,
+            initials: quote2Initials,
+          },
+          {
+            text: quote3Text,
+            author: quote3Author,
+            company: quote3Company,
+            initials: quote3Initials,
+          },
+        ],
+        (it) => ({
+          text: it.text as typeof quote1Text,
+          author: it.author as typeof quote1Author,
+          company: it.company as typeof quote1Company,
+          initials: it.initials as typeof quote1Initials,
+        })
+      ).filter((q) => q.text)
       return (
         <section
           className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
@@ -7919,6 +8214,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: ({
+      testimonials: rows_testimonials,
       sectionTitle,
       testimonial1Thumbnail,
       testimonial1Name,
@@ -7932,11 +8228,19 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding,
       background,
     }) => {
-      const testimonials = [
-        { thumbnail: testimonial1Thumbnail, name: testimonial1Name, quote: testimonial1Quote },
-        { thumbnail: testimonial2Thumbnail, name: testimonial2Name, quote: testimonial2Quote },
-        { thumbnail: testimonial3Thumbnail, name: testimonial3Name, quote: testimonial3Quote },
-      ].filter((t) => t.thumbnail)
+      const testimonials = resolveItems(
+        rows_testimonials,
+        [
+          { thumbnail: testimonial1Thumbnail, name: testimonial1Name, quote: testimonial1Quote },
+          { thumbnail: testimonial2Thumbnail, name: testimonial2Name, quote: testimonial2Quote },
+          { thumbnail: testimonial3Thumbnail, name: testimonial3Name, quote: testimonial3Quote },
+        ],
+        (it) => ({
+          thumbnail: it.thumbnail as typeof testimonial1Thumbnail,
+          name: it.name as typeof testimonial1Name,
+          quote: it.quote as typeof testimonial1Quote,
+        })
+      ).filter((t) => t.thumbnail)
       return (
         <section
           className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
@@ -8035,6 +8339,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: ({
+      steps: rows_steps,
       sectionTitle,
       sectionSubtitle,
       step1Title,
@@ -8050,13 +8355,20 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding,
       background,
     }) => {
-      const steps = [
-        { title: step1Title, description: step1Description },
-        { title: step2Title, description: step2Description },
-        { title: step3Title, description: step3Description },
-        { title: step4Title, description: step4Description },
-        { title: step5Title, description: step5Description },
-      ].filter((s) => s.title)
+      const steps = resolveItems(
+        rows_steps,
+        [
+          { title: step1Title, description: step1Description },
+          { title: step2Title, description: step2Description },
+          { title: step3Title, description: step3Description },
+          { title: step4Title, description: step4Description },
+          { title: step5Title, description: step5Description },
+        ],
+        (it) => ({
+          title: it.title as typeof step1Title,
+          description: it.description as typeof step1Description,
+        })
+      ).filter((s) => s.title)
       return (
         <section
           className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
@@ -8144,6 +8456,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: ({
+      points: rows_points,
       sectionTitle,
       sectionSubtitle,
       point1Title,
@@ -8159,12 +8472,19 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding,
       background,
     }) => {
-      const points = [
-        { title: point1Title, description: point1Description },
-        { title: point2Title, description: point2Description },
-        { title: point3Title, description: point3Description },
-        { title: point4Title, description: point4Description },
-      ].filter((p) => p.title)
+      const points = resolveItems(
+        rows_points,
+        [
+          { title: point1Title, description: point1Description },
+          { title: point2Title, description: point2Description },
+          { title: point3Title, description: point3Description },
+          { title: point4Title, description: point4Description },
+        ],
+        (it) => ({
+          title: it.title as typeof point1Title,
+          description: it.description as typeof point1Description,
+        })
+      ).filter((p) => p.title)
       return (
         <section
           className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
@@ -8342,6 +8662,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: ({
+      milestones: rows_milestones,
       eyebrow,
       heading,
       milestone1Year,
@@ -8355,12 +8676,19 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding,
       background,
     }) => {
-      const milestones = [
-        { year: milestone1Year, label: milestone1Label },
-        { year: milestone2Year, label: milestone2Label },
-        { year: milestone3Year, label: milestone3Label },
-        { year: milestone4Year, label: milestone4Label },
-      ].filter((m) => m.year || m.label)
+      const milestones = resolveItems(
+        rows_milestones,
+        [
+          { year: milestone1Year, label: milestone1Label },
+          { year: milestone2Year, label: milestone2Label },
+          { year: milestone3Year, label: milestone3Label },
+          { year: milestone4Year, label: milestone4Label },
+        ],
+        (it) => ({
+          year: it.year as typeof milestone1Year,
+          label: it.label as typeof milestone1Label,
+        })
+      ).filter((m) => m.year || m.label)
       return (
         <section
           className={`${background === 'muted' ? 'bg-slate-50' : 'bg-white'} ${padY[padding]}`}
@@ -10380,6 +10708,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: function ConstructionTimelineHistoryRender({
+      entries: rows_entries,
       eyebrow,
       heading,
       subtitle,
@@ -10414,15 +10743,24 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding,
       background,
     }) {
-      const entries = [
-        { year: entry1Year, title: entry1Title, text: entry1Text, image: entry1Image },
-        { year: entry2Year, title: entry2Title, text: entry2Text, image: entry2Image },
-        { year: entry3Year, title: entry3Title, text: entry3Text, image: entry3Image },
-        { year: entry4Year, title: entry4Title, text: entry4Text, image: entry4Image },
-        { year: entry5Year, title: entry5Title, text: entry5Text, image: entry5Image },
-        { year: entry6Year, title: entry6Title, text: entry6Text, image: entry6Image },
-        { year: entry7Year, title: entry7Title, text: entry7Text, image: entry7Image },
-      ].filter((e) => e.year || e.text)
+      const entries = resolveItems(
+        rows_entries,
+        [
+          { year: entry1Year, title: entry1Title, text: entry1Text, image: entry1Image },
+          { year: entry2Year, title: entry2Title, text: entry2Text, image: entry2Image },
+          { year: entry3Year, title: entry3Title, text: entry3Text, image: entry3Image },
+          { year: entry4Year, title: entry4Title, text: entry4Text, image: entry4Image },
+          { year: entry5Year, title: entry5Title, text: entry5Text, image: entry5Image },
+          { year: entry6Year, title: entry6Title, text: entry6Text, image: entry6Image },
+          { year: entry7Year, title: entry7Title, text: entry7Text, image: entry7Image },
+        ],
+        (it) => ({
+          year: it.year as typeof entry1Year,
+          title: it.title as typeof entry1Title,
+          text: it.text as typeof entry1Text,
+          image: it.image as typeof entry1Image,
+        })
+      ).filter((e) => e.year || e.text)
       return (
         <section
           className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
@@ -10519,6 +10857,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: ({
+      leaders: rows_leaders,
       eyebrow,
       heading,
       leader1Photo,
@@ -10536,11 +10875,20 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding,
       background,
     }) => {
-      const leaders = [
-        { photo: leader1Photo, name: leader1Name, title: leader1Title, bio: leader1Bio },
-        { photo: leader2Photo, name: leader2Name, title: leader2Title, bio: leader2Bio },
-        { photo: leader3Photo, name: leader3Name, title: leader3Title, bio: leader3Bio },
-      ].filter((l) => l.name)
+      const leaders = resolveItems(
+        rows_leaders,
+        [
+          { photo: leader1Photo, name: leader1Name, title: leader1Title, bio: leader1Bio },
+          { photo: leader2Photo, name: leader2Name, title: leader2Title, bio: leader2Bio },
+          { photo: leader3Photo, name: leader3Name, title: leader3Title, bio: leader3Bio },
+        ],
+        (it) => ({
+          photo: it.photo as typeof leader1Photo,
+          name: it.name as typeof leader1Name,
+          title: it.title as typeof leader1Title,
+          bio: it.bio as typeof leader1Bio,
+        })
+      ).filter((l) => l.name)
       return (
         <section
           className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
@@ -11343,6 +11691,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: ({
+      videos: rows_videos,
       heading,
       video1Thumbnail,
       video1Title,
@@ -11356,11 +11705,19 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding,
       background,
     }) => {
-      const videos = [
-        { thumbnail: video1Thumbnail, title: video1Title, duration: video1Duration },
-        { thumbnail: video2Thumbnail, title: video2Title, duration: video2Duration },
-        { thumbnail: video3Thumbnail, title: video3Title, duration: video3Duration },
-      ].filter((v) => v.thumbnail)
+      const videos = resolveItems(
+        rows_videos,
+        [
+          { thumbnail: video1Thumbnail, title: video1Title, duration: video1Duration },
+          { thumbnail: video2Thumbnail, title: video2Title, duration: video2Duration },
+          { thumbnail: video3Thumbnail, title: video3Title, duration: video3Duration },
+        ],
+        (it) => ({
+          thumbnail: it.thumbnail as typeof video1Thumbnail,
+          title: it.title as typeof video1Title,
+          duration: it.duration as typeof video1Duration,
+        })
+      ).filter((v) => v.thumbnail)
       return (
         <section
           className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
@@ -11450,6 +11807,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: ({
+      stats: rows_stats,
       thumbnail,
       heading,
       stat1Value,
@@ -11461,11 +11819,15 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding,
       background,
     }) => {
-      const stats = [
-        { value: stat1Value, label: stat1Label },
-        { value: stat2Value, label: stat2Label },
-        { value: stat3Value, label: stat3Label },
-      ].filter((s) => s.value)
+      const stats = resolveItems(
+        rows_stats,
+        [
+          { value: stat1Value, label: stat1Label },
+          { value: stat2Value, label: stat2Label },
+          { value: stat3Value, label: stat3Label },
+        ],
+        (it) => ({ value: it.value as typeof stat1Value, label: it.label as typeof stat1Label })
+      ).filter((s) => s.value)
       return (
         <section
           className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
@@ -11599,6 +11961,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding: 'md',
     },
     render: ({
+      posts: rows_posts,
       sectionTitle,
       post1Image,
       post1Category,
@@ -11614,11 +11977,20 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       post3Date,
       padding,
     }) => {
-      const posts = [
-        { image: post1Image, category: post1Category, title: post1Title, date: post1Date },
-        { image: post2Image, category: post2Category, title: post2Title, date: post2Date },
-        { image: post3Image, category: post3Category, title: post3Title, date: post3Date },
-      ]
+      const posts = resolveItems(
+        rows_posts,
+        [
+          { image: post1Image, category: post1Category, title: post1Title, date: post1Date },
+          { image: post2Image, category: post2Category, title: post2Title, date: post2Date },
+          { image: post3Image, category: post3Category, title: post3Title, date: post3Date },
+        ],
+        (it) => ({
+          image: it.image as typeof post1Image,
+          category: it.category as typeof post1Category,
+          title: it.title as typeof post1Title,
+          date: it.date as typeof post1Date,
+        })
+      )
       return (
         <section className={`${padY[padding]} bg-white`}>
           <div className={wrap}>
@@ -11700,6 +12072,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: ({
+      newss: rows_newss,
       eyebrow,
       heading,
       news1Headline,
@@ -11713,12 +12086,19 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding,
       background,
     }) => {
-      const items = [
-        { headline: news1Headline, date: news1Date },
-        { headline: news2Headline, date: news2Date },
-        { headline: news3Headline, date: news3Date },
-        { headline: news4Headline, date: news4Date },
-      ].filter((n) => n.headline)
+      const items = resolveItems(
+        rows_newss,
+        [
+          { headline: news1Headline, date: news1Date },
+          { headline: news2Headline, date: news2Date },
+          { headline: news3Headline, date: news3Date },
+          { headline: news4Headline, date: news4Date },
+        ],
+        (it) => ({
+          headline: it.headline as typeof news1Headline,
+          date: it.date as typeof news1Date,
+        })
+      ).filter((n) => n.headline)
       return (
         <section
           className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
@@ -11815,6 +12195,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: ({
+      cases: rows_cases,
       eyebrow,
       heading,
       case1Image,
@@ -11838,32 +12219,43 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding,
       background,
     }) => {
-      const cases = [
-        {
-          image: case1Image,
-          client: case1Client,
-          stat: case1Stat,
-          description: case1Description,
-          linkLabel: case1LinkLabel,
-          linkHref: case1LinkHref,
-        },
-        {
-          image: case2Image,
-          client: case2Client,
-          stat: case2Stat,
-          description: case2Description,
-          linkLabel: case2LinkLabel,
-          linkHref: case2LinkHref,
-        },
-        {
-          image: case3Image,
-          client: case3Client,
-          stat: case3Stat,
-          description: case3Description,
-          linkLabel: case3LinkLabel,
-          linkHref: case3LinkHref,
-        },
-      ].filter((c) => c.client)
+      const cases = resolveItems(
+        rows_cases,
+        [
+          {
+            image: case1Image,
+            client: case1Client,
+            stat: case1Stat,
+            description: case1Description,
+            linkLabel: case1LinkLabel,
+            linkHref: case1LinkHref,
+          },
+          {
+            image: case2Image,
+            client: case2Client,
+            stat: case2Stat,
+            description: case2Description,
+            linkLabel: case2LinkLabel,
+            linkHref: case2LinkHref,
+          },
+          {
+            image: case3Image,
+            client: case3Client,
+            stat: case3Stat,
+            description: case3Description,
+            linkLabel: case3LinkLabel,
+            linkHref: case3LinkHref,
+          },
+        ],
+        (it) => ({
+          image: it.image as typeof case1Image,
+          client: it.client as typeof case1Client,
+          stat: it.stat as typeof case1Stat,
+          description: it.description as typeof case1Description,
+          linkLabel: it.linkLabel as typeof case1LinkLabel,
+          linkHref: it.linkHref as typeof case1LinkHref,
+        })
+      ).filter((c) => c.client)
       return (
         <section
           className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
@@ -12044,6 +12436,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: ({
+      posts: rows_posts,
       heading,
       post1Image,
       post1Caption,
@@ -12057,11 +12450,19 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding,
       background,
     }) => {
-      const posts = [
-        { image: post1Image, caption: post1Caption, platform: post1Platform },
-        { image: post2Image, caption: post2Caption, platform: post2Platform },
-        { image: post3Image, caption: post3Caption, platform: post3Platform },
-      ].filter((p) => p.image)
+      const posts = resolveItems(
+        rows_posts,
+        [
+          { image: post1Image, caption: post1Caption, platform: post1Platform },
+          { image: post2Image, caption: post2Caption, platform: post2Platform },
+          { image: post3Image, caption: post3Caption, platform: post3Platform },
+        ],
+        (it) => ({
+          image: it.image as typeof post1Image,
+          caption: it.caption as typeof post1Caption,
+          platform: it.platform as typeof post1Platform,
+        })
+      ).filter((p) => p.image)
       return (
         <section
           className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
@@ -12245,6 +12646,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: ({
+      highlights: rows_highlights,
       heading,
       highlight1Thumbnail,
       highlight1Platform,
@@ -12258,23 +12660,31 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding,
       background,
     }) => {
-      const highlights = [
-        {
-          thumbnail: highlight1Thumbnail,
-          platform: highlight1Platform,
-          caption: highlight1Caption,
-        },
-        {
-          thumbnail: highlight2Thumbnail,
-          platform: highlight2Platform,
-          caption: highlight2Caption,
-        },
-        {
-          thumbnail: highlight3Thumbnail,
-          platform: highlight3Platform,
-          caption: highlight3Caption,
-        },
-      ].filter((h) => h.thumbnail)
+      const highlights = resolveItems(
+        rows_highlights,
+        [
+          {
+            thumbnail: highlight1Thumbnail,
+            platform: highlight1Platform,
+            caption: highlight1Caption,
+          },
+          {
+            thumbnail: highlight2Thumbnail,
+            platform: highlight2Platform,
+            caption: highlight2Caption,
+          },
+          {
+            thumbnail: highlight3Thumbnail,
+            platform: highlight3Platform,
+            caption: highlight3Caption,
+          },
+        ],
+        (it) => ({
+          thumbnail: it.thumbnail as typeof highlight1Thumbnail,
+          platform: it.platform as typeof highlight1Platform,
+          caption: it.caption as typeof highlight1Caption,
+        })
+      ).filter((h) => h.thumbnail)
       return (
         <section
           className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
@@ -12363,6 +12773,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding: 'md',
     },
     render: ({
+      faqs: rows_faqs,
       sectionTitle,
       faq1Question,
       faq1Answer,
@@ -12374,12 +12785,16 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       faq4Answer,
       padding,
     }) => {
-      const items = [
-        { q: faq1Question, a: faq1Answer },
-        { q: faq2Question, a: faq2Answer },
-        { q: faq3Question, a: faq3Answer },
-        { q: faq4Question, a: faq4Answer },
-      ].filter((f) => f.q)
+      const items = resolveItems(
+        rows_faqs,
+        [
+          { q: faq1Question, a: faq1Answer },
+          { q: faq2Question, a: faq2Answer },
+          { q: faq3Question, a: faq3Answer },
+          { q: faq4Question, a: faq4Answer },
+        ],
+        (it) => ({ q: it.question as typeof faq1Question, a: it.answer as typeof faq1Answer })
+      ).filter((f) => f.q)
       return (
         <section className={`${padY[padding]} bg-white`}>
           <div className={`${wrap} max-w-3xl`}>
@@ -12581,6 +12996,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding: 'md',
     },
     render: ({
+      faqs: rows_faqs,
       sectionTitle,
       faq1Question,
       faq1Answer,
@@ -12597,11 +13013,15 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding,
     }) => {
       const columns = [
-        [
-          { q: faq1Question, a: faq1Answer },
-          { q: faq2Question, a: faq2Answer },
-          { q: faq3Question, a: faq3Answer },
-        ].filter((f) => f.q),
+        resolveItems(
+          rows_faqs,
+          [
+            { q: faq1Question, a: faq1Answer },
+            { q: faq2Question, a: faq2Answer },
+            { q: faq3Question, a: faq3Answer },
+          ],
+          (it) => ({ q: it.question as typeof faq1Question, a: it.answer as typeof faq1Answer })
+        ).filter((f) => f.q),
         [
           { q: faq4Question, a: faq4Answer },
           { q: faq5Question, a: faq5Answer },
@@ -12679,6 +13099,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding: 'md',
     },
     render: ({
+      faqs: rows_faqs,
       sectionTitle,
       faq1Question,
       faq1Answer,
@@ -12691,11 +13112,15 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       contactCtaHref,
       padding,
     }) => {
-      const items = [
-        { q: faq1Question, a: faq1Answer },
-        { q: faq2Question, a: faq2Answer },
-        { q: faq3Question, a: faq3Answer },
-      ].filter((f) => f.q)
+      const items = resolveItems(
+        rows_faqs,
+        [
+          { q: faq1Question, a: faq1Answer },
+          { q: faq2Question, a: faq2Answer },
+          { q: faq3Question, a: faq3Answer },
+        ],
+        (it) => ({ q: it.question as typeof faq1Question, a: it.answer as typeof faq1Answer })
+      ).filter((f) => f.q)
       return (
         <section className={`${padY[padding]} bg-white`}>
           <div className={wrap}>
@@ -12965,8 +13390,41 @@ const typedComponents: Config<ConstructionProps>['components'] = {
   ConstructionOurBrands: {
     label: 'Our Brands (Tabbed Categories)',
     fields: {
+      sectionEyebrow: { type: 'text' },
       sectionTitle: { type: 'text' },
       sectionSubtitle: { type: 'textarea' },
+      tabs: {
+        type: 'array',
+        min: 0,
+        max: 8,
+        getItemSummary: (item, index) => item.label || `Tab ${(index ?? 0) + 1}`,
+        defaultItemProps: { label: 'New tab', categories: [] },
+        arrayFields: {
+          label: { type: 'text' },
+          categories: {
+            type: 'array',
+            min: 0,
+            max: 40,
+            getItemSummary: (item, index) => item.heading || `Category ${(index ?? 0) + 1}`,
+            defaultItemProps: { heading: 'New category', brands: [] },
+            arrayFields: {
+              heading: { type: 'text' },
+              brands: {
+                type: 'array',
+                min: 0,
+                max: 12,
+                getItemSummary: (item, index) => item.name || `Logo ${(index ?? 0) + 1}`,
+                defaultItemProps: { name: 'New brand', logo: '' },
+                arrayFields: {
+                  name: { type: 'text' },
+                  logo: imageField('Logo'),
+                },
+              },
+            },
+          },
+        },
+      },
+      // Legacy text fields — kept so Puck/old pages type-check; hidden in the panel (HIDDEN_FIELDS).
       tab1Label: { type: 'text' },
       tab1Groups: { type: 'textarea' },
       tab2Label: { type: 'text' },
@@ -12983,59 +13441,21 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       },
     },
     defaultProps: {
+      sectionEyebrow: 'Our Brands',
       sectionTitle: 'Backed by the names you already trust',
       sectionSubtitle:
         'Every discipline is built on certified, industry-leading brands — sourced, installed and serviced by our own engineers.',
-      tab1Label: 'Design, Execution & Maintenance',
-      tab1Groups:
-        'Air Conditioning|Blue Star::/seed/subhadra/ourbrands/design-execution-maintenance/Blue_Star_primary_logo.png\n' +
-        'Refrigeration|Blue Star::/seed/subhadra/ourbrands/design-execution-maintenance/Blue_Star_primary_logo.png\n' +
-        'EPABX|Matrix::/seed/subhadra/ourbrands/design-execution-maintenance/Matrix.jpg\n' +
-        'Fire Fighting|Newage::/seed/subhadra/ourbrands/design-execution-maintenance/Newage.jpg;Safex::/seed/subhadra/ourbrands/design-execution-maintenance/Safex.png;Tyco::/seed/subhadra/ourbrands/design-execution-maintenance/tyco_logo_v1.png\n' +
-        'CCTV|CP Plus::/seed/subhadra/ourbrands/design-execution-maintenance/CP%20Plus.jpg;Matrix::/seed/subhadra/ourbrands/design-execution-maintenance/Matrix.jpg;Honeywell::/seed/subhadra/ourbrands/design-execution-maintenance/Honeywell%20CCTV.jpg;Prama::/seed/subhadra/ourbrands/design-execution-maintenance/Prama.jpg\n' +
-        'Access Control|Matrix::/seed/subhadra/ourbrands/design-execution-maintenance/Matrix.jpg;Essl::/seed/subhadra/ourbrands/design-execution-maintenance/esslogo.png\n' +
-        'Public Address System|JBL::/seed/subhadra/ourbrands/design-execution-maintenance/JBL.png;Bosch::/seed/subhadra/ourbrands/design-execution-maintenance/Bosch.jpg;Ahuja::/seed/subhadra/ourbrands/design-execution-maintenance/Ahuja.jpg;Studio Master::/seed/subhadra/ourbrands/design-execution-maintenance/Studio%20Master.jpg;Crown::/seed/subhadra/ourbrands/design-execution-maintenance/Crown.jpg;Sound Craft::/seed/subhadra/ourbrands/design-execution-maintenance/Sound%20Craft.svg\n' +
-        'Fire Alarm|Ravel::/seed/subhadra/ourbrands/design-execution-maintenance/Ravel.png;Honeywell::/seed/subhadra/ourbrands/design-execution-maintenance/hon-honeywell-technologies-logo-full-horizontal.svg;Agni::/seed/subhadra/ourbrands/design-execution-maintenance/Agni.jpg;Bosch::/seed/subhadra/ourbrands/design-execution-maintenance/Bosch.jpg\n' +
-        'Professional Audio|JBL::/seed/subhadra/ourbrands/design-execution-maintenance/JBL.png;Bose::/seed/subhadra/ourbrands/design-execution-maintenance/bose-logo.jpg;Electro-Voice::/seed/subhadra/ourbrands/design-execution-maintenance/Electro-Voice.png;QSC::/seed/subhadra/ourbrands/design-execution-maintenance/qsc.png\n' +
-        'Network Solutions|TP-Link::/seed/subhadra/ourbrands/design-execution-maintenance/TP-Link-Logo.wine.svg;Grandstream::/seed/subhadra/ourbrands/design-execution-maintenance/logo-grandstream-low-web.webp;Netgear::/seed/subhadra/ourbrands/design-execution-maintenance/Net%20Gare%20brand-logo.svg;Netfox::/seed/subhadra/ourbrands/design-execution-maintenance/Netfox-logo-WO-TM.png;D-Link::/seed/subhadra/ourbrands/design-execution-maintenance/D-link.svg;Syrotech::/seed/subhadra/ourbrands/design-execution-maintenance/Syro%20Tech.png;Honeywell::/seed/subhadra/ourbrands/design-execution-maintenance/hon-honeywell-technologies-logo-full-horizontal.svg',
-      tab2Label: 'Electrical Products',
-      tab2Groups:
-        'Fans|Crompton::/seed/subhadra/ourbrands/electrical-products/Crompton.avif\n' +
-        'Designer Fans|WadBros::/seed/subhadra/ourbrands/electrical-products/Wadbros.png\n' +
-        'Exhaust Fans|WadBros::/seed/subhadra/ourbrands/electrical-products/Wadbros.png\n' +
-        'Wires|RR Kabel::/seed/subhadra/ourbrands/electrical-products/RRKabel.jpg\n' +
-        'Fresh Air System|WadBros::/seed/subhadra/ourbrands/electrical-products/Wadbros.png\n' +
-        'MCB, DB & Switchgear|Schneider Electric::/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png\n' +
-        'Lighting|Futura::/seed/subhadra/ourbrands/electrical-products/Futura%20-1.svg;Wipro::/seed/subhadra/ourbrands/electrical-products/Wipro.png;Crompton::/seed/subhadra/ourbrands/electrical-products/Crompton.avif;Philips::/seed/subhadra/ourbrands/electrical-products/lighting-philips-logo.jpg\n' +
-        'Switches|Schneider Electric::/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png;Norisys::/seed/subhadra/ourbrands/electrical-products/Norisys.png;Legrand::/seed/subhadra/ourbrands/electrical-products/Legrand-Logo.png\n' +
-        'Panel Boards|Customized\n' +
-        'Generators|Cummins::/seed/subhadra/ourbrands/electrical-products/Cunnins.png;Jackson::/seed/subhadra/ourbrands/electrical-products/Jakson.png;Mahindra::/seed/subhadra/ourbrands/electrical-products/Mahindra.png\n' +
-        'Load Break Switch|Transgard::/seed/subhadra/ourbrands/electrical-products/Transguard-Logo-white.png;Megawin::/seed/subhadra/ourbrands/electrical-products/Megawin.jpg\n' +
-        'Servo Stabilizer|Powertex::/seed/subhadra/ourbrands/electrical-products/Power%20Tex.jpg;Servomax::/seed/subhadra/ourbrands/electrical-products/Servomax-logo-2048x471.webp\n' +
-        'UPS|APC::/seed/subhadra/ourbrands/electrical-products/LogoAPC.svg;Fuji Electric::/seed/subhadra/ourbrands/electrical-products/Fuji-Electric-Logo.jpg',
-      tab3Label: 'Lifestyle Residential Products',
-      tab3Groups:
-        'Gate Automation|Beninca::/seed/subhadra/ourbrands/lifestyle-residential-products/beninca-logo.png;Veer::/seed/subhadra/ourbrands/lifestyle-residential-products/veer-logo-.png\n' +
-        'Video Door Phone|One Touch::/seed/subhadra/ourbrands/lifestyle-residential-products/One%20Touch_logo.svg;Legrand Bticino::/seed/subhadra/ourbrands/lifestyle-residential-products/BTicino-IME.jpg\n' +
-        'Smart Lock|Yale::/seed/subhadra/ourbrands/lifestyle-residential-products/yale_logo.avif;Onetouch::/seed/subhadra/ourbrands/lifestyle-residential-products/One%20Touch_logo.svg;Ezviz::/seed/subhadra/ourbrands/lifestyle-residential-products/ezviz-logo_.png\n' +
-        'Home Automation — Retrofit|Schneider Electric::/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png;Legrand::/seed/subhadra/ourbrands/electrical-products/Legrand-Logo.png;Toyama::/seed/subhadra/ourbrands/lifestyle-residential-products/Toyama%20logo-768.webp\n' +
-        'Home Automation — Centralized|Schneider Electric::/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png;Legrand::/seed/subhadra/ourbrands/electrical-products/Legrand-Logo.png;Moorgen::/seed/subhadra/ourbrands/lifestyle-residential-products/Moorgen.jpg;Eelectron::/seed/subhadra/ourbrands/lifestyle-residential-products/eelectron.png\n' +
-        'Intrusion Alarm|Ajax::/seed/subhadra/ourbrands/lifestyle-residential-products/Ajax%20logo.jpg;Texecom::/seed/subhadra/ourbrands/lifestyle-residential-products/Texecom.png\n' +
-        'Multi-Room Audio|Xscase::/seed/subhadra/ourbrands/lifestyle-residential-products/Xscase.png;Sonos::/seed/subhadra/ourbrands/lifestyle-residential-products/Sonos.png;RTI::/seed/subhadra/ourbrands/lifestyle-residential-products/RTI.png;Lithe Audio\n' +
-        'Living Room Audio|Devialet::/seed/subhadra/ourbrands/lifestyle-residential-products/devialet-logo.png;Sonos::/seed/subhadra/ourbrands/lifestyle-residential-products/Sonos.png\n' +
-        'Home Theater — Amplifiers|Denon::/seed/subhadra/ourbrands/lifestyle-residential-products/Denon%20logo.svg;Marantz::/seed/subhadra/ourbrands/lifestyle-residential-products/Marantz%20logo.svg;JBL::/seed/subhadra/ourbrands/lifestyle-residential-products/jbl-logo.svg;Integra::/seed/subhadra/ourbrands/lifestyle-residential-products/Integra-Logo-White.svg;Onkyo::/seed/subhadra/ourbrands/lifestyle-residential-products/Logo%20-%20Onkyo%20Med%20Wht.svg;Emotiva::/seed/subhadra/ourbrands/lifestyle-residential-products/emotiva%401x.svg\n' +
-        'Home Theater — Speakers|Focal::/seed/subhadra/ourbrands/lifestyle-residential-products/focal-logo.png;M&K Sound::/seed/subhadra/ourbrands/lifestyle-residential-products/M%26K%20Sound%20logo.png;Artcoustic::/seed/subhadra/ourbrands/lifestyle-residential-products/Artcoustic-logo.webp;JBL::/seed/subhadra/ourbrands/lifestyle-residential-products/jbl-logo.svg;Klipsch::/seed/subhadra/ourbrands/lifestyle-residential-products/Klipsch_script_logo.svg;KEF::/seed/subhadra/ourbrands/lifestyle-residential-products/Kef%20logo.png;Polk::/seed/subhadra/ourbrands/lifestyle-residential-products/Polk-logo.webp;Dali::/seed/subhadra/ourbrands/lifestyle-residential-products/Dali.png\n' +
-        'Home Theater — Subwoofers|Ascendo::/seed/subhadra/ourbrands/lifestyle-residential-products/Acendo%20Sub%20logo.jpeg;SVS::/seed/subhadra/ourbrands/lifestyle-residential-products/SVS%20sub%20logo.png\n' +
-        'Home Theater — Projectors|Optoma::/seed/subhadra/ourbrands/lifestyle-residential-products/Optoma%20logo.jpeg;Sony::/seed/subhadra/ourbrands/lifestyle-residential-products/Sony%20logo.png;JVC::/seed/subhadra/ourbrands/lifestyle-residential-products/jvc_logo.svg;BenQ::/seed/subhadra/ourbrands/lifestyle-residential-products/benq-logo.png;Epson::/seed/subhadra/ourbrands/lifestyle-residential-products/Epson%20logo.png\n' +
-        'Home Theater — Screens|Euroscreen::/seed/subhadra/ourbrands/lifestyle-residential-products/Eurros%20Screen.svg;Liberty Screen::/seed/subhadra/ourbrands/lifestyle-residential-products/Liberty%20-logo.gif;Elite Screen::/seed/subhadra/ourbrands/lifestyle-residential-products/Elite%20screen.jpeg;VU-Tech Screen\n' +
-        'Heat Pump|A. O. Smith::/seed/subhadra/ourbrands/lifestyle-residential-products/Ao%20smith.jpeg',
+      tabs: DEFAULT_BRAND_TABS,
       padding: 'md',
     },
     render: function ConstructionOurBrandsRender({
       id,
       puck,
+      // Pages saved before this field existed keep the original label; clear it to hide the eyebrow.
+      sectionEyebrow = 'Our Brands',
       sectionTitle,
       sectionSubtitle,
+      tabs: tabsProp,
       tab1Label,
       tab1Groups,
       tab2Label,
@@ -13046,40 +13466,34 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
       const isEditing = puck?.isEditing ?? false
-      const tabs = [
-        { n: 1, label: tab1Label, groups: tab1Groups },
-        { n: 2, label: tab2Label, groups: tab2Groups },
-        { n: 3, label: tab3Label, groups: tab3Groups },
-      ].filter((t) => t.label)
-      const [activeTab, setActiveTab] = useState(tabs[0]?.label ?? '')
-      const active = tabs.find((t) => t.label === activeTab) ?? tabs[0]
-      const groups = (active?.groups ?? '')
-        .split('\n')
-        .map((line) => line.trim())
-        .filter(Boolean)
-        .map((line) => {
-          const [heading, brandsRaw] = line.split('|')
-          return {
-            heading: (heading ?? '').trim(),
-            brands: (brandsRaw ?? '')
-              .split(';')
-              .map((b) => b.trim())
-              .filter(Boolean)
-              .map((entry) => {
-                const [name, logo] = entry.split('::')
-                return { name: (name ?? '').trim(), logo: (logo ?? '').trim() }
-              })
-              .filter((b) => b.name),
-          }
-        })
-        .filter((g) => g.heading)
+      const isLegacy = !tabsProp?.length
+      const tabs = isLegacy
+        ? brandTabsFromLegacy({
+            tab1Label,
+            tab1Groups,
+            tab2Label,
+            tab2Groups,
+            tab3Label,
+            tab3Groups,
+          })
+        : tabsProp
+      const [activeIndex, setActiveIndex] = useState(0)
+      const active = tabs[Math.min(activeIndex, tabs.length - 1)]
+      const groups = (active?.categories ?? []).filter((c) => c.heading)
       return (
         <section ref={ref} className={`${revealCls} ${padY[padding]} bg-[#eef1f6]`}>
           <div className={wrap}>
             <div className="text-center mb-8">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 mb-2">
-                Our Brands
-              </p>
+              {(isEditing || sectionEyebrow) && (
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 mb-2">
+                  <InlineEditableText
+                    id={id}
+                    path={['sectionEyebrow']}
+                    value={sectionEyebrow}
+                    isEditing={isEditing}
+                  />
+                </p>
+              )}
               <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">
                 <InlineEditableText
                   id={id}
@@ -13102,20 +13516,20 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             </div>
             {tabs.length > 0 && (
               <div className="flex flex-wrap justify-center gap-3 mb-10">
-                {tabs.map((t) => (
+                {tabs.map((t, ti) => (
                   <button
-                    key={t.label}
+                    key={ti}
                     type="button"
-                    onClick={() => setActiveTab(t.label)}
+                    onClick={() => setActiveIndex(ti)}
                     className={`rounded-full px-5 py-2.5 text-sm font-semibold transition ${
-                      t.label === activeTab
+                      t === active
                         ? 'bg-slate-950 text-white'
                         : 'bg-white border border-slate-200 text-slate-700 hover:border-slate-400'
                     }`}
                   >
                     <InlineEditableText
                       id={id}
-                      path={[`tab${t.n}Label`]}
+                      path={isLegacy ? [`tab${ti + 1}Label`] : ['tabs', ti, 'label']}
                       value={t.label ?? ''}
                       isEditing={isEditing}
                     />
@@ -13703,6 +14117,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: function ConstructionSectorsTabbedRender({
+      tabs: rows_tabs,
       heading,
       tab1Label,
       tab1Description,
@@ -13714,11 +14129,18 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background,
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
-      const tabs = [
-        { label: tab1Label, description: tab1Description },
-        { label: tab2Label, description: tab2Description },
-        { label: tab3Label, description: tab3Description },
-      ].filter((t) => t.label)
+      const tabs = resolveItems(
+        rows_tabs,
+        [
+          { label: tab1Label, description: tab1Description },
+          { label: tab2Label, description: tab2Description },
+          { label: tab3Label, description: tab3Description },
+        ],
+        (it) => ({
+          label: it.label as typeof tab1Label,
+          description: it.description as typeof tab1Description,
+        })
+      ).filter((t) => t.label)
       const [activeTab, setActiveTab] = useState(tabs[0]?.label ?? '')
       const active = tabs.find((t) => t.label === activeTab) ?? tabs[0]
       return (
@@ -13833,6 +14255,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding: 'sm',
     },
     render: function ConstructionSectorsIconRowRender({
+      sectors: rows_sectors,
       heading,
       sector1Icon,
       sector1Label,
@@ -13847,13 +14270,17 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding,
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
-      const sectors = [
-        { icon: sector1Icon, label: sector1Label },
-        { icon: sector2Icon, label: sector2Label },
-        { icon: sector3Icon, label: sector3Label },
-        { icon: sector4Icon, label: sector4Label },
-        { icon: sector5Icon, label: sector5Label },
-      ].filter((s) => s.label)
+      const sectors = resolveItems(
+        rows_sectors,
+        [
+          { icon: sector1Icon, label: sector1Label },
+          { icon: sector2Icon, label: sector2Label },
+          { icon: sector3Icon, label: sector3Label },
+          { icon: sector4Icon, label: sector4Label },
+          { icon: sector5Icon, label: sector5Label },
+        ],
+        (it) => ({ icon: it.icon as typeof sector1Icon, label: it.label as typeof sector1Label })
+      ).filter((s) => s.label)
       return (
         <section ref={ref} className={`${revealCls} ${padY[padding]} bg-white`}>
           <div className={wrap}>
@@ -14031,6 +14458,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding: 'md',
     },
     render: function ConstructionSectorsSplitFeatureRender({
+      otherSectors: rows_otherSectors,
       featuredImage,
       featuredTitle,
       featuredDescription,
@@ -14041,7 +14469,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding,
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
-      const others = [otherSector1, otherSector2, otherSector3, otherSector4].filter(Boolean)
+      const others = resolveItems(
+        rows_otherSectors,
+        [otherSector1, otherSector2, otherSector3, otherSector4],
+        (it) => it.value as typeof otherSector1
+      ).filter(Boolean)
       return (
         <section ref={ref} className={`${revealCls} ${padY[padding]} bg-white`}>
           <div className={wrap}>
@@ -14981,6 +15413,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'muted',
     },
     render: ({
+      stats: rows_stats,
+      highlights: rows_highlights,
       eyebrow,
       heading,
       paragraph1,
@@ -15004,25 +15438,38 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding,
       background,
     }) => {
-      const highlights = [
-        {
-          icon: highlight1Icon,
-          biIcon: highlight1BiIcon,
-          title: highlight1Title,
-          description: highlight1Description,
-        },
-        {
-          icon: highlight2Icon,
-          biIcon: highlight2BiIcon,
-          title: highlight2Title,
-          description: highlight2Description,
-        },
-      ].filter((h) => h.title)
-      const stats = [
-        { value: stat1Value, label: stat1Label },
-        { value: stat2Value, label: stat2Label },
-        { value: stat3Value, label: stat3Label },
-      ].filter((s) => s.value)
+      const highlights = resolveItems(
+        rows_highlights,
+        [
+          {
+            icon: highlight1Icon,
+            biIcon: highlight1BiIcon,
+            title: highlight1Title,
+            description: highlight1Description,
+          },
+          {
+            icon: highlight2Icon,
+            biIcon: highlight2BiIcon,
+            title: highlight2Title,
+            description: highlight2Description,
+          },
+        ],
+        (it) => ({
+          icon: it.icon as typeof highlight1Icon,
+          biIcon: it.biIcon as typeof highlight1BiIcon,
+          title: it.title as typeof highlight1Title,
+          description: it.description as typeof highlight1Description,
+        })
+      ).filter((h) => h.title)
+      const stats = resolveItems(
+        rows_stats,
+        [
+          { value: stat1Value, label: stat1Label },
+          { value: stat2Value, label: stat2Label },
+          { value: stat3Value, label: stat3Label },
+        ],
+        (it) => ({ value: it.value as typeof stat1Value, label: it.label as typeof stat1Label })
+      ).filter((s) => s.value)
       if (variant === '2') {
         return (
           <section className="bg-white py-24">
@@ -15431,6 +15878,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: function ConstructionBrandsLogoGridRender({
+      logos: rows_logos,
       heading,
       logo1,
       logo2,
@@ -15442,7 +15890,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background,
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
-      const logos = [logo1, logo2, logo3, logo4, logo5, logo6].filter(Boolean)
+      const logos = resolveItems(
+        rows_logos,
+        [logo1, logo2, logo3, logo4, logo5, logo6],
+        (it) => it.value as typeof logo1
+      ).filter(Boolean)
       return (
         <section
           ref={ref}
@@ -15608,6 +16060,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: 'white',
     },
     render: function ConstructionBrandsSpotlightRender({
+      otherLogos: rows_otherLogos,
       spotlightLogo,
       spotlightDescription,
       otherLogo1,
@@ -15618,7 +16071,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background,
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
-      const otherLogos = [otherLogo1, otherLogo2, otherLogo3, otherLogo4].filter(Boolean)
+      const otherLogos = resolveItems(
+        rows_otherLogos,
+        [otherLogo1, otherLogo2, otherLogo3, otherLogo4],
+        (it) => it.value as typeof otherLogo1
+      ).filter(Boolean)
       return (
         <section
           ref={ref}
@@ -15833,7 +16290,7 @@ const typedCategories: NonNullable<Config<ConstructionProps>['categories']> = {
 export const construction: ComponentPack = {
   key: 'construction',
   label: 'Construction',
-  components: typedComponents as NonNullable<Config['components']>,
+  components: withNumberedFamilies(typedComponents) as NonNullable<Config['components']>,
   categories: typedCategories,
   // ConstructionFooter and ConstructionSectorDetailList each have 4 real
   // render branches (see their `variant` field above — Footer's 4 options

@@ -266,6 +266,8 @@ function layoutHeaderProps(brand, pages) {
     ctaNewTab: true,
     transparent: false,
     lightText: false,
+    // Floating header turns solid (theme background) after scrolling.
+    solidOnScroll: true,
   };
 }
 
