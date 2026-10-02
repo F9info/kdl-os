@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react'
 import { construction } from '@/app/admin/page-builder/packs/construction'
+import { useCustomSlotNode } from '@/hooks/useLayoutChrome'
 import { useWebsiteBrandContext } from '@/hooks/useWebsiteBrandContext'
 import {
   footerOverrides,
@@ -32,6 +33,10 @@ export function WebsiteLayoutPreview({ projectId }: { projectId: string }) {
   const stored = readLocal<Partial<LayoutSelection>>(websiteLayoutStorageKey(projectId), {})
   const selection = mergeLayoutSelection(stored)
 
+  const customTop = useCustomSlotNode(projectId, 'top-bar', selection.topHeader.variant)
+  const customHeader = useCustomSlotNode(projectId, 'header', selection.header.variant)
+  const customFooter = useCustomSlotNode(projectId, 'footer', selection.footer.variant)
+
   const topHeaderRender = TOP_HEADER_CONFIG.render as BlockRender
   const headerRender = HEADER_CONFIG.render as BlockRender
   const footerRender = FOOTER_CONFIG.render as BlockRender
@@ -44,21 +49,23 @@ export function WebsiteLayoutPreview({ projectId }: { projectId: string }) {
     <div className="w-full overflow-hidden rounded-lg border">
       {selection.topHeader.enabled && (
         <div style={{ zoom: 0.6 }}>
-          {topHeaderRender({
-            ...TOP_HEADER_CONFIG.defaultProps,
-            ...topHeaderOverrides(brand),
-            variant: selection.topHeader.variant,
-          })}
+          {customTop ??
+            topHeaderRender({
+              ...TOP_HEADER_CONFIG.defaultProps,
+              ...topHeaderOverrides(brand),
+              variant: selection.topHeader.variant,
+            })}
         </div>
       )}
       {selection.header.enabled && (
         <div style={{ zoom: 0.6 }}>
-          {headerRender({
-            ...HEADER_CONFIG.defaultProps,
-            ...headerFooterOverrides(brand),
-            variant: selection.header.variant,
-            puck: { isEditing: true, metadata: { projectId } },
-          })}
+          {customHeader ??
+            headerRender({
+              ...HEADER_CONFIG.defaultProps,
+              ...headerFooterOverrides(brand),
+              variant: selection.header.variant,
+              puck: { isEditing: true, metadata: { projectId } },
+            })}
         </div>
       )}
       <div className="flex items-center justify-center bg-muted/30 py-12 text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -66,12 +73,13 @@ export function WebsiteLayoutPreview({ projectId }: { projectId: string }) {
       </div>
       {selection.footer.enabled && (
         <div style={{ zoom: 0.6 }}>
-          {footerRender({
-            ...FOOTER_CONFIG.defaultProps,
-            ...footerOverrides(brand),
-            variant: selection.footer.variant,
-            puck: { isEditing: true, metadata: { projectId } },
-          })}
+          {customFooter ??
+            footerRender({
+              ...FOOTER_CONFIG.defaultProps,
+              ...footerOverrides(brand),
+              variant: selection.footer.variant,
+              puck: { isEditing: true, metadata: { projectId } },
+            })}
         </div>
       )}
     </div>

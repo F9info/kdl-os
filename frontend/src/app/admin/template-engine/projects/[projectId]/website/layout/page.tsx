@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
@@ -10,6 +11,12 @@ import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { useAdvanceStage, useTemplateEngineRuns } from '@/hooks/useTemplateEngine'
 import { useWebsiteBrandContext } from '@/hooks/useWebsiteBrandContext'
 import { construction } from '@/app/admin/page-builder/packs/construction'
+import { ComposerProjectContext } from '@/app/admin/page-builder/packs/composer/atoms'
+import { renderComposedBlock } from '@/app/admin/page-builder/packs/composer/render-composed-block'
+import {
+  listCustomBlocks,
+  type CustomBlockRecord,
+} from '@/app/admin/page-builder/packs/composer/custom-blocks-store'
 import { cn } from '@/lib/utils'
 import {
   footerOverrides,
@@ -161,6 +168,8 @@ function sectionConfig(
 // presets, same as the earlier "Create new" ask pointed at (KDL's own
 // ADD A SECTION flow), rather than duplicating that composer here.
 const SECTION_BUILDER_HREF = '/admin/page-builder/section-builder'
+// Section Builder category each layout slot's saved blocks are filed under.
+const SECTION_CATEGORY = { topHeader: 'top-bar', header: 'header', footer: 'footer' } as const
 
 function SectionPicker({
   section,
@@ -179,6 +188,15 @@ function SectionPicker({
 }) {
   const cfg = sectionConfig(section, brand, projectId)
   const [viewingVariant, setViewingVariant] = useState<Variant | null>(null)
+  const [viewingCustom, setViewingCustom] = useState<CustomBlockRecord | null>(null)
+  const category = SECTION_CATEGORY[section]
+  const { data: customBlocks } = useQuery({
+    queryKey: ['custom-blocks', projectId, category],
+    queryFn: () => listCustomBlocks(projectId, category),
+  })
+  const returnTo = encodeURIComponent(`/admin/template-engine/projects/${projectId}/website/layout`)
+  const builderHref = (extra: string) =>
+    `${SECTION_BUILDER_HREF}?category=${category}&projectId=${projectId}&returnTo=${returnTo}${extra}`
   const editHref = editPageId
     ? `/admin/template-engine/edit/${editPageId}?projectId=${projectId}`
     : undefined
@@ -254,15 +272,85 @@ function SectionPicker({
                   className="h-7 px-2 text-xs"
                   asChild
                 >
-                  <a href={SECTION_BUILDER_HREF} target="_blank" rel="noreferrer">
-                    Create new
-                  </a>
+                  <a href={builderHref('&new=1')}>Create new</a>
                 </Button>
               </div>
             </div>
           ))}
+          {(customBlocks ?? []).map((b) => {
+            const id = `custom:${b.id}` as const
+            return (
+              <div
+                key={b.id}
+                className={cn(
+                  'relative overflow-hidden rounded-md border',
+                  state.variant === id && 'ring-2 ring-primary'
+                )}
+              >
+                {state.variant === id && (
+                  <CheckCircle2 className="absolute right-1.5 top-1.5 z-10 h-5 w-5 rounded-full bg-white text-green-600" />
+                )}
+                <button
+                  type="button"
+                  aria-label={b.name}
+                  onClick={() => onChange({ ...state, variant: id })}
+                  className="block w-full text-left transition-colors hover:opacity-80"
+                >
+                  <div
+                    className="pointer-events-none overflow-hidden bg-white"
+                    style={{ zoom: cfg.tileScale }}
+                  >
+                    <ComposerProjectContext.Provider value={projectId}>
+                      {renderComposedBlock(b.config)}
+                    </ComposerProjectContext.Provider>
+                  </div>
+                </button>
+                <div className="flex items-center justify-center gap-1 border-t bg-muted/30 p-1">
+                  <span className="mr-2 text-xs text-muted-foreground">Custom · {b.name}</span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => setViewingCustom(b)}
+                  >
+                    View
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs"
+                    asChild
+                  >
+                    <a href={builderHref(`&blockId=${b.id}`)}>Edit</a>
+                  </Button>
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
+
+      <Dialog
+        open={viewingCustom !== null}
+        onOpenChange={(open) => !open && setViewingCustom(null)}
+      >
+        <DialogContent className="w-[95vw] max-w-[1600px]">
+          <DialogHeader>
+            <DialogTitle>
+              {cfg.title} — {viewingCustom?.name}
+            </DialogTitle>
+          </DialogHeader>
+          {viewingCustom && (
+            <div className="overflow-hidden rounded-md border bg-white">
+              <ComposerProjectContext.Provider value={projectId}>
+                {renderComposedBlock(viewingCustom.config)}
+              </ComposerProjectContext.Provider>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={viewingVariant !== null}

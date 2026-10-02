@@ -22,8 +22,18 @@ import {
 } from 'lucide-react'
 import { ModuleGuard } from '@/components/shared/ModuleGuard'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Button } from '@/components/ui/button'
 import { ComposerCanvas } from '../packs/composer/ComposerCanvas'
-import { getDefaultProjectId } from '../packs/composer/custom-blocks-store'
+import { ComposerProjectContext } from '../packs/composer/atoms'
+import { renderComposedBlock } from '../packs/composer/render-composed-block'
+import {
+  deleteCustomBlock,
+  duplicateCustomBlock,
+  getDefaultProjectId,
+  listCustomBlocks,
+  setDefaultCustomBlock,
+} from '../packs/composer/custom-blocks-store'
 
 /** The 16-category taxonomy from templateEnginesections.html — same names as
  *  the in-editor "Insert a block" section picker (puck.config.tsx /
@@ -74,10 +84,14 @@ export default function SectionBuilderPage() {
   // an absolute/protocol-relative URL (`//evil.com`, `https://evil.com`)
   // that a crafted link could use to bounce an admin off-site on close/save.
   const rawReturnTo = searchParams.get('returnTo') ?? ''
-  const returnTo =
-    rawReturnTo.startsWith('/admin/') && !rawReturnTo.startsWith('//')
-      ? rawReturnTo
-      : '/admin/template-engine'
+  const hasReturnTo = rawReturnTo.startsWith('/admin/') && !rawReturnTo.startsWith('//')
+  const blockId = searchParams.get('blockId')
+  const isNew = searchParams.get('new') === '1'
+  // Arriving from the category picker (no returnTo / new / blockId) shows the
+  // saved-block list for that category; any explicit flow opens the canvas.
+  const showList = !hasReturnTo && !blockId && !isNew
+  const listHref = `/admin/page-builder/section-builder?category=${category ?? ''}`
+  const returnTo = hasReturnTo ? rawReturnTo : showList ? listHref : '/admin/template-engine'
   const [projectId, setProjectId] = useState(searchParams.get('projectId') ?? '')
 
   useEffect(() => {
@@ -110,24 +124,169 @@ export default function SectionBuilderPage() {
     )
   }
 
+  if (showList) {
+    return (
+      <ModuleGuard slug="page-builder">
+        <BlockList category={category} projectId={projectId} />
+      </ModuleGuard>
+    )
+  }
+
   return (
     <ModuleGuard slug="page-builder">
+      <CanvasHost
+        projectId={projectId}
+        category={category}
+        blockId={blockId}
+        returnTo={returnTo}
+        onDone={() => router.push(returnTo)}
+      />
+    </ModuleGuard>
+  )
+}
+
+function CanvasHost({
+  projectId,
+  category,
+  blockId,
+  returnTo,
+  onDone,
+}: {
+  projectId: string
+  category: string
+  blockId: string | null
+  returnTo: string
+  onDone: () => void
+}) {
+  void returnTo
+  const { data: blocks, isLoading } = useQuery({
+    queryKey: ['custom-blocks', projectId, category],
+    queryFn: () => listCustomBlocks(projectId, category),
+    enabled: Boolean(projectId && blockId),
+  })
+  const editing = blockId ? blocks?.find((b) => b.id === blockId) : undefined
+  return (
+    <>
       {/* z-[2100] matches BlockComposer.tsx's own full-screen composer overlay —
           anything lower (e.g. the shared Dialog's z-50) renders behind this
           page and is invisible even though it's mounted, like the MediaPicker
           opened from the Image URL field's Upload button. */}
       <div className="fixed inset-0 z-[2100]">
-        {projectId ? (
+        {projectId && !(blockId && isLoading) ? (
           <ComposerCanvas
+            key={editing?.id ?? 'new'}
             projectId={projectId}
             categoryKey={category}
-            onClose={() => router.push(returnTo)}
-            onSaved={() => router.push(returnTo)}
+            editing={editing}
+            onClose={onDone}
+            onSaved={onDone}
           />
         ) : (
           <LoadingSpinner fullPage />
         )}
       </div>
-    </ModuleGuard>
+    </>
+  )
+}
+
+/** Saved blocks for one category (stored in the DB) with edit / duplicate /
+ *  set-default / delete — the same records the website Layout step offers. */
+function BlockList({ category, projectId }: { category: string; projectId: string }) {
+  const router = useRouter()
+  const qc = useQueryClient()
+  const label = SECTION_CATEGORIES.find((c) => c.key === category)?.label ?? category
+  const { data: blocks, isLoading } = useQuery({
+    queryKey: ['custom-blocks', projectId, category],
+    queryFn: () => listCustomBlocks(projectId, category),
+    enabled: Boolean(projectId),
+  })
+  const refresh = () => qc.invalidateQueries({ queryKey: ['custom-blocks', projectId, category] })
+  const base = `/admin/page-builder/section-builder?category=${category}&projectId=${projectId}`
+
+  return (
+    <div className="mx-auto max-w-5xl p-8">
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push('/admin/page-builder/section-builder')}
+          >
+            ← All categories
+          </Button>
+          <h1 className="text-xl font-bold">{label} sections</h1>
+        </div>
+        <Button onClick={() => router.push(`${base}&new=1`)}>Create new</Button>
+      </div>
+      {!projectId || isLoading ? (
+        <LoadingSpinner />
+      ) : !blocks || blocks.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          No saved {label.toLowerCase()} sections yet — click “Create new”.
+        </p>
+      ) : (
+        <div className="space-y-4">
+          {blocks.map((b) => (
+            <div key={b.id} className="overflow-hidden rounded-lg border bg-card">
+              <div className="pointer-events-none overflow-hidden bg-white" style={{ zoom: 0.6 }}>
+                <ComposerProjectContext.Provider value={projectId}>
+                  {renderComposedBlock(b.config)}
+                </ComposerProjectContext.Provider>
+              </div>
+              <div className="flex items-center justify-between gap-2 border-t p-2">
+                <span className="text-sm font-medium">
+                  {b.name}
+                  {b.isDefault ? ' · default' : ''}
+                  {b.status === 'DRAFT' ? ' · draft' : ''}
+                </span>
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => router.push(`${base}&blockId=${b.id}`)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={async () => {
+                      await duplicateCustomBlock(b.id, projectId)
+                      refresh()
+                    }}
+                  >
+                    Duplicate
+                  </Button>
+                  {!b.isDefault && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={async () => {
+                        await setDefaultCustomBlock(b.id, projectId)
+                        refresh()
+                      }}
+                    >
+                      Set default
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive"
+                    onClick={async () => {
+                      if (!window.confirm(`Delete "${b.name}"?`)) return
+                      await deleteCustomBlock(b.id, projectId)
+                      refresh()
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }

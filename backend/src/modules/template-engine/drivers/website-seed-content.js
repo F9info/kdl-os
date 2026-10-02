@@ -500,13 +500,79 @@ function applyFooterSection(content, section, pageKey, brand, pages) {
 // (whose header/footer block types aren't in HEADER_BLOCK_TYPES/
 // FOOTER_BLOCK_TYPES) would grow a stray NavBar/Footer pair with no way to
 // turn it off.
+// A saved Section Builder block chosen for a layout slot (`variant:
+// 'custom:<id>'`, resolved by the driver into `section.customBlock`) lands in
+// the page as a `CustomComposedBlock` tagged with `layoutSlot`, so it can be
+// found, swapped or removed later without touching other custom blocks the
+// page owner dropped in by hand. Returns `handled: true` when the slot is
+// fully dealt with here; otherwise any stale custom block is removed and the
+// regular design-variant logic runs.
+const SLOT_BLOCK_TYPES = {
+  topHeader: TOP_HEADER_BLOCK_TYPES,
+  header: new Set([...HEADER_LEGACY_BLOCK_TYPES, HEADER_TARGET_BLOCK_TYPE]),
+  footer: new Set([...FOOTER_LEGACY_BLOCK_TYPES, FOOTER_TARGET_BLOCK_TYPE]),
+};
+
+function applyCustomSlot(content, slot, section, pageKey, insertIndex) {
+  if (!section) return { content, changed: false, handled: false };
+  const custom = section.customBlock;
+  const existing = content.find(
+    (b) => b.type === 'CustomComposedBlock' && b.props?.layoutSlot === slot
+  );
+  if (!custom || section.enabled === false) {
+    if (!existing) return { content, changed: false, handled: false };
+    return { content: content.filter((b) => b !== existing), changed: true, handled: false };
+  }
+  const built = block(pageKey, 'CustomComposedBlock', {
+    id: `${pageKey}-${slot}-custom`,
+    layoutSlot: slot,
+    customBlockId: custom.id,
+    config: custom.config,
+  });
+  if (existing) {
+    const same =
+      existing.props?.customBlockId === custom.id &&
+      JSON.stringify(existing.props?.config) === JSON.stringify(custom.config);
+    if (same) return { content, changed: false, handled: true };
+    return { content: content.map((b) => (b === existing ? built : b)), changed: true, handled: true };
+  }
+  const types = SLOT_BLOCK_TYPES[slot];
+  const firstStd = content.findIndex((b) => types.has(b.type));
+  const rest = content.filter((b) => !types.has(b.type));
+  const idx = firstStd === -1 ? insertIndex(rest) : firstStd;
+  return {
+    content: [...rest.slice(0, idx), built, ...rest.slice(idx)],
+    changed: true,
+    handled: true,
+  };
+}
+
 export function patchLayout(data, layout, pageKey, brand, pages) {
   if (!data?.content || !layout) return null;
 
   let content = data.content;
   let changed = false;
 
-  const topHeader = applySection(
+  const customTop = applyCustomSlot(content, 'topHeader', layout.topHeader, pageKey, () => 0);
+  content = customTop.content;
+  changed = changed || customTop.changed;
+  const customHeader = applyCustomSlot(content, 'header', layout.header, pageKey, (c) => {
+    const i = c.findIndex((b) => !TOP_HEADER_BLOCK_TYPES.has(b.type));
+    return i === -1 ? c.length : i;
+  });
+  content = customHeader.content;
+  changed = changed || customHeader.changed;
+  const customFooter = applyCustomSlot(
+    content,
+    'footer',
+    layout.footer,
+    pageKey,
+    (c) => c.length
+  );
+  content = customFooter.content;
+  changed = changed || customFooter.changed;
+
+  const topHeader = customTop.handled ? { content, changed: false } : applySection(
     content,
     TOP_HEADER_BLOCK_TYPES,
     layout.topHeader,
@@ -516,11 +582,15 @@ export function patchLayout(data, layout, pageKey, brand, pages) {
   content = topHeader.content;
   changed = changed || topHeader.changed;
 
-  const header = applyHeaderSection(content, layout.header, pageKey, brand, pages);
+  const header = customHeader.handled
+    ? { content, changed: false }
+    : applyHeaderSection(content, layout.header, pageKey, brand, pages);
   content = header.content;
   changed = changed || header.changed;
 
-  const footer = applyFooterSection(content, layout.footer, pageKey, brand, pages);
+  const footer = customFooter.handled
+    ? { content, changed: false }
+    : applyFooterSection(content, layout.footer, pageKey, brand, pages);
   content = footer.content;
   changed = changed || footer.changed;
 

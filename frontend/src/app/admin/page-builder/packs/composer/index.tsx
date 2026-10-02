@@ -1,5 +1,6 @@
 import type { Config } from '@puckeditor/core'
 import type { ComponentPack } from '../types'
+import { ComposerProjectContext } from './atoms'
 import {
   renderComposedBlock,
   DEFAULT_SETTINGS,
@@ -20,7 +21,11 @@ const CustomComposedBlock: Config<ComposerProps>['components']['CustomComposedBl
   defaultProps: {
     config: { category: 'general', atoms: [], settings: DEFAULT_SETTINGS },
   },
-  render: ({ config }) => renderComposedBlock(config),
+  render: ({ config, puck }) => (
+    <ComposerProjectContext.Provider value={puck?.metadata?.projectId as string | undefined}>
+      {renderComposedBlock(config)}
+    </ComposerProjectContext.Provider>
+  ),
 }
 
 export const composer: ComponentPack = {

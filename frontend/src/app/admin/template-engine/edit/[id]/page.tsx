@@ -200,6 +200,8 @@ export default function TemplateEngineEditPage() {
           headerTitle={page.title}
           headerPath={`/p/${page.slug}`}
           onPublish={handlePublish}
+          // Saving here also publishes, so "Publish" confused users — call it Save.
+          dictionary={{ 'header-publish': 'Save' }}
           overrides={{
             outline: () => <></>,
             // The canvas area (root render + all DropZone content) — wraps
