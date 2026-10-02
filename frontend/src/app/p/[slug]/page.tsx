@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { Render } from '@puckeditor/core'
+import { applyHeaderOverlay } from '@/lib/header-overlay'
 import { config } from '@/app/admin/page-builder/puck.config'
 import { getPageBySlug } from '@/app/admin/page-builder/store'
 
@@ -39,7 +40,7 @@ export default function PublicPage() {
   return (
     <Render
       config={config}
-      data={page.data}
+      data={applyHeaderOverlay(page.data)}
       metadata={{ pageTitle: page.title, projectId: page.projectId ?? undefined }}
     />
   )

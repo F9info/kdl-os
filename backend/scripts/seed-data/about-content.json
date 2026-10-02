@@ -36,13 +36,11 @@
       "paragraph": "Subhadra Group was founded in the year 1996 with the aim to provide all building related engineering products & services under one roof for residential, commercial buildings and industries.\n\nWe provide complete solutions home theaters, home automation, safety and security solutions, fire protection solutions for residential, commercial and industrial applications. With 30+ years of technical expertise in these fields, our team strives to give perfect-engineered solutions for every application. Our team has experience of executing projects with leading MNCs and international groups with quality execution and on time delivery.\n\nWe deal with world-class brands that are pioneers in their respective fields to give the best solution to our clients. We have dedicated service managers for each field of services that we provide to give 24x7 support for all our installations.",
       "background": "white",
       "badgeLabel": "Years of Trust",
-      "check1Text": "",
-      "check2Text": "",
-      "check3Text": "",
       "badgeNumber": "30",
       "brochureHref": "",
       "brochureLabel": "",
-      "membershipLabel": ""
+      "membershipLabel": "",
+      "checks": []
     }
   },
   {
@@ -51,14 +49,24 @@
       "id": "about-stats",
       "padding": "md",
       "background": "dark",
-      "stat1Label": "Years of Trust",
-      "stat1Value": "30+",
-      "stat2Label": "Services Under One Roof",
-      "stat2Value": "15",
-      "stat3Label": "Trusted Clients",
-      "stat3Value": "1 Lakh+",
-      "stat4Label": "Support on Installations",
-      "stat4Value": "24×7"
+      "stats": [
+        {
+          "label": "Years of Trust",
+          "value": "30+"
+        },
+        {
+          "label": "Services Under One Roof",
+          "value": "15"
+        },
+        {
+          "label": "Trusted Clients",
+          "value": "1 Lakh+"
+        },
+        {
+          "label": "Support on Installations",
+          "value": "24×7"
+        }
+      ]
     }
   },
   {
@@ -174,27 +182,43 @@
       "heading": "From 1996 to today",
       "padding": "md",
       "background": "muted",
-      "entry1Text": "Subhadra Group is established in Visakhapatnam to bring every building-related engineering product & service under one roof — for residential, commercial and industrial customers.",
-      "entry1Year": "1996",
-      "entry2Text": "Added electrical wiring, MCB/DB and switchgear installations to the roof, backed by world-class brands like Schneider Electric.",
-      "entry2Year": "2001",
-      "entry3Text": "Brought fire & life safety, CCTV and access control fully in-house — completing our ELV systems capability.",
-      "entry3Year": "2006",
-      "entry4Text": "Started designing home automation and home theater systems for premium residences across the city.",
-      "entry4Year": "2011",
-      "entry5Text": "Began delivering HVAC, electrical and automation as one coordinated scope for hotels, malls and hospitals — including landmark properties like Novotel Visakhapatnam.",
-      "entry5Year": "2016",
-      "entry6Text": "Reached 25 years of technical expertise, with a dedicated service manager assigned to every discipline we install in.",
-      "entry6Year": "2021",
-      "entry7Text": "15 services under one roof, 1 Lakh+ trusted clients across Andhra Pradesh, and one accountable team behind every installation.",
-      "entry7Year": "Today",
-      "entry1Image": "/seed/subhadra/brand/shop.webp",
-      "entry2Image": "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=700&h=525&fit=crop&q=80&auto=format",
-      "entry3Image": "https://images.unsplash.com/photo-1643123182527-3bd30840e7ed?w=700&h=525&fit=crop&q=80&auto=format",
-      "entry4Image": "/seed/subhadra/products/home-automation.jpg",
-      "entry5Image": "/seed/subhadra/case-studies/novotel.jpg",
-      "entry6Image": "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=700&h=525&fit=crop&q=80&auto=format",
-      "entry7Image": "/seed/subhadra/inside.webp"
+      "entries": [
+        {
+          "text": "Subhadra Group is established in Visakhapatnam to bring every building-related engineering product & service under one roof — for residential, commercial and industrial customers.",
+          "year": "1996",
+          "image": "/seed/subhadra/brand/shop.webp"
+        },
+        {
+          "text": "Added electrical wiring, MCB/DB and switchgear installations to the roof, backed by world-class brands like Schneider Electric.",
+          "year": "2001",
+          "image": "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=700&h=525&fit=crop&q=80&auto=format"
+        },
+        {
+          "text": "Brought fire & life safety, CCTV and access control fully in-house — completing our ELV systems capability.",
+          "year": "2006",
+          "image": "https://images.unsplash.com/photo-1643123182527-3bd30840e7ed?w=700&h=525&fit=crop&q=80&auto=format"
+        },
+        {
+          "text": "Started designing home automation and home theater systems for premium residences across the city.",
+          "year": "2011",
+          "image": "/seed/subhadra/products/home-automation.jpg"
+        },
+        {
+          "text": "Began delivering HVAC, electrical and automation as one coordinated scope for hotels, malls and hospitals — including landmark properties like Novotel Visakhapatnam.",
+          "year": "2016",
+          "image": "/seed/subhadra/case-studies/novotel.jpg"
+        },
+        {
+          "text": "Reached 25 years of technical expertise, with a dedicated service manager assigned to every discipline we install in.",
+          "year": "2021",
+          "image": "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=700&h=525&fit=crop&q=80&auto=format"
+        },
+        {
+          "text": "15 services under one roof, 1 Lakh+ trusted clients across Andhra Pradesh, and one accountable team behind every installation.",
+          "year": "Today",
+          "image": "/seed/subhadra/inside.webp"
+        }
+      ]
     }
   },
   {

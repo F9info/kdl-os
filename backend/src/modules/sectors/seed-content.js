@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { normalizeData } from '../../shared/numbered-families.js';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -188,7 +189,10 @@ export async function seedSubhadraSectorContent(
       console.log(`sectors.seed-content: skipping "${sector.name}" (no approved content for slug "${sector.slug}")`);
       continue;
     }
-    const built = buildDataForSector(template.data, templateSlug, sector.slug, sector.name, parsed, parentHref);
+    // Approved copy still names numbered slots (stat1Label…); fold them into the template's array rows.
+    const built = normalizeData(
+      buildDataForSector(template.data, templateSlug, sector.slug, sector.name, parsed, parentHref)
+    );
     const content = {};
     template.data.content.forEach((tplBlock, i) => {
       if (SITE_WIDE.has(tplBlock.type) || !tplBlock.props?.id) return;

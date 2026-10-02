@@ -54,7 +54,10 @@ export function renderComposedBlock(
           const def = ATOM_BY_TYPE[atom.type]
           if (!def) return null
           const node = <div style={atomStyleProps(atom).style}>{def.Render(atom)}</div>
-          const hideMobileCls = atom.hideMobile ? 'hidden md:block' : ''
+          // w-full: the section is a flex column with `items-*` from the block's own
+          // align setting, which would otherwise shrink-wrap a row (grid/flex layout)
+          // and make its columns/nav alignment collapse to the content width.
+          const hideMobileCls = `w-full ${atom.hideMobile ? 'hidden md:block' : ''}`
           if (!interactive)
             return (
               <div key={atom.id} className={hideMobileCls}>

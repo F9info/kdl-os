@@ -2,6 +2,7 @@
 
 import { Render } from '@puckeditor/core'
 import { config } from '@/app/admin/page-builder/puck.config'
+import { applyHeaderOverlay } from '@/lib/header-overlay'
 
 // Same renderer + config as the admin's public /p/<slug> page.
 export default function SitePage({
@@ -13,5 +14,5 @@ export default function SitePage({
   title: string
   projectId?: string
 }) {
-  return <Render config={config} data={data} metadata={{ pageTitle: title, projectId }} />
+  return <Render config={config} data={applyHeaderOverlay(data)} metadata={{ pageTitle: title, projectId }} />
 }

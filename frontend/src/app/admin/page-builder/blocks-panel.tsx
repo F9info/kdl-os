@@ -1,5 +1,6 @@
 'use client'
 
+import { isLegacyNumberedKey } from './packs/numbered-families'
 import { useEffect, useRef, useState } from 'react'
 import { usePuck, AutoField, FieldLabel } from '@puckeditor/core'
 import type { Field } from '@puckeditor/core'
@@ -306,6 +307,14 @@ function ThemeEngineLink() {
  *  block's own design picker. */
 const HIDDEN_FIELDS: Record<string, Set<string>> = {
   ConstructionHero: new Set(['variant', 'primaryColor', 'secondaryColor']),
+  ConstructionOurBrands: new Set([
+    'tab1Label',
+    'tab1Groups',
+    'tab2Label',
+    'tab2Groups',
+    'tab3Label',
+    'tab3Groups',
+  ]),
 }
 
 const STYLE_FIELD_KEYS = new Set(['padding', 'background', 'align', 'variant', 'spacing', 'gap'])
@@ -468,7 +477,10 @@ function SplitFieldEditor({ group }: { group: 'style' | 'content' }) {
     : staticFields
   const hidden = HIDDEN_FIELDS[selectedItem.type as string]
   const entries = Object.entries(fields).filter(
-    ([key]) => !hidden?.has(key) && isStyleField(key) === (group === 'style')
+    ([key]) =>
+      !hidden?.has(key) &&
+      !isLegacyNumberedKey(selectedItem.type as string, key) &&
+      isStyleField(key) === (group === 'style')
   )
   if (entries.length === 0) {
     return (
