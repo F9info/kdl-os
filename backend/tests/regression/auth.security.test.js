@@ -89,7 +89,8 @@ describe('auth security regressions', () => {
 
       expect(res.status).toBe(200);
       expect(prisma.refreshToken.updateMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { token_hash: oldHash }, data: { revoked: true } })
+        // atomic claim: only an still-active token is flipped (concurrent-refresh safety)
+        expect.objectContaining({ where: { token_hash: oldHash, revoked: false }, data: { revoked: true } })
       );
       expect(prisma.refreshToken.create).toHaveBeenCalledWith(
         expect.objectContaining({

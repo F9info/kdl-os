@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../../middleware/auth.js';
 import { requirePermission } from '../../middleware/permission.js';
 import { validate } from '../../middleware/validate.js';
+import { publicOnlyActive } from '../../middleware/public-only-active.js';
 import {
   listCaseStudiesSchema,
   getCaseStudySchema,
@@ -21,7 +22,7 @@ const router = Router();
 
 // Public read of active case studies (consumed by ConstructionProjectsSlider,
 // on both the editor canvas and /p/[slug]).
-router.get('/public', validate(listCaseStudiesSchema), listCaseStudies);
+router.get('/public', validate(listCaseStudiesSchema), publicOnlyActive, listCaseStudies);
 
 // Admin CRUD — authenticated + RBAC-gated.
 router.use(authenticate);

@@ -178,10 +178,18 @@ export const refresh = async (req, res, next) => {
       const { user } = dbRecord;
       if (!user.is_active || user.status === 'SUSPENDED' || user.deleted_at) continue;
 
+      // Claim the token atomically BEFORE issuing anything: of two concurrent requests
+      // with the same token only one revoke succeeds. The loser gets a plain 401 — not
+      // the family-wide revoke above, so a user's second tab racing the first isn't
+      // logged out everywhere, yet a replayer can't mint a second valid token pair.
+      const claimed = await authService.revokeRefreshToken(token);
+      if (claimed?.count === 0) {
+        return errorResponse(res, 'Refresh token already used — retry with the new token', 401);
+      }
+
       // Valid token — rotate it, threading the same family_id through
       const roleSlugs = await authService.getUserRoleSlugs(user.id);
       const accessToken = authService.signAccessToken(buildAccessTokenPayload(user, roleSlugs));
-      await authService.revokeRefreshToken(token);
       const newRefreshToken = authService.signRefreshToken({ userId: user.id });
       await authService.storeRefreshToken(user.id, newRefreshToken, dbRecord.family_id);
       setAuthCookies(res, accessToken, newRefreshToken);

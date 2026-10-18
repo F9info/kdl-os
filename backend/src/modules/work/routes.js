@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../../middleware/auth.js';
 import { requirePermission } from '../../middleware/permission.js';
 import { validate } from '../../middleware/validate.js';
+import { publicOnlyActive } from '../../middleware/public-only-active.js';
 import {
   listWorkSchema,
   getWorkSchema,
@@ -32,7 +33,7 @@ registerDetailPageType('work', {
 const router = Router();
 
 // Public — consumed by /work/[slug].
-router.get('/public', validate(listWorkSchema), listWork);
+router.get('/public', validate(listWorkSchema), publicOnlyActive, listWork);
 router.get('/public/:slug', validate(getPublicWorkSchema), getPublicWork);
 
 // Admin CRUD — authenticated + RBAC-gated.

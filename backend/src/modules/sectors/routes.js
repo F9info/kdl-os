@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../../middleware/auth.js';
 import { requirePermission } from '../../middleware/permission.js';
 import { validate } from '../../middleware/validate.js';
+import { publicOnlyActive } from '../../middleware/public-only-active.js';
 import {
   listSectorsSchema,
   getSectorSchema,
@@ -37,7 +38,7 @@ const router = Router();
 
 // Public read of active sectors (consumed by ConstructionSectorDetailList, on
 // both the editor canvas and /p/[slug]).
-router.get('/public', validate(listSectorsSchema), listSectors);
+router.get('/public', validate(listSectorsSchema), publicOnlyActive, listSectors);
 
 // Public read of one sector by slug, joined with its linked detail page's
 // content — consumed by the dynamic /sectors/[slug] route.

@@ -1,6 +1,7 @@
 import { prisma } from '../../../config/database.js';
 import { logger } from '../../../shared/utils/logger.js';
 import { getActiveProvider } from './ai-provider.service.js';
+import { assertPublicEndpoint } from '../../../shared/utils/ssrf-guard.js';
 import { getFileUrl } from '../../../shared/services/storage.service.js';
 
 // Mirrors replicate.js driver's `ops` — kept here too so we can 422 before
@@ -53,6 +54,8 @@ export async function runImageOpJob({ mediaId, op, scale, mask, note, createdBy 
   // Never store an external URL as the asset of record — download the
   // Replicate output and land it in our own storage via the version helper
   // (which itself uploads through storage.service.js).
+  // The URL comes back from the provider — never fetch it blind (SSRF).
+  await assertPublicEndpoint(outputUrl);
   const outputRes = await fetch(outputUrl);
   if (!outputRes.ok) {
     throw new Error(`Failed to download AI image-op output (${outputRes.status})`);

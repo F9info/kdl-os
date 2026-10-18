@@ -127,9 +127,15 @@ export const findAnyRefreshTokenByHash = (token) => {
   });
 };
 
+// Only flips a still-active token, so the returned `count` says whether THIS call
+// revoked it (1) or something else already had (0). refresh() relies on that to let
+// exactly one of several concurrent requests holding the same token rotate it.
 export const revokeRefreshToken = (token) => {
   const token_hash = hashToken(token);
-  return prisma.refreshToken.updateMany({ where: { token_hash }, data: { revoked: true } });
+  return prisma.refreshToken.updateMany({
+    where: { token_hash, revoked: false },
+    data: { revoked: true },
+  });
 };
 
 export const revokeAllRefreshTokensForUser = (userId) =>

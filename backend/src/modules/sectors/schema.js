@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { safeUrl } from '../../shared/utils/safe-url.js';
 
 export const listSectorsSchema = z.object({
   query: z.object({
@@ -35,11 +36,11 @@ const sectorBody = {
   description: z.string().max(4000).nullish(),
   image: z.string().max(500).nullish(),
   cta_label: z.string().max(100).nullish(),
-  cta_href: z.string().max(500).nullish(),
+  cta_href: safeUrl,
   seo_title: z.string().max(200).nullish(),
   seo_description: z.string().max(500).nullish(),
   og_image: z.string().max(500).nullish(),
-  canonical_url: z.string().max(500).nullish(),
+  canonical_url: safeUrl,
   order: z.number().int().default(0),
   is_active: z.boolean().default(true),
 };

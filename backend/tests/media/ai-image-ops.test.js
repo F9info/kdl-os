@@ -1,13 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { prismaMock, getActiveProviderMock, createMediaVersionMock, getFileUrlMock, fetchMock } = vi.hoisted(() => ({
+const { prismaMock, getActiveProviderMock, createMediaVersionMock, getFileUrlMock, fetchMock, assertPublicEndpointMock } = vi.hoisted(() => ({
   prismaMock: { media: { findUnique: vi.fn() } },
   getActiveProviderMock: vi.fn(),
   createMediaVersionMock: vi.fn(),
   getFileUrlMock: vi.fn(),
   fetchMock: vi.fn(),
+  assertPublicEndpointMock: vi.fn(),
 }));
 
+vi.mock('../../src/shared/utils/ssrf-guard.js', () => ({ assertPublicEndpoint: assertPublicEndpointMock }));
 vi.mock('../../src/config/database.js', () => ({ prisma: prismaMock }));
 vi.mock('../../src/modules/media/ai/ai-provider.service.js', () => ({ getActiveProvider: getActiveProviderMock }));
 vi.mock('../../src/shared/services/storage.service.js', () => ({ getFileUrl: getFileUrlMock }));
@@ -23,6 +25,10 @@ beforeEach(() => {
 });
 
 describe('runImageOpJob', () => {
+  beforeEach(() => {
+    assertPublicEndpointMock.mockResolvedValue(undefined);
+  });
+
   const mockDriver = { runImageOp: vi.fn() };
 
   it('exposes the D6 op set', () => {
@@ -106,5 +112,18 @@ describe('runImageOpJob', () => {
     fetchMock.mockResolvedValue({ ok: false, status: 502 });
 
     await expect(runImageOpJob({ mediaId: 'm1', op: 'enhance' })).rejects.toThrow(/Failed to download/);
+  });
+
+  it('never downloads an output URL the SSRF guard rejects', async () => {
+    getActiveProviderMock.mockResolvedValue({ driver: mockDriver, credentials: {}, config: {} });
+    prismaMock.media.findUnique.mockResolvedValue({
+      id: 'm1', type: 'IMAGE', path: 'u/photo.png', mime_type: 'image/png',
+    });
+    mockDriver.runImageOp.mockResolvedValue({ outputUrl: 'http://169.254.169.254/latest/meta-data' });
+    assertPublicEndpointMock.mockRejectedValue(new Error('SSRF guard: private address'));
+
+    await expect(runImageOpJob({ mediaId: 'm1', op: 'enhance' })).rejects.toThrow(/SSRF guard/);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(createMediaVersionMock).not.toHaveBeenCalled();
   });
 });

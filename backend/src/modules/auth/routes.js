@@ -50,11 +50,48 @@ const authLimiter = rateLimit({
   skipSuccessfulRequests: true,
 });
 
-router.post('/register', authLimiter, validate(registerSchema), register);
+// authLimiter above skips successful requests, so on its own it never counts a
+// successful signup or a forgot-password call (which always answers 200): an
+// attacker could create unlimited accounts, or email-bomb any address. These
+// count EVERY request. Dev is effectively unlimited (see authLimiter comment).
+const strictLimiter = ({ max, keyGenerator, message }) =>
+  rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: process.env.NODE_ENV === 'production' ? max : 2000,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator,
+    message: { success: false, message },
+  });
+const emailOf = (req) => (req.body?.email || '').toLowerCase().trim();
+export const registerLimiter = strictLimiter({
+  max: 5,
+  keyGenerator: (req) => req.ip,
+  message: 'Too many sign-ups from this address. Try again in an hour.',
+});
+export const forgotIpLimiter = strictLimiter({
+  max: 10,
+  keyGenerator: (req) => req.ip,
+  message: 'Too many reset requests. Try again in an hour.',
+});
+export const forgotEmailLimiter = strictLimiter({
+  max: 3,
+  keyGenerator: emailOf,
+  message: 'Too many reset requests for this account. Try again in an hour.',
+});
+
+router.post('/register', registerLimiter, authLimiter, validate(registerSchema), register);
 router.post('/login', authLimiter, validate(loginSchema), login);
 router.post('/refresh', validate(refreshSchema), refresh);
 router.post('/logout', validate(logoutSchema), logout);
-router.post('/forgot-password', authLimiter, validate(forgotPasswordSchema), forgotPassword);
+router.post(
+  '/forgot-password',
+  forgotIpLimiter,
+  forgotEmailLimiter,
+  authLimiter,
+  validate(forgotPasswordSchema),
+  forgotPassword
+);
 router.post('/reset-password', authLimiter, validate(resetPasswordSchema), resetPassword);
 router.post(
   '/change-password',

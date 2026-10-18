@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../../middleware/auth.js';
 import { requirePermission } from '../../middleware/permission.js';
 import { validate } from '../../middleware/validate.js';
+import { publicOnlyActive } from '../../middleware/public-only-active.js';
 import {
   listCatalogSchema,
   getCatalogSchema,
@@ -36,7 +37,7 @@ registerDetailPageType('catalog', {
 const router = Router();
 
 // Public — consumed by /catalog/[slug].
-router.get('/public', validate(listCatalogSchema), listCatalog);
+router.get('/public', validate(listCatalogSchema), publicOnlyActive, listCatalog);
 router.get('/public/:slug', validate(getPublicCatalogSchema), getPublicCatalog);
 
 // Admin CRUD — authenticated + RBAC-gated.

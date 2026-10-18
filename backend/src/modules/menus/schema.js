@@ -2,26 +2,10 @@ import { z } from 'zod';
 
 const linkType = z.enum(['page', 'custom', 'external']);
 
-// Blocks javascript:/data:/vbscript: hrefs (stored-XSS via menu URL) while
-// still allowing relative paths, http(s), mailto, and tel.
-const safeUrl = z
-  .string()
-  .max(1000)
-  .refine(
-    (v) => {
-      if (!v) return true;
-      if (v.startsWith('#')) return true;
-      if (v.startsWith('/') && !v.startsWith('//')) return true;
-      try {
-        const scheme = new URL(v).protocol;
-        return ['http:', 'https:', 'mailto:', 'tel:'].includes(scheme);
-      } catch {
-        return false;
-      }
-    },
-    { message: 'URL must be http(s), mailto, tel, or a relative path' }
-  )
-  .nullish();
+import { safeUrl } from '../../shared/utils/safe-url.js';
+
+
+export { safeUrl };
 
 export const listMenusSchema = z.object({
   query: z.object({

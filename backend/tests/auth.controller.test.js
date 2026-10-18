@@ -187,6 +187,29 @@ describe('auth controller regression', () => {
       expect(refreshCookie[1]).toBe('new-refresh');
     });
 
+    it('a concurrent refresh that loses the atomic revoke gets 401 and no new tokens', async () => {
+      serviceMock.verifyRefreshToken.mockImplementation(() => ({ type: 'refresh', userId: 'u1' }));
+      serviceMock.findAnyRefreshTokenByHash.mockResolvedValue({
+        id: 'rt1',
+        revoked: false,
+        family_id: 'fam-1',
+        expires_at: new Date(Date.now() + 60_000),
+        user: { id: 'u1', email: 'u@kdl.com', role: 'USER', is_active: true },
+      });
+      serviceMock.revokeRefreshToken.mockResolvedValueOnce({ count: 0 }); // another request won
+      serviceMock.storeRefreshToken.mockClear();
+      serviceMock.revokeFamilyById.mockClear();
+
+      const res = mockRes();
+      await refresh(mockReq({ headers: { cookie: 'kdl-refresh-token=racedtoken' } }), res, vi.fn());
+
+      expect(res.statusCode).toBe(401);
+      expect(serviceMock.storeRefreshToken).not.toHaveBeenCalled();
+      expect(res.cookieCalls.find((c) => c[0] === 'kdl-refresh-token')).toBeUndefined();
+      // Not treated as theft: other sessions in the family stay logged in.
+      expect(serviceMock.revokeFamilyById).not.toHaveBeenCalled();
+    });
+
     it('revokes the whole family when a revoked token is replayed (M3)', async () => {
       serviceMock.verifyRefreshToken.mockImplementation(() => ({ type: 'refresh', userId: 'u1' }));
       serviceMock.findAnyRefreshTokenByHash.mockResolvedValue({

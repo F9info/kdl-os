@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { safeUrl } from '../../shared/utils/safe-url.js';
 
 export const listCaseStudiesSchema = z.object({
   query: z.object({
@@ -21,9 +22,9 @@ const caseStudyBody = {
   image: z.string().max(500).nullish(),
   description: z.string().max(4000).nullish(),
   cta_label: z.string().max(100).nullish(),
-  cta_href: z.string().max(500).nullish(),
+  cta_href: safeUrl,
   link_label: z.string().max(200).nullish(),
-  link_href: z.string().max(500).nullish(),
+  link_href: safeUrl,
   order: z.number().int().default(0),
   is_active: z.boolean().default(true),
 };

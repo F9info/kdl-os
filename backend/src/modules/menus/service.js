@@ -96,8 +96,16 @@ const depthOfParentChain = async (parentId, seen = new Set()) => {
   return 1 + (await depthOfParentChain(parent.parent_id, seen));
 };
 
+const unprocessable = (message) => Object.assign(new Error(message), { status: 422 });
+
 export const createMenuItem = async (menuId, data) => {
   if (data.parent_id) {
+    // The parent must be an item of THIS menu — never another menu's (or a dangling id).
+    const parent = await prisma.menuItem.findUnique({
+      where: { id: data.parent_id },
+      select: { menu_id: true },
+    });
+    if (!parent || parent.menu_id !== menuId) throw unprocessable('Parent item must belong to this menu');
     const parentDepth = await depthOfParentChain(data.parent_id);
     if (parentDepth + 1 > MAX_DEPTH) {
       throw Object.assign(
@@ -153,7 +161,24 @@ export function validateDepth(items) {
 }
 
 export const reorderMenuItems = async (menuId, items) => {
-  validateDepth(items);
+  // Only this menu's own items may be moved, and only under this menu's own items.
+  // (The route authorises "edit menus" for the menu in the URL; without this a
+  // caller could re-parent items belonging to any other menu/project.)
+  const existing = await prisma.menuItem.findMany({
+    where: { menu_id: menuId },
+    select: { id: true, parent_id: true },
+  });
+  const ownIds = new Set(existing.map((i) => i.id));
+  for (const item of items) {
+    if (!ownIds.has(item.id) || (item.parent_id && !ownIds.has(item.parent_id))) {
+      throw unprocessable('Items and parents must belong to this menu');
+    }
+  }
+  // Depth is checked on the whole resulting tree (stored items overlaid with the
+  // batch), so a parent that sits outside the batch still counts toward the limit.
+  const merged = new Map(existing.map((i) => [i.id, { id: i.id, parent_id: i.parent_id }]));
+  for (const item of items) merged.set(item.id, { id: item.id, parent_id: item.parent_id });
+  validateDepth([...merged.values()]);
   await prisma.$transaction(
     items.map((item) =>
       prisma.menuItem.update({

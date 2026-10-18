@@ -2,6 +2,7 @@ import { prisma } from '../../../config/database.js';
 import { decrypt } from '../../../shared/utils/crypto.js';
 import { errorResponse } from '../../../shared/utils/response.js';
 import { logger } from '../../../shared/utils/logger.js';
+import { assertPublicEndpoint } from '../../../shared/utils/ssrf-guard.js';
 import { getDriver, FEATURES } from './drivers/index.js';
 
 export const FEATURE_KEYS = Object.keys(FEATURES); // ['vision', 'image_ops', 'speech_to_text']
@@ -41,7 +42,20 @@ export async function getActiveProvider(feature) {
     return null;
   }
 
-  return { row, driver, credentials, config: row.config ?? {} };
+  // Drivers fetch `config.base_url` server-side, so an admin-set value could aim them at
+  // internal hosts (redis, minio, cloud metadata). Fail closed like the branches above.
+  // whisper-local is exempt: a self-hosted endpoint on a private address is its purpose.
+  const config = row.config ?? {};
+  if (row.driver !== 'whisper-local' && config.base_url) {
+    try {
+      await assertPublicEndpoint(config.base_url);
+    } catch (err) {
+      logger.error(`AI provider ${row.id} base_url rejected by SSRF guard: ${err.message}`);
+      return null;
+    }
+  }
+
+  return { row, driver, credentials, config };
 }
 
 /**

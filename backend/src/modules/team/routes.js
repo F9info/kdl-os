@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../../middleware/auth.js';
 import { requirePermission } from '../../middleware/permission.js';
 import { validate } from '../../middleware/validate.js';
+import { publicOnlyActive } from '../../middleware/public-only-active.js';
 import {
   listTeamMembersSchema,
   getTeamMemberSchema,
@@ -21,7 +22,7 @@ const router = Router();
 
 // Public read of active members (consumed by page-builder blocks like
 // ConstructionFounderProfile, on both the editor canvas and /p/[slug]).
-router.get('/public', validate(listTeamMembersSchema), listTeamMembers);
+router.get('/public', validate(listTeamMembersSchema), publicOnlyActive, listTeamMembers);
 
 // Admin CRUD — authenticated + RBAC-gated.
 router.use(authenticate);
