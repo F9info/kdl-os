@@ -1,20 +1,21 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { useParams, useSearchParams } from 'next/navigation'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Puck, blocksPlugin, type Data, type ComponentData } from '@puckeditor/core'
 import '@puckeditor/core/puck.css'
 import '../../../page-builder/puck-overrides.css'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Loader2 } from 'lucide-react'
 import { ModuleGuard } from '@/components/shared/ModuleGuard'
 import { toast } from '@/hooks/use-toast'
 import { BlocksPanel } from '../../../page-builder/blocks-panel'
 import { InsertBlockButton } from '../../../page-builder/insert-block-modal'
 import { config } from '../../../page-builder/puck.config'
-import { getPage, savePage } from '../../../page-builder/store'
+import { autosavePage, getPage, savePage } from '../../../page-builder/store'
 import { useLayoutChrome } from '@/hooks/useLayoutChrome'
+import { useAutosave, type AutosaveStatus } from '@/hooks/useAutosave'
 
 // Top Header/Header/Footer are layout-managed — every page gets the same
 // one, picked once on the Layout page (website/layout), not per page here.
@@ -110,6 +111,26 @@ export default function TemplateEngineEditPage() {
     [page?.data.content]
   )
 
+  // Puck only ever sees the editable middle; every save splices the
+  // layout-managed blocks back around it (manual Save and autosave alike).
+  const buildFinal = useCallback(
+    (data: Data): Data => ({
+      ...data,
+      content: [...layoutSplit.startBlocks, ...data.content, ...layoutSplit.endBlocks],
+    }),
+    [layoutSplit]
+  )
+  const baseline = useMemo(
+    () => (page ? buildFinal({ ...page.data, content: layoutSplit.editableContent }) : null),
+    [page, layoutSplit, buildFinal]
+  )
+  const autosave = useAutosave<Data>((data) => autosavePage(params.id, data), baseline)
+  const { schedule: scheduleAutosave } = autosave
+  const handleChange = useCallback(
+    (data: Data) => scheduleAutosave(buildFinal(data)),
+    [scheduleAutosave, buildFinal]
+  )
+
   if (isLoading) return <div className="p-8 text-muted-foreground">Loading editor…</div>
 
   if (isError || !page) {
@@ -126,8 +147,9 @@ export default function TemplateEngineEditPage() {
   const editableData: Data = { ...page.data, content: layoutSplit.editableContent }
 
   function handlePublish(data: Data) {
-    const finalContent = [...layoutSplit.startBlocks, ...data.content, ...layoutSplit.endBlocks]
-    saveMutation.mutate({ ...data, content: finalContent })
+    const final = buildFinal(data)
+    autosave.markSaved(final) // supersedes any pending autosave
+    saveMutation.mutate(final)
   }
 
   return (
@@ -199,6 +221,7 @@ export default function TemplateEngineEditPage() {
           ]}
           headerTitle={page.title}
           headerPath={`/p/${page.slug}`}
+          onChange={handleChange}
           onPublish={handlePublish}
           // Saving here also publishes, so "Publish" confused users — call it Save.
           dictionary={{ 'header-publish': 'Save' }}
@@ -232,6 +255,7 @@ export default function TemplateEngineEditPage() {
                   <ArrowLeft size={15} /> Back
                 </Link>
                 <InsertBlockButton projectId={projectId ?? undefined} />
+                <AutosaveBadge status={autosave.status} />
                 {children}
               </>
             ),
@@ -244,5 +268,24 @@ export default function TemplateEngineEditPage() {
         />
       </div>
     </ModuleGuard>
+  )
+}
+
+function AutosaveBadge({ status }: { status: AutosaveStatus }) {
+  if (status === 'idle') return null
+  return (
+    <span role="status" className="flex items-center gap-1 text-xs">
+      {status === 'saving' && (
+        <span className="flex items-center gap-1 text-muted-foreground">
+          <Loader2 className="h-3 w-3 animate-spin" /> Saving…
+        </span>
+      )}
+      {status === 'saved' && <span className="font-medium text-emerald-600">✓ Saved</span>}
+      {status === 'error' && (
+        <span className="font-medium text-destructive">
+          ⚠ Autosave failed — will retry on next edit
+        </span>
+      )}
+    </span>
   )
 }

@@ -70,6 +70,11 @@ export async function createPage(title: string): Promise<PageRecord> {
   return toRecord(res.data.data.page)
 }
 
+/** Autosave: data only — leaves title and DRAFT/PUBLISHED status as they are. */
+export async function autosavePage(id: string, data: Data): Promise<void> {
+  await api.put(`/page-builder/${id}`, { data })
+}
+
 export async function savePage(id: string, data: Data): Promise<void> {
   const title = (data.root?.props?.title as string) || undefined
   await api.put(`/page-builder/${id}`, {
