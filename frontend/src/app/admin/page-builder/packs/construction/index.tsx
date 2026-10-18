@@ -10,7 +10,7 @@ import { resolveItems, withNumberedFamilies } from '../numbered-families'
 import { InlineEditableText } from '../inline-editable-text'
 import { teamMemberField } from '../team-member-field'
 import { useSettingsFieldValues } from '../use-settings-field-values'
-import { useHeaderMenuTree, HeaderNavMenu } from '../header-nav-menu'
+import { useHeaderMenuTree, HeaderNavMenu, MobileNavMenu } from '../header-nav-menu'
 
 // ── shared helpers ────────────────────────────────────────────────────────────
 
@@ -3021,10 +3021,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       const isEditingInPuck = puck?.isEditing ?? false
       // Menus module (backend/src/modules/menus/) is the source of truth
       // once a project has a configured "header" menu — enables real
-      // dropdown/flyout submenus. `links` below is the fallback for a
-      // project that hasn't set one up, and stays the only source for
-      // designs 2-4 and the mobile panel for now (phase 1: Design 1's
-      // desktop nav only, not yet extended to the rest).
+      // dropdown/flyout submenus in every design, and an expandable
+      // accordion in the mobile panel. `links` below is only the fallback
+      // for a project that hasn't set a menu up.
       const menuTree = useHeaderMenuTree(puck?.metadata?.projectId as string | undefined)
       const navItems = (links || '')
         .split('\n')
@@ -3055,18 +3054,22 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   </svg>
                 </button>
               </div>
-              <nav className="flex flex-col gap-5 mb-8">
-                {navItems.map(([label, href], i) => (
-                  <a
-                    key={i}
-                    href={href || '#'}
-                    onClick={() => setMobileOpen(false)}
-                    className="text-lg font-medium text-slate-900"
-                  >
-                    {label}
-                  </a>
-                ))}
-              </nav>
+              {menuTree ? (
+                <MobileNavMenu items={menuTree} onNavigate={() => setMobileOpen(false)} />
+              ) : (
+                <nav className="flex flex-col gap-5 mb-8">
+                  {navItems.map(([label, href], i) => (
+                    <a
+                      key={i}
+                      href={href || '#'}
+                      onClick={() => setMobileOpen(false)}
+                      className="text-lg font-medium text-slate-900"
+                    >
+                      {label}
+                    </a>
+                  ))}
+                </nav>
+              )}
               <div className="flex flex-col gap-3 mt-auto">
                 {loginLabel && (
                   <a

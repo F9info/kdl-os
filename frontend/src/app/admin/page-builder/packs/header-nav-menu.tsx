@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 
@@ -23,10 +23,12 @@ function NavLabel({
   item,
   className,
   children,
+  onClick,
 }: {
   item: HeaderMenuItem
   className: string
   children: ReactNode
+  onClick?: () => void
 }) {
   if (item.no_page) {
     return <span className={`${className} cursor-default select-none`}>{children}</span>
@@ -36,6 +38,7 @@ function NavLabel({
       href={safeHref(item.url)}
       target={item.open_in_new_tab ? '_blank' : undefined}
       rel={item.open_in_new_tab ? 'noopener noreferrer' : undefined}
+      onClick={onClick}
       className={className}
     >
       {children}
@@ -173,6 +176,95 @@ export function HeaderNavMenu({
           </div>
         )
       })}
+    </nav>
+  )
+}
+
+const MOBILE_INDENT = [
+  '',
+  'ml-4 border-l border-slate-200 pl-3',
+  'ml-4 border-l border-slate-200 pl-3',
+]
+const MOBILE_TEXT = ['text-lg font-medium', 'text-base', 'text-sm text-slate-600']
+
+function MobileNavItem({
+  item,
+  depth,
+  onNavigate,
+}: {
+  item: HeaderMenuItem
+  depth: number
+  onNavigate: () => void
+}) {
+  const [open, setOpen] = useState(false)
+  const hasChildren = item.children.length > 0
+  const text = `${MOBILE_TEXT[depth] ?? MOBILE_TEXT[2]} text-slate-900`
+  return (
+    <div className={depth > 0 ? (MOBILE_INDENT[depth] ?? MOBILE_INDENT[2]) : undefined}>
+      <div className="flex items-center justify-between gap-2 py-2">
+        {item.no_page ? (
+          // Not a link: tapping the label itself should open its sub-items.
+          <button
+            type="button"
+            aria-expanded={open}
+            onClick={() => setOpen((o) => !o)}
+            className={`flex-1 text-left ${text}`}
+          >
+            {item.label}
+          </button>
+        ) : (
+          <NavLabel item={item} className={`flex-1 ${text}`} onClick={onNavigate}>
+            {item.label}
+          </NavLabel>
+        )}
+        {hasChildren && (
+          <button
+            type="button"
+            aria-label={`${open ? 'Collapse' : 'Expand'} ${item.label}`}
+            aria-expanded={open}
+            onClick={() => setOpen((o) => !o)}
+            className="p-2 -mr-2 text-slate-600"
+          >
+            <svg
+              className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
+        )}
+      </div>
+      {hasChildren && open && (
+        <div>
+          {item.children.map((child) => (
+            <MobileNavItem key={child.id} item={child} depth={depth + 1} onNavigate={onNavigate} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Mobile-drawer counterpart of `HeaderNavMenu`: the same (up to 3-level) Menu
+ * tree as a tap-to-expand accordion — hover dropdowns don't exist on touch.
+ * `onNavigate` closes the drawer when a link is followed.
+ */
+export function MobileNavMenu({
+  items,
+  onNavigate,
+}: {
+  items: HeaderMenuItem[]
+  onNavigate: () => void
+}) {
+  return (
+    <nav className="mb-8 flex flex-col overflow-y-auto">
+      {items.map((item) => (
+        <MobileNavItem key={item.id} item={item} depth={0} onNavigate={onNavigate} />
+      ))}
     </nav>
   )
 }
