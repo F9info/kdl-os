@@ -2,19 +2,20 @@
 #   docker compose -f docker-compose.yml -f docker-compose.preview.yml up -d
 #
 # Differences from the base file:
-#   - Uses GHCR images (not local builds)
+#   - Uses GHCR images (not local builds). IMAGE_REPO must match what cd.yml pushes
+#     (lowercased GITHUB_REPOSITORY); cd-staging.yml passes it, default is this repo.
 #   - All service ports are internal-only; only nginx:80 is publicly exposed
 #   - NODE_ENV=staging for all app services
 #   - IMAGE_TAG defaults to "latest" (set to a SHA in CI for pinned deploys)
 services:
   backend:
-    image: ghcr.io/kalamdreamlabs/kdl-starter-kit/backend:${IMAGE_TAG:-latest}
+    image: ghcr.io/${IMAGE_REPO:-f9info/kdl-os}/backend:${IMAGE_TAG:-latest}
     environment:
       NODE_ENV: staging
     ports: !reset []  # internal only
 
   frontend:
-    image: ghcr.io/kalamdreamlabs/kdl-starter-kit/frontend:${IMAGE_TAG:-latest}
+    image: ghcr.io/${IMAGE_REPO:-f9info/kdl-os}/frontend:${IMAGE_TAG:-latest}
     environment:
       NODE_ENV: staging
       NEXT_PUBLIC_API_URL: /api
@@ -22,7 +23,7 @@ services:
     ports: !reset []  # internal only
 
   ai-services:
-    image: ghcr.io/kalamdreamlabs/kdl-starter-kit/ai-services:${IMAGE_TAG:-latest}
+    image: ghcr.io/${IMAGE_REPO:-f9info/kdl-os}/ai-services:${IMAGE_TAG:-latest}
     environment:
       NODE_ENV: staging
     ports: !reset []  # internal only

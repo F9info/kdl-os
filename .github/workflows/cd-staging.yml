@@ -1,6 +1,8 @@
 name: CD Staging
 
-# Deploys latest master images to the always-on staging VPS.
+# Deploys master images to the always-on staging VPS. Runs AFTER the "CD" workflow has
+# pushed the images for that commit (workflow_run) — a plain push trigger raced the image
+# build and could try to pull tags that did not exist yet.
 # Required GitHub secrets — set in repo Settings → Environments → staging → Secrets
 # (NOT in repo-level Secrets → Actions; the preflight job reads them via environment scope):
 #   STAGING_HOST       — IP or hostname of the staging VPS
@@ -10,18 +12,19 @@ name: CD Staging
 #                        bash infra/gen-staging-env.sh > /tmp/staging.env
 #                        gh secret set STAGING_ENV --env staging < /tmp/staging.env
 #   GHCR_TOKEN         — (optional) PAT with read:packages; falls back to built-in
-#                        GITHUB_TOKEN when not set (same-org packages only)
+#                        GITHUB_TOKEN when not set (same-owner packages only)
 #
 # Required variable — set in repo Settings → Environments → staging → Variables:
 #   STAGING_URL        — public URL of the staging site (used for the deployment link)
 #
 # One-time VPS bootstrap (run once by a human — see MANUAL_TASKS.md):
-#   ssh $STAGING_USER@$STAGING_HOST 'bash -s' < infra/scripts/staging-bootstrap.sh
+#   ssh $STAGING_USER@$STAGING_HOST 'sudo bash -s' < infra/scripts/staging-bootstrap.sh
 
 on:
-  push:
-    branches:
-      - master
+  workflow_run:
+    workflows: ["CD"]
+    types: [completed]
+    branches: [master]
   workflow_dispatch:
 
 concurrency:
@@ -31,6 +34,8 @@ concurrency:
 jobs:
   preflight:
     name: Check staging secrets
+    # Only deploy a commit whose images were built; manual runs deploy :latest.
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment:
       name: staging
@@ -61,7 +66,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: read   # allows GITHUB_TOKEN to pull from ghcr.io/f9info/*
+      packages: read   # allows GITHUB_TOKEN to pull same-owner images from ghcr.io
     environment:
       name: staging
       url: ${{ vars.STAGING_URL }}   # Set STAGING_URL in repo → Environments → staging
@@ -71,9 +76,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
-      - name: Compute image tag
-        run: echo "IMAGE_TAG=${{ github.sha }}" >> "$GITHUB_ENV"
+      # Images are tagged by commit SHA (and :latest) by cd.yml. A manual run has no
+      # triggering CD run, so it deploys :latest.
+      - name: Compute image tag and repo
+        run: |
+          echo "IMAGE_TAG=${{ github.event.workflow_run.head_sha || 'latest' }}" >> "$GITHUB_ENV"
+          echo "IMAGE_REPO=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
 
       - name: Copy compose files to VPS
         uses: appleboy/scp-action@v1.0.0
@@ -81,7 +92,9 @@ jobs:
           host: ${{ secrets.STAGING_HOST }}
           username: ${{ secrets.STAGING_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
-          source: "docker-compose.yml,docker-compose.preview.yml,infra/nginx/nginx.conf"
+          # frontend/{src,package.json,tailwind,postcss}: the backend's site generator
+          # reads the admin source (mounted at /app/frontend-src) to build project sites.
+          source: "docker-compose.yml,docker-compose.preview.yml,infra/nginx/nginx.conf,frontend/src,frontend/package.json,frontend/tailwind.config.ts,frontend/postcss.config.js"
           target: "/opt/kdl-staging"
           strip_components: 0
 
@@ -98,7 +111,7 @@ jobs:
           host: ${{ secrets.STAGING_HOST }}
           username: ${{ secrets.STAGING_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
-          envs: IMAGE_TAG,STAGING_ENV_CONTENTS,GHCR_TOKEN_PAT,GITHUB_TOKEN_FOR_GHCR,GHCR_ACTOR
+          envs: IMAGE_TAG,IMAGE_REPO,STAGING_ENV_CONTENTS,GHCR_TOKEN_PAT,GITHUB_TOKEN_FOR_GHCR,GHCR_ACTOR
           script: |
             set -euo pipefail
             cd /opt/kdl-staging
@@ -112,21 +125,28 @@ jobs:
             echo "$_ghcr_token" | docker login ghcr.io -u "$GHCR_ACTOR" --password-stdin
 
             # Pull new images before taking the stack down (zero-downtime window)
-            IMAGE_TAG="$IMAGE_TAG" \
+            IMAGE_TAG="$IMAGE_TAG" IMAGE_REPO="$IMAGE_REPO" \
               docker compose -f docker-compose.yml -f docker-compose.preview.yml pull
 
             # Bring the full stack up (recreate changed containers only)
-            IMAGE_TAG="$IMAGE_TAG" \
+            IMAGE_TAG="$IMAGE_TAG" IMAGE_REPO="$IMAGE_REPO" \
               docker compose -f docker-compose.yml -f docker-compose.preview.yml \
               up -d --remove-orphans
 
-            # Run pending DB migrations (idempotent)
-            docker compose exec -T backend npx prisma migrate deploy || true
+            # DB migrations run inside the backend container at start
+            # (`prisma migrate deploy && node src/index.js`), so a failed migration
+            # crash-loops it and fails the health check below — no separate step.
 
-            # Quick health check — nginx must return HTTP 200
-            sleep 10
-            curl -sf http://localhost/health || \
-              (echo "Health check failed"; docker compose logs --tail=50; exit 1)
+            # Health check through nginx -> backend /health. Retry while the stack boots.
+            for i in $(seq 1 30); do
+              curl -sf http://localhost/health >/dev/null && ok=1 && break
+              sleep 5
+            done
+            if [ -z "${ok:-}" ]; then
+              echo "Health check failed"
+              docker compose -f docker-compose.yml -f docker-compose.preview.yml logs --tail=80
+              exit 1
+            fi
 
             echo "Staging deploy complete — IMAGE_TAG=$IMAGE_TAG"
 

@@ -17,8 +17,6 @@ name: Staging Smoke Deploy
 on:
   push:
     branches: [master]
-  workflow_dispatch:
-
     paths-ignore:
       - '**/*.md'
       - 'docs/**'
