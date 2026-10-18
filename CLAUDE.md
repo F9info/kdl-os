@@ -215,22 +215,16 @@ Full rules in [`docs/MERGE_DISCIPLINE.md`](docs/MERGE_DISCIPLINE.md). Summary:
 
 ## What Is NOT Built Yet
 
-All 6 phases are complete. The following are known open items from code reviews:
+All 6 phases are complete. Verified against the code on 2026-10-18 (the previous list here was stale):
 
-**MEDIUM findings (post-Phase-5, not blocking):**
-- M1 — No logger module in ai-services (console.* used)
-- M2 — `redis.keys()` O(N) in `short-term.js` (use SCAN)
-- M3 — Unscubbed original message written to MANUAL_TASKS.md on budget exhaust in `chat.js`
-- M4 — Unbounded `Promise.all` for embed calls in `ingest.js`
-- M5 — MeiliSearch master key used in `tools/search.js` (needs scoped API key)
-- M6 — `process.cwd()` paths in `workflows/base.js` + `controllers/chat.js` (H1/H2 fixes used `import.meta.url` but M6 may still apply to BaseWorkflow)
-- M7 — `jwt.verify` missing `{ algorithms: ['HS256'] }` in `ai-services/middleware/auth.js`
+**Fixed since the earlier review (do not re-open):** M1 logger (`ai-services/src/utils/logger.js`), M2 `redis.keys()` → `scan`, M4 bounded embeds (`p-limit`), M5 scoped Meili key, M6 `import.meta.url` paths, M7 `jwt.verify` HS256, M3 mostly (message is scrubbed and now collapsed to one line). Whisper transcription (`controllers/transcribe.js`) and forgot-password (`POST /api/auth/forgot-password`) are implemented.
 
-**Not yet implemented:**
-
-
-- Whisper transcription (`POST /api/ai/transcribe` returns 501)
-- Forgot-password backend endpoint (`/api/auth/forgot-password` — frontend shows static stub)
+**Open (see `docs/PLATFORM_ROADMAP_AND_MOBILE_MODULES.md` §3 for the full list):**
+- Chroma knowledge base has no tenant isolation (`ai-services/src/knowledge/*` uses one shared collection).
+- ai-services has no per-user rate limit or role check; Claude/embed/brand-inference spend is not recorded against the budget.
+- Project-membership checks are missing on credits / brand-kit / collateral routes (latent while only one project is allowed).
+- PII scrubber covers US formats only (no Aadhaar / PAN / +91).
+- No push notifications, device/session tracking, API versioning, OpenAPI spec or app-config endpoint — all needed for the Android/iOS apps.
 
 *(Documentation Agent updates this after each phase)*
 

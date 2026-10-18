@@ -1,3 +1,24 @@
+## 2026-10-18 (later) — Full-code audit: security hardening + roadmap/mobile module plan (uncommitted)
+
+Audits (backend, ai-services, mobile-readiness) → fixes with tests: `publicOnlyActive` on 6 public list routes; register/forgot-password limiters (authLimiter skipped successes = unlimited); menus URL allowlist (open redirect) + ownership/depth checks; shared `utils/safe-url.js` on sectors/case-study links; atomic refresh-token claim; SSRF guard on AI provider `base_url` + image-op output URL; ai-services chat: clamp client `priority`, per-user session key, one-line MANUAL_TASKS note; LLM client timeouts; `claude.brain.test` mock made vitest-4-safe. CLAUDE.md "not built yet" corrected. Backend 1385 / ai-services 101 / frontend 307 green.
+
+**Still open (needs owner decision):** Chroma tenant isolation, ai-services per-user limits + budget accounting, `requireProject` on credits/brand-kit/collateral, Dependabot merges (Dependabot owns lockfiles), staging provisioning. Full plan + 12 Android/iOS modules + stages: `docs/PLATFORM_ROADMAP_AND_MOBILE_MODULES.md`.
+
+## 2026-10-18 — CURRENT_ISSUES_AND_SOLUTIONS.md issues 1–9 resolved (uncommitted), 10–11 audited
+
+**P0 tests (1–4):** `website.driver.test.js` mock now returns `{id,...patch}` from `updatePage` (+ reused-page mocks carry `project_id`, assertions count the new auto-publish call); `seed-content.test.js` mocks `config/database.js`; `template-engine-website-stage.test.tsx` rewritten for the real flow (typography → fontSettings → navigation → assemble, resume via localStorage, `useTemplateEngineRuns` in the hook mock); 3 variants registered in `construction.variants`. Backend 1329 / frontend 307 green.
+
+**5 Autosave:** `hooks/useAutosave.ts` (1.5s debounce, no overlap, retry, flush on unmount, beforeunload) wired into `template-engine/edit/[id]/page.tsx` via `autosavePage` (data only — never changes status). Autosave goes LIVE (one `data` column) and queues a site rebuild per save — owner chose this.
+
+**6 Mobile menu:** `MobileNavMenu` accordion (3 levels) in `header-nav-menu.tsx`, used by ConstructionHeader's mobile drawer. **7** was already done in code (all 4 designs use `menuTree`); only a stale comment fixed.
+
+**8 SEO:** `sectors/[slug]/page.tsx` is now a server component with `generateMetadata` (helper `lib/sector-metadata.ts`, real endpoint `/api/sectors/public/:slug`); UI moved to `SectorDetailClient.tsx`. Generated sites copy these by import closure (verified).
+
+**9 Per-project copy:** the doc's premise was wrong — `SettingValue` is the theme-engine token store; Vision/Mission live in global `SettingField.value`. Added `ProjectSettingValue` (migration `20261018083941_add_project_setting_values`, applied to local dev DB only) as a per-project override; public `GET /setting-fields/public/values?project_id=` and admin `by-type`/`value`/`values` accept a project; empty value deletes the override. UI: `/admin/settings/view/<slug>?projectId=<id>` (not yet linked from nav).
+
+**10 Dependabot:** audit only — 7 open PRs all red (frontend: pnpm overrides mismatch → `@dependabot rebase`; backend/ai-services: fail on master-wide test drift fixed above). Nothing merged.
+**11 Staging (repo side fixed, human side pending):** `docker-compose.preview.yml` image path now `ghcr.io/${IMAGE_REPO:-f9info/kdl-os}` (was a non-existent `kalamdreamlabs/...`); `cd-staging.yml` triggers via `workflow_run` after "CD" (no image race), passes IMAGE_REPO, ships the frontend source the site generator needs, drops the masked migration step (backend migrates at start), retries the health check; nginx now routes `/health` → backend (was falling through to site-preview); `staging-bootstrap.sh` rewritten for sudo/non-root deploy user + ufw; `staging-smoke.yml` trigger block fixed; dead "INTENTIONAL BREAK" CMD removed from `backend/Dockerfile`. Still needs a human: VPS, SSH key, DNS, GitHub secrets (`MANUAL_TASKS.md` KDL-403). Known gaps listed there (no TLS, MinIO 9002 not public, Meili keys, site-preview is `next dev`). Local-only: site-preview 500s on macOS Docker bind mounts (`Unknown system error -35`) — pre-existing.
+
 ## 2026-09-26 — Web app · Pages wizard grid now lists all 11 real Sector Detail pages
 
 User's complaint: a stray, empty, recurring "Sector Detail" card kept showing in the Navigation

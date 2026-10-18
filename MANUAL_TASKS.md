@@ -135,9 +135,13 @@ Any provider works (Hetzner CX11, DigitalOcean Droplet, Vultr, etc.). Ubuntu 22.
 Note the public IP — call it `<STAGING_HOST>`.
 
 ### Step 2 — Bootstrap Docker on the VPS (2 min)
+Needs root, so run it through `sudo`. The user you SSH in as becomes the deploy user
+(gets Docker access, owns `/opt/kdl-staging`) and must be the same value as the `STAGING_USER` secret.
 ```bash
-ssh ubuntu@<STAGING_HOST> 'bash -s' < infra/scripts/staging-bootstrap.sh
+ssh ubuntu@<STAGING_HOST> 'sudo bash -s' < infra/scripts/staging-bootstrap.sh
 ```
+The script also opens ports 22/80/443 in `ufw` (SSH first, so it cannot lock you out).
+Also open 22, 80 and 443 in your provider's cloud firewall if it has one.
 
 ### Step 3 — Generate STAGING_ENV and set it as a GitHub secret (2 min)
 ```bash
@@ -162,7 +166,15 @@ AI keys default to the built-in `local` fallback (KDL-262); external API keys (S
 |-------------|-------|
 | `STAGING_HOST` | VPS IP or hostname — **the only remaining human-supplied secret** |
 
-Already set (no action needed): `STAGING_USER`, `STAGING_SSH_KEY`, `STAGING_ENV` (from Step 3).  
+`STAGING_USER` and `STAGING_SSH_KEY` are reported as already set — **verify, don't assume**:
+`gh secret list --env staging`. If missing:
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/kdl_staging -N ""
+ssh-copy-id -i ~/.ssh/kdl_staging.pub ubuntu@<STAGING_HOST>
+gh secret set STAGING_SSH_KEY --env staging < ~/.ssh/kdl_staging
+gh secret set STAGING_USER   --env staging -b ubuntu
+```
+`STAGING_ENV` comes from Step 3.  
 No longer needed: `GHCR_TOKEN` — removed in KDL-403.
 
 ### Step 5 — Add GitHub environment variable (repo → Settings → Environments → staging → Variables)
@@ -177,8 +189,16 @@ Update `STAGING_URL` env var to use the domain.
 Update the staging URL in `.github/PULL_REQUEST_TEMPLATE.md` to match.
 
 ### Step 7 — Trigger first deploy
-Push any commit to `master` — `cd-staging.yml` runs automatically.  
-Or: GitHub → Actions → "CD Staging" → "Run workflow".
+`cd-staging.yml` now runs automatically **after the "CD" workflow finishes** for a master commit
+(so the images for that commit exist). Or: GitHub → Actions → "CD Staging" → "Run workflow"
+(a manual run deploys the `:latest` images). It health-checks `http://localhost/health` on the VPS
+(nginx → backend) for up to 2.5 minutes and fails the job if it never answers.
+
+### Known limitations of staging (not yet addressed)
+- **No HTTPS.** nginx serves plain HTTP on :80 only; add TLS (certbot/Caddy + publish 443 in `docker-compose.preview.yml`) before sharing it widely.
+- **Media URLs.** `gen-staging-env.sh` points `MINIO_PUBLIC_*` at port 9002, which the stack does not publish publicly, so uploaded media will not load in a browser; `NEXT_PUBLIC_IMAGE_HOSTS` is also baked at image build time for `localhost:9002`.
+- **Search.** MeiliSearch scoped keys are placeholders until minted after first boot.
+- **Public site.** `site-preview` runs `next dev` and installs deps on the VPS — heavy on a $6 box, and `/` returns 502 until a project site is generated from the Web app step.
 
 **Status:** [ ] Pending → [ ] Done (date)
 
