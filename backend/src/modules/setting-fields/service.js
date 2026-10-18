@@ -4,7 +4,7 @@ import { getPaginationParams } from '../../shared/utils/pagination.js';
 import { uniqueSlug } from '../../shared/utils/slug.js';
 import * as storageService from '../../shared/services/storage.service.js';
 import { FILE_INPUT_TYPES } from '../../shared/constants/inputTypes.js';
-import { enqueueAllSiteBuilds } from '../template-engine/site/queue.js';
+import { enqueueAllSiteBuilds, enqueueSiteBuild } from '../template-engine/site/queue.js';
 
 const SORTABLE = ['field_name', 'created_at', 'sort'];
 const FIELD_INCLUDE = {
@@ -119,21 +119,64 @@ export const getTypeBySlug = (slug) =>
 
 // Returns all fields for a Type (by slug), ordered for rendering, with file values
 // resolved to fresh presigned URLs for display (never persisted — per storage rules).
-export const getFieldsForType = async (typeId) => {
+export const getFieldsForType = async (typeId, projectId = null) => {
   const fields = await prisma.settingField.findMany({
     where: { type_id: typeId },
     include: { category: { select: { id: true, name: true } } },
     orderBy: { sort: 'asc' },
   });
-  return Promise.all(fields.map(withDisplayValue));
+  const overrides = await loadOverrides(projectId, fields.map((f) => f.id));
+  return Promise.all(
+    fields.map((f) => {
+      if (!projectId) return withDisplayValue(f);
+      const has = overrides.has(f.id);
+      // `has_project_override` lets the UI show "inherited from global" vs "set for this project".
+      return withDisplayValue({
+        ...f,
+        value: has ? overrides.get(f.id) : f.value,
+        has_project_override: has,
+      });
+    })
+  );
 };
 
 // Bulk-save submitted values for a Type's fields. Only fields belonging to the
 // given type are updated; unknown ids and valueless types (heading) are ignored.
-export const saveValues = async (typeId, values) => {
+export const saveValues = async (typeId, values, { projectId = null, userId = null } = {}) => {
   // Only standalone fields are writable through the generic values endpoint.
   const fields = await prisma.settingField.findMany({ where: { type_id: typeId, ...WRITABLE } });
   const byId = new Map(fields.map((f) => [f.id, f]));
+
+  // Project mode: write per-project overrides, never the global value. An empty
+  // value deletes the override, so that project inherits the global value again.
+  if (projectId) {
+    const ops = [];
+    for (const entry of values) {
+      const field = byId.get(entry.id);
+      if (!field || field.input_type === 'heading') continue;
+      const where = { project_id_field_id: { project_id: projectId, field_id: field.id } };
+      if (entry.value === null || entry.value === undefined || entry.value === '') {
+        ops.push(
+          prisma.projectSettingValue.deleteMany({
+            where: { project_id: projectId, field_id: field.id },
+          })
+        );
+      } else {
+        ops.push(
+          prisma.projectSettingValue.upsert({
+            where,
+            create: { project_id: projectId, field_id: field.id, value: entry.value, updated_by: userId },
+            update: { value: entry.value, updated_by: userId },
+          })
+        );
+      }
+    }
+    if (ops.length) {
+      await prisma.$transaction(ops);
+      enqueueSiteBuild(projectId);
+    }
+    return ops.length;
+  }
 
   const updates = [];
   for (const entry of values) {
@@ -157,10 +200,14 @@ export const saveValues = async (typeId, values) => {
 };
 
 // Read one field's value by slug — the `applicationSettings('slug')` equivalent.
-export const getValueBySlug = async (slug) => {
+export const getValueBySlug = async (slug, projectId = null) => {
   const field = await prisma.settingField.findUnique({ where: { slug } });
   if (!field) return null;
-  return withDisplayValue(field);
+  if (!projectId) return withDisplayValue(field);
+  const overrides = await loadOverrides(projectId, [field.id]);
+  return withDisplayValue(
+    overrides.has(field.id) ? { ...field, value: overrides.get(field.id) } : field
+  );
 };
 
 // Bulk read for the public site renderer (ConstructionAboutSplit,
@@ -169,13 +216,15 @@ export const getValueBySlug = async (slug) => {
 // one call instead of one request per field). Returns only { slug: value },
 // silently skipping unknown slugs — a typo'd slug shows as empty/fallback
 // content, never a 500.
-export const getValuesBySlugs = async (slugs) => {
+export const getValuesBySlugs = async (slugs, projectId = null) => {
   const fields = await prisma.settingField.findMany({
     where: { slug: { in: slugs } },
-    select: { slug: true, value: true },
+    select: { id: true, slug: true, value: true },
   });
+  // A project's own override wins; otherwise it inherits the global value.
+  const overrides = await loadOverrides(projectId, fields.map((f) => f.id));
   const values = {};
-  for (const f of fields) values[f.slug] = f.value ?? '';
+  for (const f of fields) values[f.slug] = (overrides.get(f.id) ?? f.value) ?? '';
   return values;
 };
 
@@ -222,6 +271,16 @@ export const removeGalleryItem = async (id, index) => {
 };
 
 // ---- helpers ----
+
+// Map<field_id, value> of a project's overrides (empty map when no project).
+const loadOverrides = async (projectId, fieldIds) => {
+  if (!projectId || fieldIds.length === 0) return new Map();
+  const rows = await prisma.projectSettingValue.findMany({
+    where: { project_id: projectId, field_id: { in: fieldIds } },
+    select: { field_id: true, value: true },
+  });
+  return new Map(rows.map((r) => [r.field_id, r.value]));
+};
 
 const parseJsonArray = (value) => {
   if (!value) return [];

@@ -83,7 +83,7 @@ export const getFieldsByTypeSlug = async (req, res, next) => {
   try {
     const type = await fieldService.getTypeBySlug(req.validated.params.slug);
     if (!type) return errorResponse(res, 'Type not found', 404);
-    const fields = await fieldService.getFieldsForType(type.id);
+    const fields = await fieldService.getFieldsForType(type.id, req.projectId ?? null);
     return successResponse(res, { type, fields });
   } catch (err) {
     next(err);
@@ -97,7 +97,10 @@ export const saveValues = async (req, res, next) => {
     if (!(await fieldService.typeExists(type_id))) {
       return errorResponse(res, 'Type not found', 422);
     }
-    const updated = await fieldService.saveValues(type_id, values);
+    const updated = await fieldService.saveValues(type_id, values, {
+      projectId: req.projectId ?? null,
+      userId: req.user?.id ?? null,
+    });
     return successResponse(res, { message: 'Settings saved', updated });
   } catch (err) {
     next(err);
@@ -107,7 +110,7 @@ export const saveValues = async (req, res, next) => {
 // GET /value/:slug — read a single value by slug (app-wide helper).
 export const getValueBySlug = async (req, res, next) => {
   try {
-    const field = await fieldService.getValueBySlug(req.validated.params.slug);
+    const field = await fieldService.getValueBySlug(req.validated.params.slug, req.projectId ?? null);
     if (!field) return errorResponse(res, 'Setting field not found', 404);
     return successResponse(res, { field });
   } catch (err) {
@@ -119,7 +122,7 @@ export const getValueBySlug = async (req, res, next) => {
 export const getPublicValues = async (req, res, next) => {
   try {
     const slugs = req.validated.query.slugs.split(',').map((s) => s.trim()).filter(Boolean);
-    const values = await fieldService.getValuesBySlugs(slugs);
+    const values = await fieldService.getValuesBySlugs(slugs, req.validated.query.project_id ?? null);
     return successResponse(res, { values });
   } catch (err) {
     next(err);

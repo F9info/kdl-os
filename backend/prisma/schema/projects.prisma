@@ -19,6 +19,7 @@ model Project {
   credit_holds   CreditHold[]
   credit_ledger  CreditLedgerEntry[]
   members        ProjectMember[]
+  setting_values ProjectSettingValue[]
 
   @@map("projects")
 }

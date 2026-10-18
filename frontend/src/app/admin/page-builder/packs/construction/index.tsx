@@ -5437,7 +5437,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       // that hasn't set those fields yet. Disable inline-editing on whichever
       // of the 3 currently comes from Settings, so a canvas click can't
       // silently edit the now-unused static prop instead.
-      const sfAll = useSettingsFieldValues(['about-eyebrow', 'about-heading', 'about-paragraph'])
+      const sfAll = useSettingsFieldValues(
+        ['about-eyebrow', 'about-heading', 'about-paragraph'],
+        puck?.metadata?.projectId as string | undefined
+      )
       const sf = useSettings === false ? ({} as typeof sfAll) : sfAll
       const eyebrow = sf['about-eyebrow'] || eyebrowProp
       const heading = sf['about-heading'] || headingProp
@@ -9533,10 +9536,18 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       brand: 'Subhadra Group',
       tagline: 'Your one-stop solution for building engineering products & services.',
     },
-    render: function ConstructionTaglineStripRender({ logoUrl, brand, tagline: taglineProp }) {
+    render: function ConstructionTaglineStripRender({
+      logoUrl,
+      brand,
+      tagline: taglineProp,
+      puck,
+    }) {
       // Simple website text, managed through Settings → Fields
       // (/admin/settings/view/website-content) once it has a value there.
-      const sf = useSettingsFieldValues(['tagline-text'])
+      const sf = useSettingsFieldValues(
+        ['tagline-text'],
+        puck?.metadata?.projectId as string | undefined
+      )
       const tagline = sf['tagline-text'] || taglineProp
       return (
         <div className="bg-slate-900 text-white py-6">
@@ -11468,19 +11479,23 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       missionParagraph1: missionParagraph1Prop,
       missionParagraph2: missionParagraph2Prop,
       padding,
+      puck,
     }) {
       // Vision/Mission copy is simple website text, managed through
       // Settings → Fields (/admin/settings/view/website-content) once it has
       // a value there — these props are only the fallback for an install
       // that hasn't set those fields yet.
-      const sf = useSettingsFieldValues([
-        'vision-heading',
-        'vision-paragraph-1',
-        'vision-paragraph-2',
-        'mission-heading',
-        'mission-paragraph-1',
-        'mission-paragraph-2',
-      ])
+      const sf = useSettingsFieldValues(
+        [
+          'vision-heading',
+          'vision-paragraph-1',
+          'vision-paragraph-2',
+          'mission-heading',
+          'mission-paragraph-1',
+          'mission-paragraph-2',
+        ],
+        puck?.metadata?.projectId as string | undefined
+      )
       const visionHeading = sf['vision-heading'] || visionHeadingProp
       const visionParagraph1 = sf['vision-paragraph-1'] || visionParagraph1Prop
       const visionParagraph2 = sf['vision-paragraph-2'] || visionParagraph2Prop

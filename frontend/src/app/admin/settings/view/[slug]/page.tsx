@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Save, Settings2 } from 'lucide-react'
 import api from '@/lib/axios'
@@ -17,13 +17,16 @@ import { FieldControl, type FieldState } from '../../_components/FieldControl'
 export default function TypeSettingsPage() {
   const params = useParams<{ slug: string }>()
   const slug = params.slug
+  // `?projectId=` switches this screen to per-project overrides of the global
+  // values (e.g. a different Vision/Mission per project).
+  const projectId = useSearchParams().get('projectId')
   const queryClient = useQueryClient()
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['setting-fields-by-type', slug],
+    queryKey: ['setting-fields-by-type', slug, projectId],
     queryFn: () =>
       api
-        .get(`/setting-fields/by-type/${slug}`)
+        .get(`/setting-fields/by-type/${slug}`, { params: projectId ? { projectId } : undefined })
         .then((r) => r.data.data as { type: Type; fields: SettingField[] }),
   })
 
@@ -61,23 +64,36 @@ export default function TypeSettingsPage() {
     })
   }
 
+  // Current form value of a field, as it would be saved.
+  function fieldValue(f: SettingField): string {
+    const state = form[f.id] ?? { value: '', alt_text: '' }
+    if (f.input_type === 'multiple-files') {
+      const paths = (state.gallery ?? []).map((g) => g.path)
+      return paths.length ? JSON.stringify(paths) : ''
+    }
+    return state.value
+  }
+
   const saveMutation = useMutation({
     mutationFn: () => {
       const values = fields
         .filter((f) => f.input_type !== 'heading')
+        // Project mode saves overrides: send only what changed, so untouched
+        // fields keep inheriting the global value instead of being copied.
+        .filter((f) => !projectId || fieldValue(f) !== (f.value ?? ''))
         .map((f) => {
           const state = form[f.id] ?? { value: '', alt_text: '' }
-          let value = state.value
-          if (f.input_type === 'multiple-files') {
-            const paths = (state.gallery ?? []).map((g) => g.path)
-            value = paths.length ? JSON.stringify(paths) : ''
-          }
-          return { id: f.id, value, alt_text: state.alt_text || null }
+          return { id: f.id, value: fieldValue(f), alt_text: state.alt_text || null }
         })
-      return api.post('/setting-fields/values', { type_id: data!.type.id, values })
+      return api.post('/setting-fields/values', {
+        type_id: data!.type.id,
+        values,
+        ...(projectId ? { projectId } : {}),
+      })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['setting-fields-by-type', slug] })
+      queryClient.invalidateQueries({ queryKey: ['settings-field-values-public'] })
       // Refresh the sidebar logo in case this type holds the 'logo' field.
       queryClient.invalidateQueries({ queryKey: ['app-logo'] })
       toast({ title: 'Settings saved' })
@@ -94,6 +110,13 @@ export default function TypeSettingsPage() {
             { label: data?.type?.name ?? 'Settings' },
           ]}
         />
+
+        {projectId && (
+          <p className="mb-4 max-w-3xl rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            Editing values for <strong>this project only</strong>. Fields you change here override
+            the global value for this project; clear a field to inherit the global value again.
+          </p>
+        )}
 
         {isLoading ? (
           <LoadingSpinner />

@@ -57,19 +57,26 @@ export const reorderFieldsSchema = z.object({
 
 export const byTypeSchema = z.object({
   params: z.object({ slug: z.string().min(1) }),
+  // Optional: show this project's overrides on top of the global values.
+  query: z.object({ projectId: z.string().min(1).optional() }).optional(),
 });
 
 export const valueBySlugSchema = z.object({
   params: z.object({ slug: z.string().min(1) }),
+  query: z.object({ projectId: z.string().min(1).optional() }).optional(),
 });
 
 export const valuesBySlugsSchema = z.object({
-  query: z.object({ slugs: z.string().min(1) }),
+  // `project_id` (snake, like the other public module endpoints): that project's
+  // overrides win over the global values.
+  query: z.object({ slugs: z.string().min(1), project_id: z.string().min(1).optional() }),
 });
 
 export const saveValuesSchema = z.object({
   body: z.object({
     type_id: z.string().min(1),
+    // When set, values are saved as this project's overrides, not globally.
+    projectId: z.string().min(1).optional(),
     values: z
       .array(
         z.object({
