@@ -101,6 +101,7 @@ function makeStageRecord(outputRef = null) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  updatePage.mockImplementation((id, patch) => Promise.resolve({ id, ...patch }));
 });
 
 // ── intake ────────────────────────────────────────────────────────────────────
@@ -446,7 +447,7 @@ describe('website driver — navigationPages (KDL bug: Navigation-step selection
     // mockResolvedValueOnce (not mockImplementation) so this override
     // consumes itself after the 'home' lookup and doesn't leak into later
     // tests — the module-level default (resolves null) covers 'about'.
-    getPageBySlug.mockResolvedValueOnce({ id: 'orphaned-home-page' });
+    getPageBySlug.mockResolvedValueOnce({ id: 'orphaned-home-page', project_id: 'proj-A' });
     createPage.mockResolvedValueOnce({ id: 'page-about' });
 
     const result = await getDriver('website').execute({
@@ -463,7 +464,9 @@ describe('website driver — navigationPages (KDL bug: Navigation-step selection
       expect.objectContaining({ slug: 'te-run-1-about' }),
       'user-1',
     );
-    expect(updatePage).not.toHaveBeenCalled();
+    // Only the newly created 'about' is auto-published; the reused orphan is untouched.
+    expect(updatePage).toHaveBeenCalledTimes(1);
+    expect(updatePage).toHaveBeenCalledWith('page-about', { status: 'PUBLISHED' }, 'user-1');
     expect(result.outputRef.pageKeyToId).toMatchObject({
       home: 'orphaned-home-page',
       about: 'page-about',
@@ -549,7 +552,7 @@ describe('website driver — crash recovery (§4.1)', () => {
       { type: 'FeatureCards', props: { sectionTitle: 'A user hand-edited this section' } },
     ];
     const priorMap = { home: 'page-home' };
-    getPage.mockResolvedValueOnce({ id: 'page-home', data: { content: staleContent } });
+    getPage.mockResolvedValueOnce({ id: 'page-home', project_id: 'proj-A', data: { content: staleContent } });
     updatePage.mockResolvedValueOnce({ id: 'page-home' });
     createPage.mockResolvedValueOnce({ id: 'page-blog' });
 
@@ -561,7 +564,9 @@ describe('website driver — crash recovery (§4.1)', () => {
       navigationPages: ['Home', 'Blog'],
     });
 
-    expect(updatePage).toHaveBeenCalledTimes(1);
+    // 1: reused 'home' nav patch; 2: newly created 'blog' auto-publish.
+    expect(updatePage).toHaveBeenCalledTimes(2);
+    expect(updatePage).toHaveBeenLastCalledWith('page-blog', { status: 'PUBLISHED' }, 'user-1');
     const [updatedId, patch] = updatePage.mock.calls[0];
     expect(updatedId).toBe('page-home');
     const patchedNav = patch.data.content.find((b) => b.type === 'MedicalTopNav');
@@ -593,7 +598,7 @@ describe('website driver — crash recovery (§4.1)', () => {
       addressLines: [],
     });
     const priorMap = { home: 'page-home' };
-    getPage.mockResolvedValueOnce({ id: 'page-home', data: { content: staleContent } });
+    getPage.mockResolvedValueOnce({ id: 'page-home', project_id: 'proj-A', data: { content: staleContent } });
     updatePage.mockResolvedValueOnce({ id: 'page-home' });
 
     const result = await getDriver('website').execute({
@@ -624,7 +629,7 @@ describe('website driver — crash recovery (§4.1)', () => {
     const upToDateContent = [
       { type: 'NavBar', props: { links: 'Home|/p/te-run-1-home', brand: 'Your Brand', logoUrl: '' } },
     ];
-    getPage.mockResolvedValueOnce({ id: 'page-home', data: { content: upToDateContent } });
+    getPage.mockResolvedValueOnce({ id: 'page-home', project_id: 'proj-A', data: { content: upToDateContent } });
 
     await getDriver('website').execute({
       run: makeRun(),
@@ -675,7 +680,7 @@ describe('website driver — crash recovery (§4.1)', () => {
       phone: null,
       addressLines: [],
     });
-    getPage.mockResolvedValueOnce({ id: 'page-home', data: { content: staleContent } });
+    getPage.mockResolvedValueOnce({ id: 'page-home', project_id: 'proj-A', data: { content: staleContent } });
     updatePage.mockResolvedValueOnce({ id: 'page-home' });
 
     await getDriver('website').execute({
@@ -712,7 +717,7 @@ describe('website driver — crash recovery (§4.1)', () => {
         },
       },
     ];
-    getPage.mockResolvedValueOnce({ id: 'page-home', data: { content: upToDateContent } });
+    getPage.mockResolvedValueOnce({ id: 'page-home', project_id: 'proj-A', data: { content: upToDateContent } });
 
     await getDriver('website').execute({
       run: makeRun(),
@@ -879,7 +884,7 @@ describe('website driver — construction pack seeding (KDL-558 homepage)', () =
       phone: '+91 88972 24466',
       addressLines: ['Showroom address', 'Registered office address'],
     });
-    getPage.mockResolvedValueOnce({ id: 'page-home', data: { content: staleContent } });
+    getPage.mockResolvedValueOnce({ id: 'page-home', project_id: 'proj-A', data: { content: staleContent } });
     updatePage.mockResolvedValueOnce({ id: 'page-home' });
 
     const result = await getDriver('website').execute({

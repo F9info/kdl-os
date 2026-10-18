@@ -26,6 +26,7 @@ vi.mock('@/hooks/useTemplateEngine', () => ({
   useBrandKit: mockUseBrandKit,
   usePatchTypography: () => ({ mutate: mockPatchTypography, isPending: false }),
   useCreateSite: () => ({ mutate: mockCreateSite, isPending: false }),
+  useTemplateEngineRuns: () => ({ data: [], isLoading: false }),
 }))
 
 vi.mock('@/components/shared/MediaPicker', () => ({
@@ -68,7 +69,7 @@ function makeRun(pageIds?: Record<string, string>): TemplateEngineRun {
         stage: 'WEBSITE',
         status: pageIds ? 'DONE' : 'PENDING',
         errorCode: null,
-        outputRef: pageIds ? { pageIds } : null,
+        outputRef: pageIds ? { pageIds: Object.values(pageIds), pageKeyToId: pageIds } : null,
         startedAt: null,
         completedAt: null,
       },
@@ -76,8 +77,17 @@ function makeRun(pageIds?: Record<string, string>): TemplateEngineRun {
   }
 }
 
+// WebsiteStage persists its step to localStorage and resumes from it on mount.
+function resumeAt(webAppStep: 'typography' | 'fontSettings' | 'navigation' | 'assemble') {
+  window.localStorage.setItem(
+    'te-website-ui:proj-1',
+    JSON.stringify({ openBrand: 'webapp', webAppStep })
+  )
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
+  window.localStorage.clear()
   mockUseBrandKit.mockReturnValue({ data: BRAND_KIT, isLoading: false })
 })
 
@@ -116,7 +126,7 @@ describe('WebsiteStage — Brands cards grid (KDL-558)', () => {
 })
 
 describe('WebsiteStage — Web app Typography step (KDL-558)', () => {
-  it('defaults to Poppins/Inter, saves the selection, and advances to the assemble view', async () => {
+  it('defaults to Poppins/Inter, saves the selection, and advances to Font settings', async () => {
     renderWithQC(<WebsiteStage run={makeRun()} />)
     fireEvent.click(screen.getByText('Web app'))
 
@@ -136,9 +146,17 @@ describe('WebsiteStage — Web app Typography step (KDL-558)', () => {
     )
 
     // Simulate the mutation's onSuccess firing (mutate is a bare vi.fn()).
-    const [, opts] = mockPatchTypography.mock.calls[0] as [unknown, { onSuccess: () => void }]
-    act(() => opts.onSuccess())
-    expect(screen.getByText(/no pages assembled yet/i)).toBeInTheDocument()
+    // onSuccess receives the updated brand kit and moves on to Font settings.
+    const [, opts] = mockPatchTypography.mock.calls[0] as [
+      unknown,
+      { onSuccess: (kit: { typography: unknown }) => void },
+    ]
+    act(() =>
+      opts.onSuccess({
+        typography: { heading: { family: 'Poppins' }, body: { family: 'Inter' } },
+      })
+    )
+    expect(screen.queryByText(/pick the heading and body fonts/i)).not.toBeInTheDocument()
   })
 
   it('is a true multi-select — picking another heading font keeps the first one checked too', () => {
@@ -203,17 +221,10 @@ describe('WebsiteStage — Web app Typography step (KDL-558)', () => {
     expect(screen.getAllByPlaceholderText(/google font name/i)).toHaveLength(2)
   })
 
-  it('skips straight to the assemble view when typography was already saved', () => {
-    mockUseBrandKit.mockReturnValue({
-      data: {
-        ...BRAND_KIT,
-        typography: { heading: { family: 'Manrope' }, body: { family: 'Roboto' } },
-      },
-      isLoading: false,
-    })
+  it('resumes at the assemble view when the saved UI state says so', () => {
+    resumeAt('assemble')
     renderWithQC(<WebsiteStage run={makeRun()} />)
 
-    fireEvent.click(screen.getByText('Web app'))
     expect(screen.queryByText(/pick the heading and body fonts/i)).not.toBeInTheDocument()
     expect(screen.getByText(/no pages assembled yet/i)).toBeInTheDocument()
   })
@@ -228,9 +239,9 @@ describe('WebsiteStage — assemble view (post-typography)', () => {
       },
       isLoading: false,
     })
+    resumeAt('assemble')
     renderWithQC(<WebsiteStage run={makeRun({ home: 'page-1', about: 'page-2' })} />)
 
-    fireEvent.click(screen.getByText('Web app'))
-    expect(screen.getByText('2 pages assembled')).toBeInTheDocument()
+    expect(screen.getByText(/2 pages assembled/i)).toBeInTheDocument()
   })
 })

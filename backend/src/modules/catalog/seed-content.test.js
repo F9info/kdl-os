@@ -1,7 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+
+// resolveCatalogBindings is a pure transform; stub the DB singleton so import doesn't need DATABASE_URL.
+vi.mock('../../config/database.js', () => ({ prisma: {} }));
 
 import { resolveCatalogBindings } from './service.js';
 
