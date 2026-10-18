@@ -4,9 +4,11 @@ const createMock = vi.hoisted(() => vi.fn());
 const streamMock = vi.hoisted(() => vi.fn());
 
 vi.mock('@anthropic-ai/sdk', () => ({
-  default: vi.fn(() => ({
-    messages: { create: createMock, stream: streamMock },
-  })),
+  // `function` (not an arrow): the code under test calls `new Anthropic(...)`, and
+  // vitest 4+ rejects `new` on an arrow-function mock ("is not a constructor").
+  default: vi.fn(function () {
+    return { messages: { create: createMock, stream: streamMock } };
+  }),
 }));
 
 import {

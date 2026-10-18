@@ -1,6 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+// Explicit limits: SDK defaults (~10 min, 2 retries) let a hung upstream hold a request —
+// and its paid tokens — open far longer than any caller is willing to wait.
+const client = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+  timeout: 120_000,
+  maxRetries: 2,
+});
 
 /**
  * Single source of truth for the Claude model id (KDL-511). D-BK-2 (KDL-483)

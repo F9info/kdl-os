@@ -3,6 +3,9 @@ import OpenAI, { toFile } from 'openai';
 const client = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
   baseURL: process.env.OPENROUTER_BASE_URL ?? 'https://openrouter.ai/api/v1',
+  // Chat, embeddings and audio transcription all use this client — bound them.
+  timeout: 120_000,
+  maxRetries: 2,
   defaultHeaders: {
     'HTTP-Referer': process.env.BACKEND_URL ?? 'http://localhost:4000',
     'X-Title': 'KDL AI Services',
