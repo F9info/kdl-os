@@ -2,7 +2,7 @@
 
 # STATUS — what is done, what is pending
 
-_Derived from code + GitHub + the board at master `656e616` (latest commit 2026-09-26)._
+_Derived from code + GitHub + the board at master `74dff4a` (latest commit 2026-10-19)._
 _Regenerate: `node scripts/status-rollup.mjs`. Hand edits to this block are overwritten._
 
 Read this instead of counting board issues or PRs — both mislead. The board has 500+ done
@@ -10,7 +10,7 @@ issues with no aggregate view, and PR state under-reports what shipped (§3).
 
 ### 1. Backend module build state
 
-`backend/src/modules/*` — **28 modules: 26 built, 2 stubbed, 0 spec-only.**
+`backend/src/modules/*` — **31 modules: 29 built, 2 stubbed, 0 spec-only.**
 
 State is decided by what the directory actually contains (service + routes + controller),
 not by whether a spec or a board issue says the module is done.
@@ -19,10 +19,12 @@ not by whether a spec or a board issue says the module is done.
 | --- | --- | --- | --- | --- |
 | `auth` | ✅ built | service + routes + controller | 3 | Authentication, registration, and session management |
 | `brand-kit` | ✅ built | service + routes + controller | 6 | Logo intake, OKLCH palette extraction, WCAG AA contrast report, and theme-token hand-off for Template Engine Mode A |
+| `catalog` | ✅ built | service + routes + controller | 1 | Individual product/service catalog entries shown on the Products & Services page |
 | `categories` | ✅ built | service + routes + controller | 1 | Taxonomy categories grouped under types |
 | `collateral` | ✅ built | service + routes + controller | 2 | Print-ready collateral render engine — visiting card, letterhead, t-shirt, ID card (COLLATERAL_SPEC.md §2). |
 | `credits` | ✅ built | service + routes + controller | 2 | Per-project internal metering ledger — hold lifecycle, ledger, reconciliation. |
 | `custom-blocks` | ✅ built | service + routes + controller | 1 | Project-scoped reusable custom block templates for the page builder |
+| `detail-page-types` | ✅ built | service + routes + controller | **0** | Aggregates registered Details Page types (Sectors, Work, ...) for the Web App wizard |
 | `e2e-fixture` | ✅ built | service + routes + controller | **0** | Disposable install/enable/disable target for the KDL-83 plugin-lifecycle E2E test (frontend/e2e/module-plugin.spec.ts) — not a real feature. |
 | `faq` | ✅ built | service + routes + controller | **0** | FAQ module |
 | `integrations` | ✅ built | service + routes + controller | 9 | Integrations module |
@@ -38,15 +40,16 @@ not by whether a spec or a board issue says the module is done.
 | `settings` | ✅ built | service + routes + controller | 2 | Application settings management |
 | `storage-settings` | ✅ built | service + routes + controller | 1 | (no module.json) |
 | `team` | ✅ built | service + routes + controller | **0** | Team module |
-| `template-engine` | ✅ built | service + routes + controller | 8 | 9-stage DAG orchestrator — drives brand-kit, theme-engine, page-builder, collateral, and credits via their public APIs (Mode A / Studio). No rendering logic lives here. |
+| `template-engine` | ✅ built | service + routes + controller | 9 | 9-stage DAG orchestrator — drives brand-kit, theme-engine, page-builder, collateral, and credits via their public APIs (Mode A / Studio). No rendering logic lives here. |
 | `theme-engine` | ✅ built | service + routes + controller | 4 | Design-system token compiler — always-on engine layer |
 | `types` | ✅ built | service + routes + controller | 1 | Taxonomy types for categories and setting fields |
 | `user-management` | ✅ built | service + routes + controller | 3 | RBAC roles, permissions matrix, and activity log |
 | `users` | ✅ built | service + routes + controller | 2 | User accounts, profile management, and soft-delete |
+| `work` | ✅ built | service + routes + controller | **0** | "Our Work" showcase categories shown in the homepage's See Our Work section |
 | `page-builder-ui` | 🟡 stubbed | nav-only shell — empty Router, no service/controller | **0** | Page Builder engine dependency shim for Template Engine, plus the Section Builder nav entry. Template Engine's own page-edit screen (imports blocks-panel.tsx/insert-block-modal.tsx/puck.config.tsx directly) is the only way to edit PAGES — a standalone 'Page Builder' nav entry duplicated that with a second, less-capable editor and was removed. Section Builder is a distinct, real feature (a from-scratch custom-section canvas) worth its own direct entry point. |
 | `theme-engine-ui` | 🟡 stubbed | nav-only shell — empty Router, no service/controller | **0** | Admin nav and screens for Theme Engine — toggleable |
 
-> ⚠ **7 built module(s) have no test file** in `backend/src/modules/<name>/` or `backend/tests/` matched by name: `e2e-fixture`, `faq`, `menus`, `page-builder`, `projects-content`, `sectors`, `team`. Built ≠ verified — a name-based scan can also miss suites filed elsewhere, so check before acting.
+> ⚠ **9 built module(s) have no test file** in `backend/src/modules/<name>/` or `backend/tests/` matched by name: `detail-page-types`, `e2e-fixture`, `faq`, `menus`, `page-builder`, `projects-content`, `sectors`, `team`, `work`. Built ≠ verified — a name-based scan can also miss suites filed elsewhere, so check before acting.
 
 ### 2. Template-engine 9-stage driver reality
 
@@ -68,24 +71,19 @@ Parsed from `backend/src/modules/template-engine/drivers/index.js` — from the 
 
 ### 3. Pull requests — true merge state
 
-**14 open PR(s).**
+**9 open PR(s).**
 
 | PR | Title | Branch | CI / merge state | Review |
 | --- | --- | --- | --- | --- |
-| [#304](https://github.com/F9info/kdl-os/pull/304) | chore(deps): bump the minor-and-patch group across 1 directory with 20 updates | `dependabot/npm_and_yarn/frontend/minor-and-patch-4a28a0c08b` | UNSTABLE | none |
-| [#303](https://github.com/F9info/kdl-os/pull/303) | chore(deps): bump the minor-and-patch group across 1 directory with 14 updates | `dependabot/npm_and_yarn/backend/minor-and-patch-7fd185136b` | CLEAN | none |
-| [#302](https://github.com/F9info/kdl-os/pull/302) | chore(deps): bump adm-zip from 0.6.0 to 0.6.1 in /backend | `dependabot/npm_and_yarn/backend/adm-zip-0.6.1` | CLEAN | none |
-| [#299](https://github.com/F9info/kdl-os/pull/299) | chore(deps): bump next from 15.5.23 to 15.5.24 in /frontend | `dependabot/npm_and_yarn/frontend/next-15.5.24` | UNSTABLE | none |
-| [#298](https://github.com/F9info/kdl-os/pull/298) | chore(deps): bump sharp from 0.35.3 to 0.35.4 in /backend | `dependabot/npm_and_yarn/backend/sharp-0.35.4` | CLEAN | none |
-| [#297](https://github.com/F9info/kdl-os/pull/297) | chore(deps): bump vitest from 3.2.7 to 4.1.11 in /frontend | `dependabot/npm_and_yarn/frontend/vitest-4.1.11` | UNSTABLE | none |
-| [#296](https://github.com/F9info/kdl-os/pull/296) | chore(deps): bump @vitest/mocker and vitest in /ai-services | `dependabot/npm_and_yarn/ai-services/multi-00f7b83f97` | UNSTABLE | none |
-| [#295](https://github.com/F9info/kdl-os/pull/295) | chore(deps): bump @vitest/mocker and vitest in /backend | `dependabot/npm_and_yarn/backend/multi-00f7b83f97` | UNSTABLE | none |
-| [#294](https://github.com/F9info/kdl-os/pull/294) | chore(deps): bump nodemailer from 9.0.5 to 9.1.1 in /backend | `dependabot/npm_and_yarn/backend/nodemailer-9.1.1` | CLEAN | none |
-| [#293](https://github.com/F9info/kdl-os/pull/293) | chore(deps): bump multer from 2.2.0 to 2.3.0 in /backend | `dependabot/npm_and_yarn/backend/multer-2.3.0` | CLEAN | none |
-| [#290](https://github.com/F9info/kdl-os/pull/290) | chore(deps): bump qs from 6.15.3 to 6.16.0 in /backend | `dependabot/npm_and_yarn/backend/qs-6.16.0` | CLEAN | none |
-| [#289](https://github.com/F9info/kdl-os/pull/289) | chore(deps): bump qs from 6.15.3 to 6.16.0 in /ai-services | `dependabot/npm_and_yarn/ai-services/qs-6.16.0` | CLEAN | none |
-| [#288](https://github.com/F9info/kdl-os/pull/288) | chore(deps): bump fast-uri from 3.1.5 to 3.1.7 in /backend | `dependabot/npm_and_yarn/backend/fast-uri-3.1.7` | CLEAN | none |
-| [#285](https://github.com/F9info/kdl-os/pull/285) | chore(deps): bump @anthropic-ai/sdk from 0.120.0 to 0.123.0 in /ai-services in the minor-and-patch group across 1 directory | `dependabot/npm_and_yarn/ai-services/minor-and-patch-a7a3856383` | CLEAN | none |
+| [#353](https://github.com/F9info/kdl-os/pull/353) | chore(deps): bump prosemirror-view from 1.42.2 to 1.42.6 in /frontend | `dependabot/npm_and_yarn/frontend/prosemirror-view-1.42.6` | DIRTY · CONFLICTING | REVIEW_REQUIRED |
+| [#352](https://github.com/F9info/kdl-os/pull/352) | chore(deps): bump sharp from 0.35.4 to 0.35.5 in /backend | `dependabot/npm_and_yarn/backend/sharp-0.35.5` | BLOCKED | REVIEW_REQUIRED |
+| [#351](https://github.com/F9info/kdl-os/pull/351) | fix(modules): enable newly-installed deps + target in installModule() (KDL-610) | `fix/kdl-610-install-enables-modules-v2` | DIRTY · CONFLICTING | REVIEW_REQUIRED |
+| [#350](https://github.com/F9info/kdl-os/pull/350) | chore(deps): bump the minor-and-patch group across 1 directory with 31 updates | `dependabot/npm_and_yarn/frontend/minor-and-patch-9ca96a9cb9` | BLOCKED | REVIEW_REQUIRED |
+| [#349](https://github.com/F9info/kdl-os/pull/349) | chore(deps): bump the minor-and-patch group across 1 directory with 13 updates | `dependabot/npm_and_yarn/backend/minor-and-patch-90f7fd4d7a` | BLOCKED | REVIEW_REQUIRED |
+| [#348](https://github.com/F9info/kdl-os/pull/348) | chore(deps): bump the minor-and-patch group across 1 directory with 4 updates | `dependabot/npm_and_yarn/ai-services/minor-and-patch-9b72c6eed4` | BLOCKED | REVIEW_REQUIRED |
+| [#342](https://github.com/F9info/kdl-os/pull/342) | chore(deps): bump next from 15.5.25 to 15.5.27 in /frontend | `dependabot/npm_and_yarn/frontend/next-15.5.27` | BLOCKED | REVIEW_REQUIRED |
+| [#335](https://github.com/F9info/kdl-os/pull/335) | feat(site): single-origin site+admin, slug URLs, solid-on-scroll header, array-based repeating items | `feat/single-origin-site-array-items` | UNKNOWN | REVIEW_REQUIRED |
+| [#334](https://github.com/F9info/kdl-os/pull/334) | chore(deps): bump dompurify from 3.4.15 to 3.4.16 in /frontend | `dependabot/npm_and_yarn/frontend/dompurify-3.4.16` | BLOCKED | REVIEW_REQUIRED |
 
 #### Ghost merges — CLOSED on GitHub, but the code IS on master
 
@@ -95,7 +93,30 @@ _Scan window: the 40 most recent closed PRs. Older ghost merges are not covered.
 
 ### 4. Board state — blocked and in-flight
 
-> ⚠ **Board data unavailable:** PAPERCLIP_API_URL / PAPERCLIP_API_KEY / PAPERCLIP_COMPANY_ID not set — board state could not be read (run this from a Paperclip agent run). Treat this section as UNKNOWN, not empty.
+**652 issues total: 625 done, 8 in progress, 3 blocked, 0 todo, 16 cancelled.**
+
+#### Blocked — every row needs a named unblock owner
+
+| Issue | Title | Unblock owner | Unblock action | Owner source |
+| --- | --- | --- | --- | --- |
+| KDL-617 | HUMAN-ONLY BLOCKER: org monthly spend limit outage recurred 2026-08-22 — 5+ agents dead | **⚠ UNASSIGNED** | set `unblockDescriptor` on the board, or add KDL-617 to `.agents/unblock-owners.json` | — |
+| KDL-639 | HUMAN-ONLY BLOCKER: GitHub Actions spending limit exhausted 2026-08-24 ~05:57 UTC — all PR CI dead, 3 PRs cannot merge | **⚠ UNASSIGNED** | set `unblockDescriptor` on the board, or add KDL-639 to `.agents/unblock-owners.json` | — |
+| KDL-654 | Gemini smoke test: Documentation agent | **⚠ UNASSIGNED** | set `unblockDescriptor` on the board, or add KDL-654 to `.agents/unblock-owners.json` | — |
+
+> ⚠ 3 blocked issue(s) have no named unblock owner: KDL-617, KDL-639, KDL-654. A blocked issue without an owner never moves.
+
+#### In progress
+
+| Issue | Title |
+| --- | --- |
+| KDL-653 | Generate KDL-OS Project Overview Report |
+| KDL-655 | Verify KDL Starter Kit root files and new features are build-ready |
+| KDL-656 | Fix 27 failing backend tests on master (6 suites) |
+| KDL-657 | Fix 55 failing frontend tests on master (9 suites) |
+| KDL-658 | Fix ai-services claude.brain.test.js — suite fails to load (0 tests run) |
+| KDL-659 | CI is red and unenforced — master has no branch protection |
+| KDL-660 | Repo hygiene: remove committed junk files, regenerate stale STATUS.md |
+| KDL-661 | Test coverage gap: 7 built backend modules have zero tests |
 
 ---
 
