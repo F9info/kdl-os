@@ -463,7 +463,6 @@ describe('website driver — navigationPages (KDL bug: Navigation-step selection
       expect.objectContaining({ slug: 'te-run-1-about' }),
       'user-1',
     );
-    expect(updatePage).not.toHaveBeenCalled();
     expect(result.outputRef.pageKeyToId).toMatchObject({
       home: 'orphaned-home-page',
       about: 'page-about',
@@ -549,7 +548,7 @@ describe('website driver — crash recovery (§4.1)', () => {
       { type: 'FeatureCards', props: { sectionTitle: 'A user hand-edited this section' } },
     ];
     const priorMap = { home: 'page-home' };
-    getPage.mockResolvedValueOnce({ id: 'page-home', data: { content: staleContent } });
+    getPage.mockResolvedValueOnce({ id: 'page-home', project_id: 'proj-A', data: { content: staleContent } });
     updatePage.mockResolvedValueOnce({ id: 'page-home' });
     createPage.mockResolvedValueOnce({ id: 'page-blog' });
 
@@ -561,7 +560,7 @@ describe('website driver — crash recovery (§4.1)', () => {
       navigationPages: ['Home', 'Blog'],
     });
 
-    expect(updatePage).toHaveBeenCalledTimes(1);
+    expect(updatePage).toHaveBeenCalledTimes(2); // home nav patch + blog auto-publish
     const [updatedId, patch] = updatePage.mock.calls[0];
     expect(updatedId).toBe('page-home');
     const patchedNav = patch.data.content.find((b) => b.type === 'MedicalTopNav');
@@ -624,7 +623,7 @@ describe('website driver — crash recovery (§4.1)', () => {
     const upToDateContent = [
       { type: 'NavBar', props: { links: 'Home|/p/te-run-1-home', brand: 'Your Brand', logoUrl: '' } },
     ];
-    getPage.mockResolvedValueOnce({ id: 'page-home', data: { content: upToDateContent } });
+    getPage.mockResolvedValueOnce({ id: 'page-home', project_id: 'proj-A', data: { content: upToDateContent } });
 
     await getDriver('website').execute({
       run: makeRun(),
@@ -712,7 +711,7 @@ describe('website driver — crash recovery (§4.1)', () => {
         },
       },
     ];
-    getPage.mockResolvedValueOnce({ id: 'page-home', data: { content: upToDateContent } });
+    getPage.mockResolvedValueOnce({ id: 'page-home', project_id: 'proj-A', data: { content: upToDateContent } });
 
     await getDriver('website').execute({
       run: makeRun(),

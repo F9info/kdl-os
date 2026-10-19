@@ -413,7 +413,10 @@ const websiteDriver = {
         if (layoutPatched) patchedData = layoutPatched;
         if (patchedData) patch.data = patchedData;
         if (!existing.project_id) patch.project_id = run.projectId;
-        page = Object.keys(patch).length > 0 ? await updatePage(existing.id, patch, userId) : existing;
+        if (Object.keys(patch).length > 0) {
+          await updatePage(existing.id, patch, userId);
+        }
+        page = existing;
       } else {
         const seeded = seed(key, title, brand, seedPages);
         const layoutApplied = patchLayout(seeded, layout, key, brand, seedPages);
@@ -429,7 +432,7 @@ const websiteDriver = {
         // the reuse branch above never touches an existing page's status,
         // so an admin who deliberately unpublishes a page later stays in
         // control of it.
-        page = await updatePage(page.id, { status: 'PUBLISHED' }, userId);
+        await updatePage(page.id, { status: 'PUBLISHED' }, userId);
       }
 
       pageKeyToId[key] = page.id;

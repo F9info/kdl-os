@@ -24,19 +24,19 @@ const { minioMethods, s3SendMock, presignMock } = vi.hoisted(() => {
 
 // ─── MinIO driver ────────────────────────────────────────────────────────────
 vi.mock('minio', () => ({
-  Client: vi.fn(() => minioMethods),
+  Client: vi.fn(function() { return minioMethods; }),
 }));
 
 // ─── S3 driver ───────────────────────────────────────────────────────────────
 vi.mock('@aws-sdk/client-s3', () => ({
-  S3Client: vi.fn(() => ({ send: s3SendMock })),
-  PutObjectCommand: vi.fn((i) => ({ _type: 'PutObject', ...i })),
-  GetObjectCommand: vi.fn((i) => ({ _type: 'GetObject', ...i })),
-  DeleteObjectCommand: vi.fn((i) => ({ _type: 'DeleteObject', ...i })),
-  DeleteObjectsCommand: vi.fn((i) => ({ _type: 'DeleteObjects', ...i })),
-  CopyObjectCommand: vi.fn((i) => ({ _type: 'CopyObject', ...i })),
-  CreateBucketCommand: vi.fn((i) => ({ _type: 'CreateBucket', ...i })),
-  HeadBucketCommand: vi.fn((i) => ({ _type: 'HeadBucket', ...i })),
+  S3Client: vi.fn(function() { return { send: s3SendMock }; }),
+  PutObjectCommand: vi.fn(function(i) { return { _type: 'PutObject', ...i }; }),
+  GetObjectCommand: vi.fn(function(i) { return { _type: 'GetObject', ...i }; }),
+  DeleteObjectCommand: vi.fn(function(i) { return { _type: 'DeleteObject', ...i }; }),
+  DeleteObjectsCommand: vi.fn(function(i) { return { _type: 'DeleteObjects', ...i }; }),
+  CopyObjectCommand: vi.fn(function(i) { return { _type: 'CopyObject', ...i }; }),
+  CreateBucketCommand: vi.fn(function(i) { return { _type: 'CreateBucket', ...i }; }),
+  HeadBucketCommand: vi.fn(function(i) { return { _type: 'HeadBucket', ...i }; }),
 }));
 
 vi.mock('@aws-sdk/s3-request-presigner', () => ({

@@ -225,7 +225,8 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
     // the user moves on to Typography.
     createSite.mutate()
     setOpenBrand('webapp')
-    setWebAppStep('typography')
+    // Skip the Typography step if the brand kit already has typography saved.
+    setWebAppStep(brandKit?.typography ? 'assemble' : 'typography')
   }
 
   // Navigation writes its selection straight to localStorage (no API call
@@ -360,8 +361,8 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
               onNext={(typography) =>
                 patchTypography.mutate(typography, {
                   onSuccess: (updatedKit) => {
-                    setSavedTypography(updatedKit.typography)
-                    setWebAppStep('fontSettings')
+                    if (updatedKit?.typography) setSavedTypography(updatedKit.typography)
+                    setWebAppStep('assemble')
                   },
                 })
               }
@@ -394,9 +395,18 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
                 <div>
                   <h3 className="text-base font-semibold">Web app · Pages</h3>
                   <p className="text-sm text-muted-foreground">
-                    {advance.isPending
-                      ? 'Updating pages for your latest selection…'
-                      : `${pageCount} page${pageCount !== 1 ? 's' : ''} assembled in the page-builder engine. Open a page to edit it, or view all pages to step through the whole site.`}
+                    {advance.isPending ? (
+                      'Updating pages for your latest selection…'
+                    ) : (
+                      <>
+                        <span>
+                          {pageCount} page{pageCount !== 1 ? 's' : ''} assembled
+                        </span>
+                        {
+                          ' in the page-builder engine. Open a page to edit it, or view all pages to step through the whole site.'
+                        }
+                      </>
+                    )}
                   </p>
                 </div>
                 {demoSiteHref && (
