@@ -4,9 +4,9 @@ import registry, { getDriver, driversForFeature, FEATURES } from '../../src/modu
 const FEATURE_KEYS = Object.keys(FEATURES);
 
 describe('AI driver registry contract', () => {
-  it('exports all 5 v1 drivers', () => {
+  it('exports all 6 drivers', () => {
     expect(Object.keys(registry).sort()).toEqual(
-      ['openai-embeddings', 'openai-whisper-api', 'openrouter-vision', 'replicate', 'whisper-local'],
+      ['gemini', 'openai-embeddings', 'openai-whisper-api', 'openrouter-vision', 'replicate', 'whisper-local'],
     );
   });
 
@@ -42,11 +42,11 @@ describe('AI driver registry contract', () => {
   });
 
   it('driversForFeature maps every feature to at least one driver', () => {
-    expect(driversForFeature('vision').map((d) => d.driver)).toEqual(['openrouter-vision']);
+    expect(driversForFeature('vision').map((d) => d.driver).sort()).toEqual(['gemini', 'openrouter-vision']);
     expect(driversForFeature('image_ops').map((d) => d.driver)).toEqual(['replicate']);
     expect(driversForFeature('speech_to_text').map((d) => d.driver).sort())
       .toEqual(['openai-whisper-api', 'whisper-local']);
-    expect(driversForFeature('embeddings').map((d) => d.driver)).toEqual(['openai-embeddings']);
+    expect(driversForFeature('embeddings').map((d) => d.driver).sort()).toEqual(['gemini', 'openai-embeddings']);
   });
 });
 
@@ -131,5 +131,69 @@ describe('driver HTTP calls (fetch mocked)', () => {
       expect(url, name).toContain('/audio/transcriptions');
       expect(init.body, name).toBeInstanceOf(FormData);
     }
+  });
+
+  it('gemini.analyzeImage sends inline_data and returns text', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        candidates: [{ content: { parts: [{ text: 'a blue car' }] } }],
+      }),
+    });
+    const d = getDriver('gemini');
+    const out = await d.analyzeImage({
+      credentials: { api_key: 'gk' },
+      config: {},
+      image: Buffer.from('imgdata'),
+      mimeType: 'image/jpeg',
+      prompt: 'what is this?',
+    });
+    expect(out.text).toBe('a blue car');
+    expect(out.model).toBe('gemini-2.5-flash');
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toContain('gemini-2.5-flash:generateContent');
+    // Gemini uses key= query param, not Authorization header
+    expect(init.headers['Authorization']).toBeUndefined();
+    const body = JSON.parse(init.body);
+    expect(body.contents[0].parts[1].inline_data.mime_type).toBe('image/jpeg');
+    expect(body.contents[0].parts[1].inline_data.data).toBe(Buffer.from('imgdata').toString('base64'));
+  });
+
+  it('gemini.analyzeImage throws on non-2xx response', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 403, text: async () => 'forbidden' });
+    const d = getDriver('gemini');
+    await expect(d.analyzeImage({
+      credentials: { api_key: 'bad' }, image: Buffer.from('x'), mimeType: 'image/png', prompt: 'p',
+    })).rejects.toThrow('gemini request failed (403)');
+  });
+
+  it('gemini.embed sends batchEmbedContents and returns vectors', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        embeddings: [{ values: [0.1, 0.2, 0.3] }, { values: [0.4, 0.5, 0.6] }],
+      }),
+    });
+    const d = getDriver('gemini');
+    const out = await d.embed({
+      credentials: { api_key: 'gk' },
+      config: {},
+      texts: ['hello', 'world'],
+    });
+    expect(out).toEqual([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toContain('text-embedding-004:batchEmbedContents');
+    const body = JSON.parse(init.body);
+    expect(body.requests).toHaveLength(2);
+    expect(body.requests[0].content.parts[0].text).toBe('hello');
+    expect(body.requests[1].content.parts[0].text).toBe('world');
+  });
+
+  it('gemini.embed throws on non-2xx response', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 429, text: async () => 'quota exceeded' });
+    const d = getDriver('gemini');
+    await expect(d.embed({
+      credentials: { api_key: 'bad' }, texts: ['test'],
+    })).rejects.toThrow('gemini request failed (429)');
   });
 });

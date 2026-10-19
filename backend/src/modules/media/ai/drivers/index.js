@@ -3,6 +3,7 @@ import replicate from './replicate.js';
 import whisperLocal from './whisper-local.js';
 import openaiWhisperApi from './openai-whisper-api.js';
 import openaiEmbeddings from './openai-embeddings.js';
+import gemini from './gemini.js';
 
 // AI features (mirror AiFeature enum, lowercase): feature → required driver method
 export const FEATURES = {
@@ -18,6 +19,7 @@ const registry = {
   'whisper-local': whisperLocal,
   'openai-whisper-api': openaiWhisperApi,
   'openai-embeddings': openaiEmbeddings,
+  gemini,
 };
 
 export default registry;
