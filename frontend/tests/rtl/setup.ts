@@ -1,5 +1,39 @@
 import '@testing-library/jest-dom/vitest'
-import { vi } from 'vitest'
+import { vi, beforeEach } from 'vitest'
+
+// Node.js 26 defines globalThis.localStorage as an accessor returning undefined
+// (no --localstorage-file). The property is configurable, so we replace the
+// descriptor with a working in-memory implementation before jsdom or any test
+// code accesses it. Without this, Zustand persist middleware throws
+// "Cannot read properties of undefined (reading 'setItem')".
+{
+  const _desc = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')
+  if (_desc?.get) {
+    const _store: Record<string, string> = {}
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      enumerable: true,
+      writable: true,
+      value: {
+        getItem: (key: string) =>
+          Object.prototype.hasOwnProperty.call(_store, key) ? _store[key] : null,
+        setItem: (key: string, value: string) => {
+          _store[key] = String(value)
+        },
+        removeItem: (key: string) => {
+          delete _store[key]
+        },
+        clear: () => {
+          for (const k of Object.keys(_store)) delete _store[k]
+        },
+        key: (n: number) => Object.keys(_store)[n] ?? null,
+        get length() {
+          return Object.keys(_store).length
+        },
+      },
+    })
+  }
+}
 
 global.ResizeObserver = class ResizeObserver {
   observe() {}
@@ -56,3 +90,9 @@ if (typeof window !== 'undefined') {
 
 vi.mock('next/navigation', () => import('../__mocks__/next-navigation'))
 vi.mock('next/link', () => import('../__mocks__/next-link'))
+
+// Clear localStorage before each test so components that persist UI state
+// (e.g. WebsiteStage) always start from their defaults.
+beforeEach(() => {
+  localStorage.clear()
+})

@@ -15857,5 +15857,8 @@ export const construction: ComponentPack = {
     ConstructionFooter: ['1', '2', '3', '4'],
     ConstructionSectorDetailList: ['1', '2', '3', '4'],
     ConstructionMissionVision: ['1', '2', '3', '4'],
+    ConstructionIconFeatureGrid: ['1', '2'],
+    ConstructionApproachSplit: ['1', '2'],
+    ConstructionProcessSteps: ['1', '2'],
   },
 }

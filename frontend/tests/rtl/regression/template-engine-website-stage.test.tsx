@@ -26,6 +26,7 @@ vi.mock('@/hooks/useTemplateEngine', () => ({
   useBrandKit: mockUseBrandKit,
   usePatchTypography: () => ({ mutate: mockPatchTypography, isPending: false }),
   useCreateSite: () => ({ mutate: mockCreateSite, isPending: false }),
+  useTemplateEngineRuns: () => ({ data: undefined, isLoading: false }),
 }))
 
 vi.mock('@/components/shared/MediaPicker', () => ({
@@ -68,7 +69,7 @@ function makeRun(pageIds?: Record<string, string>): TemplateEngineRun {
         stage: 'WEBSITE',
         status: pageIds ? 'DONE' : 'PENDING',
         errorCode: null,
-        outputRef: pageIds ? { pageIds } : null,
+        outputRef: pageIds ? { pageKeyToId: pageIds } : null,
         startedAt: null,
         completedAt: null,
       },
