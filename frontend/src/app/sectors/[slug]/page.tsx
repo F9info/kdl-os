@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-import { buildSectorMetadata, fetchPublicSector } from '@/lib/sector-metadata'
+import { headers } from 'next/headers'
+import { buildSectorMetadata, fetchPublicSector, resolveSiteOrigin } from '@/lib/sector-metadata'
 import { siteProjectId } from '@/lib/site-project'
 import SectorDetailClient from './SectorDetailClient'
 
@@ -15,7 +16,12 @@ export async function generateMetadata({
   const { slug } = await params
   const { projectId } = await searchParams
   const sector = await fetchPublicSector(slug, siteProjectId(projectId ?? null))
-  return sector ? buildSectorMetadata(sector) : { title: 'Sector not found' }
+  const h = await headers()
+  const origin = resolveSiteOrigin(
+    { SITE_URL: process.env.SITE_URL, FRONTEND_URL: process.env.FRONTEND_URL },
+    (name) => h.get(name)
+  )
+  return sector ? buildSectorMetadata(sector, origin) : { title: 'Sector not found' }
 }
 
 export default function SectorDetailPage() {

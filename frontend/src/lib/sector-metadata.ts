@@ -34,12 +34,35 @@ export async function fetchPublicSector(
   }
 }
 
-export function buildSectorMetadata(sector: SectorMeta): Metadata {
+/**
+ * Public origin used to resolve relative URLs (og:image, canonical). Without a
+ * `metadataBase` Next falls back to http://localhost:3000, so link previews in
+ * production would point at localhost. Explicit env wins; otherwise the request's own host.
+ */
+export function resolveSiteOrigin(
+  env: { SITE_URL?: string; FRONTEND_URL?: string },
+  headerGet: (name: string) => string | null
+): string | undefined {
+  const explicit = env.SITE_URL || env.FRONTEND_URL
+  if (explicit) return explicit
+  const host = headerGet('x-forwarded-host') ?? headerGet('host')
+  if (!host) return undefined
+  return `${headerGet('x-forwarded-proto') ?? 'http'}://${host}`
+}
+
+export function buildSectorMetadata(sector: SectorMeta, origin?: string): Metadata {
   const title = sector.seo_title || sector.name
   const description =
     sector.seo_description || (sector.description ?? '').split('\n\n')[0] || undefined
   const image = sector.og_image || sector.image
+  let metadataBase: URL | undefined
+  try {
+    metadataBase = origin ? new URL(origin) : undefined
+  } catch {
+    metadataBase = undefined // a malformed env value must not break the page
+  }
   return {
+    metadataBase,
     title,
     description,
     alternates: sector.canonical_url ? { canonical: sector.canonical_url } : undefined,

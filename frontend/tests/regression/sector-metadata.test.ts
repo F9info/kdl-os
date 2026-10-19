@@ -4,7 +4,12 @@
  * don't run JS. These pin the head content and the fetch contract.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { buildSectorMetadata, fetchPublicSector, type SectorMeta } from '@/lib/sector-metadata'
+import {
+  buildSectorMetadata,
+  fetchPublicSector,
+  resolveSiteOrigin,
+  type SectorMeta,
+} from '@/lib/sector-metadata'
 
 const sector = (over: Partial<SectorMeta> = {}): SectorMeta => ({
   name: 'Hotel',
@@ -71,5 +76,27 @@ describe('fetchPublicSector', () => {
     expect(await fetchPublicSector('nope', null)).toBeNull()
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('down')))
     expect(await fetchPublicSector('nope', null)).toBeNull()
+  })
+})
+
+describe('metadataBase (relative og:image must not resolve to localhost)', () => {
+  it('sets metadataBase from the given origin', () => {
+    expect(buildSectorMetadata(sector(), 'https://example.com').metadataBase?.href).toBe(
+      'https://example.com/'
+    )
+  })
+  it('ignores a malformed origin instead of throwing', () => {
+    expect(buildSectorMetadata(sector(), 'not a url').metadataBase).toBeUndefined()
+  })
+  it('prefers explicit env, then forwarded headers, then host', () => {
+    const none = () => null
+    expect(resolveSiteOrigin({ SITE_URL: 'https://a.com' }, none)).toBe('https://a.com')
+    expect(resolveSiteOrigin({ FRONTEND_URL: 'https://b.com' }, none)).toBe('https://b.com')
+    const h = (n: string) =>
+      ({ 'x-forwarded-host': 'c.com', 'x-forwarded-proto': 'https' })[n] ?? null
+    expect(resolveSiteOrigin({}, h)).toBe('https://c.com')
+    const plain = (n: string) => (n === 'host' ? 'd.com' : null)
+    expect(resolveSiteOrigin({}, plain)).toBe('http://d.com')
+    expect(resolveSiteOrigin({}, none)).toBeUndefined()
   })
 })
