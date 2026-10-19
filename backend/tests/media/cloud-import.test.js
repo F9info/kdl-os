@@ -31,12 +31,12 @@ vi.mock('../../src/shared/utils/crypto.js', () => ({
   decrypt: (s) => Buffer.from(String(s), 'base64').toString('utf8'),
 }));
 vi.mock('@aws-sdk/client-s3', () => ({
-  S3Client: vi.fn(() => ({ send: s3SendMock })),
-  ListObjectsV2Command: vi.fn((i) => ({ _type: 'ListObjectsV2', ...i })),
-  GetObjectCommand: vi.fn((i) => ({ _type: 'GetObject', ...i })),
+  S3Client: vi.fn(function() { return { send: s3SendMock }; }),
+  ListObjectsV2Command: vi.fn(function(i) { return { _type: 'ListObjectsV2', ...i }; }),
+  GetObjectCommand: vi.fn(function(i) { return { _type: 'GetObject', ...i }; }),
 }));
 vi.mock('basic-ftp', () => ({
-  Client: vi.fn(() => ftpMocks),
+  Client: vi.fn(function() { return ftpMocks; }),
   FileType: { Unknown: 0, File: 1, Directory: 2, SymbolicLink: 3 },
 }));
 // SSRF guard is tested in isolation (tests/shared/ssrf-guard.test.js); stub it

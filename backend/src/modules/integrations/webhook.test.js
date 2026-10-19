@@ -22,12 +22,10 @@ vi.mock('../../config/redis.js', () => ({
 }));
 
 vi.mock('bullmq', () => ({
-  Worker: vi.fn().mockImplementation(() => ({ on: vi.fn(), close: vi.fn() })),
-  Queue: vi.fn().mockImplementation(() => ({
-    add: vi.fn(),
-    getWaitingCount: vi.fn(),
-    close: vi.fn(),
-  })),
+  Worker: vi.fn().mockImplementation(function() { return { on: vi.fn(), close: vi.fn() }; }),
+  Queue: vi.fn().mockImplementation(function() {
+    return { add: vi.fn(), getWaitingCount: vi.fn(), close: vi.fn() };
+  }),
 }));
 
 vi.mock('../../shared/utils/logger.js', () => ({
