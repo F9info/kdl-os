@@ -111,6 +111,12 @@ Recent per-issue detail is in the rolling changelog below; full history in
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+- **2026-10-19 — KDL-658: ai-services claude.brain.test.js collection error fixed**: the suite's
+  `@anthropic-ai/sdk` mock used an arrow-function implementation, which `new Anthropic(...)` in
+  `src/brains/claude.js` cannot construct, so all 15 of its tests silently never ran. Mock is now
+  a constructible `function` returning the `messages.create`/`messages.stream` spies.
+  `ai-services` `npm test`: 1 failed suite | 12 passed (79 tests) → 13 passed (94 tests).
+
 - **2026-09-26 — Web app · Pages wizard grid now lists all 11 real Sector Detail pages**: stray
   recurring "Sector Detail" test-debris page/nav-item cleaned up (again — 3rd occurrence, root
   cause is the Navigation wizard's custom-add field always auto-scaffolding a real page). Added a

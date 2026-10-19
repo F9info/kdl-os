@@ -3,10 +3,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 const createMock = vi.hoisted(() => vi.fn());
 const streamMock = vi.hoisted(() => vi.fn());
 
+// The real SDK default export is a class, and src/brains/claude.js calls
+// `new Anthropic(...)` — so the mock implementation must be constructible
+// (a `function`, not an arrow). The returned object overrides `this` under
+// `new`, giving every test the shared create/stream spies.
 vi.mock('@anthropic-ai/sdk', () => ({
-  default: vi.fn(() => ({
-    messages: { create: createMock, stream: streamMock },
-  })),
+  default: vi.fn(function Anthropic() {
+    return { messages: { create: createMock, stream: streamMock } };
+  }),
 }));
 
 import {
