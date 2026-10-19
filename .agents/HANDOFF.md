@@ -1,3 +1,17 @@
+## 2026-10-19 — KDL-658: ai-services claude.brain.test.js suite loads again (79 → 94 tests)
+
+The suite failed at collection — `vi.mock('@anthropic-ai/sdk')` stubbed the default export with
+an arrow-function implementation, but `src/brains/claude.js` calls `new Anthropic(...)` at module
+load, and an arrow function is not constructible. All 15 tests in the suite silently never ran,
+so the Claude brain was untested while looking like "1 red". Fix: the mock implementation is now
+a plain `function` (constructible; its returned object overrides `this` under `new`), matching
+the real SDK's class-shaped default export. Mock covers both `messages.create` and
+`messages.stream`; the two-brain routing path is separately covered by the passing
+`brain-router.contract.test.js`. `cd ai-services && npm test`: before 1 failed suite | 12 passed,
+79 tests — after 13 passed (13), 94 tests. The loud `[ERROR]`/`[WARN]` lines (401 invalid api
+key, "redis down", schema-invalid after repair cap) are expected negative-path assertions in
+passing tests and were deliberately left alone.
+
 ## 2026-09-26 — Web app · Pages wizard grid now lists all 11 real Sector Detail pages
 
 User's complaint: a stray, empty, recurring "Sector Detail" card kept showing in the Navigation
