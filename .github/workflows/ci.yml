@@ -150,3 +150,25 @@ jobs:
         env:
           JWT_SECRET: ci-jwt-secret-must-be-at-least-32-characters-long
         run: npm test
+
+  # ── Gate: single required check for branch protection ─────────────────────
+  # Always runs. Fails if any enabled job above failed; passes if jobs were
+  # skipped by the path filter (i.e. the package was not changed in this PR).
+  # Branch protection should require only "CI / CI Gate" so path-filtered jobs
+  # do not permanently block PRs that never touch a given package.
+  ci-gate:
+    name: CI Gate
+    if: always()
+    needs: [backend-check, frontend-check, ai-services-check]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check job results
+        run: |
+          results='${{ toJSON(needs) }}'
+          echo "Job results: $results"
+          failed=$(echo "$results" | jq '[to_entries[] | select(.value.result == "failure" or .value.result == "cancelled")] | length')
+          if [ "$failed" -gt 0 ]; then
+            echo "::error::$failed CI job(s) failed or were cancelled"
+            exit 1
+          fi
+          echo "All triggered CI jobs passed (skipped jobs are not required)."
