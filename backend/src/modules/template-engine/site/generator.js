@@ -2,7 +2,7 @@
 // <SITES_DIR>/<project-slug>/ (default: frontend/projects/). Content
 // (site.json, menus.json, pages/*.json) is rewritten from the DB on every
 // build; the app shell in ./templates is copied verbatim. Friendly URLs:
-// every page is served at /<slugified-title> (Home at /), never /p/te-<id>.
+// every page is served at /<its slug> (the menu-name slug, e.g. about-us; Home at /), never /p/te-<id>.
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -13,7 +13,11 @@ import { getCompanyInfo } from '../../brand-kit/contact-fields.js';
 
 const TEMPLATES_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'templates');
 const MARKER = '.kdl-site.json';
-const RESERVED = new Set(['api', '_next', 'static']);
+// Paths owned by the admin app / nginx (infra/nginx/nginx.conf) or the site shell.
+const RESERVED = new Set([
+  'api', 'ai', '_next', 'static', 'site-assets', 'seed', 'vendor', 'p',
+  'login', 'register', 'forgot-password', 'reset-password', 'change-password', 'admin', 'share',
+]);
 
 export const sitesDir = () =>
   path.resolve(process.env.SITES_DIR || path.join(process.cwd(), '..', 'frontend', 'projects'));
@@ -22,7 +26,11 @@ export const sitesDir = () =>
 
 const isHome = (p) => /^home$/i.test(p.title.trim()) || /(^|-)home$/.test(p.slug);
 
-/** Friendly, unique route per page. Home → '' (root). */
+// Generated slugs are `<prefix>-<cuid>-<key>` (e.g. te-cmt18…-about-us); <key> is the
+// slugified menu/page name. Hand-made pages without that shape fall back to the title.
+const keyOf = (slug) => /^.+?-c[a-z0-9]{24}-(.+)$/.exec(slug ?? '')?.[1];
+
+/** Friendly, unique route per page = its menu-name slug. Home → '' (root). */
 export function assignRoutes(pages) {
   const used = new Set(['']);
   let homeTaken = false;
@@ -31,7 +39,7 @@ export function assignRoutes(pages) {
       homeTaken = true;
       return { ...p, route: '' };
     }
-    let base = slugify(p.title) || 'page';
+    let base = keyOf(p.slug) || slugify(p.title) || 'page';
     if (RESERVED.has(base)) base = `${base}-page`;
     let route = base;
     for (let n = 2; used.has(route); n += 1) route = `${base}-${n}`;
@@ -70,6 +78,9 @@ export function buildSiteModel({ project, kit, company, pages, menus }) {
   const routed = assignRoutes(pages);
   const byId = new Map(routed.map((p) => [p.id, p.route]));
   const bySlug = new Map(routed.map((p) => [p.slug, p.route]));
+  // Seeded links name pages as te-<run>-<key>; when that exact page is absent, a page with the same key still matches.
+  const byKey = new Map(routed.map((p) => [keyOf(p.slug), p.route]).reverse());
+  const routeOf = (slug) => bySlug.get(slug) ?? byKey.get(keyOf(slug));
   const toHref = (route) => (route ? `/${route}` : '/');
   const hrefFor = (i) => {
     if (i.page_id && byId.has(i.page_id)) return toHref(byId.get(i.page_id));
@@ -77,6 +88,15 @@ export function buildSiteModel({ project, kit, company, pages, menus }) {
     if (m && bySlug.has(m[1])) return toHref(bySlug.get(m[1]));
     return i.url || '#';
   };
+  // Links saved in the admin (button hrefs, multi-line nav text) are `/p/<slug>`; point them at the friendly route.
+  const friendly = (v) =>
+    typeof v === 'string'
+      ? v.replace(/\/p\/([a-z0-9-]+)/g, (m, slug) => (routeOf(slug) === undefined ? m : toHref(routeOf(slug))))
+      : Array.isArray(v)
+        ? v.map(friendly)
+        : v && typeof v === 'object'
+          ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, friendly(x)]))
+          : v;
   const menuOf = (key) => {
     const m = menus.find((x) => x.key === key);
     return m ? menuTree(m.items, hrefFor) : [];
@@ -100,7 +120,7 @@ export function buildSiteModel({ project, kit, company, pages, menus }) {
     menus: { header: menuOf('header'), footer: menuOf('footer') },
     pages: routed.map((p) => ({
       file: p.route === '' ? 'index' : p.route,
-      json: { route: p.route, slug: p.slug, projectId: project.id, title: p.title, status: p.status, data: p.data },
+      json: { route: p.route, slug: p.slug, projectId: project.id, title: p.title, status: p.status, data: friendly(p.data) },
     })),
   };
 }
@@ -163,6 +183,7 @@ export const frontendDir = () =>
 const ROOT_FILES = [
   'src/app/layout.tsx',
   'src/app/admin/page-builder/puck.config.tsx',
+  'src/lib/header-overlay.ts',
   'src/app/work/[slug]/page.tsx',
   'src/app/catalog/[slug]/page.tsx',
   'src/app/sectors/[slug]/page.tsx',

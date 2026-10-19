@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+// Design '1'-'4', or `custom:<id>` = a saved Section Builder block
+// (CustomBlockTemplate) chosen for that slot.
+const layoutVariant = z.string().regex(/^([1-4]|custom:[A-Za-z0-9_-]+)$/);
+
 // Canonical stage slugs per TEMPLATE_ENGINE_ARCH.md §3.
 export const DAG_STAGE_SLUGS = [
   'intake',
@@ -59,19 +63,19 @@ export const advanceStageSchema = z.object({
           topHeader: z
             .object({
               enabled: z.boolean().optional(),
-              variant: z.enum(['1', '2', '3', '4']).optional(),
+              variant: layoutVariant.optional(),
             })
             .optional(),
           header: z
             .object({
               enabled: z.boolean().optional(),
-              variant: z.enum(['1', '2', '3', '4']).optional(),
+              variant: layoutVariant.optional(),
             })
             .optional(),
           footer: z
             .object({
               enabled: z.boolean().optional(),
-              variant: z.enum(['1', '2', '3', '4']).optional(),
+              variant: layoutVariant.optional(),
             })
             .optional(),
         })

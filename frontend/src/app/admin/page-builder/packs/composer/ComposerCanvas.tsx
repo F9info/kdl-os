@@ -13,6 +13,7 @@ import {
   atomStyleProps,
   AtomStyleField,
   normalizeGridColumns,
+  ComposerProjectContext,
   type ComposerAtom,
 } from './atoms'
 import { atomCatalogueFor } from './catalogue-by-category'
@@ -388,6 +389,33 @@ export function ComposerCanvas({
     setConfig((c) => ({ ...c, atoms: updateNodeById(c.atoms, id, (a) => ({ ...a, ...patch })) }))
   }
 
+  /** Set one element's width out of 12. The row is switched to a 12-track
+   *  grid first (siblings rescaled so they keep their look), so every
+   *  element is sized independently and the row total is never a thing the
+   *  user has to manage. */
+  function setChildSpan(parentId: string, childId: string, span: number) {
+    setConfig((c) => ({
+      ...c,
+      atoms: updateNodeById(c.atoms, parentId, (parent) => {
+        const cols = Math.max(1, Math.min(12, Number(parent.columns ?? 2)))
+        const k = 12 / cols
+        return {
+          ...parent,
+          columns: 12,
+          children: (parent.children ?? []).map((ch) => {
+            const start = Number(ch.colStart ?? 0)
+            const next = {
+              ...ch,
+              colSpan: Math.max(1, Math.round(Number(ch.colSpan ?? 1) * k)),
+              colStart: start > 0 ? Math.min(12, Math.round((start - 1) * k) + 1) : ch.colStart,
+            }
+            return ch.id === childId ? { ...next, colSpan: span } : next
+          }),
+        }
+      }),
+    }))
+  }
+
   function removeAtom(id: string) {
     setConfig((c) => ({ ...c, atoms: extractAtom(c.atoms, id).next }))
     if (selectedId === id) setSelectedId(null)
@@ -496,6 +524,32 @@ export function ComposerCanvas({
   const selectedParent = selectedParentId ? findAtom(config.atoms, selectedParentId) : null
   const selectedParentIsGrid =
     selectedParent?.type === 'layout' && String(selectedParent.mode ?? 'grid') === 'grid'
+
+  /** Drag the right edge of a grid child to set its colSpan, snapping to
+   *  the parent's column tracks (width / columns). */
+  function startSpanResize(e: React.MouseEvent, atom: ComposerAtom, parent: ComposerAtom) {
+    e.preventDefault()
+    e.stopPropagation()
+    const node = (e.currentTarget as HTMLElement).parentElement
+    const grid = node?.parentElement
+    if (!node || !grid) return
+    const colW = grid.getBoundingClientRect().width / 12
+    const left = node.getBoundingClientRect().left
+    let last = -1
+    const onMove = (ev: MouseEvent) => {
+      const span = Math.max(1, Math.min(12, Math.round((ev.clientX - left) / colW)))
+      if (span !== last) {
+        last = span
+        setChildSpan(parent.id, atom.id, span)
+      }
+    }
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }
 
   function renderAtomNode(atom: ComposerAtom, containerId: string | null): ReactNode {
     const def = ATOM_BY_TYPE[atom.type]
@@ -612,6 +666,17 @@ export function ComposerCanvas({
               </div>
             ) : null}
           </div>
+        ) : null}
+        {parent?.type === 'layout' && String(parent.mode ?? 'grid') === 'grid' ? (
+          <span
+            draggable={false}
+            onMouseDown={(e) => startSpanResize(e, atom, parent)}
+            onClick={(e) => e.stopPropagation()}
+            title="Drag to resize column width"
+            className={`absolute -right-1.5 top-1/2 z-20 h-10 w-2.5 -translate-y-1/2 cursor-col-resize rounded-full bg-[#38bdf8] transition ${
+              selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+            }`}
+          />
         ) : null}
       </div>
     )
@@ -863,7 +928,9 @@ export function ComposerCanvas({
                   handleCanvasDrop(null, null)
                 }}
               >
-                {config.atoms.map((atom) => renderAtomNode(atom, null))}
+                <ComposerProjectContext.Provider value={projectId}>
+                  {config.atoms.map((atom) => renderAtomNode(atom, null))}
+                </ComposerProjectContext.Provider>
                 <div
                   role="presentation"
                   className="border-t border-slate-100 p-4"
@@ -927,36 +994,40 @@ export function ComposerCanvas({
               ) : selectedParentIsGrid ? (
                 <div className="mb-3.5 flex flex-col gap-3.5">
                   <ChipRow
-                    label="Row columns (total, out of 12)"
-                    value={String(selectedParent!.columns ?? 2)}
-                    options={[2, 3, 4, 6, 8, 12].map((n) => ({ label: `${n}`, value: String(n) }))}
-                    onChange={(v) => patchAtom(selectedParent!.id, { columns: Number(v) })}
-                  />
-                  <p className="-mt-2 text-[10.5px] leading-relaxed text-[#8b93a1]">
-                    Widen the row first (e.g. to 12), then set each element&apos;s own span below —
-                    spans across the row only need to add up to this total, not match the number of
-                    elements in it.
-                  </p>
-                  <ChipRow
-                    label="Column span"
-                    value={String(selectedAtom.colSpan ?? 1)}
-                    options={Array.from(
-                      { length: Number(selectedParent!.columns ?? 2) },
-                      (_, i) => ({ label: `${i + 1}`, value: String(i + 1) })
+                    label="Width (out of 12)"
+                    value={String(
+                      Math.round(
+                        Number(selectedAtom.colSpan ?? 1) *
+                          (12 / Math.max(1, Number(selectedParent!.columns ?? 2)))
+                      )
                     )}
-                    onChange={(v) => patchAtom(selectedAtom.id, { colSpan: Number(v) })}
+                    options={Array.from({ length: 12 }, (_, i) => ({
+                      label: `${i + 1}`,
+                      value: String(i + 1),
+                    }))}
+                    onChange={(v) => setChildSpan(selectedParent!.id, selectedAtom.id, Number(v))}
                   />
                   <ChipRow
                     label="Column start (offset)"
                     value={String(selectedAtom.colStart ?? 0)}
                     options={[
                       { label: 'Auto', value: '0' },
-                      ...Array.from({ length: Number(selectedParent!.columns ?? 2) }, (_, i) => ({
+                      ...Array.from({ length: 12 }, (_, i) => ({
                         label: `${i + 1}`,
                         value: String(i + 1),
                       })),
                     ]}
-                    onChange={(v) => patchAtom(selectedAtom.id, { colStart: Number(v) })}
+                    onChange={(v) => {
+                      setChildSpan(
+                        selectedParent!.id,
+                        selectedAtom.id,
+                        Math.round(
+                          Number(selectedAtom.colSpan ?? 1) *
+                            (12 / Math.max(1, Number(selectedParent!.columns ?? 2)))
+                        )
+                      )
+                      patchAtom(selectedAtom.id, { colStart: Number(v) })
+                    }}
                   />
                 </div>
               ) : null}

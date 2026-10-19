@@ -52,6 +52,17 @@ export interface HeaderMenuItem {
   children: HeaderMenuItem[]
 }
 
+// Menu items store `/p/te-<runId>-<key>`; the site serves each page at `/<key>` (Home at `/`),
+// so link there directly instead of bouncing through the /p redirect.
+const PAGE_URL = /^\/p\/(?:.+?-c[a-z0-9]{24}-)([^/?#]+)([?#].*)?$/
+function friendlyUrl(url: string | null): string | null {
+  const m = url ? PAGE_URL.exec(url) : null
+  return m ? `${m[1] === 'home' ? '/' : `/${m[1]}`}${m[2] ?? ''}` : url
+}
+function friendlyTree(items: HeaderMenuItem[]): HeaderMenuItem[] {
+  return items.map((i) => ({ ...i, url: friendlyUrl(i.url), children: friendlyTree(i.children) }))
+}
+
 /**
  * Fetches a project's Menu tree by key (Menus module — see
  * backend/src/modules/menus/) — `key: 'header'` for `ConstructionHeader`,
@@ -67,7 +78,10 @@ export function useHeaderMenuTree(projectId: string | undefined, key: string = '
     queryFn: () =>
       fetch(`/api/menus/public?key=${key}${projectId ? `&project_id=${projectId}` : ''}`)
         .then((r) => r.json())
-        .then((json) => (json?.data?.menu?.items ?? null) as HeaderMenuItem[] | null),
+        .then((json) => {
+          const items = json?.data?.menu?.items as HeaderMenuItem[] | undefined
+          return items ? friendlyTree(items) : null
+        }),
     enabled: Boolean(projectId),
   })
   return data && data.length > 0 ? data : null

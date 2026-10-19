@@ -1,0 +1,244 @@
+{
+  "ConstructionServicesGrid": [
+    {
+      "prefix": "service",
+      "prop": "services"
+    }
+  ],
+  "ConstructionOfferingsRows": [
+    {
+      "prefix": "offering",
+      "prop": "offerings"
+    }
+  ],
+  "ConstructionAboutSplit": [
+    {
+      "prefix": "check",
+      "prop": "checks"
+    }
+  ],
+  "ConstructionFeaturedProject": [
+    {
+      "prefix": "scope",
+      "prop": "scopes"
+    }
+  ],
+  "ConstructionProjectsGridCards": [
+    {
+      "prefix": "project",
+      "prop": "projects"
+    }
+  ],
+  "ConstructionProjectShowcaseSplit": [
+    {
+      "prefix": "stat",
+      "prop": "stats"
+    }
+  ],
+  "ConstructionProjectMapStrip": [
+    {
+      "prefix": "location",
+      "prop": "locations"
+    }
+  ],
+  "ConstructionProductsShowcase": [
+    {
+      "prefix": "category",
+      "prop": "categories"
+    }
+  ],
+  "ConstructionStatsStrip": [
+    {
+      "prefix": "stat",
+      "prop": "stats"
+    }
+  ],
+  "ConstructionTeamCrew": [
+    {
+      "prefix": "member",
+      "prop": "members"
+    }
+  ],
+  "ConstructionCertificationsBadges": [
+    {
+      "prefix": "badge",
+      "prop": "badges"
+    }
+  ],
+  "ConstructionOrgChart": [
+    {
+      "prefix": "report",
+      "prop": "reports"
+    }
+  ],
+  "ConstructionTeamStats": [
+    {
+      "prefix": "stat",
+      "prop": "stats"
+    },
+    {
+      "prefix": "crew",
+      "prop": "crews"
+    }
+  ],
+  "ConstructionClientsTestimonialStrip": [
+    {
+      "prefix": "client",
+      "prop": "clients"
+    }
+  ],
+  "ConstructionClientsMarquee": [
+    {
+      "prefix": "logo",
+      "prop": "logos"
+    }
+  ],
+  "ConstructionClientsCaseHighlight": [
+    {
+      "prefix": "otherLogo",
+      "prop": "otherLogos"
+    }
+  ],
+  "ConstructionTestimonials": [
+    {
+      "prefix": "quote",
+      "prop": "quotes"
+    }
+  ],
+  "ConstructionVideoTestimonials": [
+    {
+      "prefix": "testimonial",
+      "prop": "testimonials"
+    }
+  ],
+  "ConstructionProcessTimeline": [
+    {
+      "prefix": "step",
+      "prop": "steps"
+    }
+  ],
+  "ConstructionWhyChooseUs": [
+    {
+      "prefix": "point",
+      "prop": "points"
+    }
+  ],
+  "ConstructionMilestoneTimeline": [
+    {
+      "prefix": "milestone",
+      "prop": "milestones"
+    }
+  ],
+  "ConstructionTimelineHistory": [
+    {
+      "prefix": "entry",
+      "prop": "entries"
+    }
+  ],
+  "ConstructionLeadershipGrid": [
+    {
+      "prefix": "leader",
+      "prop": "leaders"
+    }
+  ],
+  "ConstructionVideoGrid": [
+    {
+      "prefix": "video",
+      "prop": "videos"
+    }
+  ],
+  "ConstructionVideoSplitStats": [
+    {
+      "prefix": "stat",
+      "prop": "stats"
+    }
+  ],
+  "ConstructionBlogPosts": [
+    {
+      "prefix": "post",
+      "prop": "posts"
+    }
+  ],
+  "ConstructionNewsTicker": [
+    {
+      "prefix": "news",
+      "prop": "newss"
+    }
+  ],
+  "ConstructionCaseStudyGrid": [
+    {
+      "prefix": "case",
+      "prop": "cases"
+    }
+  ],
+  "ConstructionSocialFeedGrid": [
+    {
+      "prefix": "post",
+      "prop": "posts"
+    }
+  ],
+  "ConstructionSocialVideoHighlights": [
+    {
+      "prefix": "highlight",
+      "prop": "highlights"
+    }
+  ],
+  "ConstructionFAQ": [
+    {
+      "prefix": "faq",
+      "prop": "faqs"
+    }
+  ],
+  "ConstructionFAQTwoColumn": [
+    {
+      "prefix": "faq",
+      "prop": "faqs"
+    }
+  ],
+  "ConstructionFAQWithContact": [
+    {
+      "prefix": "faq",
+      "prop": "faqs"
+    }
+  ],
+  "ConstructionSectorsTabbed": [
+    {
+      "prefix": "tab",
+      "prop": "tabs"
+    }
+  ],
+  "ConstructionSectorsIconRow": [
+    {
+      "prefix": "sector",
+      "prop": "sectors"
+    }
+  ],
+  "ConstructionSectorsSplitFeature": [
+    {
+      "prefix": "otherSector",
+      "prop": "otherSectors"
+    }
+  ],
+  "ConstructionApproachSplit": [
+    {
+      "prefix": "highlight",
+      "prop": "highlights"
+    },
+    {
+      "prefix": "stat",
+      "prop": "stats"
+    }
+  ],
+  "ConstructionBrandsLogoGrid": [
+    {
+      "prefix": "logo",
+      "prop": "logos"
+    }
+  ],
+  "ConstructionBrandsSpotlight": [
+    {
+      "prefix": "otherLogo",
+      "prop": "otherLogos"
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
+import { useHeaderMenuTree, HeaderNavMenu } from '../header-nav-menu'
 import DOMPurify from 'dompurify'
 import { Button } from '@/components/ui/button'
 import { MediaPicker } from '@/components/shared/MediaPicker'
@@ -303,7 +304,12 @@ function splitLines(s: unknown) {
     .filter(Boolean)
 }
 
-function navRender(atom: ComposerAtom) {
+/** Project the composed block renders for — lets the nav atom read the
+ *  Menus module (single source of truth) instead of a copy typed into it. */
+export const ComposerProjectContext = createContext<string | undefined>(undefined)
+
+function NavAtom({ atom }: { atom: ComposerAtom }) {
+  const menuTree = useHeaderMenuTree(useContext(ComposerProjectContext), 'header')
   const items = splitCsv(atom.items ?? 'Home, About, Services, Contact')
   const align = String(atom.align ?? 'center') as Align
   const justify =
@@ -314,19 +320,32 @@ function navRender(atom: ComposerAtom) {
   // descendant's own class. Same override convention as buttonRender/
   // badgeRender: a custom Style-tab text color replaces the default class.
   const textColor = (atom.style as AtomStyle | undefined)?.textColor
+  const style = textColor ? { color: textColor } : undefined
+  const linkCls = textColor ? '' : 'text-slate-800'
+  if (menuTree) {
+    return (
+      <div className={`flex ${justify}`} style={style}>
+        <HeaderNavMenu
+          items={menuTree}
+          linkClassName={`text-sm font-semibold ${linkCls}`}
+          activeClassName={`text-sm font-semibold ${linkCls}`}
+        />
+      </div>
+    )
+  }
   return (
     <nav className={`flex flex-wrap gap-6 ${justify}`}>
       {items.map((item, i) => (
-        <span
-          key={i}
-          style={textColor ? { color: textColor } : undefined}
-          className={`text-sm font-semibold ${textColor ? '' : 'text-slate-800'}`}
-        >
+        <span key={i} style={style} className={`text-sm font-semibold ${linkCls}`}>
           {item}
         </span>
       ))}
     </nav>
   )
+}
+
+function navRender(atom: ComposerAtom) {
+  return <NavAtom atom={atom} />
 }
 
 function socialRender(atom: ComposerAtom) {
@@ -530,7 +549,10 @@ function layoutField({
         <ChipRow
           label="Columns"
           value={String(atom.columns ?? 12)}
-          options={[2, 3, 4, 6, 12].map((n) => ({ label: `${n}`, value: String(n) }))}
+          options={Array.from({ length: 12 }, (_, i) => ({
+            label: `${i + 1}`,
+            value: String(i + 1),
+          }))}
           onChange={(v) => onChange({ columns: Number(v) })}
         />
       ) : (
@@ -1569,7 +1591,7 @@ export const ATOM_CATALOGUE: AtomDefinition[] = [
     Field: ({ atom, onChange }) => (
       <div className="flex flex-col gap-3.5">
         <TextareaInput
-          label="Menu items (comma separated)"
+          label="Fallback items (used only if no Header menu is set up in Menus)"
           rows={2}
           value={String(atom.items ?? '')}
           onChange={(items) => onChange({ items })}

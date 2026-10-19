@@ -91,3 +91,28 @@ describe('patchLayout', () => {
     expect(patchLayout(swapped, { footer: { enabled: true, variant: '1' } }, 'about', {}, [])).toBeNull();
   });
 });
+
+describe('patchLayout custom (Section Builder) blocks', () => {
+  const custom = { id: 'cb1', config: { category: 'header', atoms: [], settings: {} } };
+
+  it('replaces the legacy header with the saved block, then back to a design', () => {
+    const data = seedWebsitePageData('about', 'About', {}, []);
+    const applied = patchLayout(
+      data,
+      { header: { enabled: true, variant: 'custom:cb1', customBlock: custom } },
+      'about',
+      {},
+      []
+    );
+    const slot = applied.content.filter((b) => b.props.layoutSlot === 'header');
+    expect(slot).toHaveLength(1);
+    expect(applied.content.some((b) => b.type === 'NavBar')).toBe(false);
+    expect(
+      patchLayout(applied, { header: { enabled: true, customBlock: custom } }, 'about', {}, [])
+    ).toBeNull();
+
+    const back = patchLayout(applied, { header: { enabled: true, variant: '2' } }, 'about', {}, []);
+    expect(back.content.some((b) => b.props.layoutSlot === 'header')).toBe(false);
+    expect(back.content.find((b) => b.type === 'ConstructionHeader').props.variant).toBe('2');
+  });
+});

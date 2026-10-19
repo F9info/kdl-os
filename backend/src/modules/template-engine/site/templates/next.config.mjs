@@ -8,7 +8,11 @@ const backend = process.env.BACKEND_INTERNAL_URL ?? 'http://localhost:4000'
 const admin = process.env.FRONTEND_INTERNAL_URL ?? 'http://localhost:3000'
 
 /** @type {import('next').NextConfig} */
+// Set by compose when the site sits behind nginx next to the admin app (same origin).
+const assetPrefix = process.env.SITE_ASSET_PREFIX || undefined
+
 export default {
+  assetPrefix,
   images: { remotePatterns: hosts },
   // Lives inside the admin repo; don't inherit its lint config, and the copied
   // admin code is already type-checked there.

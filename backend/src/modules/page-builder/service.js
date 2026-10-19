@@ -2,6 +2,7 @@ import { prisma } from '../../config/database.js';
 import { resolveForEditor, stripEntityBindings } from '../../shared/detail-pages/resolve.js';
 import { writeActivityAsync } from '../user-management/shared/activity-logger.js';
 import { enqueueSiteBuild } from '../template-engine/site/queue.js';
+import { normalizeData } from '../../shared/numbered-families.js';
 
 export const listPages = async () => {
   return prisma.builderPage.findMany({
@@ -54,7 +55,7 @@ export const createPage = async ({ title, slug, data, project_id }, actorId) => 
       title,
       slug,
       status: 'DRAFT',
-      data: data ?? { root: { props: { title } }, content: [], zones: {} },
+      data: normalizeData(data ?? { root: { props: { title } }, content: [], zones: {} }),
       created_by: actorId,
       project_id,
     },
@@ -71,7 +72,8 @@ export const createPage = async ({ title, slug, data, project_id }, actorId) => 
   return page;
 };
 
-export const updatePage = async (id, patch, actorId) => {
+export const updatePage = async (id, rawPatch, actorId) => {
+  const patch = rawPatch.data === undefined ? rawPatch : { ...rawPatch, data: normalizeData(rawPatch.data) };
   // Same transparency as getPage above: a structural save on a
   // template-bound instance writes through to the shared template (every
   // sibling instance re-resolves from it on next load), not this page's own

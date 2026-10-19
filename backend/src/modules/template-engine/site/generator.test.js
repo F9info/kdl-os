@@ -18,6 +18,20 @@ describe('site generator', () => {
     expect(routes).toEqual(['', 'about-us', 'about-us-2', 'api-page']);
   });
 
+  it('uses the menu-name slug (page key) as the route, not the page title', () => {
+    const slug = 'te-cmt18teqh000101rxwfzfndow-contact';
+    const [p] = assignRoutes([page('1', "Let's talk about your building", slug)]);
+    expect(p.route).toBe('contact');
+  });
+
+  it('rewrites /p/<slug> hrefs inside page data to friendly routes', () => {
+    const slug = 'te-cmt18teqh000101rxwfzfndow-about-us';
+    const pages = [{ ...page('1', 'About Us', slug), data: { content: [{ props: { href: `/p/${slug}?x=1`, nav: `About|/p/${slug}\nHome|/p/nope` } }] } }];
+    const model = buildSiteModel({ project: { id: 'p', slug: 's', name: 'S' }, kit: null, pages, menus: [] });
+    expect(model.pages[0].json.data.content[0].props.href).toBe('/about-us?x=1');
+    expect(model.pages[0].json.data.content[0].props.nav).toBe('About|/about-us\nHome|/p/nope');
+  });
+
   it('drops brand values that could break out of generated CSS/HTML', () => {
     const model = buildSiteModel({
       project: { id: 'p', slug: 's', name: 'S' },

@@ -27,10 +27,6 @@
       "sectionEyebrow": "What we design, execute & maintain",
       "sectionTitle": "15 services, three disciplines",
       "sectionSubtitle": "Every service below is designed, supplied, installed and maintained by our own engineers — with a dedicated service manager for after-sales support.",
-      "category1Label": "All",
-      "category2Label": "Electrical, climate & refrigeration",
-      "category3Label": "Safety & security",
-      "category4Label": "Automation & entertainment",
       "padding": "md",
       "background": "muted",
       "items": [
@@ -274,6 +270,20 @@
           "description": "EPABX, video walls and display solutions for offices and corporate spaces.",
           "brands": "Matrix"
         }
+      ],
+      "categories": [
+        {
+          "label": "All"
+        },
+        {
+          "label": "Electrical, climate & refrigeration"
+        },
+        {
+          "label": "Safety & security"
+        },
+        {
+          "label": "Automation & entertainment"
+        }
       ]
     }
   },
@@ -287,22 +297,23 @@
       "paragraph1": "Subhadra Group was founded in 1996 to bring every building-related engineering service under one roof — for residential, commercial and industrial customers across Andhra Pradesh. These 15 services are designed, supplied, installed and maintained by that same team, not outsourced to sub-contractors.",
       "paragraph2": "With 25+ years of technical expertise across HVAC, electricals and ELV systems, we've executed projects for leading MNCs and international groups — Marriott, Novotel, NTPC, Vizag Steel and GITAM University among them — with a track record of quality execution and on-time delivery. Every discipline has its own dedicated service manager, so support doesn't end at handover.",
       "photo": "/seed/subhadra/about.webp",
-      "highlight1Icon": "",
-      "highlight1BiIcon": "",
-      "highlight1Title": "",
-      "highlight1Description": "",
-      "highlight2Icon": "",
-      "highlight2BiIcon": "",
-      "highlight2Title": "",
-      "highlight2Description": "",
-      "stat1Value": "30",
-      "stat1Label": "Years of trust",
-      "stat2Value": "15",
-      "stat2Label": "Services under one roof",
-      "stat3Value": "24×7",
-      "stat3Label": "Support on installations",
       "padding": "md",
-      "background": "white"
+      "background": "white",
+      "highlights": [],
+      "stats": [
+        {
+          "value": "30",
+          "label": "Years of trust"
+        },
+        {
+          "value": "15",
+          "label": "Services under one roof"
+        },
+        {
+          "value": "24×7",
+          "label": "Support on installations"
+        }
+      ]
     }
   },
   {
@@ -337,18 +348,28 @@
       "id": "services-why",
       "sectionTitle": "What working with us looks like",
       "sectionSubtitle": "One accountable team for design, supply, installation and after-sales — not five different contractors to chase.",
-      "point1Title": "One roof",
-      "point1Description": "HVAC, electricals and ELV on a single contract — no coordination gaps.",
-      "point2Title": "World-class makes",
-      "point2Description": "Only pioneer brands, so spares and service are never a problem.",
-      "point3Title": "Customized design",
-      "point3Description": "Perfect-engineered solutions sized to every application.",
-      "point4Title": "24×7 support",
-      "point4Description": "A dedicated service manager for every field we install in.",
       "ctaLabel": "",
       "ctaHref": "",
       "padding": "md",
-      "background": "muted"
+      "background": "muted",
+      "points": [
+        {
+          "title": "One roof",
+          "description": "HVAC, electricals and ELV on a single contract — no coordination gaps."
+        },
+        {
+          "title": "World-class makes",
+          "description": "Only pioneer brands, so spares and service are never a problem."
+        },
+        {
+          "title": "Customized design",
+          "description": "Perfect-engineered solutions sized to every application."
+        },
+        {
+          "title": "24×7 support",
+          "description": "A dedicated service manager for every field we install in."
+        }
+      ]
     }
   },
   {

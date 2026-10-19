@@ -204,11 +204,10 @@ services:
       BACKEND_INTERNAL_URL: http://backend:4000
       FRONTEND_INTERNAL_URL: http://frontend:3000
       NEXT_PUBLIC_IMAGE_HOSTS: http:localhost:9002
+      SITE_ASSET_PREFIX: /site-assets
     command: >
       sh -c "until [ -f package.json ]; do sleep 3; done;
       npm install --no-audit --no-fund && npx next dev -p 3000"
-    ports:
-      - "127.0.0.1:3300:3000"
 
   ai-services:
     build: ./ai-services

@@ -342,8 +342,36 @@ const SEEDER_BY_PACK = {
  * seedConstructionPageData) so a fresh page isn't a blank canvas.
  * Crash recovery: recorded pageKeyToId is checked on re-run; existing pages are reused.
  */
+// `variant: 'custom:<id>'` → attach the saved block's live config from the DB
+// (so a Section Builder edit is picked up on the next layout apply). A block
+// that has since been deleted falls back to design '1'.
+const LAYOUT_SLOTS = ['topHeader', 'header', 'footer'];
+const SLOT_CATEGORY = { topHeader: 'top-bar', header: 'header', footer: 'footer' };
+async function resolveCustomLayout(layout, projectId) {
+  if (!layout) return layout;
+  const out = { ...layout };
+  for (const slot of LAYOUT_SLOTS) {
+    const section = layout[slot];
+    const m = /^custom:(.+)$/.exec(section?.variant ?? '');
+    if (!m) continue;
+    const row = await prisma.customBlockTemplate.findFirst({
+      where: {
+        id: m[1],
+        project_id: projectId,
+        category_key: SLOT_CATEGORY[slot],
+        deleted_at: null,
+      },
+    });
+    out[slot] = row
+      ? { ...section, customBlock: { id: row.id, config: row.config } }
+      : { ...section, variant: '1' };
+  }
+  return out;
+}
+
 const websiteDriver = {
-  async execute({ run, stageRecord, userId, templatePack, navigationPages, layout }) {
+  async execute({ run, stageRecord, userId, templatePack, navigationPages, layout: rawLayout }) {
+    const layout = await resolveCustomLayout(rawLayout, run.projectId);
     const seed = SEEDER_BY_PACK[templatePack] ?? seedWebsitePageData;
     const brand = await resolveWebsiteBrand(run.projectId, userId);
 

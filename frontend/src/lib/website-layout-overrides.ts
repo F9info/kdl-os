@@ -6,9 +6,16 @@
 
 export type Variant = '1' | '2' | '3' | '4'
 
+/** Design '1'-'4', or `custom:<id>` = a saved Section Builder block. */
+export type SectionVariant = Variant | `custom:${string}`
+
+export function customBlockIdOf(variant: SectionVariant): string | null {
+  return variant.startsWith('custom:') ? variant.slice(7) : null
+}
+
 export interface SectionState {
   enabled: boolean
-  variant: Variant
+  variant: SectionVariant
 }
 
 export interface LayoutSelection {
