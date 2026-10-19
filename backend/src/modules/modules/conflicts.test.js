@@ -5,6 +5,7 @@ vi.mock('../user-management/shared/activity-logger.js', () => ({ writeActivityAs
 vi.mock('../../middleware/module-gate.js', () => ({
   invalidateModuleCache: vi.fn(),
 }));
+vi.mock('node:fs', () => ({ existsSync: vi.fn(() => false) }));
 
 import { prisma } from '../../config/database.js';
 import { loadedManifests } from '../../shared/modules/module-loader.js';
@@ -569,6 +570,99 @@ describe('KDL-609: theme-engine-ui and page-builder-ui nav always visible alongs
     const teui = modules.find((m) => m.slug === 'theme-engine-ui');
     expect(teui.nav).toHaveLength(1);
     expect(teui.nav[0].label).toBe('Theme Engine');
+  });
+});
+
+// ── KDL-610: installModule enables all auto-installed deps + target immediately ─
+
+describe('KDL-610: installModule enables newly-installed deps + target (no manual Enable step)', () => {
+  /**
+   * Primary regression: fresh install of template-engine when all its deps are
+   * absent from DB. All 7 rows (6 deps + target) must land in ENABLED, not
+   * INSTALLED, so moduleGate() passes immediately after install.
+   */
+  it('all deps + target are ENABLED immediately after fresh installModule()', async () => {
+    loadTemplateEngineManifests();
+
+    // Stateful map starts empty — every slug is absent from DB.
+    const statuses = {};
+    const isCore = { 'theme-engine': true, 'page-builder': true };
+
+    prisma.module = {
+      findUnique: vi.fn().mockImplementation(({ where }) => {
+        const s = statuses[where.slug];
+        if (s == null) return Promise.resolve(null);
+        return Promise.resolve({
+          slug: where.slug,
+          status: s,
+          is_core: !!isCore[where.slug],
+          id: `id-${where.slug}`,
+          name: where.slug,
+        });
+      }),
+      findMany: vi.fn().mockImplementation(({ where } = {}) => {
+        if (where?.status === 'ENABLED') {
+          return Promise.resolve(
+            Object.entries(statuses)
+              .filter(([, s]) => s === 'ENABLED')
+              .map(([slug]) => ({ slug, status: 'ENABLED', is_core: !!isCore[slug], id: `id-${slug}`, name: slug }))
+          );
+        }
+        return Promise.resolve([]);
+      }),
+      create: vi.fn().mockImplementation(({ data }) => {
+        statuses[data.slug] = data.status;
+        return Promise.resolve({ ...data, id: `id-${data.slug}` });
+      }),
+      update: vi.fn().mockImplementation(({ where, data }) => {
+        statuses[where.slug] = data.status;
+        return Promise.resolve({ slug: where.slug, status: data.status, is_core: !!isCore[where.slug], id: `id-${where.slug}`, name: where.slug });
+      }),
+    };
+    prisma.$transaction = vi.fn().mockImplementation((fn) => fn(prisma));
+
+    const result = await installModule('template-engine', 'actor');
+
+    // Return value must be ENABLED (not INSTALLED)
+    expect(result.status).toBe('ENABLED');
+
+    // Every dep must also be ENABLED
+    for (const dep of ['theme-engine', 'theme-engine-ui', 'page-builder', 'page-builder-ui', 'brand-kit', 'collateral', 'credits']) {
+      expect(statuses[dep]).toBe('ENABLED');
+    }
+
+    // installedDependencies side-channel must list all auto-installed deps
+    expect(result.installedDependencies).toHaveLength(7);
+  });
+
+  /**
+   * Single-module install (no deps): module must be ENABLED after install.
+   */
+  it('single-module install returns ENABLED status', async () => {
+    loadedManifests.set('simple-mod', makeManifest('simple-mod', { dependsOn: [] }));
+
+    const statuses = {};
+    prisma.module = {
+      findUnique: vi.fn().mockImplementation(({ where }) => {
+        const s = statuses[where.slug];
+        if (s == null) return Promise.resolve(null);
+        return Promise.resolve({ slug: where.slug, status: s, is_core: false, id: `id-${where.slug}`, name: where.slug });
+      }),
+      findMany: vi.fn().mockResolvedValue([]),
+      create: vi.fn().mockImplementation(({ data }) => {
+        statuses[data.slug] = data.status;
+        return Promise.resolve({ ...data, id: `id-${data.slug}` });
+      }),
+      update: vi.fn().mockImplementation(({ where, data }) => {
+        statuses[where.slug] = data.status;
+        return Promise.resolve({ slug: where.slug, status: data.status, is_core: false, id: `id-${where.slug}`, name: where.slug });
+      }),
+    };
+    prisma.$transaction = vi.fn().mockImplementation((fn) => fn(prisma));
+
+    const result = await installModule('simple-mod', 'actor');
+    expect(result.status).toBe('ENABLED');
+    expect(result.installedDependencies).toHaveLength(0);
   });
 });
 

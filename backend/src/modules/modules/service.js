@@ -285,11 +285,14 @@ export async function installModule(slug, actorId, { resolveConflicts = false } 
     const existingDep = await prisma.module.findUnique({ where: { slug: depSlug } });
     if (existingDep) continue;
     await _installSingle(depSlug, actorId, { resolveConflicts });
+    // KDL-610: enable each newly-installed dep so moduleGate() passes immediately
+    await _enableSingle(depSlug, actorId, { resolveConflicts });
     installedDependencies.push(depSlug);
   }
 
-  // Install the target itself
-  const mod = await _installSingle(slug, actorId, { resolveConflicts });
+  // Install the target itself then enable it (KDL-610)
+  await _installSingle(slug, actorId, { resolveConflicts });
+  const mod = await _enableSingle(slug, actorId, { resolveConflicts });
 
   // Return shape stays the bare module (KDL-542 contract) — installedDependencies
   // rides along as a side-channel field rather than nesting the module under
