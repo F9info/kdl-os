@@ -24,10 +24,11 @@ jobs:
           BILLING_PAT: ${{ secrets.BILLING_CHECK_PAT }}
         run: |
           if [[ -z "$BILLING_PAT" ]]; then
-            echo "::error::BILLING_CHECK_PAT secret is not configured."
-            echo "::error::Create a PAT with manage_billing:github scope and add it as an org secret."
-            echo "::error::See docs/BILLING_OUTAGE_RUNBOOK.md for setup instructions."
-            exit 1
+            echo "::warning::BILLING_CHECK_PAT secret is not configured — billing check skipped."
+            echo "::warning::Create a PAT with manage_billing:github scope and add it as an org secret."
+            echo "::warning::See docs/BILLING_OUTAGE_RUNBOOK.md for setup instructions."
+            echo "skipped=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
           RESPONSE=$(curl -sf \
@@ -58,6 +59,7 @@ jobs:
             --repo "$GITHUB_REPOSITORY" 2>/dev/null || true
 
       - name: Alert on threshold breach or overage
+        if: steps.billing.outputs.skipped != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           USED:     ${{ steps.billing.outputs.used }}
