@@ -93,6 +93,7 @@ vi.mock('next/link', () => import('../__mocks__/next-link'))
 
 // Clear localStorage before each test so components that persist UI state
 // (e.g. WebsiteStage) always start from their defaults.
+// Guard: this setup file is shared by the node project (no jsdom, no localStorage).
 beforeEach(() => {
-  localStorage.clear()
+  if (typeof localStorage !== 'undefined') localStorage.clear()
 })
