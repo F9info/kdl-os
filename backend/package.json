@@ -55,7 +55,7 @@
   "devDependencies": {
     "nodemon": "^3.1.0",
     "supertest": "^7.3.0",
-    "vitest": "^5.0.2"
+    "vitest": "^5.0.5"
   },
   "prisma": {
     "schema": "prisma/schema",
