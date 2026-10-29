@@ -191,7 +191,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@22.20.3)(happy-dom@20.11.2)(jsdom@29.1.1)(vite@7.3.6(@types/node@22.20.3)(jiti@1.21.7)(terser@5.49.0)(yaml@2.9.0))
+        version: 4.1.11(@types/node@22.20.3)(happy-dom@20.14.6)(jsdom@29.1.1)(vite@7.3.6(@types/node@22.20.3)(jiti@1.21.7)(terser@5.49.0)(yaml@2.9.0))
 
 packages:
 
@@ -4328,8 +4328,8 @@ packages:
     resolution: {integrity: sha512-ax7ZYomf6jqPTQ4+XCpUGyXKHk5WweS+e05MBO4/y3WJ5RkmPXNKvX+bx1behVILVwr6JSQvZAku021CHPXG3Q==}
     engines: {node: '>=10'}
 
-  happy-dom@20.11.2:
-    resolution: {integrity: sha512-7MB+bJLkxu3SowAfBJbjW+c55kNz5tkR45gu2qzrxznezhLeN5YIlJbwUgSzlGc+qWoZ8Ykg71H5ezz69xixrw==}
+  happy-dom@20.14.6:
+    resolution: {integrity: sha512-5DDsf4QmEIlRL6NkCv/fxSjYHHkZceL/IaYQdJc2h3G7DRTEai++VTjbfL0LB9geW2VrA3+vrjF3Efx+OTtX0Q==}
     engines: {node: '>=20.0.0'}
 
   has-bigints@1.1.0:
@@ -7846,13 +7846,13 @@ snapshots:
       '@tiptap/extension-text': 3.30.1(@tiptap/core@3.30.1(@tiptap/pm@3.30.1))
       '@tiptap/extension-text-align': 3.30.1(@tiptap/core@3.30.1(@tiptap/pm@3.30.1))
       '@tiptap/extension-underline': 3.31.3(@tiptap/core@3.30.1(@tiptap/pm@3.30.1))
-      '@tiptap/html': 3.30.1(@tiptap/core@3.30.1(@tiptap/pm@3.30.1))(@tiptap/pm@3.30.1)(happy-dom@20.11.2)
+      '@tiptap/html': 3.30.1(@tiptap/core@3.30.1(@tiptap/pm@3.30.1))(@tiptap/pm@3.30.1)(happy-dom@20.14.6)
       '@tiptap/pm': 3.30.1
       '@tiptap/react': 3.31.3(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.1(@tiptap/pm@3.30.1))(@tiptap/pm@3.30.1)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       deep-diff: 1.0.2
       fast-equals: 5.2.2
       flat: 5.0.2
-      happy-dom: 20.11.2
+      happy-dom: 20.14.6
       object-hash: 3.0.0
       react: 18.3.1
       react-hotkeys-hook: 4.6.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -9046,11 +9046,11 @@ snapshots:
       '@tiptap/core': 3.31.3(@tiptap/pm@3.31.3)
       '@tiptap/pm': 3.31.3
 
-  '@tiptap/html@3.30.1(@tiptap/core@3.30.1(@tiptap/pm@3.30.1))(@tiptap/pm@3.30.1)(happy-dom@20.11.2)':
+  '@tiptap/html@3.30.1(@tiptap/core@3.30.1(@tiptap/pm@3.30.1))(@tiptap/pm@3.30.1)(happy-dom@20.14.6)':
     dependencies:
       '@tiptap/core': 3.30.1(@tiptap/pm@3.30.1)
       '@tiptap/pm': 3.30.1
-      happy-dom: 20.11.2
+      happy-dom: 20.14.6
 
   '@tiptap/pm@3.30.1':
     dependencies:
@@ -10977,7 +10977,7 @@ snapshots:
     dependencies:
       duplexer: 0.1.2
 
-  happy-dom@20.11.2:
+  happy-dom@20.14.6:
     dependencies:
       '@types/node': 22.20.3
       '@types/whatwg-mimetype': 3.0.2
@@ -12958,7 +12958,7 @@ snapshots:
       terser: 5.49.0
       yaml: 2.9.0
 
-  vitest@4.1.11(@types/node@22.20.3)(happy-dom@20.11.2)(jsdom@29.1.1)(vite@7.3.6(@types/node@22.20.3)(jiti@1.21.7)(terser@5.49.0)(yaml@2.9.0)):
+  vitest@4.1.11(@types/node@22.20.3)(happy-dom@20.14.6)(jsdom@29.1.1)(vite@7.3.6(@types/node@22.20.3)(jiti@1.21.7)(terser@5.49.0)(yaml@2.9.0)):
     dependencies:
       '@vitest/expect': 4.1.11
       '@vitest/mocker': 4.1.11(vite@7.3.6(@types/node@22.20.3)(jiti@1.21.7)(terser@5.49.0)(yaml@2.9.0))
@@ -12982,7 +12982,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 22.20.3
-      happy-dom: 20.11.2
+      happy-dom: 20.14.6
       jsdom: 29.1.1
     transitivePeerDependencies:
       - msw
