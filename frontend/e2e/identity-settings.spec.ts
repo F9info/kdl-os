@@ -2,7 +2,7 @@
  * T1.3 — Admin "Application Identity" page.
  *
  * Real: login, auth, permissions, admin shell + sidebar (served by the running backend).
- * Mocked (page.route): GET/PUT /api/identity and POST /api/setting-fields/upload — the real
+ * Mocked (page.route): GET/PUT /api/identity and POST /api/identity/upload — the real
  * identity endpoints are covered by backend/src/modules/identity/identity.test.js, and the
  * running Docker backend image predates the identity module. No database writes happen.
  *
@@ -81,7 +81,7 @@ async function installMocks(page: Page, initial: Record<string, string> = {}): P
       body: JSON.stringify({ success: true, data: { identity: mock.state, resolved: resolved() } }),
     })
   })
-  await page.route('**/api/setting-fields/upload', (route) =>
+  await page.route('**/api/identity/upload', (route) =>
     route.fulfill({
       status: 201,
       contentType: 'application/json',

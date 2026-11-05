@@ -34,6 +34,7 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 import { useAuth } from '@/hooks/useAuth'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useModules } from '@/hooks/useModules'
+import { useIdentity } from '@/hooks/useIdentity'
 import api from '@/lib/axios'
 import { cn } from '@/lib/utils'
 import { AppImage } from '@/components/shared/AppImage'
@@ -223,8 +224,8 @@ export function AdminSidebar() {
       icon: Cog,
     }))
 
-  // Dynamic logo from the 'logo' setting field — shown in the header in place of
-  // the "KDL Admin" text. Falls back to the text when no logo is configured.
+  // Header logo: Application Identity first, then the legacy 'logo' setting field, then the
+  // application name as text.
   const { data: logoUrl } = useQuery({
     queryKey: ['app-logo'],
     enabled: isAdmin,
@@ -235,6 +236,9 @@ export function AdminSidebar() {
         .then((r) => (r.data.data.field as SettingField).value_url ?? null)
         .catch(() => null),
   })
+
+  const { identity, appName } = useIdentity()
+  const headerLogo = identity.logo_light || logoUrl
 
   // Exact match: '/admin/settings/types' must not mark a sibling active, so
   // leaves never use startsWith.
@@ -283,21 +287,32 @@ export function AdminSidebar() {
         {/* th-header keeps the logo row the same height as the TopBar when
           Layout > Header Height changes. */}
         <div className="th-header flex items-center border-b px-4">
-          {logoUrl ? (
+          {headerLogo ? (
             // Expanded: logo_image class sizes the logo from the Template
             // Engine's Images pane. Collapsed: the 64px rail is fixed chrome, so
             // an inline style (beats the class) pins the logo to fit it.
-            <AppImage
-              size="logo"
-              src={logoUrl}
-              alt="Logo"
-              className="max-w-full"
-              style={showLabels ? undefined : { width: '2rem', height: '2rem' }}
-            />
+            <>
+              <AppImage
+                size="logo"
+                src={headerLogo}
+                alt={appName}
+                className={cn('max-w-full', identity.logo_dark && 'dark:hidden')}
+                style={showLabels ? undefined : { width: '2rem', height: '2rem' }}
+              />
+              {identity.logo_dark && (
+                <AppImage
+                  size="logo"
+                  src={identity.logo_dark}
+                  alt={appName}
+                  className="hidden max-w-full dark:block"
+                  style={showLabels ? undefined : { width: '2rem', height: '2rem' }}
+                />
+              )}
+            </>
           ) : showLabels ? (
-            <span className="font-bold text-lg tracking-tight">KDL Admin</span>
+            <span className="font-bold text-lg tracking-tight">{appName}</span>
           ) : (
-            <span className="font-bold text-lg">K</span>
+            <span className="font-bold text-lg">{appName.charAt(0)}</span>
           )}
         </div>
 

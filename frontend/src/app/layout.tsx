@@ -6,13 +6,13 @@ import './th-layout.css'
 import './th-components.css'
 import { Providers } from './providers'
 import { WebVitals } from '@/components/WebVitals'
+import { buildIdentityMetadata, fetchAppIdentity } from '@/lib/app-identity'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const sora = Sora({ subsets: ['latin'], variable: '--font-sora' })
 
-export const metadata: Metadata = {
-  title: 'KDL Admin',
-  description: 'KDL Starter Kit Admin Panel',
+export async function generateMetadata(): Promise<Metadata> {
+  return buildIdentityMetadata(await fetchAppIdentity())
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

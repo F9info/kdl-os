@@ -169,3 +169,44 @@ describe('asset resolution (presigned URLs expire, so paths are resolved at read
     expect((await getAppConfig()).logo_light).toBe('');
   });
 });
+
+describe('POST /api/identity/upload (own route: needs settings:edit, not setting-fields:edit)', () => {
+  beforeEach(() => {
+    storageMock.uploadFile = vi.fn(async () => {});
+  });
+  const png = Buffer.from('89504e470d0a1a0a', 'hex');
+
+  it('requires login and settings:edit', async () => {
+    expect((await request(app).post('/api/identity/upload')).status).toBe(401);
+    expect((await request(app).post('/api/identity/upload').set('x-user', '1')).status).toBe(403);
+  });
+
+  it('stores an image under identity/ and returns path + preview url', async () => {
+    const res = await request(app)
+      .post('/api/identity/upload')
+      .set({ 'x-user': '1', 'x-perm': '1' })
+      .attach('file', png, { filename: 'logo.png', contentType: 'image/png' });
+    expect(res.status).toBe(201);
+    expect(res.body.data.path).toMatch(/^identity\/[0-9a-f-]+\.png$/);
+    expect(res.body.data.url).toContain(res.body.data.path);
+    expect(storageMock.uploadFile).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects non-images (incl. SVG) and a missing file with 400, storing nothing', async () => {
+    const h = { 'x-user': '1', 'x-perm': '1' };
+    for (const [name, type] of [['a.svg', 'image/svg+xml'], ['a.html', 'text/html']]) {
+      const res = await request(app).post('/api/identity/upload').set(h).attach('file', Buffer.from('x'), { filename: name, contentType: type });
+      expect(res.status).toBe(400);
+    }
+    expect((await request(app).post('/api/identity/upload').set(h)).status).toBe(400);
+    expect(storageMock.uploadFile).not.toHaveBeenCalled();
+  });
+
+  it('rejects images over 2 MB', async () => {
+    const res = await request(app)
+      .post('/api/identity/upload')
+      .set({ 'x-user': '1', 'x-perm': '1' })
+      .attach('file', Buffer.alloc(2 * 1024 * 1024 + 1), { filename: 'big.png', contentType: 'image/png' });
+    expect(res.status).toBe(400);
+  });
+});

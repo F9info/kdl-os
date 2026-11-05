@@ -1,3 +1,6 @@
+'use client'
+
+import { useIdentity } from '@/hooks/useIdentity'
 import { AdminSidebar } from './AdminSidebar'
 import { TopBar } from './TopBar'
 import { CommandMenu } from '@/components/command/CommandMenu'
@@ -11,6 +14,7 @@ interface AdminShellProps {
 // height) follows the Theme Engine Layout tokens via the te-* classes
 // defined in app/te-layout.css (KDL-212).
 export function AdminShell({ children }: AdminShellProps) {
+  const { appName } = useIdentity()
   return (
     <div className="th-admin-shell flex h-screen overflow-hidden">
       <AdminSidebar />
@@ -20,7 +24,7 @@ export function AdminShell({ children }: AdminShellProps) {
           <div className="th-container">{children}</div>
         </main>
         <footer className="th-footer flex shrink-0 items-center justify-center border-t text-xs text-muted-foreground">
-          KDL Admin
+          {appName}
         </footer>
       </div>
       <CommandMenu />

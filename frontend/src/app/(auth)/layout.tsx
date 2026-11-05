@@ -3,11 +3,14 @@
 import { useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
+import { useIdentity } from '@/hooks/useIdentity'
+import { AppImage } from '@/components/shared/AppImage'
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, user } = useAuthStore()
   const router = useRouter()
   const pathname = usePathname()
+  const { identity, appName } = useIdentity()
 
   useEffect(() => {
     if (isLoading || !isAuthenticated) return
@@ -24,7 +27,26 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       {/* shadow-md uses the B1 elevation token from globals.css */}
       <div className="w-full max-w-md rounded-xl border bg-card p-8 shadow-md">
         <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold tracking-tight">KDL Admin</h1>
+          {identity.logo_light ? (
+            <h1 className="flex justify-center">
+              <AppImage
+                size="logo"
+                src={identity.logo_light}
+                alt={appName}
+                className={identity.logo_dark ? 'dark:hidden' : undefined}
+              />
+              {identity.logo_dark && (
+                <AppImage
+                  size="logo"
+                  src={identity.logo_dark}
+                  alt={appName}
+                  className="hidden dark:block"
+                />
+              )}
+            </h1>
+          ) : (
+            <h1 className="text-2xl font-bold tracking-tight">{appName}</h1>
+          )}
         </div>
         {children}
       </div>

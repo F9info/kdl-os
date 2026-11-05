@@ -145,7 +145,7 @@ export default function IdentityPage() {
     try {
       const body = new FormData()
       body.append('file', file)
-      const res = await api.post('/setting-fields/upload', body)
+      const res = await api.post('/identity/upload', body)
       const { path, url } = res.data.data as { path: string; url: string }
       set(key, path)
       setPreviews((p) => ({ ...p, [key]: url }))

@@ -1,6 +1,6 @@
 import * as service from './service.js';
 import { ASSET_KEYS } from './schema.js';
-import { successResponse } from '../../shared/utils/response.js';
+import { successResponse, errorResponse } from '../../shared/utils/response.js';
 import { writeActivity, getClientIp } from '../user-management/shared/activity-logger.js';
 
 export const getAppConfig = async (req, res, next) => {
@@ -47,6 +47,16 @@ export const updateIdentity = async (req, res, next) => {
     }
     return successResponse(res, await adminPayload(identity));
   } catch (err) {
+    next(err);
+  }
+};
+
+export const uploadAsset = async (req, res, next) => {
+  try {
+    if (!req.file) return errorResponse(res, 'No file uploaded', 400);
+    return successResponse(res, await service.uploadAsset(req.file), 201);
+  } catch (err) {
+    if (err.status === 400) return errorResponse(res, err.message, 400);
     next(err);
   }
 };
