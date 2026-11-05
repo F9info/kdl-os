@@ -152,8 +152,8 @@ export async function getSchemaTree(platform) {
     select: {
       id: true, field_name: true, slug: true, input_type: true,
       value: true, alt_text: true, options: true, sort: true,
-      type_id: true, category_id: true,
-      setting_values: { select: { value: true }, take: 1 },
+      type_id: true, category_id: true, locked_by: true,
+      setting_values: { select: { value: true, updated_at: true }, take: 1 },
     },
     orderBy: { sort: 'asc' },
   });
@@ -169,7 +169,12 @@ export async function getSchemaTree(platform) {
   const fieldsWithoutCat = new Map(); // type_id → fields
   for (const f of fields) {
     const effective = f.setting_values?.[0]?.value ?? f.value;
-    const field = { ...f, effective_value: effective, setting_values: undefined };
+    const field = {
+      ...f,
+      effective_value: effective,
+      updated_at: f.setting_values?.[0]?.updated_at ?? null,
+      setting_values: undefined,
+    };
     if (f.category_id) {
       if (!fieldsByCatId.has(f.category_id)) fieldsByCatId.set(f.category_id, []);
       fieldsByCatId.get(f.category_id).push(field);
@@ -204,6 +209,8 @@ export async function getSchemaTree(platform) {
         alt_text: f.alt_text,
         options: f.options,
         sort: f.sort,
+        locked_by: f.locked_by ?? null,
+        updated_at: f.updated_at,
       })),
     }));
     return {
@@ -256,28 +263,14 @@ export async function upsertValues(platform, typeId, values, actorId, { lockedBy
   // Load all fields for the pane
   const fields = await prisma.settingField.findMany({
     where: { type_id: typeId },
-    select: { id: true, slug: true, field_name: true, input_type: true, options: true, locked_by: true },
+    select: { id: true, slug: true, field_name: true, input_type: true, options: true, locked_by: true, value: true },
   });
   const byId = new Map(fields.map((f) => [f.id, f]));
   const bySlug = new Map(fields.map((f) => [f.slug, f]));
 
   // Lock guard: block user writes when a non-terminal template-engine run holds the field.
   // When lockedByModule is set the caller IS the owning module — bypass the check.
-  if (!lockedByModule) {
-    const lockedFields = fields.filter((f) => f.locked_by);
-    if (lockedFields.length > 0) {
-      const activeRun = await prisma.templateEngineRun.findFirst({
-        where: { status: { in: ['IN_PROGRESS', 'AWAITING_APPROVAL'] } },
-        select: { id: true },
-      });
-      if (activeRun) {
-        const lockedByName = lockedFields[0].locked_by;
-        const err = new Error(`Settings are read-only: locked by module "${lockedByName}"`);
-        err.status = 409;
-        throw err;
-      }
-    }
-  }
+  if (!lockedByModule) await assertNotLocked(fields);
 
   // The whole pane's fields (including "Custom Fonts") save in one request —
   // pull any custom font names out of this same batch so Font Family selects
@@ -306,6 +299,11 @@ export async function upsertValues(platform, typeId, values, actorId, { lockedBy
 
   if (errors.length) return { errors };
 
+  // User saves snapshot the previous state first so the publish can be undone.
+  if (!lockedByModule) {
+    await captureVersion(platform, typeId, upserts, byId, actorId);
+  }
+
   await prisma.$transaction(
     upserts.map((u) =>
       prisma.settingValue.upsert({
@@ -327,6 +325,104 @@ export async function upsertValues(platform, typeId, values, actorId, { lockedBy
 
   await invalidateTokenCache(platform);
   return { saved: upserts.length };
+}
+
+// ── Versions (undo a publish) ────────────────────────────────────────────────
+
+const MAX_VERSIONS = 20;
+
+async function assertNotLocked(fields) {
+  const lockedFields = fields.filter((f) => f.locked_by);
+  if (lockedFields.length === 0) return;
+  const activeRun = await prisma.templateEngineRun.findFirst({
+    where: { status: { in: ['IN_PROGRESS', 'AWAITING_APPROVAL'] } },
+    select: { id: true },
+  });
+  if (activeRun) {
+    const err = new Error(`Settings are read-only: locked by module "${lockedFields[0].locked_by}"`);
+    err.status = 409;
+    throw err;
+  }
+}
+
+// Store the pre-change value of every field about to be written — but only if
+// something actually changes, so pressing Publish twice doesn't add noise.
+async function captureVersion(platform, typeId, upserts, fieldsById, actorId) {
+  const existing = await prisma.settingValue.findMany({
+    where: { field_id: { in: upserts.map((u) => u.field_id) } },
+    select: { field_id: true, value: true },
+  });
+  const before = new Map(existing.map((v) => [v.field_id, v.value]));
+  const changed = upserts.some((u) => (before.get(u.field_id) ?? fieldsById.get(u.field_id)?.value) !== u.value);
+  if (!changed) return;
+
+  const snapshot = JSON.stringify(upserts.map((u) => ({ field_id: u.field_id, value: before.get(u.field_id) ?? null })));
+  await prisma.themeValueVersion.create({
+    data: { platform, type_id: typeId, snapshot, created_by: actorId ?? null },
+  });
+  const stale = await prisma.themeValueVersion.findMany({
+    where: { platform, type_id: typeId },
+    orderBy: { created_at: 'desc' },
+    skip: MAX_VERSIONS,
+    select: { id: true },
+  });
+  if (stale.length) {
+    await prisma.themeValueVersion.deleteMany({ where: { id: { in: stale.map((v) => v.id) } } });
+  }
+}
+
+export async function listVersions(platform, typeId) {
+  const rows = await prisma.themeValueVersion.findMany({
+    where: { platform, type_id: typeId },
+    orderBy: { created_at: 'desc' },
+    take: MAX_VERSIONS,
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    created_at: r.created_at,
+    created_by: r.created_by,
+    field_count: JSON.parse(r.snapshot).length,
+  }));
+}
+
+// Put a pane back to the state captured in `versionId`. The current state is
+// captured first, so a restore can itself be undone.
+export async function restoreVersion(versionId, actorId) {
+  const version = await prisma.themeValueVersion.findUnique({ where: { id: versionId } });
+  if (!version) return { notFound: true };
+
+  const entries = JSON.parse(version.snapshot);
+  const fields = await prisma.settingField.findMany({
+    where: { id: { in: entries.map((e) => e.field_id) } },
+    select: { id: true, locked_by: true, value: true },
+  });
+  await assertNotLocked(fields);
+  const byId = new Map(fields.map((f) => [f.id, f]));
+  const live = entries.filter((e) => byId.has(e.field_id)); // fields may have been removed since
+
+  await captureVersion(
+    version.platform,
+    version.type_id,
+    live.map((e) => ({ field_id: e.field_id, value: e.value ?? byId.get(e.field_id).value })),
+    byId,
+    actorId
+  );
+
+  const writes = [];
+  for (const e of live) {
+    writes.push(
+      e.value === null
+        ? prisma.settingValue.deleteMany({ where: { field_id: e.field_id } })
+        : prisma.settingValue.upsert({
+            where: { field_id: e.field_id },
+            create: { field_id: e.field_id, platform: version.platform, value: e.value, updated_by: actorId ?? null },
+            update: { value: e.value, updated_by: actorId ?? null },
+          })
+    );
+  }
+  await prisma.$transaction(writes);
+  await invalidateTokenCache(version.platform);
+  return { restored: live.length, platform: version.platform, type_id: version.type_id };
 }
 
 // ── Reset pane to defaults (POST /reset) ─────────────────────────────────────

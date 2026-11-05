@@ -26,6 +26,7 @@ import { startBrandKitExpiryJob } from './modules/brand-kit/brand-kit.queue.js';
 import authRoutes from './modules/auth/routes.js';
 import userRoutes from './modules/users/routes.js';
 import settingsRoutes from './modules/settings/routes.js';
+import identityRoutes, { publicRouter as appConfigRoutes } from './modules/identity/routes.js';
 import mediaRoutes from './modules/media/routes.js';
 import mediaImportPublicRoutes from './modules/media/import/public-routes.js';
 import typeRoutes from './modules/types/routes.js';
@@ -104,6 +105,8 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/identity', identityRoutes);
+app.use('/api/app-config', appConfigRoutes);
 // Unauthenticated OAuth callback (Phase D8 cloud imports) — must be registered
 // before the authenticated media router since both share the /api/media prefix.
 app.use('/api/media/import/oauth', mediaImportPublicRoutes);

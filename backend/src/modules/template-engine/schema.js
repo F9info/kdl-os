@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 // Design '1'-'4', or `custom:<id>` = a saved Section Builder block
 // (CustomBlockTemplate) chosen for that slot.
-const layoutVariant = z.string().regex(/^([1-4]|custom:[A-Za-z0-9_-]+)$/);
+const layoutVariant = z.string().regex(/^([1-5]|custom:[A-Za-z0-9_-]+)$/);
 
 // Canonical stage slugs per TEMPLATE_ENGINE_ARCH.md §3.
 export const DAG_STAGE_SLUGS = [
@@ -54,7 +54,7 @@ export const advanceStageSchema = z.object({
       templatePack: z.enum(['general', 'medical', 'construction']).optional(),
       navigationPages: z.array(z.string().min(1)).optional(),
       // Layout settings (the dedicated Layout picker page) — toggle and pick
-      // a design variant ('1'-'4', same variant scale as every other Puck
+      // a design variant ('1'-'5', same variant scale as every other Puck
       // block) for the top-header/header/footer blocks on every assembled
       // page. Each section is independently optional (see patchLayout in
       // drivers/website-seed-content.js) — omitted keys are left untouched.

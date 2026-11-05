@@ -43,7 +43,7 @@ const TOP_HEADER_CONFIG = construction.components.ConstructionTopBar!
 const HEADER_CONFIG = construction.components.ConstructionHeader!
 const FOOTER_CONFIG = construction.components.ConstructionFooter!
 
-const VARIANTS: Variant[] = ['1', '2', '3', '4']
+const VARIANTS: Variant[] = ['1', '2', '3', '4', '5']
 
 // Shrinks a component's own real render to a given scale. Uses CSS `zoom`
 // rather than `transform: scale()` — transform only shrinks the paint, not
@@ -75,6 +75,7 @@ const TOP_HEADER_LABELS: Record<Variant, string> = {
   '2': 'Announcement + social + language',
   '3': 'Tagline + CTA button',
   '4': 'Support items + login/signup',
+  '5': 'Modern agency — contact + follow us',
 }
 
 const HEADER_LABELS: Record<Variant, string> = {
@@ -82,6 +83,7 @@ const HEADER_LABELS: Record<Variant, string> = {
   '2': 'Diagonal banner (socials) + phone badge',
   '3': 'Solid color bar, login + grid menu',
   '4': 'Phone/email badges, search + CTA',
+  '5': 'Modern agency — logo, centered menu, search + CTA',
 }
 
 // All 4 Footer designs are built (each of the 4 reference designs is a
@@ -92,6 +94,7 @@ const FOOTER_LABELS: Record<Variant, string> = {
   '2': 'Colorful blocks — about + quick links + contact',
   '3': 'White logo bar, dark link columns + big phone',
   '4': 'Dark curve, 4 link columns + newsletter signup',
+  '5': 'Modern agency — brand, quick links, services, contact info',
 }
 
 function sectionConfig(

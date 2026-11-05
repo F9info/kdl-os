@@ -1,6 +1,8 @@
 import { successResponse, errorResponse } from '../../shared/utils/response.js';
 import { createPageSchema, updatePageSchema } from './schema.js';
 import * as service from './service.js';
+import { getDefaultProjectId } from '../../shared/default-project.js';
+import { prisma } from '../../config/database.js';
 
 export const getAll = async (req, res, next) => {
   try {
@@ -25,6 +27,17 @@ export const getOne = async (req, res, next) => {
 export const getPublic = async (req, res, next) => {
   try {
     const page = await service.getPublishedBySlug(req.params.slug);
+    if (!page) return errorResponse(res, 'Page not found', 404);
+    successResponse(res, { page });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getPublicSitePage = async (req, res, next) => {
+  try {
+    const projectId = req.query.project_id ?? (await getDefaultProjectId(prisma));
+    const page = projectId && (await service.getPublishedBySiteKey(projectId, req.params.key));
     if (!page) return errorResponse(res, 'Page not found', 404);
     successResponse(res, { page });
   } catch (err) {

@@ -223,8 +223,8 @@ export default function TypesPage() {
     <PermissionGuard permission="types:view">
       <div>
         <PageHeader
-          title="Types"
-          breadcrumbs={[{ label: 'Application Settings' }, { label: 'Types' }]}
+          title="Field Types"
+          breadcrumbs={[{ label: 'Settings' }, { label: 'Field Types' }]}
           action={
             <Button onClick={openCreate}>
               <Plus className="h-4 w-4" />

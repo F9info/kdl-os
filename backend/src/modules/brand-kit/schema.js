@@ -47,6 +47,8 @@ export const getTokensSchema = z.object({
   }),
 });
 
+export const getThemeColorsSchema = projectParamsSchema;
+
 export const renderGuidelinesSchema = z.object({
   params: z.object({ projectId: z.string().min(1) }),
 });

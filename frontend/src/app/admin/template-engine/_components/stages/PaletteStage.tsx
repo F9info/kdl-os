@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { Palette, Pipette, Shuffle } from 'lucide-react'
 import api from '@/lib/axios'
@@ -17,7 +16,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { rampFromHex, srgbToOklch, hexToRgb } from '@/lib/oklch-ramp'
 import {
-  DAG_STAGES,
   type BrandKitPalette,
   type PaletteColor,
   type PaletteRole,
@@ -51,7 +49,6 @@ function colorFromHex(hex: string): PaletteColor {
 }
 
 export function PaletteStage({ run }: { run: TemplateEngineRun }) {
-  const router = useRouter()
   const stage = run.stages.find((s) => s.stage === 'PALETTE')
   const advance = useAdvanceStage(run.id, run.projectId)
   const retry = useRetryStage(run.id, run.projectId)
@@ -169,19 +166,6 @@ export function PaletteStage({ run }: { run: TemplateEngineRun }) {
     }
   }
 
-  function goToNextStage() {
-    // The Studio nav only surfaces Overview/Color Palette/Brands (KDL-558) —
-    // jump straight to Brands (WEBSITE) rather than the DAG's literal next
-    // stage (Brand Inference), which has no visible tab. This only changes
-    // where the browser navigates; it doesn't skip or auto-run the hidden
-    // Inference/Approval/Guidelines/Collateral stages server-side — their
-    // real gates (e.g. Brand Approval's human review) still apply wherever
-    // they already did.
-    const websiteDef = DAG_STAGES.find((s) => s.stage === 'WEBSITE')
-    if (websiteDef)
-      router.push(`/admin/template-engine/projects/${run.projectId}/${websiteDef.slug}`)
-  }
-
   function handleSubmit() {
     if (!edits) return
     const palette: BrandKitPalette = {
@@ -191,7 +175,9 @@ export function PaletteStage({ run }: { run: TemplateEngineRun }) {
       paletteConfidence: brandKit?.palette?.paletteConfidence ?? 'low',
       colors: edits,
     }
-    patchPalette.mutate(palette, { onSuccess: goToNextStage })
+    patchPalette.mutate(palette, {
+      onSuccess: () => toast({ title: 'Color palette saved' }),
+    })
   }
 
   return (
@@ -366,13 +352,13 @@ export function PaletteStage({ run }: { run: TemplateEngineRun }) {
 
             <div className="rounded-lg border bg-card px-6 py-6 flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-medium">Submit palette</h3>
+                <h3 className="text-sm font-medium">Save palette</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Saves your edits and moves on to Brand Inference.
+                  Saves your colour edits. You stay on this page.
                 </p>
               </div>
               <Button onClick={handleSubmit} disabled={isApproved || patchPalette.isPending}>
-                {patchPalette.isPending ? 'Saving…' : 'Next'}
+                {patchPalette.isPending ? 'Saving…' : 'Save'}
               </Button>
             </div>
           </>

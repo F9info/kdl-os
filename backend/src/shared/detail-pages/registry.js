@@ -36,3 +36,27 @@ export function getDetailPageType(typeKey) {
 export function listDetailPageTypes() {
   return [...registry.entries()];
 }
+
+// Providers contribute types that live in the DB and can differ per project
+// (admin-created Blog/Service/... types — see
+// modules/detail-page-types/entries.service.js). A provider is
+// `async (projectId) => Array<[typeKey, config]>`.
+const providers = new Set();
+
+export function registerDetailPageTypeProvider(provider) {
+  providers.add(provider);
+}
+
+// Code-registered types plus every provider's types for this project.
+export async function listDetailPageTypesForProject(projectId) {
+  const all = [...registry.entries()];
+  if (!projectId) return all;
+  for (const provider of providers) all.push(...(await provider(projectId)));
+  return all;
+}
+
+export async function resolveDetailPageType(typeKey, projectId) {
+  const staticType = registry.get(typeKey);
+  if (staticType) return staticType;
+  return (await listDetailPageTypesForProject(projectId)).find(([k]) => k === typeKey)?.[1];
+}

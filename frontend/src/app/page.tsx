@@ -1,5 +1,6 @@
-import { redirect } from 'next/navigation'
+import { SitePage } from './_site/SitePage'
 
+// The public website's home. No published home page yet → login (fresh install).
 export default function RootPage() {
-  redirect('/login')
+  return <SitePage pageKey="home" fallbackToLogin />
 }

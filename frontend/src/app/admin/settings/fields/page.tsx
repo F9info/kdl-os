@@ -260,8 +260,8 @@ export default function FieldsPage() {
     <PermissionGuard permission="setting-fields:view">
       <div>
         <PageHeader
-          title="Fields"
-          breadcrumbs={[{ label: 'Application Settings' }, { label: 'Fields' }]}
+          title="Custom Fields"
+          breadcrumbs={[{ label: 'Settings' }, { label: 'Custom Fields' }]}
           action={
             <Button onClick={openCreate}>
               <Plus className="h-4 w-4" />

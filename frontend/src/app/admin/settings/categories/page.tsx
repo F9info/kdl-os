@@ -251,8 +251,8 @@ export default function CategoriesPage() {
     <PermissionGuard permission="categories:view">
       <div>
         <PageHeader
-          title="Categories"
-          breadcrumbs={[{ label: 'Application Settings' }, { label: 'Categories' }]}
+          title="Field Categories"
+          breadcrumbs={[{ label: 'Settings' }, { label: 'Field Categories' }]}
           action={
             <Button onClick={openCreate}>
               <Plus className="h-4 w-4" />

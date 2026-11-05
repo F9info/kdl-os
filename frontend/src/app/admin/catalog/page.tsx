@@ -297,7 +297,7 @@ function CatalogPageContent() {
             hint="A stock or Unsplash URL is fine if no local asset exists yet."
             error={errors.image?.message}
           >
-            <Input placeholder="/seed/subhadra/products/cables.png" {...register('image')} />
+            <Input placeholder="https://… or /uploads/image.jpg" {...register('image')} />
             {imageUrl && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={imageUrl} alt="" className="mt-2 h-24 w-36 rounded object-cover" />

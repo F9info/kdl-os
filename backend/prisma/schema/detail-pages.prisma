@@ -16,3 +16,48 @@ model DetailPageTemplate {
   @@unique([project_id, type_key])
   @@map("detail_page_templates")
 }
+
+// DB-defined Details Page content type (Blog, Service, ...) — the generic,
+// admin-creatable counterpart of the code-registered types (sectors/work/
+// catalog). Each row is surfaced through the detail-pages registry by a
+// provider (modules/detail-page-types/entries.service.js), so Layout
+// Settings, nav-sync and the public route need no per-type code.
+// `slug_prefix` is the public URL base: /<slug_prefix>/<entry slug>.
+model DetailPageType {
+  id               String   @id @default(cuid())
+  project_id       String
+  type_key         String
+  label            String
+  nav_parent_label String
+  slug_prefix      String
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  @@unique([project_id, type_key])
+  @@unique([project_id, slug_prefix])
+  @@map("detail_page_types")
+}
+
+// One entry of a DetailPageType. `detail_page_id` is a loose reference to the
+// entry's bound BuilderPage (same convention as Sector.detail_page_id).
+model DetailPageEntry {
+  id              String   @id @default(cuid())
+  project_id      String
+  type_key        String
+  title           String
+  slug            String
+  description     String?
+  body            String?
+  image           String?
+  detail_page_id  String?
+  seo_title       String?
+  seo_description String?
+  order           Int      @default(0)
+  is_active       Boolean  @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  @@unique([project_id, type_key, slug])
+  @@index([project_id, type_key])
+  @@map("detail_page_entries")
+}

@@ -33,6 +33,13 @@ function injectCss(css: string) {
   styleEl.textContent = css
 }
 
+// Which platform's compiled tokens this app consumes. The admin panel keeps
+// `webapp_admin`; a generated client site (template-engine/site/generator.js
+// writes NEXT_PUBLIC_THEME_PLATFORM=webapp into its .env.local) consumes the
+// same `webapp` theme the Theme Engine "Web App" tab edits — so the Studio
+// preview matches what gets exported (export manifest: site.themeEndpoint).
+const THEME_PLATFORM = process.env.NEXT_PUBLIC_THEME_PLATFORM || 'webapp_admin'
+
 // This Next.js app IS the admin panel — its own chrome (sidebar, etc.) must
 // consume the `webapp_admin` platform's compiled tokens, not `webapp` (the
 // public-facing site, a separate consumer that fetches this same endpoint
@@ -40,7 +47,7 @@ function injectCss(css: string) {
 // fetch this endpoint with their own `platform` and apply the JSON form.
 async function fetchAndApply(): Promise<ActiveTheme> {
   const res = await api.get<TokensResponse>('/theme-engine/tokens', {
-    params: { platform: 'webapp_admin' },
+    params: { platform: THEME_PLATFORM },
   })
   const { css, activeTheme } = res.data.data
   injectCss(css)

@@ -25,6 +25,8 @@ import {
   type MenuItemNode as NavNode,
 } from '@/app/admin/menus/_tree'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { fetchDetailPageTypes } from '@/lib/detail-page-types'
+import { useSiteHomeHref } from '@/hooks/useSiteHomeHref'
 import api from '@/lib/axios'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -52,6 +54,7 @@ interface DetailPageType {
   typeKey: string
   label: string
   navParentLabel: string
+  deletable?: boolean
   count: number
   sectionHref: string
   listHref: string
@@ -72,7 +75,7 @@ const PLATFORM_GROUPS: { label: string; note: string; items: string[] }[] = [
   {
     label: 'Web',
     note: 'Responsive Web + WCAG',
-    items: ['Website', 'Landing Page', 'Admin Dashboard', 'Progressive Web App (PWA)'],
+    items: ['Website', 'Landing Page', 'Portfolio', 'Admin Dashboard', 'Progressive Web App (PWA)'],
   },
   {
     label: 'Mobile',
@@ -109,6 +112,14 @@ const PLATFORM_GROUPS: { label: string; note: string; items: string[] }[] = [
   },
 ]
 
+// Only these cards are shown for now; the rest of PLATFORM_GROUPS stays defined and
+// appears once its name is added here (all platforms get integrated later).
+const VISIBLE_PLATFORMS = new Set(['Landing Page', 'Portfolio', 'Progressive Web App (PWA)'])
+const visiblePlatformGroups = PLATFORM_GROUPS.map((g) => ({
+  ...g,
+  items: g.items.filter((name) => VISIBLE_PLATFORMS.has(name)),
+})).filter((g) => g.items.length > 0)
+
 // Curated starter sets matching the prototype's Web app Typography screen.
 const HEADING_FONTS = ['Poppins', 'Inter', 'Manrope', 'Space Grotesk']
 const BODY_FONTS = ['Inter', 'Roboto', 'Open Sans', 'Work Sans']
@@ -138,11 +149,6 @@ function writeLocal(key: string, value: unknown) {
   }
 }
 
-// The generated site is served at `/` on this same origin (nginx routes it).
-function sitePreviewUrl() {
-  return typeof window === 'undefined' ? '#' : `${window.location.origin}/`
-}
-
 export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'WEBSITE')
   const advance = useAdvanceStage(run.id, run.projectId)
@@ -158,7 +164,7 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
         .openBrand
   )
   const [webAppStep, setWebAppStep] = useState<
-    'typography' | 'fontSettings' | 'navigation' | 'assemble'
+    'typography' | 'fontSettings' | 'navigation' | 'layouts' | 'assemble'
   >(() => readLocal(uiStateKey, { webAppStep: 'typography' as const }).webAppStep)
   // Snapshot of what Typography's Next just saved — read straight from the
   // mutation result instead of waiting on brandKit's invalidate-refetch, so
@@ -187,18 +193,33 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
   // it just starts showing up in this list.
   const { data: detailPageTypes } = useQuery({
     queryKey: ['detail-page-types', run.projectId],
-    queryFn: () =>
-      api
-        .get('/detail-page-types', { params: { project_id: run.projectId } })
-        .then((r) => r.data.data.items as DetailPageType[]),
+    queryFn: () => fetchDetailPageTypes<DetailPageType>(run.projectId),
+  })
+  // Live menu labels (header + footer): a plain "X Detail" nav-page pill is shown only while a
+  // menu item with that label exists — the menu is the source of truth for detail layouts.
+  const { data: menuLabels } = useQuery({
+    queryKey: ['detail-menu-labels', run.projectId],
+    queryFn: async () => {
+      type Node = { label: string; children?: Node[] }
+      const labels = new Set<string>()
+      const walk = (items: Node[] = []) =>
+        items.forEach((i) => {
+          labels.add(i.label.trim().toLowerCase())
+          walk(i.children)
+        })
+      for (const key of ['header', 'footer']) {
+        const r = await api.post('/menus/ensure', { project_id: run.projectId, key, name: key })
+        walk(r.data.data.menu.items)
+      }
+      return labels
+    },
   })
   // Page slugs are deterministic (`te-{runId}-{key}`, set by the website
   // driver — see template-engine/drivers/index.js's `seedPages`), so the
   // real public Home URL can be computed here with no extra fetch. Prefers
   // the "home" key; falls back to whatever page exists first for a run
   // that genuinely has no Home page.
-  const demoHomeKey = pages.find(([key]) => key === 'home')?.[0] ?? pages[0]?.[0]
-  const demoSiteHref = demoHomeKey ? `/p/te-${run.id}-${demoHomeKey}` : null
+  const demoSiteHref = useSiteHomeHref(outputRef?.pageKeyToId)
   // Older runs (before navigationPages existed) have no pageKeyToTitle —
   // every key was its title lowercased then, so capitalizing the key alone
   // still matches ('home' -> 'Home').
@@ -211,12 +232,38 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
   // assembled page — but it still gets its own Layout pill next to "Layout
   // Sector detail", just pointing straight at that one page's own editor
   // instead of a list of many.
-  const customDetailPageTypes = pages
-    .filter(([key]) => /\bdetail$/i.test(pageLabel(key)))
-    .map(([key, id]) => {
-      const editHref = `/admin/template-engine/edit/${id}?projectId=${run.projectId}`
-      return { label: pageLabel(key), count: 1, sectionHref: editHref, listHref: editHref }
-    })
+  // Same-titled pages ("Service Detail" x2) share one pill; its badge is how many there are.
+  const customDetailPageTypes = Object.values(
+    pages
+      .filter(([key]) => /\bdetail$/i.test(pageLabel(key)))
+      .reduce<
+        Record<
+          string,
+          {
+            label: string
+            count: number
+            sectionHref: string
+            listHref: string
+          }
+        >
+      >((acc, [key, id]) => {
+        const label = pageLabel(key)
+        const editHref = `/admin/template-engine/edit/${id}?projectId=${run.projectId}`
+        // Pill -> section builder of the first page; numbered badge -> /admin/<slug> pages table.
+        acc[label] = acc[label]
+          ? { ...acc[label], count: acc[label].count + 1 }
+          : {
+              label,
+              count: 1,
+              sectionHref: editHref,
+              listHref: `/admin/${label
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '')}?projectId=${run.projectId}`,
+            }
+        return acc
+      }, {})
+  )
 
   function openWebApp() {
     // Fire-and-continue: the folder is (re)generated in the background while
@@ -273,7 +320,7 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
       {openBrand === null ? (
         <div className="space-y-3">
           <div>
-            <h3 className="text-base font-semibold">Brands</h3>
+            <h3 className="text-base font-semibold">Types</h3>
             <p className="text-sm text-muted-foreground">
               Your brand surfaces. Click a card to open it.
             </p>
@@ -293,7 +340,7 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
               </button>
             ))}
           </div>
-          {PLATFORM_GROUPS.map((g) => (
+          {visiblePlatformGroups.map((g) => (
             <div key={g.label} className="space-y-2 pt-2">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {g.label} — <span className="font-normal normal-case">{g.note}</span>
@@ -314,16 +361,6 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
         </div>
       ) : (
         <div className="space-y-3">
-          <div className="flex justify-end">
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => window.open(sitePreviewUrl(), '_blank', 'noopener,noreferrer')}
-            >
-              <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
-              Frontend view
-            </Button>
-          </div>
           {webAppStep === 'typography' ? (
             <Button
               type="button"
@@ -333,7 +370,7 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
               className="gap-1.5 px-2"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
-              Back to Brands
+              Back to Types
             </Button>
           ) : webAppStep === 'assemble' ? (
             // The Pages grid is downstream of the page selection made in
@@ -359,7 +396,6 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
                 patchTypography.mutate(typography, {
                   onSuccess: (updatedKit) => {
                     setSavedTypography(updatedKit.typography)
-                    setWebAppStep('fontSettings')
                   },
                 })
               }
@@ -369,7 +405,44 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
               projectId={run.projectId}
               typography={savedTypography ?? brandKit?.typography ?? null}
               onBack={() => setWebAppStep('typography')}
-              onNext={() => setWebAppStep('navigation')}
+            />
+          ) : webAppStep === 'layouts' ? (
+            <LayoutSettingsPanel
+              projectId={run.projectId}
+              editHref={`/admin/template-engine/projects/${run.projectId}/website/layout`}
+              detailPageTypes={[
+                ...(detailPageTypes ?? []).map((t) => ({
+                  ...t,
+                  onDelete: t.deletable
+                    ? () =>
+                        api.delete(`/detail-page-types/${t.typeKey}`, {
+                          params: { project_id: run.projectId },
+                        })
+                    : undefined,
+                  entries: t.entities.map((e) => ({
+                    name: e.name,
+                    href: `/admin/template-engine/edit/${e.detail_page_id}?projectId=${run.projectId}`,
+                    publicHref: e.publicPath,
+                  })),
+                })),
+                ...customDetailPageTypes
+                  .filter(
+                    (c) =>
+                      menuLabels?.has(c.label.trim().toLowerCase()) &&
+                      !(detailPageTypes ?? []).some(
+                        (t) => t.label.toLowerCase() === c.label.toLowerCase()
+                      )
+                  )
+                  .map((c) => ({
+                    ...c,
+                    onDelete: () =>
+                      Promise.all(
+                        pages
+                          .filter(([k]) => pageLabel(k) === c.label)
+                          .map(([, id]) => api.delete(`/page-builder/${id}`))
+                      ),
+                  })),
+              ]}
             />
           ) : webAppStep === 'navigation' ? (
             <NavigationStep
@@ -383,11 +456,6 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
             />
           ) : pageCount > 0 ? (
             <div className="space-y-3">
-              <LayoutSettingsPanel
-                projectId={run.projectId}
-                editHref={`/admin/template-engine/projects/${run.projectId}/website/layout`}
-                detailPageTypes={[...(detailPageTypes ?? []), ...customDetailPageTypes]}
-              />
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
                   <h3 className="text-base font-semibold">Web app · Pages</h3>
@@ -485,7 +553,7 @@ function WebAppTypographyStep({
         </span>
       </div>
       <p className="text-xs text-muted-foreground -mt-4">
-        Pick the heading and body fonts for this surface, then continue with Next.
+        Pick the heading and body fonts for this surface, then Save.
       </p>
 
       <FontRoleSection
@@ -530,8 +598,7 @@ function WebAppTypographyStep({
           }
           disabled={isSaving || heading.length === 0 || body.length === 0}
         >
-          {isSaving ? 'Saving…' : 'Next'}
-          <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+          {isSaving ? 'Saving…' : 'Save'}
         </Button>
       </div>
     </div>
@@ -967,7 +1034,6 @@ function FontSettingsStep({
   projectId,
   typography,
   onBack,
-  onNext,
 }: {
   projectId: string
   typography: {
@@ -975,7 +1041,6 @@ function FontSettingsStep({
     body: { family: string; families?: string[] } | null
   } | null
   onBack: () => void
-  onNext: () => void
 }) {
   const storageKey = `te-website-ui:${projectId}:typeScale`
   const headingOptions = typography?.heading?.families?.length
@@ -1013,6 +1078,16 @@ function FontSettingsStep({
   useEffect(() => {
     writeLocal(storageKey, rows)
   }, [storageKey, rows])
+
+  // Rows already autosave above; Save writes them explicitly and confirms, staying on this step.
+  const [saved, setSaved] = useState(false)
+  useEffect(() => {
+    setSaved(false)
+  }, [rows])
+  function saveRows() {
+    writeLocal(storageKey, rows)
+    setSaved(true)
+  }
 
   function updateRow(i: number, patch: Partial<TypeScaleRow>) {
     setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)))
@@ -1110,10 +1185,9 @@ function FontSettingsStep({
               </tbody>
             </table>
           </div>
-          <div className="flex justify-end pt-2">
-            <Button type="button" onClick={onNext}>
-              Next
-              <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={saveRows}>
+              {saved ? 'Saved' : 'Save'}
             </Button>
           </div>
         </div>
@@ -1152,9 +1226,19 @@ function LayoutSettingsPanel({
 }: {
   projectId: string
   editHref: string
-  detailPageTypes?: { label: string; count: number; sectionHref: string; listHref: string }[]
+  detailPageTypes?: {
+    label: string
+    count: number
+    sectionHref: string
+    listHref: string
+    // href = section-builder editor; publicHref = the entry's live page at its real slug.
+    entries?: { name: string; href: string; publicHref?: string }[]
+    // Present only for deletable types: removes the type, all its pages and their menu links.
+    onDelete?: () => Promise<unknown>
+  }[]
 }) {
   const availableDetailTypes = detailPageTypes.filter((t) => t.count > 0)
+  const queryClient = useQueryClient()
 
   return (
     <div className="flex flex-col items-center gap-3 rounded-lg border bg-card p-4 text-center">
@@ -1169,22 +1253,71 @@ function LayoutSettingsPanel({
       </Button>
       <div className="flex flex-wrap items-start justify-center gap-3">
         {availableDetailTypes.map((t) => (
-          <div key={t.label} className="relative inline-block">
-            <a
-              href={t.sectionHref}
-              className="rounded-full border border-gray-300 bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"
-            >
-              Layout {t.label}
-            </a>
-            {/* Separate link from the pill text above — goes to the per-entry list
-              (/admin/sectors), not the section builder the pill itself opens. */}
-            <a
-              href={t.listHref}
-              title={`Manage all ${t.count} ${t.label} entries`}
-              className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground hover:bg-primary/90"
-            >
-              {t.count}
-            </a>
+          <div key={t.label} className="flex flex-col items-center gap-1.5">
+            <div className="relative inline-block">
+              {/* Pill -> Section Builder of the shared layout; badge -> manage entries. */}
+              <a
+                href={t.sectionHref}
+                className="rounded-full border border-gray-300 bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"
+              >
+                Layout {t.label}
+              </a>
+              {t.onDelete ? (
+                <button
+                  type="button"
+                  title={`Delete ${t.label} and its ${t.count} pages`}
+                  aria-label={`Delete ${t.label}`}
+                  className="absolute -left-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[11px] leading-none text-destructive-foreground"
+                  onClick={async () => {
+                    if (
+                      !window.confirm(
+                        `Delete "${t.label}" with all ${t.count} pages? This also removes its menu links.`
+                      )
+                    )
+                      return
+                    await t.onDelete?.()
+                    queryClient.invalidateQueries()
+                  }}
+                >
+                  ×
+                </button>
+              ) : null}
+              <a
+                href={t.listHref}
+                title={`${t.count} ${t.label} pages`}
+                className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground"
+              >
+                {t.count}
+              </a>
+            </div>
+            {/* One numbered link per page: edit its own content; "view" opens its slug URL. */}
+            <div className="flex flex-wrap justify-center gap-1">
+              {(t.entries ?? []).map((e, i) => (
+                <span
+                  key={e.href}
+                  className="inline-flex items-center overflow-hidden rounded border text-[10px]"
+                >
+                  <a
+                    href={e.href}
+                    title={`Edit ${e.name}`}
+                    className="px-1.5 py-0.5 hover:bg-gray-100"
+                  >
+                    {i + 1}
+                  </a>
+                  {e.publicHref ? (
+                    <a
+                      href={e.publicHref}
+                      target="_blank"
+                      rel="noreferrer"
+                      title={e.publicHref}
+                      className="border-l px-1 py-0.5 hover:bg-gray-100"
+                    >
+                      ↗
+                    </a>
+                  ) : null}
+                </span>
+              ))}
+            </div>
           </div>
         ))}
       </div>

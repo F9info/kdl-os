@@ -197,8 +197,8 @@ test('3+4. limited user logs in; restricted menu hidden, visible items accessibl
   await expect(sidebar.getByRole('link', { name: 'Roles' })).toHaveCount(0)
   await expect(sidebar.getByRole('link', { name: 'Permissions' })).toHaveCount(0)
   await expect(sidebar.getByRole('link', { name: 'Activity Log' })).toHaveCount(0)
-  // Viewer has types:view — "Application Settings" group shows with only Types visible.
-  await expect(sidebar.getByText('Application Settings')).toBeVisible()
+  // Viewer has types:view — "Settings" group shows with only Types visible.
+  await expect(sidebar.getByText('Settings', { exact: true })).toBeVisible()
   await expect(sidebar.getByRole('link', { name: 'Categories' })).toHaveCount(0)
   await expect(sidebar.getByRole('link', { name: 'Fields' })).toHaveCount(0)
 

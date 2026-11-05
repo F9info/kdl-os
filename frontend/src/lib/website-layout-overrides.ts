@@ -4,9 +4,9 @@
 // on/off + variant selection shape, so it lives here once instead of
 // drifting into two slightly different copies.
 
-export type Variant = '1' | '2' | '3' | '4'
+export type Variant = '1' | '2' | '3' | '4' | '5'
 
-/** Design '1'-'4', or `custom:<id>` = a saved Section Builder block. */
+/** Design '1'-'5', or `custom:<id>` = a saved Section Builder block. */
 export type SectionVariant = Variant | `custom:${string}`
 
 export function customBlockIdOf(variant: SectionVariant): string | null {
@@ -25,9 +25,10 @@ export interface LayoutSelection {
 }
 
 export const DEFAULT_SELECTION: LayoutSelection = {
-  topHeader: { enabled: false, variant: '1' },
-  header: { enabled: true, variant: '1' },
-  footer: { enabled: true, variant: '1' },
+  // Design 5 ("Modern agency") is the default look when nothing is saved.
+  topHeader: { enabled: true, variant: '5' },
+  header: { enabled: true, variant: '5' },
+  footer: { enabled: true, variant: '5' },
 }
 
 export interface BrandContext {

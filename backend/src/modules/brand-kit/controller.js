@@ -8,6 +8,7 @@ import {
   approveKit,
   reopenKit,
   getTokens,
+  getThemeColors,
   renderGuidelines,
 } from './service.js';
 import { getContactFields, saveContactFields } from './contact-fields.js';
@@ -87,6 +88,14 @@ export const getTokensHandler = async (req, res, next) => {
     // D-BK-6: tokens shaped for POST /api/theme-engine/values; orchestrator writes
     const payload = await getTokens(req.params.projectId, req.query.platform);
     successResponse(res, payload);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getThemeColorsHandler = async (req, res, next) => {
+  try {
+    successResponse(res, await getThemeColors(req.params.projectId));
   } catch (err) {
     next(err);
   }

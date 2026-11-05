@@ -24,7 +24,7 @@ import { getUploadSettings } from '../media/settings.js';
 import { enqueueScanJob } from '../media/media.queue.js';
 import { extractPalette, hueNameFor } from './palette.js';
 import { buildContrastReport } from './contrast.js';
-import { buildTokenPayload } from './tokens.js';
+import { buildTokenPayload, buildThemeColors } from './tokens.js';
 import { BRAND_INFERENCE_COST, COLLATERAL_EXPORT_COST } from './costs.js';
 import { withCreditHold } from '../credits/service.js';
 import { aiServicesConfigured, requestBrandInference } from './ai-client.js';
@@ -572,6 +572,14 @@ export const getTokens = async (projectId, platform = 'webapp') => {
   }
 
   return buildTokenPayload(kit, platform, brandKitType.id);
+};
+
+// The brand as the Theme Engine's semantic light/dark colours (read-only, D-BK-6).
+// Unlike getTokens this works before approval — the Simple Theme view offers it as a
+// preview — so only a palette that was never extracted is a 409 (NOT_EXTRACTED).
+export const getThemeColors = async (projectId) => {
+  const kit = await getKit(projectId);
+  return { approved: kit.status === 'approved', kitId: kit.id, ...buildThemeColors(kit) };
 };
 
 // ─── Brand-guidelines PDF render (KDL-537) ───────────────────────────────────

@@ -1,11 +1,7 @@
 /**
- * RTL regression tests for KDL-558 roadmap row 1 (corrected) — IntakeStage's
- * "Logo & Contact Details" card sources its 7 contact fields from the
- * standalone Application Settings "brand-profile" Type (seeded by
- * backend/prisma/seeders/brand-profile-fields.seed.js) via the generic
- * GET /setting-fields/by-type/:slug + POST /setting-fields/values endpoints —
- * the same mechanism /admin/settings/view/[slug] uses — not a per-project
- * hidden store.
+ * RTL regression tests for IntakeStage (Overview). The logo and contact details are edited
+ * under CMS → Company Details; this stage only checks the logo and company name exist
+ * (read from the "brand-profile" settings Type) and lets the run move on to the palette.
  */
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
@@ -176,8 +172,8 @@ beforeEach(() => {
   })
 })
 
-describe('IntakeStage — Logo & Contact Details (standalone Application Settings fields)', () => {
-  it('fetches fields from GET /setting-fields/by-type/brand-profile', async () => {
+describe('IntakeStage — Overview (checks Company Details, then continues)', () => {
+  it('reads the company name from GET /setting-fields/by-type/brand-profile', async () => {
     const api = (await import('@/lib/axios')).default
     renderWithQC(<IntakeStage run={makeRun()} />)
 
@@ -186,99 +182,53 @@ describe('IntakeStage — Logo & Contact Details (standalone Application Setting
     )
   })
 
-  it('renders the 7 contact fields (not the generic Logo field, which stays on brand-kit upload)', async () => {
+  it('links to Company Details instead of editing the fields itself', async () => {
     renderWithQC(<IntakeStage run={makeRun()} />)
 
-    // Company name's label includes a trailing " *" (required marker), so it's matched by regex.
-    for (const label of [
-      /^Company name/,
-      'Primary email',
-      'Secondary email',
-      'Primary phone',
-      'Secondary phone',
-      'Address 1',
-      'Address 2',
-    ]) {
-      expect(await screen.findByLabelText(label)).toBeInTheDocument()
-    }
-    // Two "Logo file" labels would be ambiguous — assert Studio's own upload button instead.
-    // hasLogo is true in this fixture, so the button reads "Replace file".
-    expect(screen.getByRole('button', { name: /replace file/i })).toBeInTheDocument()
-    // No "Category: …" clutter — every field shares the one category the card title already names.
-    expect(screen.queryByText(/Category:/)).not.toBeInTheDocument()
+    const link = await screen.findByRole('link', { name: /edit company details/i })
+    expect(link).toHaveAttribute('href', '/admin/website-details')
+    expect(screen.queryByLabelText(/^Company name/)).not.toBeInTheDocument()
   })
 
-  it('shows the uploaded logo as an image preview once its media record resolves', async () => {
+  it('shows the logo and company checks', async () => {
     renderWithQC(<IntakeStage run={makeRun()} />)
 
-    const img = await screen.findByAltText('Uploaded logo')
-    expect(img).toHaveAttribute('src', 'https://minio.test/logo.png')
+    expect(await screen.findByText('Logo uploaded')).toBeInTheDocument()
+    expect(screen.getByText('Company name entered')).toBeInTheDocument()
   })
 
-  it('clicking Next with an empty company name shows a validation error and does not save', async () => {
-    const api = (await import('@/lib/axios')).default
+  it('Next is disabled until the company name is filled in', async () => {
     renderWithQC(<IntakeStage run={makeRun()} />)
-    await screen.findByLabelText(/^Company name/)
 
-    fireEvent.click(screen.getByRole('button', { name: /next/i }))
-
-    expect(await screen.findByText('Company name is required.')).toBeInTheDocument()
-    expect(api.post).not.toHaveBeenCalled()
+    // FIELDS has an empty company name
+    const next = await screen.findByRole('button', { name: /^next$/i })
+    expect(next).toBeDisabled()
   })
 
-  it('clicking Next with no logo uploaded shows a validation error and does not save', async () => {
-    const api = (await import('@/lib/axios')).default
+  it('Next is disabled when no logo is uploaded', async () => {
     mockUseBrandKit.mockReturnValue({
       data: { logo_media_id: null, status: 'draft' },
       isLoading: false,
     })
     renderWithQC(<IntakeStage run={makeRun()} />)
 
-    fireEvent.change(await screen.findByLabelText(/^Company name/), {
-      target: { value: 'Aster Foundation' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: /next/i }))
-
-    expect(await screen.findByText('Logo file is required.')).toBeInTheDocument()
-    expect(api.post).not.toHaveBeenCalled()
+    expect(await screen.findByRole('button', { name: /^next$/i })).toBeDisabled()
   })
 
-  it('clicking Next saves via POST /setting-fields/values with the Brand Profile type_id, excluding the logo field', async () => {
-    const api = (await import('@/lib/axios')).default
-    renderWithQC(<IntakeStage run={makeRun()} />)
-
-    fireEvent.change(await screen.findByLabelText(/^Company name/), {
-      target: { value: 'Aster Foundation' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: /next/i }))
-
-    await waitFor(() =>
-      expect(api.post).toHaveBeenCalledWith(
-        '/setting-fields/values',
-        expect.objectContaining({
-          type_id: 'type-1',
-          values: expect.arrayContaining([
-            expect.objectContaining({ id: 'f-company', value: 'Aster Foundation' }),
-          ]),
-        })
-      )
-    )
-    const call = (api.post as ReturnType<typeof vi.fn>).mock.calls[0]
-    const body = call?.[1] as { values: Array<{ id: string }> }
-    expect(body.values.some((v) => v.id === 'f-logo')).toBe(false)
-  })
-
-  it('navigates to the Palette stage once the stage actually advances', async () => {
+  it('Next advances the stage and opens the Color Palette page when logo and company are set', async () => {
     const { mockPush } = await import('../../__mocks__/next-navigation')
-    renderWithQC(<IntakeStage run={makeRun()} />)
-
-    fireEvent.change(await screen.findByLabelText(/^Company name/), {
-      target: { value: 'Aster Foundation' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: /next/i }))
-
-    await waitFor(() =>
-      expect(mockPush).toHaveBeenCalledWith('/admin/template-engine/projects/proj-1/palette')
-    )
+    const company = FIELDS.find((f) => f.slug === 'brand-profile-company-name')!
+    company.value = 'Acme'
+    try {
+      renderWithQC(<IntakeStage run={makeRun()} />)
+      const next = await screen.findByRole('button', { name: /^next$/i })
+      await waitFor(() => expect(next).toBeEnabled())
+      fireEvent.click(next)
+      await waitFor(() =>
+        expect(mockPush).toHaveBeenCalledWith('/admin/template-engine/projects/proj-1/palette')
+      )
+    } finally {
+      company.value = ''
+    }
   })
 })

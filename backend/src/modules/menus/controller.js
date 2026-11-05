@@ -68,7 +68,7 @@ export const createMenuItem = async (req, res, next) => {
     if (!(await menuService.menuExists(menuId))) {
       return errorResponse(res, 'Menu not found', 404);
     }
-    const item = await menuService.createMenuItem(menuId, req.validated.body);
+    const item = await menuService.createMenuItem(menuId, req.validated.body, req.user?.id);
     return successResponse(res, { item }, 201);
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);
@@ -88,7 +88,7 @@ export const updateMenuItem = async (req, res, next) => {
 
 export const deleteMenuItem = async (req, res, next) => {
   try {
-    const deleted = await menuService.deleteMenuItem(req.validated.params.id);
+    const deleted = await menuService.deleteMenuItem(req.validated.params.id, req.user?.id);
     if (!deleted) return errorResponse(res, 'Menu item not found', 404);
     return successResponse(res, { message: 'Menu item deleted' });
   } catch (err) {
@@ -103,6 +103,22 @@ export const reorderMenuItems = async (req, res, next) => {
     return successResponse(res, { menu });
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+export const getOptions = async (_req, res, next) => {
+  try {
+    return successResponse(res, await menuService.getMenuOptions());
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const putOptions = async (req, res, next) => {
+  try {
+    return successResponse(res, await menuService.updateMenuOptions(req.validated.body));
+  } catch (err) {
     next(err);
   }
 };

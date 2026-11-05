@@ -199,7 +199,7 @@ describe('PaletteStage — re-extraction after a logo replace (stage stuck at st
     run.stages[0]!.status = 'FAILED'
     renderWithQC(<PaletteStage run={run} />)
 
-    fireEvent.click(screen.getByRole('button', { name: /^next$/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }))
 
     await waitFor(() => expect(mockPatchMutate).toHaveBeenCalled())
     const [palette] = mockPatchMutate.mock.calls[0] as [{ paletteConfidence: string }]
@@ -231,26 +231,22 @@ describe('PaletteStage — editable colour groups', () => {
     expect(screen.getByText('#1A73E8')).toBeInTheDocument()
   })
 
-  it('clicking Next saves via usePatchBrandKit and navigates to Brand Inference', async () => {
+  it('clicking Save saves via usePatchBrandKit, confirms, and stays on the page', async () => {
     renderWithQC(<PaletteStage run={makeRun()} />)
 
-    fireEvent.click(screen.getByRole('button', { name: /^next$/i }))
+    expect(screen.queryByRole('button', { name: /^next$/i })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }))
 
     await waitFor(() => expect(mockPatchMutate).toHaveBeenCalled())
-    const call = mockPatchMutate.mock.calls[0]!
-    const [palette, opts] = call as [
+    const [palette, opts] = mockPatchMutate.mock.calls[0]! as [
       { colors: { primary: { hex: string }; accent: { hex: string } } },
       { onSuccess: () => void },
     ]
     expect(palette.colors.primary.hex).toBe('#ec1b34')
     expect(palette.colors.accent.hex).toBe('#888888')
 
-    // Simulate the mutation's onSuccess firing (mockPatchMutate is a bare vi.fn(),
-    // so invoke the passed options.onSuccess directly to assert the navigation wiring).
-    // Jumps straight to Brands (WEBSITE) — the Studio nav only surfaces
-    // Overview/Color Palette/Brands (KDL-558), not the DAG's literal next
-    // stage (Brand Inference), which has no visible tab.
+    // After the save succeeds the user stays here: no navigation.
     opts.onSuccess()
-    expect(mockPush).toHaveBeenCalledWith('/admin/template-engine/projects/proj-1/website')
+    expect(mockPush).not.toHaveBeenCalled()
   })
 })

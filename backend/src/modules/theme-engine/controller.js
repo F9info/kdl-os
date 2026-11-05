@@ -127,3 +127,32 @@ export const getTokens = async (req, res, next) => {
     next(err);
   }
 };
+
+export const getVersions = async (req, res, next) => {
+  try {
+    const { platform, type_id } = req.validated.query;
+    const versions = await service.listVersions(platform, type_id);
+    return successResponse(res, { platform, type_id, versions });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const postRestoreVersion = async (req, res, next) => {
+  try {
+    const { id } = req.validated.params;
+    const result = await service.restoreVersion(id, req.user?.id);
+    if (result.notFound) return errorResponse(res, 'Version not found', 404);
+    writeActivityAsync({
+      actor: req.user?.id,
+      module: 'theme-engine',
+      action: 'version_restored',
+      description: `Restored theme engine version ${id} (platform=${result.platform})`,
+      properties: { version_id: id, platform: result.platform, type_id: result.type_id },
+      ip_address: getClientIp(req),
+    });
+    return successResponse(res, result);
+  } catch (err) {
+    next(err);
+  }
+};

@@ -13,6 +13,7 @@ import {
   updateMenuItemSchema,
   deleteMenuItemSchema,
   reorderMenuItemsSchema,
+  updateMenuOptionsSchema,
 } from './schema.js';
 import {
   listMenus,
@@ -25,6 +26,8 @@ import {
   updateMenuItem,
   deleteMenuItem,
   reorderMenuItems,
+  getOptions,
+  putOptions,
 } from './controller.js';
 
 const router = Router();
@@ -36,6 +39,9 @@ router.get('/public', validate(publicMenuSchema), getPublicMenu);
 // Admin CRUD — authenticated + RBAC-gated.
 router.use(authenticate);
 router.get('/', requirePermission('menus', 'view'), validate(listMenusSchema), listMenus);
+// Site-wide menu options (footer = same links as header). Registered before /:id.
+router.get('/options', requirePermission('menus', 'view'), getOptions);
+router.put('/options', requirePermission('menus', 'edit'), validate(updateMenuOptionsSchema), putOptions);
 router.post('/ensure', requirePermission('menus', 'add'), validate(ensureMenuSchema), ensureMenu);
 router.get('/:id', requirePermission('menus', 'view'), validate(getMenuSchema), getMenu);
 router.patch('/:id', requirePermission('menus', 'edit'), validate(updateMenuSchema), updateMenu);

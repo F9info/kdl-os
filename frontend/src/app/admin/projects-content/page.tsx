@@ -255,7 +255,7 @@ function ProjectsContentPageContent() {
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField label="Title" error={errors.title?.message} required>
-              <Input placeholder="e.g. Novotel Visakhapatnam" {...register('title')} />
+              <Input placeholder="e.g. Business Website" {...register('title')} />
             </FormField>
             <FormField label="Category / eyebrow" error={errors.eyebrow?.message}>
               <Input placeholder="e.g. 02 · Hotel" {...register('eyebrow')} />
@@ -265,7 +265,7 @@ function ProjectsContentPageContent() {
             <Input placeholder="Central AC, Fire & Life Safety" {...register('tags')} />
           </FormField>
           <FormField label="Image URL" error={errors.image?.message}>
-            <Input placeholder="/seed/subhadra/case-studies/novotel.jpg" {...register('image')} />
+            <Input placeholder="https://… or /uploads/image.jpg" {...register('image')} />
             {imageUrl && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={imageUrl} alt="" className="mt-2 h-24 w-36 rounded object-cover" />

@@ -21,6 +21,8 @@ export const manifestSchema = z.object({
   version: z.string().regex(/^\d+\.\d+\.\d+$/, 'version must be semver'),
   description: z.string().optional(),
   core: z.boolean().default(false),
+  // Umbrella = a bundle whose dependsOn modules install/enable/disable together with it.
+  umbrella: z.boolean().default(false),
   apiPrefix: z.string().startsWith('/api/'),
   permissions: z.array(permissionEntrySchema).default([]),
   nav: z.array(navItemSchema).default([]),

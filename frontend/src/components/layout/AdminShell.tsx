@@ -1,6 +1,7 @@
 import { AdminSidebar } from './AdminSidebar'
 import { TopBar } from './TopBar'
 import { CommandMenu } from '@/components/command/CommandMenu'
+import { FrontendOnboardingDialog } from '@/components/onboarding/FrontendOnboardingDialog'
 
 interface AdminShellProps {
   children: React.ReactNode
@@ -23,6 +24,7 @@ export function AdminShell({ children }: AdminShellProps) {
         </footer>
       </div>
       <CommandMenu />
+      <FrontendOnboardingDialog />
     </div>
   )
 }

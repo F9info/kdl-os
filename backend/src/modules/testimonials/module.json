@@ -1,0 +1,26 @@
+{
+  "slug": "testimonials",
+  "name": "Testimonials",
+  "version": "1.0.0",
+  "description": "Customer quotes shown on the public Testimonials page (part of CMS)",
+  "core": false,
+  "visibleInCatalog": false,
+  "apiPrefix": "/api/testimonials",
+  "permissions": [
+    "testimonials"
+  ],
+  "nav": [
+    {
+      "label": "Testimonials",
+      "path": "/admin/testimonials",
+      "icon": "Quote",
+      "permission": "testimonials:view"
+    }
+  ],
+  "navSuppressedByPeer": [
+    "template-engine"
+  ],
+  "dependsOn": [],
+  "queues": [],
+  "env": []
+}

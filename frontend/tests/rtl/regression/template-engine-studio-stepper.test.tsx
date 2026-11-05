@@ -118,13 +118,13 @@ function makeRun(): TemplateEngineRun {
   }
 }
 
-describe('StudioStepper — trimmed to 3 tabs (KDL-558)', () => {
-  it('renders only Overview, Color Palette, and Brands — nothing else', () => {
+describe('StudioStepper — only Overview (Color Palette and Brands moved to CMS)', () => {
+  it('renders only Overview — Color Palette and Brands now live under CMS', () => {
     render(<StudioStepper run={makeRun()} projectId="proj-1" activeSlug="website" />)
 
     expect(screen.getByText('Overview')).toBeInTheDocument()
-    expect(screen.getByText('Color Palette')).toBeInTheDocument()
-    expect(screen.getByText('Brands')).toBeInTheDocument()
+    expect(screen.queryByText('Color Palette')).not.toBeInTheDocument()
+    expect(screen.queryByText('Brands')).not.toBeInTheDocument()
 
     for (const hidden of [
       'Brand Inference',
@@ -138,11 +138,11 @@ describe('StudioStepper — trimmed to 3 tabs (KDL-558)', () => {
     }
   })
 
-  it('numbers the visible tabs 1-3 based on the filtered list, not the full 9-stage DAG', () => {
+  it('shows a single tab based on the filtered list, not the full 9-stage DAG', () => {
     render(<StudioStepper run={makeRun()} projectId="proj-1" activeSlug="intake" />)
 
     const nav = screen.getByRole('navigation', { name: /studio stages/i })
     const buttons = nav.querySelectorAll('button')
-    expect(buttons).toHaveLength(3)
+    expect(buttons).toHaveLength(1)
   })
 })

@@ -13,3 +13,14 @@ export function useRouter() {
     forward: vi.fn(),
   }
 }
+
+// Tests can set `mockPathname.value` to simulate being on a given route.
+export const mockPathname = { value: '/admin/dashboard' }
+
+export function usePathname() {
+  return mockPathname.value
+}
+
+export function useSearchParams() {
+  return new URLSearchParams()
+}

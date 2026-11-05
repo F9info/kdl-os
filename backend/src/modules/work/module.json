@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "\"Our Work\" showcase categories shown in the homepage's See Our Work section",
   "core": false,
+  "visibleInCatalog": false,
   "apiPrefix": "/api/work",
   "permissions": [
     "work"
@@ -16,7 +17,9 @@
       "permission": "work:view"
     }
   ],
-  "navSuppressedByPeer": ["template-engine"],
+  "navSuppressedByPeer": [
+    "template-engine"
+  ],
   "dependsOn": [],
   "queues": [],
   "env": []

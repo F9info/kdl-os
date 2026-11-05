@@ -141,6 +141,30 @@ describe('B1 — service.getSchemaTree shape', () => {
     expect(branding.groups[0].fields[0].value).toBe('#ff0000');
     expect(branding.groups[0].fields[0].default_value).toBe('#ffffff');
   });
+
+  it('exposes locked_by and updated_at so the UI can show who controls a value', async () => {
+    const { prisma } = await import('../../config/database.js');
+    const saved = new Date('2026-10-24T07:00:00Z');
+    const fakeType = { id: 'type-3', name: 'Theme Color', slug: 'webapp.branding' };
+    const fakeCat = { id: 'cat-3', name: 'Colors', slug: 'webapp.branding.colors', type_id: 'type-3' };
+    const fakeField = {
+      id: 'f-3', field_name: 'Primary', slug: 'webapp.branding.colors.primary',
+      input_type: 'color', value: '#ffffff', alt_text: null, options: null, sort: 0,
+      type_id: 'type-3', category_id: 'cat-3', locked_by: 'template-engine',
+      setting_values: [{ value: '#ff0000', updated_at: saved }],
+    };
+
+    prisma.type = { findMany: vi.fn().mockResolvedValue([fakeType]) };
+    prisma.category = { findMany: vi.fn().mockResolvedValue([fakeCat]) };
+    prisma.settingField = { findMany: vi.fn().mockResolvedValue([fakeField]) };
+
+    const tree = await service.getSchemaTree('webapp');
+    const field = tree.find((p) => p.id === 'branding').groups[0].fields[0];
+    expect(field.locked_by).toBe('template-engine');
+    expect(field.updated_at).toEqual(saved);
+    // the select must actually ask the DB for it
+    expect(prisma.settingField.findMany.mock.calls[0][0].select.locked_by).toBe(true);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -283,7 +307,9 @@ describe('B2 — upsertValues rejects invalid fields and unknown field ids', () 
         { id: 'f-1', slug: 'webapp.branding.colors.primary', input_type: 'color', options: null },
       ]),
     };
+    prisma.themeValueVersion = { create: vi.fn().mockResolvedValue({}), findMany: vi.fn().mockResolvedValue([]), deleteMany: vi.fn() };
     prisma.settingValue = {
+      findMany: vi.fn().mockResolvedValue([]),
       upsert: vi.fn().mockResolvedValue({ id: 'sv-1' }),
     };
     prisma.$transaction = vi.fn(async (ops) => Promise.all(ops));
@@ -307,7 +333,8 @@ describe('B2 — upsertValues rejects invalid fields and unknown field ids', () 
         { id: 'f-tv', slug: 'tv.branding.colors.primary', input_type: 'color', options: null },
       ]),
     };
-    prisma.settingValue = { upsert: vi.fn().mockResolvedValue({ id: 'sv-1' }) };
+    prisma.settingValue = { findMany: vi.fn().mockResolvedValue([]), upsert: vi.fn().mockResolvedValue({ id: 'sv-1' }) };
+    prisma.themeValueVersion = { create: vi.fn().mockResolvedValue({}), findMany: vi.fn().mockResolvedValue([]), deleteMany: vi.fn() };
     prisma.$transaction = vi.fn(async (ops) => Promise.all(ops));
 
     await service.upsertValues('tv', 'type-tv', [{ field_id: 'f-tv', value: '#ff0000' }], 'user-1');
@@ -377,7 +404,9 @@ describe('B2 — resetValues restores defaults', () => {
     prisma.settingField = {
       findMany: vi.fn().mockResolvedValue([{ id: 'f-1' }, { id: 'f-2' }]),
     };
+    prisma.themeValueVersion = { create: vi.fn().mockResolvedValue({}), findMany: vi.fn().mockResolvedValue([]), deleteMany: vi.fn() };
     prisma.settingValue = {
+      findMany: vi.fn().mockResolvedValue([]),
       deleteMany: vi.fn().mockResolvedValue({ count: 2 }),
     };
 
@@ -394,7 +423,9 @@ describe('B2 — resetValues restores defaults', () => {
     prisma.settingField = {
       findMany: vi.fn().mockResolvedValue([{ id: 'f-3' }]),
     };
+    prisma.themeValueVersion = { create: vi.fn().mockResolvedValue({}), findMany: vi.fn().mockResolvedValue([]), deleteMany: vi.fn() };
     prisma.settingValue = {
+      findMany: vi.fn().mockResolvedValue([]),
       deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
     };
 

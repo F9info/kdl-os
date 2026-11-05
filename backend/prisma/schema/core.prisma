@@ -161,6 +161,21 @@ model SettingField {
   @@map("setting_fields")
 }
 
+// Pre-change snapshots of a Theme Engine pane, written on each user save so a
+// publish can be undone. snapshot = JSON [{field_id, value|null}]; null means
+// "no stored row" (the field was on its default).
+model ThemeValueVersion {
+  id         String   @id @default(cuid())
+  platform   String
+  type_id    String
+  snapshot   String
+  created_by String?
+  created_at DateTime @default(now())
+
+  @@index([platform, type_id, created_at])
+  @@map("theme_value_versions")
+}
+
 model SettingValue {
   id         String   @id @default(cuid())
   platform   String // webapp | tv | android | ios  (denormalized for fast per-platform load)

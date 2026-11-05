@@ -21,7 +21,7 @@ const root: Config['root'] = {
   fields: { title: { type: 'text' } },
   defaultProps: { title: 'Untitled page' },
   render: ({ children }: { children: ReactNode }) => (
-    <main className="min-h-screen bg-white text-slate-900">{children}</main>
+    <main className="min-h-screen bg-surface text-body">{children}</main>
   ),
 }
 

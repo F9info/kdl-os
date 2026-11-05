@@ -24,3 +24,7 @@ export const updateProjectSchema = z.object({
     is_default: z.boolean().optional(),
   }),
 });
+
+export const answerOnboardingSchema = z.object({
+  body: z.object({ frontend: z.enum(['yes', 'no']) }),
+});

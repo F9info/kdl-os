@@ -11,12 +11,12 @@ import {
   type StepDisplayState,
 } from '@/types/template-engine.types'
 
-// The Studio nav only surfaces the three stages with a real built-out screen
-// so far (Overview/Color Palette/Brands — KDL-558). The other six DAG stages
-// still run underneath (each has its own advance/skip controls on its page,
-// reachable via each stage's own "Next" — see PaletteStage.goToNextStage) —
-// this only hides them from the top tab bar, it does not skip or remove them.
-const VISIBLE_STAGES: DagStage[] = ['INTAKE', 'PALETTE', 'WEBSITE']
+// The Studio tab bar only shows Overview. Color Palette and Brands moved to the sidebar
+// (CMS → Color Palette / Brands); they still run as stages and open at .../palette and
+// .../website. The other DAG stages also still run underneath (each has its own advance/skip
+// controls on its page) — this only hides them from the top tab bar, it does not skip or
+// remove them.
+const VISIBLE_STAGES: DagStage[] = ['INTAKE']
 
 interface StudioStepperProps {
   run: TemplateEngineRun

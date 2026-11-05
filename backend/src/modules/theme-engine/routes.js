@@ -10,8 +10,10 @@ import {
   postActiveThemeBodySchema,
   postLocksReleaseBodySchema,
   getTokensQuerySchema,
+  getVersionsQuerySchema,
+  postRestoreVersionSchema,
 } from './schema.js';
-import { getSchema, getValues, postValues, postReset, postActiveTheme, releaseLocks, getTokens } from './controller.js';
+import { getSchema, getValues, postValues, postReset, postActiveTheme, releaseLocks, getTokens, getVersions, postRestoreVersion } from './controller.js';
 
 const router = Router();
 
@@ -25,5 +27,7 @@ router.post('/values', authenticate, requirePermission('theme-engine', 'edit'), 
 router.post('/reset', authenticate, requirePermission('theme-engine', 'edit'), validate(postResetBodySchema), postReset);
 router.post('/active-theme', authenticate, requirePermission('theme-engine', 'edit'), validate(postActiveThemeBodySchema), postActiveTheme);
 router.post('/locks/release', authenticate, requirePermission('theme-engine', 'edit'), validate(postLocksReleaseBodySchema), releaseLocks);
+router.get('/versions', authenticate, requirePermission('theme-engine', 'view'), validate(getVersionsQuerySchema), getVersions);
+router.post('/versions/:id/restore', authenticate, requirePermission('theme-engine', 'edit'), validate(postRestoreVersionSchema), postRestoreVersion);
 
 export default router;

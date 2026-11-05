@@ -43,6 +43,17 @@ export const postResetBodySchema = z.object({
   }),
 });
 
+export const getVersionsQuerySchema = z.object({
+  query: z.object({
+    platform: platformEnum,
+    type_id: z.string().min(1),
+  }),
+});
+
+export const postRestoreVersionSchema = z.object({
+  params: z.object({ id: z.string().min(1) }),
+});
+
 export const postActiveThemeBodySchema = z.object({
   body: z.object({
     platform: platformEnum,

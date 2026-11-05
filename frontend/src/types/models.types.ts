@@ -38,6 +38,8 @@ export interface EnabledModule {
   slug: string
   name: string
   core: boolean
+  /** Slug of the enabled bundle (e.g. 'cms') this module is a hidden part of. */
+  parent?: string | null
   nav: ModuleNavItem[]
 }
 

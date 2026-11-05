@@ -1,4 +1,5 @@
 import { successResponse, errorResponse } from '../../shared/utils/response.js';
+import { getOnboarding, answerOnboarding } from './onboarding.js';
 import { listProjects, getProject, createProject, updateProject, deleteProject } from './service.js';
 
 export const handleList = async (req, res, next) => {
@@ -46,6 +47,24 @@ export const handleDelete = async (req, res, next) => {
   try {
     await deleteProject(req.params.id);
     successResponse(res, { deleted: true });
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+export const handleGetOnboarding = async (req, res, next) => {
+  try {
+    successResponse(res, await getOnboarding());
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const handleAnswerOnboarding = async (req, res, next) => {
+  try {
+    const { frontend } = req.validated?.body ?? req.body;
+    successResponse(res, await answerOnboarding(frontend, req.user?.id ?? null));
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);
     next(err);

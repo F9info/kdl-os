@@ -180,7 +180,7 @@ function textRender(atom: ComposerAtom) {
         : 'text-left'
   return (
     <p
-      className={`max-w-3xl leading-relaxed ${alignCls} ${muted ? 'text-slate-500' : 'text-slate-800'}`}
+      className={`max-w-3xl leading-relaxed ${alignCls} ${muted ? 'text-muted-foreground' : 'text-body'}`}
     >
       {text}
     </p>
@@ -207,8 +207,8 @@ function buttonRender(atom: ComposerAtom) {
         variant === 'primary'
           ? customStyle
             ? ''
-            : 'bg-blue-600 text-white hover:bg-blue-700'
-          : 'border border-slate-300 text-slate-800 hover:bg-slate-100'
+            : 'bg-primary text-primary-foreground hover:bg-primary/85'
+          : 'border border-border text-title hover:bg-divider'
       }`}
     >
       {label}
@@ -223,7 +223,7 @@ function imageRender(atom: ComposerAtom) {
   if (!src)
     return (
       <div
-        className={`grid aspect-video w-full place-items-center bg-gradient-to-br from-slate-100 to-slate-200 text-sm text-slate-400 ${rounded ? 'rounded-xl' : ''}`}
+        className={`grid aspect-video w-full place-items-center bg-gradient-to-br from-background to-divider text-sm text-faint ${rounded ? 'rounded-xl' : ''}`}
       >
         No image yet
       </div>
@@ -250,10 +250,10 @@ function badgeRender(atom: ComposerAtom) {
   const tone = String(atom.tone ?? 'primary')
   const cls =
     tone === 'secondary'
-      ? 'bg-slate-100 text-slate-700'
+      ? 'bg-divider text-body'
       : tone === 'neutral'
-        ? 'bg-slate-800 text-white'
-        : 'bg-blue-100 text-blue-700'
+        ? 'bg-inverse text-inverse-foreground'
+        : 'bg-primary/15 text-primary'
   // Same override convention as buttonRender — a custom Style-tab color
   // beats the tone's own Tailwind fill instead of sitting invisibly on the
   // (differently-shaped) wrapper behind it.
@@ -273,7 +273,7 @@ function badgeRender(atom: ComposerAtom) {
 }
 
 function dividerRender() {
-  return <hr className="w-full border-slate-200" />
+  return <hr className="w-full border-divider" />
 }
 
 const LOGO_HEIGHT = { sm: 24, md: 32, lg: 44 } as const
@@ -287,7 +287,7 @@ function logoRender(atom: ComposerAtom) {
       // eslint-disable-next-line @next/next/no-img-element
       <img src={src} alt={text} style={{ height }} className="w-auto" />
     )
-  return <span className="text-xl font-black text-slate-900">{text}</span>
+  return <span className="text-xl font-black text-title">{text}</span>
 }
 
 function splitCsv(s: unknown) {
@@ -315,13 +315,13 @@ function NavAtom({ atom }: { atom: ComposerAtom }) {
   const justify =
     align === 'center' ? 'justify-center' : align === 'right' ? 'justify-end' : 'justify-start'
   // A dark/transparent row (Style tab background) needs light nav text —
-  // the hardcoded text-slate-800 class would otherwise win over any color
+  // the hardcoded text-title class would otherwise win over any color
   // set on the row's own wrapper, since inherited color never overrides a
   // descendant's own class. Same override convention as buttonRender/
   // badgeRender: a custom Style-tab text color replaces the default class.
   const textColor = (atom.style as AtomStyle | undefined)?.textColor
   const style = textColor ? { color: textColor } : undefined
-  const linkCls = textColor ? '' : 'text-slate-800'
+  const linkCls = textColor ? '' : 'text-title'
   if (menuTree) {
     return (
       <div className={`flex ${justify}`} style={style}>
@@ -380,7 +380,7 @@ function videoRender(atom: ComposerAtom) {
         />
       ) : null}
       <div className="absolute inset-0 grid place-items-center">
-        <span className="grid h-16 w-16 place-items-center rounded-full bg-white text-blue-600 shadow-lg">
+        <span className="grid h-16 w-16 place-items-center rounded-full bg-white text-primary shadow-lg">
           ▶
         </span>
       </div>
@@ -400,7 +400,7 @@ function icontextRender(atom: ComposerAtom) {
       >
         {icon}
       </span>
-      <span className="text-[15px] text-slate-700">{text}</span>
+      <span className="text-[15px] text-body">{text}</span>
     </div>
   )
 }
@@ -627,8 +627,8 @@ function listRender(atom: ComposerAtom) {
   return (
     <div className="flex w-full flex-col gap-2">
       {items.map((item, i) => (
-        <div key={i} className="flex items-start gap-2.5 text-[15px] text-slate-800">
-          <span className="font-bold text-blue-600">✓</span>
+        <div key={i} className="flex items-start gap-2.5 text-[15px] text-body">
+          <span className="font-bold text-primary">✓</span>
           {item}
         </div>
       ))}
@@ -642,15 +642,15 @@ function cardRender(atom: ComposerAtom) {
   const text = String(atom.text ?? 'A short description of this feature.')
   const color = String(atom.color ?? '#2563eb')
   return (
-    <div className="max-w-sm rounded-2xl border border-slate-100 p-6 shadow-sm">
+    <div className="max-w-sm rounded-2xl border border-divider p-6 shadow-sm">
       <span
         className="mb-3 grid h-11 w-11 place-items-center rounded-xl text-lg"
         style={{ backgroundColor: `${color}18`, color }}
       >
         {icon}
       </span>
-      <div className="mb-1.5 text-base font-bold text-slate-900">{title}</div>
-      <p className="text-sm leading-relaxed text-slate-600">{text}</p>
+      <div className="mb-1.5 text-base font-bold text-title">{title}</div>
+      <p className="text-sm leading-relaxed text-body">{text}</p>
     </div>
   )
 }
@@ -660,8 +660,8 @@ function quoteRender(atom: ComposerAtom) {
   const author = String(atom.author ?? 'Someone, Somewhere')
   return (
     <div className="mx-auto max-w-2xl text-center">
-      <p className="mb-2.5 text-xl italic text-slate-900">&ldquo;{text}&rdquo;</p>
-      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{author}</p>
+      <p className="mb-2.5 text-xl italic text-title">&ldquo;{text}&rdquo;</p>
+      <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{author}</p>
     </div>
   )
 }
@@ -675,19 +675,19 @@ function testimonialRender(atom: ComposerAtom) {
   const role = String(atom.role ?? 'CEO, Acme Inc.')
   return (
     <div className="max-w-xl">
-      <p className="mb-3.5 leading-relaxed text-slate-700">&ldquo;{quote}&rdquo;</p>
+      <p className="mb-3.5 leading-relaxed text-body">&ldquo;{quote}&rdquo;</p>
       <div className="flex items-center gap-2.5">
         {avatar ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={avatar} alt="" className="h-10 w-10 rounded-full object-cover" />
         ) : (
-          <span className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 text-sm text-slate-400">
+          <span className="grid h-10 w-10 place-items-center rounded-full bg-divider text-sm text-muted-foreground">
             {name.charAt(0)}
           </span>
         )}
         <div>
-          <div className="text-sm font-bold text-slate-900">{name}</div>
-          <div className="text-xs text-slate-500">{role}</div>
+          <div className="text-sm font-bold text-title">{name}</div>
+          <div className="text-xs text-muted-foreground">{role}</div>
         </div>
       </div>
     </div>
@@ -703,7 +703,7 @@ function statsRender(atom: ComposerAtom) {
       <div className="text-4xl font-black" style={{ color }}>
         {number}
       </div>
-      <div className="text-sm font-semibold text-slate-600">{label}</div>
+      <div className="text-sm font-semibold text-body">{label}</div>
     </div>
   )
 }
@@ -725,14 +725,11 @@ function formRender(atom: ComposerAtom) {
   return (
     <div className="flex w-full max-w-md flex-col gap-2.5">
       {fields.map((f, i) => (
-        <div
-          key={i}
-          className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-slate-400"
-        >
+        <div key={i} className="rounded-lg border border-divider px-3.5 py-2.5 text-sm text-faint">
           {f}
         </div>
       ))}
-      <span className="inline-flex w-fit rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white">
+      <span className="inline-flex w-fit rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground">
         {buttonText}
       </span>
     </div>
@@ -1105,7 +1102,7 @@ function SliderCarousel({ atom }: { atom: ComposerAtom }) {
 
   if (count === 0) {
     return (
-      <div className="grid h-64 place-items-center rounded-xl border-2 border-dashed border-slate-200 text-sm text-slate-400">
+      <div className="grid h-64 place-items-center rounded-xl border-2 border-dashed border-divider text-sm text-faint">
         No slides yet — add one from the Settings panel.
       </div>
     )
@@ -1132,7 +1129,7 @@ function SliderCarousel({ atom }: { atom: ComposerAtom }) {
     hasBgImage || (slide.bgGradient && slide.bgGradient !== 'none') || Boolean(slide.bgColor)
 
   const imageBlock = (
-    <div className="aspect-video w-full overflow-hidden rounded-lg bg-gradient-to-br from-slate-100 to-slate-200">
+    <div className="aspect-video w-full overflow-hidden rounded-lg bg-gradient-to-br from-background to-divider">
       {slide.image ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={slide.image} alt="" className="h-full w-full object-cover" />
@@ -1142,17 +1139,17 @@ function SliderCarousel({ atom }: { atom: ComposerAtom }) {
   const textBlock = (
     <div className={`flex flex-col ${alignCls}`}>
       <h3
-        className={`mb-3 text-2xl font-bold md:text-3xl ${onDarkBg ? 'text-white' : 'text-slate-900'}`}
+        className={`mb-3 text-2xl font-bold md:text-3xl ${onDarkBg ? 'text-white' : 'text-title'}`}
       >
         {slide.heading}
       </h3>
-      <p className={`mb-5 leading-relaxed ${onDarkBg ? 'text-white/85' : 'text-slate-600'}`}>
+      <p className={`mb-5 leading-relaxed ${onDarkBg ? 'text-white/85' : 'text-body'}`}>
         {slide.text}
       </p>
       {slide.buttonLabel ? (
         <a
           href={slide.buttonHref || '#'}
-          className="inline-flex rounded-lg bg-blue-600 px-5 py-2.5 font-medium text-white hover:bg-blue-700"
+          className="inline-flex rounded-lg bg-primary px-5 py-2.5 font-medium text-primary-foreground hover:bg-primary/85"
         >
           {slide.buttonLabel}
         </a>
@@ -1182,7 +1179,7 @@ function SliderCarousel({ atom }: { atom: ComposerAtom }) {
                 type="button"
                 aria-label="Previous slide"
                 onClick={() => setIndex((i) => (i - 1 + count) % count)}
-                className="absolute left-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-slate-700 shadow hover:bg-white"
+                className="absolute left-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-surface/90 text-body shadow hover:bg-surface"
               >
                 ‹
               </button>
@@ -1190,7 +1187,7 @@ function SliderCarousel({ atom }: { atom: ComposerAtom }) {
                 type="button"
                 aria-label="Next slide"
                 onClick={() => setIndex((i) => (i + 1) % count)}
-                className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-slate-700 shadow hover:bg-white"
+                className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-surface/90 text-body shadow hover:bg-surface"
               >
                 ›
               </button>
@@ -1207,7 +1204,7 @@ function SliderCarousel({ atom }: { atom: ComposerAtom }) {
               aria-label={`Go to slide ${i + 1}`}
               onClick={() => setIndex(i)}
               className={`h-2 w-2 rounded-full transition ${
-                i === current ? 'bg-blue-600' : 'bg-slate-300'
+                i === current ? 'bg-primary' : 'bg-border'
               }`}
             />
           ))}

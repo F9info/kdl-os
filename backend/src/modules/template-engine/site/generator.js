@@ -187,6 +187,7 @@ const ROOT_FILES = [
   'src/app/work/[slug]/page.tsx',
   'src/app/catalog/[slug]/page.tsx',
   'src/app/sectors/[slug]/page.tsx',
+  'src/app/[prefix]/[slug]/page.tsx',
 ];
 const CONFIG_FILES = ['tailwind.config.ts', 'postcss.config.js'];
 const IMPORT_RE =
@@ -278,7 +279,7 @@ export async function writeSite(model) {
   // Public detail routes read their project scope from here, not from ?projectId=.
   await fs.writeFile(
     path.join(root, '.env.local'),
-    `NEXT_PUBLIC_SITE_PROJECT_ID=${model.site.projectId}\n`
+    `NEXT_PUBLIC_SITE_PROJECT_ID=${model.site.projectId}\nNEXT_PUBLIC_THEME_PLATFORM=webapp\n`
   );
   await writeJson(path.join(root, MARKER), {
     projectId: model.site.projectId,

@@ -11,6 +11,7 @@
  *          collateral, website, preflight, export
  */
 
+import { ensureTwoDetailPages } from './ensure-two-detail-pages.js';
 import {
   getOrCreateKit,
   extractPaletteForKit,
@@ -20,6 +21,11 @@ import {
   renderGuidelines,
 } from '../../brand-kit/service.js';
 import { getCompanyInfo } from '../../brand-kit/contact-fields.js';
+import {
+  buildThemeColors,
+  buildThemeColorValues,
+  buildButtonColorValues,
+} from '../../brand-kit/tokens.js';
 
 import { upsertValues } from '../../theme-engine/service.js';
 
@@ -33,7 +39,7 @@ import {
 import { getMediaById } from '../../media/service.js';
 
 import { createPage, updatePage, getPage, getPageBySlug } from '../../page-builder/service.js';
-import { listDetailPageTypes } from '../../../shared/detail-pages/registry.js';
+import { listDetailPageTypesForProject } from '../../../shared/detail-pages/registry.js';
 import {
   seedWebsitePageData,
   seedMedicalPageData,
@@ -47,6 +53,7 @@ import {
 
 import { prisma } from '../../../config/database.js';
 import { slugify } from '../../../shared/utils/slug.js';
+import { logger } from '../../../shared/utils/logger.js';
 
 // Best-effort — a fresh project with no approved brand kit yet still gets
 // pages seeded, just with the generic "Your Brand" copy/colors the seed
@@ -110,12 +117,47 @@ function namedErr(msg, status, code) {
 }
 
 // Resolves the theme-engine SettingType DB id from the brand-kit token payload's
-// type_id string (which is a slug convention, not a raw DB id — see brand-kit/tokens.js).
+// type_id string (which is a slug convention, not a raw DB id — see brand-kit/tokens.js)
+// or from a theme pane id ('branding', 'buttons': the Type slug is `${platform}.${pane}`).
 // Falls back to the raw string so upsertValues returns soft errors rather than throw.
 async function resolveThemeTypeId(platform, tokenTypeId) {
   const slug = `${platform}.${tokenTypeId}`;
   const row = await prisma.type.findFirst({ where: { slug }, select: { id: true } });
   return row?.id ?? tokenTypeId;
+}
+
+// Brand → the theme's semantic colours: the branding pane (primary / secondary / accent /
+// highlight / background / text / link) plus the primary button's label colour. The
+// brand-kit-* ramp written first is read by nothing in the frontend; these are the fields
+// Tailwind's primary / secondary / accent / background classes map to, so an approved brand
+// only reaches the blocks through them. Each pane is its own Type, hence its own upsert.
+// Returns the Theme Engine's own validation errors (system-generated strings, null when clean)
+// for outputRef, like the ramp write's tokenErrors. A THROWN error is different: its message
+// can carry Prisma call-site paths or host:port, and outputRef is returned to API clients, so
+// it is logged here and the stage fails with a fixed code instead — like a failing ramp write,
+// so retryStage re-runs these idempotent upserts. A kit with no palette (NOT_EXTRACTED) is
+// already a named error and passes through.
+async function writeThemeColors(kit, platform, userId, projectId) {
+  const colors = buildThemeColors(kit);
+  const panes = [
+    ['branding', buildThemeColorValues(colors, platform)],
+    ['buttons', buildButtonColorValues(colors, platform)],
+  ];
+  const errors = [];
+  try {
+    for (const [pane, values] of panes) {
+      const typeId = await resolveThemeTypeId(platform, pane);
+      const result = await upsertValues(platform, typeId, values, userId, { lockedByModule: 'template-engine' });
+      if (result?.errors) {
+        logger.warn(`approval: Theme Engine rejected the ${pane} colours for project ${projectId}: ${result.errors.join('; ')}`);
+        errors.push(...result.errors);
+      }
+    }
+  } catch (err) {
+    logger.error(`approval: theme colour write failed for project ${projectId}: ${err?.message ?? err}`, { stack: err?.stack });
+    throw namedErr('Theme colour write failed', 500, 'THEME_COLORS_WRITE_FAILED');
+  }
+  return errors.length ? errors : null;
 }
 
 // ── Drivers ───────────────────────────────────────────────────────────────────
@@ -161,8 +203,14 @@ const inferenceDriver = {
 };
 
 /**
- * approval — verifies the brand-kit is approved, then writes tokens to theme-engine.
- * Crash recovery (§4.1): if tokensWrittenAt is already set, skips the write.
+ * approval — verifies the brand-kit is approved, then writes the brand to theme-engine:
+ * the brand-kit-* ramp tokens, then the semantic colour fields (branding + primary
+ * button label) that Tailwind's primary / secondary / accent / background classes read.
+ * Crash recovery (§4.1): if tokensWrittenAt is already set, skips both writes. Both are
+ * idempotent upserts, so a crash before outputRef was saved simply re-issues them.
+ * A write that throws (ramp or semantic) fails the stage with a named code and no outputRef,
+ * so retryStage + advance re-run all three upserts; Theme Engine validation errors are only
+ * recorded (tokenErrors / themeColorErrors) and the stage still advances.
  * The user approves the brand-kit via the brand-kit UI before advancing this stage.
  */
 const approvalDriver = {
@@ -184,11 +232,16 @@ const approvalDriver = {
     const resolvedTypeId = await resolveThemeTypeId(tokenPayload.platform, tokenPayload.type_id);
     const writeResult = await upsertValues(tokenPayload.platform, resolvedTypeId, tokenPayload.values, userId, { lockedByModule: 'template-engine' });
 
+    // Exit action, part 2: the semantic colours (a thrown write fails the stage, see above).
+    const themeColorErrors = await writeThemeColors(kit, tokenPayload.platform, userId, projectId);
+
     return {
       outputRef: {
         approvedAt,
         tokensWrittenAt: new Date().toISOString(),
         tokenErrors: writeResult?.errors ?? null,
+        themeColorsWrittenAt: themeColorErrors ? null : new Date().toISOString(),
+        themeColorErrors,
       },
     };
   },
@@ -306,7 +359,9 @@ const WEBSITE_SEED_PAGES = [
 // scaffolder would blindly create a SECOND, unrelated page for "Hotel" too.
 async function excludeDetailPageEntityLabels(navigationPages, projectId) {
   const entityNames = new Set();
-  for (const [, config] of listDetailPageTypes()) {
+  for (const [, config] of await listDetailPageTypesForProject(projectId)) {
+    // The type's own label ("Blog detail") is reserved too — its pages are real entries, never a scaffolded page.
+    entityNames.add(config.label.toLowerCase());
     const entities = await config.listEntities(projectId).catch(() => []);
     for (const e of entities) entityNames.add(e.name.toLowerCase());
   }
@@ -393,7 +448,7 @@ const websiteDriver = {
       Array.isArray(navigationPages) ? navigationPages : [],
       run.projectId
     );
-    const seedPages = resolveSeedPages(filteredNavigationPages).map(({ key, title }) => ({
+    const seedPages = resolveSeedPages(ensureTwoDetailPages(filteredNavigationPages)).map(({ key, title }) => ({
       key,
       title,
       slug: `te-${run.id}-${key}`,

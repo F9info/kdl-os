@@ -92,10 +92,10 @@ beforeEach(() => {
 })
 
 describe('WebsiteStage — Brands cards grid (KDL-558)', () => {
-  it('lands on the Brands grid with a single Web app card', () => {
+  it('lands on the Types grid with a single Web app card', () => {
     renderWithQC(<WebsiteStage run={makeRun()} />)
 
-    expect(screen.getByText('Brands')).toBeInTheDocument()
+    expect(screen.getByText('Types')).toBeInTheDocument()
     expect(screen.getByText('Web app')).toBeInTheDocument()
     // No other brand cards yet — Admin app / Visiting card / etc. aren't wired up.
     expect(screen.queryByText('Admin app')).not.toBeInTheDocument()
@@ -109,10 +109,10 @@ describe('WebsiteStage — Brands cards grid (KDL-558)', () => {
 
     fireEvent.click(screen.getByText('Web app'))
     expect(screen.getByText(/pick the heading and body fonts/i)).toBeInTheDocument()
-    expect(screen.queryByText('Brands')).not.toBeInTheDocument()
+    expect(screen.queryByText('Types')).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: /back to brands/i }))
-    expect(screen.getByText('Brands')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /back to types/i }))
+    expect(screen.getByText('Types')).toBeInTheDocument()
     expect(screen.getByText('Web app')).toBeInTheDocument()
   })
 

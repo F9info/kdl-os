@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "FAQ module",
   "core": false,
+  "visibleInCatalog": false,
   "apiPrefix": "/api/faq",
   "permissions": [
     "faq"
@@ -15,6 +16,9 @@
       "icon": "Package",
       "permission": "faq:view"
     }
+  ],
+  "navSuppressedByPeer": [
+    "template-engine"
   ],
   "dependsOn": [],
   "queues": [],

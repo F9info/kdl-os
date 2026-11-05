@@ -1,50 +1,44 @@
 import { prisma } from '../../config/database.js';
+import { getDefaultProjectId } from '../../shared/default-project.js';
 
-// Real Subhadra Group header navigation, previously a flat "Label|href"
-// string baked into ConstructionHeader's own `links` prop — moved here as
-// the single source of truth. Attached to the specific Subhadra project
-// already running in this environment (this module has no generic demo
-// data of its own beyond this one client).
-//
-// Flat on purpose — the real reference site (after-delete-folder/*.html)
-// has no dropdown/submenu anywhere in its header; this seed exercises the
-// Menu/MenuItem model at depth 1 only. The 3-level hierarchy the model
-// supports has no real Subhadra content to seed it with yet.
-const SUBHADRA_PROJECT_ID = 'cmt15bmts000401s6fn5ydhzp';
-const HOME_SLUG = 'te-cmt18teqh000101rxwfzfndow-home';
+// Demo header + footer navigation for the default project. Pages are the
+// DemoLogo site pages created by scripts/seed-demo-site.js (`/p/<prefix>-<key>`).
+export const DEMO_PAGE_PREFIX = 'demo';
+const page = (key) => `/p/${DEMO_PAGE_PREFIX}-${key}`;
 
-const HEADER_ITEMS = [
-  { label: 'Home', url: `/p/${HOME_SLUG}` },
-  { label: 'Products & Services', url: `/p/te-cmt18teqh000101rxwfzfndow-products-services` },
-  { label: 'Sectors', url: `/p/te-cmt18teqh000101rxwfzfndow-sectors` },
-  { label: 'Contact', url: `/p/te-cmt18teqh000101rxwfzfndow-contact` },
-  { label: 'About', url: `/p/te-cmt18teqh000101rxwfzfndow-about` },
+const ITEMS = [
+  { label: 'Home', url: page('home') },
+  { label: 'About', url: page('about') },
+  { label: 'Services', url: page('services') },
+  { label: 'Portfolio', url: page('portfolio') },
+  { label: 'Blog', url: page('blog') },
+  { label: 'Contact', url: page('contact') },
+];
+
+const MENUS = [
+  { key: 'header', name: 'Header Navigation' },
+  { key: 'footer', name: 'Footer Navigation' },
 ];
 
 export async function seedMenus(prismaClient = prisma) {
-  const menu = await prismaClient.menu.upsert({
-    where: { project_id_key: { project_id: SUBHADRA_PROJECT_ID, key: 'header' } },
-    create: { project_id: SUBHADRA_PROJECT_ID, key: 'header', name: 'Header Navigation' },
-    update: {},
-  });
-
-  for (let i = 0; i < HEADER_ITEMS.length; i++) {
-    const def = HEADER_ITEMS[i];
-    const existing = await prismaClient.menuItem.findFirst({
-      where: { menu_id: menu.id, label: def.label, parent_id: null },
-      select: { id: true },
+  const projectId = await getDefaultProjectId(prismaClient);
+  if (!projectId) return;
+  for (const def of MENUS) {
+    const menu = await prismaClient.menu.upsert({
+      where: { project_id_key: { project_id: projectId, key: def.key } },
+      create: { project_id: projectId, key: def.key, name: def.name },
+      update: {},
     });
-    if (existing) continue;
-    await prismaClient.menuItem.create({
-      data: {
-        menu_id: menu.id,
-        label: def.label,
-        link_type: 'custom',
-        url: def.url,
-        order: i,
-      },
-    });
+    for (let i = 0; i < ITEMS.length; i++) {
+      const existing = await prismaClient.menuItem.findFirst({
+        where: { menu_id: menu.id, label: ITEMS[i].label, parent_id: null },
+        select: { id: true },
+      });
+      if (existing) continue;
+      await prismaClient.menuItem.create({
+        data: { menu_id: menu.id, label: ITEMS[i].label, link_type: 'custom', url: ITEMS[i].url, order: i },
+      });
+    }
   }
-
-  console.log(`menus.seed: seeded "header" menu with ${HEADER_ITEMS.length} real Subhadra items`);
+  console.log('menus.seed: seeded demo header + footer menus');
 }

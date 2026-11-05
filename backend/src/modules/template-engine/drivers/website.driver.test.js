@@ -52,6 +52,12 @@ vi.mock('../../../config/database.js', () => ({
   },
 }));
 
+// The approval driver logs a failed theme-colour write server-side; keep the real winston
+// logger (and its backend/logs files) out of the test run.
+vi.mock('../../../shared/utils/logger.js', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
+}));
+
 // ── Imports ───────────────────────────────────────────────────────────────────
 
 import {
@@ -78,6 +84,7 @@ import { getMediaById } from '../../media/service.js';
 import { createPage, updatePage, getPage, getPageBySlug } from '../../page-builder/service.js';
 
 import { prisma } from '../../../config/database.js';
+import { logger } from '../../../shared/utils/logger.js';
 
 import { getDriver } from './index.js';
 
@@ -161,22 +168,82 @@ describe('approval driver', () => {
     values: [{ field_id: 'brand-kit-primary-100', value: '#aabbcc' }],
   };
 
-  it('writes tokens to theme-engine when brand-kit is approved', async () => {
-    getKit.mockResolvedValue({ status: 'approved' });
-    getTokens.mockResolvedValue(tokenPayload);
-    prisma.type.findFirst.mockResolvedValue({ id: 'type-db-id' });
-    upsertValues.mockResolvedValue({ errors: null });
+  // A kit with a real palette, so the semantic theme colours can be derived from it.
+  // Deep-green primary → white button label on the light primary, ramp-300 on dark.
+  const approvedKit = {
+    status: 'approved',
+    palette: {
+      colors: {
+        primary: {
+          hex: '#0e6e5c',
+          ramp: {
+            50: '#f2fbf8', 100: '#d4f0e8', 200: '#a8e0d0', 300: '#74ccb5', 400: '#3baa93',
+            500: '#0e6e5c', 600: '#0a5547', 700: '#07403a', 800: '#042f2b', 900: '#021e1b',
+          },
+        },
+        neutral: {
+          hex: '#6b7280',
+          ramp: {
+            50: '#f9fafb', 100: '#f3f4f6', 200: '#e5e7eb', 300: '#d1d5db', 400: '#9ca3af',
+            500: '#6b7280', 600: '#4b5563', 700: '#374151', 800: '#1f2937', 900: '#111827',
+          },
+        },
+      },
+    },
+    contrast_report: { adjustments: [] },
+  };
 
-    const result = await getDriver('approval').execute({
-      projectId: 'proj-A',
-      userId: 'user-1',
-      stageRecord: makeStageRecord(),
-    });
+  const LOCK = { lockedByModule: 'template-engine' };
+  const execute = () =>
+    getDriver('approval').execute({ projectId: 'proj-A', userId: 'user-1', stageRecord: makeStageRecord() });
+
+  beforeEach(() => {
+    // Each Type resolves to a distinct id so a call's target pane is visible in the assertions.
+    prisma.type.findFirst.mockImplementation(async ({ where }) => ({ id: `id:${where.slug}` }));
+  });
+
+  it('writes the brand-kit ramp, then the branding and button colours, all locked to template-engine', async () => {
+    getKit.mockResolvedValue(approvedKit);
+    getTokens.mockResolvedValue(tokenPayload);
+    upsertValues.mockResolvedValue({ saved: 1 });
+
+    const result = await execute();
 
     expect(getTokens).toHaveBeenCalledWith('proj-A', 'webapp');
-    expect(upsertValues).toHaveBeenCalledWith('webapp', 'type-db-id', tokenPayload.values, 'user-1', { lockedByModule: 'template-engine' });
-    expect(result.outputRef.tokensWrittenAt).toBeTruthy();
+    expect(upsertValues).toHaveBeenCalledTimes(3);
+    // 1. the brand-kit-* ramp — unchanged
+    expect(upsertValues).toHaveBeenNthCalledWith(1, 'webapp', 'id:webapp.brand-kit', tokenPayload.values, 'user-1', LOCK);
+    // 2. the semantic branding colours Tailwind's primary/background/... classes read
+    expect(upsertValues).toHaveBeenNthCalledWith(
+      2,
+      'webapp',
+      'id:webapp.branding',
+      expect.arrayContaining([
+        { slug: 'webapp.branding.light.brand_colors.primary_color', value: '#0e6e5c' },
+        { slug: 'webapp.branding.light.surfaces.background_color', value: '#f9fafb' },
+        { slug: 'webapp.branding.dark.brand_colors.primary_color', value: '#74ccb5' },
+        { slug: 'webapp.branding.dark.surfaces.background_color', value: '#111827' },
+      ]),
+      'user-1',
+      LOCK,
+    );
+    // 3. the primary button label, so it stays readable on the brand primary
+    expect(upsertValues).toHaveBeenNthCalledWith(
+      3,
+      'webapp',
+      'id:webapp.buttons',
+      [
+        { slug: 'webapp.buttons.light.primary_button.text_color', value: '#ffffff' },
+        { slug: 'webapp.buttons.dark.primary_button.text_color', value: '#111111' },
+      ],
+      'user-1',
+      LOCK,
+    );
+
+    expect(result.outputRef).toMatchObject({ tokenErrors: null, themeColorErrors: null });
     expect(result.outputRef.approvedAt).toBeTruthy();
+    expect(result.outputRef.tokensWrittenAt).toBeTruthy();
+    expect(result.outputRef.themeColorsWrittenAt).toBeTruthy();
   });
 
   it('throws BRAND_KIT_NOT_APPROVED when kit status is not approved', async () => {
@@ -203,25 +270,152 @@ describe('approval driver', () => {
 
     expect(getKit).not.toHaveBeenCalled();
     expect(upsertValues).not.toHaveBeenCalled();
+    expect(prisma.type.findFirst).not.toHaveBeenCalled();
     expect(result.outputRef).toEqual(priorOutputRef);
   });
 
-  it('falls back to raw type_id when theme-engine type is not seeded yet', async () => {
-    getKit.mockResolvedValue({ status: 'approved' });
+  it('re-issues both writes, keeping the original approvedAt, when a crash left tokensWrittenAt unset', async () => {
+    getKit.mockResolvedValue(approvedKit);
     getTokens.mockResolvedValue(tokenPayload);
-    prisma.type.findFirst.mockResolvedValue(null); // type not seeded
-    upsertValues.mockResolvedValue({ errors: ['type_id does not belong to platform "webapp"'] });
+    upsertValues.mockResolvedValue({ saved: 1 });
 
     const result = await getDriver('approval').execute({
       projectId: 'proj-A',
       userId: 'user-1',
-      stageRecord: makeStageRecord(),
+      stageRecord: makeStageRecord({ approvedAt: '2026-08-19T10:00:00Z' }),
     });
 
-    // upsertValues called with raw fallback type_id
-    expect(upsertValues).toHaveBeenCalledWith('webapp', 'brand-kit', tokenPayload.values, 'user-1', { lockedByModule: 'template-engine' });
+    expect(upsertValues).toHaveBeenCalledTimes(3);
+    expect(result.outputRef.approvedAt).toBe('2026-08-19T10:00:00Z');
+    expect(result.outputRef.tokensWrittenAt).toBeTruthy();
+    expect(result.outputRef.themeColorsWrittenAt).toBeTruthy();
+  });
+
+  it('records themeColorErrors — and still advances the stage — when the theme rejects the semantic colours', async () => {
+    getKit.mockResolvedValue(approvedKit);
+    getTokens.mockResolvedValue(tokenPayload);
+    upsertValues
+      .mockResolvedValueOnce({ saved: 51 })
+      .mockResolvedValueOnce({ errors: ['webapp.branding.light.surfaces.background_color: invalid color value'] })
+      .mockResolvedValueOnce({ saved: 2 });
+
+    const result = await execute();
+
+    expect(upsertValues).toHaveBeenCalledTimes(3); // the buttons pane is still attempted
+    expect(result.outputRef.tokenErrors).toBeNull();
+    expect(result.outputRef.tokensWrittenAt).toBeTruthy();
+    expect(result.outputRef.themeColorsWrittenAt).toBeNull();
+    expect(result.outputRef.themeColorErrors).toEqual([
+      'webapp.branding.light.surfaces.background_color: invalid color value',
+    ]);
+    // Not swallowed silently: the rejection is logged for whoever runs the server.
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('invalid color value'));
+  });
+
+  // Regression: a thrown semantic write used to be caught and its raw err.message pushed into
+  // outputRef.themeColorErrors — which the stage endpoints return to API clients — and the stage
+  // still ended DONE, never retried and never logged. Prisma / connection errors carry call-site
+  // paths and host:port, so the message must stay server-side and the stage must fail like the
+  // ramp write does.
+  describe('when the semantic write throws', () => {
+    const LEAKY = 'connect ECONNREFUSED 10.0.3.7:5432 at /app/src/modules/theme-engine/service.js:312 (postgresql://kdl:s3cret@db/kdl)';
+
+    it('fails the stage with a fixed code and never carries the raw error message', async () => {
+      getKit.mockResolvedValue(approvedKit);
+      getTokens.mockResolvedValue(tokenPayload);
+      upsertValues.mockResolvedValueOnce({ saved: 51 }).mockRejectedValueOnce(new Error(LEAKY));
+
+      const failure = await execute().then(
+        () => null,
+        (err) => err,
+      );
+
+      expect(failure).toMatchObject({ status: 500, code: 'THEME_COLORS_WRITE_FAILED' });
+      expect(JSON.stringify({ message: failure.message, code: failure.code })).not.toMatch(/ECONNREFUSED|s3cret|10\.0\.3\.7|service\.js/);
+    });
+
+    it('logs the real error server-side, with the project', async () => {
+      getKit.mockResolvedValue(approvedKit);
+      getTokens.mockResolvedValue(tokenPayload);
+      upsertValues.mockResolvedValueOnce({ saved: 51 }).mockRejectedValueOnce(new Error(LEAKY));
+
+      await expect(execute()).rejects.toMatchObject({ code: 'THEME_COLORS_WRITE_FAILED' });
+
+      expect(logger.error).toHaveBeenCalledTimes(1);
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringMatching(/proj-A.*ECONNREFUSED/),
+        expect.objectContaining({ stack: expect.any(String) }),
+      );
+    });
+
+    it('fails the same way when the buttons pane is the one that throws, after the branding pane was saved', async () => {
+      getKit.mockResolvedValue(approvedKit);
+      getTokens.mockResolvedValue(tokenPayload);
+      upsertValues
+        .mockResolvedValueOnce({ saved: 51 })
+        .mockResolvedValueOnce({ saved: 18 })
+        .mockRejectedValueOnce(new Error(LEAKY));
+
+      await expect(execute()).rejects.toMatchObject({ status: 500, code: 'THEME_COLORS_WRITE_FAILED' });
+
+      expect(upsertValues).toHaveBeenCalledTimes(3);
+    });
+
+    it('a retry re-issues the ramp and both semantic writes and completes (the failed stage left no outputRef)', async () => {
+      getKit.mockResolvedValue(approvedKit);
+      getTokens.mockResolvedValue(tokenPayload);
+      upsertValues
+        .mockResolvedValueOnce({ saved: 51 })
+        .mockResolvedValueOnce({ saved: 18 })
+        .mockRejectedValueOnce(new Error(LEAKY));
+      await expect(execute()).rejects.toMatchObject({ code: 'THEME_COLORS_WRITE_FAILED' });
+
+      upsertValues.mockReset().mockResolvedValue({ saved: 1 });
+      const result = await execute();
+
+      expect(upsertValues).toHaveBeenCalledTimes(3);
+      expect(result.outputRef).toMatchObject({ tokenErrors: null, themeColorErrors: null });
+      expect(result.outputRef.themeColorsWrittenAt).toBeTruthy();
+    });
+  });
+
+  it('fails with the named NOT_EXTRACTED error, not a write failure, when the kit has no palette to derive colours from', async () => {
+    getKit.mockResolvedValue({ status: 'approved' });
+    getTokens.mockResolvedValue(tokenPayload);
+    upsertValues.mockResolvedValue({ saved: 51 });
+
+    await expect(execute()).rejects.toMatchObject({ status: 409, code: 'NOT_EXTRACTED' });
+
+    expect(upsertValues).toHaveBeenCalledTimes(1); // the ramp only — nothing to derive from
+    expect(logger.error).not.toHaveBeenCalled(); // a named error, not an infrastructure failure
+  });
+
+  it('a failing brand-kit ramp write still fails the stage, and the semantic colours are not attempted', async () => {
+    getKit.mockResolvedValue(approvedKit);
+    getTokens.mockResolvedValue(tokenPayload);
+    upsertValues.mockRejectedValueOnce(new Error('ramp write failed'));
+
+    await expect(execute()).rejects.toThrow('ramp write failed');
+
+    expect(upsertValues).toHaveBeenCalledTimes(1);
+  });
+
+  it('falls back to raw type_id when theme-engine type is not seeded yet', async () => {
+    const notSeeded = 'type_id does not belong to platform "webapp"';
+    getKit.mockResolvedValue(approvedKit);
+    getTokens.mockResolvedValue(tokenPayload);
+    prisma.type.findFirst.mockResolvedValue(null); // type not seeded
+    upsertValues.mockResolvedValue({ errors: [notSeeded] });
+
+    const result = await execute();
+
+    // upsertValues called with the raw fallback ids — the pane id for the semantic writes
+    expect(upsertValues).toHaveBeenCalledWith('webapp', 'brand-kit', tokenPayload.values, 'user-1', LOCK);
+    expect(upsertValues).toHaveBeenCalledWith('webapp', 'branding', expect.any(Array), 'user-1', LOCK);
+    expect(upsertValues).toHaveBeenCalledWith('webapp', 'buttons', expect.any(Array), 'user-1', LOCK);
     // Stage still advances; errors recorded in outputRef
-    expect(result.outputRef.tokenErrors).toEqual(expect.arrayContaining([expect.any(String)]));
+    expect(result.outputRef.tokenErrors).toEqual([notSeeded]);
+    expect(result.outputRef.themeColorErrors).toEqual([notSeeded, notSeeded]);
     expect(result.outputRef.tokensWrittenAt).toBeTruthy();
   });
 });
@@ -333,6 +527,7 @@ describe('website driver — navigationPages (KDL bug: Navigation-step selection
       .mockResolvedValueOnce({ id: 'page-about' })
       .mockResolvedValueOnce({ id: 'page-services' })
       .mockResolvedValueOnce({ id: 'page-service-detail' })
+      .mockResolvedValueOnce({ id: 'page-service-detail-2' })
       .mockResolvedValueOnce({ id: 'page-contact' })
       .mockResolvedValueOnce({ id: 'page-faq' });
 
@@ -346,8 +541,9 @@ describe('website driver — navigationPages (KDL bug: Navigation-step selection
       navigationPages,
     });
 
-    expect(createPage).toHaveBeenCalledTimes(6);
-    expect(result.outputRef.pageIds).toHaveLength(6);
+    // A lone "<X> detail" page is doubled ("Service detail" -> 2 pages).
+    expect(createPage).toHaveBeenCalledTimes(7);
+    expect(result.outputRef.pageIds).toHaveLength(7);
     expect(result.outputRef.pageKeyToId).toMatchObject({
       home: 'page-home',
       about: 'page-about',
@@ -370,7 +566,7 @@ describe('website driver — navigationPages (KDL bug: Navigation-step selection
   });
 
   it('derives each page key by slugifying its title', async () => {
-    createPage.mockResolvedValueOnce({ id: 'page-1' });
+    createPage.mockResolvedValueOnce({ id: 'page-1' }).mockResolvedValueOnce({ id: 'page-2' });
 
     await getDriver('website').execute({
       run: makeRun(),
@@ -420,7 +616,9 @@ describe('website driver — navigationPages (KDL bug: Navigation-step selection
     // "Team", "Team member", ...) rendered identical "Build faster with
     // KDL" content, making it look like clicking between pages did
     // nothing even though navigation itself worked.
-    createPage.mockResolvedValueOnce({ id: 'page-blog-detail' });
+    createPage
+      .mockResolvedValueOnce({ id: 'page-blog-detail' })
+      .mockResolvedValueOnce({ id: 'page-blog-detail-2' });
 
     await getDriver('website').execute({
       run: makeRun(),
@@ -832,10 +1030,10 @@ describe('website driver — construction pack seeding (KDL-558 homepage)', () =
   it('Footer contact fields and the WhatsApp button use the real brand-kit phone/email/address instead of dummy placeholders (KDL bug repro: "why does it show dummy contact info")', async () => {
     createPage.mockResolvedValueOnce({ id: 'page-home' });
     getCompanyInfo.mockResolvedValueOnce({
-      company_name: 'Subhadra Group',
-      email: 'sales@subhadragroup.in',
+      company_name: 'Demo Agency',
+      email: 'sales@demologo.com',
       phone: '+91 88972 24466',
-      addressLines: ['Showroom, Visakhapatnam - 530 016', 'Registered Office, Visakhapatnam - 530 016'],
+      addressLines: ['Showroom, 123 Main Street, City', 'Registered Office, 456 Side Street, City'],
     });
 
     await getDriver('website').execute({
@@ -851,9 +1049,9 @@ describe('website driver — construction pack seeding (KDL-558 homepage)', () =
     const footer = call.data.content.find((b) => b.type === 'ConstructionFooter');
     const floatingActions = call.data.content.find((b) => b.type === 'ConstructionFloatingActions');
     expect(footer.props.contactPhone).toBe('+91 88972 24466');
-    expect(footer.props.contactEmail).toBe('sales@subhadragroup.in');
-    expect(footer.props.contactAddress).toBe('Showroom, Visakhapatnam - 530 016');
-    expect(footer.props.showroomAddress).toBe('Registered Office, Visakhapatnam - 530 016');
+    expect(footer.props.contactEmail).toBe('sales@demologo.com');
+    expect(footer.props.contactAddress).toBe('Showroom, 123 Main Street, City');
+    expect(footer.props.showroomAddress).toBe('Registered Office, 456 Side Street, City');
     expect(floatingActions.props.whatsappHref).toBe('https://wa.me/918897224466');
     expect(floatingActions.props).toMatchObject({ badgeSide: 'right', actionsSide: 'left' });
   });
@@ -879,8 +1077,8 @@ describe('website driver — construction pack seeding (KDL-558 homepage)', () =
     ];
     getKit.mockResolvedValueOnce({ palette: { colors: {} } });
     getCompanyInfo.mockResolvedValueOnce({
-      company_name: 'Subhadra Group',
-      email: 'sales@subhadragroup.in',
+      company_name: 'Demo Agency',
+      email: 'sales@demologo.com',
       phone: '+91 88972 24466',
       addressLines: ['Showroom address', 'Registered office address'],
     });
@@ -900,7 +1098,7 @@ describe('website driver — construction pack seeding (KDL-558 homepage)', () =
     const footer = patch.data.content.find((b) => b.type === 'ConstructionFooter');
     const floatingActions = patch.data.content.find((b) => b.type === 'ConstructionFloatingActions');
     expect(footer.props.contactPhone).toBe('+91 88972 24466');
-    expect(footer.props.contactEmail).toBe('sales@subhadragroup.in');
+    expect(footer.props.contactEmail).toBe('sales@demologo.com');
     expect(footer.props.contactAddress).toBe('Showroom address');
     expect(footer.props.showroomAddress).toBe('Registered office address');
     expect(floatingActions.props.whatsappHref).toBe('https://wa.me/918897224466');

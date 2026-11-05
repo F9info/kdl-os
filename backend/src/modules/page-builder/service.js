@@ -3,6 +3,8 @@ import { resolveForEditor, stripEntityBindings } from '../../shared/detail-pages
 import { writeActivityAsync } from '../user-management/shared/activity-logger.js';
 import { enqueueSiteBuild } from '../template-engine/site/queue.js';
 import { normalizeData } from '../../shared/numbered-families.js';
+import { removePageFromMenus } from '../menus/site-menus.js';
+import { unregisterFromWebsiteStage } from '../template-engine/site/unregister-page.js';
 
 export const listPages = async () => {
   return prisma.builderPage.findMany({
@@ -46,6 +48,25 @@ export const getPublishedBySlug = async (slug) => {
   return prisma.builderPage.findFirst({
     where: { slug, status: 'PUBLISHED', deleted_at: null },
     select: { slug: true, title: true, data: true, project_id: true },
+  });
+};
+
+// Clean public URLs: "/" is the site's `home` page and "/<key>" its other pages, where <key> is the
+// page key the website stage recorded (slugified title). Falls back to a plain slug match.
+export const getPublishedBySiteKey = async (projectId, key) => {
+  const select = { slug: true, title: true, data: true, project_id: true };
+  const stages = await prisma.templateEngineStage.findMany({
+    where: { stage: 'WEBSITE', run: { projectId } },
+    orderBy: { run: { createdAt: 'desc' } },
+  });
+  for (const stage of stages) {
+    const id = stage.outputRef?.pageKeyToId?.[key];
+    const page = id && (await prisma.builderPage.findFirst({ where: { id, status: 'PUBLISHED', deleted_at: null }, select }));
+    if (page) return page;
+  }
+  return prisma.builderPage.findFirst({
+    where: { slug: key, project_id: projectId, status: 'PUBLISHED', deleted_at: null },
+    select,
   });
 };
 
@@ -122,6 +143,13 @@ export const deletePage = async (id, actorId) => {
     where: { id },
     data: { deleted_at: new Date() },
   });
+  // A deleted page must not leave a dead link in the header/footer menus.
+  try {
+    await removePageFromMenus(prisma, page);
+  } catch {
+    /* menus are optional — never block a page delete */
+  }
+  await unregisterFromWebsiteStage(page.project_id, id).catch(() => {});
   writeActivityAsync({
     actor: actorId,
     module: 'page-builder',

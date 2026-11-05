@@ -10,7 +10,7 @@ const sector = (over) => createSectorSchema.safeParse({
   body: { name: 'Hotel', slug: 'hotel', ...over },
 });
 const caseStudy = (over) => createCaseStudySchema.safeParse({
-  body: { title: 'Novotel', ...over },
+  body: { title: 'Demo Project', ...over },
 });
 
 describe('link fields reject script/redirect URLs', () => {

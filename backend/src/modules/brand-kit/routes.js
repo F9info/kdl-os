@@ -18,6 +18,7 @@ import {
   patchKitSchema,
   approveSchema,
   getTokensSchema,
+  getThemeColorsSchema,
   renderGuidelinesSchema,
   getContactFieldsSchema,
   saveContactFieldsSchema,
@@ -31,6 +32,7 @@ import {
   approveHandler,
   reopenHandler,
   getTokensHandler,
+  getThemeColorsHandler,
   renderGuidelinesHandler,
   getContactFieldsHandler,
   saveContactFieldsHandler,
@@ -54,6 +56,15 @@ router.get(
   authenticate, requirePermission('brand-kit', 'view'),
   validate(getTokensSchema),
   getTokensHandler,
+);
+
+// The brand as the theme's semantic light/dark colours — the Simple Theme view's
+// "Use my Brand Kit colours". Read-only; the approval driver is what writes them.
+router.get(
+  '/:projectId/theme-colors',
+  authenticate, requirePermission('brand-kit', 'view'),
+  validate(getThemeColorsSchema),
+  getThemeColorsHandler,
 );
 
 // KDL-558 roadmap row 1: Intake stage "Logo & Contact Details" form.

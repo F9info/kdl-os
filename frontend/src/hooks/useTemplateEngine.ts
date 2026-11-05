@@ -131,6 +131,36 @@ export function useAdvanceStage(runId: string, projectId: string) {
   })
 }
 
+/**
+ * "Next" from Company Details: makes sure a run exists and the Overview (INTAKE) stage is done,
+ * so the Color Palette page opens unlocked. Resolves with the run.
+ */
+export function useContinueToPalette(projectId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (existing: TemplateEngineRun | undefined) => {
+      let run = existing
+      if (!run) {
+        const res = await api.post<{ success: boolean; data: TemplateEngineRun }>(`${BASE}/runs`, {
+          projectId,
+        })
+        run = res.data.data
+      }
+      const intake = run.stages.find((st) => st.stage === 'INTAKE')
+      if (intake?.status !== 'DONE' && intake?.status !== 'SKIPPED') {
+        await api.post(
+          `${BASE}/runs/${run.id}/stages/${stageEnumToSlug('INTAKE')}/advance`,
+          undefined,
+          projectScope(projectId)
+        )
+      }
+      return run
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: runsKey(projectId) }),
+    onError: (err) => toast({ title: extractErrorCode(err), variant: 'destructive' }),
+  })
+}
+
 export function useBrandKit(projectId: string | null) {
   return useQuery({
     queryKey: projectId ? ['brand-kit', projectId] : [],

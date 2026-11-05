@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import { authenticate } from '../../middleware/auth.js';
 import { requirePermission } from '../../middleware/permission.js';
-import { getAll, getOne, getPublic, postCreate, putUpdate, remove } from './controller.js';
+import { getAll, getOne, getPublic, getPublicSitePage, postCreate, putUpdate, remove } from './controller.js';
 
 const router = Router();
 
 // Public read of a PUBLISHED page (consumed by the /p/[slug] renderer).
+router.get('/public/site/:key', getPublicSitePage);
 router.get('/public/:slug', getPublic);
 
 // Admin CRUD — authenticated + RBAC-gated.

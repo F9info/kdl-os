@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Team module",
   "core": false,
+  "visibleInCatalog": false,
   "apiPrefix": "/api/team",
   "permissions": [
     "team"
@@ -15,6 +16,9 @@
       "icon": "Package",
       "permission": "team:view"
     }
+  ],
+  "navSuppressedByPeer": [
+    "template-engine"
   ],
   "dependsOn": [],
   "queues": [],

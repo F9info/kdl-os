@@ -3,7 +3,16 @@ import { useState, useEffect, useRef, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
-import { Eye, Rocket } from 'lucide-react'
+import {
+  ArrowRight as ArrowRightLucide,
+  Eye,
+  Mail as MailLucide,
+  MapPin as MapPinLucide,
+  Navigation as NavigationLucide,
+  Phone as PhoneLucide,
+  Rocket,
+  Search as SearchLucide,
+} from 'lucide-react'
 import type { ComponentPack } from '../types'
 import { imageField } from '../image-field'
 import { resolveItems, withNumberedFamilies } from '../numbered-families'
@@ -92,49 +101,10 @@ function brandTabsFromLegacy(p: Record<string, string | undefined>): BrandTab[] 
 }
 
 const DEFAULT_BRAND_TABS: BrandTab[] = brandTabsFromLegacy({
-  tab1Label: 'Design, Execution & Maintenance',
-  tab1Groups:
-    'Air Conditioning|Blue Star::/seed/subhadra/ourbrands/design-execution-maintenance/Blue_Star_primary_logo.png\n' +
-    'Refrigeration|Blue Star::/seed/subhadra/ourbrands/design-execution-maintenance/Blue_Star_primary_logo.png\n' +
-    'EPABX|Matrix::/seed/subhadra/ourbrands/design-execution-maintenance/Matrix.jpg\n' +
-    'Fire Fighting|Newage::/seed/subhadra/ourbrands/design-execution-maintenance/Newage.jpg;Safex::/seed/subhadra/ourbrands/design-execution-maintenance/Safex.png;Tyco::/seed/subhadra/ourbrands/design-execution-maintenance/tyco_logo_v1.png\n' +
-    'CCTV|CP Plus::/seed/subhadra/ourbrands/design-execution-maintenance/CP%20Plus.jpg;Matrix::/seed/subhadra/ourbrands/design-execution-maintenance/Matrix.jpg;Honeywell::/seed/subhadra/ourbrands/design-execution-maintenance/Honeywell%20CCTV.jpg;Prama::/seed/subhadra/ourbrands/design-execution-maintenance/Prama.jpg\n' +
-    'Access Control|Matrix::/seed/subhadra/ourbrands/design-execution-maintenance/Matrix.jpg;Essl::/seed/subhadra/ourbrands/design-execution-maintenance/esslogo.png\n' +
-    'Public Address System|JBL::/seed/subhadra/ourbrands/design-execution-maintenance/JBL.png;Bosch::/seed/subhadra/ourbrands/design-execution-maintenance/Bosch.jpg;Ahuja::/seed/subhadra/ourbrands/design-execution-maintenance/Ahuja.jpg;Studio Master::/seed/subhadra/ourbrands/design-execution-maintenance/Studio%20Master.jpg;Crown::/seed/subhadra/ourbrands/design-execution-maintenance/Crown.jpg;Sound Craft::/seed/subhadra/ourbrands/design-execution-maintenance/Sound%20Craft.svg\n' +
-    'Fire Alarm|Ravel::/seed/subhadra/ourbrands/design-execution-maintenance/Ravel.png;Honeywell::/seed/subhadra/ourbrands/design-execution-maintenance/hon-honeywell-technologies-logo-full-horizontal.svg;Agni::/seed/subhadra/ourbrands/design-execution-maintenance/Agni.jpg;Bosch::/seed/subhadra/ourbrands/design-execution-maintenance/Bosch.jpg\n' +
-    'Professional Audio|JBL::/seed/subhadra/ourbrands/design-execution-maintenance/JBL.png;Bose::/seed/subhadra/ourbrands/design-execution-maintenance/bose-logo.jpg;Electro-Voice::/seed/subhadra/ourbrands/design-execution-maintenance/Electro-Voice.png;QSC::/seed/subhadra/ourbrands/design-execution-maintenance/qsc.png\n' +
-    'Network Solutions|TP-Link::/seed/subhadra/ourbrands/design-execution-maintenance/TP-Link-Logo.wine.svg;Grandstream::/seed/subhadra/ourbrands/design-execution-maintenance/logo-grandstream-low-web.webp;Netgear::/seed/subhadra/ourbrands/design-execution-maintenance/Net%20Gare%20brand-logo.svg;Netfox::/seed/subhadra/ourbrands/design-execution-maintenance/Netfox-logo-WO-TM.png;D-Link::/seed/subhadra/ourbrands/design-execution-maintenance/D-link.svg;Syrotech::/seed/subhadra/ourbrands/design-execution-maintenance/Syro%20Tech.png;Honeywell::/seed/subhadra/ourbrands/design-execution-maintenance/hon-honeywell-technologies-logo-full-horizontal.svg',
-  tab2Label: 'Electrical Products',
-  tab2Groups:
-    'Fans|Crompton::/seed/subhadra/ourbrands/electrical-products/Crompton.avif\n' +
-    'Designer Fans|WadBros::/seed/subhadra/ourbrands/electrical-products/Wadbros.png\n' +
-    'Exhaust Fans|WadBros::/seed/subhadra/ourbrands/electrical-products/Wadbros.png\n' +
-    'Wires|RR Kabel::/seed/subhadra/ourbrands/electrical-products/RRKabel.jpg\n' +
-    'Fresh Air System|WadBros::/seed/subhadra/ourbrands/electrical-products/Wadbros.png\n' +
-    'MCB, DB & Switchgear|Schneider Electric::/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png\n' +
-    'Lighting|Futura::/seed/subhadra/ourbrands/electrical-products/Futura%20-1.svg;Wipro::/seed/subhadra/ourbrands/electrical-products/Wipro.png;Crompton::/seed/subhadra/ourbrands/electrical-products/Crompton.avif;Philips::/seed/subhadra/ourbrands/electrical-products/lighting-philips-logo.jpg\n' +
-    'Switches|Schneider Electric::/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png;Norisys::/seed/subhadra/ourbrands/electrical-products/Norisys.png;Legrand::/seed/subhadra/ourbrands/electrical-products/Legrand-Logo.png\n' +
-    'Panel Boards|Customized\n' +
-    'Generators|Cummins::/seed/subhadra/ourbrands/electrical-products/Cunnins.png;Jackson::/seed/subhadra/ourbrands/electrical-products/Jakson.png;Mahindra::/seed/subhadra/ourbrands/electrical-products/Mahindra.png\n' +
-    'Load Break Switch|Transgard::/seed/subhadra/ourbrands/electrical-products/Transguard-Logo-white.png;Megawin::/seed/subhadra/ourbrands/electrical-products/Megawin.jpg\n' +
-    'Servo Stabilizer|Powertex::/seed/subhadra/ourbrands/electrical-products/Power%20Tex.jpg;Servomax::/seed/subhadra/ourbrands/electrical-products/Servomax-logo-2048x471.webp\n' +
-    'UPS|APC::/seed/subhadra/ourbrands/electrical-products/LogoAPC.svg;Fuji Electric::/seed/subhadra/ourbrands/electrical-products/Fuji-Electric-Logo.jpg',
-  tab3Label: 'Lifestyle Residential Products',
-  tab3Groups:
-    'Gate Automation|Beninca::/seed/subhadra/ourbrands/lifestyle-residential-products/beninca-logo.png;Veer::/seed/subhadra/ourbrands/lifestyle-residential-products/veer-logo-.png\n' +
-    'Video Door Phone|One Touch::/seed/subhadra/ourbrands/lifestyle-residential-products/One%20Touch_logo.svg;Legrand Bticino::/seed/subhadra/ourbrands/lifestyle-residential-products/BTicino-IME.jpg\n' +
-    'Smart Lock|Yale::/seed/subhadra/ourbrands/lifestyle-residential-products/yale_logo.avif;Onetouch::/seed/subhadra/ourbrands/lifestyle-residential-products/One%20Touch_logo.svg;Ezviz::/seed/subhadra/ourbrands/lifestyle-residential-products/ezviz-logo_.png\n' +
-    'Home Automation — Retrofit|Schneider Electric::/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png;Legrand::/seed/subhadra/ourbrands/electrical-products/Legrand-Logo.png;Toyama::/seed/subhadra/ourbrands/lifestyle-residential-products/Toyama%20logo-768.webp\n' +
-    'Home Automation — Centralized|Schneider Electric::/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png;Legrand::/seed/subhadra/ourbrands/electrical-products/Legrand-Logo.png;Moorgen::/seed/subhadra/ourbrands/lifestyle-residential-products/Moorgen.jpg;Eelectron::/seed/subhadra/ourbrands/lifestyle-residential-products/eelectron.png\n' +
-    'Intrusion Alarm|Ajax::/seed/subhadra/ourbrands/lifestyle-residential-products/Ajax%20logo.jpg;Texecom::/seed/subhadra/ourbrands/lifestyle-residential-products/Texecom.png\n' +
-    'Multi-Room Audio|Xscase::/seed/subhadra/ourbrands/lifestyle-residential-products/Xscase.png;Sonos::/seed/subhadra/ourbrands/lifestyle-residential-products/Sonos.png;RTI::/seed/subhadra/ourbrands/lifestyle-residential-products/RTI.png;Lithe Audio\n' +
-    'Living Room Audio|Devialet::/seed/subhadra/ourbrands/lifestyle-residential-products/devialet-logo.png;Sonos::/seed/subhadra/ourbrands/lifestyle-residential-products/Sonos.png\n' +
-    'Home Theater — Amplifiers|Denon::/seed/subhadra/ourbrands/lifestyle-residential-products/Denon%20logo.svg;Marantz::/seed/subhadra/ourbrands/lifestyle-residential-products/Marantz%20logo.svg;JBL::/seed/subhadra/ourbrands/lifestyle-residential-products/jbl-logo.svg;Integra::/seed/subhadra/ourbrands/lifestyle-residential-products/Integra-Logo-White.svg;Onkyo::/seed/subhadra/ourbrands/lifestyle-residential-products/Logo%20-%20Onkyo%20Med%20Wht.svg;Emotiva::/seed/subhadra/ourbrands/lifestyle-residential-products/emotiva%401x.svg\n' +
-    'Home Theater — Speakers|Focal::/seed/subhadra/ourbrands/lifestyle-residential-products/focal-logo.png;M&K Sound::/seed/subhadra/ourbrands/lifestyle-residential-products/M%26K%20Sound%20logo.png;Artcoustic::/seed/subhadra/ourbrands/lifestyle-residential-products/Artcoustic-logo.webp;JBL::/seed/subhadra/ourbrands/lifestyle-residential-products/jbl-logo.svg;Klipsch::/seed/subhadra/ourbrands/lifestyle-residential-products/Klipsch_script_logo.svg;KEF::/seed/subhadra/ourbrands/lifestyle-residential-products/Kef%20logo.png;Polk::/seed/subhadra/ourbrands/lifestyle-residential-products/Polk-logo.webp;Dali::/seed/subhadra/ourbrands/lifestyle-residential-products/Dali.png\n' +
-    'Home Theater — Subwoofers|Ascendo::/seed/subhadra/ourbrands/lifestyle-residential-products/Acendo%20Sub%20logo.jpeg;SVS::/seed/subhadra/ourbrands/lifestyle-residential-products/SVS%20sub%20logo.png\n' +
-    'Home Theater — Projectors|Optoma::/seed/subhadra/ourbrands/lifestyle-residential-products/Optoma%20logo.jpeg;Sony::/seed/subhadra/ourbrands/lifestyle-residential-products/Sony%20logo.png;JVC::/seed/subhadra/ourbrands/lifestyle-residential-products/jvc_logo.svg;BenQ::/seed/subhadra/ourbrands/lifestyle-residential-products/benq-logo.png;Epson::/seed/subhadra/ourbrands/lifestyle-residential-products/Epson%20logo.png\n' +
-    'Home Theater — Screens|Euroscreen::/seed/subhadra/ourbrands/lifestyle-residential-products/Eurros%20Screen.svg;Liberty Screen::/seed/subhadra/ourbrands/lifestyle-residential-products/Liberty%20-logo.gif;Elite Screen::/seed/subhadra/ourbrands/lifestyle-residential-products/Elite%20screen.jpeg;VU-Tech Screen\n' +
-    'Heat Pump|A. O. Smith::/seed/subhadra/ourbrands/lifestyle-residential-products/Ao%20smith.jpeg',
+  tab1Label: 'Category One',
+  tab1Groups: 'Group A|Brand A::/seed/demologo/logo.svg\nGroup B|Brand B::/seed/demologo/logo.svg',
+  tab2Label: 'Category Two',
+  tab2Groups: 'Group C|Brand C::/seed/demologo/logo.svg\nGroup D|Brand D::/seed/demologo/logo.svg',
 })
 
 // Text-badge fallback for platform indicators — no lucide-react social icons
@@ -369,12 +339,44 @@ function variantFields<T extends Record<string, unknown>>(
   variant: string | undefined
 ): Partial<T> {
   const v = variant || '1'
-  const otherVariantPrefix = /^d[1-4]/
+  const otherVariantPrefix = /^d[1-5]/
+  // Design 5 (Modern agency) reuses Design 1's contact/social fields.
   return Object.fromEntries(
     Object.entries(fields).filter(
-      ([key]) => !otherVariantPrefix.test(key) || key.startsWith(`d${v}`)
+      ([key]) =>
+        !otherVariantPrefix.test(key) ||
+        key.startsWith(`d${v}`) ||
+        (v === '5' && key.startsWith('d1'))
     )
   ) as Partial<T>
+}
+
+// "DemoLogo" -> navy "Demo" + accent "Logo" (Modern agency designs). Brands
+// without a camelCase split render as one solid word.
+function ModernWordmark({
+  brand,
+  logoUrl,
+  accent,
+  textClass,
+  imgClass,
+}: {
+  brand: string
+  logoUrl?: string
+  accent: string
+  textClass: string
+  imgClass: string
+}) {
+  if (logoUrl) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={logoUrl} alt={brand} className={imgClass} />
+  }
+  const m = /^(.+?[a-z])([A-Z].*)$/.exec(brand || '')
+  return (
+    <span className={`font-extrabold tracking-tight ${textClass}`}>
+      {m ? m[1] : brand}
+      {m && <span style={{ color: accent }}>{m[2]}</span>}
+    </span>
+  )
 }
 
 // Neutral gray-box placeholder for logo/QR-style slots — a real stock photo
@@ -395,7 +397,7 @@ function dummyLogo(w: number, h: number, label: string) {
 
 type ConstructionProps = {
   ConstructionHeader: {
-    variant: '1' | '2' | '3' | '4'
+    variant: '1' | '2' | '3' | '4' | '5'
     visible: boolean
     brand: string
     logoUrl: string
@@ -420,7 +422,8 @@ type ConstructionProps = {
     social4Href: string
   }
   ConstructionTopBar: {
-    variant: '1' | '2' | '3' | '4'
+    variant: '1' | '2' | '3' | '4' | '5'
+    d5FollowLabel: string
     visible: boolean
     primaryColor: string
     secondaryColor: string
@@ -582,11 +585,14 @@ type ConstructionProps = {
     items: {
       title: string
       category: string
+      filter?: string
       image: string
       numberTag: string
       description: string
       href: string
     }[]
+    showFilters?: boolean
+    cardStyle?: 'overlay' | 'card'
     padding: 'sm' | 'md' | 'lg'
   }
   ConstructionQuoteCTA: {
@@ -1025,7 +1031,9 @@ type ConstructionProps = {
     actionsSide: 'left' | 'right'
   }
   ConstructionFooter: {
-    variant: '1' | '2' | '3' | '4'
+    variant: '1' | '2' | '3' | '4' | '5'
+    directionsLabel: string
+    directionsHref: string
     logoUrl: string
     brand: string
     tagline: string
@@ -1809,7 +1817,7 @@ function BuildingIcon() {
 
 function StarIcon() {
   return (
-    <svg className="w-5 h-5 fill-yellow-400 text-yellow-400" viewBox="0 0 20 20" aria-hidden="true">
+    <svg className="w-5 h-5 fill-highlight text-highlight" viewBox="0 0 20 20" aria-hidden="true">
       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.955a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.368 2.447a1 1 0 00-.364 1.118l1.287 3.955c.3.921-.755 1.688-1.54 1.118l-3.368-2.447a1 1 0 00-1.175 0l-3.368 2.447c-.784.57-1.838-.197-1.539-1.118l1.286-3.955a1 1 0 00-.364-1.118L2.063 9.382c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.951-.69L9.05 2.927z" />
     </svg>
   )
@@ -2445,6 +2453,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           { label: 'Design 2 — Announcement + social + language', value: '2' },
           { label: 'Design 3 — Tagline + CTA button', value: '3' },
           { label: 'Design 4 — Support items + login/signup', value: '4' },
+          { label: 'Design 5 — Modern agency (contact + follow us)', value: '5' },
         ],
       },
       visible: {
@@ -2454,6 +2463,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           { label: 'Hide', value: false },
         ],
       },
+      d5FollowLabel: { type: 'text' },
       d1Address: { type: 'text' },
       d1Phone: { type: 'text' },
       d1Email: { type: 'text' },
@@ -2497,6 +2507,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     defaultProps: {
       variant: '1',
       visible: true,
+      d5FollowLabel: 'Follow Us:',
       primaryColor: '',
       secondaryColor: '',
       tertiaryColor: '',
@@ -2546,6 +2557,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     render: function ConstructionTopBarRender({
       variant,
       visible,
+      d5FollowLabel,
       primaryColor,
       secondaryColor,
       tertiaryColor,
@@ -2586,6 +2598,68 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     }) {
       if (visible === false) return <></>
 
+      if (variant === '5') {
+        // Modern agency: thin tinted strip — email + phone left, "Follow
+        // Us:" + socials right. Reuses Design 1's contact/social fields;
+        // social order is Facebook, Instagram, LinkedIn, YouTube.
+        const accent = primaryColor || '#1565e0'
+        const navy = secondaryColor || '#0b1f4d'
+        const socials = [
+          { href: d1Social1Href, label: 'Facebook', Icon: FacebookIcon },
+          { href: d1Social2Href, label: 'Instagram', Icon: InstagramIcon },
+          { href: d1Social3Href, label: 'LinkedIn', Icon: LinkedInIcon },
+          { href: d1Social4Href, label: 'YouTube', Icon: YoutubeIcon },
+        ].filter((x) => x.href)
+        return (
+          <div
+            className="text-[11px]"
+            style={{
+              color: navy,
+              backgroundColor: `color-mix(in srgb, ${accent} 7%, #ffffff)`,
+              ['--tb-accent' as string]: accent,
+            }}
+          >
+            <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-1 px-4 py-1.5">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+                {d1Email && (
+                  <a
+                    href={`mailto:${d1Email}`}
+                    className="flex items-center gap-1.5 hover:text-[var(--tb-accent)]"
+                  >
+                    <MailLucide className="h-3 w-3" aria-hidden />
+                    {d1Email}
+                  </a>
+                )}
+                {d1Phone && (
+                  <a
+                    href={`tel:${d1Phone.replace(/\s+/g, '')}`}
+                    className="flex items-center gap-1.5 hover:text-[var(--tb-accent)]"
+                  >
+                    <PhoneLucide className="h-3 w-3" aria-hidden />
+                    {d1Phone}
+                  </a>
+                )}
+              </div>
+              {socials.length > 0 && (
+                <div className="flex items-center gap-3">
+                  {d5FollowLabel && <span className="opacity-80">{d5FollowLabel}</span>}
+                  {socials.map(({ href, label, Icon }) => (
+                    <a
+                      key={label}
+                      href={href}
+                      aria-label={label}
+                      className="hover:text-[var(--tb-accent)] [&>svg]:h-3 [&>svg]:w-3"
+                    >
+                      <Icon />
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      }
+
       if (variant === '2') {
         // Dark announcement bar. Field reuse note (see defaultProps comment
         // above): d4Tagline carries the announcement text and d2Item1Text
@@ -2617,7 +2691,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 {d2Item1Text && <span className="pl-3">{d2Item1Text}</span>}
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-slate-400">Follow us:</span>
+                <span className="text-white/60">Follow us:</span>
                 <div className="flex items-center gap-3">
                   {d4Social1Href && (
                     <a
@@ -2708,7 +2782,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 <a
                   href={d3CtaHref}
                   style={{ color: barAccent }}
-                  className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold hover:bg-white/90 transition"
+                  className="inline-flex items-center gap-2 rounded-full bg-card px-5 py-2.5 text-sm font-semibold hover:bg-surface/90 transition"
                 >
                   {d3CtaLabel}
                   <span aria-hidden="true">→</span>
@@ -2724,16 +2798,16 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         // defaultProps comment above): d2Item2Text/d2Item3Text/d2TrackLabel
         // carry the first three items and d4Language the fourth (promo);
         // d4HelpLabel/Href and d4FaqLabel/Href carry Login and Sign Up.
-        const itemBorder = 'border-l border-slate-200 pl-6 first:border-l-0 first:pl-0'
+        const itemBorder = 'border-l border-divider pl-6 first:border-l-0 first:pl-0'
         return (
           <div
-            className="bg-white border-b"
+            className="bg-surface border-b"
             style={{
               ['--tb-accent' as string]: primaryColor || '#f5a623',
               borderColor: quaternaryColor || '#e2e8f0',
             }}
           >
-            <div className="flex flex-wrap items-center justify-between gap-y-2 px-4 py-2.5 text-sm text-slate-600 md:px-8">
+            <div className="flex flex-wrap items-center justify-between gap-y-2 px-4 py-2.5 text-sm text-body md:px-8">
               <div className="flex flex-wrap items-center">
                 {d2Item2Text && (
                   <span className={`flex items-center gap-2 pr-6 ${itemBorder}`}>
@@ -2769,7 +2843,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 {d4FaqLabel && (
                   <a
                     href={d4FaqHref}
-                    className="border-l border-slate-200 pl-4 hover:text-[var(--tb-accent)] transition"
+                    className="border-l border-divider pl-4 hover:text-[var(--tb-accent)] transition"
                   >
                     {d4FaqLabel}
                   </a>
@@ -2787,14 +2861,14 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       // margin outside it on wide screens.
       return (
         <div
-          className="bg-white border-b"
+          className="bg-surface border-b"
           style={{
             ['--tb-accent' as string]: primaryColor || '#f5a623',
             borderColor: quaternaryColor || '#e2e8f0',
           }}
         >
-          <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-3 text-sm text-slate-600 md:px-8">
-            <div className="flex items-center gap-4 divide-x divide-slate-200">
+          <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-3 text-sm text-body md:px-8">
+            <div className="flex items-center gap-4 divide-x divide-divider">
               {d1Email && (
                 <span className="flex items-center gap-2 pr-4 first:pl-0">
                   <MailIcon />
@@ -2826,7 +2900,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     {l.label}
                   </a>
                 ))}
-              <div className="flex items-center gap-3 border-l border-slate-200 pl-5">
+              <div className="flex items-center gap-3 border-l border-divider pl-5">
                 {d1Social1Href && (
                   <a
                     href={d1Social1Href}
@@ -2882,6 +2956,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           { label: 'Design 2 — Diagonal banner (socials) + phone badge', value: '2' },
           { label: 'Design 3 — Solid color bar, login + grid menu', value: '3' },
           { label: 'Design 4 — Phone/email badges, search + CTA', value: '4' },
+          { label: 'Design 5 — Modern agency (wordmark, centered menu, search + CTA)', value: '5' },
         ],
       },
       visible: {
@@ -2907,7 +2982,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       quaternaryColor: { type: 'text' },
       // Design 1 only, for now — floats the header over the section below
       // instead of occupying its own row (matches
-      // subhadra.cloudhostingcompany.in). Text colour is a separate toggle,
+      // example.com). Text colour is a separate toggle,
       // not implied by transparency — a transparent header only reads over a
       // dark/photo hero with light text, but over a light hero the header
       // needs to stay dark-on-transparent, so both need to be independently
@@ -3034,14 +3109,14 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       const mobilePanel = mobileOpen && typeof document !== 'undefined' && (
         <>
           {createPortal(
-            <div className="fixed inset-0 z-50 bg-white flex flex-col p-6 md:hidden">
+            <div className="fixed inset-0 z-50 bg-surface flex flex-col p-6 md:hidden">
               <div className="flex items-center justify-between mb-8">
-                <span className="font-bold text-slate-900">{brand}</span>
+                <span className="font-bold text-title">{brand}</span>
                 <button
                   type="button"
                   aria-label="Close menu"
                   onClick={() => setMobileOpen(false)}
-                  className="p-2 -mr-2 text-slate-700"
+                  className="p-2 -mr-2 text-body"
                 >
                   <svg
                     className="w-6 h-6"
@@ -3063,7 +3138,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       key={i}
                       href={href || '#'}
                       onClick={() => setMobileOpen(false)}
-                      className="text-lg font-medium text-slate-900"
+                      className="text-lg font-medium text-title"
                     >
                       {label}
                     </a>
@@ -3074,7 +3149,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 {loginLabel && (
                   <a
                     href={loginHref}
-                    className="inline-flex items-center justify-center rounded-lg border-2 border-slate-300 px-4 py-3 text-sm font-semibold text-slate-900"
+                    className="inline-flex items-center justify-center rounded-lg border-2 border-border px-4 py-3 text-sm font-semibold text-title"
                   >
                     {loginLabel}
                   </a>
@@ -3084,7 +3159,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     href={ctaHref}
                     {...ctaTarget(ctaHref, ctaNewTab)}
                     style={ctaStyle}
-                    className="inline-flex items-center justify-center rounded-lg bg-orange-500 px-4 py-3 text-sm font-semibold text-white"
+                    className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground"
                   >
                     {ctaLabel}
                   </a>
@@ -3118,6 +3193,80 @@ const typedComponents: Config<ConstructionProps>['components'] = {
 
       if (visible === false) return <></>
 
+      if (variant === '5') {
+        // Modern agency: solid white bar (never floats), wordmark left,
+        // centered menu with an underlined active item, search + CTA right.
+        const accent = primaryColor || '#1565e0'
+        const navy = secondaryColor || '#0b1f4d'
+        const activeCls =
+          'border-b-2 border-[color:var(--hdr-accent)] px-2 py-1 text-[13px] font-medium text-[color:var(--hdr-accent)]'
+        const linkCls =
+          'text-[13px] font-medium text-[color:var(--hdr-navy)] hover:text-[color:var(--hdr-accent)] transition'
+        return (
+          <>
+            <header
+              className="sticky top-0 z-40 border-b border-divider bg-surface"
+              style={{ ['--hdr-accent' as string]: accent, ['--hdr-navy' as string]: navy }}
+            >
+              <div className="mx-auto flex h-[60px] max-w-6xl items-center justify-between gap-6 px-4">
+                <Link href="/" suppressHydrationWarning className="flex shrink-0 items-center">
+                  <ModernWordmark
+                    brand={brand}
+                    logoUrl={logoUrl}
+                    accent={accent}
+                    textClass="text-[22px] text-[color:var(--hdr-navy)]"
+                    imgClass="h-8 w-auto"
+                  />
+                </Link>
+                <div className="hidden flex-1 justify-center md:flex">
+                  {menuTree ? (
+                    <HeaderNavMenu
+                      items={menuTree}
+                      linkClassName={linkCls}
+                      activeClassName={activeCls}
+                    />
+                  ) : (
+                    <nav className="flex items-center gap-2">
+                      {navItems.map(([label, href], i) => (
+                        <a
+                          key={i}
+                          href={href || '#'}
+                          className={i === 0 ? activeCls : `${linkCls} px-2 py-1`}
+                        >
+                          {label}
+                        </a>
+                      ))}
+                    </nav>
+                  )}
+                </div>
+                <div className="hidden shrink-0 items-center gap-5 md:flex">
+                  <button
+                    type="button"
+                    aria-label="Search"
+                    className="text-[color:var(--hdr-navy)] hover:text-[color:var(--hdr-accent)] transition"
+                  >
+                    <SearchLucide className="h-[18px] w-[18px]" aria-hidden />
+                  </button>
+                  {ctaLabel && (
+                    <a
+                      href={ctaHref}
+                      {...ctaTarget(ctaHref, ctaNewTab)}
+                      className="inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-semibold"
+                      style={{ backgroundColor: accent, color: readableTextColor(accent) }}
+                    >
+                      {ctaLabel.replace(/\s*[→>↓]+\s*$/, '')}
+                      <ArrowRightLucide className="h-3.5 w-3.5" aria-hidden />
+                    </a>
+                  )}
+                </div>
+                {hamburgerBtn('text-[color:var(--hdr-navy)]')}
+              </div>
+            </header>
+            {mobilePanel}
+          </>
+        )
+      }
+
       if (variant === '2') {
         // Diagonal orange banner (social icons) between the logo and the
         // phone badge, nav row underneath with the first item highlighted
@@ -3125,7 +3274,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         return (
           <>
             <header
-              className="sticky top-0 z-40 bg-white text-slate-900"
+              className="sticky top-0 z-40 bg-surface text-title"
               style={{ ['--hdr-accent' as string]: primaryColor || '#f5a623' }}
             >
               <div className="flex items-stretch">
@@ -3195,19 +3344,19 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   <a
                     href={`tel:${phoneNumber.replace(/[^\d+]/g, '')}`}
                     style={ctaStyle}
-                    className="hidden shrink-0 items-center gap-2 bg-slate-900 px-6 text-sm font-semibold text-white md:flex"
+                    className="hidden shrink-0 items-center gap-2 bg-inverse px-6 text-sm font-semibold text-inverse-foreground md:flex"
                   >
                     <PhoneIcon />
                     {phoneNumber}
                   </a>
                 )}
-                {hamburgerBtn('text-slate-700 ml-auto md:hidden')}
+                {hamburgerBtn('text-body ml-auto md:hidden')}
               </div>
               <div className="hidden py-3 text-sm font-bold uppercase tracking-wide md:flex md:justify-center">
                 {menuTree ? (
                   <HeaderNavMenu
                     items={menuTree}
-                    linkClassName="text-slate-800 hover:text-[var(--hdr-accent)] transition"
+                    linkClassName="text-title hover:text-[var(--hdr-accent)] transition"
                     activeClassName="text-[var(--hdr-accent)]"
                   />
                 ) : (
@@ -3219,7 +3368,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                         className={
                           i === 0
                             ? 'text-[var(--hdr-accent)]'
-                            : 'text-slate-800 hover:text-[var(--hdr-accent)] transition'
+                            : 'text-title hover:text-[var(--hdr-accent)] transition'
                         }
                       >
                         {label}
@@ -3322,7 +3471,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         return (
           <>
             <header
-              className="sticky top-0 z-40 bg-white text-slate-900"
+              className="sticky top-0 z-40 bg-surface text-title"
               style={{ ['--hdr-accent' as string]: primaryColor || '#f5a623' }}
             >
               <div className="flex flex-wrap items-center gap-4 px-4 py-3 md:px-8">
@@ -3344,14 +3493,14 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                         <PhoneIcon />
                       </span>
                       <div className="leading-tight">
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                           Make a call
                         </p>
-                        <p className="text-sm font-bold text-slate-900">{phoneNumber}</p>
+                        <p className="text-sm font-bold text-title">{phoneNumber}</p>
                       </div>
                     </div>
                   )}
-                  {phoneNumber && email && <span className="h-9 border-l border-slate-200" />}
+                  {phoneNumber && email && <span className="h-9 border-l border-divider" />}
                   {email && (
                     <div className="flex items-center gap-3">
                       <span
@@ -3361,16 +3510,16 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                         <MailIcon />
                       </span>
                       <div className="leading-tight">
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                           Send email
                         </p>
-                        <p className="text-sm font-bold text-slate-900">{email}</p>
+                        <p className="text-sm font-bold text-title">{email}</p>
                       </div>
                     </div>
                   )}
                 </div>
                 <div className="hidden shrink-0 items-center gap-3 md:flex">
-                  <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-400">
+                  <div className="flex items-center gap-2 rounded-full border border-divider bg-background px-4 py-2 text-sm text-muted-foreground">
                     <span>Type &amp; Hit Enter...</span>
                     <SearchIcon />
                   </div>
@@ -3384,9 +3533,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     <HeartIcon />
                   </a>
                 </div>
-                {hamburgerBtn('text-slate-700')}
+                {hamburgerBtn('text-body')}
               </div>
-              <div className="hidden border-t border-slate-100 px-4 py-3 text-sm font-semibold text-slate-800 md:flex md:px-8">
+              <div className="hidden border-t border-divider px-4 py-3 text-sm font-semibold text-title md:flex md:px-8">
                 {menuTree ? (
                   <HeaderNavMenu
                     items={menuTree}
@@ -3439,15 +3588,15 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             : solid
               ? 'fixed top-0 inset-x-0 z-40 bg-card text-card-foreground shadow-md transition-colors duration-200'
               : 'fixed top-0 inset-x-0 z-40 bg-transparent transition-colors duration-200'
-          : 'sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-100'
-        const brandTextClass = lightText ? 'text-white' : 'text-slate-900'
+          : 'sticky top-0 z-40 bg-surface/95 backdrop-blur border-b border-divider'
+        const brandTextClass = lightText ? 'text-white' : 'text-title'
         const navLinkClass = lightText
           ? 'text-sm font-medium text-white/90 hover:text-[var(--hdr-accent)] transition'
-          : 'text-sm font-medium text-slate-700 hover:text-[var(--hdr-accent)] transition'
+          : 'text-sm font-medium text-body hover:text-[var(--hdr-accent)] transition'
         const loginBtnClass = lightText
           ? 'inline-flex items-center rounded-lg border-2 border-white/40 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10 transition'
-          : 'inline-flex items-center rounded-lg border-2 border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50 transition'
-        const hamburgerColorClass = lightText ? 'text-white' : 'text-slate-700'
+          : 'inline-flex items-center rounded-lg border-2 border-border px-4 py-2 text-sm font-semibold text-title hover:bg-background transition'
+        const hamburgerColorClass = lightText ? 'text-white' : 'text-body'
 
         // Active-tab pill on the first nav item (e.g. "Home") — this
         // component has no routing context to know the real current page,
@@ -3455,7 +3604,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         // design's single highlighted pill among otherwise-plain links.
         const activeNavLinkClass = lightText
           ? 'rounded-full bg-white/15 px-4 py-2 text-sm font-medium text-white transition'
-          : 'rounded-full bg-slate-900/10 px-4 py-2 text-sm font-medium text-slate-900 transition'
+          : 'rounded-full bg-inverse/10 px-4 py-2 text-sm font-medium text-title transition'
 
         return (
           <>
@@ -3756,7 +3905,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       secondaryColor: '',
       d1Slides: [
         {
-          image: '/seed/subhadra/hero-slider/center-ac.jpeg',
+          image: '/seed/demologo/hero.jpg',
           badge: 'Central AC',
           headline: 'Cool comfort, engineered precisely.',
           subheadline:
@@ -3765,7 +3914,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           ctaHref: '#quote',
         },
         {
-          image: '/seed/subhadra/hero-slider/complete-electrical.jpg',
+          image: '/seed/demologo/hero.jpg',
           badge: 'Electrical & Switchgear',
           headline: 'Electrical products, engineered to last.',
           subheadline:
@@ -3774,7 +3923,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           ctaHref: '#quote',
         },
         {
-          image: '/seed/subhadra/hero-slider/safety-security.jpg',
+          image: '/seed/demologo/hero.jpg',
           badge: 'Safety and Security',
           headline: 'Safety and security systems, engineered to protect.',
           subheadline:
@@ -3788,10 +3937,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       d2CtaLabel: 'Get a Quote →',
       d2CtaHref: '#quote',
       d2SecondaryLabel: 'See Our Work',
-      d2Avatar1: '/seed/subhadra/clients/client-01.png',
-      d2Avatar2: '/seed/subhadra/clients/client-14.png',
-      d2Avatar3: '/seed/subhadra/clients/client-21.png',
-      d2TrustText: '1000+ businesses across Andhra Pradesh trust us',
+      d2Avatar1: '/seed/demologo/logo.svg',
+      d2Avatar2: '/seed/demologo/logo.svg',
+      d2Avatar3: '/seed/demologo/logo.svg',
+      d2TrustText: '1000+ businesses across your region trust us',
       d2Stat1Value: '30+',
       d2Stat1Label: 'Years of Trust',
       d2Stat2Value: '1 Lakh+',
@@ -3801,39 +3950,39 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       d2Slides: [
         {
           dotLabel: 'Central AC',
-          image: '/seed/subhadra/hero-slider/center-ac.jpeg',
+          image: '/seed/demologo/hero.jpg',
           lead: 'Cool comfort,',
           highlight: 'engineered precisely.',
           description:
             'Centralized air-conditioning sized, supplied and installed by our own engineers — from single rooms to full commercial buildings, backed by annual maintenance and genuine spares on call.',
           brands: [
             {
-              name: 'Blue Star',
-              logo: '/seed/subhadra/ourbrands/design-execution-maintenance/Blue_Star_primary_logo.png',
+              name: 'Partner Brand',
+              logo: '/seed/demologo/logo.svg',
             },
           ],
           workHref: 'work-central-ac.html',
         },
         {
           dotLabel: 'Electrical & Switchgear',
-          image: '/seed/subhadra/hero-slider/complete-electrical.jpg',
+          image: '/seed/demologo/hero.jpg',
           lead: 'Electrical products,',
           highlight: 'engineered to last.',
           description:
             'We supply Switches, Wires, MCBs, Distribution Boards, Cables, Switchgear, Panel Boards, Generators, Transformers, UPS, Stabilizers.',
           brands: [
             {
-              name: 'Schneider Electric',
-              logo: '/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png',
+              name: 'Partner Brand',
+              logo: '/seed/demologo/logo.svg',
             },
-            { name: 'RR Kabel', logo: '/seed/subhadra/ourbrands/electrical-products/RRKabel.jpg' },
+            { name: 'Brand', logo: '/seed/demologo/logo.svg' },
             {
-              name: 'Crompton',
-              logo: '/seed/subhadra/ourbrands/electrical-products/Crompton.avif',
+              name: 'Brand',
+              logo: '/seed/demologo/logo.svg',
             },
-            { name: 'Norisys', logo: '/seed/subhadra/ourbrands/electrical-products/Norisys.png' },
-            { name: 'Cummins', logo: '/seed/subhadra/ourbrands/electrical-products/Cunnins.png' },
-            { name: 'APC', logo: '/seed/subhadra/ourbrands/electrical-products/LogoAPC.svg' },
+            { name: 'Brand', logo: '/seed/demologo/logo.svg' },
+            { name: 'Brand', logo: '/seed/demologo/logo.svg' },
+            { name: 'APC', logo: '/seed/demologo/logo.svg' },
           ],
           // No matching work page in the reference site for this slide —
           // blank hides the "See Our Work" button (data-hide-cta="work").
@@ -3841,73 +3990,73 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         },
         {
           dotLabel: 'Safety and Security',
-          image: '/seed/subhadra/hero-slider/safety-security.jpg',
+          image: '/seed/demologo/hero.jpg',
           lead: 'Safety and security systems,',
           highlight: 'engineered to protect.',
           description:
             'CCTV, video analytics, access control, fire alarm, detection and fire-fighting systems designed and installed by our own team — so every entry point is covered and safety never waits.',
           brands: [
             {
-              name: 'CP Plus',
-              logo: '/seed/subhadra/ourbrands/design-execution-maintenance/CP%20Plus.jpg',
+              name: 'Brand',
+              logo: '/seed/demologo/logo.svg',
             },
             {
-              name: 'Honeywell',
-              logo: '/seed/subhadra/ourbrands/design-execution-maintenance/Honeywell%20CCTV.jpg',
+              name: 'Brand',
+              logo: '/seed/demologo/logo.svg',
             },
             {
-              name: 'Ravel',
-              logo: '/seed/subhadra/ourbrands/design-execution-maintenance/Ravel.png',
+              name: 'Brand',
+              logo: '/seed/demologo/logo.svg',
             },
             {
-              name: 'Bosch',
-              logo: '/seed/subhadra/ourbrands/design-execution-maintenance/Bosch.jpg',
+              name: 'Brand',
+              logo: '/seed/demologo/logo.svg',
             },
             {
               name: 'Ajax',
-              logo: '/seed/subhadra/ourbrands/lifestyle-residential-products/Ajax%20logo.jpg',
+              logo: '/seed/demologo/logo.svg',
             },
             {
-              name: 'Matrix',
-              logo: '/seed/subhadra/ourbrands/design-execution-maintenance/Matrix.jpg',
+              name: 'Brand',
+              logo: '/seed/demologo/logo.svg',
             },
           ],
           workHref: 'work-safety-security.html',
         },
         {
           dotLabel: 'Home Automation',
-          image: '/seed/subhadra/hero-slider/home-automation.jpg',
+          image: '/seed/demologo/hero.jpg',
           lead: 'Smart homes,',
           highlight: 'engineered as one.',
           description:
             'Lighting, AC, curtains and appliances — retrofit or centralized, all on one interface you control from anywhere, with voice control and scheduled scenes for everyday comfort.',
           brands: [
             {
-              name: 'Schneider Electric',
-              logo: '/seed/subhadra/ourbrands/electrical-products/schneider-electric-logo-png_seeklogo-123510.png',
+              name: 'Partner Brand',
+              logo: '/seed/demologo/logo.svg',
             },
             {
-              name: 'Bticino',
-              logo: '/seed/subhadra/ourbrands/lifestyle-residential-products/BTicino-IME.jpg',
+              name: 'Brand',
+              logo: '/seed/demologo/logo.svg',
             },
             {
               name: 'RTI',
-              logo: '/seed/subhadra/ourbrands/lifestyle-residential-products/RTI.png',
+              logo: '/seed/demologo/logo.svg',
             },
             {
-              name: 'Toyama',
-              logo: '/seed/subhadra/ourbrands/lifestyle-residential-products/Toyama%20logo-768.webp',
+              name: 'Brand',
+              logo: '/seed/demologo/logo.svg',
             },
             {
               name: 'eelectron',
-              logo: '/seed/subhadra/ourbrands/lifestyle-residential-products/eelectron.png',
+              logo: '/seed/demologo/logo.svg',
             },
           ],
           workHref: 'work-home-automation.html',
         },
         {
           dotLabel: 'Home Theater',
-          image: '/seed/subhadra/hero-slider/home-theater.jpg',
+          image: '/seed/demologo/hero.jpg',
           lead: 'Home theaters,',
           highlight: 'engineered for sound.',
           description:
@@ -3915,34 +4064,34 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           brands: [
             {
               name: 'M&K Sound',
-              logo: '/seed/subhadra/ourbrands/lifestyle-residential-products/M%26K%20Sound%20logo.png',
+              logo: '/seed/demologo/logo.svg',
             },
             {
               name: 'Focal',
-              logo: '/seed/subhadra/ourbrands/lifestyle-residential-products/focal-logo.png',
+              logo: '/seed/demologo/logo.svg',
             },
             {
               name: 'Sony',
-              logo: '/seed/subhadra/ourbrands/lifestyle-residential-products/Sony%20logo.png',
+              logo: '/seed/demologo/logo.svg',
             },
             {
               name: 'Optoma',
-              logo: '/seed/subhadra/ourbrands/lifestyle-residential-products/Optoma%20logo.jpeg',
+              logo: '/seed/demologo/logo.svg',
             },
             {
               name: 'SVS',
-              logo: '/seed/subhadra/ourbrands/lifestyle-residential-products/SVS%20sub%20logo.png',
+              logo: '/seed/demologo/logo.svg',
             },
             {
               name: 'Marantz',
-              logo: '/seed/subhadra/ourbrands/lifestyle-residential-products/Marantz%20logo.svg',
+              logo: '/seed/demologo/logo.svg',
             },
           ],
           workHref: 'work-home-theater.html',
         },
         {
           dotLabel: 'Premium Lighting',
-          image: '/seed/subhadra/hero-slider/premium-lighting.jpg',
+          image: '/seed/demologo/hero.jpg',
           lead: 'Premium lighting,',
           highlight: 'engineered to impress.',
           description:
@@ -3950,9 +4099,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           brands: [
             {
               name: 'Futura',
-              logo: '/seed/subhadra/ourbrands/electrical-products/Futura%20-1.svg',
+              logo: '/seed/demologo/logo.svg',
             },
-            { name: 'Wipro', logo: '/seed/subhadra/ourbrands/electrical-products/Wipro.png' },
+            { name: 'Brand', logo: '/seed/demologo/logo.svg' },
           ],
           workHref: 'work-premium-lighting.html',
         },
@@ -3970,7 +4119,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           quote:
             'One team handled our entire HVAC and electrical fit-out — no coordination headaches between contractors, and the AMC support since handover has been excellent.',
           author: 'Operations Manager',
-          role: 'Hospitality group, Visakhapatnam',
+          role: 'Hospitality group, Your City',
         },
         {
           image:
@@ -3978,15 +4127,15 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           quote:
             'Critical-area AC and fire safety were sized and installed to code without a single delay to our opening date. Their service manager still checks in every quarter.',
           author: 'Facilities Head',
-          role: 'Healthcare facility, Andhra Pradesh',
+          role: 'Healthcare facility, your region',
         },
         {
           image:
             'https://images.unsplash.com/photo-1607746882042-944635dfe10e?w=200&h=200&fit=crop&crop=faces&q=80&auto=format',
           quote:
-            "We compared three vendors for our showroom's cooling and CCTV — Subhadra Group was the only one that could design, supply and install everything themselves.",
+            "We compared three vendors for our showroom's cooling and CCTV — DemoLogo was the only one that could design, supply and install everything themselves.",
           author: 'Retail Operations Lead',
-          role: 'Shopping mall, Visakhapatnam',
+          role: 'Shopping mall, Your City',
         },
       ],
       d4Headline: 'Six Disciplines, Engineered As One System',
@@ -4152,7 +4301,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 >
                   {s.badge && (
                     <span
-                      className="inline-flex w-fit items-center rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold text-white mb-5"
+                      className="inline-flex w-fit items-center rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground mb-5"
                       style={heroTaglineStyle}
                     >
                       {s.badge}
@@ -4173,7 +4322,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   {s.ctaLabel && (
                     <a
                       href={s.ctaHref}
-                      className="inline-flex w-fit items-center rounded-lg bg-orange-500 px-7 py-3.5 text-white font-semibold hover:bg-orange-600 transition text-base"
+                      className="inline-flex w-fit items-center rounded-lg bg-primary px-7 py-3.5 text-primary-foreground font-semibold hover:bg-primary/85 transition text-base"
                       style={heroButtonStyle}
                     >
                       {s.ctaLabel}
@@ -4229,7 +4378,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     aria-label={`Show slide ${i + 1}`}
                     onClick={() => setActiveSlide(i)}
                     className={`h-2 rounded-full transition-all ${
-                      i === idx ? 'w-7 bg-orange-500' : 'w-2 bg-white/50'
+                      i === idx ? 'w-7 bg-primary' : 'w-2 bg-white/50'
                     }`}
                   />
                 ))}
@@ -4247,24 +4396,24 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         const canPrev = sliderLoop || idx > 0
         const canNext = sliderLoop || idx < total - 1
         return (
-          <section className="bg-slate-50 py-16 md:py-24">
+          <section className="bg-background py-16 md:py-24">
             <div className={`${wrap} text-center`}>
               {d3Eyebrow && (
                 <p
-                  className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-3"
+                  className="text-primary text-sm font-semibold uppercase tracking-wide mb-3"
                   style={heroTaglineStyle}
                 >
                   {d3Eyebrow}
                 </p>
               )}
               <h1
-                className="text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight mb-4 max-w-3xl mx-auto"
+                className="text-3xl md:text-5xl font-extrabold text-title leading-tight tracking-tight mb-4 max-w-3xl mx-auto"
                 style={heroTitleStyle}
               >
                 {d3Headline}
               </h1>
               <p
-                className="text-slate-600 text-base md:text-lg mb-10 max-w-xl mx-auto"
+                className="text-body text-base md:text-lg mb-10 max-w-xl mx-auto"
                 style={heroParaStyle}
               >
                 {d3Subheadline}
@@ -4272,7 +4421,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               {d3CtaLabel && (
                 <a
                   href={d3CtaHref}
-                  className="inline-flex items-center rounded-lg bg-orange-500 px-7 py-3.5 text-white font-semibold hover:bg-orange-600 transition text-base mb-12"
+                  className="inline-flex items-center rounded-lg bg-primary px-7 py-3.5 text-primary-foreground font-semibold hover:bg-primary/85 transition text-base mb-12"
                   style={heroButtonStyle}
                 >
                   {d3CtaLabel}
@@ -4281,7 +4430,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               {slide && (
                 <div
                   key={idx}
-                  className={`relative max-w-2xl mx-auto rounded-2xl bg-white border border-slate-200 shadow-sm p-8 md:p-10 ${heroTransitionClass}`}
+                  className={`relative max-w-2xl mx-auto rounded-2xl bg-card border border-divider shadow-sm p-8 md:p-10 ${heroTransitionClass}`}
                 >
                   <div className="flex flex-col items-center gap-4">
                     {slide.image && (
@@ -4292,12 +4441,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                         className="w-16 h-16 rounded-full object-cover"
                       />
                     )}
-                    <p className="text-slate-700 text-lg leading-relaxed">
-                      &#8220;{slide.quote}&#8221;
-                    </p>
+                    <p className="text-body text-lg leading-relaxed">&#8220;{slide.quote}&#8221;</p>
                     <div>
-                      <p className="font-semibold text-slate-900">{slide.author}</p>
-                      <p className="text-sm text-slate-500">{slide.role}</p>
+                      <p className="font-semibold text-title">{slide.author}</p>
+                      <p className="text-sm text-muted-foreground">{slide.role}</p>
                     </div>
                   </div>
                   {total > 1 && sliderShowArrows && (
@@ -4307,7 +4454,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                         aria-label="Previous"
                         disabled={!canPrev}
                         onClick={() => canPrev && setActiveSlide((i) => (i - 1 + total) % total)}
-                        className={`absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-slate-50 text-slate-700 flex items-center justify-center hover:bg-slate-100 transition ${canPrev ? '' : 'opacity-30 cursor-not-allowed'}`}
+                        className={`absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-background text-body flex items-center justify-center hover:bg-divider transition ${canPrev ? '' : 'opacity-30 cursor-not-allowed'}`}
                       >
                         <svg
                           className="w-4 h-4"
@@ -4324,7 +4471,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                         aria-label="Next"
                         disabled={!canNext}
                         onClick={() => canNext && setActiveSlide((i) => (i + 1) % total)}
-                        className={`absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-slate-50 text-slate-700 flex items-center justify-center hover:bg-slate-100 transition ${canNext ? '' : 'opacity-30 cursor-not-allowed'}`}
+                        className={`absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-background text-body flex items-center justify-center hover:bg-divider transition ${canNext ? '' : 'opacity-30 cursor-not-allowed'}`}
                       >
                         <svg
                           className="w-4 h-4"
@@ -4349,7 +4496,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       aria-label={`Show slide ${i + 1}`}
                       onClick={() => setActiveSlide(i)}
                       className={`h-2 rounded-full transition-all ${
-                        i === idx ? 'w-6 bg-orange-500' : 'w-2 bg-slate-300'
+                        i === idx ? 'w-6 bg-primary' : 'w-2 bg-border'
                       }`}
                     />
                   ))}
@@ -4369,16 +4516,16 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         const canPrev = sliderLoop || idx > 0
         const canNext = sliderLoop || idx < total - 1
         return (
-          <section className="bg-white py-16 md:py-24 border-b border-slate-100">
+          <section className="bg-surface py-16 md:py-24 border-b border-divider">
             <div className={`${wrap} text-center`}>
               <h1
-                className="text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight mb-4 max-w-3xl mx-auto"
+                className="text-3xl md:text-5xl font-extrabold text-title leading-tight tracking-tight mb-4 max-w-3xl mx-auto"
                 style={heroTitleStyle}
               >
                 {d4Headline}
               </h1>
               <p
-                className="text-slate-600 text-base md:text-lg mb-4 max-w-xl mx-auto"
+                className="text-body text-base md:text-lg mb-4 max-w-xl mx-auto"
                 style={heroParaStyle}
               >
                 {d4Subheadline}
@@ -4386,7 +4533,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               {d4CtaLabel && (
                 <a
                   href={d4CtaHref}
-                  className="inline-flex items-center rounded-lg bg-orange-500 px-7 py-3.5 text-white font-semibold hover:bg-orange-600 transition text-base mb-12"
+                  className="inline-flex items-center rounded-lg bg-primary px-7 py-3.5 text-primary-foreground font-semibold hover:bg-primary/85 transition text-base mb-12"
                   style={heroButtonStyle}
                 >
                   {d4CtaLabel}
@@ -4394,12 +4541,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               )}
               {slide && (
                 <div key={idx} className={`relative max-w-md mx-auto ${heroTransitionClass}`}>
-                  <div className="rounded-2xl border border-slate-200 shadow-sm p-8 hover:shadow-md transition">
-                    <div className="text-orange-500 mb-4 flex justify-center [&>svg]:w-9 [&>svg]:h-9">
+                  <div className="rounded-2xl border border-divider shadow-sm p-8 hover:shadow-md transition">
+                    <div className="text-primary mb-4 flex justify-center [&>svg]:w-9 [&>svg]:h-9">
                       <Icon />
                     </div>
-                    <h3 className="text-lg font-bold text-slate-900 mb-2">{slide.title}</h3>
-                    <p className="text-slate-600 text-sm leading-relaxed">{slide.description}</p>
+                    <h3 className="text-lg font-bold text-title mb-2">{slide.title}</h3>
+                    <p className="text-body text-sm leading-relaxed">{slide.description}</p>
                   </div>
                   {total > 1 && sliderShowArrows && (
                     <>
@@ -4408,7 +4555,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                         aria-label="Previous"
                         disabled={!canPrev}
                         onClick={() => canPrev && setActiveSlide((i) => (i - 1 + total) % total)}
-                        className={`absolute -left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white border border-slate-200 text-slate-700 flex items-center justify-center hover:bg-slate-50 transition shadow-sm ${canPrev ? '' : 'opacity-30 cursor-not-allowed'}`}
+                        className={`absolute -left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-card border border-divider text-body flex items-center justify-center hover:bg-background transition shadow-sm ${canPrev ? '' : 'opacity-30 cursor-not-allowed'}`}
                       >
                         <svg
                           className="w-4 h-4"
@@ -4425,7 +4572,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                         aria-label="Next"
                         disabled={!canNext}
                         onClick={() => canNext && setActiveSlide((i) => (i + 1) % total)}
-                        className={`absolute -right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white border border-slate-200 text-slate-700 flex items-center justify-center hover:bg-slate-50 transition shadow-sm ${canNext ? '' : 'opacity-30 cursor-not-allowed'}`}
+                        className={`absolute -right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-card border border-divider text-body flex items-center justify-center hover:bg-background transition shadow-sm ${canNext ? '' : 'opacity-30 cursor-not-allowed'}`}
                       >
                         <svg
                           className="w-4 h-4"
@@ -4450,7 +4597,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       aria-label={`Show slide ${i + 1}`}
                       onClick={() => setActiveSlide(i)}
                       className={`h-2 rounded-full transition-all ${
-                        i === idx ? 'w-6 bg-orange-500' : 'w-2 bg-slate-300'
+                        i === idx ? 'w-6 bg-primary' : 'w-2 bg-border'
                       }`}
                     />
                   ))}
@@ -4704,7 +4851,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       onClick={() =>
                         d2CanPrev && setActiveSlide((i) => (i - 1 + d2Total) % d2Total)
                       }
-                      className={`absolute left-3 top-3 w-8 h-8 rounded-full bg-white/90 text-slate-900 flex items-center justify-center shadow hover:bg-white transition ${d2CanPrev ? '' : 'opacity-30 cursor-not-allowed'}`}
+                      className={`absolute left-3 top-3 w-8 h-8 rounded-full bg-surface/90 text-title flex items-center justify-center shadow hover:bg-card transition ${d2CanPrev ? '' : 'opacity-30 cursor-not-allowed'}`}
                     >
                       <svg
                         className="w-4 h-4"
@@ -4721,7 +4868,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       aria-label="Next slide"
                       disabled={!d2CanNext}
                       onClick={() => d2CanNext && setActiveSlide((i) => (i + 1) % d2Total)}
-                      className={`absolute right-3 top-3 w-8 h-8 rounded-full bg-white/90 text-slate-900 flex items-center justify-center shadow hover:bg-white transition ${d2CanNext ? '' : 'opacity-30 cursor-not-allowed'}`}
+                      className={`absolute right-3 top-3 w-8 h-8 rounded-full bg-surface/90 text-title flex items-center justify-center shadow hover:bg-card transition ${d2CanNext ? '' : 'opacity-30 cursor-not-allowed'}`}
                     >
                       <svg
                         className="w-4 h-4"
@@ -4806,8 +4953,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     defaultProps: {
       variant: '1',
       visible: true,
-      backgroundImage: '/seed/subhadra/brand/shop.webp',
-      imageAlt: 'Subhadra Group showroom building exterior',
+      backgroundImage: '/seed/demologo/hero.jpg',
+      imageAlt: 'DemoLogo showroom building exterior',
       subtitle:
         'Your one-stop solution for building engineering products & services — 30 years of trust, one accountable team.',
       homeHref: '/',
@@ -4913,7 +5060,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               {breadcrumb}
               <h1 className="text-3xl font-extrabold text-white md:text-4xl">{title}</h1>
               <div className="max-w-md text-[15px] text-white/75">{subtitleNode}</div>
-              <span className="mt-4 h-1 w-16 rounded bg-orange-500" />
+              <span className="mt-4 h-1 w-16 rounded bg-primary" />
             </div>
             <div className="relative min-h-[280px]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -5105,13 +5252,13 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       ).filter((s) => s.title)
       return (
         <section
-          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
             <div className="text-center mb-10">
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">{sectionTitle}</h2>
+              <h2 className="text-2xl md:text-4xl font-bold text-title mb-3">{sectionTitle}</h2>
               {sectionSubtitle && (
-                <p className="text-slate-600 max-w-2xl mx-auto text-base md:text-lg">
+                <p className="text-body max-w-2xl mx-auto text-base md:text-lg">
                   {sectionSubtitle}
                 </p>
               )}
@@ -5120,13 +5267,13 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               {services.map((s, i) => (
                 <div
                   key={i}
-                  className="rounded-xl border border-slate-200 p-6 hover:shadow-md transition bg-white"
+                  className="rounded-xl border border-divider p-6 hover:shadow-md transition bg-card"
                 >
-                  <div className="text-orange-500 mb-3">
+                  <div className="text-primary mb-3">
                     <HardHatIcon />
                   </div>
-                  <h3 className="font-semibold text-slate-900 text-lg mb-2">{s.title}</h3>
-                  <p className="text-slate-600 text-sm leading-relaxed">{s.description}</p>
+                  <h3 className="font-semibold text-title text-lg mb-2">{s.title}</h3>
+                  <p className="text-body text-sm leading-relaxed">{s.description}</p>
                 </div>
               ))}
             </div>
@@ -5274,14 +5421,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       return (
         <section
           ref={ref}
-          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
             <div className="text-center mb-12">
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">{sectionTitle}</h2>
-              {sectionSubtitle && (
-                <p className="text-slate-600 max-w-2xl mx-auto">{sectionSubtitle}</p>
-              )}
+              <h2 className="text-2xl md:text-4xl font-bold text-title mb-3">{sectionTitle}</h2>
+              {sectionSubtitle && <p className="text-body max-w-2xl mx-auto">{sectionSubtitle}</p>}
             </div>
             <div className="flex flex-col gap-16">
               {offerings.map((o, i) => {
@@ -5292,7 +5437,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     className={`md:flex gap-10 items-center ${i % 2 === 1 ? 'md:flex-row-reverse' : ''}`}
                   >
                     <div className="md:w-1/2 relative mb-6 md:mb-0">
-                      <span className="absolute -top-6 -left-2 text-7xl font-extrabold text-slate-100 select-none">
+                      <span className="absolute -top-6 -left-2 text-7xl font-extrabold text-divider/60 select-none">
                         {o.numberTag}
                       </span>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -5303,17 +5448,17 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       />
                     </div>
                     <div className="md:w-1/2">
-                      <div className="text-orange-500 mb-3">
+                      <div className="text-primary mb-3">
                         <Icon />
                       </div>
-                      <h3 className="text-xl font-bold text-slate-900 mb-2">{o.heading}</h3>
-                      <p className="text-slate-600 leading-relaxed mb-3">{o.description}</p>
+                      <h3 className="text-xl font-bold text-title mb-2">{o.heading}</h3>
+                      <p className="text-body leading-relaxed mb-3">{o.description}</p>
                       {o.brandNames && (
-                        <p className="text-xs text-slate-400 mb-4">{o.brandNames}</p>
+                        <p className="text-xs text-muted-foreground mb-4">{o.brandNames}</p>
                       )}
                       <a
                         href={o.href}
-                        className="inline-flex items-center gap-1 text-orange-600 font-semibold text-sm hover:gap-2 transition-all"
+                        className="inline-flex items-center gap-1 text-primary font-semibold text-sm hover:gap-2 transition-all"
                       >
                         Explore <span aria-hidden="true">→</span>
                       </a>
@@ -5385,8 +5530,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       eyebrow: 'About Us',
       heading: 'Your one-stop solution for building engineering',
       paragraph:
-        'Subhadra Group was founded in 1996 to provide all building-related engineering products & services under one roof for residential, commercial buildings and industries. With 30+ years of technical expertise across HVAC, Electricals and ELV systems, our team delivers perfect-engineered solutions for every application.',
-      photo: '/seed/subhadra/about.webp',
+        'DemoLogo was founded in 1996 to provide all building-related engineering products & services under one roof for residential, commercial buildings and industries. With 30+ years of technical expertise across HVAC, Electricals and ELV systems, our team delivers perfect-engineered solutions for every application.',
+      photo: '/seed/demologo/about.jpg',
       badgeNumber: '30',
       badgeLabel: 'Years of Trust',
       check1Text: 'World-class, pioneer brands only',
@@ -5396,14 +5541,14 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       brochureHref: 'about.html',
       membershipLabel: 'Proud member of',
       members: [
-        { title: '', logo: '/seed/subhadra/member/fsai.jpeg' },
-        { title: '', logo: '/seed/subhadra/member/IIID.jpeg' },
-        { title: '', logo: '/seed/subhadra/member/IGBC.png' },
-        { title: '', logo: '/seed/subhadra/member/IPA.png' },
-        { title: '', logo: '/seed/subhadra/member/ASHRAE.webp' },
-        { title: '', logo: '/seed/subhadra/member/bni.svg' },
-        { title: '', logo: '/seed/subhadra/member/cii.svg' },
-        { title: '', logo: '/seed/subhadra/member/VCCI.png' },
+        { title: '', logo: '/seed/demologo/logo.svg' },
+        { title: '', logo: '/seed/demologo/logo.svg' },
+        { title: '', logo: '/seed/demologo/logo.svg' },
+        { title: '', logo: '/seed/demologo/logo.svg' },
+        { title: '', logo: '/seed/demologo/logo.svg' },
+        { title: '', logo: '/seed/demologo/logo.svg' },
+        { title: '', logo: '/seed/demologo/logo.svg' },
+        { title: '', logo: '/seed/demologo/logo.svg' },
       ],
       padding: 'md',
       background: 'muted',
@@ -5464,14 +5609,14 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       return (
         <section
           ref={ref}
-          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className="w-full px-6 md:px-10 lg:px-16 md:flex gap-14 items-center">
             <div className="md:w-2/5 relative mb-10 md:mb-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={photo} alt={heading} className="rounded-2xl w-full h-96 object-cover" />
               {(isEditing || badgeNumber || badgeLabel) && (
-                <div className="absolute -bottom-6 -right-6 w-28 h-28 rounded-full bg-orange-500 text-white flex flex-col items-center justify-center text-center shadow-lg">
+                <div className="absolute -bottom-6 -right-6 w-28 h-28 rounded-full bg-primary text-primary-foreground flex flex-col items-center justify-center text-center shadow-lg">
                   <span className="text-2xl font-extrabold leading-none">
                     <InlineEditableText
                       id={id}
@@ -5493,7 +5638,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             </div>
             <div className="md:w-3/5">
               {(isEditing || eyebrow) && (
-                <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                <p className="text-primary text-sm font-semibold uppercase tracking-wide mb-2">
                   <InlineEditableText
                     id={id}
                     path={['eyebrow']}
@@ -5502,7 +5647,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   />
                 </p>
               )}
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-4">
+              <h2 className="text-2xl md:text-4xl font-bold text-title mb-4">
                 <InlineEditableText
                   id={id}
                   path={['heading']}
@@ -5511,7 +5656,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 />
               </h2>
               {(isEditing || paragraph) && (
-                <p className="text-slate-600 leading-relaxed mb-6">
+                <p className="text-body leading-relaxed mb-6">
                   <InlineEditableText
                     id={id}
                     path={['paragraph']}
@@ -5524,7 +5669,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               {checks.length > 0 && (
                 <ul className="flex flex-col gap-3 mb-8">
                   {checks.map((c, i) => (
-                    <li key={i} className="flex items-center gap-3 text-slate-700">
+                    <li key={i} className="flex items-center gap-3 text-body">
                       <span className="text-green-600 flex-shrink-0">
                         <CheckShieldIcon />
                       </span>
@@ -5542,7 +5687,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 <a
                   href={brochureHref}
                   onClick={isEditing ? (e) => e.preventDefault() : undefined}
-                  className="inline-flex items-center rounded-lg bg-orange-500 px-6 py-3 text-white font-semibold hover:bg-orange-600 transition text-sm"
+                  className="inline-flex items-center rounded-lg bg-primary px-6 py-3 text-primary-foreground font-semibold hover:bg-primary/85 transition text-sm"
                 >
                   <InlineEditableText
                     id={id}
@@ -5555,7 +5700,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               {memberLogos.length > 0 && (
                 <div className="mt-8">
                   {(isEditing || membershipLabel) && (
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-faint mb-3">
                       <InlineEditableText
                         id={id}
                         path={['membershipLabel']}
@@ -5575,7 +5720,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                           className="h-9 w-auto object-contain opacity-90"
                         />
                         {m.title && (
-                          <span className="text-[10px] text-slate-500 text-center leading-tight max-w-[80px]">
+                          <span className="text-[10px] text-muted-foreground text-center leading-tight max-w-[80px]">
                             {m.title}
                           </span>
                         )}
@@ -5606,6 +5751,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         defaultItemProps: {
           title: '',
           category: '',
+          filter: '',
           image: '',
           numberTag: '',
           description: '',
@@ -5614,11 +5760,27 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         arrayFields: {
           title: { type: 'text' },
           category: { type: 'text' },
+          // Optional filter-tab label; defaults to the category.
+          filter: { type: 'text' },
           image: imageField('Image'),
           numberTag: { type: 'text' },
           description: { type: 'textarea' },
           href: { type: 'text' },
         },
+      },
+      showFilters: {
+        type: 'radio',
+        options: [
+          { label: 'Hide filter tabs', value: false },
+          { label: 'Show filter tabs', value: true },
+        ],
+      },
+      cardStyle: {
+        type: 'radio',
+        options: [
+          { label: 'Image overlay', value: 'overlay' },
+          { label: 'Card (text below image)', value: 'card' },
+        ],
       },
       padding: {
         type: 'select',
@@ -5637,7 +5799,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         {
           title: 'Villa',
           category: 'Residential',
-          image: '/seed/subhadra/sectors/villa.jpg',
+          image: '/seed/demologo/about.jpg',
           numberTag: '01',
           description: 'Comfort, control and cinema for private residences.',
           href: '#villa',
@@ -5645,7 +5807,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         {
           title: 'Hotel',
           category: 'Hospitality',
-          image: '/seed/subhadra/sectors/hotel.jpg',
+          image: '/seed/demologo/about.jpg',
           numberTag: '02',
           description: 'Guest-room comfort that runs all day, every day.',
           href: '#hotel',
@@ -5662,7 +5824,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         {
           title: 'Showrooms',
           category: 'Retail',
-          image: '/seed/subhadra/sectors/showrooms.jpg',
+          image: '/seed/demologo/about.jpg',
           numberTag: '04',
           description: 'Cooling, lighting and access control for retail floors.',
           href: '#showrooms',
@@ -5670,7 +5832,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         {
           title: 'Convention Center',
           category: 'Events',
-          image: '/seed/subhadra/sectors/convention-center.jpg',
+          image: '/seed/demologo/about.jpg',
           numberTag: '05',
           description: 'High-load cooling and professional audio.',
           href: '#convention-center',
@@ -5678,7 +5840,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         {
           title: 'Education',
           category: 'Institutional',
-          image: '/seed/subhadra/sectors/educational-institute.jpg',
+          image: '/seed/demologo/about.jpg',
           numberTag: '06',
           description: 'Campus electrical, networking and safety.',
           href: '#educational-institute',
@@ -5686,7 +5848,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         {
           title: 'Builder',
           category: 'Construction',
-          image: '/seed/subhadra/sectors/builder.jpg',
+          image: '/seed/demologo/about.jpg',
           numberTag: '07',
           description: 'Turnkey MEP packages, block after block, on schedule.',
           href: '#builder',
@@ -5694,7 +5856,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         {
           title: 'Industry',
           category: 'Industrial',
-          image: '/seed/subhadra/sectors/industry.jpg',
+          image: '/seed/demologo/about.jpg',
           numberTag: '08',
           description: 'Transformers, switchgear and plant maintenance.',
           href: '#industry',
@@ -5736,24 +5898,35 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       sectionTitle,
       sectionSubtitle,
       items,
+      showFilters,
+      cardStyle,
       padding,
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
       const isEditing = puck?.isEditing ?? false
-      const projects = (items ?? []).map((p, n) => ({ ...p, n })).filter((p) => p.title)
+      const [activeFilter, setActiveFilter] = useState('')
+      const allProjects = (items ?? []).map((p, n) => ({ ...p, n })).filter((p) => p.title)
+      const filterOf = (p: { filter?: string; category: string }) => p.filter || p.category
+      // Tabs come from the items themselves (single source of truth).
+      const filters = showFilters
+        ? Array.from(new Set(allProjects.map(filterOf).filter(Boolean)))
+        : []
+      const projects = activeFilter
+        ? allProjects.filter((p) => filterOf(p) === activeFilter)
+        : allProjects
       return (
-        <section ref={ref} className={`${revealCls} ${padY[padding]} bg-white`}>
+        <section ref={ref} className={`${revealCls} ${padY[padding]} bg-surface`}>
           {/* Reference (v2-sectors) wraps this section in container-fluid, not
               a max-width container — full width so the rail can show more
               cards edge-to-edge, unlike every other section on the page. */}
           <div className="w-full px-4 md:px-8">
             <div className="text-center mb-10">
               {sectionEyebrow && (
-                <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-[#4b5058]">
+                <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
                   {sectionEyebrow}
                 </p>
               )}
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">
+              <h2 className="text-2xl md:text-4xl font-bold text-title mb-3">
                 <InlineEditableText
                   id={id}
                   path={['sectionTitle']}
@@ -5762,7 +5935,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 />
               </h2>
               {(isEditing || sectionSubtitle) && (
-                <p className="text-slate-600 max-w-2xl mx-auto">
+                <p className="text-body max-w-2xl mx-auto">
                   <InlineEditableText
                     id={id}
                     path={['sectionSubtitle']}
@@ -5773,61 +5946,103 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 </p>
               )}
             </div>
+            {filters.length > 0 && (
+              <div className="flex flex-wrap justify-center gap-2 mb-8" role="tablist">
+                {['', ...filters].map((f) => (
+                  <button
+                    key={f || 'all'}
+                    type="button"
+                    role="tab"
+                    aria-selected={activeFilter === f}
+                    onClick={() => setActiveFilter(f)}
+                    className={`rounded-full border px-4 py-1.5 text-sm font-medium transition ${
+                      activeFilter === f
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-surface text-body border-divider hover:border-primary'
+                    }`}
+                  >
+                    {f || 'All'}
+                  </button>
+                ))}
+              </div>
+            )}
             {/* Reference (.v2-sector-rail) breaks at 640/900/1200px → 2/3/4
                 columns — Tailwind's stock `lg` (1024px) would skip straight
                 from 2 to 4, so 900/1200 need arbitrary-value breakpoints. */}
             <div className="grid grid-cols-1 sm:grid-cols-2 min-[900px]:grid-cols-3 min-[1200px]:grid-cols-4 gap-4">
-              {projects.map((p, i) => (
-                <a
-                  key={i}
-                  href={p.href || '#'}
-                  onClick={isEditing ? (e) => e.preventDefault() : undefined}
-                  className="group relative rounded-xl overflow-hidden aspect-[4/3] block"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={p.image}
-                    alt={p.title}
-                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/85 via-slate-900/20 to-transparent" />
-                  {p.numberTag && (
-                    <span className="absolute top-3 left-3 w-8 h-8 rounded-full bg-white/90 text-slate-900 text-xs font-bold flex items-center justify-center">
-                      {p.numberTag}
-                    </span>
-                  )}
-                  <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                    {(isEditing || p.category) && (
-                      <span className="text-xs font-medium text-orange-300 uppercase tracking-wide">
-                        <InlineEditableText
-                          id={id}
-                          path={['items', p.n, 'category']}
-                          value={p.category ?? ''}
-                          isEditing={isEditing}
-                        />
+              {projects.map((p, i) =>
+                cardStyle === 'card' ? (
+                  <a
+                    key={i}
+                    href={p.href || '#'}
+                    onClick={isEditing ? (e) => e.preventDefault() : undefined}
+                    className="group block rounded-xl overflow-hidden border border-divider bg-card hover:shadow-md transition"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={p.image}
+                      alt={p.title}
+                      className="w-full aspect-[16/10] object-cover"
+                    />
+                    <div className="p-4">
+                      <p className="font-semibold text-title">{p.title}</p>
+                      {p.category && (
+                        <p className="text-xs text-muted-foreground mt-0.5">{p.category}</p>
+                      )}
+                    </div>
+                  </a>
+                ) : (
+                  <a
+                    key={i}
+                    href={p.href || '#'}
+                    onClick={isEditing ? (e) => e.preventDefault() : undefined}
+                    className="group relative rounded-xl overflow-hidden aspect-[4/3] block"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={p.image}
+                      alt={p.title}
+                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/85 via-slate-900/20 to-transparent" />
+                    {p.numberTag && (
+                      <span className="absolute top-3 left-3 w-8 h-8 rounded-full bg-surface/90 text-title text-xs font-bold flex items-center justify-center">
+                        {p.numberTag}
                       </span>
                     )}
-                    <p className="font-semibold">
-                      <InlineEditableText
-                        id={id}
-                        path={['items', p.n, 'title']}
-                        value={p.title ?? ''}
-                        isEditing={isEditing}
-                      />
-                    </p>
-                    {(isEditing || p.description) && (
-                      <p className="text-xs text-white/80 mt-0.5">
+                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                      {(isEditing || p.category) && (
+                        <span className="text-xs font-medium text-highlight uppercase tracking-wide">
+                          <InlineEditableText
+                            id={id}
+                            path={['items', p.n, 'category']}
+                            value={p.category ?? ''}
+                            isEditing={isEditing}
+                          />
+                        </span>
+                      )}
+                      <p className="font-semibold">
                         <InlineEditableText
                           id={id}
-                          path={['items', p.n, 'description']}
-                          value={p.description ?? ''}
+                          path={['items', p.n, 'title']}
+                          value={p.title ?? ''}
                           isEditing={isEditing}
                         />
                       </p>
-                    )}
-                  </div>
-                </a>
-              ))}
+                      {(isEditing || p.description) && (
+                        <p className="text-xs text-white/80 mt-0.5">
+                          <InlineEditableText
+                            id={id}
+                            path={['items', p.n, 'description']}
+                            value={p.description ?? ''}
+                            isEditing={isEditing}
+                          />
+                        </p>
+                      )}
+                    </div>
+                  </a>
+                )
+              )}
             </div>
           </div>
         </section>
@@ -5854,7 +6069,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         type: 'select',
         options: [
           { label: 'Dark', value: 'dark' },
-          { label: 'Accent (Orange)', value: 'accent' },
+          { label: 'Accent (Main colour)', value: 'accent' },
           { label: 'Muted', value: 'muted' },
         ],
       },
@@ -5885,14 +6100,14 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     }) => {
       const bgCls =
         background === 'dark'
-          ? 'bg-slate-900 text-white'
+          ? 'bg-inverse text-inverse-foreground'
           : background === 'accent'
-            ? 'bg-orange-500 text-white'
-            : 'bg-slate-100 text-slate-900'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-background text-title'
       const btnCls =
         background === 'muted'
-          ? 'bg-orange-500 text-white hover:bg-orange-600'
-          : 'bg-white text-slate-900 hover:bg-slate-100'
+          ? 'bg-primary text-primary-foreground hover:bg-primary/85'
+          : 'bg-surface text-title hover:bg-background'
       return (
         <section className={`${bgCls} py-16`}>
           <div className="mx-auto max-w-3xl px-4 md:px-8 text-center">
@@ -5904,7 +6119,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             {headline && <h2 className="text-2xl md:text-4xl font-bold mb-4">{headline}</h2>}
             {subtext && (
               <p
-                className={`mb-8 text-base md:text-lg ${background === 'muted' ? 'text-slate-600' : 'opacity-90'}`}
+                className={`mb-8 text-base md:text-lg ${background === 'muted' ? 'text-body' : 'opacity-90'}`}
               >
                 {subtext}
               </p>
@@ -5921,15 +6136,13 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               {secondaryCtaLabel && (
                 <a
                   href={secondaryCtaHref || '#'}
-                  className="inline-flex rounded-lg border border-current px-8 py-3.5 font-semibold transition hover:bg-white/10"
+                  className="inline-flex rounded-lg border border-current px-8 py-3.5 font-semibold transition hover:bg-inverse-foreground/10"
                 >
                   {secondaryCtaLabel}
                 </a>
               )}
               {phoneNumber && (
-                <div
-                  className={`text-sm ${background === 'muted' ? 'text-slate-600' : 'opacity-80'}`}
-                >
+                <div className={`text-sm ${background === 'muted' ? 'text-body' : 'opacity-80'}`}>
                   <span className="block text-xs mb-0.5">{phoneLabel}</span>
                   <a
                     href={`tel:${phoneNumber}`}
@@ -5958,7 +6171,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       background: {
         type: 'select',
         options: [
-          { label: 'Accent (Orange)', value: 'accent' },
+          { label: 'Accent (Main colour)', value: 'accent' },
           { label: 'Dark', value: 'dark' },
         ],
       },
@@ -5981,11 +6194,14 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding: 'sm',
     },
     render: ({ headline, ctaLabel, ctaHref, phoneNumber, phoneLabel, background, padding }) => {
-      const bgCls = background === 'dark' ? 'bg-slate-900 text-white' : 'bg-orange-500 text-white'
+      const bgCls =
+        background === 'dark'
+          ? 'bg-inverse text-inverse-foreground'
+          : 'bg-primary text-primary-foreground'
       const btnCls =
         background === 'dark'
-          ? 'bg-orange-500 text-white hover:bg-orange-600'
-          : 'bg-white text-slate-900 hover:bg-slate-100'
+          ? 'bg-primary text-primary-foreground hover:bg-primary/85'
+          : 'bg-surface text-title hover:bg-background'
       return (
         <section className={`${bgCls} ${padY[padding]}`}>
           <div className={wrap}>
@@ -6139,10 +6355,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       return (
         <section
           ref={ref}
-          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
-            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+            <h2 className="text-2xl md:text-4xl font-bold text-title text-center mb-10">
               {sectionTitle}
             </h2>
             <div className="md:flex gap-12 items-center">
@@ -6155,7 +6371,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 />
               </div>
               <div className="md:w-1/2">
-                {paragraph && <p className="text-slate-600 leading-relaxed mb-6">{paragraph}</p>}
+                {paragraph && <p className="text-body leading-relaxed mb-6">{paragraph}</p>}
                 {scopes.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-8">
                     {scopes.map((s, i) => {
@@ -6163,9 +6379,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       return (
                         <span
                           key={i}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-divider px-3 py-1.5 text-xs font-medium text-body"
                         >
-                          <span className="text-orange-500 [&>svg]:w-4 [&>svg]:h-4">
+                          <span className="text-primary [&>svg]:w-4 [&>svg]:h-4">
                             <Icon />
                           </span>
                           {s.label}
@@ -6178,7 +6394,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   {ctaLabel && (
                     <a
                       href={ctaHref}
-                      className="inline-flex items-center rounded-lg bg-orange-500 px-6 py-3 text-white font-semibold hover:bg-orange-600 transition text-sm"
+                      className="inline-flex items-center rounded-lg bg-primary px-6 py-3 text-primary-foreground font-semibold hover:bg-primary/85 transition text-sm"
                     >
                       {ctaLabel}
                     </a>
@@ -6186,7 +6402,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   {linkLabel && (
                     <a
                       href={linkHref}
-                      className="text-orange-600 font-semibold text-sm hover:underline"
+                      className="text-primary font-semibold text-sm hover:underline"
                     >
                       {linkLabel}
                     </a>
@@ -6302,23 +6518,23 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       ).filter((p) => p.title)
       return (
         <section
-          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
-            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+            <h2 className="text-2xl md:text-4xl font-bold text-title text-center mb-10">
               {heading}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {projects.map((p, i) => (
-                <div key={i} className="rounded-xl overflow-hidden border border-slate-200">
+                <div key={i} className="rounded-xl overflow-hidden border border-divider">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={p.image} alt={p.title} className="w-full aspect-[4/3] object-cover" />
                   <div className="p-5">
-                    <span className="inline-block rounded-full bg-orange-50 text-orange-600 text-xs font-semibold px-3 py-1 mb-3">
+                    <span className="inline-block rounded-full bg-primary/10 text-primary text-xs font-semibold px-3 py-1 mb-3">
                       {p.category}
                     </span>
-                    <p className="font-semibold text-slate-900">{p.title}</p>
-                    <p className="text-sm text-slate-500 mt-1">{p.stat}</p>
+                    <p className="font-semibold text-title">{p.title}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{p.stat}</p>
                   </div>
                 </div>
               ))}
@@ -6361,7 +6577,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=960&h=720&fit=crop&auto=format',
       title: 'Meridian Corporate Towers',
       description:
-        'A 12-lakh sq ft twin-tower commercial complex in Vijayawada, delivered end-to-end — structural design, MEP, and interiors — under a single Subhadra Group contract.',
+        'A 12-lakh sq ft twin-tower commercial complex in Another City, delivered end-to-end — structural design, MEP, and interiors — under a single DemoLogo contract.',
       stat1Value: '12 Lakh sq ft',
       stat1Label: 'Built-up Area',
       stat2Value: '22 Months',
@@ -6391,7 +6607,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       ).filter((s) => s.value)
       return (
         <section
-          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={`${wrap} grid grid-cols-1 md:grid-cols-2 gap-10 items-center`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -6401,13 +6617,13 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               className="rounded-2xl w-full aspect-[4/3] object-cover shadow-lg"
             />
             <div>
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-4">{title}</h2>
-              {description && <p className="text-slate-600 leading-relaxed mb-8">{description}</p>}
+              <h2 className="text-2xl md:text-4xl font-bold text-title mb-4">{title}</h2>
+              {description && <p className="text-body leading-relaxed mb-8">{description}</p>}
               <div className="grid grid-cols-2 gap-6">
                 {stats.map((s, i) => (
                   <div key={i}>
-                    <p className="text-2xl md:text-3xl font-bold text-orange-600">{s.value}</p>
-                    <p className="text-xs md:text-sm text-slate-600 mt-1">{s.label}</p>
+                    <p className="text-2xl md:text-3xl font-bold text-primary">{s.value}</p>
+                    <p className="text-xs md:text-sm text-body mt-1">{s.label}</p>
                   </div>
                 ))}
               </div>
@@ -6451,10 +6667,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       heading: 'Where We Build',
       location1Thumbnail:
         'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=200&h=200&fit=crop&auto=format',
-      location1City: 'Vijayawada',
+      location1City: 'Another City',
       location2Thumbnail:
         'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=200&h=200&fit=crop&auto=format',
-      location2City: 'Visakhapatnam',
+      location2City: 'Your City',
       location3Thumbnail:
         'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=200&h=200&fit=crop&auto=format',
       location3City: 'Guntur',
@@ -6493,11 +6709,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       ).filter((l) => l.city)
       return (
         <section
-          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
             {heading && (
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+              <h2 className="text-2xl md:text-4xl font-bold text-title text-center mb-10">
                 {heading}
               </h2>
             )}
@@ -6505,7 +6721,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               {locations.map((l, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-3 rounded-full border border-slate-200 pl-1.5 pr-5 py-1.5"
+                  className="flex items-center gap-3 rounded-full border border-divider pl-1.5 pr-5 py-1.5"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -6513,7 +6729,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     alt={l.city}
                     className="w-12 h-12 rounded-full object-cover"
                   />
-                  <span className="font-semibold text-slate-900 text-sm">{l.city}</span>
+                  <span className="font-semibold text-title text-sm">{l.city}</span>
                 </div>
               ))}
             </div>
@@ -6545,7 +6761,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           image: '',
           title: '',
           description: '',
-          brands: '',
+          brands: 'Brand A · Brand B',
           href: '',
           linkLabel: '',
         },
@@ -6588,7 +6804,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       sectionEyebrow: 'In our showroom',
       sectionTitle: 'Everything for your building, in stock',
       sectionSubtitle:
-        'We deal only in world-class brands that are pioneers in their fields — Schneider Electric, Blue Star, Polycab, RR Kabel, Crompton, Cummins and more.',
+        'We deal only in world-class brands that are pioneers in their fields — leading partner brands and more.',
       category1Label: 'Electrical',
       category2Label: 'Climate & refrigeration',
       category3Label: 'Safety & systems',
@@ -6601,7 +6817,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             'https://images.unsplash.com/photo-1623707430101-9e74cefe05e2?w=700&h=525&fit=crop&q=75&auto=format',
           title: 'Switches & wiring devices',
           description: 'Livia, Zencelo, Unica Pure, Clipsal X, Avatar On, Cube Series.',
-          brands: 'Schneider Electric · Norisys',
+          brands: 'Brand A · Brand B',
         },
         {
           category: 'Electrical',
@@ -6610,7 +6826,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             'https://images.unsplash.com/photo-1753272691001-4d68806ac590?w=700&h=525&fit=crop&q=75&auto=format',
           title: 'MCB, DB & switchgear',
           description: 'Distribution boards, MCB/MCCB, ACB and panel boards.',
-          brands: 'Schneider Electric',
+          brands: 'Brand A · Brand B',
         },
         {
           category: 'Climate & refrigeration',
@@ -6620,7 +6836,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           title: 'Central & VRF AC',
           description:
             'Centralized AC, chillers, VRF and cassette units for offices, hotels and retail.',
-          brands: 'Blue Star',
+          brands: 'Brand A · Brand B',
         },
         {
           category: 'Climate & refrigeration',
@@ -6629,7 +6845,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             'https://images.unsplash.com/photo-1564998115952-368e7d4969ea?w=700&h=525&fit=crop&q=75&auto=format',
           title: 'Refrigeration',
           description: 'Visi coolers, deep freezers, water coolers and ice-cube machines.',
-          brands: 'Blue Star',
+          brands: 'Brand A · Brand B',
         },
         {
           category: 'Safety & systems',
@@ -6638,7 +6854,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             'https://images.unsplash.com/photo-1643123182527-3bd30840e7ed?w=700&h=525&fit=crop&q=75&auto=format',
           title: 'CCTV',
           description: 'Dome, bullet, PTZ, number-plate and face-recognition cameras.',
-          brands: 'CP Plus · Honeywell · Matrix',
+          brands: 'Brand A · Brand B',
         },
         {
           category: 'Safety & systems',
@@ -6647,15 +6863,15 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             'https://images.unsplash.com/photo-1508817172652-4be4be2795cb?w=700&h=525&fit=crop&q=75&auto=format',
           title: 'Fire alarm & fighting',
           description: 'Panels, detectors, sprinklers, booster pumps and extinguishers.',
-          brands: 'Honeywell · Minimax · Tyco',
+          brands: 'Brand A · Brand B',
         },
         {
           category: 'Automation',
           icon: 'hardhat',
-          image: '/seed/subhadra/products/home-automation.jpg',
+          image: '/seed/demologo/about.jpg',
           title: 'Home automation',
           description: 'Retrofit and centralized control of lighting, curtains and AC.',
-          brands: 'Schneider · Toyama · Bticino',
+          brands: 'Brand A · Brand B',
         },
         {
           category: 'Automation',
@@ -6664,7 +6880,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             'https://images.unsplash.com/photo-1773867567872-3ad1fa481082?w=700&h=525&fit=crop&q=75&auto=format',
           title: 'Home theater',
           description: 'Dolby Atmos rooms, 4K projection, acoustic design and multiroom audio.',
-          brands: 'Focal · Sony · Denon',
+          brands: 'Brand A · Brand B',
         },
         {
           category: 'Electrical',
@@ -6673,7 +6889,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             'https://images.unsplash.com/photo-1775714351784-51e93e4c12a7?w=700&h=525&fit=crop&q=75&auto=format',
           title: 'Cables & wires',
           description: 'Flexible LT/HT cables and FR/FR-LSH/LSOH house wiring, all sizes.',
-          brands: 'Polycab · RR Kabel',
+          brands: 'Brand A · Brand B',
         },
         {
           category: 'Electrical',
@@ -6682,7 +6898,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             'https://images.unsplash.com/photo-1780445392484-38a4852a1fd8?w=700&h=525&fit=crop&q=75&auto=format',
           title: 'Generators & UPS',
           description: '15 KVA to 3750 KVA silent diesel generators, online UPS from 1 KVA.',
-          brands: 'Cummins · APC',
+          brands: 'Brand A · Brand B',
         },
         {
           category: 'Electrical',
@@ -6691,7 +6907,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             'https://images.unsplash.com/photo-1758448755856-01d3add0177b?w=700&h=525&fit=crop&q=75&auto=format',
           title: 'Lights',
           description: 'COB spots, panels, street and flood lighting.',
-          brands: 'Wipro · Crompton · Halonix',
+          brands: 'Brand A · Brand B',
         },
         {
           category: 'Electrical',
@@ -6700,7 +6916,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             'https://images.unsplash.com/photo-1698653223542-3319103c425b?w=700&h=525&fit=crop&q=75&auto=format',
           title: 'Fans & ventilation',
           description: 'Designer ceiling fans, ventilation and fresh-air fans.',
-          brands: 'Crompton · WadBros',
+          brands: 'Brand A · Brand B',
         },
         {
           category: 'Safety & systems',
@@ -6709,7 +6925,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             'https://images.unsplash.com/photo-1585079374502-415f8516dcc3?w=700&h=525&fit=crop&q=75&auto=format',
           title: 'Access control',
           description: 'Biometric & proximity access, attendance systems.',
-          brands: 'Matrix',
+          brands: 'Brand A · Brand B',
         },
         {
           category: 'Safety & systems',
@@ -6718,7 +6934,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             'https://images.unsplash.com/photo-1630965764686-159c575031b3?w=700&h=525&fit=crop&q=75&auto=format',
           title: 'PA system',
           description: 'Public address for showrooms, malls, hotels, hospitals and industries.',
-          brands: 'Ahuja · Honeywell · Bosch',
+          brands: 'Brand A · Brand B',
         },
         {
           category: 'Automation',
@@ -6728,7 +6944,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           title: 'Networking solutions',
           description:
             'Structured cabling, switches and enterprise Wi-Fi for offices and campuses.',
-          brands: 'Matrix',
+          brands: 'Brand A · Brand B',
         },
       ],
       padding: 'md',
@@ -6762,12 +6978,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       return (
         <section
           ref={ref}
-          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
             <div className="text-center mb-8">
               {(isEditing || sectionEyebrow) && (
-                <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                <p className="text-primary text-sm font-semibold uppercase tracking-wide mb-2">
                   <InlineEditableText
                     id={id}
                     path={['sectionEyebrow']}
@@ -6776,7 +6992,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   />
                 </p>
               )}
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">
+              <h2 className="text-2xl md:text-4xl font-bold text-title mb-3">
                 <InlineEditableText
                   id={id}
                   path={['sectionTitle']}
@@ -6785,7 +7001,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 />
               </h2>
               {(isEditing || sectionSubtitle) && (
-                <p className="text-slate-600 max-w-2xl mx-auto">
+                <p className="text-body max-w-2xl mx-auto">
                   <InlineEditableText
                     id={id}
                     path={['sectionSubtitle']}
@@ -6805,8 +7021,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     onClick={() => setActiveTab(c)}
                     className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
                       c === activeTab
-                        ? 'bg-orange-500 text-white'
-                        : 'bg-white border border-slate-200 text-slate-700 hover:border-orange-300'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-card border border-divider text-body hover:border-primary/40'
                     }`}
                   >
                     {c}
@@ -6820,7 +7036,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 return (
                   <div
                     key={i}
-                    className="overflow-hidden rounded-xl border border-slate-200 bg-white hover:shadow-md transition"
+                    className="overflow-hidden rounded-xl border border-divider bg-card hover:shadow-md transition"
                   >
                     {p.image && (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -6828,11 +7044,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     )}
                     <div className="p-5">
                       {!p.image && (
-                        <div className="text-orange-500 mb-3">
+                        <div className="text-primary mb-3">
                           <Icon />
                         </div>
                       )}
-                      <h3 className="font-semibold text-slate-900 mb-1">
+                      <h3 className="font-semibold text-title mb-1">
                         <InlineEditableText
                           id={id}
                           path={['items', p.n, 'title']}
@@ -6840,7 +7056,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                           isEditing={isEditing}
                         />
                       </h3>
-                      <p className="text-slate-600 text-sm leading-relaxed">
+                      <p className="text-body text-sm leading-relaxed">
                         <InlineEditableText
                           id={id}
                           path={['items', p.n, 'description']}
@@ -6850,7 +7066,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                         />
                       </p>
                       {(isEditing || p.brands) && (
-                        <p className="mt-2 text-xs font-medium text-orange-600">
+                        <p className="mt-2 text-xs font-medium text-primary">
                           <InlineEditableText
                             id={id}
                             path={['items', p.n, 'brands']}
@@ -6862,7 +7078,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       {p.href && p.linkLabel && (
                         <a
                           href={p.href}
-                          className="mt-3 inline-block text-sm font-semibold text-orange-600 hover:text-orange-700"
+                          className="mt-3 inline-block text-sm font-semibold text-primary hover:text-primary/80"
                         >
                           {p.linkLabel}
                         </a>
@@ -6894,7 +7110,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         type: 'select',
         options: [
           { label: 'Dark', value: 'dark' },
-          { label: 'Accent (Orange)', value: 'accent' },
+          { label: 'Accent (Main colour)', value: 'accent' },
           { label: 'Muted', value: 'muted' },
         ],
       },
@@ -6934,10 +7150,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     }) => {
       const bgCls =
         background === 'dark'
-          ? 'bg-slate-900 text-white'
+          ? 'bg-inverse text-inverse-foreground'
           : background === 'accent'
-            ? 'bg-orange-500 text-white'
-            : 'bg-slate-100 text-slate-900'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-background text-title'
       const stats = resolveItems(
         rows_stats,
         [
@@ -6954,12 +7170,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             {stats.map((s, i) => (
               <div key={i}>
                 <p
-                  className={`text-3xl md:text-4xl font-extrabold mb-1 ${background === 'muted' ? 'text-orange-500' : 'text-orange-400'}`}
+                  className={`text-3xl md:text-4xl font-extrabold mb-1 ${background === 'muted' ? 'text-primary' : 'text-highlight'}`}
                 >
                   {s.value}
                 </p>
                 <p
-                  className={`text-sm font-medium ${background === 'muted' ? 'text-slate-600' : 'opacity-80'}`}
+                  className={`text-sm font-medium ${background === 'muted' ? 'text-body' : 'opacity-80'}`}
                 >
                   {s.label}
                 </p>
@@ -7063,14 +7279,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       ).filter((m) => m.name)
       return (
         <section
-          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
             <div className="text-center mb-10">
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">{sectionTitle}</h2>
-              {sectionSubtitle && (
-                <p className="text-slate-600 max-w-2xl mx-auto">{sectionSubtitle}</p>
-              )}
+              <h2 className="text-2xl md:text-4xl font-bold text-title mb-3">{sectionTitle}</h2>
+              {sectionSubtitle && <p className="text-body max-w-2xl mx-auto">{sectionSubtitle}</p>}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               {members.map((m, i) => (
@@ -7079,10 +7293,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   <img
                     src={m.image}
                     alt={m.name}
-                    className="w-28 h-28 rounded-full object-cover mx-auto mb-4 border-4 border-orange-100"
+                    className="w-28 h-28 rounded-full object-cover mx-auto mb-4 border-4 border-primary/15"
                   />
-                  <h3 className="font-semibold text-slate-900">{m.name}</h3>
-                  <p className="text-sm text-slate-500 mt-0.5">{m.role}</p>
+                  <h3 className="font-semibold text-title">{m.name}</h3>
+                  <p className="text-sm text-muted-foreground mt-0.5">{m.role}</p>
                 </div>
               ))}
             </div>
@@ -7181,26 +7395,24 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       ).filter((b) => b.label)
       return (
         <section
-          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
             <div className="text-center mb-10">
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">{sectionTitle}</h2>
-              {sectionSubtitle && (
-                <p className="text-slate-600 max-w-2xl mx-auto">{sectionSubtitle}</p>
-              )}
+              <h2 className="text-2xl md:text-4xl font-bold text-title mb-3">{sectionTitle}</h2>
+              {sectionSubtitle && <p className="text-body max-w-2xl mx-auto">{sectionSubtitle}</p>}
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-5">
               {badges.map((b, i) => (
                 <div
                   key={i}
-                  className="flex flex-col items-center text-center rounded-xl border border-slate-200 bg-white p-5 hover:shadow-sm transition"
+                  className="flex flex-col items-center text-center rounded-xl border border-divider bg-card p-5 hover:shadow-sm transition"
                 >
                   <div className="text-green-600 mb-3">
                     <CheckShieldIcon />
                   </div>
-                  <p className="font-semibold text-slate-900 text-sm leading-tight">{b.label}</p>
-                  <p className="text-xs text-slate-500 mt-1 leading-snug">{b.detail}</p>
+                  <p className="font-semibold text-title text-sm leading-tight">{b.label}</p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-snug">{b.detail}</p>
                 </div>
               ))}
             </div>
@@ -7297,34 +7509,34 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       ).filter((r) => r.name)
       return (
         <section
-          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
-            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+            <h2 className="text-2xl md:text-4xl font-bold text-title text-center mb-10">
               {heading}
             </h2>
             <div className="flex justify-center">
-              <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="flex items-center gap-3 rounded-xl border border-divider bg-card p-4 shadow-sm">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={topPhoto} alt={topName} className="w-12 h-12 rounded-full object-cover" />
                 <div>
-                  <p className="font-semibold text-slate-900 text-sm">{topName}</p>
-                  <p className="text-xs text-orange-600">{topRole}</p>
+                  <p className="font-semibold text-title text-sm">{topName}</p>
+                  <p className="text-xs text-primary">{topRole}</p>
                 </div>
               </div>
             </div>
-            <div className="w-px h-4 bg-slate-300 mx-auto" />
+            <div className="w-px h-4 bg-border mx-auto" />
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {reports.map((r, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4"
+                  className="flex items-center gap-3 rounded-xl border border-divider bg-card p-4"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={r.photo} alt={r.name} className="w-10 h-10 rounded-full object-cover" />
                   <div>
-                    <p className="font-semibold text-slate-900 text-sm">{r.name}</p>
-                    <p className="text-xs text-slate-500">{r.role}</p>
+                    <p className="font-semibold text-title text-sm">{r.name}</p>
+                    <p className="text-xs text-muted-foreground">{r.role}</p>
                   </div>
                 </div>
               ))}
@@ -7437,31 +7649,28 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       ).filter((c) => c.name)
       return (
         <section
-          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
             <div className="grid grid-cols-3 gap-4 mb-12">
               {stats.map((s, i) => (
                 <div key={i} className="text-center">
-                  <p className="text-3xl md:text-4xl font-bold text-orange-600">{s.value}</p>
-                  <p className="text-xs md:text-sm text-slate-500 mt-1">{s.label}</p>
+                  <p className="text-3xl md:text-4xl font-bold text-primary">{s.value}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground mt-1">{s.label}</p>
                 </div>
               ))}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {crew.map((c, i) => (
-                <div
-                  key={i}
-                  className="text-center rounded-xl border border-slate-200 bg-white p-6"
-                >
+                <div key={i} className="text-center rounded-xl border border-divider bg-card p-6">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={c.photo}
                     alt={c.name}
-                    className="w-20 h-20 rounded-full object-cover mx-auto mb-3 border-4 border-orange-100"
+                    className="w-20 h-20 rounded-full object-cover mx-auto mb-3 border-4 border-primary/15"
                   />
-                  <p className="font-semibold text-slate-900">{c.name}</p>
-                  <p className="text-xs text-slate-500 mt-1">{c.years}</p>
+                  <p className="font-semibold text-title">{c.name}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{c.years}</p>
                 </div>
               ))}
             </div>
@@ -7509,50 +7718,50 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       sectionEyebrow: 'Our Clients',
       sectionTitle: 'Trusted by businesses & institutions',
       sectionSubtitle:
-        'From retail malls to hospitality and healthcare — brands across Andhra Pradesh trust us to keep their buildings running.',
+        'From retail malls to hospitality and healthcare — brands across your region trust us to keep their buildings running.',
       items: [
-        { logo: '/seed/subhadra/clients/client-01.png', name: 'Marriott' },
-        { logo: '/seed/subhadra/clients/client-02.png', name: 'Novotel Hotels' },
-        { logo: '/seed/subhadra/clients/client-03.png', name: 'Best Western' },
+        { logo: '/seed/demologo/logo.svg', name: 'Marriott' },
+        { logo: '/seed/demologo/logo.svg', name: 'Demo Project Hotels' },
+        { logo: '/seed/demologo/logo.svg', name: 'Best Western' },
         {
-          logo: '/seed/subhadra/clients/client-04.png',
+          logo: '/seed/demologo/logo.svg',
           name: "Fortune \u2014 Member ITC's Hotel Group",
         },
-        { logo: '/seed/subhadra/clients/client-05.png', name: 'Radisson Blu' },
-        { logo: '/seed/subhadra/clients/client-06.png', name: 'ABC Hospitals' },
-        { logo: '/seed/subhadra/clients/client-07.png', name: 'Medicover' },
-        { logo: '/seed/subhadra/clients/client-08.png', name: 'Apollo Hospitals' },
-        { logo: '/seed/subhadra/clients/client-09.png', name: 'Lotus Multispeciality Hospital' },
-        { logo: '/seed/subhadra/clients/client-10.png', name: 'Ikya Hospital' },
-        { logo: '/seed/subhadra/clients/client-11.png', name: 'Vaibhav Jewellers' },
-        { logo: '/seed/subhadra/clients/client-12.png', name: 'Lifestyle' },
-        { logo: '/seed/subhadra/clients/client-13.png', name: 'Kankatala' },
-        { logo: '/seed/subhadra/clients/client-14.png', name: 'South India Shopping Mall' },
-        { logo: '/seed/subhadra/clients/client-15.png', name: 'KLM Fashion Mall' },
-        { logo: '/seed/subhadra/clients/client-16.png', name: 'Lucky Shopping Mall' },
-        { logo: '/seed/subhadra/clients/client-17.png', name: 'Kalamandir' },
-        { logo: '/seed/subhadra/clients/client-18.png', name: 'SR Shopping Mall' },
-        { logo: '/seed/subhadra/clients/client-19.png', name: 'Bothra Group' },
-        { logo: '/seed/subhadra/clients/client-20.png', name: 'Visakha Dairy' },
-        { logo: '/seed/subhadra/clients/client-21.png', name: 'Varun Group' },
-        { logo: '/seed/subhadra/clients/client-22.png', name: 'Lakshmi Group' },
-        { logo: '/seed/subhadra/clients/client-23.png', name: 'PVR' },
-        { logo: '/seed/subhadra/clients/client-24.png', name: 'Cin\u00e9polis' },
-        { logo: '/seed/subhadra/clients/client-25.png', name: 'Vizag Steel (RINL)' },
-        { logo: '/seed/subhadra/clients/client-26.png', name: 'ANITS' },
-        { logo: '/seed/subhadra/clients/client-27.png', name: 'GITAM' },
-        { logo: '/seed/subhadra/clients/client-28.png', name: 'Vizag Conventions' },
-        { logo: '/seed/subhadra/clients/client-29.png', name: "Chenna's The Convention" },
-        { logo: '/seed/subhadra/clients/client-30.png', name: 'A1 Grand \u2014 The Convention' },
-        { logo: '/seed/subhadra/clients/client-31.png', name: 'Laurus Labs' },
-        { logo: '/seed/subhadra/clients/client-32.png', name: 'Asian Paints' },
-        { logo: '/seed/subhadra/clients/client-33.png', name: 'Yokohama' },
-        { logo: '/seed/subhadra/clients/client-34.png', name: 'NCL Group' },
-        { logo: '/seed/subhadra/clients/client-35.png', name: 'GVMC' },
-        { logo: '/seed/subhadra/clients/client-36.png', name: 'Visakhapatnam Port Authority' },
-        { logo: '/seed/subhadra/clients/client-37.png', name: 'Lansum Properties LLP' },
-        { logo: '/seed/subhadra/clients/client-38.png', name: 'MK Builders & Developers' },
-        { logo: '/seed/subhadra/clients/client-39.png', name: 'FAME Realty' },
+        { logo: '/seed/demologo/logo.svg', name: 'Radisson Blu' },
+        { logo: '/seed/demologo/logo.svg', name: 'ABC Hospitals' },
+        { logo: '/seed/demologo/logo.svg', name: 'Medicover' },
+        { logo: '/seed/demologo/logo.svg', name: 'Apollo Hospitals' },
+        { logo: '/seed/demologo/logo.svg', name: 'Lotus Multispeciality Hospital' },
+        { logo: '/seed/demologo/logo.svg', name: 'Ikya Hospital' },
+        { logo: '/seed/demologo/logo.svg', name: 'Vaibhav Jewellers' },
+        { logo: '/seed/demologo/logo.svg', name: 'Lifestyle' },
+        { logo: '/seed/demologo/logo.svg', name: 'Kankatala' },
+        { logo: '/seed/demologo/logo.svg', name: 'South India Shopping Mall' },
+        { logo: '/seed/demologo/logo.svg', name: 'KLM Fashion Mall' },
+        { logo: '/seed/demologo/logo.svg', name: 'Lucky Shopping Mall' },
+        { logo: '/seed/demologo/logo.svg', name: 'Kalamandir' },
+        { logo: '/seed/demologo/logo.svg', name: 'SR Shopping Mall' },
+        { logo: '/seed/demologo/logo.svg', name: 'Bothra Group' },
+        { logo: '/seed/demologo/logo.svg', name: 'Client Name' },
+        { logo: '/seed/demologo/logo.svg', name: 'Varun Group' },
+        { logo: '/seed/demologo/logo.svg', name: 'Lakshmi Group' },
+        { logo: '/seed/demologo/logo.svg', name: 'PVR' },
+        { logo: '/seed/demologo/logo.svg', name: 'Cin\u00e9polis' },
+        { logo: '/seed/demologo/logo.svg', name: 'Vizag Steel (RINL)' },
+        { logo: '/seed/demologo/logo.svg', name: 'ANITS' },
+        { logo: '/seed/demologo/logo.svg', name: 'GITAM' },
+        { logo: '/seed/demologo/logo.svg', name: 'Vizag Conventions' },
+        { logo: '/seed/demologo/logo.svg', name: "Chenna's The Convention" },
+        { logo: '/seed/demologo/logo.svg', name: 'A1 Grand \u2014 The Convention' },
+        { logo: '/seed/demologo/logo.svg', name: 'Laurus Labs' },
+        { logo: '/seed/demologo/logo.svg', name: 'Asian Paints' },
+        { logo: '/seed/demologo/logo.svg', name: 'Yokohama' },
+        { logo: '/seed/demologo/logo.svg', name: 'NCL Group' },
+        { logo: '/seed/demologo/logo.svg', name: 'GVMC' },
+        { logo: '/seed/demologo/logo.svg', name: 'Your City Port Authority' },
+        { logo: '/seed/demologo/logo.svg', name: 'Lansum Properties LLP' },
+        { logo: '/seed/demologo/logo.svg', name: 'MK Builders & Developers' },
+        { logo: '/seed/demologo/logo.svg', name: 'FAME Realty' },
       ],
       padding: 'md',
       background: 'muted',
@@ -7573,12 +7782,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       return (
         <section
           ref={ref}
-          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
             <div className="text-center mb-10">
               {(isEditing || sectionEyebrow) && (
-                <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                <p className="text-primary text-sm font-semibold uppercase tracking-wide mb-2">
                   <InlineEditableText
                     id={id}
                     path={['sectionEyebrow']}
@@ -7587,7 +7796,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   />
                 </p>
               )}
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">
+              <h2 className="text-2xl md:text-4xl font-bold text-title mb-3">
                 <InlineEditableText
                   id={id}
                   path={['sectionTitle']}
@@ -7596,7 +7805,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 />
               </h2>
               {(isEditing || sectionSubtitle) && (
-                <p className="text-slate-600 max-w-2xl mx-auto">
+                <p className="text-body max-w-2xl mx-auto">
                   <InlineEditableText
                     id={id}
                     path={['sectionSubtitle']}
@@ -7611,7 +7820,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               {clients.map((c, i) => (
                 <div
                   key={i}
-                  className="flex items-center justify-center rounded-xl border border-slate-200 bg-white p-5 h-24"
+                  className="flex items-center justify-center rounded-xl border border-divider bg-white p-5 h-24"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={c.logo} alt={c.name} className="max-h-10 max-w-full object-contain" />
@@ -7653,9 +7862,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       },
     },
     defaultProps: {
-      sectionTitle: 'Clients Who Trust Subhadra Group',
+      sectionTitle: 'Clients Who Trust DemoLogo',
       client1Logo: dummyLogo(140, 70, 'Client 1'),
-      client1Quote: 'Subhadra Group turned our HVAC overhaul around three weeks ahead of schedule.',
+      client1Quote: 'DemoLogo turned our HVAC overhaul around three weeks ahead of schedule.',
       client2Logo: dummyLogo(140, 70, 'Client 2'),
       client2Quote:
         'Zero safety incidents across an 18-month build — their site discipline is unmatched.',
@@ -7690,11 +7899,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       return (
         <section
           ref={ref}
-          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
             {sectionTitle && (
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+              <h2 className="text-2xl md:text-4xl font-bold text-title text-center mb-10">
                 {sectionTitle}
               </h2>
             )}
@@ -7702,13 +7911,13 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               {clients.map((c, i) => (
                 <div
                   key={i}
-                  className="rounded-xl border border-slate-200 bg-white p-6 flex flex-col gap-4"
+                  className="rounded-xl border border-divider bg-card p-6 flex flex-col gap-4"
                 >
                   {c.logo && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={c.logo} alt="" className="h-8 max-w-[140px] object-contain" />
                   )}
-                  <p className="text-slate-700 text-sm leading-relaxed">&#8220;{c.quote}&#8221;</p>
+                  <p className="text-body text-sm leading-relaxed">&#8220;{c.quote}&#8221;</p>
                 </div>
               ))}
             </div>
@@ -7747,7 +7956,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       },
     },
     defaultProps: {
-      sectionTitle: 'Trusted by Businesses Across Andhra Pradesh',
+      sectionTitle: 'Trusted by Businesses Across your region',
       logo1: dummyLogo(140, 70, 'Client 1'),
       logo2: dummyLogo(140, 70, 'Client 2'),
       logo3: dummyLogo(140, 70, 'Client 3'),
@@ -7778,11 +7987,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       return (
         <section
           ref={ref}
-          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
             {sectionTitle && (
-              <h2 className="text-center text-2xl md:text-3xl font-bold text-slate-900 mb-10">
+              <h2 className="text-center text-2xl md:text-3xl font-bold text-title mb-10">
                 {sectionTitle}
               </h2>
             )}
@@ -7830,7 +8039,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       spotlightLogo: dummyLogo(240, 120, 'Reddy Builders'),
       spotlightStat: '40% faster handover',
       spotlightQuote:
-        'Subhadra Group delivered our 12-unit residential complex three weeks ahead of schedule, without a single quality defect.',
+        'DemoLogo delivered our 12-unit residential complex three weeks ahead of schedule, without a single quality defect.',
       otherLogo1: dummyLogo(140, 70, 'Client 1'),
       otherLogo2: dummyLogo(140, 70, 'Client 2'),
       otherLogo3: dummyLogo(140, 70, 'Client 3'),
@@ -7859,10 +8068,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       return (
         <section
           ref={ref}
-          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={`${wrap} text-center`}>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 mb-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-faint mb-6">
               Client Spotlight
             </p>
             {spotlightLogo && (
@@ -7874,15 +8083,15 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               />
             )}
             {spotlightStat && (
-              <p className="text-3xl md:text-4xl font-bold text-orange-600 mb-4">{spotlightStat}</p>
+              <p className="text-3xl md:text-4xl font-bold text-primary mb-4">{spotlightStat}</p>
             )}
             {spotlightQuote && (
-              <p className="max-w-2xl mx-auto text-slate-600 leading-relaxed mb-10">
+              <p className="max-w-2xl mx-auto text-body leading-relaxed mb-10">
                 &#8220;{spotlightQuote}&#8221;
               </p>
             )}
             {otherLogos.length > 0 && (
-              <div className="flex flex-wrap items-center justify-center gap-8 pt-8 border-t border-slate-100">
+              <div className="flex flex-wrap items-center justify-center gap-8 pt-8 border-t border-divider">
                 {otherLogos.map((logo, i) => (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -8002,33 +8211,31 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       ).filter((q) => q.text)
       return (
         <section
-          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
-            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+            <h2 className="text-2xl md:text-4xl font-bold text-title text-center mb-10">
               {sectionTitle}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {quotes.map((q, i) => (
                 <div
                   key={i}
-                  className="rounded-xl border border-slate-200 bg-white p-6 flex flex-col gap-4"
+                  className="rounded-xl border border-divider bg-card p-6 flex flex-col gap-4"
                 >
                   <div className="flex gap-0.5">
                     {[...Array(5)].map((_, si) => (
                       <StarIcon key={si} />
                     ))}
                   </div>
-                  <p className="text-slate-700 text-sm leading-relaxed flex-1">
-                    &#8220;{q.text}&#8221;
-                  </p>
+                  <p className="text-body text-sm leading-relaxed flex-1">&#8220;{q.text}&#8221;</p>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-semibold text-sm flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-primary/15 text-primary flex items-center justify-center font-semibold text-sm flex-shrink-0">
                       {q.initials}
                     </div>
                     <div>
-                      <p className="font-semibold text-slate-900 text-sm">{q.author}</p>
-                      <p className="text-xs text-slate-500">{q.company}</p>
+                      <p className="font-semibold text-title text-sm">{q.author}</p>
+                      <p className="text-xs text-muted-foreground">{q.company}</p>
                     </div>
                   </div>
                 </div>
@@ -8085,7 +8292,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           photo:
             'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=440&h=440&fit=crop&crop=faces&q=80&auto=format',
           quote:
-            'Subhadra Group ran our entire HVAC and electrical fit-out as one coordinated scope — no chasing three contractors, no finger-pointing when something needed adjusting.',
+            'DemoLogo ran our entire HVAC and electrical fit-out as one coordinated scope — no chasing three contractors, no finger-pointing when something needed adjusting.',
           name: 'Venkat Reddy',
           role: 'Reddy Builders Pvt Ltd',
         },
@@ -8129,10 +8336,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       return (
         <section
           ref={ref}
-          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
-            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+            <h2 className="text-2xl md:text-4xl font-bold text-title text-center mb-10">
               {sectionTitle}
             </h2>
             {current && (
@@ -8145,11 +8352,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     className="w-24 h-24 rounded-full object-cover mx-auto mb-6"
                   />
                 )}
-                <p className="text-xl md:text-2xl font-medium text-slate-800 leading-relaxed mb-6">
+                <p className="text-xl md:text-2xl font-medium text-title leading-relaxed mb-6">
                   &#8220;{current.quote}&#8221;
                 </p>
-                <p className="font-semibold text-slate-900">{current.name}</p>
-                {current.role && <p className="text-sm text-slate-500">{current.role}</p>}
+                <p className="font-semibold text-title">{current.name}</p>
+                {current.role && <p className="text-sm text-muted-foreground">{current.role}</p>}
               </div>
             )}
             {slides.length > 1 && (
@@ -8158,7 +8365,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   <span
                     key={i}
                     className={`h-2.5 rounded-full ${
-                      i === 0 ? 'w-6 bg-orange-500' : 'w-2.5 bg-slate-300'
+                      i === 0 ? 'w-6 bg-primary' : 'w-2.5 bg-border'
                     }`}
                   />
                 ))}
@@ -8215,7 +8422,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=640&h=360&fit=crop&auto=format',
       testimonial3Name: 'Retail Operations Lead, Shopping Mall',
       testimonial3Quote:
-        'We compared three vendors for our showroom fit-out — Subhadra Group was the only one that could design, supply and install everything themselves.',
+        'We compared three vendors for our showroom fit-out — DemoLogo was the only one that could design, supply and install everything themselves.',
       padding: 'md',
       background: 'white',
     },
@@ -8249,18 +8456,15 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       ).filter((t) => t.thumbnail)
       return (
         <section
-          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
-            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+            <h2 className="text-2xl md:text-4xl font-bold text-title text-center mb-10">
               {sectionTitle}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {testimonials.map((t, i) => (
-                <div
-                  key={i}
-                  className="rounded-xl overflow-hidden border border-slate-200 bg-white"
-                >
+                <div key={i} className="rounded-xl overflow-hidden border border-divider bg-card">
                   <div className="relative aspect-video bg-slate-900">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -8269,7 +8473,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       className="w-full h-full object-cover opacity-80"
                     />
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="w-20 h-20 rounded-full bg-white/95 flex items-center justify-center shadow-xl">
+                      <span className="w-20 h-20 rounded-full bg-surface/95 flex items-center justify-center shadow-xl">
                         <svg width="26" height="30" viewBox="0 0 26 30" fill="none">
                           <path d="M0 0L26 15L0 30V0Z" fill="#ea580c" />
                         </svg>
@@ -8277,10 +8481,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     </div>
                   </div>
                   <div className="p-5">
-                    <p className="text-slate-700 text-sm leading-relaxed mb-3">
+                    <p className="text-body text-sm leading-relaxed mb-3">
                       &#8220;{t.quote}&#8221;
                     </p>
-                    <p className="font-semibold text-slate-900 text-sm">{t.name}</p>
+                    <p className="font-semibold text-title text-sm">{t.name}</p>
                   </div>
                 </div>
               ))}
@@ -8377,26 +8581,24 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       ).filter((s) => s.title)
       return (
         <section
-          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
             <div className="text-center mb-10">
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">{sectionTitle}</h2>
-              {sectionSubtitle && (
-                <p className="text-slate-600 max-w-2xl mx-auto">{sectionSubtitle}</p>
-              )}
+              <h2 className="text-2xl md:text-4xl font-bold text-title mb-3">{sectionTitle}</h2>
+              {sectionSubtitle && <p className="text-body max-w-2xl mx-auto">{sectionSubtitle}</p>}
             </div>
             <div className="relative">
-              <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-orange-200 hidden md:block" />
+              <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-primary/25 hidden md:block" />
               <div className="flex flex-col gap-8">
                 {steps.map((s, i) => (
                   <div key={i} className="md:flex gap-6 items-start">
-                    <div className="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-orange-500 text-white font-bold text-lg shadow relative z-10">
+                    <div className="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground font-bold text-lg shadow relative z-10">
                       {i + 1}
                     </div>
                     <div className="mt-3 md:mt-0">
-                      <h3 className="font-semibold text-slate-900 text-lg mb-1">{s.title}</h3>
-                      <p className="text-slate-600 text-sm leading-relaxed">{s.description}</p>
+                      <h3 className="font-semibold text-title text-lg mb-1">{s.title}</h3>
+                      <p className="text-body text-sm leading-relaxed">{s.description}</p>
                     </div>
                   </div>
                 ))}
@@ -8493,23 +8695,21 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       ).filter((p) => p.title)
       return (
         <section
-          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
             <div className="md:flex gap-12 items-start">
               <div className="md:w-1/3 mb-8 md:mb-0">
-                <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-4">
-                  {sectionTitle}
-                </h2>
+                <h2 className="text-2xl md:text-4xl font-bold text-title mb-4">{sectionTitle}</h2>
                 {sectionSubtitle && (
-                  <p className="text-slate-600 text-sm md:text-base leading-relaxed mb-6">
+                  <p className="text-body text-sm md:text-base leading-relaxed mb-6">
                     {sectionSubtitle}
                   </p>
                 )}
                 {ctaLabel && (
                   <a
                     href={ctaHref}
-                    className="inline-flex rounded-lg bg-orange-500 px-6 py-3 text-white font-semibold hover:bg-orange-600 transition text-sm"
+                    className="inline-flex rounded-lg bg-primary px-6 py-3 text-primary-foreground font-semibold hover:bg-primary/85 transition text-sm"
                   >
                     {ctaLabel}
                   </a>
@@ -8517,12 +8717,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               </div>
               <div className="md:w-2/3 grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {points.map((p, i) => (
-                  <div key={i} className="rounded-xl border border-slate-200 bg-white p-5">
-                    <div className="text-orange-500 mb-3">
+                  <div key={i} className="rounded-xl border border-divider bg-card p-5">
+                    <div className="text-primary mb-3">
                       <CheckShieldIcon />
                     </div>
-                    <h3 className="font-semibold text-slate-900 mb-1">{p.title}</h3>
-                    <p className="text-slate-600 text-sm leading-relaxed">{p.description}</p>
+                    <h3 className="font-semibold text-title mb-1">{p.title}</h3>
+                    <p className="text-body text-sm leading-relaxed">{p.description}</p>
                   </div>
                 ))}
               </div>
@@ -8555,7 +8755,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         type: 'select',
         options: [
           { label: 'Dark', value: 'dark' },
-          { label: 'Accent (Orange)', value: 'accent' },
+          { label: 'Accent (Main colour)', value: 'accent' },
           { label: 'Muted', value: 'muted' },
         ],
       },
@@ -8584,13 +8784,13 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     }) => {
       const bgCls =
         background === 'dark'
-          ? 'bg-slate-900 text-white'
+          ? 'bg-inverse text-inverse-foreground'
           : background === 'accent'
-            ? 'bg-orange-600 text-white'
-            : 'bg-slate-100 text-slate-900'
-      const labelCls = background === 'muted' ? 'text-slate-600' : 'opacity-75'
-      const valueCls = background === 'muted' ? 'text-orange-500' : 'text-orange-400'
-      const noteCls = background === 'muted' ? 'text-slate-600' : 'opacity-80'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-background text-title'
+      const labelCls = background === 'muted' ? 'text-body' : 'opacity-75'
+      const valueCls = background === 'muted' ? 'text-primary' : 'text-highlight'
+      const noteCls = background === 'muted' ? 'text-body' : 'opacity-80'
       return (
         <section className={`${bgCls} ${padY[padding]}`}>
           <div className={wrap}>
@@ -8657,13 +8857,13 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       eyebrow: 'Our Journey',
       heading: 'Two Decades of Growth',
       milestone1Year: '1996',
-      milestone1Label: 'Founded in Vijayawada',
+      milestone1Label: 'Founded in Another City',
       milestone2Year: '2008',
       milestone2Label: 'First commercial VRF installation',
       milestone3Year: '2015',
       milestone3Label: '500+ projects delivered',
       milestone4Year: '2024',
-      milestone4Label: "Andhra Pradesh's trusted engineering partner",
+      milestone4Label: "your region's trusted engineering partner",
       padding: 'md',
       background: 'white',
     },
@@ -8697,24 +8897,24 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       ).filter((m) => m.year || m.label)
       return (
         <section
-          className={`${background === 'muted' ? 'bg-slate-50' : 'bg-white'} ${padY[padding]}`}
+          className={`${background === 'muted' ? 'bg-background' : 'bg-surface'} ${padY[padding]}`}
         >
           <div className={wrap}>
             <div className="text-center mb-12">
               {eyebrow && (
-                <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                <p className="text-primary text-sm font-semibold uppercase tracking-wide mb-2">
                   {eyebrow}
                 </p>
               )}
-              <h2 className="text-2xl md:text-3xl font-bold text-slate-900">{heading}</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-title">{heading}</h2>
             </div>
             <div className="relative grid grid-cols-2 md:grid-cols-4 gap-y-10">
-              <div className="hidden md:block absolute top-1.5 left-0 right-0 h-px bg-slate-200" />
+              <div className="hidden md:block absolute top-1.5 left-0 right-0 h-px bg-divider" />
               {milestones.map((m, i) => (
                 <div key={i} className="relative flex flex-col items-center text-center px-2">
-                  <span className="w-3 h-3 rounded-full bg-orange-500 mb-4" />
-                  <p className="text-lg font-bold text-slate-900">{m.year}</p>
-                  <p className="text-sm text-slate-600 mt-1">{m.label}</p>
+                  <span className="w-3 h-3 rounded-full bg-primary mb-4" />
+                  <p className="text-lg font-bold text-title">{m.year}</p>
+                  <p className="text-sm text-body mt-1">{m.label}</p>
                 </div>
               ))}
             </div>
@@ -8793,9 +8993,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       sectionIntroLinkHref: '#quote',
       faqs: [
         {
-          question: 'Do you only work in Visakhapatnam, or across Andhra Pradesh?',
+          question: 'Do you only work in Your City, or across your region?',
           answer:
-            "We're based in Visakhapatnam, but our engineering teams design, install and maintain systems for clients across Andhra Pradesh — including plants, hospitals and retail groups outside the city.",
+            "We're based in Your City, but our engineering teams design, install and maintain systems for clients across your region — including plants, hospitals and retail groups outside the city.",
         },
         {
           question: 'How fast can I get a quote?',
@@ -8810,12 +9010,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         {
           question: 'What brands do you deal in?',
           answer:
-            'Only world-class, pioneer brands in each category — Schneider Electric, Blue Star, Polycab, RR Kabel, Crompton, Cummins, Honeywell and more — so spares and service are never a problem.',
+            'Only world-class, pioneer brands in each category — leading partner brands and more — so spares and service are never a problem.',
         },
         {
           question: 'Can I see products in person before buying?',
           answer:
-            'Yes — walk into our Visakhapatnam showroom to compare products on the shelf before you decide, or have our engineers visit your site directly for a free assessment.',
+            'Yes — walk into our Your City showroom to compare products on the shelf before you decide, or have our engineers visit your site directly for a free assessment.',
         },
         {
           question: 'What kind of after-sales support do you offer?',
@@ -8883,13 +9083,13 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               : (faqsRaw ?? [])
       const faqs = faqSource.map((f, n) => ({ ...f, n })).filter((f) => f.question)
       return (
-        <section id="get-quote" ref={ref} className={`${revealCls} ${padY[padding]} bg-slate-950`}>
+        <section id="get-quote" ref={ref} className={`${revealCls} ${padY[padding]} bg-inverse`}>
           {/* Reference (v2-lead) wraps this in container-fluid, not a
               max-width container. */}
           <div className="w-full px-4 md:px-8 md:flex gap-12">
             <div className="md:w-1/2 mb-14 md:mb-0">
               {(isEditing || sectionEyebrow) && (
-                <p className="mb-3 text-xs font-bold uppercase tracking-wide text-orange-500">
+                <p className="mb-3 text-xs font-bold uppercase tracking-wide text-highlight">
                   <InlineEditableText
                     id={id}
                     path={['sectionEyebrow']}
@@ -8898,7 +9098,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   />
                 </p>
               )}
-              <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+              <h2 className="text-2xl md:text-3xl font-bold text-inverse-foreground mb-4">
                 <InlineEditableText
                   id={id}
                   path={['sectionTitle']}
@@ -8906,14 +9106,14 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   isEditing={isEditing}
                 />
               </h2>
-              {introText && <p className="text-slate-400 mb-6">{introText}</p>}
+              {introText && <p className="text-inverse-foreground/60 mb-6">{introText}</p>}
               {(isEditing || sectionIntroLinkLabel) && (
-                <p className="text-slate-400 mb-6">
+                <p className="text-inverse-foreground/60 mb-6">
                   Can&apos;t find what you&apos;re looking for?{' '}
                   <a
                     href={sectionIntroLinkHref}
                     onClick={isEditing ? (e) => e.preventDefault() : undefined}
-                    className="text-orange-500 font-semibold hover:text-orange-400"
+                    className="text-highlight font-semibold hover:text-highlight/80"
                   >
                     <InlineEditableText
                       id={id}
@@ -8932,9 +9132,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     .map((t) => t.trim())
                     .filter(Boolean)
                     .map((t, i) => (
-                      <li key={i} className="flex items-center gap-2.5 text-slate-300">
+                      <li key={i} className="flex items-center gap-2.5 text-inverse-foreground/70">
                         <svg
-                          className="h-4 w-4 shrink-0 text-orange-500"
+                          className="h-4 w-4 shrink-0 text-highlight"
                           fill="currentColor"
                           viewBox="0 0 20 20"
                         >
@@ -8950,13 +9150,15 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 </ul>
               )}
               {trustStats && trustStats.filter((s) => s.number || s.label).length > 0 && (
-                <div className="mb-8 flex flex-wrap gap-6 border-t border-slate-800 pt-6">
+                <div className="mb-8 flex flex-wrap gap-6 border-t border-inverse-foreground/15 pt-6">
                   {trustStats
                     .filter((s) => s.number || s.label)
                     .map((s, i) => (
                       <div key={i}>
-                        <b className="block text-2xl font-bold text-white">{s.number}</b>
-                        <span className="text-xs text-slate-400">{s.label}</span>
+                        <b className="block text-2xl font-bold text-inverse-foreground">
+                          {s.number}
+                        </b>
+                        <span className="text-xs text-inverse-foreground/60">{s.label}</span>
                       </div>
                     ))}
                 </div>
@@ -8965,11 +9167,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 {faqs.map((f, i) => {
                   const isOpen = openIndex === i
                   return (
-                    <div key={i} className="border-b border-slate-800">
+                    <div key={i} className="border-b border-inverse-foreground/15">
                       <button
                         type="button"
                         onClick={() => setOpenIndex(isOpen ? null : i)}
-                        className="w-full flex items-center justify-between gap-4 py-4 text-left font-semibold text-white"
+                        className="w-full flex items-center justify-between gap-4 py-4 text-left font-semibold text-inverse-foreground"
                       >
                         <InlineEditableText
                           id={id}
@@ -8978,13 +9180,13 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                           isEditing={isEditing}
                         />
                         <span
-                          className={`flex-shrink-0 text-orange-500 text-xl leading-none transition-transform ${isOpen ? 'rotate-45' : ''}`}
+                          className={`flex-shrink-0 text-highlight text-xl leading-none transition-transform ${isOpen ? 'rotate-45' : ''}`}
                         >
                           +
                         </span>
                       </button>
                       {isOpen && (
-                        <p className="pb-4 text-sm text-slate-400 leading-relaxed">
+                        <p className="pb-4 text-sm text-inverse-foreground/60 leading-relaxed">
                           <InlineEditableText
                             id={id}
                             path={['faqs', f.n, 'answer']}
@@ -9000,8 +9202,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               </div>
             </div>
             <div className="md:w-1/2">
-              <div className="relative rounded-2xl bg-white p-6 md:p-8 shadow-2xl">
-                <h3 className="mb-2 inline-block rounded bg-orange-500 px-2 py-1 text-lg font-bold text-white">
+              <div className="relative rounded-2xl bg-card p-6 md:p-8 shadow-2xl">
+                <h3 className="mb-2 inline-block rounded bg-primary px-2 py-1 text-lg font-bold text-primary-foreground">
                   <InlineEditableText
                     id={id}
                     path={['formHeading']}
@@ -9010,7 +9212,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   />
                 </h3>
                 {(isEditing || formSubtext) && (
-                  <p className="text-sm text-slate-600 mb-6">
+                  <p className="text-sm text-body mb-6">
                     <InlineEditableText
                       id={id}
                       path={['formSubtext']}
@@ -9028,39 +9230,33 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 <div className="flex flex-col gap-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="mb-1.5 block text-sm font-semibold text-slate-900">
-                        Name
-                      </label>
+                      <label className="mb-1.5 block text-sm font-semibold text-title">Name</label>
                       <input
                         type="text"
-                        className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm"
+                        className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm"
                       />
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-sm font-semibold text-slate-900">
-                        Phone
-                      </label>
+                      <label className="mb-1.5 block text-sm font-semibold text-title">Phone</label>
                       <input
                         type="tel"
-                        className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm"
+                        className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-slate-900">
-                      Email
-                    </label>
+                    <label className="mb-1.5 block text-sm font-semibold text-title">Email</label>
                     <input
                       type="email"
-                      className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm"
+                      className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm"
                     />
                   </div>
                   {options.length > 0 && (
                     <div>
-                      <label className="mb-1.5 block text-sm font-semibold text-slate-900">
+                      <label className="mb-1.5 block text-sm font-semibold text-title">
                         What are you looking for?
                       </label>
-                      <select className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm text-slate-700">
+                      <select className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-body">
                         {options.map((o, i) => (
                           <option key={i}>{o}</option>
                         ))}
@@ -9068,7 +9264,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     </div>
                   )}
                   <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-slate-900">
+                    <label className="mb-1.5 block text-sm font-semibold text-title">
                       Preferred Contact
                     </label>
                     <div className="flex gap-3">
@@ -9077,8 +9273,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                         onClick={() => setContactPref('whatsapp')}
                         className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
                           contactPref === 'whatsapp'
-                            ? 'border-orange-500 text-orange-600'
-                            : 'border-slate-300 text-slate-700'
+                            ? 'border-primary text-primary'
+                            : 'border-border text-body'
                         }`}
                       >
                         WhatsApp
@@ -9088,8 +9284,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                         onClick={() => setContactPref('phone')}
                         className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
                           contactPref === 'phone'
-                            ? 'border-orange-500 text-orange-600'
-                            : 'border-slate-300 text-slate-700'
+                            ? 'border-primary text-primary'
+                            : 'border-border text-body'
                         }`}
                       >
                         Phone Call
@@ -9097,17 +9293,17 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     </div>
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-slate-900">
+                    <label className="mb-1.5 block text-sm font-semibold text-title">
                       Message (optional)
                     </label>
                     <textarea
                       rows={3}
-                      className="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm"
+                      className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm"
                     />
                   </div>
                   <button
                     type="button"
-                    className="rounded-lg bg-gradient-to-r from-orange-600 to-orange-400 px-6 py-3.5 text-white font-semibold hover:opacity-90 transition text-sm"
+                    className="rounded-lg bg-gradient-to-r from-primary to-primary/70 px-6 py-3.5 text-primary-foreground font-semibold hover:opacity-90 transition text-sm"
                   >
                     <InlineEditableText
                       id={id}
@@ -9117,7 +9313,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     />
                   </button>
                   {(isEditing || formPrivacyNote) && (
-                    <p className="text-center text-xs text-slate-400">
+                    <p className="text-center text-xs text-muted-foreground">
                       <InlineEditableText
                         id={id}
                         path={['formPrivacyNote']}
@@ -9149,12 +9345,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     render: function ConstructionSimpleContactFormRender({ heading, submitLabel }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
       return (
-        <section ref={ref} className={`${revealCls} ${padY.md} bg-white`}>
+        <section ref={ref} className={`${revealCls} ${padY.md} bg-surface`}>
           <div className={`${wrap} max-w-xl`}>
-            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6 text-center">
+            <h2 className="text-2xl md:text-3xl font-bold text-title mb-6 text-center">
               {heading}
             </h2>
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm">
+            <div className="rounded-2xl border border-divider bg-card p-6 md:p-8 shadow-sm">
               {/*
                 Display-only: no lead-capture endpoint exists in this app
                 yet. Plain div (not <form>) + type="button" submit so
@@ -9165,26 +9361,26 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 <input
                   type="text"
                   placeholder="Name"
-                  className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                  className="rounded-lg border border-border px-4 py-2.5 text-sm"
                 />
                 <input
                   type="email"
                   placeholder="Email"
-                  className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                  className="rounded-lg border border-border px-4 py-2.5 text-sm"
                 />
                 <input
                   type="tel"
                   placeholder="Phone"
-                  className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                  className="rounded-lg border border-border px-4 py-2.5 text-sm"
                 />
                 <textarea
                   placeholder="Message"
                   rows={4}
-                  className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                  className="rounded-lg border border-border px-4 py-2.5 text-sm"
                 />
                 <button
                   type="button"
-                  className="rounded-lg bg-orange-500 px-6 py-3 text-white font-semibold hover:bg-orange-600 transition text-sm"
+                  className="rounded-lg bg-primary px-6 py-3 text-primary-foreground font-semibold hover:bg-primary/85 transition text-sm"
                 >
                   {submitLabel}
                 </button>
@@ -9207,17 +9403,17 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     defaultProps: {
       heading: 'Request a Quote',
       submitLabel: 'Get My Quote',
-      trustText: '1000+ businesses across Andhra Pradesh trust us',
+      trustText: '1000+ businesses across your region trust us',
     },
     render: function ConstructionQuoteRequestFormRender({ heading, submitLabel, trustText }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
       return (
-        <section ref={ref} className={`${revealCls} ${padY.md} bg-slate-50`}>
+        <section ref={ref} className={`${revealCls} ${padY.md} bg-background`}>
           <div className={`${wrap} max-w-xl`}>
-            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6 text-center">
+            <h2 className="text-2xl md:text-3xl font-bold text-title mb-6 text-center">
               {heading}
             </h2>
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm">
+            <div className="rounded-2xl border border-divider bg-card p-6 md:p-8 shadow-sm">
               {/*
                 Display-only: no lead-capture endpoint exists in this app
                 yet. Plain div (not <form>) + type="button" submit so
@@ -9228,24 +9424,24 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 <input
                   type="text"
                   placeholder="Name"
-                  className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                  className="rounded-lg border border-border px-4 py-2.5 text-sm"
                 />
                 <input
                   type="email"
                   placeholder="Email"
-                  className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                  className="rounded-lg border border-border px-4 py-2.5 text-sm"
                 />
                 <input
                   type="tel"
                   placeholder="Phone"
-                  className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                  className="rounded-lg border border-border px-4 py-2.5 text-sm"
                 />
-                <select className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-700">
+                <select className="rounded-lg border border-border px-4 py-2.5 text-sm text-body">
                   <option>Residential</option>
                   <option>Commercial</option>
                   <option>Industrial</option>
                 </select>
-                <select className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-700">
+                <select className="rounded-lg border border-border px-4 py-2.5 text-sm text-body">
                   <option>Under ₹10 Lakh</option>
                   <option>₹10–50 Lakh</option>
                   <option>₹50 Lakh – 1 Crore</option>
@@ -9254,15 +9450,15 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 <textarea
                   placeholder="Tell us about your project"
                   rows={3}
-                  className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                  className="rounded-lg border border-border px-4 py-2.5 text-sm"
                 />
                 <button
                   type="button"
-                  className="rounded-lg bg-orange-500 px-6 py-3 text-white font-semibold hover:bg-orange-600 transition text-sm"
+                  className="rounded-lg bg-primary px-6 py-3 text-primary-foreground font-semibold hover:bg-primary/85 transition text-sm"
                 >
                   {submitLabel}
                 </button>
-                {trustText && <p className="text-center text-sm text-slate-600">{trustText}</p>}
+                {trustText && <p className="text-center text-sm text-body">{trustText}</p>}
               </div>
             </div>
           </div>
@@ -9335,28 +9531,26 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         {
           icon: 'envelope',
           label: 'Email',
-          lines: 'sepl@subhadragroup.in\ninfo@subhadragroup.in',
+          lines: 'info@demologo.com\nsales@demologo.com',
           linkPrefix: 'mailto:',
         },
         {
           icon: 'shop',
           label: 'Showroom',
-          lines:
-            '49-52-1/16, 1st Floor, Adusha Towers, Opp. Income Tax Office, Sankaramattam Road, Shanthipuram, Visakhapatnam - 530 016',
+          lines: '123 Main Street, City, Country',
           linkPrefix: '',
         },
         {
           icon: 'building',
           label: 'Registered Office',
-          lines: '50-58-15, Rajendra Nagar, Visakhapatnam - 530 016',
+          lines: '456 Side Street, City, Country',
           linkPrefix: '',
         },
       ],
-      mapEmbedUrl:
-        'https://www.google.com/maps?q=49-52-1/16%20Sankaramattam%20Road%20Shanthipuram%20Visakhapatnam%20530016&output=embed',
+      mapEmbedUrl: 'https://www.google.com/maps?q=123%20Main%20Street%20City&output=embed',
       formEyebrow: 'Send a message',
       formHeading: 'Tell us what you need',
-      formAction: 'mailto:sepl@subhadragroup.in',
+      formAction: 'mailto:info@demologo.com',
       submitLabel: 'Send Message →',
     },
     render: function ConstructionContactSplitMapRender({
@@ -9372,43 +9566,41 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     }) {
       const { ref, revealCls } = useScrollReveal<HTMLDivElement>()
       return (
-        <section ref={ref} className={`${revealCls} ${padY.md} bg-white`}>
+        <section ref={ref} className={`${revealCls} ${padY.md} bg-surface`}>
           <div className={wrap}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
               <div>
                 {eyebrow && (
-                  <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                  <p className="text-primary text-sm font-semibold uppercase tracking-wide mb-2">
                     {eyebrow}
                   </p>
                 )}
                 {heading && (
-                  <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-3">{heading}</h2>
+                  <h2 className="text-2xl md:text-3xl font-bold text-title mb-3">{heading}</h2>
                 )}
-                {subcopy && <p className="text-slate-600 leading-relaxed mb-6">{subcopy}</p>}
+                {subcopy && <p className="text-body leading-relaxed mb-6">{subcopy}</p>}
                 <div className="flex flex-col gap-5 mb-6">
                   {(infoItems ?? []).map((item, i) => {
                     const Icon = item.icon ? ICON_BY_KEY[item.icon as IconKey] : PhoneIcon
                     const lines = (item.lines ?? '').split('\n').filter(Boolean)
                     return (
                       <div key={i} className="flex gap-3">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-50 text-orange-600">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                           <Icon />
                         </span>
                         <div>
-                          {item.label && (
-                            <h4 className="font-semibold text-slate-900">{item.label}</h4>
-                          )}
+                          {item.label && <h4 className="font-semibold text-title">{item.label}</h4>}
                           {lines.map((line, li) =>
                             item.linkPrefix ? (
                               <a
                                 key={li}
                                 href={`${item.linkPrefix}${line.replace(/\s+/g, '')}`}
-                                className="block text-sm text-slate-600 hover:text-orange-600 transition"
+                                className="block text-sm text-body hover:text-primary/80 transition"
                               >
                                 {line}
                               </a>
                             ) : (
-                              <p key={li} className="text-sm text-slate-600 leading-relaxed">
+                              <p key={li} className="text-sm text-body leading-relaxed">
                                 {line}
                               </p>
                             )
@@ -9419,7 +9611,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   })}
                 </div>
                 {mapEmbedUrl && (
-                  <div className="rounded-2xl overflow-hidden border border-slate-200 h-64">
+                  <div className="rounded-2xl overflow-hidden border border-divider h-64">
                     <iframe
                       src={mapEmbedUrl}
                       loading="lazy"
@@ -9438,18 +9630,16 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 className="flex flex-col gap-4"
               >
                 {formEyebrow && (
-                  <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide">
+                  <p className="text-primary text-sm font-semibold uppercase tracking-wide">
                     {formEyebrow}
                   </p>
                 )}
                 {formHeading && (
-                  <h2 className="text-2xl md:text-3xl font-bold text-slate-900 -mt-2">
-                    {formHeading}
-                  </h2>
+                  <h2 className="text-2xl md:text-3xl font-bold text-title -mt-2">{formHeading}</h2>
                 )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label htmlFor="cf-name" className="text-sm font-medium text-slate-700">
+                    <label htmlFor="cf-name" className="text-sm font-medium text-body">
                       Name
                     </label>
                     <input
@@ -9457,11 +9647,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       name="Name"
                       type="text"
                       required
-                      className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                      className="rounded-lg border border-border px-4 py-2.5 text-sm"
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label htmlFor="cf-phone" className="text-sm font-medium text-slate-700">
+                    <label htmlFor="cf-phone" className="text-sm font-medium text-body">
                       Phone
                     </label>
                     <input
@@ -9469,12 +9659,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       name="Phone"
                       type="tel"
                       required
-                      className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                      className="rounded-lg border border-border px-4 py-2.5 text-sm"
                     />
                   </div>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="cf-email" className="text-sm font-medium text-slate-700">
+                  <label htmlFor="cf-email" className="text-sm font-medium text-body">
                     Email
                   </label>
                   <input
@@ -9482,11 +9672,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     name="Email"
                     type="email"
                     required
-                    className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                    className="rounded-lg border border-border px-4 py-2.5 text-sm"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="cf-subject" className="text-sm font-medium text-slate-700">
+                  <label htmlFor="cf-subject" className="text-sm font-medium text-body">
                     What do you need?
                   </label>
                   <input
@@ -9494,11 +9684,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     name="Subject"
                     type="text"
                     placeholder="e.g. Central AC for a 3BHK villa"
-                    className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                    className="rounded-lg border border-border px-4 py-2.5 text-sm"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="cf-message" className="text-sm font-medium text-slate-700">
+                  <label htmlFor="cf-message" className="text-sm font-medium text-body">
                     Message
                   </label>
                   <textarea
@@ -9506,12 +9696,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     name="Message"
                     required
                     rows={4}
-                    className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
+                    className="rounded-lg border border-border px-4 py-2.5 text-sm"
                   />
                 </div>
                 <button
                   type="submit"
-                  className="rounded-lg bg-orange-500 px-6 py-3 text-white font-semibold hover:bg-orange-600 transition text-sm w-fit"
+                  className="rounded-lg bg-primary px-6 py-3 text-primary-foreground font-semibold hover:bg-primary/85 transition text-sm w-fit"
                 >
                   {submitLabel}
                 </button>
@@ -9532,8 +9722,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       tagline: { type: 'text' },
     },
     defaultProps: {
-      logoUrl: '/seed/subhadra/brand/logo.png',
-      brand: 'Subhadra Group',
+      logoUrl: '/seed/demologo/logo.svg',
+      brand: 'DemoLogo',
       tagline: 'Your one-stop solution for building engineering products & services.',
     },
     render: function ConstructionTaglineStripRender({
@@ -9550,7 +9740,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       )
       const tagline = sf['tagline-text'] || taglineProp
       return (
-        <div className="bg-slate-900 text-white py-6">
+        <div className="bg-inverse text-inverse-foreground py-6">
           <div className={`${wrap} flex items-center justify-center gap-3 text-center`}>
             {logoUrl && (
               // eslint-disable-next-line @next/next/no-img-element
@@ -9577,8 +9767,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     },
     defaultProps: {
       whatsappHref:
-        'https://wa.me/918897224466?text=Hi%20Subhadra%20Group%2C%20I%27d%20like%20to%20know%20more%20about%20your%20services.',
-      brochureHref: '/seed/subhadra/Subhadra-Group-30-Years-Brochure.pdf',
+        'https://wa.me/919876543210?text=Hi%20DemoLogo%20Group%2C%20I%27d%20like%20to%20know%20more%20about%20your%20services.',
+      brochureHref: '#',
       badgeYearLabel: 'Estd. 1996',
       badgeNumber: '30',
       badgeLabel: 'years of Trust',
@@ -9602,7 +9792,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       const sameSide = badgeSide === actionsSide
       const badgeEl = badgeNumber ? (
         <div
-          className="relative z-40 hidden md:flex h-24 w-24 items-center justify-center rounded-full bg-slate-950 shadow-lg"
+          className="relative z-40 hidden md:flex h-24 w-24 items-center justify-center rounded-full bg-inverse shadow-lg"
           aria-hidden="true"
         >
           <svg className="absolute inset-0 h-full w-full" viewBox="0 0 200 200">
@@ -9624,7 +9814,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               strokeLinecap="round"
             />
           </svg>
-          <div className="relative flex flex-col items-center text-center text-white">
+          <div className="relative flex flex-col items-center text-center text-inverse-foreground">
             {(isEditing || badgeYearLabel) && (
               <span className="text-[9px] tracking-wide">
                 <InlineEditableText
@@ -9682,7 +9872,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Download brochure"
-                className="w-11 h-11 rounded-full bg-slate-900 text-white flex items-center justify-center shadow-lg hover:bg-slate-800 transition"
+                className="w-11 h-11 rounded-full bg-inverse text-inverse-foreground flex items-center justify-center shadow-lg hover:bg-inverse/85 transition"
               >
                 <svg
                   className="w-5 h-5"
@@ -9719,6 +9909,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           { label: 'Design 2 — colorful blocks, about + quick links + contact', value: '2' },
           { label: 'Design 3 — white logo bar, dark link columns + big phone', value: '3' },
           { label: 'Design 4 — dark curve, 4 link columns + newsletter signup', value: '4' },
+          {
+            label: 'Design 5 — Modern agency (brand, quick links, services, contact info)',
+            value: '5',
+          },
         ],
       },
       logoUrl: { type: 'text' },
@@ -9773,6 +9967,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       qrCaption: { type: 'text' },
       estdYear: { type: 'text' },
       copyright: { type: 'text' },
+      directionsLabel: { type: 'text' },
+      directionsHref: { type: 'text' },
     },
     defaultProps: {
       variant: '1',
@@ -9828,6 +10024,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       qrCaption: 'Scan for directions',
       estdYear: '',
       copyright: '© Your Brand. All rights reserved.',
+      directionsLabel: 'Get Directions',
+      directionsHref: '#',
     },
     render: function ConstructionFooterRender({
       id,
@@ -9885,6 +10083,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       qrCaption,
       estdYear,
       copyright,
+      directionsLabel,
+      directionsHref,
     }) {
       const parseLinkList = (text: string) =>
         (text || '')
@@ -9921,6 +10121,131 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       // primary/secondary colors (same accentColorFor/readableTextColor
       // contrast helpers Header already uses) instead of hardcoded
       // yellow/red, so it reskins to whatever brand is active.
+      if (variant === '5') {
+        // Modern agency: flat dark navy, brand + Quick Links (live footer
+        // menu) + Services (group2) + Contact Info, thin divider, legal row.
+        const accent = primaryColor || '#1565e0'
+        const navy = secondaryColor || '#0b1b3a'
+        const serviceLinks = parseLinkList(group2Links)
+        const legal = parseLinkList(policyLinks)
+        const address = showroomAddress || contactAddress
+        const modernSocials = [
+          { href: social1Href, label: 'Facebook', Icon: FacebookIcon },
+          { href: social2Href, label: 'Instagram', Icon: InstagramIcon },
+          { href: social3Href, label: 'LinkedIn', Icon: LinkedInIcon },
+          { href: social4Href, label: 'YouTube', Icon: YoutubeIcon },
+        ].filter((x) => x.href)
+        const colTitle = 'mb-3 text-sm font-semibold text-white'
+        const linkCls = 'text-[11px] text-white/70 hover:text-white transition'
+        return (
+          <footer style={{ backgroundColor: navy }} className="text-white">
+            <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 py-10 sm:grid-cols-2 md:grid-cols-[2.2fr_1fr_1.4fr_1.6fr]">
+              <div>
+                <ModernWordmark
+                  brand={brand}
+                  logoUrl={logoUrl}
+                  accent={`color-mix(in srgb, ${accent} 70%, #ffffff)`}
+                  textClass="text-[22px] text-white"
+                  imgClass="h-8 w-auto"
+                />
+                {tagline && (
+                  <p className="mt-3 max-w-[240px] text-[11px] leading-relaxed text-white/70">
+                    {tagline}
+                  </p>
+                )}
+                {modernSocials.length > 0 && (
+                  <div className="mt-4 flex items-center gap-3">
+                    {modernSocials.map(({ href, label, Icon }) => (
+                      <a
+                        key={label}
+                        href={href}
+                        aria-label={label}
+                        className="flex h-7 w-7 items-center justify-center rounded-full text-white/80 hover:text-white [&>svg]:h-3 [&>svg]:w-3"
+                      >
+                        <Icon />
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div>
+                <h4 className={colTitle}>{companyLinksTitle || 'Quick Links'}</h4>
+                <ul className="space-y-2">
+                  {companyLinks.map(([label, href], i) => (
+                    <li key={i}>
+                      <a href={href || '#'} className={linkCls}>
+                        {label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h4 className={colTitle}>{group2Title || 'Services'}</h4>
+                <ul className="space-y-2">
+                  {serviceLinks.map(([label, href], i) => (
+                    <li key={i}>
+                      <a href={href || '#'} className={linkCls}>
+                        {label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h4 className={colTitle}>{contactTitle || 'Contact Info'}</h4>
+                <ul className="space-y-2.5 [&>li]:text-[11px] [&>li]:text-white/70">
+                  {address && (
+                    <li className="flex items-start gap-2">
+                      <MapPinLucide
+                        className="mt-0.5 h-3.5 w-3.5 shrink-0 text-white"
+                        aria-hidden
+                      />
+                      <span className="whitespace-pre-line">{address}</span>
+                    </li>
+                  )}
+                  {contactPhone && (
+                    <li className="flex items-center gap-2">
+                      <PhoneLucide className="h-3.5 w-3.5 shrink-0 text-white" aria-hidden />
+                      {contactPhone}
+                    </li>
+                  )}
+                  {contactEmail && (
+                    <li className="flex items-center gap-2">
+                      <MailLucide className="h-3.5 w-3.5 shrink-0 text-white" aria-hidden />
+                      {contactEmail}
+                    </li>
+                  )}
+                  {directionsLabel && (
+                    <li className="flex items-center gap-2">
+                      <NavigationLucide className="h-3.5 w-3.5 shrink-0 text-white" aria-hidden />
+                      <a href={directionsHref || '#'} className="hover:text-white transition">
+                        {directionsLabel}
+                      </a>
+                    </li>
+                  )}
+                </ul>
+              </div>
+            </div>
+            <div className="border-t border-white/10">
+              <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-3 text-[10px] text-white/70">
+                <span>{copyright}</span>
+                <span className="flex items-center">
+                  {legal.map(([label, href], i) => (
+                    <span key={i} className="flex items-center">
+                      {i > 0 && <span className="mx-2 text-white/40">|</span>}
+                      <a href={href || '#'} className="hover:text-white transition">
+                        {label}
+                      </a>
+                    </span>
+                  ))}
+                </span>
+              </div>
+            </div>
+          </footer>
+        )
+      }
+
       if (variant === '2') {
         const mainBg = primaryColor || '#dc2626'
         // Reference design pairs a clearly distinct accent color for the
@@ -10071,7 +10396,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
 
         return (
           <footer>
-            <div className="relative overflow-hidden bg-white py-6">
+            <div className="relative overflow-hidden bg-surface py-6">
               <div
                 className={`${wrap} flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between`}
               >
@@ -10096,7 +10421,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                         href={s.href}
                         aria-label={s.label || 'Social link'}
                         style={{ color: bandBg }}
-                        className="flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-md transition hover:shadow-lg [&_svg]:h-5 [&_svg]:w-5"
+                        className="flex h-11 w-11 items-center justify-center rounded-full bg-card shadow-md transition hover:shadow-lg [&_svg]:h-5 [&_svg]:w-5"
                       >
                         <s.Icon />
                       </a>
@@ -10550,15 +10875,15 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             </div>
           </div>
           {yearsOfTrust !== null && (
-            <div className="absolute right-4 bottom-8 hidden md:flex h-28 w-28 items-center justify-center rounded-full border-2 border-dashed border-amber-400/70 text-center">
+            <div className="absolute right-4 bottom-8 hidden md:flex h-28 w-28 items-center justify-center rounded-full border-2 border-dashed border-highlight/70 text-center">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-400">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-highlight">
                   Estd. {estdYear}
                 </p>
-                <p className="text-2xl font-extrabold leading-none text-amber-400">
+                <p className="text-2xl font-extrabold leading-none text-highlight">
                   {yearsOfTrust}
                 </p>
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-400">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-highlight">
                   Years of Trust
                 </p>
               </div>
@@ -10598,9 +10923,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding: 'md',
     },
     render: ({ sectionTitle, photo, quoteText, founderName, founderTitle, padding }) => (
-      <section className={`${padY[padding]} bg-white`}>
+      <section className={`${padY[padding]} bg-surface`}>
         <div className={wrap}>
-          <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+          <h2 className="text-2xl md:text-4xl font-bold text-title text-center mb-10">
             {sectionTitle}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-8 md:gap-12 items-center max-w-4xl mx-auto">
@@ -10616,16 +10941,16 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 height="28"
                 viewBox="0 0 36 28"
                 fill="none"
-                className="text-orange-300 mb-4"
+                className="text-primary/40 mb-4"
               >
                 <path
                   d="M14.5 0C6.5 3 0 9.5 0 17.5 0 23.3 4.2 28 9.8 28c4.9 0 8.7-3.7 8.7-8.4 0-4.4-3.1-7.7-7.2-7.7-.6 0-1.2.1-1.7.2C10.6 7.4 13.4 4 17.5 1.8L14.5 0zm18 0c-8 3-14.5 9.5-14.5 17.5 0 5.8 4.2 10.5 9.8 10.5 4.9 0 8.7-3.7 8.7-8.4 0-4.4-3.1-7.7-7.2-7.7-.6 0-1.2.1-1.7.2C28.6 7.4 31.4 4 35.5 1.8L32.5 0z"
                   fill="currentColor"
                 />
               </svg>
-              <p className="text-lg md:text-xl text-slate-800 leading-relaxed mb-6">{quoteText}</p>
-              <p className="font-semibold text-slate-900">{founderName}</p>
-              <p className="text-sm text-slate-500">{founderTitle}</p>
+              <p className="text-lg md:text-xl text-title leading-relaxed mb-6">{quoteText}</p>
+              <p className="font-semibold text-title">{founderName}</p>
+              <p className="text-sm text-muted-foreground">{founderTitle}</p>
             </div>
           </div>
         </div>
@@ -10689,11 +11014,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       heading: 'From 1996 to today',
       entry1Year: '1996',
       entry1Text:
-        'Subhadra Group is established in Visakhapatnam to bring every building-related engineering product & service under one roof — for residential, commercial and industrial customers.',
-      entry1Image: '/seed/subhadra/brand/shop.webp',
+        'DemoLogo is established in Your City to bring every building-related engineering product & service under one roof — for residential, commercial and industrial customers.',
+      entry1Image: '/seed/demologo/hero.jpg',
       entry2Year: '2001',
       entry2Text:
-        'Added electrical wiring, MCB/DB and switchgear installations to the roof, backed by world-class brands like Schneider Electric.',
+        'Added electrical wiring, MCB/DB and switchgear installations to the roof, backed by world-class brands like Partner Brand.',
       entry2Image:
         'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=700&h=525&fit=crop&q=80&auto=format',
       entry3Year: '2006',
@@ -10704,11 +11029,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       entry4Year: '2011',
       entry4Text:
         'Started designing home automation and home theater systems for premium residences across the city.',
-      entry4Image: '/seed/subhadra/products/home-automation.jpg',
+      entry4Image: '/seed/demologo/about.jpg',
       entry5Year: '2016',
       entry5Text:
-        'Began delivering HVAC, electrical and automation as one coordinated scope for hotels, malls and hospitals — including landmark properties like Novotel Visakhapatnam.',
-      entry5Image: '/seed/subhadra/case-studies/novotel.jpg',
+        'Began delivering HVAC, electrical and automation as one coordinated scope for hotels, malls and hospitals — including landmark properties like Business Website.',
+      entry5Image: '/seed/demologo/about.jpg',
       entry6Year: '2021',
       entry6Text:
         'Reached 25 years of technical expertise, with a dedicated service manager assigned to every discipline we install in.',
@@ -10716,8 +11041,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=700&h=525&fit=crop&q=80&auto=format',
       entry7Year: 'Today',
       entry7Text:
-        '15 services under one roof, 1 Lakh+ trusted clients across Andhra Pradesh, and one accountable team behind every installation.',
-      entry7Image: '/seed/subhadra/inside.webp',
+        '15 services under one roof, 1 Lakh+ trusted clients across your region, and one accountable team behind every installation.',
+      entry7Image: '/seed/demologo/hero.jpg',
       padding: 'md',
       background: 'white',
     },
@@ -10777,22 +11102,22 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       ).filter((e) => e.year || e.text)
       return (
         <section
-          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
             <div className="mx-auto mb-12 max-w-2xl text-center">
               {eyebrow && (
-                <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-orange-600">
+                <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-primary">
                   {eyebrow}
                 </p>
               )}
-              <h2 className="text-2xl font-bold text-slate-900 md:text-4xl">{heading}</h2>
-              {subtitle && <p className="mt-4 text-slate-600">{subtitle}</p>}
+              <h2 className="text-2xl font-bold text-title md:text-4xl">{heading}</h2>
+              {subtitle && <p className="mt-4 text-body">{subtitle}</p>}
             </div>
-            <div className="mx-auto max-w-2xl border-l-2 border-slate-200 pl-8">
+            <div className="mx-auto max-w-2xl border-l-2 border-divider pl-8">
               {entries.map((e, i) => (
                 <div key={i} className="relative pb-10 last:pb-0">
-                  <span className="absolute -left-[41px] top-0 flex items-center justify-center rounded-full bg-orange-500 px-3 py-1 text-xs font-bold text-white">
+                  <span className="absolute -left-[41px] top-0 flex items-center justify-center rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">
                     {e.year}
                   </span>
                   {e.image && (
@@ -10803,8 +11128,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       className="mb-3 h-40 w-full rounded-xl object-cover"
                     />
                   )}
-                  {e.title && <h4 className="pt-1 font-bold text-slate-900">{e.title}</h4>}
-                  <p className="pt-1 leading-relaxed text-slate-600">{e.text}</p>
+                  {e.title && <h4 className="pt-1 font-bold text-title">{e.title}</h4>}
+                  <p className="pt-1 leading-relaxed text-body">{e.text}</p>
                 </div>
               ))}
             </div>
@@ -10856,7 +11181,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       leader1Name: 'Ramesh Kumar',
       leader1Title: 'Managing Director',
       leader1Bio:
-        'Founded Subhadra Group in 1996; sets the technical standard for every project we take on.',
+        'Founded DemoLogo in 1996; sets the technical standard for every project we take on.',
       leader2Photo:
         'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=480&h=480&fit=crop&crop=faces&auto=format',
       leader2Name: 'Priya Nair',
@@ -10905,16 +11230,16 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       ).filter((l) => l.name)
       return (
         <section
-          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
             <div className="text-center mb-12">
               {eyebrow && (
-                <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                <p className="text-primary text-sm font-semibold uppercase tracking-wide mb-2">
                   {eyebrow}
                 </p>
               )}
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900">{heading}</h2>
+              <h2 className="text-2xl md:text-4xl font-bold text-title">{heading}</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {leaders.map((l, i) => (
@@ -10925,9 +11250,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     alt={l.name}
                     className="w-32 h-32 mx-auto rounded-full object-cover mb-4"
                   />
-                  <p className="font-semibold text-slate-900">{l.name}</p>
-                  <p className="text-sm text-orange-600 mb-2">{l.title}</p>
-                  <p className="text-sm text-slate-600">{l.bio}</p>
+                  <p className="font-semibold text-title">{l.name}</p>
+                  <p className="text-sm text-primary mb-2">{l.title}</p>
+                  <p className="text-sm text-body">{l.bio}</p>
                 </div>
               ))}
             </div>
@@ -10995,7 +11320,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         ],
       },
       // Separate credentials panel below both heroes — matches the approved
-      // reference's "#uday-kumar-detail" section (facts + membership logos).
+      // reference's "#director-detail" section (facts + membership logos).
       person2Facts: {
         type: 'array',
         min: 0,
@@ -11040,12 +11365,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       eyebrow: '',
       heading: '',
       person1MemberId: '',
-      person1Photo: '/seed/subhadra/founder.png',
-      person1Name: 'K Leela Prasad',
-      person1Role: 'Founder, Subhadra Group',
+      person1Photo: '/seed/demologo/about.jpg',
+      person1Name: 'Jane Founder',
+      person1Role: 'Founder, DemoLogo',
       person1Quote: 'Every building deserves one accountable team — not five contractors to chase.',
       person1Bio:
-        "A practicing MEP consultant since 1983, K Leela Prasad has planned electrical installations, air conditioning & refrigeration systems, building services, IBMS, plumbing and fire-fighting solutions across Visakhapatnam for over four decades — associated with most of the region's major projects, including Swarnabharathi Indoor Stadium, Fairfield by Marriott, Novotel Visakhapatnam and Pradhama Hospital (now Medicover, MVP). In 1996, the same year he founded Subhadra Group, he also set up the Bureau of Electrical Energy Conservation.",
+        "A practicing MEP consultant since 1983, Jane Founder has planned electrical installations, air conditioning & refrigeration systems, building services, IBMS, plumbing and fire-fighting solutions across Your City for over four decades — associated with most of the region's major projects, including Swarnabharathi Indoor Stadium, Fairfield by Marriott, Business Website and Pradhama Hospital (now Medicover, MVP). In 1996, the same year he founded DemoLogo, he also set up the Bureau of Electrical Energy Conservation.",
       person1Facts: [
         {
           icon: 'graduationcap',
@@ -11060,31 +11385,30 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         {
           icon: 'award',
           label: 'Recognition:',
-          value:
-            'Founder President, ISHRAE, FSAI & IPA Visakhapatnam · Life Member, Institution of Engineers',
+          value: 'Industry association member · Life member, professional body',
         },
       ],
       person1LinkLabel: '',
-      person1LinkHref: '/leadership#leela-prasad',
+      person1LinkHref: '/leadership#founder',
       person1Variant: 'dark',
       person2MemberId: '',
-      person2Photo: '/seed/subhadra/products/director.png',
-      person2Name: 'K N V Uday Kumar',
-      person2Role: 'Director, Subhadra Group',
+      person2Photo: '/seed/demologo/about.jpg',
+      person2Name: 'John Director',
+      person2Role: 'Director, DemoLogo',
       person2Bio:
-        'A gold medalist engineering graduate from REC Warangal (now NIT Warangal), K N V Uday Kumar brings international experience across leading MNCs to Subhadra Group. He leads the design of air conditioning for comfort & industrial applications, surveillance and fire alarm, intrusion alarm systems, audio-video solutions, and automation for residences, offices and commercial establishments, along with networking solutions.',
+        'An engineering graduate, John Director brings international experience across leading MNCs to DemoLogo. He leads the design of air conditioning for comfort & industrial applications, surveillance and fire alarm, intrusion alarm systems, audio-video solutions, and automation for residences, offices and commercial establishments, along with networking solutions.',
       person2Ctas: [
-        { label: 'View Credentials ↓', href: '#uday-kumar-credentials' },
+        { label: 'View Credentials ↓', href: '#director-credentials' },
         { label: 'Get in Touch', href: '/contact' },
       ],
       person2LinkLabel: '',
-      person2LinkHref: '/leadership#uday-kumar',
+      person2LinkHref: '/leadership#director',
       person2Variant: 'orange',
       person2Facts: [
         {
           icon: 'graduationcap',
           label: 'Qualification:',
-          value: 'Gold Medalist, B.Tech Engineering, REC Warangal',
+          value: 'B.Tech Engineering',
         },
         {
           icon: 'briefcase',
@@ -11094,19 +11418,19 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         {
           icon: 'award',
           label: 'Affiliations:',
-          value: 'ISHRAE, FSAI, IIID, IGBC & IPA Visakhapatnam · BNI, CII & VCCI Visakhapatnam',
+          value: 'Industry associations and chambers',
         },
       ],
       person2MembershipLabel: 'Proud member of',
       person2Memberships: [
-        { image: '/seed/subhadra/member/fsai.jpeg', alt: 'FSAI Visakhapatnam' },
-        { image: '/seed/subhadra/member/IIID.jpeg', alt: 'IIID Visakhapatnam' },
-        { image: '/seed/subhadra/member/IGBC.png', alt: 'IGBC Visakhapatnam' },
-        { image: '/seed/subhadra/member/IPA.png', alt: 'IPA Visakhapatnam' },
-        { image: '/seed/subhadra/member/ASHRAE.webp', alt: 'ASHRAE Deccan' },
-        { image: '/seed/subhadra/member/bni.svg', alt: 'BNI Visakhapatnam' },
-        { image: '/seed/subhadra/member/cii.svg', alt: 'CII Visakhapatnam' },
-        { image: '/seed/subhadra/member/VCCI.png', alt: 'VCCI Visakhapatnam' },
+        { image: '/seed/demologo/logo.svg', alt: 'Association logo' },
+        { image: '/seed/demologo/logo.svg', alt: 'Association logo' },
+        { image: '/seed/demologo/logo.svg', alt: 'Association logo' },
+        { image: '/seed/demologo/logo.svg', alt: 'Association logo' },
+        { image: '/seed/demologo/logo.svg', alt: 'Association logo' },
+        { image: '/seed/demologo/logo.svg', alt: 'Association logo' },
+        { image: '/seed/demologo/logo.svg', alt: 'Association logo' },
+        { image: '/seed/demologo/logo.svg', alt: 'Association logo' },
       ],
       padding: 'md',
       background: 'muted',
@@ -11199,13 +11523,16 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           <li key={i} className="flex items-start gap-3">
             <span
               className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-                light ? 'bg-slate-100 text-slate-700' : 'bg-white/15 text-white'
+                light
+                  ? 'bg-background text-body'
+                  : 'bg-inverse-foreground/15 text-inverse-foreground'
               }`}
             >
               <Icon />
             </span>
-            <span className={light ? 'text-slate-700' : 'text-white/85'}>
-              <b className={light ? 'text-slate-900' : 'text-white'}>{fact.label}</b> {fact.value}
+            <span className={light ? 'text-body' : 'text-inverse-foreground/85'}>
+              <b className={light ? 'text-title' : 'text-inverse-foreground'}>{fact.label}</b>{' '}
+              {fact.value}
             </span>
           </li>
         )
@@ -11217,12 +11544,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             <div className={wrap}>
               <div className="mx-auto mb-10 max-w-2xl text-center">
                 {eyebrow && (
-                  <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-orange-600">
+                  <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-primary">
                     {eyebrow}
                   </p>
                 )}
                 {heading && (
-                  <h2 className="text-2xl font-bold text-slate-900 md:text-4xl">{heading}</h2>
+                  <h2 className="text-2xl font-bold text-title md:text-4xl">{heading}</h2>
                 )}
               </div>
             </div>
@@ -11230,9 +11557,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
 
           {/* Leader 1 — dark hero with quote + facts, photo right */}
           <div
-            id="leela-prasad"
+            id="founder"
             className={`relative overflow-hidden py-16 md:py-24 ${
-              person1Variant === 'light' ? 'bg-white' : 'bg-slate-950'
+              person1Variant === 'light' ? 'bg-surface' : 'bg-inverse'
             }`}
           >
             {person1Variant !== 'light' && (
@@ -11250,7 +11577,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               <div>
                 <h3
                   className={`text-2xl font-extrabold md:text-4xl ${
-                    person1Variant === 'light' ? 'text-slate-900' : 'text-orange-500'
+                    person1Variant === 'light' ? 'text-title' : 'text-highlight'
                   }`}
                 >
                   {p1.name}
@@ -11258,8 +11585,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 <span
                   className={`mt-2 inline-block rounded-full px-4 py-1.5 text-sm font-bold ${
                     person1Variant === 'light'
-                      ? 'bg-slate-100 text-slate-700'
-                      : 'bg-white/15 text-white'
+                      ? 'bg-background text-body'
+                      : 'bg-inverse-foreground/15 text-inverse-foreground'
                   }`}
                 >
                   {p1.role}
@@ -11268,15 +11595,15 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   <blockquote
                     className={`mt-5 border-l-[3px] pl-4 text-lg font-bold italic leading-snug ${
                       person1Variant === 'light'
-                        ? 'border-slate-300 text-slate-800'
-                        : 'border-white/55 text-white'
+                        ? 'border-border text-title'
+                        : 'border-inverse-foreground/55 text-inverse-foreground'
                     }`}
                   >
                     &quot;{person1Quote}&quot;
                   </blockquote>
                 )}
                 <p
-                  className={`mt-4 ${person1Variant === 'light' ? 'text-slate-600' : 'text-white/80'}`}
+                  className={`mt-4 ${person1Variant === 'light' ? 'text-body' : 'text-inverse-foreground/80'}`}
                 >
                   {p1.bio}
                 </p>
@@ -11290,8 +11617,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     href={person1LinkHref || '#'}
                     className={`mt-6 inline-block text-sm font-semibold ${
                       person1Variant === 'light'
-                        ? 'text-slate-900 hover:text-orange-600'
-                        : 'text-white hover:text-orange-400'
+                        ? 'text-title hover:text-primary/80'
+                        : 'text-inverse-foreground hover:text-highlight'
                     }`}
                   >
                     {person1LinkLabel}
@@ -11311,10 +11638,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
 
           {/* Leader 2 — orange hero, CTAs, photo left (reversed) */}
           <div
-            id="uday-kumar"
+            id="director"
             className={`relative py-16 md:py-24 ${
               person2Variant === 'light'
-                ? 'bg-white'
+                ? 'bg-surface'
                 : 'bg-gradient-to-br from-[#f0895d] via-orange-600 to-orange-800'
             }`}
           >
@@ -11333,7 +11660,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 <span
                   className={`inline-block rounded-full px-4 py-1.5 text-sm font-bold ${
                     person2Variant === 'light'
-                      ? 'bg-slate-100 text-slate-700'
+                      ? 'bg-background text-body'
                       : 'bg-white/15 text-white'
                   }`}
                 >
@@ -11341,14 +11668,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 </span>
                 <h3
                   className={`mt-4 text-2xl font-extrabold md:text-4xl ${
-                    person2Variant === 'light' ? 'text-slate-900' : 'text-white'
+                    person2Variant === 'light' ? 'text-title' : 'text-white'
                   }`}
                 >
                   {p2.name}
                 </h3>
-                <p
-                  className={`mt-4 ${person2Variant === 'light' ? 'text-slate-600' : 'text-white/85'}`}
-                >
+                <p className={`mt-4 ${person2Variant === 'light' ? 'text-body' : 'text-white/85'}`}>
                   {p2.bio}
                 </p>
                 {(person2Ctas ?? []).length > 0 && (
@@ -11359,7 +11684,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                         href={cta.href || '#'}
                         className={`inline-block rounded-lg px-5 py-2.5 text-sm font-semibold transition ${
                           person2Variant === 'light'
-                            ? 'bg-orange-600 text-white hover:bg-orange-700'
+                            ? 'bg-primary text-primary-foreground hover:bg-primary/85'
                             : 'border border-white/50 text-white hover:bg-white/10'
                         }`}
                       >
@@ -11373,7 +11698,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     href={person2LinkHref || '#'}
                     className={`mt-6 inline-block text-sm font-semibold ${
                       person2Variant === 'light'
-                        ? 'text-slate-900 hover:text-orange-600'
+                        ? 'text-title hover:text-primary/80'
                         : 'text-white hover:text-slate-900'
                     }`}
                   >
@@ -11386,8 +11711,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
 
           {/* Credentials panel — person 2's facts + membership logos */}
           {((person2Facts ?? []).length > 0 || (person2Memberships ?? []).length > 0) && (
-            <div id="uday-kumar-credentials" className={`${wrap} py-12 md:py-16`}>
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-9">
+            <div id="director-credentials" className={`${wrap} py-12 md:py-16`}>
+              <div className="rounded-2xl border border-divider bg-card p-6 shadow-sm sm:p-9">
                 {(person2Facts ?? []).length > 0 && (
                   <ul className="flex flex-col gap-3">
                     {person2Facts.map((f, i) => factRow(f, i, true))}
@@ -11396,11 +11721,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 {(person2Memberships ?? []).length > 0 && (
                   <div
                     className={
-                      (person2Facts ?? []).length > 0 ? 'mt-7 border-t border-slate-100 pt-7' : ''
+                      (person2Facts ?? []).length > 0 ? 'mt-7 border-t border-divider pt-7' : ''
                     }
                   >
                     {person2MembershipLabel && (
-                      <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         {person2MembershipLabel}
                       </span>
                     )}
@@ -11458,11 +11783,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     },
     defaultProps: {
       variant: '1',
-      visionHeading: 'The most trusted name in building engineering across Andhra Pradesh',
+      visionHeading: 'The most trusted name in building engineering across your region',
       visionParagraph1:
-        'To become the most trusted & complete solution provider for Electrical, Air Conditioning, Security & Safety, Automation and Entertainment systems — for homes, commercial buildings, industries & departments across entire Andhra Pradesh.',
+        'To become the most trusted & complete solution provider for Electrical, Air Conditioning, Security & Safety, Automation and Entertainment systems — for homes, commercial buildings, industries & departments across entire your region.',
       visionParagraph2:
-        'That means every new sector we enter — hospitality, healthcare, retail, education, industry — gets the same one-team accountability that built our reputation in Visakhapatnam, backed by brands and engineers our clients can rely on for decades, not just for the installation date.',
+        'That means every new sector we enter — hospitality, healthcare, retail, education, industry — gets the same one-team accountability that built our reputation in Your City, backed by brands and engineers our clients can rely on for decades, not just for the installation date.',
       missionHeading: 'All building engineering, under one accountable roof',
       missionParagraph1:
         'To provide all building-related engineering products & services under one roof for residential, commercial buildings and industries — with perfect-engineered solutions, quality execution and on-time delivery, every single time.',
@@ -11505,24 +11830,24 @@ const typedComponents: Config<ConstructionProps>['components'] = {
 
       if (variant === '2') {
         return (
-          <section className={`${padY[padding]} bg-white`}>
+          <section className={`${padY[padding]} bg-surface`}>
             <div className={wrap}>
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 p-8 text-center">
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-orange-50">
-                    <Eye className="h-7 w-7 text-orange-600" strokeWidth={1.75} />
+                <div className="rounded-2xl border border-divider p-8 text-center">
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                    <Eye className="h-7 w-7 text-primary" strokeWidth={1.75} />
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900">{visionHeading}</h3>
-                  <p className="mt-3 text-sm text-slate-600">{visionParagraph1}</p>
-                  <p className="mt-2 text-sm text-slate-600">{visionParagraph2}</p>
+                  <h3 className="text-lg font-bold text-title">{visionHeading}</h3>
+                  <p className="mt-3 text-sm text-body">{visionParagraph1}</p>
+                  <p className="mt-2 text-sm text-body">{visionParagraph2}</p>
                 </div>
-                <div className="rounded-2xl border border-slate-200 p-8 text-center">
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-orange-50">
-                    <Rocket className="h-7 w-7 text-orange-600" strokeWidth={1.75} />
+                <div className="rounded-2xl border border-divider p-8 text-center">
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                    <Rocket className="h-7 w-7 text-primary" strokeWidth={1.75} />
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900">{missionHeading}</h3>
-                  <p className="mt-3 text-sm text-slate-600">{missionParagraph1}</p>
-                  <p className="mt-2 text-sm text-slate-600">{missionParagraph2}</p>
+                  <h3 className="text-lg font-bold text-title">{missionHeading}</h3>
+                  <p className="mt-3 text-sm text-body">{missionParagraph1}</p>
+                  <p className="mt-2 text-sm text-body">{missionParagraph2}</p>
                 </div>
               </div>
             </div>
@@ -11532,25 +11857,25 @@ const typedComponents: Config<ConstructionProps>['components'] = {
 
       if (variant === '3') {
         return (
-          <section className={`${padY[padding]} bg-white`}>
+          <section className={`${padY[padding]} bg-surface`}>
             <div className={`${wrap} mx-auto flex max-w-3xl flex-col gap-12`}>
               <div className="text-center">
-                <div className="mb-3 flex items-center justify-center gap-2 text-orange-600">
+                <div className="mb-3 flex items-center justify-center gap-2 text-primary">
                   <Eye className="h-5 w-5" strokeWidth={1.75} />
                   <span className="text-xs font-bold uppercase tracking-wide">Our Vision</span>
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 md:text-2xl">{visionHeading}</h3>
-                <p className="mx-auto mt-4 max-w-xl text-slate-600">{visionParagraph1}</p>
-                <p className="mx-auto mt-3 max-w-xl text-slate-600">{visionParagraph2}</p>
+                <h3 className="text-xl font-bold text-title md:text-2xl">{visionHeading}</h3>
+                <p className="mx-auto mt-4 max-w-xl text-body">{visionParagraph1}</p>
+                <p className="mx-auto mt-3 max-w-xl text-body">{visionParagraph2}</p>
               </div>
               <div className="text-center">
-                <div className="mb-3 flex items-center justify-center gap-2 text-orange-600">
+                <div className="mb-3 flex items-center justify-center gap-2 text-primary">
                   <Rocket className="h-5 w-5" strokeWidth={1.75} />
                   <span className="text-xs font-bold uppercase tracking-wide">Our Mission</span>
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 md:text-2xl">{missionHeading}</h3>
-                <p className="mx-auto mt-4 max-w-xl text-slate-600">{missionParagraph1}</p>
-                <p className="mx-auto mt-3 max-w-xl text-slate-600">{missionParagraph2}</p>
+                <h3 className="text-xl font-bold text-title md:text-2xl">{missionHeading}</h3>
+                <p className="mx-auto mt-4 max-w-xl text-body">{missionParagraph1}</p>
+                <p className="mx-auto mt-3 max-w-xl text-body">{missionParagraph2}</p>
               </div>
             </div>
           </section>
@@ -11559,20 +11884,20 @@ const typedComponents: Config<ConstructionProps>['components'] = {
 
       if (variant === '4') {
         return (
-          <section className={`${padY[padding]} bg-slate-900 text-white`}>
+          <section className={`${padY[padding]} bg-inverse text-inverse-foreground`}>
             <div className={wrap}>
-              <div className="grid grid-cols-1 divide-y divide-white/10 md:grid-cols-2 md:divide-x md:divide-y-0">
+              <div className="grid grid-cols-1 divide-y divide-inverse-foreground/10 md:grid-cols-2 md:divide-x md:divide-y-0">
                 <div className="pb-8 pr-0 md:pb-0 md:pr-10">
-                  <Eye className="h-8 w-8 text-orange-400" strokeWidth={1.5} />
+                  <Eye className="h-8 w-8 text-highlight" strokeWidth={1.5} />
                   <h3 className="mt-4 text-xl font-bold md:text-2xl">{visionHeading}</h3>
-                  <p className="mt-4 text-white/70">{visionParagraph1}</p>
-                  <p className="mt-3 text-white/70">{visionParagraph2}</p>
+                  <p className="mt-4 text-inverse-foreground/70">{visionParagraph1}</p>
+                  <p className="mt-3 text-inverse-foreground/70">{visionParagraph2}</p>
                 </div>
                 <div className="pl-0 pt-8 md:pl-10 md:pt-0">
-                  <Rocket className="h-8 w-8 text-orange-400" strokeWidth={1.5} />
+                  <Rocket className="h-8 w-8 text-highlight" strokeWidth={1.5} />
                   <h3 className="mt-4 text-xl font-bold md:text-2xl">{missionHeading}</h3>
-                  <p className="mt-4 text-white/70">{missionParagraph1}</p>
-                  <p className="mt-3 text-white/70">{missionParagraph2}</p>
+                  <p className="mt-4 text-inverse-foreground/70">{missionParagraph1}</p>
+                  <p className="mt-3 text-inverse-foreground/70">{missionParagraph2}</p>
                 </div>
               </div>
             </div>
@@ -11582,28 +11907,28 @@ const typedComponents: Config<ConstructionProps>['components'] = {
 
       // Design 1 — reference clone (about.html Mission & Vision cards)
       return (
-        <section className={`${padY[padding]} bg-white`}>
+        <section className={`${padY[padding]} bg-surface`}>
           <div className={`${wrap} flex flex-col gap-10`}>
-            <div className="grid grid-cols-1 items-center gap-8 rounded-2xl bg-slate-50 p-8 md:grid-cols-[1fr_180px] md:p-12">
+            <div className="grid grid-cols-1 items-center gap-8 rounded-2xl bg-background p-8 md:grid-cols-[1fr_180px] md:p-12">
               <div>
-                <h3 className="text-xl font-bold text-slate-900 md:text-2xl">{visionHeading}</h3>
-                <p className="mt-4 text-slate-600">{visionParagraph1}</p>
-                <p className="mt-3 text-slate-600">{visionParagraph2}</p>
+                <h3 className="text-xl font-bold text-title md:text-2xl">{visionHeading}</h3>
+                <p className="mt-4 text-body">{visionParagraph1}</p>
+                <p className="mt-3 text-body">{visionParagraph2}</p>
               </div>
-              <div className="mx-auto flex h-36 w-36 flex-col items-center justify-center gap-2 rounded-full border-2 border-orange-200 bg-white text-center">
-                <Eye className="h-7 w-7 text-orange-600" strokeWidth={1.75} />
-                <span className="text-xs font-bold text-slate-700">Our Vision</span>
+              <div className="mx-auto flex h-36 w-36 flex-col items-center justify-center gap-2 rounded-full border-2 border-primary/25 bg-card text-center">
+                <Eye className="h-7 w-7 text-primary" strokeWidth={1.75} />
+                <span className="text-xs font-bold text-body">Our Vision</span>
               </div>
             </div>
-            <div className="grid grid-cols-1 items-center gap-8 rounded-2xl bg-slate-50 p-8 md:grid-cols-[180px_1fr] md:p-12">
-              <div className="order-2 mx-auto flex h-36 w-36 flex-col items-center justify-center gap-2 rounded-full border-2 border-orange-200 bg-white text-center md:order-1">
-                <Rocket className="h-7 w-7 text-orange-600" strokeWidth={1.75} />
-                <span className="text-xs font-bold text-slate-700">Our Mission</span>
+            <div className="grid grid-cols-1 items-center gap-8 rounded-2xl bg-background p-8 md:grid-cols-[180px_1fr] md:p-12">
+              <div className="order-2 mx-auto flex h-36 w-36 flex-col items-center justify-center gap-2 rounded-full border-2 border-primary/25 bg-card text-center md:order-1">
+                <Rocket className="h-7 w-7 text-primary" strokeWidth={1.75} />
+                <span className="text-xs font-bold text-body">Our Mission</span>
               </div>
               <div className="order-1 md:order-2">
-                <h3 className="text-xl font-bold text-slate-900 md:text-2xl">{missionHeading}</h3>
-                <p className="mt-4 text-slate-600">{missionParagraph1}</p>
-                <p className="mt-3 text-slate-600">{missionParagraph2}</p>
+                <h3 className="text-xl font-bold text-title md:text-2xl">{missionHeading}</h3>
+                <p className="mt-4 text-body">{missionParagraph1}</p>
+                <p className="mt-3 text-body">{missionParagraph2}</p>
               </div>
             </div>
           </div>
@@ -11638,19 +11963,17 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding: 'md',
     },
     render: ({ sectionTitle, sectionSubtitle, thumbnail, padding }) => (
-      <section className={`${padY[padding]} bg-slate-50`}>
+      <section className={`${padY[padding]} bg-background`}>
         <div className={wrap}>
           <div className="text-center mb-8">
-            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">{sectionTitle}</h2>
-            {sectionSubtitle && (
-              <p className="text-slate-600 max-w-2xl mx-auto">{sectionSubtitle}</p>
-            )}
+            <h2 className="text-2xl md:text-4xl font-bold text-title mb-3">{sectionTitle}</h2>
+            {sectionSubtitle && <p className="text-body max-w-2xl mx-auto">{sectionSubtitle}</p>}
           </div>
           <div className="relative max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-lg aspect-video bg-slate-900">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={thumbnail} alt="" className="w-full h-full object-cover opacity-80" />
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="w-20 h-20 rounded-full bg-white/95 flex items-center justify-center shadow-xl">
+              <span className="w-20 h-20 rounded-full bg-surface/95 flex items-center justify-center shadow-xl">
                 <svg width="26" height="30" viewBox="0 0 26 30" fill="none">
                   <path d="M0 0L26 15L0 30V0Z" fill="#ea580c" />
                 </svg>
@@ -11738,18 +12061,15 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       ).filter((v) => v.thumbnail)
       return (
         <section
-          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
-            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+            <h2 className="text-2xl md:text-4xl font-bold text-title text-center mb-10">
               {heading}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {videos.map((v, i) => (
-                <div
-                  key={i}
-                  className="rounded-xl overflow-hidden border border-slate-200 bg-white"
-                >
+                <div key={i} className="rounded-xl overflow-hidden border border-divider bg-card">
                   <div className="relative aspect-video bg-slate-900">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -11758,7 +12078,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       className="w-full h-full object-cover opacity-80"
                     />
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="w-12 h-12 rounded-full bg-white/95 flex items-center justify-center shadow-xl">
+                      <span className="w-12 h-12 rounded-full bg-surface/95 flex items-center justify-center shadow-xl">
                         <svg width="16" height="18" viewBox="0 0 26 30" fill="none">
                           <path d="M0 0L26 15L0 30V0Z" fill="#ea580c" />
                         </svg>
@@ -11771,7 +12091,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     )}
                   </div>
                   <div className="p-4">
-                    <p className="font-semibold text-slate-900 text-sm">{v.title}</p>
+                    <p className="font-semibold text-title text-sm">{v.title}</p>
                   </div>
                 </div>
               ))}
@@ -11848,14 +12168,14 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       ).filter((s) => s.value)
       return (
         <section
-          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={`${wrap} grid grid-cols-1 md:grid-cols-2 gap-10 items-center`}>
             <div className="relative rounded-2xl overflow-hidden shadow-lg aspect-video bg-slate-900">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={thumbnail} alt="" className="w-full h-full object-cover opacity-80" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="w-16 h-16 rounded-full bg-white/95 flex items-center justify-center shadow-xl">
+                <span className="w-16 h-16 rounded-full bg-surface/95 flex items-center justify-center shadow-xl">
                   <svg width="20" height="23" viewBox="0 0 26 30" fill="none">
                     <path d="M0 0L26 15L0 30V0Z" fill="#ea580c" />
                   </svg>
@@ -11863,12 +12183,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               </div>
             </div>
             <div>
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-8">{heading}</h2>
+              <h2 className="text-2xl md:text-4xl font-bold text-title mb-8">{heading}</h2>
               <div className="grid grid-cols-3 gap-4">
                 {stats.map((s, i) => (
                   <div key={i}>
-                    <p className="text-2xl md:text-3xl font-bold text-orange-600">{s.value}</p>
-                    <p className="text-xs md:text-sm text-slate-600 mt-1">{s.label}</p>
+                    <p className="text-2xl md:text-3xl font-bold text-primary">{s.value}</p>
+                    <p className="text-xs md:text-sm text-body mt-1">{s.label}</p>
                   </div>
                 ))}
               </div>
@@ -11911,14 +12231,14 @@ const typedComponents: Config<ConstructionProps>['components'] = {
     },
     render: ({ thumbnail, caption, padding, background }) => (
       <section
-        className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+        className={`${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
       >
         <div className={wrap}>
           <div className="relative mx-auto max-w-xs rounded-2xl overflow-hidden shadow-lg aspect-[9/16] bg-slate-900">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={thumbnail} alt="" className="w-full h-full object-cover opacity-80" />
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="w-14 h-14 rounded-full bg-white/95 flex items-center justify-center shadow-xl">
+              <span className="w-14 h-14 rounded-full bg-surface/95 flex items-center justify-center shadow-xl">
                 <svg width="18" height="21" viewBox="0 0 26 30" fill="none">
                   <path d="M0 0L26 15L0 30V0Z" fill="#ea580c" />
                 </svg>
@@ -12010,17 +12330,14 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         })
       )
       return (
-        <section className={`${padY[padding]} bg-white`}>
+        <section className={`${padY[padding]} bg-surface`}>
           <div className={wrap}>
-            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+            <h2 className="text-2xl md:text-4xl font-bold text-title text-center mb-10">
               {sectionTitle}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {posts.map((post, i) => (
-                <article
-                  key={i}
-                  className="rounded-xl overflow-hidden border border-slate-200 group"
-                >
+                <article key={i} className="rounded-xl overflow-hidden border border-divider group">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={post.image}
@@ -12028,13 +12345,13 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     className="w-full aspect-[16/10] object-cover group-hover:scale-105 transition duration-300"
                   />
                   <div className="p-5">
-                    <span className="text-xs font-semibold text-orange-600 uppercase tracking-wide">
+                    <span className="text-xs font-semibold text-primary uppercase tracking-wide">
                       {post.category}
                     </span>
-                    <h3 className="text-base font-bold text-slate-900 mt-1.5 mb-2 leading-snug">
+                    <h3 className="text-base font-bold text-title mt-1.5 mb-2 leading-snug">
                       {post.title}
                     </h3>
-                    <p className="text-xs text-slate-500">{post.date}</p>
+                    <p className="text-xs text-muted-foreground">{post.date}</p>
                   </div>
                 </article>
               ))}
@@ -12080,11 +12397,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       heading: 'From the Newsroom',
       news1Headline: 'Riverside Villas handed over three weeks ahead of schedule',
       news1Date: 'Mar 18, 2026',
-      news2Headline: 'Subhadra Group wins Regional Contractor of the Year',
+      news2Headline: 'DemoLogo wins Regional Contractor of the Year',
       news2Date: 'Feb 22, 2026',
-      news3Headline: 'New Vijayawada office opens to serve growing project pipeline',
+      news3Headline: 'New Another City office opens to serve growing project pipeline',
       news3Date: 'Jan 30, 2026',
-      news4Headline: 'Crossed 500 residential units delivered across Andhra Pradesh',
+      news4Headline: 'Crossed 500 residential units delivered across your region',
       news4Date: 'Jan 05, 2026',
       padding: 'md',
       background: 'white',
@@ -12119,20 +12436,20 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       ).filter((n) => n.headline)
       return (
         <section
-          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={`${wrap} max-w-3xl`}>
             {eyebrow && (
-              <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+              <p className="text-primary text-sm font-semibold uppercase tracking-wide mb-2">
                 {eyebrow}
               </p>
             )}
-            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-8">{heading}</h2>
-            <div className="divide-y divide-slate-200">
+            <h2 className="text-2xl md:text-4xl font-bold text-title mb-8">{heading}</h2>
+            <div className="divide-y divide-divider">
               {items.map((item, i) => (
                 <div key={i} className="flex justify-between items-baseline gap-4 py-3">
-                  <span className="font-medium text-slate-900">{item.headline}</span>
-                  <span className="text-sm text-slate-500 shrink-0">{item.date}</span>
+                  <span className="font-medium text-title">{item.headline}</span>
+                  <span className="text-sm text-muted-foreground shrink-0">{item.date}</span>
                 </div>
               ))}
             </div>
@@ -12276,32 +12593,30 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       ).filter((c) => c.client)
       return (
         <section
-          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
             <div className="text-center mb-12">
               {eyebrow && (
-                <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                <p className="text-primary text-sm font-semibold uppercase tracking-wide mb-2">
                   {eyebrow}
                 </p>
               )}
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900">{heading}</h2>
+              <h2 className="text-2xl md:text-4xl font-bold text-title">{heading}</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {cases.map((c, i) => (
-                <div key={i} className="rounded-xl overflow-hidden border border-slate-200">
+                <div key={i} className="rounded-xl overflow-hidden border border-divider">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={c.image} alt={c.client} className="w-full aspect-[3/2] object-cover" />
                   <div className="p-5">
-                    <p className="text-lg font-bold text-orange-600 mb-2">{c.stat}</p>
-                    <p className="font-semibold text-slate-900">{c.client}</p>
-                    <p className="text-sm text-slate-600 leading-relaxed mt-1 mb-4">
-                      {c.description}
-                    </p>
+                    <p className="text-lg font-bold text-primary mb-2">{c.stat}</p>
+                    <p className="font-semibold text-title">{c.client}</p>
+                    <p className="text-sm text-body leading-relaxed mt-1 mb-4">{c.description}</p>
                     {c.linkLabel && (
                       <a
                         href={c.linkHref}
-                        className="inline-flex items-center gap-1 text-orange-600 font-semibold text-sm hover:gap-2 transition-all"
+                        className="inline-flex items-center gap-1 text-primary font-semibold text-sm hover:gap-2 transition-all"
                       >
                         {c.linkLabel} <span aria-hidden="true">→</span>
                       </a>
@@ -12360,18 +12675,22 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         ['X', twitterHandle],
       ].filter(([, href]) => href)
       return (
-        <section className={`${padY[padding]} bg-slate-900`}>
+        <section className={`${padY[padding]} bg-inverse`}>
           <div className={`${wrap} flex flex-col sm:flex-row items-center justify-between gap-6`}>
             <div>
-              <h2 className="text-xl md:text-2xl font-bold text-white">{sectionTitle}</h2>
-              {sectionSubtitle && <p className="text-sm text-white/50 mt-1">{sectionSubtitle}</p>}
+              <h2 className="text-xl md:text-2xl font-bold text-inverse-foreground">
+                {sectionTitle}
+              </h2>
+              {sectionSubtitle && (
+                <p className="text-sm text-inverse-foreground/50 mt-1">{sectionSubtitle}</p>
+              )}
             </div>
             <div className="flex gap-3">
               {links.map(([label, href], i) => (
                 <a
                   key={i}
                   href={href ? `https://${href}` : '#'}
-                  className="w-11 h-11 rounded-full bg-white/10 hover:bg-orange-600 text-white flex items-center justify-center font-semibold text-sm transition"
+                  className="w-11 h-11 rounded-full bg-inverse-foreground/10 hover:bg-primary/85 text-inverse-foreground flex items-center justify-center font-semibold text-sm transition"
                 >
                   {label}
                 </a>
@@ -12440,7 +12759,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       heading: 'From Our Feed',
       post1Image:
         'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=500&h=500&fit=crop&auto=format',
-      post1Caption: 'Foundation pour complete at our Vijayawada twin-tower site 🏗️',
+      post1Caption: 'Foundation pour complete at our Another City twin-tower site 🏗️',
       post1Platform: 'instagram',
       post2Image:
         'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=500&h=500&fit=crop&auto=format',
@@ -12483,20 +12802,17 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       ).filter((p) => p.image)
       return (
         <section
-          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
-            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+            <h2 className="text-2xl md:text-4xl font-bold text-title text-center mb-10">
               {heading}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {posts.map((p, i) => {
                 const badge = socialPlatformBadge[p.platform]
                 return (
-                  <div
-                    key={i}
-                    className="rounded-xl overflow-hidden border border-slate-200 bg-white"
-                  >
+                  <div key={i} className="rounded-xl overflow-hidden border border-divider bg-card">
                     <div className="relative aspect-square bg-slate-900">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={p.image} alt="" className="w-full h-full object-cover" />
@@ -12509,7 +12825,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       )}
                     </div>
                     <div className="p-4">
-                      <p className="text-sm text-slate-700">{p.caption}</p>
+                      <p className="text-sm text-body">{p.caption}</p>
                     </div>
                   </div>
                 )
@@ -12544,10 +12860,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       heading: 'Follow Our Journey',
       followerCount: '25K+',
       followerLabel: 'Followers across platforms',
-      facebookHandle: 'facebook.com/subhadragroup',
-      instagramHandle: 'instagram.com/subhadragroup',
-      linkedinHandle: 'linkedin.com/company/subhadragroup',
-      twitterHandle: 'x.com/subhadragroup',
+      facebookHandle: 'facebook.com/demologo',
+      instagramHandle: 'instagram.com/demologo',
+      linkedinHandle: 'linkedin.com/company/demologo',
+      twitterHandle: 'x.com/demologo',
       padding: 'md',
     },
     render: ({
@@ -12567,13 +12883,15 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         ['X', twitterHandle],
       ].filter(([, href]) => href)
       return (
-        <section className={`${padY[padding]} bg-orange-500`}>
+        <section className={`${padY[padding]} bg-primary`}>
           <div className={`${wrap} flex flex-col sm:flex-row items-center justify-between gap-8`}>
             <div className="text-center sm:text-left">
-              <h2 className="text-2xl md:text-3xl font-bold text-white">{heading}</h2>
-              <p className="mt-1 text-lg font-semibold text-white/90">
+              <h2 className="text-2xl md:text-3xl font-bold text-primary-foreground">{heading}</h2>
+              <p className="mt-1 text-lg font-semibold text-primary-foreground/90">
                 {followerCount}{' '}
-                <span className="text-sm font-normal text-white/70">{followerLabel}</span>
+                <span className="text-sm font-normal text-primary-foreground/70">
+                  {followerLabel}
+                </span>
               </p>
             </div>
             <div className="flex gap-3">
@@ -12581,7 +12899,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 <a
                   key={i}
                   href={href ? `https://${href}` : '#'}
-                  className="w-14 h-14 rounded-full bg-white text-orange-600 flex items-center justify-center font-bold text-base shadow-lg hover:bg-slate-900 hover:text-white transition"
+                  className="w-14 h-14 rounded-full bg-card text-primary flex items-center justify-center font-bold text-base shadow-lg hover:bg-inverse hover:text-inverse-foreground transition"
                 >
                   {label}
                 </a>
@@ -12659,7 +12977,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       highlight3Thumbnail:
         'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=400&h=700&fit=crop&auto=format',
       highlight3Platform: 'facebook',
-      highlight3Caption: 'Client shoutout: on-time handover in Vijayawada',
+      highlight3Caption: 'Client shoutout: on-time handover in Another City',
       padding: 'md',
       background: 'white',
     },
@@ -12705,20 +13023,17 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       ).filter((h) => h.thumbnail)
       return (
         <section
-          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
-            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+            <h2 className="text-2xl md:text-4xl font-bold text-title text-center mb-10">
               {heading}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               {highlights.map((h, i) => {
                 const badge = socialPlatformBadge[h.platform]
                 return (
-                  <div
-                    key={i}
-                    className="rounded-xl overflow-hidden border border-slate-200 bg-white"
-                  >
+                  <div key={i} className="rounded-xl overflow-hidden border border-divider bg-card">
                     <div className="relative aspect-[9/16] bg-slate-900">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -12727,7 +13042,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                         className="w-full h-full object-cover opacity-80"
                       />
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="w-10 h-10 rounded-full bg-white/95 flex items-center justify-center shadow-xl">
+                        <span className="w-10 h-10 rounded-full bg-surface/95 flex items-center justify-center shadow-xl">
                           <svg width="14" height="16" viewBox="0 0 26 30" fill="none">
                             <path d="M0 0L26 15L0 30V0Z" fill="#ea580c" />
                           </svg>
@@ -12742,7 +13057,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       )}
                     </div>
                     <div className="p-3">
-                      <p className="text-sm text-slate-700">{h.caption}</p>
+                      <p className="text-sm text-body">{h.caption}</p>
                     </div>
                   </div>
                 )
@@ -12814,25 +13129,23 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         (it) => ({ q: it.question as typeof faq1Question, a: it.answer as typeof faq1Answer })
       ).filter((f) => f.q)
       return (
-        <section className={`${padY[padding]} bg-white`}>
+        <section className={`${padY[padding]} bg-surface`}>
           <div className={`${wrap} max-w-3xl`}>
-            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+            <h2 className="text-2xl md:text-4xl font-bold text-title text-center mb-10">
               {sectionTitle}
             </h2>
             <div className="flex flex-col gap-3">
               {items.map((item, i) => (
                 <details
                   key={i}
-                  className="rounded-xl border border-slate-200 p-5 group"
+                  className="rounded-xl border border-divider p-5 group"
                   {...(i === 0 ? { open: true } : {})}
                 >
-                  <summary className="font-semibold text-slate-900 cursor-pointer list-none flex items-center justify-between gap-4">
+                  <summary className="font-semibold text-title cursor-pointer list-none flex items-center justify-between gap-4">
                     {item.q}
-                    <span className="text-orange-600 group-open:rotate-45 transition shrink-0">
-                      +
-                    </span>
+                    <span className="text-primary group-open:rotate-45 transition shrink-0">+</span>
                   </summary>
-                  <p className="text-sm text-slate-600 leading-relaxed mt-3">{item.a}</p>
+                  <p className="text-sm text-body leading-relaxed mt-3">{item.a}</p>
                 </details>
               ))}
             </div>
@@ -12932,29 +13245,29 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         },
       ].filter((c) => c.items.length > 0)
       return (
-        <section className={`${padY[padding]} bg-white`}>
+        <section className={`${padY[padding]} bg-surface`}>
           <div className={wrap}>
-            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+            <h2 className="text-2xl md:text-4xl font-bold text-title text-center mb-10">
               {sectionTitle}
             </h2>
             <div className="grid md:grid-cols-2 gap-10">
               {categories.map((cat, ci) => (
                 <div key={ci}>
-                  <h3 className="text-lg font-semibold text-orange-600 mb-4">{cat.label}</h3>
+                  <h3 className="text-lg font-semibold text-primary mb-4">{cat.label}</h3>
                   <div className="flex flex-col gap-3">
                     {cat.items.map((item, i) => (
                       <details
                         key={i}
-                        className="rounded-xl border border-slate-200 p-5 group"
+                        className="rounded-xl border border-divider p-5 group"
                         {...(i === 0 ? { open: true } : {})}
                       >
-                        <summary className="font-semibold text-slate-900 cursor-pointer list-none flex items-center justify-between gap-4">
+                        <summary className="font-semibold text-title cursor-pointer list-none flex items-center justify-between gap-4">
                           {item.q}
-                          <span className="text-orange-600 group-open:rotate-45 transition shrink-0">
+                          <span className="text-primary group-open:rotate-45 transition shrink-0">
                             +
                           </span>
                         </summary>
-                        <p className="text-sm text-slate-600 leading-relaxed mt-3">{item.a}</p>
+                        <p className="text-sm text-body leading-relaxed mt-3">{item.a}</p>
                       </details>
                     ))}
                   </div>
@@ -13047,9 +13360,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         ].filter((f) => f.q),
       ]
       return (
-        <section className={`${padY[padding]} bg-white`}>
+        <section className={`${padY[padding]} bg-surface`}>
           <div className={wrap}>
-            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+            <h2 className="text-2xl md:text-4xl font-bold text-title text-center mb-10">
               {sectionTitle}
             </h2>
             <div className="grid md:grid-cols-2 gap-6">
@@ -13058,16 +13371,16 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   {col.map((item, i) => (
                     <details
                       key={i}
-                      className="rounded-xl border border-slate-200 p-5 group"
+                      className="rounded-xl border border-divider p-5 group"
                       {...(ci === 0 && i === 0 ? { open: true } : {})}
                     >
-                      <summary className="font-semibold text-slate-900 cursor-pointer list-none flex items-center justify-between gap-4">
+                      <summary className="font-semibold text-title cursor-pointer list-none flex items-center justify-between gap-4">
                         {item.q}
-                        <span className="text-orange-600 group-open:rotate-45 transition shrink-0">
+                        <span className="text-primary group-open:rotate-45 transition shrink-0">
                           +
                         </span>
                       </summary>
-                      <p className="text-sm text-slate-600 leading-relaxed mt-3">{item.a}</p>
+                      <p className="text-sm text-body leading-relaxed mt-3">{item.a}</p>
                     </details>
                   ))}
                 </div>
@@ -13140,9 +13453,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         (it) => ({ q: it.question as typeof faq1Question, a: it.answer as typeof faq1Answer })
       ).filter((f) => f.q)
       return (
-        <section className={`${padY[padding]} bg-white`}>
+        <section className={`${padY[padding]} bg-surface`}>
           <div className={wrap}>
-            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+            <h2 className="text-2xl md:text-4xl font-bold text-title text-center mb-10">
               {sectionTitle}
             </h2>
             <div className="grid md:grid-cols-3 gap-8 items-start">
@@ -13150,24 +13463,26 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 {items.map((item, i) => (
                   <details
                     key={i}
-                    className="rounded-xl border border-slate-200 p-5 group"
+                    className="rounded-xl border border-divider p-5 group"
                     {...(i === 0 ? { open: true } : {})}
                   >
-                    <summary className="font-semibold text-slate-900 cursor-pointer list-none flex items-center justify-between gap-4">
+                    <summary className="font-semibold text-title cursor-pointer list-none flex items-center justify-between gap-4">
                       {item.q}
-                      <span className="text-orange-600 group-open:rotate-45 transition shrink-0">
+                      <span className="text-primary group-open:rotate-45 transition shrink-0">
                         +
                       </span>
                     </summary>
-                    <p className="text-sm text-slate-600 leading-relaxed mt-3">{item.a}</p>
+                    <p className="text-sm text-body leading-relaxed mt-3">{item.a}</p>
                   </details>
                 ))}
               </div>
-              <div className="rounded-xl bg-slate-900 p-8 text-center">
-                <h3 className="text-xl font-semibold text-white mb-4">{contactHeading}</h3>
+              <div className="rounded-xl bg-inverse p-8 text-center">
+                <h3 className="text-xl font-semibold text-inverse-foreground mb-4">
+                  {contactHeading}
+                </h3>
                 <a
                   href={contactCtaHref}
-                  className="inline-block rounded-lg bg-orange-600 px-6 py-3 text-sm font-semibold text-white hover:bg-orange-500 transition"
+                  className="inline-block rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition"
                 >
                   {contactCtaLabel}
                 </a>
@@ -13196,7 +13511,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           image: '',
           title: '',
           description: '',
-          brands: '',
+          brands: 'Brand A · Brand B',
           href: '',
         },
         arrayFields: {
@@ -13237,16 +13552,16 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           title: 'Central AC',
           description:
             'Centralized air-conditioning sized, supplied and installed by our own engineers — from single rooms to full commercial buildings, backed by annual maintenance and genuine spares on call.',
-          brands: 'Blue Star',
+          brands: 'Brand A · Brand B',
           href: '#products',
         },
         {
           icon: 'plug',
-          image: '/seed/subhadra/products/mcb1.jpg',
+          image: '/seed/demologo/about.jpg',
           title: 'Electrical & Switchgear',
           description:
             'We supply complete range of Switches, Wires, MCBs, Distribution Boards, Cables, Switchgear, Panel Boards, Generators, Transformers, UPS, Stabilizers.',
-          brands: 'Schneider Electric',
+          brands: 'Brand A · Brand B',
           href: '#products',
         },
         {
@@ -13256,16 +13571,16 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           title: 'Safety and Security Solutions',
           description:
             'CCTV, video analytics, access control, fire alarm, intrusion alarm and fire-fighting systems designed and installed by our own team — so every entry point is covered and safety never waits.',
-          brands: 'Honeywell · Minimax · Tyco',
+          brands: 'Brand A · Brand B',
           href: '#products',
         },
         {
           icon: 'housegear',
-          image: '/seed/subhadra/products/home-automation.jpg',
+          image: '/seed/demologo/about.jpg',
           title: 'Home Automation',
           description:
             'Lighting, AC, curtains and appliances — retrofit or centralized, all on one interface you control from anywhere, with voice control and scheduled scenes for everyday comfort.',
-          brands: 'Schneider · RTI · Bticino',
+          brands: 'Brand A · Brand B',
           href: '#products',
         },
         {
@@ -13275,7 +13590,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           title: 'Home Theater',
           description:
             'Dolby Atmos rooms, 4K projection and multiroom audio — custom-built and installed by our own team, with acoustic treatment and calibration for true cinema-grade sound.',
-          brands: 'Focal · Sony · Denon',
+          brands: 'Brand A · Brand B',
           href: '#products',
         },
         {
@@ -13285,7 +13600,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           title: 'Premium Lighting',
           description:
             'Designer, architectural and smart-dimmable lighting — specified, supplied and installed to elevate every room, with layered scenes for ambience, task and accent lighting.',
-          brands: 'Wipro · Crompton · Philips',
+          brands: 'Brand A · Brand B',
           href: '#products',
         },
       ],
@@ -13308,12 +13623,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       return (
         <section
           ref={ref}
-          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
             <div className="text-center mb-10">
               {(isEditing || sectionEyebrow) && (
-                <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                <p className="text-primary text-sm font-semibold uppercase tracking-wide mb-2">
                   <InlineEditableText
                     id={id}
                     path={['sectionEyebrow']}
@@ -13322,7 +13637,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   />
                 </p>
               )}
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">
+              <h2 className="text-2xl md:text-4xl font-bold text-title mb-3">
                 <InlineEditableText
                   id={id}
                   path={['sectionTitle']}
@@ -13331,7 +13646,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 />
               </h2>
               {(isEditing || sectionSubtitle) && (
-                <p className="text-slate-600 max-w-2xl mx-auto">
+                <p className="text-body max-w-2xl mx-auto">
                   <InlineEditableText
                     id={id}
                     path={['sectionSubtitle']}
@@ -13348,13 +13663,15 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 return (
                   <article
                     key={i}
-                    className="overflow-hidden rounded-xl border border-slate-200 bg-white hover:shadow-md transition"
+                    className="overflow-hidden rounded-xl border border-divider bg-card hover:shadow-md transition"
                   >
                     {d.image && (
                       <div className="relative">
                         <span
-                          className={`absolute left-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-xl text-white shadow ${
-                            i % 2 === 0 ? 'bg-orange-500' : 'bg-slate-900'
+                          className={`absolute left-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-xl shadow ${
+                            i % 2 === 0
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-inverse text-inverse-foreground'
                           }`}
                         >
                           <Icon />
@@ -13364,7 +13681,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       </div>
                     )}
                     <div className="p-5">
-                      <h3 className="font-semibold text-lg text-slate-900 mb-2">
+                      <h3 className="font-semibold text-lg text-title mb-2">
                         <InlineEditableText
                           id={id}
                           path={['items', d.n, 'title']}
@@ -13373,7 +13690,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                         />
                       </h3>
                       {(isEditing || d.description) && (
-                        <p className="text-slate-600 text-sm leading-relaxed mb-3">
+                        <p className="text-body text-sm leading-relaxed mb-3">
                           <InlineEditableText
                             id={id}
                             path={['items', d.n, 'description']}
@@ -13384,10 +13701,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                         </p>
                       )}
                       {d.href && (
-                        <div className="border-t border-slate-100 pt-3 mt-1">
+                        <div className="border-t border-divider pt-3 mt-1">
                           <a
                             href={d.href}
-                            className="text-sm font-semibold text-orange-600 hover:text-orange-700 whitespace-nowrap"
+                            className="text-sm font-semibold text-primary hover:text-primary/80 whitespace-nowrap"
                           >
                             Explore →
                           </a>
@@ -13499,11 +13816,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       const active = tabs[Math.min(activeIndex, tabs.length - 1)]
       const groups = (active?.categories ?? []).filter((c) => c.heading)
       return (
-        <section ref={ref} className={`${revealCls} ${padY[padding]} bg-[#eef1f6]`}>
+        <section ref={ref} className={`${revealCls} ${padY[padding]} bg-background`}>
           <div className={wrap}>
             <div className="text-center mb-8">
               {(isEditing || sectionEyebrow) && (
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 mb-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-faint mb-2">
                   <InlineEditableText
                     id={id}
                     path={['sectionEyebrow']}
@@ -13512,7 +13829,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   />
                 </p>
               )}
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">
+              <h2 className="text-2xl md:text-4xl font-bold text-title mb-3">
                 <InlineEditableText
                   id={id}
                   path={['sectionTitle']}
@@ -13521,7 +13838,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 />
               </h2>
               {(isEditing || sectionSubtitle) && (
-                <p className="text-slate-600 max-w-2xl mx-auto">
+                <p className="text-body max-w-2xl mx-auto">
                   <InlineEditableText
                     id={id}
                     path={['sectionSubtitle']}
@@ -13541,8 +13858,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     onClick={() => setActiveIndex(ti)}
                     className={`rounded-full px-5 py-2.5 text-sm font-semibold transition ${
                       t === active
-                        ? 'bg-slate-950 text-white'
-                        : 'bg-white border border-slate-200 text-slate-700 hover:border-slate-400'
+                        ? 'bg-inverse text-inverse-foreground'
+                        : 'bg-card border border-divider text-body hover:border-faint'
                     }`}
                   >
                     <InlineEditableText
@@ -13557,8 +13874,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {groups.map((g, i) => (
-                <div key={i} className="rounded-xl bg-white p-5">
-                  <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500 pb-3 mb-4 border-b border-slate-100">
+                <div key={i} className="rounded-xl bg-card p-5">
+                  <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground pb-3 mb-4 border-b border-divider">
                     {g.heading}
                   </h4>
                   <div className="flex flex-wrap items-center gap-5">
@@ -13573,7 +13890,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                           className="h-6 max-w-[110px] object-contain"
                         />
                       ) : (
-                        <span key={j} className="text-xs font-medium text-slate-500">
+                        <span key={j} className="text-xs font-medium text-muted-foreground">
                           {b.name}
                         </span>
                       )
@@ -13632,12 +13949,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       },
     },
     defaultProps: {
-      sectionEyebrow: 'Subhadra Group',
+      sectionEyebrow: 'DemoLogo',
       sectionTitle: 'Real projects, every sector',
       slides: [
         {
           eyebrow: '09 · Residential',
-          image: '/seed/subhadra/sectors/villa.jpg',
+          image: '/seed/demologo/about.jpg',
           title: 'The Amara Residency',
           description:
             'Private residences deserve comfort that stays out of sight until you need it. We size central or split AC room-by-room, wire the home from day one, and layer in automation, home theater, multi-room audio and CCTV — all on one interface, backed by one service team for the life of the home.',
@@ -13649,10 +13966,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         },
         {
           eyebrow: '02 · Hotel',
-          image: '/seed/subhadra/case-studies/novotel.jpg',
-          title: 'Novotel Visakhapatnam',
+          image: '/seed/demologo/about.jpg',
+          title: 'Business Website',
           description:
-            'Advanced HVAC and automation solutions designed and delivered by Subhadra Group for a premium guest experience at Novotel Visakhapatnam — central AC across guest rooms and the banquet hall, electrical and switchgear, fire and life safety, guest-room automation and diesel power backup, all as one coordinated scope, by one team.',
+            'Advanced HVAC and automation solutions designed and delivered by DemoLogo for a premium guest experience at Business Website — central AC across guest rooms and the banquet hall, electrical and switchgear, fire and life safety, guest-room automation and diesel power backup, all as one coordinated scope, by one team.',
           tags: 'Central AC, Electrical & Switchgear, Fire & Life Safety, Guest Room Automation, Power Backup',
           linkLabel: 'Read the full project scope →',
           linkHref: '#hotel',
@@ -13661,7 +13978,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         },
         {
           eyebrow: '01 · Retail',
-          image: '/seed/subhadra/sectors/showrooms.jpg',
+          image: '/seed/demologo/about.jpg',
           title: 'CMR Family Shopping Mall',
           description:
             'A showroom floor lives or dies on how it feels the moment someone walks in. We size central and VRF AC to footfall and display heat load, fit LED lighting tuned for retail, and layer in CCTV, PA and fire safety — built into the fit-out from day one, not added after.',
@@ -13743,11 +14060,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         .map((t) => t.trim())
         .filter(Boolean)
       return (
-        <section ref={ref} className={`${revealCls} ${padY[padding]} bg-slate-50`}>
+        <section ref={ref} className={`${revealCls} ${padY[padding]} bg-background`}>
           <div className={wrap}>
             <div className="text-center mb-10">
               {(isEditing || sectionEyebrow) && (
-                <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                <p className="text-primary text-sm font-semibold uppercase tracking-wide mb-2">
                   <InlineEditableText
                     id={id}
                     path={['sectionEyebrow']}
@@ -13756,7 +14073,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   />
                 </p>
               )}
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900">
+              <h2 className="text-2xl md:text-4xl font-bold text-title">
                 <InlineEditableText
                   id={id}
                   path={['sectionTitle']}
@@ -13766,7 +14083,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               </h2>
             </div>
             {current && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center rounded-2xl bg-white border border-slate-200 overflow-hidden">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center rounded-2xl bg-card border border-divider overflow-hidden">
                 {current.image && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -13777,7 +14094,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 )}
                 <div className="p-8">
                   {(isEditing || current.eyebrow) && (
-                    <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                    <p className="text-primary text-sm font-semibold uppercase tracking-wide mb-2">
                       <InlineEditableText
                         id={id}
                         path={['slides', current.origIndex, 'eyebrow']}
@@ -13786,7 +14103,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       />
                     </p>
                   )}
-                  <h3 className="text-2xl font-bold text-slate-900 mb-3">
+                  <h3 className="text-2xl font-bold text-title mb-3">
                     <InlineEditableText
                       id={id}
                       path={['slides', current.origIndex, 'title']}
@@ -13795,7 +14112,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     />
                   </h3>
                   {(isEditing || current.description) && (
-                    <p className="text-slate-600 text-sm leading-relaxed mb-4">
+                    <p className="text-body text-sm leading-relaxed mb-4">
                       <InlineEditableText
                         id={id}
                         path={['slides', current.origIndex, 'description']}
@@ -13810,7 +14127,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       {tags.map((t, i) => (
                         <span
                           key={i}
-                          className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600"
+                          className="rounded-full bg-background px-3 py-1 text-xs font-medium text-body"
                         >
                           {t}
                         </span>
@@ -13822,7 +14139,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       <a
                         href={current.linkHref}
                         onClick={isEditing ? (e) => e.preventDefault() : undefined}
-                        className="text-sm font-semibold text-orange-600 hover:text-orange-700"
+                        className="text-sm font-semibold text-primary hover:text-primary/80"
                       >
                         <InlineEditableText
                           id={id}
@@ -13836,7 +14153,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       <a
                         href={current.ctaHref}
                         onClick={isEditing ? (e) => e.preventDefault() : undefined}
-                        className="inline-flex items-center rounded-lg bg-orange-500 px-5 py-2.5 text-white font-semibold hover:bg-orange-600 transition text-sm"
+                        className="inline-flex items-center rounded-lg bg-primary px-5 py-2.5 text-primary-foreground font-semibold hover:bg-primary/85 transition text-sm"
                       >
                         <InlineEditableText
                           id={id}
@@ -13859,7 +14176,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     aria-label={`Show project ${i + 1}`}
                     onClick={() => setIndex(i)}
                     className={`h-2.5 rounded-full transition ${
-                      i === index ? 'w-6 bg-orange-500' : 'w-2.5 bg-slate-300'
+                      i === index ? 'w-6 bg-primary' : 'w-2.5 bg-border'
                     }`}
                   />
                 ))}
@@ -13923,7 +14240,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           quote:
             'One team handled our entire HVAC and electrical fit-out — no coordination headaches between contractors, and the AMC support since handover has been excellent.',
           name: 'Operations Manager',
-          role: 'Hospitality group, Visakhapatnam',
+          role: 'Hospitality group, Your City',
           videoLabel: 'Video Testimonial',
         },
         {
@@ -13932,16 +14249,16 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           quote:
             'Critical-area AC and fire safety were sized and installed to code without a single delay to our opening date. Their service manager still checks in every quarter.',
           name: 'Facilities Head',
-          role: 'Healthcare facility, Andhra Pradesh',
+          role: 'Healthcare facility, your region',
           videoLabel: 'Video Testimonial',
         },
         {
           photo:
             'https://images.unsplash.com/photo-1607746882042-944635dfe10e?w=440&h=550&fit=crop&crop=faces&q=80&auto=format',
           quote:
-            "We compared three vendors for our showroom's cooling and CCTV — Subhadra Group was the only one that could design, supply and install everything themselves.",
+            "We compared three vendors for our showroom's cooling and CCTV — DemoLogo was the only one that could design, supply and install everything themselves.",
           name: 'Retail Operations Lead',
-          role: 'Shopping mall, Visakhapatnam',
+          role: 'Shopping mall, Your City',
           videoLabel: 'Video Testimonial',
         },
       ],
@@ -13968,12 +14285,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       return (
         <section
           ref={ref}
-          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
             <div className="text-center mb-10">
               {(isEditing || sectionEyebrow) && (
-                <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                <p className="text-primary text-sm font-semibold uppercase tracking-wide mb-2">
                   <InlineEditableText
                     id={id}
                     path={['sectionEyebrow']}
@@ -13982,7 +14299,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   />
                 </p>
               )}
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900">
+              <h2 className="text-2xl md:text-4xl font-bold text-title">
                 <InlineEditableText
                   id={id}
                   path={['sectionTitle']}
@@ -14002,12 +14319,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   />
                 )}
                 <div className="flex-1 text-center md:text-left">
-                  <div className="mb-4 flex justify-center gap-1 text-orange-500 md:justify-start">
+                  <div className="mb-4 flex justify-center gap-1 text-primary md:justify-start">
                     {[0, 1, 2, 3, 4].map((i) => (
                       <StarIcon key={i} />
                     ))}
                   </div>
-                  <p className="mb-4 text-lg text-slate-700 leading-relaxed">
+                  <p className="mb-4 text-lg text-body leading-relaxed">
                     &quot;
                     <InlineEditableText
                       id={id}
@@ -14018,7 +14335,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     />
                     &quot;
                   </p>
-                  <p className="font-semibold text-slate-900">
+                  <p className="font-semibold text-title">
                     <InlineEditableText
                       id={id}
                       path={['slides', current.origIndex, 'name']}
@@ -14027,7 +14344,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     />
                   </p>
                   {(isEditing || current.role) && (
-                    <p className="mb-4 text-sm text-slate-500">
+                    <p className="mb-4 text-sm text-muted-foreground">
                       <InlineEditableText
                         id={id}
                         path={['slides', current.origIndex, 'role']}
@@ -14040,7 +14357,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     <button
                       type="button"
                       onClick={() => setVideoOpen(true)}
-                      className="mt-2 inline-flex items-center gap-2 rounded-full border border-orange-500 px-5 py-2.5 text-sm font-semibold text-orange-600 hover:bg-orange-50 transition"
+                      className="mt-2 inline-flex items-center gap-2 rounded-full border border-primary px-5 py-2.5 text-sm font-semibold text-primary hover:bg-primary/10 transition"
                     >
                       ▶ {current.videoLabel}
                     </button>
@@ -14057,7 +14374,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     aria-label={`Show testimonial ${i + 1}`}
                     onClick={() => setIndex(i)}
                     className={`h-2.5 rounded-full transition ${
-                      i === index ? 'w-6 bg-orange-500' : 'w-2.5 bg-slate-300'
+                      i === index ? 'w-6 bg-primary' : 'w-2.5 bg-border'
                     }`}
                   />
                 ))}
@@ -14070,18 +14387,18 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               onClick={() => setVideoOpen(false)}
             >
               <div
-                className="max-w-md rounded-2xl bg-white p-8 text-center"
+                className="max-w-md rounded-2xl bg-card p-8 text-center"
                 onClick={(e) => e.stopPropagation()}
               >
-                <h4 className="font-semibold text-slate-900 mb-2">{current?.videoLabel}</h4>
-                <p className="text-sm text-slate-600">
+                <h4 className="font-semibold text-title mb-2">{current?.videoLabel}</h4>
+                <p className="text-sm text-body">
                   We&apos;re recording video testimonials with our clients — check back soon, or ask
                   us during your showroom visit to hear from them in person.
                 </p>
                 <button
                   type="button"
                   onClick={() => setVideoOpen(false)}
-                  className="mt-5 inline-flex items-center rounded-lg bg-slate-900 px-5 py-2 text-white text-sm font-semibold hover:bg-slate-800 transition"
+                  className="mt-5 inline-flex items-center rounded-lg bg-inverse px-5 py-2 text-inverse-foreground text-sm font-semibold hover:bg-inverse/85 transition"
                 >
                   Close
                 </button>
@@ -14164,10 +14481,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       return (
         <section
           ref={ref}
-          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
-            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 text-center mb-10">
+            <h2 className="text-2xl md:text-4xl font-bold text-title text-center mb-10">
               {heading}
             </h2>
             {tabs.length > 0 && (
@@ -14179,8 +14496,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     onClick={() => setActiveTab(t.label)}
                     className={`rounded-full px-5 py-2.5 text-sm font-semibold transition ${
                       t.label === activeTab
-                        ? 'bg-slate-950 text-white'
-                        : 'bg-white border border-slate-200 text-slate-700 hover:border-slate-400'
+                        ? 'bg-inverse text-inverse-foreground'
+                        : 'bg-card border border-divider text-body hover:border-faint'
                     }`}
                   >
                     {t.label}
@@ -14189,7 +14506,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               </div>
             )}
             {active?.description && (
-              <p className="max-w-2xl mx-auto text-center text-slate-600 leading-relaxed">
+              <p className="max-w-2xl mx-auto text-center text-body leading-relaxed">
                 {active.description}
               </p>
             )}
@@ -14300,10 +14617,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         (it) => ({ icon: it.icon as typeof sector1Icon, label: it.label as typeof sector1Label })
       ).filter((s) => s.label)
       return (
-        <section ref={ref} className={`${revealCls} ${padY[padding]} bg-white`}>
+        <section ref={ref} className={`${revealCls} ${padY[padding]} bg-surface`}>
           <div className={wrap}>
             {heading && (
-              <h2 className="text-xl md:text-2xl font-bold text-slate-900 text-center mb-6">
+              <h2 className="text-xl md:text-2xl font-bold text-title text-center mb-6">
                 {heading}
               </h2>
             )}
@@ -14313,9 +14630,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 return (
                   <span
                     key={i}
-                    className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700"
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-body"
                   >
-                    <span className="text-orange-500 [&>svg]:w-5 [&>svg]:h-5">
+                    <span className="text-primary [&>svg]:w-5 [&>svg]:h-5">
                       <Icon />
                     </span>
                     {s.label}
@@ -14371,7 +14688,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       heading: 'Every sector, one accountable team',
       description:
         'Villas to industrial plants — the same one-roof team designs, supplies, installs and maintains it all. Tap a sector to see the full scope.',
-      centerLogo: '/seed/subhadra/brand/logo.png',
+      centerLogo: '/seed/demologo/logo.svg',
       centerTagline: 'One-Stop Solution',
       sectors: [
         { label: 'Showrooms', href: '/sectors' },
@@ -14402,32 +14719,32 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       const list = (sectors ?? []).filter((s) => s.label)
       return (
         <section
-          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
             <div className="mx-auto mb-12 max-w-2xl text-center">
               {eyebrow && (
-                <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-orange-600">
+                <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-primary">
                   {eyebrow}
                 </p>
               )}
-              <h2 className="text-2xl font-bold text-slate-900 md:text-4xl">{heading}</h2>
-              {description && <p className="mt-3 text-slate-600">{description}</p>}
+              <h2 className="text-2xl font-bold text-title md:text-4xl">{heading}</h2>
+              {description && <p className="mt-3 text-body">{description}</p>}
             </div>
             <div className="flex flex-col items-center gap-10 md:flex-row md:justify-center">
-              <div className="flex h-40 w-40 flex-none flex-col items-center justify-center gap-2 rounded-full border-2 border-orange-200 bg-orange-50 text-center md:h-48 md:w-48">
+              <div className="flex h-40 w-40 flex-none flex-col items-center justify-center gap-2 rounded-full border-2 border-primary/25 bg-primary/10 text-center md:h-48 md:w-48">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={centerLogo} alt="" className="h-10 w-auto object-contain" />
-                <span className="text-xs font-semibold text-slate-600">{centerTagline}</span>
+                <span className="text-xs font-semibold text-body">{centerTagline}</span>
               </div>
               <div className="grid w-full max-w-xl grid-cols-1 gap-2 sm:grid-cols-2">
                 {list.map((s, i) => (
                   <Link
                     key={i}
                     href={s.href || '/sectors'}
-                    className="flex items-center gap-3 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:border-orange-300 hover:text-orange-600"
+                    className="flex items-center gap-3 rounded-lg border border-divider px-4 py-2.5 text-sm font-semibold text-body hover:border-primary/40 hover:text-primary/80"
                   >
-                    <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-slate-900 text-[11px] font-bold text-white">
+                    <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-inverse text-[11px] font-bold text-inverse-foreground">
                       {i + 1}
                     </span>
                     {s.label}
@@ -14493,7 +14810,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         (it) => it.value as typeof otherSector1
       ).filter(Boolean)
       return (
-        <section ref={ref} className={`${revealCls} ${padY[padding]} bg-white`}>
+        <section ref={ref} className={`${revealCls} ${padY[padding]} bg-surface`}>
           <div className={wrap}>
             <div className="md:flex gap-12 items-center">
               <div className="md:w-1/2 mb-8 md:mb-0">
@@ -14505,17 +14822,15 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 />
               </div>
               <div className="md:w-1/2">
-                <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-4">
-                  {featuredTitle}
-                </h2>
+                <h2 className="text-2xl md:text-4xl font-bold text-title mb-4">{featuredTitle}</h2>
                 {featuredDescription && (
-                  <p className="text-slate-600 leading-relaxed mb-8">{featuredDescription}</p>
+                  <p className="text-body leading-relaxed mb-8">{featuredDescription}</p>
                 )}
                 {others.length > 0 && (
                   <ul className="space-y-3">
                     {others.map((label, i) => (
-                      <li key={i} className="flex items-center gap-3 text-slate-700 font-medium">
-                        <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+                      <li key={i} className="flex items-center gap-3 text-body font-medium">
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                         {label}
                       </li>
                     ))}
@@ -14671,20 +14986,20 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       const sectionHead = (sectionEyebrow || sectionTitle || sectionSubtitle) && (
         <div className="mb-10 max-w-2xl">
           {sectionEyebrow && (
-            <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+            <p className="text-primary text-sm font-semibold uppercase tracking-wide mb-2">
               {sectionEyebrow}
             </p>
           )}
           {sectionTitle && (
-            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">{sectionTitle}</h2>
+            <h2 className="text-2xl md:text-4xl font-bold text-title mb-3">{sectionTitle}</h2>
           )}
-          {sectionSubtitle && <p className="text-slate-600 leading-relaxed">{sectionSubtitle}</p>}
+          {sectionSubtitle && <p className="text-body leading-relaxed">{sectionSubtitle}</p>}
         </div>
       )
 
       if (variant === '2') {
         return (
-          <section className={`${padY[padding]} bg-white`}>
+          <section className={`${padY[padding]} bg-surface`}>
             <div className={wrap}>
               {sectionHead}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -14692,7 +15007,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   <SectorRevealItem
                     key={s.slug}
                     id={s.slug}
-                    className="rounded-2xl border border-slate-200 overflow-hidden bg-white flex flex-col"
+                    className="rounded-2xl border border-divider overflow-hidden bg-card flex flex-col"
                   >
                     {s.image && (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -14700,20 +15015,20 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     )}
                     <div className="p-5 flex flex-col flex-1">
                       {s.eyebrow && (
-                        <p className="text-orange-600 text-xs font-semibold uppercase tracking-wide mb-1.5">
+                        <p className="text-primary text-xs font-semibold uppercase tracking-wide mb-1.5">
                           {s.eyebrow}
                         </p>
                       )}
-                      <h3 className="text-lg font-bold text-slate-900 mb-2">{s.name}</h3>
+                      <h3 className="text-lg font-bold text-title mb-2">{s.name}</h3>
                       {s.description && (
-                        <p className="text-sm text-slate-600 leading-relaxed mb-4 line-clamp-3 flex-1">
+                        <p className="text-sm text-body leading-relaxed mb-4 line-clamp-3 flex-1">
                           {s.description.split('\n\n')[0]}
                         </p>
                       )}
                       {s.ctaLabel && (
                         <a
                           href={s.ctaHref || '#'}
-                          className="text-sm font-semibold text-orange-600 hover:text-orange-700"
+                          className="text-sm font-semibold text-primary hover:text-primary/80"
                         >
                           {s.ctaLabel}
                         </a>
@@ -14729,34 +15044,34 @@ const typedComponents: Config<ConstructionProps>['components'] = {
 
       if (variant === '3') {
         return (
-          <section className={`${padY[padding]} bg-slate-50`}>
+          <section className={`${padY[padding]} bg-background`}>
             <div className={`${wrap} max-w-3xl`}>
               {sectionHead}
               <div className="space-y-10">
                 {list.map((s, i) => (
                   <SectorRevealItem key={s.slug} id={s.slug} className="flex gap-5">
-                    <span className="shrink-0 h-9 w-9 rounded-full bg-slate-900 text-white text-sm font-bold flex items-center justify-center">
+                    <span className="shrink-0 h-9 w-9 rounded-full bg-inverse text-inverse-foreground text-sm font-bold flex items-center justify-center">
                       {i + 1}
                     </span>
                     <div>
                       {s.eyebrow && (
-                        <p className="text-orange-600 text-xs font-semibold uppercase tracking-wide mb-1">
+                        <p className="text-primary text-xs font-semibold uppercase tracking-wide mb-1">
                           {s.eyebrow}
                         </p>
                       )}
-                      <h3 className="text-xl font-bold text-slate-900 mb-2">{s.name}</h3>
+                      <h3 className="text-xl font-bold text-title mb-2">{s.name}</h3>
                       {s.description
                         .split('\n\n')
                         .filter(Boolean)
                         .map((p, pi) => (
-                          <p key={pi} className="text-slate-600 leading-relaxed mb-2 last:mb-0">
+                          <p key={pi} className="text-body leading-relaxed mb-2 last:mb-0">
                             {p}
                           </p>
                         ))}
                       {s.ctaLabel && (
                         <a
                           href={s.ctaHref || '#'}
-                          className="inline-block mt-3 text-sm font-semibold text-orange-600 hover:text-orange-700"
+                          className="inline-block mt-3 text-sm font-semibold text-primary hover:text-primary/80"
                         >
                           {s.ctaLabel}
                         </a>
@@ -14781,7 +15096,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   <SectorRevealItem
                     key={s.slug}
                     id={s.slug}
-                    className={dark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}
+                    className={
+                      dark ? 'bg-inverse text-inverse-foreground' : 'bg-surface text-title'
+                    }
                   >
                     <div
                       className={`${wrap} py-14 grid grid-cols-1 md:grid-cols-2 gap-10 items-center`}
@@ -14797,7 +15114,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       <div>
                         {s.eyebrow && (
                           <p
-                            className={`text-sm font-semibold uppercase tracking-wide mb-2 ${dark ? 'text-orange-400' : 'text-orange-600'}`}
+                            className={`text-sm font-semibold uppercase tracking-wide mb-2 ${dark ? 'text-highlight' : 'text-primary'}`}
                           >
                             {s.eyebrow}
                           </p>
@@ -14809,7 +15126,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                           .map((p, pi) => (
                             <p
                               key={pi}
-                              className={`leading-relaxed mb-3 last:mb-0 ${dark ? 'text-slate-300' : 'text-slate-600'}`}
+                              className={`leading-relaxed mb-3 last:mb-0 ${dark ? 'text-inverse-foreground/70' : 'text-body'}`}
                             >
                               {p}
                             </p>
@@ -14817,7 +15134,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                         {s.ctaLabel && (
                           <a
                             href={s.ctaHref || '#'}
-                            className={`inline-block mt-2 text-sm font-semibold ${dark ? 'text-orange-400 hover:text-orange-300' : 'text-orange-600 hover:text-orange-700'}`}
+                            className={`inline-block mt-2 text-sm font-semibold ${dark ? 'text-highlight hover:text-highlight/80' : 'text-primary hover:text-primary/80'}`}
                           >
                             {s.ctaLabel}
                           </a>
@@ -14835,7 +15152,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       // Design 1 (default) — exact clone of the approved sectors.html:
       // jump-pills row + alternating full image/text article rows.
       return (
-        <section className={`${padY[padding]} bg-white`}>
+        <section className={`${padY[padding]} bg-surface`}>
           <div className={wrap}>
             {sectionHead}
             <div className="flex flex-wrap gap-2 mb-12">
@@ -14843,7 +15160,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 <a
                   key={s.slug}
                   href={`#${s.slug}`}
-                  className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-orange-500 hover:text-orange-600 transition"
+                  className="rounded-full border border-divider px-4 py-2 text-sm font-semibold text-body hover:border-primary hover:text-primary/80 transition"
                 >
                   {s.name}
                 </a>
@@ -14867,23 +15184,23 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     )}
                     <div className="md:[direction:ltr]">
                       {s.eyebrow && (
-                        <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                        <p className="text-primary text-sm font-semibold uppercase tracking-wide mb-2">
                           {s.eyebrow}
                         </p>
                       )}
-                      <h2 className="text-2xl font-bold text-slate-900 mb-3">{s.name}</h2>
+                      <h2 className="text-2xl font-bold text-title mb-3">{s.name}</h2>
                       {s.description
                         .split('\n\n')
                         .filter(Boolean)
                         .map((p, pi) => (
-                          <p key={pi} className="text-slate-600 leading-relaxed mb-3 last:mb-0">
+                          <p key={pi} className="text-body leading-relaxed mb-3 last:mb-0">
                             {p}
                           </p>
                         ))}
                       {s.ctaLabel && (
                         <a
                           href={s.ctaHref || '#'}
-                          className="inline-block mt-3 rounded-lg bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 transition"
+                          className="inline-block mt-3 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition"
                         >
                           {s.ctaLabel}
                         </a>
@@ -15019,13 +15336,15 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         )
       }
       return (
-        <section className={`${padY[padding]} ${dark ? 'bg-slate-900 text-white' : 'bg-white'}`}>
+        <section
+          className={`${padY[padding]} ${dark ? 'bg-inverse text-inverse-foreground' : 'bg-surface'}`}
+        >
           <div className={wrap}>
             {(sectionEyebrow || sectionTitle) && (
               <div className="mb-10 text-center">
                 {sectionEyebrow && (
                   <p
-                    className={`text-sm font-semibold uppercase tracking-wide mb-2 ${dark ? 'text-orange-400' : 'text-orange-600'}`}
+                    className={`text-sm font-semibold uppercase tracking-wide mb-2 ${dark ? 'text-highlight' : 'text-primary'}`}
                   >
                     {sectionEyebrow}
                   </p>
@@ -15042,17 +15361,17 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                 return (
                   <article
                     key={i}
-                    className={`rounded-2xl p-6 text-center ${dark ? 'bg-white/5' : 'border border-slate-200'}`}
+                    className={`rounded-2xl p-6 text-center ${dark ? 'bg-inverse-foreground/5' : 'border border-divider'}`}
                   >
                     <div
-                      className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full ${dark ? 'bg-white/10 text-orange-400' : 'bg-orange-50 text-orange-600'}`}
+                      className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full ${dark ? 'bg-inverse-foreground/10 text-highlight' : 'bg-primary/10 text-primary'}`}
                     >
-                      <Icon />
+                      {item.biIcon ? <BiIcon name={item.biIcon} /> : <Icon />}
                     </div>
                     <h4 className="font-semibold mb-1.5">{item.title}</h4>
                     {item.description && (
                       <p
-                        className={`text-sm leading-relaxed ${dark ? 'text-white/70' : 'text-slate-600'}`}
+                        className={`text-sm leading-relaxed ${dark ? 'text-inverse-foreground/70' : 'text-body'}`}
                       >
                         {item.description}
                       </p>
@@ -15188,7 +15507,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           image: '',
           images: [],
           clients: [],
-          brandTag: 'Blue Star',
+          brandTag: 'Partner Brand',
           ctaLabel: 'Enquire →',
           ctaHref: '#get-quote',
         },
@@ -15210,24 +15529,20 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       return (
         <section
           id={anchorId || undefined}
-          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
             {(sectionEyebrow || sectionTitle || sectionSubtitle) && (
               <div className="mb-12 max-w-2xl mx-auto text-center">
                 {sectionEyebrow && (
-                  <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                  <p className="text-primary text-sm font-semibold uppercase tracking-wide mb-2">
                     {sectionEyebrow}
                   </p>
                 )}
                 {sectionTitle && (
-                  <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">
-                    {sectionTitle}
-                  </h2>
+                  <h2 className="text-2xl md:text-4xl font-bold text-title mb-3">{sectionTitle}</h2>
                 )}
-                {sectionSubtitle && (
-                  <p className="text-slate-600 leading-relaxed">{sectionSubtitle}</p>
-                )}
+                {sectionSubtitle && <p className="text-body leading-relaxed">{sectionSubtitle}</p>}
               </div>
             )}
             <div className="space-y-16">
@@ -15250,7 +15565,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       />
                       <div className="md:[direction:ltr]">
                         {row.eyebrow && (
-                          <p className="flex items-center gap-2 text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                          <p className="flex items-center gap-2 text-primary text-sm font-semibold uppercase tracking-wide mb-2">
                             {Icon && (
                               <span className="inline-flex h-5 w-5">
                                 <Icon />
@@ -15259,12 +15574,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                             {row.eyebrow}
                           </p>
                         )}
-                        <h2 className="text-2xl font-bold text-slate-900 mb-3">{row.heading}</h2>
+                        <h2 className="text-2xl font-bold text-title mb-3">{row.heading}</h2>
                         {row.description && (
-                          <p className="text-slate-600 leading-relaxed mb-3">{row.description}</p>
+                          <p className="text-body leading-relaxed mb-3">{row.description}</p>
                         )}
                         {clients.length > 0 ? (
-                          <div className="mb-4 divide-y divide-slate-100">
+                          <div className="mb-4 divide-y divide-divider">
                             {clients.map((c, ci) => {
                               const cities = (c.cities ?? '')
                                 .split(/[,\n]/)
@@ -15272,14 +15587,16 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                                 .filter(Boolean)
                               return (
                                 <div key={ci} className="py-3 first:pt-0 last:pb-0">
-                                  <p className="font-semibold text-slate-900">{c.name}</p>
-                                  {c.note && <p className="text-sm text-slate-500">{c.note}</p>}
+                                  <p className="font-semibold text-title">{c.name}</p>
+                                  {c.note && (
+                                    <p className="text-sm text-muted-foreground">{c.note}</p>
+                                  )}
                                   {cities.length > 0 && (
                                     <div className="mt-2 flex flex-wrap gap-2">
                                       {cities.map((city, cityI) => (
                                         <span
                                           key={cityI}
-                                          className="rounded-full bg-orange-50 px-3 py-1 text-xs font-medium text-orange-700"
+                                          className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
                                         >
                                           {city}
                                         </span>
@@ -15294,10 +15611,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                           checklistItems.length > 0 && (
                             <ul className="flex flex-col gap-2 mb-4">
                               {checklistItems.map((c, ci) => (
-                                <li
-                                  key={ci}
-                                  className="flex items-center gap-2 text-slate-700 text-sm"
-                                >
+                                <li key={ci} className="flex items-center gap-2 text-body text-sm">
                                   <span className="text-green-600 flex-shrink-0">
                                     <CheckShieldIcon />
                                   </span>
@@ -15311,7 +15625,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                           <div
                             className={
                               row.brandLogos?.length
-                                ? 'mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4'
+                                ? 'mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-divider pt-4'
                                 : 'flex flex-wrap items-center gap-3 mt-2'
                             }
                           >
@@ -15330,7 +15644,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                               </div>
                             ) : (
                               row.brandTag && (
-                                <span className="text-xs font-medium text-slate-500">
+                                <span className="text-xs font-medium text-muted-foreground">
                                   {row.brandTag}
                                 </span>
                               )
@@ -15338,7 +15652,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                             {row.ctaLabel && (
                               <a
                                 href={row.ctaHref || '#'}
-                                className="inline-block rounded-lg bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 transition"
+                                className="inline-block rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition"
                               >
                                 {row.ctaLabel}
                               </a>
@@ -15413,14 +15727,14 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       heading: 'Expert engineering. One accountable team, start to finish.',
       paragraph1: '',
       paragraph2: '',
-      photo: '/seed/subhadra/brand/shop.webp',
+      photo: '/seed/demologo/hero.jpg',
       highlight1Icon: 'star',
       highlight1Title: 'Engineering Expertise',
       highlight1Description: 'Every system is sized and specified by our own qualified engineers.',
       highlight2Icon: 'shield',
       highlight2Title: 'One Point of Accountability',
       highlight2Description:
-        'A single Subhadra Group team owns the project — no subcontractors, no gaps.',
+        'A single DemoLogo team owns the project — no subcontractors, no gaps.',
       stat1Value: '100%',
       stat1Label: 'Genuine, brand-sourced products',
       stat2Value: '0',
@@ -15559,7 +15873,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       }
       return (
         <section
-          className={`${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className="w-full px-6 md:px-10 lg:px-16 md:flex gap-14 items-center">
             <div className="md:w-2/5 mb-10 md:mb-0">
@@ -15568,27 +15882,25 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             </div>
             <div className="md:w-3/5">
               {eyebrow && (
-                <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                <p className="text-primary text-sm font-semibold uppercase tracking-wide mb-2">
                   {eyebrow}
                 </p>
               )}
-              <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-4">{heading}</h2>
-              {paragraph1 && <p className="text-slate-600 leading-relaxed mb-6">{paragraph1}</p>}
+              <h2 className="text-2xl md:text-4xl font-bold text-title mb-4">{heading}</h2>
+              {paragraph1 && <p className="text-body leading-relaxed mb-6">{paragraph1}</p>}
               {highlights.length > 0 && (
                 <div className="grid sm:grid-cols-2 gap-5 mb-6">
                   {highlights.map((h, i) => {
                     const Icon = ICON_BY_KEY[(h.icon as IconKey) || 'star']
                     return (
                       <div key={i} className="flex gap-3">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-50 text-orange-600">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                           <Icon />
                         </span>
                         <div>
-                          <h4 className="font-semibold text-slate-900 mb-1">{h.title}</h4>
+                          <h4 className="font-semibold text-title mb-1">{h.title}</h4>
                           {h.description && (
-                            <p className="text-sm text-slate-600 leading-relaxed">
-                              {h.description}
-                            </p>
+                            <p className="text-sm text-body leading-relaxed">{h.description}</p>
                           )}
                         </div>
                       </div>
@@ -15596,13 +15908,13 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   })}
                 </div>
               )}
-              {paragraph2 && <p className="text-slate-600 leading-relaxed mb-6">{paragraph2}</p>}
+              {paragraph2 && <p className="text-body leading-relaxed mb-6">{paragraph2}</p>}
               {stats.length > 0 && (
                 <div className="grid grid-cols-3 gap-4">
                   {stats.map((s, i) => (
-                    <div key={i} className="rounded-xl border border-slate-200 p-4 text-center">
-                      <b className="block text-2xl font-extrabold text-slate-900">{s.value}</b>
-                      <span className="text-xs text-slate-500">{s.label}</span>
+                    <div key={i} className="rounded-xl border border-divider p-4 text-center">
+                      <b className="block text-2xl font-extrabold text-title">{s.value}</b>
+                      <span className="text-xs text-muted-foreground">{s.label}</span>
                     </div>
                   ))}
                 </div>
@@ -15730,20 +16042,20 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         )
       }
       return (
-        <section className={`${padY[padding]} bg-white`}>
+        <section className={`${padY[padding]} bg-surface`}>
           <div className={wrap}>
             {(sectionEyebrow || sectionTitle) && (
               <div className="mb-12 text-center">
                 {sectionEyebrow && (
-                  <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                  <p className="text-primary text-sm font-semibold uppercase tracking-wide mb-2">
                     {sectionEyebrow}
                   </p>
                 )}
                 {sectionTitle && (
-                  <h2 className="text-2xl md:text-4xl font-bold text-slate-900">{sectionTitle}</h2>
+                  <h2 className="text-2xl md:text-4xl font-bold text-title">{sectionTitle}</h2>
                 )}
                 {sectionSubtitle && (
-                  <p className="mx-auto mt-4 max-w-2xl text-slate-600">{sectionSubtitle}</p>
+                  <p className="mx-auto mt-4 max-w-2xl text-body">{sectionSubtitle}</p>
                 )}
               </div>
             )}
@@ -15753,12 +16065,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             >
               {list.map((step, i) => (
                 <div key={i} className="text-center md:text-left">
-                  <span className="text-xs font-bold uppercase tracking-wide text-orange-600">
+                  <span className="text-xs font-bold uppercase tracking-wide text-primary">
                     {step.stepLabel}
                   </span>
-                  <h4 className="mt-1 font-semibold text-slate-900 text-lg mb-1.5">{step.title}</h4>
+                  <h4 className="mt-1 font-semibold text-title text-lg mb-1.5">{step.title}</h4>
                   {step.description && (
-                    <p className="text-sm text-slate-600 leading-relaxed">{step.description}</p>
+                    <p className="text-sm text-body leading-relaxed">{step.description}</p>
                   )}
                 </div>
               ))}
@@ -15811,30 +16123,26 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       const list = (items ?? []).filter((i) => i.image)
       if (list.length === 0) return <></>
       return (
-        <section className={`${padY[padding]} bg-white`}>
+        <section className={`${padY[padding]} bg-surface`}>
           <div className={wrap}>
             {(sectionEyebrow || sectionTitle || sectionSubtitle) && (
               <div className="mb-10 max-w-2xl mx-auto text-center">
                 {sectionEyebrow && (
-                  <p className="text-orange-600 text-sm font-semibold uppercase tracking-wide mb-2">
+                  <p className="text-primary text-sm font-semibold uppercase tracking-wide mb-2">
                     {sectionEyebrow}
                   </p>
                 )}
                 {sectionTitle && (
-                  <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3">
-                    {sectionTitle}
-                  </h2>
+                  <h2 className="text-2xl md:text-4xl font-bold text-title mb-3">{sectionTitle}</h2>
                 )}
-                {sectionSubtitle && (
-                  <p className="text-slate-600 leading-relaxed">{sectionSubtitle}</p>
-                )}
+                {sectionSubtitle && <p className="text-body leading-relaxed">{sectionSubtitle}</p>}
               </div>
             )}
             <div className="flex gap-5 overflow-x-auto snap-x snap-mandatory pb-2">
               {list.map((p, i) => (
                 <div
                   key={i}
-                  className="snap-start shrink-0 w-72 rounded-2xl overflow-hidden border border-slate-200"
+                  className="snap-start shrink-0 w-72 rounded-2xl overflow-hidden border border-divider"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -15844,8 +16152,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                     className="h-48 w-full object-cover"
                   />
                   <div className="p-4">
-                    <h3 className="font-bold text-slate-900">{p.title}</h3>
-                    {p.subtitle && <p className="text-sm text-slate-500">{p.subtitle}</p>}
+                    <h3 className="font-bold text-title">{p.title}</h3>
+                    {p.subtitle && <p className="text-sm text-muted-foreground">{p.subtitle}</p>}
                   </div>
                 </div>
               ))}
@@ -15916,11 +16224,11 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       return (
         <section
           ref={ref}
-          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
             {heading && (
-              <h2 className="text-center text-2xl md:text-3xl font-bold text-slate-900 mb-10">
+              <h2 className="text-center text-2xl md:text-3xl font-bold text-title mb-10">
                 {heading}
               </h2>
             )}
@@ -15928,7 +16236,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               {logos.map((logo, i) => (
                 <div
                   key={i}
-                  className="flex items-center justify-center rounded-xl border border-slate-100 bg-white p-5 h-24"
+                  className="flex items-center justify-center rounded-xl border border-divider bg-white p-5 h-24"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={logo} alt="" className="max-h-12 max-w-full object-contain" />
@@ -16007,16 +16315,16 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         <section
           ref={ref}
           id={anchorId || undefined}
-          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={wrap}>
             {sectionEyebrow && (
-              <p className="mb-2 text-center text-xs font-bold uppercase tracking-[0.16em] text-[#4b5058]">
+              <p className="mb-2 text-center text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
                 {sectionEyebrow}
               </p>
             )}
             {sectionTitle && (
-              <h2 className="text-center text-2xl md:text-3xl font-bold text-slate-900 mb-10">
+              <h2 className="text-center text-2xl md:text-3xl font-bold text-title mb-10">
                 {sectionTitle}
               </h2>
             )}
@@ -16067,9 +16375,9 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       },
     },
     defaultProps: {
-      spotlightLogo: dummyLogo(240, 120, 'Blue Star'),
+      spotlightLogo: dummyLogo(240, 120, 'Partner Brand'),
       spotlightDescription:
-        'Our long-standing partnership with Blue Star powers every HVAC and refrigeration installation we deliver — from residential VRF systems to large-scale commercial chillers.',
+        'Our long-standing partnership with Partner Brand powers every HVAC and refrigeration installation we deliver — from residential VRF systems to large-scale commercial chillers.',
       otherLogo1: dummyLogo(140, 70, 'Brand 1'),
       otherLogo2: dummyLogo(140, 70, 'Brand 2'),
       otherLogo3: dummyLogo(140, 70, 'Brand 3'),
@@ -16097,10 +16405,10 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       return (
         <section
           ref={ref}
-          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-slate-50' : 'bg-white'}`}
+          className={`${revealCls} ${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
         >
           <div className={`${wrap} text-center`}>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 mb-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-faint mb-6">
               Featured Brand Partner
             </p>
             {spotlightLogo && (
@@ -16112,12 +16420,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               />
             )}
             {spotlightDescription && (
-              <p className="max-w-2xl mx-auto text-slate-600 leading-relaxed mb-10">
+              <p className="max-w-2xl mx-auto text-body leading-relaxed mb-10">
                 {spotlightDescription}
               </p>
             )}
             {otherLogos.length > 0 && (
-              <div className="flex flex-wrap items-center justify-center gap-8 pt-8 border-t border-slate-100">
+              <div className="flex flex-wrap items-center justify-center gap-8 pt-8 border-t border-divider">
                 {otherLogos.map((logo, i) => (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -16325,11 +16633,11 @@ export const construction: ComponentPack = {
   // only governs which entity a bound page renders, not how this picker
   // shows it, so it needs its variants registered too.
   variants: {
-    ConstructionTopBar: ['1', '2', '3', '4'],
-    ConstructionHeader: ['1', '2', '3', '4'],
+    ConstructionTopBar: ['1', '2', '3', '4', '5'],
+    ConstructionHeader: ['1', '2', '3', '4', '5'],
     ConstructionHero: ['1', '2', '3', '4'],
     ConstructionInnerBanner: ['1', '2', '3', '4'],
-    ConstructionFooter: ['1', '2', '3', '4'],
+    ConstructionFooter: ['1', '2', '3', '4', '5'],
     ConstructionSectorDetailList: ['1', '2', '3', '4'],
     ConstructionMissionVision: ['1', '2', '3', '4'],
     ConstructionIconFeatureGrid: ['1', '2'],

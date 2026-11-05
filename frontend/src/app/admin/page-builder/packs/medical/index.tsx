@@ -131,27 +131,27 @@ function medicalHeroBody(props: MedicalProps['MedicalHero']) {
   const { headline, subheadline, ctaLabel, ctaHref, badge, align, image } = props
   if (props.variant === '2')
     return (
-      <section className="grid grid-cols-1 items-center gap-8 bg-white px-6 py-16 md:grid-cols-2 md:py-24">
+      <section className="grid grid-cols-1 items-center gap-8 bg-surface px-6 py-16 md:grid-cols-2 md:py-24">
         <div className="flex flex-col gap-5">
           {badge ? (
-            <span className="inline-flex w-fit items-center rounded-full bg-teal-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-teal-700">
+            <span className="inline-flex w-fit items-center rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
               {badge}
             </span>
           ) : null}
-          <h1 className="max-w-xl text-3xl font-bold tracking-tight text-slate-900 md:text-5xl">
+          <h1 className="max-w-xl text-3xl font-bold tracking-tight text-title md:text-5xl">
             {headline}
           </h1>
-          <p className="max-w-lg text-base text-slate-600 md:text-xl">{subheadline}</p>
+          <p className="max-w-lg text-base text-body md:text-xl">{subheadline}</p>
           {ctaLabel ? (
             <a
               href={ctaHref}
-              className="mt-2 inline-flex w-fit rounded-lg bg-teal-600 px-7 py-3 font-semibold text-white transition hover:bg-teal-700"
+              className="mt-2 inline-flex w-fit rounded-lg bg-primary px-7 py-3 font-semibold text-primary-foreground transition hover:bg-primary/85"
             >
               {ctaLabel}
             </a>
           ) : null}
         </div>
-        <div className="overflow-hidden rounded-2xl bg-slate-100">
+        <div className="overflow-hidden rounded-2xl bg-background">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={
@@ -166,20 +166,20 @@ function medicalHeroBody(props: MedicalProps['MedicalHero']) {
     )
   if (props.variant === '3')
     return (
-      <section className="flex flex-col items-center gap-6 bg-slate-900 px-6 py-16 text-center md:py-28">
+      <section className="flex flex-col items-center gap-6 bg-inverse px-6 py-16 text-center md:py-28">
         {badge ? (
-          <span className="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-teal-300">
+          <span className="inline-flex items-center rounded-full bg-inverse-foreground/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-inverse-foreground">
             {badge}
           </span>
         ) : null}
-        <h1 className="max-w-3xl text-3xl font-bold tracking-tight text-white md:text-5xl">
+        <h1 className="max-w-3xl text-3xl font-bold tracking-tight text-inverse-foreground md:text-5xl">
           {headline}
         </h1>
-        <p className="max-w-2xl text-base text-slate-300 md:text-xl">{subheadline}</p>
+        <p className="max-w-2xl text-base text-inverse-foreground/80 md:text-xl">{subheadline}</p>
         {ctaLabel ? (
           <a
             href={ctaHref}
-            className="mt-2 inline-flex rounded-lg bg-teal-500 px-7 py-3 font-semibold text-white transition hover:bg-teal-400"
+            className="mt-2 inline-flex rounded-lg bg-inverse-foreground px-7 py-3 font-semibold text-foreground transition hover:bg-inverse-foreground/90"
           >
             {ctaLabel}
           </a>
@@ -188,12 +188,12 @@ function medicalHeroBody(props: MedicalProps['MedicalHero']) {
     )
   if (props.variant === '4')
     return (
-      <section className="flex flex-col items-center justify-between gap-4 bg-teal-50 px-6 py-8 md:flex-row md:py-10">
-        <h1 className="text-xl font-bold text-slate-900 md:text-2xl">{headline}</h1>
+      <section className="flex flex-col items-center justify-between gap-4 bg-primary/10 px-6 py-8 md:flex-row md:py-10">
+        <h1 className="text-xl font-bold text-title md:text-2xl">{headline}</h1>
         {ctaLabel ? (
           <a
             href={ctaHref}
-            className="inline-flex shrink-0 rounded-lg bg-teal-600 px-6 py-2.5 font-semibold text-white transition hover:bg-teal-700"
+            className="inline-flex shrink-0 rounded-lg bg-primary px-6 py-2.5 font-semibold text-primary-foreground transition hover:bg-primary/85"
           >
             {ctaLabel}
           </a>
@@ -202,23 +202,23 @@ function medicalHeroBody(props: MedicalProps['MedicalHero']) {
     )
   return (
     <section
-      className={`relative flex flex-col gap-6 px-6 py-16 md:py-28 bg-gradient-to-br from-teal-50 to-cyan-50 ${
+      className={`relative flex flex-col gap-6 px-6 py-16 md:py-28 bg-gradient-to-br from-primary/10 to-tertiary/10 ${
         align === 'center' ? 'items-center text-center' : 'items-start text-left'
       }`}
     >
       {badge ? (
-        <span className="inline-flex items-center rounded-full bg-teal-100 px-3 py-1 text-xs font-semibold text-teal-700 uppercase tracking-wide">
+        <span className="inline-flex items-center rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-primary uppercase tracking-wide">
           {badge}
         </span>
       ) : null}
-      <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-slate-900 max-w-3xl">
+      <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-title max-w-3xl">
         {headline}
       </h1>
-      <p className="text-base md:text-xl text-slate-600 max-w-2xl">{subheadline}</p>
+      <p className="text-base md:text-xl text-body max-w-2xl">{subheadline}</p>
       {ctaLabel ? (
         <a
           href={ctaHref}
-          className="mt-2 inline-flex rounded-lg bg-teal-600 px-7 py-3 text-white font-semibold hover:bg-teal-700 transition"
+          className="mt-2 inline-flex rounded-lg bg-primary px-7 py-3 text-primary-foreground font-semibold hover:bg-primary/85 transition"
         >
           {ctaLabel}
         </a>
@@ -300,14 +300,16 @@ const SERVICES_FALLBACK = {
 function servicesListBody(props: MedicalProps['MedicalServicesList']) {
   const { variant, sectionTitle, sectionSubtitle, services } = props
   const rows = parsePipeLines(services, 3)
-  const header = (align: 'text-center' | 'text-left', titleClass = '') => (
+  const header = (
+    align: 'text-center' | 'text-left',
+    titleClass = 'text-title',
+    subtitleClass = 'text-muted-foreground'
+  ) => (
     <div className={`mb-10 ${align}`}>
-      <h2 className={`text-2xl font-bold text-slate-900 md:text-3xl ${titleClass}`}>
-        {sectionTitle}
-      </h2>
+      <h2 className={`text-2xl font-bold md:text-3xl ${titleClass}`}>{sectionTitle}</h2>
       {sectionSubtitle ? (
         <p
-          className={`mt-3 text-slate-500 ${align === 'text-center' ? 'mx-auto max-w-2xl' : 'max-w-2xl'}`}
+          className={`mt-3 ${subtitleClass} ${align === 'text-center' ? 'mx-auto max-w-2xl' : 'max-w-2xl'}`}
         >
           {sectionSubtitle}
         </p>
@@ -316,18 +318,21 @@ function servicesListBody(props: MedicalProps['MedicalServicesList']) {
   )
   if (variant === '2')
     return (
-      <section className="bg-slate-900 px-6 py-12 md:py-20">
+      <section className="bg-inverse px-6 py-12 md:py-20">
         <div className="mx-auto max-w-5xl">
-          {header('text-center', 'text-white')}
+          {header('text-center', 'text-inverse-foreground', 'text-inverse-foreground/70')}
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             {rows.map(([icon, name, desc], i) => (
-              <div key={i} className="flex items-start gap-4 rounded-xl bg-white/5 p-5">
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-teal-500/20 text-xl">
+              <div
+                key={i}
+                className="flex items-start gap-4 rounded-xl bg-inverse-foreground/5 p-5"
+              >
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary/20 text-xl">
                   {icon}
                 </span>
                 <div>
-                  <h3 className="font-semibold text-white">{name}</h3>
-                  <p className="mt-1 text-sm text-slate-400">{desc}</p>
+                  <h3 className="font-semibold text-inverse-foreground">{name}</h3>
+                  <p className="mt-1 text-sm text-inverse-foreground/70">{desc}</p>
                 </div>
               </div>
             ))}
@@ -337,16 +342,16 @@ function servicesListBody(props: MedicalProps['MedicalServicesList']) {
     )
   if (variant === '3')
     return (
-      <section className="bg-white px-6 py-12 md:py-20">
+      <section className="bg-surface px-6 py-12 md:py-20">
         <div className="mx-auto max-w-3xl">
           {header('text-left')}
-          <div className="flex flex-col divide-y divide-slate-100">
+          <div className="flex flex-col divide-y divide-divider">
             {rows.map(([icon, name, desc], i) => (
               <div key={i} className="flex items-center gap-4 py-4">
                 <span className="text-2xl">{icon}</span>
                 <div>
-                  <h3 className="font-semibold text-slate-900">{name}</h3>
-                  <p className="text-sm text-slate-500">{desc}</p>
+                  <h3 className="font-semibold text-title">{name}</h3>
+                  <p className="text-sm text-muted-foreground">{desc}</p>
                 </div>
               </div>
             ))}
@@ -356,12 +361,12 @@ function servicesListBody(props: MedicalProps['MedicalServicesList']) {
     )
   if (variant === '4')
     return (
-      <section className="bg-teal-50 px-6 py-8">
+      <section className="bg-primary/10 px-6 py-8">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-3">
           {rows.map(([icon, name], i) => (
             <span
               key={i}
-              className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-800 shadow-sm"
+              className="inline-flex items-center gap-1.5 rounded-full bg-card px-4 py-2 text-sm font-medium text-title shadow-sm"
             >
               <span>{icon}</span> {name}
             </span>
@@ -370,18 +375,18 @@ function servicesListBody(props: MedicalProps['MedicalServicesList']) {
       </section>
     )
   return (
-    <section className="py-12 md:py-20 px-6 bg-white">
+    <section className="py-12 md:py-20 px-6 bg-surface">
       <div className="mx-auto max-w-5xl">
         {header('text-center')}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {rows.map(([icon, name, desc], i) => (
             <div
               key={i}
-              className="flex flex-col gap-2 rounded-xl border border-slate-200 p-6 hover:shadow-md transition"
+              className="flex flex-col gap-2 rounded-xl border border-divider p-6 hover:shadow-md transition"
             >
               <span className="text-3xl">{icon}</span>
-              <h3 className="font-semibold text-slate-900">{name}</h3>
-              <p className="text-sm text-slate-500">{desc}</p>
+              <h3 className="font-semibold text-title">{name}</h3>
+              <p className="text-sm text-muted-foreground">{desc}</p>
             </div>
           ))}
         </div>
@@ -426,14 +431,16 @@ const DOCTORS_FALLBACK = {
 function doctorProfilesBody(props: MedicalProps['MedicalDoctorProfiles']) {
   const { variant, sectionTitle, sectionSubtitle, doctors } = props
   const rows = parsePipeLines(doctors, 3)
-  const header = (align: 'text-center' | 'text-left', titleClass = '') => (
+  const header = (
+    align: 'text-center' | 'text-left',
+    titleClass = 'text-title',
+    subtitleClass = 'text-muted-foreground'
+  ) => (
     <div className={`mb-10 ${align}`}>
-      <h2 className={`text-2xl font-bold text-slate-900 md:text-3xl ${titleClass}`}>
-        {sectionTitle}
-      </h2>
+      <h2 className={`text-2xl font-bold md:text-3xl ${titleClass}`}>{sectionTitle}</h2>
       {sectionSubtitle ? (
         <p
-          className={`mt-3 text-slate-500 ${align === 'text-center' ? 'mx-auto max-w-2xl' : 'max-w-2xl'}`}
+          className={`mt-3 ${subtitleClass} ${align === 'text-center' ? 'mx-auto max-w-2xl' : 'max-w-2xl'}`}
         >
           {sectionSubtitle}
         </p>
@@ -442,12 +449,12 @@ function doctorProfilesBody(props: MedicalProps['MedicalDoctorProfiles']) {
   )
   if (variant === '2')
     return (
-      <section className="bg-slate-900 px-6 py-12 md:py-20">
+      <section className="bg-inverse px-6 py-12 md:py-20">
         <div className="mx-auto max-w-5xl">
-          {header('text-center', 'text-white')}
+          {header('text-center', 'text-inverse-foreground', 'text-inverse-foreground/70')}
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-4">
             {rows.map(([name, qual, specialty, photo], i) => (
-              <div key={i} className="overflow-hidden rounded-xl bg-white/5">
+              <div key={i} className="overflow-hidden rounded-xl bg-inverse-foreground/5">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={
@@ -458,9 +465,9 @@ function doctorProfilesBody(props: MedicalProps['MedicalDoctorProfiles']) {
                   className="h-36 w-full object-cover"
                 />
                 <div className="p-4">
-                  <p className="font-semibold text-white">{name}</p>
-                  <p className="text-xs font-medium text-teal-300">{specialty}</p>
-                  <p className="text-xs text-slate-400">{qual}</p>
+                  <p className="font-semibold text-inverse-foreground">{name}</p>
+                  <p className="text-xs font-medium text-inverse-foreground">{specialty}</p>
+                  <p className="text-xs text-inverse-foreground/70">{qual}</p>
                 </div>
               </div>
             ))}
@@ -470,10 +477,10 @@ function doctorProfilesBody(props: MedicalProps['MedicalDoctorProfiles']) {
     )
   if (variant === '3')
     return (
-      <section className="bg-white px-6 py-12 md:py-20">
+      <section className="bg-surface px-6 py-12 md:py-20">
         <div className="mx-auto max-w-3xl">
           {header('text-left')}
-          <div className="flex flex-col divide-y divide-slate-100">
+          <div className="flex flex-col divide-y divide-divider">
             {rows.map(([name, qual, specialty, photo], i) => (
               <div key={i} className="flex items-center gap-4 py-4">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -486,9 +493,9 @@ function doctorProfilesBody(props: MedicalProps['MedicalDoctorProfiles']) {
                   className="h-16 w-16 shrink-0 rounded-full object-cover"
                 />
                 <div>
-                  <p className="font-semibold text-slate-900">{name}</p>
-                  <p className="text-xs font-medium text-teal-700">{specialty}</p>
-                  <p className="text-xs text-slate-500">{qual}</p>
+                  <p className="font-semibold text-title">{name}</p>
+                  <p className="text-xs font-medium text-primary">{specialty}</p>
+                  <p className="text-xs text-muted-foreground">{qual}</p>
                 </div>
               </div>
             ))}
@@ -498,15 +505,15 @@ function doctorProfilesBody(props: MedicalProps['MedicalDoctorProfiles']) {
     )
   if (variant === '4')
     return (
-      <section className="bg-slate-50 px-6 py-10">
+      <section className="bg-background px-6 py-10">
         <div className="mx-auto max-w-5xl">
           {header('text-center')}
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {rows.map(([name, qual, specialty], i) => (
-              <div key={i} className="rounded-lg bg-white p-4 text-center shadow-sm">
-                <p className="font-semibold text-slate-900">{name}</p>
-                <p className="text-xs text-teal-700">{specialty}</p>
-                <p className="text-xs text-slate-400">{qual}</p>
+              <div key={i} className="rounded-lg bg-card p-4 text-center shadow-sm">
+                <p className="font-semibold text-title">{name}</p>
+                <p className="text-xs text-primary">{specialty}</p>
+                <p className="text-xs text-faint">{qual}</p>
               </div>
             ))}
           </div>
@@ -514,7 +521,7 @@ function doctorProfilesBody(props: MedicalProps['MedicalDoctorProfiles']) {
       </section>
     )
   return (
-    <section className="py-12 md:py-20 px-6 bg-slate-50">
+    <section className="py-12 md:py-20 px-6 bg-background">
       <div className="mx-auto max-w-5xl">
         {header('text-center')}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
@@ -527,12 +534,12 @@ function doctorProfilesBody(props: MedicalProps['MedicalDoctorProfiles']) {
                   'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop&auto=format'
                 }
                 alt={name}
-                className="w-28 h-28 rounded-full object-cover border-4 border-teal-100"
+                className="w-28 h-28 rounded-full object-cover border-4 border-primary/15"
               />
               <div>
-                <p className="font-semibold text-slate-900">{name}</p>
-                <p className="text-xs text-teal-700 font-medium">{specialty}</p>
-                <p className="text-xs text-slate-500">{qual}</p>
+                <p className="font-semibold text-title">{name}</p>
+                <p className="text-xs text-primary font-medium">{specialty}</p>
+                <p className="text-xs text-muted-foreground">{qual}</p>
               </div>
             </div>
           ))}
@@ -557,7 +564,7 @@ const MedicalDoctorProfiles: Config<MedicalProps>['components']['MedicalDoctorPr
 // ─── MedicalAppointmentCTA ───────────────────────────────────────────────────
 
 const CTA_VARIANT_LABELS: Record<string, string> = {
-  '1': 'Teal, centered',
+  '1': 'Brand colour, centered',
   '2': 'Dark, split',
   '3': 'Card, boxed',
   '4': 'Minimal bar',
@@ -586,16 +593,16 @@ function appointmentCtaBody(props: MedicalProps['MedicalAppointmentCTA']) {
   } = props
   if (variant === '2')
     return (
-      <section className="flex flex-col items-center justify-between gap-6 bg-slate-900 px-6 py-12 text-white md:flex-row md:py-20">
+      <section className="flex flex-col items-center justify-between gap-6 bg-inverse px-6 py-12 text-inverse-foreground md:flex-row md:py-20">
         <div>
           <h2 className="text-2xl font-bold md:text-4xl">{headline}</h2>
-          <p className="mt-2 max-w-md text-slate-400">{subtext}</p>
+          <p className="mt-2 max-w-md text-inverse-foreground/70">{subtext}</p>
         </div>
         <div className="flex shrink-0 flex-col gap-3 sm:flex-row">
           {primaryLabel ? (
             <a
               href={primaryHref}
-              className="rounded-lg bg-teal-500 px-6 py-3 font-semibold text-white transition hover:bg-teal-400"
+              className="rounded-lg bg-inverse-foreground px-6 py-3 font-semibold text-foreground transition hover:bg-inverse-foreground/90"
             >
               {primaryLabel}
             </a>
@@ -603,7 +610,7 @@ function appointmentCtaBody(props: MedicalProps['MedicalAppointmentCTA']) {
           {secondaryLabel ? (
             <a
               href={secondaryHref}
-              className="rounded-lg border border-white/30 px-6 py-3 font-semibold text-white transition hover:bg-white/10"
+              className="rounded-lg border border-inverse-foreground/30 px-6 py-3 font-semibold text-inverse-foreground transition hover:bg-inverse-foreground/10"
             >
               {secondaryLabel}
             </a>
@@ -613,24 +620,24 @@ function appointmentCtaBody(props: MedicalProps['MedicalAppointmentCTA']) {
     )
   if (variant === '3')
     return (
-      <section className="bg-slate-50 px-6 py-12 md:py-20">
-        <div className="mx-auto flex max-w-xl flex-col items-center gap-4 rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-          <h2 className="text-2xl font-bold text-slate-900 md:text-3xl">{headline}</h2>
-          <p className="max-w-md text-slate-500">{subtext}</p>
+      <section className="bg-background px-6 py-12 md:py-20">
+        <div className="mx-auto flex max-w-xl flex-col items-center gap-4 rounded-2xl border border-divider bg-card p-10 text-center shadow-sm">
+          <h2 className="text-2xl font-bold text-title md:text-3xl">{headline}</h2>
+          <p className="max-w-md text-muted-foreground">{subtext}</p>
           {primaryLabel ? (
             <a
               href={primaryHref}
-              className="mt-2 rounded-lg bg-teal-600 px-6 py-3 font-semibold text-white transition hover:bg-teal-700"
+              className="mt-2 rounded-lg bg-primary px-6 py-3 font-semibold text-primary-foreground transition hover:bg-primary/85"
             >
               {primaryLabel}
             </a>
           ) : null}
           {phoneNumber ? (
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-faint">
               Or call:{' '}
               <a
                 href={`tel:${phoneNumber.replace(/\s+/g, '')}`}
-                className="font-semibold text-teal-700"
+                className="font-semibold text-primary"
               >
                 {phoneNumber}
               </a>
@@ -641,12 +648,12 @@ function appointmentCtaBody(props: MedicalProps['MedicalAppointmentCTA']) {
     )
   if (variant === '4')
     return (
-      <section className="flex flex-col items-center justify-between gap-4 bg-teal-600 px-6 py-6 text-white md:flex-row">
+      <section className="flex flex-col items-center justify-between gap-4 bg-primary px-6 py-6 text-primary-foreground md:flex-row">
         <h2 className="text-lg font-semibold">{headline}</h2>
         {primaryLabel ? (
           <a
             href={primaryHref}
-            className="shrink-0 rounded-lg bg-white px-5 py-2.5 font-semibold text-teal-700 transition hover:bg-teal-50"
+            className="shrink-0 rounded-lg bg-surface px-5 py-2.5 font-semibold text-primary transition hover:bg-surface/90"
           >
             {primaryLabel}
           </a>
@@ -654,15 +661,15 @@ function appointmentCtaBody(props: MedicalProps['MedicalAppointmentCTA']) {
       </section>
     )
   return (
-    <section className="py-12 md:py-20 px-6 bg-teal-600 text-white">
+    <section className="py-12 md:py-20 px-6 bg-primary text-primary-foreground">
       <div className="mx-auto max-w-3xl text-center flex flex-col items-center gap-5">
         <h2 className="text-2xl md:text-4xl font-bold">{headline}</h2>
-        <p className="text-teal-100 max-w-xl">{subtext}</p>
+        <p className="text-primary-foreground/80 max-w-xl">{subtext}</p>
         <div className="flex flex-col sm:flex-row gap-3">
           {primaryLabel ? (
             <a
               href={primaryHref}
-              className="rounded-lg bg-white text-teal-700 font-semibold px-6 py-3 hover:bg-teal-50 transition"
+              className="rounded-lg bg-surface text-primary font-semibold px-6 py-3 hover:bg-surface/90 transition"
             >
               {primaryLabel}
             </a>
@@ -670,18 +677,18 @@ function appointmentCtaBody(props: MedicalProps['MedicalAppointmentCTA']) {
           {secondaryLabel ? (
             <a
               href={secondaryHref}
-              className="rounded-lg border border-white text-white font-semibold px-6 py-3 hover:bg-teal-700 transition"
+              className="rounded-lg border border-primary-foreground text-primary-foreground font-semibold px-6 py-3 hover:bg-primary-foreground/10 transition"
             >
               {secondaryLabel}
             </a>
           ) : null}
         </div>
         {phoneNumber ? (
-          <p className="text-teal-200 text-sm">
+          <p className="text-primary-foreground/70 text-sm">
             Or call us:{' '}
             <a
               href={`tel:${phoneNumber.replace(/\s+/g, '')}`}
-              className="font-semibold text-white hover:underline"
+              className="font-semibold text-primary-foreground hover:underline"
             >
               {phoneNumber}
             </a>
@@ -734,14 +741,16 @@ const DEPARTMENTS_FALLBACK = {
 function departmentCardsBody(props: MedicalProps['MedicalDepartmentCards']) {
   const { variant, sectionTitle, sectionSubtitle, departments } = props
   const rows = parsePipeLines(departments, 3)
-  const header = (align: 'text-center' | 'text-left', titleClass = '') => (
+  const header = (
+    align: 'text-center' | 'text-left',
+    titleClass = 'text-title',
+    subtitleClass = 'text-muted-foreground'
+  ) => (
     <div className={`mb-10 ${align}`}>
-      <h2 className={`text-2xl font-bold text-slate-900 md:text-3xl ${titleClass}`}>
-        {sectionTitle}
-      </h2>
+      <h2 className={`text-2xl font-bold md:text-3xl ${titleClass}`}>{sectionTitle}</h2>
       {sectionSubtitle ? (
         <p
-          className={`mt-3 text-slate-500 ${align === 'text-center' ? 'mx-auto max-w-2xl' : 'max-w-2xl'}`}
+          className={`mt-3 ${subtitleClass} ${align === 'text-center' ? 'mx-auto max-w-2xl' : 'max-w-2xl'}`}
         >
           {sectionSubtitle}
         </p>
@@ -750,19 +759,19 @@ function departmentCardsBody(props: MedicalProps['MedicalDepartmentCards']) {
   )
   if (variant === '2')
     return (
-      <section className="bg-slate-900 px-6 py-12 md:py-20">
+      <section className="bg-inverse px-6 py-12 md:py-20">
         <div className="mx-auto max-w-5xl">
-          {header('text-center', 'text-white')}
+          {header('text-center', 'text-inverse-foreground', 'text-inverse-foreground/70')}
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3">
             {rows.map(([icon, name, desc, href], i) => (
               <a
                 key={i}
                 href={href || '#'}
-                className="group rounded-xl bg-white/5 p-5 transition hover:bg-white/10"
+                className="group rounded-xl bg-inverse-foreground/5 p-5 transition hover:bg-inverse-foreground/10"
               >
                 <span className="text-3xl">{icon}</span>
-                <p className="mt-3 font-semibold text-white">{name}</p>
-                <p className="mt-1 text-sm text-slate-400">{desc}</p>
+                <p className="mt-3 font-semibold text-inverse-foreground">{name}</p>
+                <p className="mt-1 text-sm text-inverse-foreground/70">{desc}</p>
               </a>
             ))}
           </div>
@@ -771,16 +780,16 @@ function departmentCardsBody(props: MedicalProps['MedicalDepartmentCards']) {
     )
   if (variant === '3')
     return (
-      <section className="bg-white px-6 py-12 md:py-20">
+      <section className="bg-surface px-6 py-12 md:py-20">
         <div className="mx-auto max-w-3xl">
           {header('text-left')}
-          <div className="flex flex-col divide-y divide-slate-100">
+          <div className="flex flex-col divide-y divide-divider">
             {rows.map(([icon, name, desc, href], i) => (
               <a key={i} href={href || '#'} className="group flex items-center gap-4 py-4">
                 <span className="text-2xl">{icon}</span>
                 <div>
-                  <p className="font-semibold text-slate-900 group-hover:text-teal-700">{name}</p>
-                  <p className="text-sm text-slate-500">{desc}</p>
+                  <p className="font-semibold text-title group-hover:text-primary">{name}</p>
+                  <p className="text-sm text-muted-foreground">{desc}</p>
                 </div>
               </a>
             ))}
@@ -790,13 +799,13 @@ function departmentCardsBody(props: MedicalProps['MedicalDepartmentCards']) {
     )
   if (variant === '4')
     return (
-      <section className="bg-slate-50 px-6 py-8">
+      <section className="bg-background px-6 py-8">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-3">
           {rows.map(([icon, name, , href], i) => (
             <a
               key={i}
               href={href || '#'}
-              className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-800 shadow-sm"
+              className="inline-flex items-center gap-1.5 rounded-full bg-card px-4 py-2 text-sm font-medium text-title shadow-sm"
             >
               <span>{icon}</span> {name}
             </a>
@@ -805,7 +814,7 @@ function departmentCardsBody(props: MedicalProps['MedicalDepartmentCards']) {
       </section>
     )
   return (
-    <section className="py-12 md:py-20 px-6 bg-white">
+    <section className="py-12 md:py-20 px-6 bg-surface">
       <div className="mx-auto max-w-5xl">
         {header('text-center')}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
@@ -813,14 +822,14 @@ function departmentCardsBody(props: MedicalProps['MedicalDepartmentCards']) {
             <a
               key={i}
               href={href || '#'}
-              className="group flex gap-4 rounded-xl border border-slate-200 p-5 hover:border-teal-400 hover:shadow-sm transition"
+              className="group flex gap-4 rounded-xl border border-divider p-5 hover:border-primary hover:shadow-sm transition"
             >
               <span className="text-3xl shrink-0">{icon}</span>
               <div>
-                <p className="font-semibold text-slate-900 group-hover:text-teal-700 transition">
+                <p className="font-semibold text-title group-hover:text-primary transition">
                   {name}
                 </p>
-                <p className="text-sm text-slate-500 mt-1">{desc}</p>
+                <p className="text-sm text-muted-foreground mt-1">{desc}</p>
               </div>
             </a>
           ))}
@@ -869,14 +878,16 @@ const TESTIMONIALS_FALLBACK = {
 function testimonialsBody(props: MedicalProps['MedicalPatientTestimonials']) {
   const { variant, sectionTitle, sectionSubtitle, testimonials } = props
   const rows = parsePipeLines(testimonials, 2)
-  const header = (align: 'text-center' | 'text-left', titleClass = '') => (
+  const header = (
+    align: 'text-center' | 'text-left',
+    titleClass = 'text-title',
+    subtitleClass = 'text-muted-foreground'
+  ) => (
     <div className={`mb-10 ${align}`}>
-      <h2 className={`text-2xl font-bold text-slate-900 md:text-3xl ${titleClass}`}>
-        {sectionTitle}
-      </h2>
+      <h2 className={`text-2xl font-bold md:text-3xl ${titleClass}`}>{sectionTitle}</h2>
       {sectionSubtitle ? (
         <p
-          className={`mt-3 text-slate-500 ${align === 'text-center' ? 'mx-auto max-w-2xl' : 'max-w-2xl'}`}
+          className={`mt-3 ${subtitleClass} ${align === 'text-center' ? 'mx-auto max-w-2xl' : 'max-w-2xl'}`}
         >
           {sectionSubtitle}
         </p>
@@ -885,16 +896,20 @@ function testimonialsBody(props: MedicalProps['MedicalPatientTestimonials']) {
   )
   if (variant === '2')
     return (
-      <section className="bg-slate-900 px-6 py-12 md:py-20">
+      <section className="bg-inverse px-6 py-12 md:py-20">
         <div className="mx-auto max-w-3xl">
-          {header('text-center', 'text-white')}
+          {header('text-center', 'text-inverse-foreground', 'text-inverse-foreground/70')}
           <div className="flex flex-col gap-6">
             {rows.map(([quote, name, condition], i) => (
-              <figure key={i} className="border-l-2 border-teal-500 pl-5">
-                <blockquote className="text-lg text-slate-200">&ldquo;{quote}&rdquo;</blockquote>
+              <figure key={i} className="border-l-2 border-inverse-foreground/40 pl-5">
+                <blockquote className="text-lg text-inverse-foreground/90">
+                  &ldquo;{quote}&rdquo;
+                </blockquote>
                 <figcaption className="mt-2 text-sm">
-                  <span className="font-semibold text-white">{name}</span>
-                  {condition ? <span className="ml-2 text-teal-400">{condition}</span> : null}
+                  <span className="font-semibold text-inverse-foreground">{name}</span>
+                  {condition ? (
+                    <span className="ml-2 text-inverse-foreground">{condition}</span>
+                  ) : null}
                 </figcaption>
               </figure>
             ))}
@@ -904,17 +919,17 @@ function testimonialsBody(props: MedicalProps['MedicalPatientTestimonials']) {
     )
   if (variant === '3')
     return (
-      <section className="bg-white px-6 py-12 md:py-20">
+      <section className="bg-surface px-6 py-12 md:py-20">
         <div className="mx-auto max-w-5xl">
           {header('text-center')}
           <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
             {rows.map(([quote, name, condition], i) => (
-              <figure key={i} className="rounded-lg border border-slate-100 p-5">
-                <blockquote className="text-sm text-slate-600">&ldquo;{quote}&rdquo;</blockquote>
-                <figcaption className="mt-3 text-sm font-semibold text-slate-900">
+              <figure key={i} className="rounded-lg border border-divider p-5">
+                <blockquote className="text-sm text-body">&ldquo;{quote}&rdquo;</blockquote>
+                <figcaption className="mt-3 text-sm font-semibold text-title">
                   {name}
                   {condition ? (
-                    <span className="ml-1 font-normal text-teal-600">· {condition}</span>
+                    <span className="ml-1 font-normal text-primary">· {condition}</span>
                   ) : null}
                 </figcaption>
               </figure>
@@ -925,13 +940,13 @@ function testimonialsBody(props: MedicalProps['MedicalPatientTestimonials']) {
     )
   if (variant === '4')
     return (
-      <section className="bg-teal-50 px-6 py-10">
+      <section className="bg-primary/10 px-6 py-10">
         <div className="mx-auto max-w-3xl">
           {header('text-left')}
-          <div className="flex flex-col divide-y divide-teal-100">
+          <div className="flex flex-col divide-y divide-primary/15">
             {rows.map(([quote, name], i) => (
-              <p key={i} className="py-3 text-sm text-slate-700">
-                <span className="font-semibold text-slate-900">{name}: </span>
+              <p key={i} className="py-3 text-sm text-body">
+                <span className="font-semibold text-title">{name}: </span>
                 &ldquo;{quote}&rdquo;
               </p>
             ))}
@@ -940,22 +955,20 @@ function testimonialsBody(props: MedicalProps['MedicalPatientTestimonials']) {
       </section>
     )
   return (
-    <section className="py-12 md:py-20 px-6 bg-teal-50">
+    <section className="py-12 md:py-20 px-6 bg-primary/10">
       <div className="mx-auto max-w-5xl">
         {header('text-center')}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {rows.map(([quote, name, condition], i) => (
             <figure
               key={i}
-              className="bg-white rounded-xl p-6 shadow-sm border border-teal-100 flex flex-col gap-3"
+              className="bg-card rounded-xl p-6 shadow-sm border border-primary/15 flex flex-col gap-3"
             >
-              <blockquote className="text-slate-700 leading-relaxed">
-                &ldquo;{quote}&rdquo;
-              </blockquote>
+              <blockquote className="text-body leading-relaxed">&ldquo;{quote}&rdquo;</blockquote>
               <figcaption className="flex flex-col">
-                <span className="font-semibold text-slate-900">{name}</span>
+                <span className="font-semibold text-title">{name}</span>
                 {condition ? (
-                  <span className="text-xs text-teal-600 font-medium">{condition}</span>
+                  <span className="text-xs text-primary font-medium">{condition}</span>
                 ) : null}
               </figcaption>
             </figure>
@@ -1033,10 +1046,10 @@ function insuranceStripBody(props: MedicalProps['MedicalInsuranceStrip']) {
     )
   if (variant === '3')
     return (
-      <section className="bg-white px-6 py-10">
-        <div className="mx-auto flex max-w-3xl flex-col items-center gap-5 rounded-2xl border border-slate-200 p-8 text-center">
+      <section className="bg-surface px-6 py-10">
+        <div className="mx-auto flex max-w-3xl flex-col items-center gap-5 rounded-2xl border border-divider p-8 text-center">
           {heading ? (
-            <p className="text-sm font-semibold uppercase tracking-widest text-slate-500">
+            <p className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
               {heading}
             </p>
           ) : null}
@@ -1046,13 +1059,13 @@ function insuranceStripBody(props: MedicalProps['MedicalInsuranceStrip']) {
               <img key={i} src={src} alt={name} className="h-9 w-auto object-contain" />
             ))}
           </div>
-          {note ? <p className="text-xs text-slate-400">{note}</p> : null}
+          {note ? <p className="text-xs text-faint">{note}</p> : null}
         </div>
       </section>
     )
   if (variant === '4')
     return (
-      <section className="flex flex-wrap items-center justify-center gap-5 bg-slate-50 px-6 py-4">
+      <section className="flex flex-wrap items-center justify-center gap-5 bg-background px-6 py-4">
         {rows.map(([src, name], i) => (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img key={i} src={src} alt={name} className="h-6 w-auto object-contain opacity-70" />
@@ -1060,10 +1073,10 @@ function insuranceStripBody(props: MedicalProps['MedicalInsuranceStrip']) {
       </section>
     )
   return (
-    <section className="py-10 px-6 bg-white border-t border-b border-slate-100">
+    <section className="py-10 px-6 bg-surface border-t border-b border-divider">
       <div className="mx-auto max-w-5xl flex flex-col items-center gap-6">
         {heading ? (
-          <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest">
+          <p className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">
             {heading}
           </p>
         ) : null}
@@ -1078,7 +1091,7 @@ function insuranceStripBody(props: MedicalProps['MedicalInsuranceStrip']) {
             />
           ))}
         </div>
-        {note ? <p className="text-xs text-slate-400">{note}</p> : null}
+        {note ? <p className="text-xs text-faint">{note}</p> : null}
       </div>
     </section>
   )
@@ -1125,26 +1138,31 @@ function contactHoursBody(props: MedicalProps['MedicalContactHours']) {
   const rows = parsePipeLines(hours, 2)
   if (variant === '2')
     return (
-      <section className="bg-slate-900 px-6 py-12 md:py-20">
+      <section className="bg-inverse px-6 py-12 md:py-20">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="mb-8 text-2xl font-bold text-white md:text-3xl">{sectionTitle}</h2>
-          <p className="whitespace-pre-line text-slate-300">{address}</p>
+          <h2 className="mb-8 text-2xl font-bold text-inverse-foreground md:text-3xl">
+            {sectionTitle}
+          </h2>
+          <p className="whitespace-pre-line text-inverse-foreground/80">{address}</p>
           <div className="mt-4 flex flex-wrap justify-center gap-4 text-sm">
             {phone ? (
               <a
                 href={`tel:${phone.replace(/\s+/g, '')}`}
-                className="text-teal-400 hover:underline"
+                className="text-inverse-foreground underline underline-offset-2 hover:no-underline"
               >
                 {phone}
               </a>
             ) : null}
             {email ? (
-              <a href={`mailto:${email}`} className="text-teal-400 hover:underline">
+              <a
+                href={`mailto:${email}`}
+                className="text-inverse-foreground underline underline-offset-2 hover:no-underline"
+              >
                 {email}
               </a>
             ) : null}
           </div>
-          <div className="mt-6 flex flex-col gap-1 text-sm text-slate-400">
+          <div className="mt-6 flex flex-col gap-1 text-sm text-inverse-foreground/70">
             {rows.map(([day, time], i) => (
               <div key={i} className="flex justify-center gap-3">
                 <span>{day}</span>
@@ -1154,53 +1172,57 @@ function contactHoursBody(props: MedicalProps['MedicalContactHours']) {
             ))}
           </div>
           {emergencyNote ? (
-            <p className="mt-6 text-sm font-medium text-red-400">🚨 {emergencyNote}</p>
+            <p className="mt-6 inline-block rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
+              🚨 {emergencyNote}
+            </p>
           ) : null}
         </div>
       </section>
     )
   if (variant === '3')
     return (
-      <section className="bg-white px-6 py-12 md:py-20">
+      <section className="bg-surface px-6 py-12 md:py-20">
         <div className="mx-auto max-w-5xl">
-          <h2 className="mb-10 text-center text-2xl font-bold text-slate-900 md:text-3xl">
+          <h2 className="mb-10 text-center text-2xl font-bold text-title md:text-3xl">
             {sectionTitle}
           </h2>
           <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-            <div className="rounded-xl border border-slate-200 p-5">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-teal-700">
+            <div className="rounded-xl border border-divider p-5">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">
                 Address
               </p>
-              <p className="whitespace-pre-line text-sm text-slate-700">{address}</p>
+              <p className="whitespace-pre-line text-sm text-body">{address}</p>
             </div>
-            <div className="rounded-xl border border-slate-200 p-5">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-teal-700">
+            <div className="rounded-xl border border-divider p-5">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">
                 Reach us
               </p>
               {phone ? (
                 <p>
-                  <a href={`tel:${phone.replace(/\s+/g, '')}`} className="text-sm text-slate-800">
+                  <a href={`tel:${phone.replace(/\s+/g, '')}`} className="text-sm text-title">
                     {phone}
                   </a>
                 </p>
               ) : null}
               {email ? (
                 <p>
-                  <a href={`mailto:${email}`} className="text-sm text-slate-800">
+                  <a href={`mailto:${email}`} className="text-sm text-title">
                     {email}
                   </a>
                 </p>
               ) : null}
               {emergencyNote ? (
-                <p className="mt-2 text-xs font-medium text-red-600">🚨 {emergencyNote}</p>
+                <p className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700">
+                  🚨 {emergencyNote}
+                </p>
               ) : null}
             </div>
-            <div className="rounded-xl border border-slate-200 p-5">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-teal-700">
+            <div className="rounded-xl border border-divider p-5">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">
                 Hours
               </p>
               {rows.map(([day, time], i) => (
-                <div key={i} className="flex justify-between text-sm text-slate-600">
+                <div key={i} className="flex justify-between text-sm text-body">
                   <span>{day}</span>
                   <span>{time}</span>
                 </div>
@@ -1212,40 +1234,40 @@ function contactHoursBody(props: MedicalProps['MedicalContactHours']) {
     )
   if (variant === '4')
     return (
-      <section className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 bg-slate-50 px-6 py-5 text-sm">
+      <section className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 bg-background px-6 py-5 text-sm">
         {phone ? (
-          <a href={`tel:${phone.replace(/\s+/g, '')}`} className="font-medium text-slate-800">
+          <a href={`tel:${phone.replace(/\s+/g, '')}`} className="font-medium text-title">
             {phone}
           </a>
         ) : null}
         {email ? (
-          <a href={`mailto:${email}`} className="text-slate-600">
+          <a href={`mailto:${email}`} className="text-body">
             {email}
           </a>
         ) : null}
-        <span className="text-slate-500">{address.split('\n')[0]}</span>
+        <span className="text-muted-foreground">{address.split('\n')[0]}</span>
       </section>
     )
   return (
-    <section className="py-12 md:py-20 px-6 bg-slate-50">
+    <section className="py-12 md:py-20 px-6 bg-background">
       <div className="mx-auto max-w-5xl">
-        <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-10">{sectionTitle}</h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-title mb-10">{sectionTitle}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
           <div className="flex flex-col gap-5">
             <div>
-              <p className="text-xs font-semibold text-teal-700 uppercase tracking-widest mb-1">
+              <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">
                 Address
               </p>
-              <p className="text-slate-700 whitespace-pre-line">{address}</p>
+              <p className="text-body whitespace-pre-line">{address}</p>
             </div>
             {phone ? (
               <div>
-                <p className="text-xs font-semibold text-teal-700 uppercase tracking-widest mb-1">
+                <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">
                   Phone
                 </p>
                 <a
                   href={`tel:${phone.replace(/\s+/g, '')}`}
-                  className="text-slate-800 hover:text-teal-700 transition"
+                  className="text-title hover:text-primary transition"
                 >
                   {phone}
                 </a>
@@ -1253,13 +1275,10 @@ function contactHoursBody(props: MedicalProps['MedicalContactHours']) {
             ) : null}
             {email ? (
               <div>
-                <p className="text-xs font-semibold text-teal-700 uppercase tracking-widest mb-1">
+                <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">
                   Email
                 </p>
-                <a
-                  href={`mailto:${email}`}
-                  className="text-slate-800 hover:text-teal-700 transition"
-                >
+                <a href={`mailto:${email}`} className="text-title hover:text-primary transition">
                   {email}
                 </a>
               </div>
@@ -1271,15 +1290,15 @@ function contactHoursBody(props: MedicalProps['MedicalContactHours']) {
             ) : null}
           </div>
           <div>
-            <p className="text-xs font-semibold text-teal-700 uppercase tracking-widest mb-3">
+            <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">
               Opening Hours
             </p>
             <table className="w-full text-sm">
               <tbody>
                 {rows.map(([day, time], i) => (
-                  <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                    <td className="py-2 px-3 font-medium text-slate-800">{day}</td>
-                    <td className="py-2 px-3 text-slate-600 text-right">{time}</td>
+                  <tr key={i} className={i % 2 === 0 ? 'bg-surface' : 'bg-background'}>
+                    <td className="py-2 px-3 font-medium text-title">{day}</td>
+                    <td className="py-2 px-3 text-body text-right">{time}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1334,14 +1353,16 @@ const FAQ_FALLBACK = {
 function faqBody(props: MedicalProps['MedicalFAQ']) {
   const { variant, sectionTitle, sectionSubtitle, items } = props
   const rows = parsePipeLines(items, 2)
-  const header = (align: 'text-center' | 'text-left', titleClass = '') => (
+  const header = (
+    align: 'text-center' | 'text-left',
+    titleClass = 'text-title',
+    subtitleClass = 'text-muted-foreground'
+  ) => (
     <div className={`mb-10 ${align}`}>
-      <h2 className={`text-2xl font-bold text-slate-900 md:text-3xl ${titleClass}`}>
-        {sectionTitle}
-      </h2>
+      <h2 className={`text-2xl font-bold md:text-3xl ${titleClass}`}>{sectionTitle}</h2>
       {sectionSubtitle ? (
         <p
-          className={`mt-3 text-slate-500 ${align === 'text-center' ? 'mx-auto max-w-xl' : 'max-w-xl'}`}
+          className={`mt-3 ${subtitleClass} ${align === 'text-center' ? 'mx-auto max-w-xl' : 'max-w-xl'}`}
         >
           {sectionSubtitle}
         </p>
@@ -1350,19 +1371,19 @@ function faqBody(props: MedicalProps['MedicalFAQ']) {
   )
   if (variant === '2')
     return (
-      <section className="bg-slate-900 px-6 py-12 md:py-20">
+      <section className="bg-inverse px-6 py-12 md:py-20">
         <div className="mx-auto max-w-3xl">
-          {header('text-center', 'text-white')}
-          <div className="flex flex-col divide-y divide-white/10">
+          {header('text-center', 'text-inverse-foreground', 'text-inverse-foreground/70')}
+          <div className="flex flex-col divide-y divide-inverse-foreground/10">
             {rows.map(([question, answer], i) => (
               <details key={i} className="group py-4">
                 <summary className="flex cursor-pointer list-none items-center justify-between">
-                  <span className="font-medium text-white">{question}</span>
-                  <span className="ml-4 shrink-0 text-teal-400 transition-transform group-open:rotate-180">
+                  <span className="font-medium text-inverse-foreground">{question}</span>
+                  <span className="ml-4 shrink-0 text-inverse-foreground transition-transform group-open:rotate-180">
                     ▾
                   </span>
                 </summary>
-                <p className="mt-3 leading-relaxed text-slate-400">{answer}</p>
+                <p className="mt-3 leading-relaxed text-inverse-foreground/70">{answer}</p>
               </details>
             ))}
           </div>
@@ -1371,14 +1392,14 @@ function faqBody(props: MedicalProps['MedicalFAQ']) {
     )
   if (variant === '3')
     return (
-      <section className="bg-slate-50 px-6 py-12 md:py-20">
+      <section className="bg-background px-6 py-12 md:py-20">
         <div className="mx-auto max-w-5xl">
           {header('text-center')}
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             {rows.map(([question, answer], i) => (
-              <div key={i} className="rounded-xl bg-white p-5 shadow-sm">
-                <p className="font-semibold text-slate-900">{question}</p>
-                <p className="mt-2 text-sm text-slate-500">{answer}</p>
+              <div key={i} className="rounded-xl bg-card p-5 shadow-sm">
+                <p className="font-semibold text-title">{question}</p>
+                <p className="mt-2 text-sm text-muted-foreground">{answer}</p>
               </div>
             ))}
           </div>
@@ -1387,14 +1408,14 @@ function faqBody(props: MedicalProps['MedicalFAQ']) {
     )
   if (variant === '4')
     return (
-      <section className="bg-white px-6 py-10">
+      <section className="bg-surface px-6 py-10">
         <div className="mx-auto max-w-2xl">
           {header('text-left')}
           <div className="flex flex-col gap-4">
             {rows.map(([question, answer], i) => (
               <div key={i}>
-                <p className="text-sm font-semibold text-slate-900">{question}</p>
-                <p className="text-sm text-slate-500">{answer}</p>
+                <p className="text-sm font-semibold text-title">{question}</p>
+                <p className="text-sm text-muted-foreground">{answer}</p>
               </div>
             ))}
           </div>
@@ -1402,19 +1423,19 @@ function faqBody(props: MedicalProps['MedicalFAQ']) {
       </section>
     )
   return (
-    <section className="py-12 md:py-20 px-6 bg-white">
+    <section className="py-12 md:py-20 px-6 bg-surface">
       <div className="mx-auto max-w-3xl">
         {header('text-center')}
-        <div className="flex flex-col divide-y divide-slate-200">
+        <div className="flex flex-col divide-y divide-divider">
           {rows.map(([question, answer], i) => (
             <details key={i} className="group py-4">
               <summary className="flex justify-between items-center cursor-pointer list-none">
-                <span className="font-medium text-slate-900">{question}</span>
-                <span className="ml-4 shrink-0 text-teal-600 group-open:rotate-180 transition-transform">
+                <span className="font-medium text-title">{question}</span>
+                <span className="ml-4 shrink-0 text-primary group-open:rotate-180 transition-transform">
                   ▾
                 </span>
               </summary>
-              <p className="mt-3 text-slate-600 leading-relaxed">{answer}</p>
+              <p className="mt-3 text-body leading-relaxed">{answer}</p>
             </details>
           ))}
         </div>
@@ -1608,11 +1629,17 @@ const MedicalTopNav: Config<MedicalProps>['components']['MedicalTopNav'] = {
       // eslint-disable-next-line @next/next/no-img-element
       <img src={logoUrl} alt={brand} className="h-8 w-8 rounded object-contain" />
     ) : null
+    // Design 2 sits on a bg-inverse band, where the brand fill can match the band (default light:
+    // indigo on near-black), so it takes the band's inverse pair. A custom colour keeps the brand
+    // pair.
+    const ctaOnBand = variant === '2' && !primaryColor
     const cta = ctaLabel ? (
       <a
         href={ctaHref}
         style={primaryColor ? { backgroundColor: primaryColor } : undefined}
-        className="inline-flex rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white"
+        className={`inline-flex rounded-lg px-5 py-2.5 text-sm font-semibold ${
+          ctaOnBand ? 'bg-inverse-foreground text-foreground' : 'bg-primary text-primary-foreground'
+        }`}
       >
         {ctaLabel}
       </a>
@@ -1620,8 +1647,8 @@ const MedicalTopNav: Config<MedicalProps>['components']['MedicalTopNav'] = {
 
     if (variant === '2') {
       return (
-        <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-900 px-6 py-4">
-          <span className="flex items-center gap-2 text-lg font-bold text-white">
+        <div className="flex flex-wrap items-center justify-between gap-4 bg-inverse px-6 py-4">
+          <span className="flex items-center gap-2 text-lg font-bold text-inverse-foreground">
             {logo}
             {brand}
           </span>
@@ -1630,7 +1657,7 @@ const MedicalTopNav: Config<MedicalProps>['components']['MedicalTopNav'] = {
               <a
                 key={i}
                 href={href}
-                className="text-sm font-medium text-slate-300 hover:text-white"
+                className="text-sm font-medium text-inverse-foreground/80 hover:text-inverse-foreground"
               >
                 {label}
               </a>
@@ -1642,14 +1669,14 @@ const MedicalTopNav: Config<MedicalProps>['components']['MedicalTopNav'] = {
     }
     if (variant === '3') {
       return (
-        <div className="flex flex-col items-center gap-3 border-b border-slate-100 bg-white px-6 py-5">
-          <span className="flex items-center gap-2 text-lg font-bold text-slate-900">
+        <div className="flex flex-col items-center gap-3 border-b border-divider bg-surface px-6 py-5">
+          <span className="flex items-center gap-2 text-lg font-bold text-title">
             {logo}
             {brand}
           </span>
           <nav className="flex flex-wrap items-center justify-center gap-6">
             {links.map(([label, href], i) => (
-              <a key={i} href={href} className="text-sm font-medium text-slate-700">
+              <a key={i} href={href} className="text-sm font-medium text-body">
                 {label}
               </a>
             ))}
@@ -1660,13 +1687,13 @@ const MedicalTopNav: Config<MedicalProps>['components']['MedicalTopNav'] = {
     }
     if (variant === '4') {
       return (
-        <div className="flex items-center justify-between gap-4 border-b border-slate-100 bg-white px-6 py-4">
-          <span className="flex items-center gap-2 text-lg font-bold text-slate-900">
+        <div className="flex items-center justify-between gap-4 border-b border-divider bg-surface px-6 py-4">
+          <span className="flex items-center gap-2 text-lg font-bold text-title">
             {logo}
             {brand}
           </span>
           {phone ? (
-            <span className="hidden items-center gap-1.5 text-sm text-slate-600 sm:inline-flex">
+            <span className="hidden items-center gap-1.5 text-sm text-body sm:inline-flex">
               <Phone size={14} /> {phone}
             </span>
           ) : null}
@@ -1676,7 +1703,7 @@ const MedicalTopNav: Config<MedicalProps>['components']['MedicalTopNav'] = {
     }
     return (
       <div>
-        <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-900 px-6 py-2 text-xs text-white">
+        <div className="flex flex-wrap items-center justify-between gap-2 bg-inverse px-6 py-2 text-xs text-inverse-foreground">
           <span>{welcomeText}</span>
           <div className="flex flex-wrap items-center gap-4">
             {phone ? (
@@ -1691,22 +1718,25 @@ const MedicalTopNav: Config<MedicalProps>['components']['MedicalTopNav'] = {
             ) : null}
             <span className="flex gap-2">
               {[Facebook, Twitter, Linkedin].map((Icon, i) => (
-                <span key={i} className="grid h-6 w-6 place-items-center rounded-full bg-white/20">
+                <span
+                  key={i}
+                  className="grid h-6 w-6 place-items-center rounded-full bg-inverse-foreground/20"
+                >
                   <Icon size={11} />
                 </span>
               ))}
             </span>
           </div>
         </div>
-        <div className="sticky top-0 z-10 border-b border-slate-100 bg-white px-6 py-4">
+        <div className="sticky top-0 z-10 border-b border-divider bg-surface px-6 py-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <span className="flex items-center gap-2 text-lg font-bold text-slate-900">
+            <span className="flex items-center gap-2 text-lg font-bold text-title">
               {logo}
               {brand}
             </span>
             <nav className="flex flex-1 flex-wrap justify-center gap-6">
               {links.map(([label, href], i) => (
-                <a key={i} href={href} className="text-sm font-medium text-slate-700">
+                <a key={i} href={href} className="text-sm font-medium text-body">
                   {label}
                 </a>
               ))}
@@ -1745,13 +1775,19 @@ function heroCtas(
   { primaryLabel, primaryHref, secondaryLabel, secondaryHref, primaryColor }: HeroVariantProps,
   secondaryLight: boolean
 ) {
+  // `secondaryLight` marks the fixed dark backdrops (slate band, photo overlay), where the brand
+  // fill can vanish (default light: indigo on slate), so they get a fixed light pair. A custom
+  // colour keeps the brand pair.
+  const primaryOnDark = secondaryLight && !primaryColor
   return (
     <div className="flex flex-wrap gap-3">
       {primaryLabel ? (
         <a
           href={primaryHref}
           style={primaryColor ? { backgroundColor: primaryColor } : undefined}
-          className="inline-flex rounded-lg bg-slate-900 px-6 py-3 font-semibold text-white"
+          className={`inline-flex rounded-lg px-6 py-3 font-semibold ${
+            primaryOnDark ? 'bg-white text-slate-900' : 'bg-primary text-primary-foreground'
+          }`}
         >
           {primaryLabel}
         </a>
@@ -1763,7 +1799,7 @@ function heroCtas(
           className={
             secondaryLight
               ? 'inline-flex rounded-lg border-2 border-white px-6 py-3 font-semibold text-white'
-              : 'inline-flex rounded-lg border-2 border-slate-900 px-6 py-3 font-semibold text-slate-900'
+              : 'inline-flex rounded-lg border-2 border-primary px-6 py-3 font-semibold text-primary'
           }
         >
           {secondaryLabel}
@@ -1858,18 +1894,16 @@ function heroVariantBody(variant: string, p: HeroVariantProps) {
 
   // 2 (default) — split-light: light background, text left, image right.
   return (
-    <section className="bg-slate-50 px-6 py-16">
+    <section className="bg-background px-6 py-16">
       <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 md:grid-cols-2">
         <div>
           {p.eyebrow ? (
-            <div className="text-xs font-bold uppercase tracking-wide text-slate-900">
-              {p.eyebrow}
-            </div>
+            <div className="text-xs font-bold uppercase tracking-wide text-title">{p.eyebrow}</div>
           ) : null}
-          <h1 className="mt-3 mb-3 text-4xl font-extrabold tracking-tight text-slate-900 md:text-5xl">
+          <h1 className="mt-3 mb-3 text-4xl font-extrabold tracking-tight text-title md:text-5xl">
             {heading}
           </h1>
-          <p className="mb-6 max-w-md text-slate-600">{p.subtext}</p>
+          <p className="mb-6 max-w-md text-body">{p.subtext}</p>
           {heroCtas(p, false)}
         </div>
         <div className="min-h-[360px] overflow-hidden rounded-2xl">
@@ -1999,20 +2033,20 @@ const MedicalContactInfoCards: Config<MedicalProps>['components']['MedicalContac
     const rows = parsePipeLines(cells, 3)
     return (
       <div className="relative z-[3] -mt-10 px-6">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 rounded-2xl bg-white shadow-xl sm:grid-cols-2 md:grid-cols-4">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 rounded-2xl bg-card shadow-xl sm:grid-cols-2 md:grid-cols-4">
           {rows.map(([icon, title, subtitle], i) => {
             const Icon = INFO_ICONS[icon as keyof typeof INFO_ICONS] ?? Phone
             return (
               <div
                 key={i}
-                className={`flex items-center gap-3 p-6 ${i < rows.length - 1 ? 'md:border-r md:border-slate-100' : ''}`}
+                className={`flex items-center gap-3 p-6 ${i < rows.length - 1 ? 'md:border-r md:border-divider' : ''}`}
               >
-                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-slate-900/10 text-slate-900">
+                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
                   <Icon size={20} />
                 </div>
                 <div>
-                  <div className="font-semibold text-slate-900">{title}</div>
-                  <div className="text-sm text-slate-500">{subtitle}</div>
+                  <div className="font-semibold text-title">{title}</div>
+                  <div className="text-sm text-muted-foreground">{subtitle}</div>
                 </div>
               </div>
             )

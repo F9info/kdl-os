@@ -241,7 +241,7 @@ function TeamPageContent() {
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField label="Name" error={errors.name?.message} required>
-              <Input placeholder="e.g. K Leela Prasad" {...register('name')} />
+              <Input placeholder="e.g. Alex Morgan" {...register('name')} />
             </FormField>
             <FormField label="Role" error={errors.role?.message} required>
               <Input placeholder="e.g. Founder" {...register('role')} />
@@ -255,7 +255,7 @@ function TeamPageContent() {
             error={errors.photo_url?.message}
             hint="Paste a URL or path."
           >
-            <Input placeholder="/seed/subhadra/founder.png" {...register('photo_url')} />
+            <Input placeholder="https://… or /uploads/photo.png" {...register('photo_url')} />
             {photoUrl && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={photoUrl} alt="" className="mt-2 h-16 w-16 rounded-full object-cover" />

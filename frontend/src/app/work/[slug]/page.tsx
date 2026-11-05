@@ -48,7 +48,7 @@ export default function WorkDetailPage() {
 
   if (isError || !work) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-slate-500">
+      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
         <p>404 — no work category at /work/{params.slug}</p>
       </div>
     )
@@ -65,8 +65,8 @@ export default function WorkDetailPage() {
             className="rounded-2xl w-full h-72 object-cover mb-8"
           />
         )}
-        <h1 className="text-3xl font-bold text-slate-900 mb-4">{work.name}</h1>
-        <p className="text-slate-600 leading-relaxed mb-4">{work.subtitle}</p>
+        <h1 className="text-3xl font-bold text-title mb-4">{work.name}</h1>
+        <p className="text-body leading-relaxed mb-4">{work.subtitle}</p>
       </div>
     )
   }

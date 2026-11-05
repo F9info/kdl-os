@@ -97,3 +97,14 @@ export async function getPageBySlug(slug: string): Promise<PageRecord | undefine
     return undefined
   }
 }
+
+/** Clean public URLs: key "home" is "/", any other key is "/<key>" (see backend getPublishedBySiteKey). */
+export async function getPageBySiteKey(key: string): Promise<PageRecord | undefined> {
+  try {
+    const res = await api.get(`/page-builder/public/site/${encodeURIComponent(key)}`)
+    const raw = res.data.data.page
+    return raw ? toRecord(raw) : undefined
+  } catch {
+    return undefined
+  }
+}

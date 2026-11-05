@@ -47,7 +47,7 @@ export default function SectorDetailClient() {
 
   if (isError || !sector) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-slate-500">
+      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
         <p>404 — no sector at /sectors/{params.slug}</p>
       </div>
     )
@@ -67,12 +67,12 @@ export default function SectorDetailClient() {
             className="rounded-2xl w-full h-72 object-cover mb-8"
           />
         )}
-        <h1 className="text-3xl font-bold text-slate-900 mb-4">{sector.name}</h1>
+        <h1 className="text-3xl font-bold text-title mb-4">{sector.name}</h1>
         {(sector.description ?? '')
           .split('\n\n')
           .filter(Boolean)
           .map((p, i) => (
-            <p key={i} className="text-slate-600 leading-relaxed mb-4">
+            <p key={i} className="text-body leading-relaxed mb-4">
               {p}
             </p>
           ))}

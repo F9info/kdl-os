@@ -37,7 +37,7 @@ import { uploadMedia } from '../media/service.js';
 import { aiServicesConfigured, requestBrandInference } from './ai-client.js';
 import { withCreditHold } from '../credits/service.js';
 import { BRAND_INFERENCE_COST } from './costs.js';
-import { getKit, uploadLogo, extractPaletteForKit, inferBrandKit, patchKit, approveKit, reopenKit, getTokens, deleteExpiredOriginals } from './service.js';
+import { getKit, uploadLogo, extractPaletteForKit, inferBrandKit, patchKit, approveKit, reopenKit, getTokens, getThemeColors, deleteExpiredOriginals } from './service.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -466,6 +466,53 @@ describe('getTokens', () => {
   it('throws 409 NOT_APPROVED for non-approved kits', async () => {
     prisma.brandKit.findUnique.mockResolvedValue(makeKit({ status: 'inferred' }));
     await expect(getTokens('proj-1', 'webapp')).rejects.toMatchObject({ status: 409, code: 'NOT_APPROVED' });
+  });
+});
+
+// ─── getThemeColors ───────────────────────────────────────────────────────────
+
+describe('getThemeColors', () => {
+  beforeEach(() => {
+    prisma.brandKit = { findUnique: vi.fn() };
+    // Read-only: it must never need (or touch) the theme-engine Type table.
+    prisma.type = { findFirst: vi.fn() };
+  });
+
+  it('returns the light/dark semantic colours of an approved kit', async () => {
+    prisma.brandKit.findUnique.mockResolvedValue(
+      makeKit({ status: 'approved', palette: GREEN_PALETTE, contrast_report: CONTRAST_REPORT }),
+    );
+
+    const result = await getThemeColors('proj-1');
+
+    expect(result).toMatchObject({
+      approved: true,
+      kitId: 'kit-1',
+      light: { primary: '#0e6e5c', highlight: '#0e6e5c', background: '#f9fafb', text: '#111827' },
+      dark: { background: '#111827', text: '#f9fafb' },
+    });
+    expect(prisma.type.findFirst).not.toHaveBeenCalled();
+  });
+
+  it('works before approval, flagged approved: false (the Simple Theme view previews it)', async () => {
+    prisma.brandKit.findUnique.mockResolvedValue(
+      makeKit({ status: 'inferred', palette: GREEN_PALETTE, contrast_report: CONTRAST_REPORT }),
+    );
+
+    const result = await getThemeColors('proj-1');
+
+    expect(result.approved).toBe(false);
+    expect(result.light.primary).toBe('#0e6e5c');
+  });
+
+  it('throws 409 NOT_EXTRACTED when the palette was never extracted', async () => {
+    prisma.brandKit.findUnique.mockResolvedValue(makeKit({ status: 'draft', palette: null }));
+    await expect(getThemeColors('proj-1')).rejects.toMatchObject({ status: 409, code: 'NOT_EXTRACTED' });
+  });
+
+  it('throws 404 NO_KIT when the project has no brand kit', async () => {
+    prisma.brandKit.findUnique.mockResolvedValue(null);
+    await expect(getThemeColors('proj-1')).rejects.toMatchObject({ status: 404, code: 'NO_KIT' });
   });
 });
 

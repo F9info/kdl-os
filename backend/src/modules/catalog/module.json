@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Individual product/service catalog entries shown on the Products & Services page",
   "core": false,
+  "visibleInCatalog": false,
   "apiPrefix": "/api/catalog",
   "permissions": [
     "catalog"
@@ -16,7 +17,9 @@
       "permission": "catalog:view"
     }
   ],
-  "navSuppressedByPeer": ["template-engine"],
+  "navSuppressedByPeer": [
+    "template-engine"
+  ],
   "dependsOn": [],
   "queues": [],
   "env": []

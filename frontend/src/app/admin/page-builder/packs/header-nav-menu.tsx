@@ -130,7 +130,7 @@ export function HeaderNavMenu({
               )}
             </NavLabel>
             {hasChildren && (
-              <div className="invisible absolute left-0 top-full z-50 min-w-[200px] rounded-lg border border-slate-200 bg-white py-2 opacity-0 shadow-lg transition group-hover/l1:visible group-hover/l1:opacity-100">
+              <div className="invisible absolute left-0 top-full z-50 min-w-[200px] rounded-lg border border-divider bg-card py-2 opacity-0 shadow-lg transition group-hover/l1:visible group-hover/l1:opacity-100">
                 {item.children.map((child) => {
                   const hasGrandchildren = child.children.length > 0
                   return (
@@ -140,7 +140,7 @@ export function HeaderNavMenu({
                     >
                       <NavLabel
                         item={child}
-                        className="flex items-center justify-between gap-3 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                        className="flex items-center justify-between gap-3 px-4 py-2 text-sm font-medium text-body hover:bg-background"
                       >
                         {child.label}
                         {hasGrandchildren && (
@@ -156,12 +156,12 @@ export function HeaderNavMenu({
                         )}
                       </NavLabel>
                       {hasGrandchildren && (
-                        <div className="invisible absolute left-full top-0 z-50 min-w-[200px] rounded-lg border border-slate-200 bg-white py-2 opacity-0 shadow-lg transition group-hover/l2:visible group-hover/l2:opacity-100">
+                        <div className="invisible absolute left-full top-0 z-50 min-w-[200px] rounded-lg border border-divider bg-card py-2 opacity-0 shadow-lg transition group-hover/l2:visible group-hover/l2:opacity-100">
                           {child.children.map((grandchild) => (
                             <NavLabel
                               key={grandchild.id}
                               item={grandchild}
-                              className="block px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                              className="block px-4 py-2 text-sm font-medium text-body hover:bg-background"
                             >
                               {grandchild.label}
                             </NavLabel>
@@ -180,12 +180,8 @@ export function HeaderNavMenu({
   )
 }
 
-const MOBILE_INDENT = [
-  '',
-  'ml-4 border-l border-slate-200 pl-3',
-  'ml-4 border-l border-slate-200 pl-3',
-]
-const MOBILE_TEXT = ['text-lg font-medium', 'text-base', 'text-sm text-slate-600']
+const MOBILE_INDENT = ['', 'ml-4 border-l border-divider pl-3', 'ml-4 border-l border-divider pl-3']
+const MOBILE_TEXT = ['text-lg font-medium', 'text-base', 'text-sm text-body']
 
 function MobileNavItem({
   item,
@@ -198,7 +194,7 @@ function MobileNavItem({
 }) {
   const [open, setOpen] = useState(false)
   const hasChildren = item.children.length > 0
-  const text = `${MOBILE_TEXT[depth] ?? MOBILE_TEXT[2]} text-slate-900`
+  const text = `${MOBILE_TEXT[depth] ?? MOBILE_TEXT[2]} text-title`
   return (
     <div className={depth > 0 ? (MOBILE_INDENT[depth] ?? MOBILE_INDENT[2]) : undefined}>
       <div className="flex items-center justify-between gap-2 py-2">
@@ -223,7 +219,7 @@ function MobileNavItem({
             aria-label={`${open ? 'Collapse' : 'Expand'} ${item.label}`}
             aria-expanded={open}
             onClick={() => setOpen((o) => !o)}
-            className="p-2 -mr-2 text-slate-600"
+            className="p-2 -mr-2 text-body"
           >
             <svg
               className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`}

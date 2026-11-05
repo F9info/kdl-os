@@ -289,7 +289,12 @@ export async function installModule(slug, actorId, { resolveConflicts = false } 
   }
 
   // Install the target itself
-  const mod = await _installSingle(slug, actorId, { resolveConflicts });
+  let mod = await _installSingle(slug, actorId, { resolveConflicts });
+
+  // Umbrella bundles (CMS) are one click: installing also enables them and all their parts.
+  if (loadedManifests.get(slug)?.umbrella) {
+    mod = await enableModule(slug, actorId, { resolveConflicts });
+  }
 
   // Return shape stays the bare module (KDL-542 contract) — installedDependencies
   // rides along as a side-channel field rather than nesting the module under
@@ -454,6 +459,21 @@ export async function disableModule(slug, actorId) {
 
   await invalidateModuleCache(slug);
 
+  // Umbrella bundles (CMS) switch their hidden parts off with them, unless something else needs them.
+  const umbrella = loadedManifests.get(slug);
+  if (umbrella?.umbrella) {
+    for (const partSlug of umbrella.dependsOn ?? []) {
+      const part = await prisma.module.findUnique({ where: { slug: partSlug } });
+      if (!part || part.status !== 'ENABLED') continue;
+      const stillNeeded = allEnabled.some(
+        (m) => m.slug !== slug && m.slug !== partSlug && loadedManifests.get(m.slug)?.dependsOn?.includes(partSlug)
+      );
+      if (stillNeeded) continue;
+      await prisma.module.update({ where: { slug: partSlug }, data: { status: 'DISABLED' } });
+      await invalidateModuleCache(partSlug);
+    }
+  }
+
   writeActivityAsync({
     actor: actorId,
     module: 'user-management/modules',
@@ -594,10 +614,15 @@ export async function listEnabledModules() {
   return dbModules.map((m) => {
     const manifest = loadedManifests.get(m.slug);
     const navSuppressed = (manifest?.navSuppressedByPeer ?? []).some((peer) => enabledSlugs.has(peer));
+    // Part of an enabled umbrella bundle (CMS)? Then the sidebar nests it under that bundle.
+    const parent =
+      dbModules.find((o) => loadedManifests.get(o.slug)?.umbrella && loadedManifests.get(o.slug)?.dependsOn?.includes(m.slug))
+        ?.slug ?? null;
     return {
       slug: m.slug,
       name: m.name,
       core: manifest?.core ?? false,
+      parent,
       nav: navSuppressed ? [] : (manifest?.nav ?? []),
     };
   });

@@ -1,0 +1,26 @@
+{
+  "slug": "gallery",
+  "name": "Gallery",
+  "version": "1.0.0",
+  "description": "Image gallery shown on the public Gallery page (part of CMS)",
+  "core": false,
+  "visibleInCatalog": false,
+  "apiPrefix": "/api/gallery",
+  "permissions": [
+    "gallery"
+  ],
+  "nav": [
+    {
+      "label": "Gallery",
+      "path": "/admin/gallery",
+      "icon": "Image",
+      "permission": "gallery:view"
+    }
+  ],
+  "navSuppressedByPeer": [
+    "template-engine"
+  ],
+  "dependsOn": [],
+  "queues": [],
+  "env": []
+}

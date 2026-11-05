@@ -53,7 +53,9 @@ describe('upsertValues locked_by guard (run-scoped)', () => {
       findMany: vi.fn().mockResolvedValue([field]),
       updateMany: vi.fn().mockResolvedValue({ count: 0 }),
     };
+    prisma.themeValueVersion = { create: vi.fn().mockResolvedValue({}), findMany: vi.fn().mockResolvedValue([]), deleteMany: vi.fn() };
     prisma.settingValue = {
+      findMany: vi.fn().mockResolvedValue([]),
       upsert: vi.fn().mockResolvedValue({}),
     };
     prisma.templateEngineRun = {
@@ -83,7 +85,9 @@ describe('upsertValues locked_by guard (run-scoped)', () => {
     prisma.settingField = {
       findMany: vi.fn().mockResolvedValue([field]),
     };
+    prisma.themeValueVersion = { create: vi.fn().mockResolvedValue({}), findMany: vi.fn().mockResolvedValue([]), deleteMany: vi.fn() };
     prisma.settingValue = {
+      findMany: vi.fn().mockResolvedValue([]),
       upsert: vi.fn().mockResolvedValue({}),
     };
     prisma.$transaction = vi.fn().mockImplementation((ops) => Promise.all(Array.isArray(ops) ? ops : [ops]));
@@ -112,7 +116,9 @@ describe('upsertValues locked_by guard (run-scoped)', () => {
       findMany: vi.fn().mockResolvedValue([field]),
       updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     };
+    prisma.themeValueVersion = { create: vi.fn().mockResolvedValue({}), findMany: vi.fn().mockResolvedValue([]), deleteMany: vi.fn() };
     prisma.settingValue = {
+      findMany: vi.fn().mockResolvedValue([]),
       upsert: vi.fn().mockResolvedValue({}),
     };
     prisma.$transaction = vi.fn().mockImplementation((ops) => Promise.all(Array.isArray(ops) ? ops : [ops]));

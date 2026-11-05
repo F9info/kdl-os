@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { useDefaultProjectId } from '@/hooks/useDefaultProjectId'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -12,7 +12,6 @@ import {
   Trash2,
   ExternalLink,
   Link2Off,
-  ArrowRight,
 } from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
@@ -33,8 +32,8 @@ import { MAX_DEPTH, moveNode, flattenForApi, type MenuItemNode, type DropZone } 
 // switching `key` here switches which one this whole page edits, it's never
 // two views onto the same data.
 const KNOWN_MENUS = [
-  { key: 'header', label: 'Header Navigation' },
-  { key: 'footer', label: 'Footer Navigation' },
+  { key: 'header', label: 'Header menu' },
+  { key: 'footer', label: 'Footer menu' },
 ]
 
 interface Menu {
@@ -62,6 +61,23 @@ function MenusPageContent() {
     enabled: Boolean(projectId),
   })
 
+  // Footer can mirror the header (site-wide option, off by default).
+  const { data: options } = useQuery({
+    queryKey: ['menu-options'],
+    queryFn: () =>
+      api.get('/menus/options').then((r) => r.data.data as { footer_same_as_header: boolean }),
+  })
+  const optionsMutation = useMutation({
+    mutationFn: (footer_same_as_header: boolean) =>
+      api.put('/menus/options', { footer_same_as_header }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['menu-options'] })
+      queryClient.invalidateQueries({ queryKey: ['menu-public'] })
+      toast({ title: 'Footer setting saved' })
+    },
+  })
+  const mirrored = menuKey === 'footer' && options?.footer_same_as_header === true
+
   // Local, editable copy of the tree — drag-and-drop mutates this instantly
   // for a responsive feel; "Save changes" is what actually persists it.
   const [tree, setTree] = useState<MenuItemNode[] | null>(null)
@@ -86,6 +102,9 @@ function MenusPageContent() {
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['menu', projectId, menuKey] })
+    // Layout settings pills derive from menu items + detail types: any menu change refreshes them.
+    queryClient.invalidateQueries({ queryKey: ['detail-page-types'] })
+    queryClient.invalidateQueries({ queryKey: ['detail-menu-labels'] })
     // `useHeaderMenuTree` (ConstructionHeader, WebsiteLayoutPreview,
     // useLayoutChrome) reads this same Menu under its own cache key —
     // without invalidating it too, those previews keep showing whatever
@@ -125,6 +144,10 @@ function MenusPageContent() {
     mutationFn: (id: string) => api.delete(`/menus/items/${id}`),
     onSuccess: () => {
       invalidate()
+      // a "<X> Detail" delete also removes its pages/layout — refresh Layout settings + pages caches
+      queryClient.invalidateQueries({ queryKey: ['detail-page-types'] })
+      queryClient.invalidateQueries({ queryKey: ['template-engine'] })
+      queryClient.invalidateQueries({ queryKey: ['builder-pages'] })
       setDirty(false)
       toast({ title: 'Menu item deleted' })
     },
@@ -152,7 +175,6 @@ function MenusPageContent() {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [editing, setEditing] = useState<MenuItemNode | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
-  const router = useRouter()
   const [customPageName, setCustomPageName] = useState('')
   const [customLabel, setCustomLabel] = useState('')
   const [customUrl, setCustomUrl] = useState('')
@@ -274,27 +296,30 @@ function MenusPageContent() {
               updateItemMutation.mutate({ id: node.id, body: { is_active: v } })
             }
           />
-          <Button
-            variant={node.no_page ? 'secondary' : 'ghost'}
-            size="sm"
-            className={cn('gap-1 px-2 text-xs', node.no_page && 'text-primary')}
-            title={
-              node.no_page
-                ? 'Label only — click to make it a link again'
-                : 'Keep in nav (and its dropdown, if any) but make the label non-clickable'
-            }
-            onClick={() =>
-              updateItemMutation.mutate({ id: node.id, body: { no_page: !node.no_page } })
-            }
-            aria-label={
-              node.no_page
-                ? `Make ${node.label} clickable again`
-                : `Make ${node.label} a non-clickable label`
-            }
-          >
-            <Link2Off className="h-3.5 w-3.5" />
-            No page
-          </Button>
+          {/* Only a dropdown parent (or an item already set to label-only) can use this. */}
+          {(hasChildren || node.no_page) && (
+            <Button
+              variant={node.no_page ? 'secondary' : 'ghost'}
+              size="sm"
+              className={cn('gap-1 px-2 text-xs', node.no_page && 'text-primary')}
+              title={
+                node.no_page
+                  ? 'Label only — click to make it a link again'
+                  : 'Keep in nav (and its dropdown, if any) but make the label non-clickable'
+              }
+              onClick={() =>
+                updateItemMutation.mutate({ id: node.id, body: { no_page: !node.no_page } })
+              }
+              aria-label={
+                node.no_page
+                  ? `Make ${node.label} clickable again`
+                  : `Make ${node.label} a non-clickable label`
+              }
+            >
+              <Link2Off className="h-3.5 w-3.5" />
+              Label only
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -341,20 +366,12 @@ function MenusPageContent() {
 
   return (
     <div>
-      <PageHeader
-        title="Menus"
-        breadcrumbs={[{ label: 'Menus' }]}
-        action={
-          dirty ? (
-            <Button
-              onClick={() => tree && saveOrderMutation.mutate(tree)}
-              disabled={saveOrderMutation.isPending}
-            >
-              Save changes
-            </Button>
-          ) : undefined
-        }
-      />
+      <PageHeader title="Navigation" breadcrumbs={[{ label: 'Navigation' }]} />
+      <p className="mb-2 text-sm text-muted-foreground">
+        Pick a menu below. Items show in this order on your website. Only the first 7 top-level
+        items show in a header; any more go under a &quot;More&quot; dropdown. Deleting a page
+        removes its menu item automatically.
+      </p>
       <p className="mb-2 text-sm text-muted-foreground">
         Drag a row onto another to nest it as a sub-item (up to {MAX_DEPTH} levels); drag to the top
         or bottom edge of a row to reorder as a sibling instead.
@@ -379,7 +396,39 @@ function MenusPageContent() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1.4fr]">
+      {menuKey === 'footer' && (
+        <div className="mb-4 flex items-center gap-3 rounded-lg border bg-card p-3">
+          <Switch
+            checked={options?.footer_same_as_header === true}
+            onCheckedChange={(v) => optionsMutation.mutate(v)}
+            disabled={!options || optionsMutation.isPending}
+            aria-label="Use the same links as the header menu"
+          />
+          <div className="text-sm">
+            <p className="font-medium">Use the same links as the header menu</p>
+            <p className="text-muted-foreground">
+              {mirrored
+                ? 'The footer now shows the header menu. Turn this off to give the footer its own list.'
+                : 'Off: the footer has its own list that you order separately.'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {tree && tree.length > 7 && menuKey === 'header' && (
+        <p className="mb-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          This menu has {tree.length} top-level items. The first 7 show in the header; the other{' '}
+          {tree.length - 7} appear under &quot;More&quot;.
+        </p>
+      )}
+
+      <div
+        className={cn(
+          'grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1.4fr]',
+          mirrored && 'pointer-events-none select-none opacity-40'
+        )}
+        aria-disabled={mirrored || undefined}
+      >
         <div className="space-y-4">
           <div className="rounded-lg border bg-card p-4">
             <h3 className="mb-2 text-sm font-semibold">Pages</h3>
@@ -445,11 +494,10 @@ function MenusPageContent() {
       <div className="mt-4 flex justify-end">
         <Button
           type="button"
-          disabled={dirty || saveOrderMutation.isPending}
-          onClick={() => router.push(`/admin/template-engine/projects/${projectId}/website`)}
+          disabled={!tree || saveOrderMutation.isPending}
+          onClick={() => tree && saveOrderMutation.mutate(tree)}
         >
-          Next
-          <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+          {saveOrderMutation.isPending ? 'Saving…' : 'Save'}
         </Button>
       </div>
 

@@ -5,12 +5,30 @@
   "description": "9-stage DAG orchestrator — drives brand-kit, theme-engine, page-builder, collateral, and credits via their public APIs (Mode A / Studio). No rendering logic lives here.",
   "core": false,
   "apiPrefix": "/api/template-engine",
-  "permissions": [{ "name": "template-engine", "actions": ["view", "run", "approve", "export"] }],
-  "nav": [
-    { "label": "Template Engine", "path": "/admin/template-engine", "icon": "Sparkles", "permission": "template-engine:view" }
+  "permissions": [
+    {
+      "name": "template-engine",
+      "actions": [
+        "view",
+        "run",
+        "approve",
+        "export"
+      ]
+    }
   ],
-  "dependsOn": ["projects", "theme-engine", "theme-engine-ui", "page-builder", "page-builder-ui", "brand-kit", "collateral", "credits"],
+  "nav": [],
+  "dependsOn": [
+    "projects",
+    "theme-engine",
+    "theme-engine-ui",
+    "page-builder",
+    "page-builder-ui",
+    "brand-kit",
+    "collateral",
+    "credits"
+  ],
   "conflictsWith": [],
   "queues": [],
-  "env": []
+  "env": [],
+  "visibleInCatalog": false
 }

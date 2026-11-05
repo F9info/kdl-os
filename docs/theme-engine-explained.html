@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Theme Engine Explained</title>
+<style>
+  :root { --primary:#2563eb; --radius:8px; --font:system-ui,sans-serif; --size:16px; }
+  body { font-family:var(--font); font-size:var(--size); margin:0; padding:24px; background:#f8fafc; color:#0f172a; max-width:860px; margin-inline:auto; }
+  h1 { margin:0 0 4px } .sub { color:#475569; margin-bottom:24px }
+  .flow { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:16px 0 28px }
+  .box { background:#fff; border:1px solid #cbd5e1; border-radius:8px; padding:10px 14px; font-weight:600 }
+  .arrow { color:#64748b }
+  .panel { display:grid; grid-template-columns:1fr 1fr; gap:20px } @media(max-width:640px){.panel{grid-template-columns:1fr}}
+  .card { background:#fff; border:1px solid #e2e8f0; border-radius:var(--radius); padding:16px }
+  label { display:block; margin:10px 0 4px; font-size:14px; color:#475569 }
+  input[type=range], select { width:100% }
+  .btn { background:var(--primary); color:#fff; border:0; padding:10px 18px; border-radius:var(--radius); font:inherit; cursor:pointer }
+  .hero { background:var(--primary); color:#fff; border-radius:var(--radius); padding:20px; margin-bottom:12px }
+  .bad { background:#2563eb; color:#fff; border-radius:8px; padding:10px; margin-top:12px; font-size:14px }
+  code { background:#e2e8f0; padding:1px 6px; border-radius:4px }
+  .note { background:#ecfdf5; border:1px solid #6ee7b7; border-radius:8px; padding:12px; margin-top:24px }
+  .warn { background:#fef2f2; border:1px solid #fca5a5; border-radius:8px; padding:12px; margin-top:12px }
+</style>
+</head>
+<body>
+<h1>Theme Engine, in simple words</h1>
+<div class="sub">One place holds the look. Everything else just reads it.</div>
+
+<div class="flow">
+  <span class="box">Brand Kit<br><small>your colors + fonts</small></span><span class="arrow">→</span>
+  <span class="box">Theme Engine<br><small>stores as variables</small></span><span class="arrow">→</span>
+  <span class="box">Blocks + pages<br><small>read the variables</small></span><span class="arrow">→</span>
+  <span class="box">Client website</span>
+</div>
+
+<div class="panel">
+  <div class="card">
+    <b>1. Change one value (try it)</b>
+    <label>Main color <code>--primary</code></label>
+    <input type="color" id="c" value="#2563eb">
+    <label>Roundness <code>--radius</code></label>
+    <input type="range" id="r" min="0" max="28" value="8">
+    <label>Font <code>--font</code></label>
+    <select id="f">
+      <option value="system-ui,sans-serif">Sans</option>
+      <option value="Georgia,serif">Serif</option>
+      <option value="ui-monospace,monospace">Mono</option>
+    </select>
+    <label>Text size <code>--size</code></label>
+    <input type="range" id="s" min="13" max="22" value="16">
+  </div>
+  <div class="card">
+    <b>2. Everything using the variable changes</b>
+    <div class="hero" style="margin-top:12px">Hero section</div>
+    <button class="btn">Contact us</button>
+    <div class="bad">This block has a hardcoded color. It ignores the theme.</div>
+  </div>
+</div>
+
+<div class="note"><b>Template Engine uses Theme Engine: yes.</b>
+  When a client's brand is approved, Template Engine copies the Brand Kit colors and fonts into Theme Engine, and locks those fields. The finished site then loads them from <code>/api/theme-engine/tokens</code>.</div>
+<div class="warn"><b>Known gap:</b> about 700 construction-block colors are hardcoded like the red-bordered blue box above, so they don't follow the theme yet. Fixing them is the path to "change once, applies everywhere".</div>
+
+<script>
+  const root = document.documentElement.style;
+  const set = (id, fn) => document.getElementById(id).addEventListener('input', e => fn(e.target.value));
+  set('c', v => root.setProperty('--primary', v));
+  set('r', v => root.setProperty('--radius', v + 'px'));
+  set('f', v => root.setProperty('--font', v));
+  set('s', v => root.setProperty('--size', v + 'px'));
+</script>
+</body>
+</html>

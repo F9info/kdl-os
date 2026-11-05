@@ -1,19 +1,56 @@
 {
   "slug": "menus",
-  "name": "Menus",
+  "name": "Website",
   "version": "1.0.0",
   "description": "Multi-level drag-and-drop navigation menus (header, footer, mobile)",
   "core": false,
+  "visibleInCatalog": false,
   "apiPrefix": "/api/menus",
   "permissions": [
     "menus"
   ],
   "nav": [
     {
-      "label": "Menus",
+      "label": "Company Details",
+      "path": "/admin/website-details",
+      "icon": "Package",
+      "permission": "menus:view"
+    },
+    {
+      "label": "Color Palette",
+      "path": "/admin/color-palette",
+      "icon": "Palette",
+      "permission": "menus:view"
+    },
+    {
+      "label": "Brands",
+      "path": "/admin/brands",
+      "icon": "LayoutTemplate",
+      "permission": "menus:view"
+    },
+    {
+      "label": "Navigation",
       "path": "/admin/menus",
       "icon": "Package",
       "permission": "menus:view"
+    },
+    {
+      "label": "Layouts",
+      "path": "/admin/layouts",
+      "icon": "LayoutTemplate",
+      "permission": "menus:view"
+    },
+    {
+      "label": "Pages",
+      "path": "/admin/pages",
+      "icon": "FileText",
+      "permission": "menus:view"
+    },
+    {
+      "label": "Section Builder",
+      "path": "/admin/page-builder/section-builder",
+      "icon": "LayoutTemplate",
+      "permission": "page-builder:view"
     }
   ],
   "dependsOn": [],

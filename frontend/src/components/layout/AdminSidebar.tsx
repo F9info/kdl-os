@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import {
   LayoutDashboard,
@@ -79,6 +79,19 @@ export const FLAT_ITEMS: NavLeaf[] = [
   { label: 'Modules', href: '/admin/modules', icon: Package, permission: 'modules:view' },
 ]
 
+export // CMS entries that open a project stage page (…/template-engine/projects/<id>/palette|website):
+// keep them highlighted (and CMS open) while you are on that page.
+function isStageNavActive(itemPath: string, pathname: string, search: string): boolean {
+  if (!pathname.startsWith('/admin/template-engine/projects/')) return false
+  const view = new URLSearchParams(search).get('view')
+  if (itemPath === '/admin/color-palette') return pathname.endsWith('/palette')
+  if (itemPath === '/admin/pages') return pathname.endsWith('/website') && view === 'pages'
+  if (itemPath === '/admin/layouts') return pathname.endsWith('/website') && view === 'layouts'
+  if (itemPath === '/admin/brands')
+    return pathname.endsWith('/website') && view !== 'pages' && view !== 'layouts'
+  return false
+}
+
 export const GROUPS: NavGroup[] = [
   {
     label: 'Media',
@@ -119,18 +132,29 @@ export const GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: 'Application Settings',
+    label: 'Settings',
     icon: UserCog,
     children: [
-      { label: 'Types', href: '/admin/settings/types', icon: ListChecks, permission: 'types:view' },
       {
-        label: 'Categories',
+        label: 'Identity',
+        href: '/admin/settings/identity',
+        icon: Palette,
+        permission: 'settings:view',
+      },
+      {
+        label: 'Field Types',
+        href: '/admin/settings/types',
+        icon: ListChecks,
+        permission: 'types:view',
+      },
+      {
+        label: 'Field Categories',
         href: '/admin/settings/categories',
         icon: Briefcase,
         permission: 'categories:view',
       },
       {
-        label: 'Fields',
+        label: 'Custom Fields',
         href: '/admin/settings/fields',
         icon: SlidersHorizontal,
         permission: 'setting-fields:view',
@@ -150,8 +174,9 @@ export function AdminSidebar() {
   const isMobile = useIsMobile()
   const { isAdmin } = useAuth()
   const { can } = usePermissions()
-  const { nonCoreNav } = useModules()
+  const { nonCoreNav, bundles } = useModules()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
 
   // Sync viewport breakpoint into the store so other components can read it.
@@ -187,11 +212,16 @@ export function AdminSidebar() {
         })
         .then((r) => r.data.data as { types: Type[] }),
   })
-  const typeLeaves: NavLeaf[] = (typesData?.types ?? []).map((t) => ({
-    label: t.name,
-    href: `/admin/settings/view/${t.slug}`,
-    icon: Cog,
-  }))
+  // Types edited inside another page (website-content lives in CMS → Company Details) get no
+  // sidebar entry of their own; their /admin/settings/view/<slug> route still works.
+  const EMBEDDED_TYPES = new Set(['website-content'])
+  const typeLeaves: NavLeaf[] = (typesData?.types ?? [])
+    .filter((t) => !EMBEDDED_TYPES.has(t.slug))
+    .map((t) => ({
+      label: t.name,
+      href: `/admin/settings/view/${t.slug}`,
+      icon: Cog,
+    }))
 
   // Dynamic logo from the 'logo' setting field — shown in the header in place of
   // the "KDL Admin" text. Falls back to the text when no logo is configured.
@@ -312,6 +342,66 @@ export function AdminSidebar() {
                 <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                 {showLabels && <span>{item.label}</span>}
               </Link>
+            )
+          })}
+
+          {/* Bundles (CMS): one collapsible entry that holds all of the bundle's parts */}
+          {bundles.map((bundle) => {
+            const items = bundle.items.filter((item) => !item.permission || can(item.permission))
+            if (items.length === 0) return null
+            const isActive = (path: string) =>
+              pathname === path ||
+              pathname.startsWith(path + '/') ||
+              isStageNavActive(path, pathname, `?${searchParams.toString()}`)
+            const open = openGroups[bundle.name] ?? items.some((i) => isActive(i.path))
+            return (
+              <div key={bundle.slug} className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(bundle.name)}
+                  aria-expanded={open}
+                  className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  title={!showLabels ? bundle.name : undefined}
+                >
+                  <Package className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  {showLabels && (
+                    <>
+                      <span className="flex-1 text-left">{bundle.name}</span>
+                      <ChevronDown
+                        className={cn(
+                          'h-4 w-4 shrink-0 transition-transform',
+                          open ? 'rotate-0' : '-rotate-90'
+                        )}
+                        aria-hidden="true"
+                      />
+                    </>
+                  )}
+                </button>
+                {open && (
+                  <div className={cn('space-y-1', showLabels && 'ml-4 border-l pl-2')}>
+                    {items.map((item) => {
+                      const active = isActive(item.path)
+                      const Icon = (item.icon ? MODULE_ICON_MAP[item.icon] : null) ?? Package
+                      return (
+                        <Link
+                          key={item.path}
+                          href={item.path}
+                          className={cn(
+                            'flex items-center gap-3 rounded-md px-3 py-2 transition-colors',
+                            active
+                              ? 'bg-primary text-primary-foreground'
+                              : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                          )}
+                          title={!showLabels ? item.label : undefined}
+                        >
+                          <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                          {showLabels && <span>{item.label}</span>}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
             )
           })}
 

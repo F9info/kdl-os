@@ -2,6 +2,7 @@
 
 import { isLegacyNumberedKey } from './packs/numbered-families'
 import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { usePuck, AutoField, FieldLabel } from '@puckeditor/core'
 import type { Field } from '@puckeditor/core'
 import {
@@ -265,15 +266,15 @@ function ThemeEngineLink() {
     >
       <Settings size={18} color={OD.muted} className="mx-auto mb-2" />
       <p style={{ color: OD.muted }}>
-        Site-wide colours, typography and button styles live in Theme Engine.
+        Site-wide colours, typography and button styles live in Themes.
       </p>
-      <a
+      <Link
         href="/admin/theme-engine"
         className="mt-2 inline-block rounded-md px-2.5 py-1.5 text-[10.5px] font-semibold"
         style={{ background: TAB_ACCENT.theme, color: '#1a1c12' }}
       >
-        Open Theme Engine →
-      </a>
+        Open Themes →
+      </Link>
     </div>
   )
 }

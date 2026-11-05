@@ -49,9 +49,9 @@ describe('site generator', () => {
   it('maps menu links to friendly routes and honours no_page / inactive', () => {
     const item = (o) => ({ id: o.id, label: o.label, parent_id: null, order: 0, is_active: true, no_page: false, open_in_new_tab: false, url: null, page_id: null, ...o });
     const model = buildSiteModel({
-      project: { id: 'p', slug: 'subhadra', name: 'Subhadra' },
+      project: { id: 'p', slug: 'demo-agency', name: 'Demo Agency' },
       kit: { palette: { colors: { primary: { hex: '#f60' } } }, typography: { heading: { family: 'Poppins' } } },
-      company: { company_name: 'Subhadra Group' },
+      company: { company_name: 'Demo Agency' },
       pages: [page('1', 'Home'), page('2', 'About Us', 'te-run-about')],
       menus: [
         {
@@ -70,7 +70,7 @@ describe('site generator', () => {
     expect(about.href).toBeNull();
     expect(about.children[0].href).toBe('/about-us');
     expect(model.menus.header).toHaveLength(2);
-    expect(model.site).toMatchObject({ name: 'Subhadra Group', colors: { primary: '#f60' }, fonts: { heading: 'Poppins', body: 'Inter' } });
+    expect(model.site).toMatchObject({ name: 'Demo Agency', colors: { primary: '#f60' }, fonts: { heading: 'Poppins', body: 'Inter' } });
     expect(model.pages.map((p) => p.file)).toEqual(['index', 'about-us']);
   });
 });

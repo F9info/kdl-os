@@ -20,7 +20,11 @@ export function applyHeaderOverlay<T>(data: T): T {
   const next = content
     .slice(i + 1)
     .find((b) => !SKIP_TYPES.has(b.type) && b.props?.visible !== false)
-  const overlay = Boolean(next && HERO_TYPES.has(next.type))
+  // A visible top bar above the header keeps the header in the flow (solid), never floating over the hero.
+  const topBar = content
+    .slice(0, i)
+    .some((b) => b.type === 'ConstructionTopBar' && b.props?.visible !== false)
+  const overlay = !topBar && Boolean(next && HERO_TYPES.has(next.type))
   const header = content[i]!
   const patched = content.map((b, n) =>
     n === i

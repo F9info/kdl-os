@@ -2,14 +2,15 @@
 // resolves a template with the entity's own copy; the editor must show the
 // same thing (otherwise it shows the template's placeholder text), but must
 // never write that per-entity copy back into the shared template on save.
-import { getDetailPageType } from './registry.js';
+import { resolveDetailPageType } from './registry.js';
 
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 async function loadContext(page, template) {
-  const type = getDetailPageType(template.type_key);
+  const projectId = page.project_id ?? template.project_id;
+  const type = await resolveDetailPageType(template.type_key, projectId);
   if (!type?.resolveEntityBindings || !page.entity_id) return null;
-  const entities = await type.listEntities(page.project_id ?? template.project_id);
+  const entities = await type.listEntities(projectId);
   const entity = entities.find((e) => e.id === page.entity_id);
   return entity ? { type, entity } : null;
 }
@@ -26,6 +27,14 @@ export async function resolveForEditor(page, template) {
 export async function stripEntityBindings(page, template, incoming) {
   const ctx = await loadContext(page, template);
   if (!ctx || !incoming?.content) return incoming;
+  // Types that own per-entity content: save the entry's edits on the entry, not the template.
+  if (ctx.type.splitEntityEdits) {
+    const { entityPatch, data } = ctx.type.splitEntityEdits(template.data, ctx.entity, incoming);
+    if (Object.keys(entityPatch).length) {
+      await ctx.type.updateEntity(page.project_id ?? template.project_id, ctx.entity.id, entityPatch);
+    }
+    incoming = data;
+  }
   const resolved = ctx.type.resolveEntityBindings(template.data, ctx.entity);
   const byId = (data) => new Map((data.content ?? []).map((b) => [b.props?.id, b]));
   const tplBlocks = byId(template.data);

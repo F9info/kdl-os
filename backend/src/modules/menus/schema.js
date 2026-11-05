@@ -93,3 +93,7 @@ export const reorderMenuItemsSchema = z.object({
       .max(500),
   }),
 });
+
+export const updateMenuOptionsSchema = z.object({
+  body: z.object({ footer_same_as_header: z.boolean().optional() }),
+});

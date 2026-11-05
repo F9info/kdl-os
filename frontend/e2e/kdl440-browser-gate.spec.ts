@@ -1,6 +1,6 @@
 /**
  * KDL-440 Phase C Browser Gate
- * (a) sidebar shows "Theme Engine"; /admin/theme-engine loads
+ * (a) sidebar shows "Themes"; /admin/theme-engine loads
  * (b) tokens endpoint returns branding vars
  * (c) sidebar NOT flooded with ~86 panes
  * (d) /api/template-engine/tokens → 404; /api/theme-engine/tokens → 200
@@ -50,8 +50,8 @@ test('(a) sidebar shows Theme Engine and /admin/theme-engine page loads', async 
   const sidebarText = await page.locator('[data-testid="admin-sidebar"]').innerText()
   console.log(`Sidebar nav items:\n${sidebarText}`)
 
-  // PASS: sidebar shows "Theme Engine"
-  expect(sidebarText, 'Sidebar must contain "Theme Engine"').toContain('Theme Engine')
+  // PASS: sidebar shows "Themes"
+  expect(sidebarText, 'Sidebar must contain "Themes"').toContain('Themes')
   // No nav item with text exactly "Template Engine" should appear
   const templateEngineLink = page.locator(
     '[data-testid="admin-sidebar"] a:has-text("Template Engine")'
