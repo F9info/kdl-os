@@ -13,7 +13,12 @@ model BuilderPage {
   slug       String     @unique
   title      String
   status     PageStatus @default(DRAFT)
+  // Live content (what visitors see while status = PUBLISHED).
   data       Json
+  // Unpublished edits of a PUBLISHED page (T6.2). Null = nothing pending. Publishing copies it to `data`.
+  draft_data Json?
+  // Per-page SEO (T6.1): { title, description, og_image, canonical, noindex }. Null/missing key = use defaults.
+  seo        Json?
   created_by String?
   deleted_at DateTime?
   created_at DateTime   @default(now())
@@ -29,9 +34,29 @@ model BuilderPage {
   template_id String?
   entity_id   String?
 
+  versions PageVersion[]
+
   @@index([status])
   @@index([project_id])
   @@index([site_id])
   @@index([template_id])
   @@map("builder_pages")
+}
+
+// Immutable snapshot taken each time a page is published (or restored). Never updated.
+model PageVersion {
+  id         String      @id @default(cuid())
+  page_id    String
+  // 1, 2, 3 ... per page.
+  version    Int
+  title      String
+  data       Json
+  seo        Json?
+  note       String?
+  created_by String?
+  created_at DateTime    @default(now())
+  page       BuilderPage @relation(fields: [page_id], references: [id], onDelete: Cascade)
+
+  @@unique([page_id, version])
+  @@map("page_versions")
 }

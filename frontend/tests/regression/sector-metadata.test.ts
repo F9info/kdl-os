@@ -9,7 +9,7 @@ import {
   fetchPublicSector,
   resolveSiteOrigin,
   type SectorMeta,
-} from '@/lib/sector-metadata'
+} from '@/frontend/lib/sector-metadata'
 
 const sector = (over: Partial<SectorMeta> = {}): SectorMeta => ({
   name: 'Hotel',

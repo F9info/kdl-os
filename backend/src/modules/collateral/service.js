@@ -4,7 +4,7 @@
 import { randomUUID } from 'crypto';
 import { prisma } from '../../config/database.js';
 import { withCreditHold } from '../credits/service.js';
-import { getCompanyInfo } from '../brand-kit/contact-fields.js';
+import { getCompanyInfo } from '../identity/company-info.js';
 import { runPreflight } from './preflight.js';
 import { renderArtifact } from './render/index.js';
 

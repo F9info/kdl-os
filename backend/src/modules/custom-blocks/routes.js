@@ -10,6 +10,7 @@ import {
   listCustomBlocksQuerySchema,
   customBlockIdParamSchema,
   updateCustomBlockSchema,
+  updateInstancesSchema,
 } from './schema.js';
 import {
   getAll,
@@ -17,6 +18,8 @@ import {
   putUpdate,
   postDuplicate,
   postSetDefault,
+  getInstances,
+  postUpdateInstances,
   remove,
 } from './controller.js';
 
@@ -77,6 +80,20 @@ router.post(
   validate(customBlockIdParamSchema),
   requireProject(),
   postSetDefault
+);
+router.get(
+  '/:id/instances',
+  requirePermission('page-builder', 'view'),
+  validate(customBlockIdParamSchema),
+  requireProject(),
+  getInstances
+);
+router.post(
+  '/:id/update-instances',
+  requirePermission('page-builder', 'edit'),
+  validate(updateInstancesSchema),
+  requireProject(),
+  postUpdateInstances
 );
 router.delete(
   '/:id',

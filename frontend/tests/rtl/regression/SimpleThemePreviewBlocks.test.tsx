@@ -49,7 +49,7 @@ describe('PreviewBlocks (real page-builder blocks)', () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {})
     const expected = (e: ErrorEvent) => e.preventDefault()
     window.addEventListener('error', expected)
-    const { config } = await import('@/app/admin/page-builder/puck.config')
+    const { config } = await import('@/frontend/blocks/puck.config')
     const [broken, fine] = PREVIEW_PACKS[1].blocks
     const original = config.components![broken]!.render
     config.components![broken]!.render = () => {

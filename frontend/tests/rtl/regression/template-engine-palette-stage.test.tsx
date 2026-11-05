@@ -9,7 +9,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { PaletteStage } from '@/app/admin/template-engine/_components/stages/PaletteStage'
-import type { TemplateEngineRun, BrandKit } from '@/types/template-engine.types'
+import type { TemplateEngineRun, BrandKit } from '@/admin/types/template-engine.types'
 
 const { mockPush } = vi.hoisted(() => ({ mockPush: vi.fn() }))
 
@@ -70,7 +70,7 @@ const { mockPatchMutate, mockAdvanceMutate, mockRetryMutate, mockUseBrandKit } =
   mockUseBrandKit: vi.fn(),
 }))
 
-vi.mock('@/hooks/useTemplateEngine', () => ({
+vi.mock('@/admin/hooks/useTemplateEngine', () => ({
   useAdvanceStage: () => ({ mutate: mockAdvanceMutate, isPending: false }),
   useRetryStage: () => ({ mutate: mockRetryMutate, isPending: false }),
   useBrandKit: mockUseBrandKit,

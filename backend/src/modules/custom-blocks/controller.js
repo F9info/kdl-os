@@ -1,5 +1,6 @@
 import { successResponse, errorResponse } from '../../shared/utils/response.js';
 import * as service from './service.js';
+import { listInstances, updateInstances } from './instances.js';
 
 // Project scope (req.projectId) is injected by the shared requireProject
 // middleware — it has already verified the caller has access to that
@@ -78,6 +79,26 @@ export const remove = async (req, res, next) => {
   try {
     await service.deleteCustomBlock(req.validated.params.id, req.projectId, req.user?.id);
     successResponse(res, { ok: true });
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+// Linked custom sections (T7.1): where a section is used, and bring those uses up to date.
+export const getInstances = async (req, res, next) => {
+  try {
+    successResponse(res, await listInstances(req.params.id, req.projectId));
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+export const postUpdateInstances = async (req, res, next) => {
+  try {
+    const { page_ids: pageIds } = req.validated.body;
+    successResponse(res, await updateInstances(req.params.id, req.projectId, pageIds, req.user?.id));
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);
     next(err);

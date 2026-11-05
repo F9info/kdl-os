@@ -1,12 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ModuleGuard } from '@/components/shared/ModuleGuard'
+import { ModuleGuard } from '@/admin/components/shared/ModuleGuard'
 import {
   renderComposedBlock,
   DEFAULT_SETTINGS,
   type ComposedBlockConfig,
-} from '../../packs/composer/render-composed-block'
+} from '../../../../../frontend/blocks/packs/composer/render-composed-block'
 
 /**
  * Opened via `window.open(...)` from the Section Builder's "Preview" button —

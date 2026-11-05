@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '../utils'
-import { useModules } from '@/hooks/useModules'
+import { useModules } from '@/admin/hooks/useModules'
 import { useAuthStore } from '@/stores/auth.store'
 
 vi.mock('@/lib/axios', () => ({ default: { get: vi.fn() } }))

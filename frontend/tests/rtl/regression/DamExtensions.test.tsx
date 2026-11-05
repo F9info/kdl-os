@@ -8,7 +8,7 @@
 //   POST /media/upload/chunked/:id/complete → { media }
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor, fireEvent } from '../utils'
-import { SearchFacets, ChunkedUploadDialog } from '@/components/media/DamExtensions'
+import { SearchFacets, ChunkedUploadDialog } from '@/admin/components/media/DamExtensions'
 
 vi.mock('@/lib/axios', () => ({
   default: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn(), patch: vi.fn() },

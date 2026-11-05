@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '../utils'
-import { general } from '@/app/admin/page-builder/packs/general'
+import { general } from '@/frontend/blocks/packs/general'
 
 const comp = general.components as any
 const Faq = comp.FaqList.render

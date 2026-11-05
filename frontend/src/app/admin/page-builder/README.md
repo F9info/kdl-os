@@ -31,13 +31,20 @@ stores plain JSON you own (Prisma), and has zero runtime lock-in. Peer dep is
 
 ## What's here
 
-Frontend (`frontend/src/app/admin/page-builder/`)
+Admin editor (`frontend/src/app/admin/page-builder/`): editor-only code.
 
-- `puck.config.tsx` — the block library (composed from every pack under `packs/`). Shared by Template Engine's editor + the public renderer.
 - `blocks-panel.tsx`, `insert-block-modal.tsx` — the editor chrome and "Insert a block" modal, mounted inside Template Engine's `<Puck>` host.
-- `store.ts` — page CRUD against the real backend API (`GET/POST/PUT /api/page-builder`).
+- `SeoDialog.tsx`, `PublishControls.tsx`, `PublishChecks.tsx`, `PreviewLink.tsx` — SEO, publish status/versions, pre-publish checks, signed preview links.
+- `store.ts` — the editor's page API (`GET/POST/PUT /api/page-builder`, publish, versions, checks, preview link).
 - `frontend/src/app/admin/template-engine/edit/[id]/page.tsx` — the actual editor route (imports everything above).
-- `frontend/src/app/p/[slug]/page.tsx` — public responsive renderer (`<Render />`).
+
+Public website (`frontend/src/frontend/`): what visitors get. The block library moved here so the admin
+no longer owns rendering code (see `docs/planning/09-admin-frontend-architecture.md`).
+
+- `blocks/puck.config.tsx` — the block library (composed from every pack under `blocks/packs/`). Imported by the editor AND the public renderer, so the editor edits exactly what the site renders.
+- `pages/page-record.ts` — the page record and the public page fetchers (by slug, site key, preview token).
+- `rendering/PageRender.tsx`, `rendering/SitePage.tsx` — how a page becomes HTML.
+- `frontend/src/app/(site)/p/[slug]/page.tsx` — public responsive renderer (`<Render />`).
 
 Backend (`backend/src/modules/page-builder/`)
 

@@ -11,7 +11,7 @@
   ],
   "nav": [
     {
-      "label": "Company Details",
+      "label": "Website Details",
       "path": "/admin/website-details",
       "icon": "Package",
       "permission": "menus:view"
@@ -47,7 +47,7 @@
       "permission": "menus:view"
     },
     {
-      "label": "Section Builder",
+      "label": "Sections",
       "path": "/admin/page-builder/section-builder",
       "icon": "LayoutTemplate",
       "permission": "page-builder:view"

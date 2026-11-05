@@ -50,3 +50,8 @@ export const updateCustomBlockSchema = z.object({
   body: updateCustomBlockBodySchema,
   params: z.object({ id: z.string().min(1) }),
 });
+
+export const updateInstancesSchema = z.object({
+  params: z.object({ id: z.string().min(1) }),
+  body: z.object({ page_ids: z.array(z.string().min(1)).max(500).optional() }).default({}),
+});

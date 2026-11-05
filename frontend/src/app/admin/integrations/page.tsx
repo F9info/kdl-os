@@ -5,11 +5,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Pencil, Trash2, SendHorizonal, RotateCcw } from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { ModuleGuard } from '@/components/shared/ModuleGuard'
-import { PermissionGuard } from '@/components/shared/PermissionGuard'
+import { PageHeader } from '@/admin/components/layout/PageHeader'
+import { ModuleGuard } from '@/admin/components/shared/ModuleGuard'
+import { PermissionGuard } from '@/admin/components/shared/PermissionGuard'
 import { Modal } from '@/components/shared/Modal'
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
+import { ConfirmDialog } from '@/admin/components/shared/ConfirmDialog'
 import { FormField } from '@/components/shared/FormField'
 import { ErrorAlert } from '@/components/shared/ErrorAlert'
 import { Button } from '@/components/ui/button'
@@ -24,8 +24,12 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
-import type { IntegrationChannel, IntegrationProvider, DriverKey } from '@/types/integrations.types'
-import { DRIVER_FIELDS, CHANNEL_DRIVERS } from '@/types/integrations.types'
+import type {
+  IntegrationChannel,
+  IntegrationProvider,
+  DriverKey,
+} from '@/admin/types/integrations.types'
+import { DRIVER_FIELDS, CHANNEL_DRIVERS } from '@/admin/types/integrations.types'
 
 const CHANNELS: IntegrationChannel[] = ['EMAIL', 'SMS', 'WHATSAPP']
 const CHANNEL_LABELS: Record<IntegrationChannel, string> = {

@@ -99,8 +99,22 @@ export function resolveProducts({ selected, previous = [], manifests, enabled = 
   };
 }
 
+/**
+ * Products that are already ON because every module they need is enabled, even though nobody chose
+ * them in Settings > Products (modules installed one by one on the Modules page). Display only: the
+ * saved selection stays the only thing that hides navigation entries (see hiddenByProducts).
+ */
+export function inferProducts({ manifests, enabled = [], stored = [] }) {
+  const enabledSet = new Set(enabled);
+  return PRODUCT_KEYS.filter((key) => {
+    if (stored.includes(key)) return false;
+    const r = resolveProducts({ selected: [key], manifests, enabled: enabledSet });
+    return r.valid && r.toEnable.length === 0;
+  });
+}
+
 /** Module graph for the admin UI: every manifest with its dependents (reverse dependsOn). */
-export function buildGraph({ manifests, enabled = [], selected = [] }) {
+export function buildGraph({ manifests, enabled = [], selected = [], inferred = [] }) {
   const enabledSet = new Set(enabled);
   const dependents = new Map();
   for (const [slug, m] of manifests) {
@@ -123,6 +137,7 @@ export function buildGraph({ manifests, enabled = [], selected = [] }) {
   return {
     products: PRODUCT_KEYS.map((key) => ({ key, ...PRODUCTS[key] })),
     selected: resolution.selected,
+    inferred,
     modules,
     resolution,
   };

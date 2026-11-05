@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor } from '../utils'
-import { general } from '@/app/admin/page-builder/packs/general'
-import { NavLinks, MAX_VISIBLE, flatten } from '@/app/admin/page-builder/packs/general/nav-items'
+import { general } from '@/frontend/blocks/packs/general'
+import { NavLinks, MAX_VISIBLE, flatten } from '@/frontend/blocks/packs/general/nav-items'
 
 const comp = general.components as any
 const NavBar = comp.NavBar.render

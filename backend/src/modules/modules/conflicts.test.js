@@ -690,3 +690,16 @@ describe('KDL-619: enableModule cascades to install/enable deps automatically', 
     expect(err.details?.code).toBe('MODULE_CONFLICT');
   });
 });
+
+// Labels are renamed in module.json; the DB row keeps the install-time name, so the sidebar
+// list must take the name from the manifest.
+describe('listEnabledModules: label comes from the manifest, not the stale DB row', () => {
+  it('returns the manifest name', async () => {
+    loadedManifests.set('cms', makeManifest('cms', { name: 'Content' }));
+    prisma.module = {
+      findMany: vi.fn().mockResolvedValue([{ slug: 'cms', name: 'CMS', status: 'ENABLED' }]),
+    };
+    const list = await listEnabledModules();
+    expect(list.find((m) => m.slug === 'cms').name).toBe('Content');
+  });
+});

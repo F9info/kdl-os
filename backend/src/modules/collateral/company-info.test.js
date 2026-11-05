@@ -1,6 +1,6 @@
 /**
  * resolveBrandKit() — company.email/phone/addressLines wiring (KDL-558 row 1).
- * Isolated from collateral.test.js so mocking ../brand-kit/contact-fields.js
+ * Isolated from collateral.test.js so mocking ../identity/company-info.js
  * here can't affect that file's existing (unmocked-contact-fields) assertions.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -11,12 +11,12 @@ vi.mock('../../config/database.js', () => ({
     project: { findUnique: vi.fn() },
   },
 }));
-vi.mock('../brand-kit/contact-fields.js', () => ({
+vi.mock('../identity/company-info.js', () => ({
   getCompanyInfo: vi.fn(),
 }));
 
 import { prisma } from '../../config/database.js';
-import { getCompanyInfo } from '../brand-kit/contact-fields.js';
+import { getCompanyInfo } from '../identity/company-info.js';
 import { resolveBrandKit } from './service.js';
 
 const LIVE_ROW = {

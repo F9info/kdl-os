@@ -5,7 +5,7 @@
  */
 import { renderHook, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { useAutosave } from '@/hooks/useAutosave'
+import { useAutosave } from '@/admin/hooks/useAutosave'
 
 beforeEach(() => vi.useFakeTimers())
 afterEach(() => vi.useRealTimers())

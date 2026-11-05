@@ -45,7 +45,7 @@ export const LANDING_TEMPLATES = {
     name: 'Product launch',
     description: 'Announce a product with features, details and a buy or sign-up button.',
     body: (s) => [
-      hero(s, 'Introducing your product', 'The short story of why it exists.', 'Buy now', '#buy'),
+      hero(s, 'Introducing your product', 'The short story of why it exists.', 'Buy now', 'mailto:hello@example.com'),
       cards(s, 'Features', 'What makes it different.', [
         '🚀 | Feature one | Describe it here.',
         '🎯 | Feature two | Describe it here.',

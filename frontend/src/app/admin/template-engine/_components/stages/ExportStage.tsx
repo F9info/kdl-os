@@ -1,9 +1,9 @@
 'use client'
 
 import { PackageCheck, Globe, FileText, Layers } from 'lucide-react'
-import { useAdvanceStage, useRetryStage, useExportManifest } from '@/hooks/useTemplateEngine'
+import { useAdvanceStage, useRetryStage, useExportManifest } from '@/admin/hooks/useTemplateEngine'
 import { StageShell } from './StageShell'
-import type { TemplateEngineRun } from '@/types/template-engine.types'
+import type { TemplateEngineRun } from '@/admin/types/template-engine.types'
 
 export function ExportStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'EXPORT')

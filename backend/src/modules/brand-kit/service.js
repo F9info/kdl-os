@@ -18,6 +18,8 @@ import { fileURLToPath } from 'node:url';
 import { join, dirname } from 'node:path';
 import { prisma } from '../../config/database.js';
 import * as storageService from '../../shared/services/storage.service.js';
+import { getDefaultProjectId } from '../../shared/default-project.js';
+import { readIdentity } from '../identity/read.js';
 import { uploadMedia } from '../media/service.js';
 import { sanitizeSvg, isSvgMime } from '../media/svg-sanitizer.js';
 import { getUploadSettings } from '../media/settings.js';
@@ -94,6 +96,26 @@ export const getOrCreateKit = async (projectId) => {
     kit = await prisma.brandKit.create({ data: { project_id: projectId } });
   }
   return kit;
+};
+
+// File types a stored logo can be re-read as (matches what uploadLogo accepts).
+const LOGO_MIME_BY_EXT = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', svg: 'image/svg+xml' };
+
+/**
+ * Inheritance: a project that has no logo of its own starts from the company logo in Application
+ * Identity, so a new project never asks for it again. Goes through the normal logo upload (checks,
+ * raster for the palette). Returns true when a logo was adopted; false when there is nothing to
+ * adopt or it cannot be read (the project then simply keeps asking for a logo).
+ */
+export const adoptIdentityLogo = async (projectId, userId) => {
+  const { logo_light: path } = await readIdentity();
+  const ext = path?.split('.').pop()?.toLowerCase();
+  if (!path || /^(https?:)?\//i.test(path) || !LOGO_MIME_BY_EXT[ext]) return false;
+  const chunks = [];
+  for await (const chunk of await storageService.getFileStream(path)) chunks.push(chunk);
+  const buffer = Buffer.concat(chunks);
+  await uploadLogo(projectId, { buffer, size: buffer.length, mimetype: LOGO_MIME_BY_EXT[ext], originalname: `logo.${ext}` }, userId);
+  return true;
 };
 
 export const getKit = async (projectId) => {
@@ -188,12 +210,13 @@ export const uploadLogo = async (projectId, file, userId) => {
     data: { owner_module: OWNER_MODULE },
   });
 
-  // Global admin sidebar/dashboard logo now follows the active project's
-  // brand-kit logo — see setGlobalLogo(). This writes to setting-fields
-  // (the standalone Application Settings system), not theme-engine, so
-  // D-BK-6 ("never write to theme-engine") doesn't apply; best-effort so a
-  // setting-fields hiccup never blocks the logo upload itself.
-  await setGlobalLogo(mediaRecord.path).catch(() => {});
+  // The company logo (admin sidebar, Application Identity) follows the DEFAULT project's brand-kit
+  // logo — see setGlobalLogo(). Any other Template Engine project has its own logo (a project-level
+  // override) and must never change the company's. This writes to setting-fields/Identity (not
+  // theme-engine), so D-BK-6 doesn't apply; best-effort so a hiccup never blocks the upload itself.
+  if (projectId === (await getDefaultProjectId().catch(() => null))) {
+    await setGlobalLogo(mediaRecord.path).catch(() => {});
+  }
 
   // 6. Render 1024 px raster PNG for palette extraction and PDF embedding (§1.3)
   let rasterMediaId = null;

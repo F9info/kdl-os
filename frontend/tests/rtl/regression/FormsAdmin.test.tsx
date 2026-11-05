@@ -8,9 +8,11 @@ vi.mock('@/lib/axios', () => ({
   default: { get: h.get, post: h.post, patch: h.patch, delete: vi.fn() },
 }))
 vi.mock('@/hooks/use-toast', () => ({ toast: vi.fn(), useToast: () => ({ toasts: [] }) }))
-vi.mock('@/hooks/usePermissions', () => ({ usePermissions: () => ({ can: h.can }) }))
-vi.mock('@/components/shared/ModuleGuard', () => ({ ModuleGuard: ({ children }: any) => children }))
-vi.mock('@/components/shared/PermissionGuard', () => ({
+vi.mock('@/admin/hooks/usePermissions', () => ({ usePermissions: () => ({ can: h.can }) }))
+vi.mock('@/admin/components/shared/ModuleGuard', () => ({
+  ModuleGuard: ({ children }: any) => children,
+}))
+vi.mock('@/admin/components/shared/PermissionGuard', () => ({
   PermissionGuard: ({ children }: any) => children,
 }))
 

@@ -5,23 +5,23 @@ import { useFieldArray, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { FileText, Inbox, Pencil, Plus, Trash2 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
-import { usePermissions } from '@/hooks/usePermissions'
+import { usePermissions } from '@/admin/hooks/usePermissions'
 import {
   useDeleteForm,
   useForms,
   useFormSubmissions,
   useSaveForm,
   type FormDef,
-} from '@/hooks/useForms'
+} from '@/admin/hooks/useForms'
 import { slugify } from '@/lib/utils'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { ModuleGuard } from '@/components/shared/ModuleGuard'
-import { PermissionGuard } from '@/components/shared/PermissionGuard'
+import { PageHeader } from '@/admin/components/layout/PageHeader'
+import { ModuleGuard } from '@/admin/components/shared/ModuleGuard'
+import { PermissionGuard } from '@/admin/components/shared/PermissionGuard'
 import { Modal } from '@/components/shared/Modal'
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
+import { ConfirmDialog } from '@/admin/components/shared/ConfirmDialog'
 import { ErrorAlert } from '@/components/shared/ErrorAlert'
 import { FormField } from '@/components/shared/FormField'
-import { StatusBadge } from '@/components/shared/StatusBadge'
+import { StatusBadge } from '@/admin/components/shared/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { EmptyState } from '@/components/ui/empty-state'

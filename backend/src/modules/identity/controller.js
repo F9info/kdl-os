@@ -5,7 +5,9 @@ import { writeActivity, getClientIp } from '../user-management/shared/activity-l
 
 export const getAppConfig = async (req, res, next) => {
   try {
-    res.set('Cache-Control', 'public, max-age=60');
+    // Revalidate on every request (cheap: served from Redis, and a 304 when unchanged). A cached
+    // copy would show an old name/logo/phone for up to a minute after someone edits Identity.
+    res.set('Cache-Control', 'no-cache');
     return successResponse(res, { identity: await service.getAppConfig() });
   } catch (err) {
     next(err);
@@ -54,9 +56,11 @@ export const updateIdentity = async (req, res, next) => {
 export const uploadAsset = async (req, res, next) => {
   try {
     if (!req.file) return errorResponse(res, 'No file uploaded', 400);
-    return successResponse(res, await service.uploadAsset(req.file), 201);
+    const asset = ASSET_KEYS.includes(req.query.asset) ? req.query.asset : undefined;
+    return successResponse(res, await service.uploadAsset(req.file, { asset, userId: req.user?.id }), 201);
   } catch (err) {
-    if (err.status === 400) return errorResponse(res, err.message, 400);
+    // 4xx from the image checks (here or in the brand kit) is the user's to fix; the rest is a real error.
+    if (err.status >= 400 && err.status < 500) return errorResponse(res, err.message, err.status);
     next(err);
   }
 };

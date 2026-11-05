@@ -3,7 +3,7 @@ import { render, screen, waitFor, fireEvent } from '../utils'
 import IntegrationsPage from '@/app/admin/integrations/page'
 import IntegrationLogsPage from '@/app/admin/integrations/logs/page'
 import { useAuthStore } from '@/stores/auth.store'
-import type { IntegrationProvider, IntegrationLog } from '@/types/integrations.types'
+import type { IntegrationProvider, IntegrationLog } from '@/admin/types/integrations.types'
 
 vi.mock('@/lib/axios', () => ({
   default: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },

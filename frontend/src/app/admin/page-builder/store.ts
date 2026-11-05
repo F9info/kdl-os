@@ -1,7 +1,11 @@
 import type { Data } from '@puckeditor/core'
 import api from '@/lib/axios'
-import { emptyData } from './puck.config'
-import type { SiteLayoutValue } from '@/lib/apply-site-layout'
+import { toRecord, type ListItem, type PageRecord } from '@/frontend/pages/page-record'
+import { emptyData } from '../../../frontend/blocks/puck.config'
+import type { PageSeo } from '@/lib/seo'
+
+// Re-exported so editor code keeps one import for the page record.
+export type { PageRecord }
 
 /**
  * Backend persistence layer for the Page Builder.
@@ -11,40 +15,9 @@ import type { SiteLayoutValue } from '@/lib/apply-site-layout'
  *   listPages()     -> GET  /page-builder
  *   getPage(id)     -> GET  /page-builder/:id
  *   createPage(...) -> POST /page-builder
- *   savePage(...)   -> PUT  /page-builder/:id  (publishes on save)
+ *   publishPage(...) -> POST /page-builder/:id/publish (saves the content and makes it live)
  *   deletePage(id)  -> DELETE /page-builder/:id
  */
-
-export interface PageRecord {
-  id: string
-  slug: string
-  title: string
-  data: Data
-  status: 'DRAFT' | 'PUBLISHED'
-  updatedAt: string
-  projectId: string | null
-  /** Public pages only: the project's saved header/footer layout (T4.2), if any. */
-  layout?: SiteLayoutValue | null
-}
-
-type ListItem = Omit<PageRecord, 'data' | 'projectId' | 'layout'> & {
-  layout?: SiteLayoutValue | null
-  updated_at: string
-  project_id: string | null
-}
-
-function toRecord(raw: ListItem & { data?: Data }): PageRecord {
-  return {
-    id: raw.id,
-    slug: raw.slug,
-    title: raw.title,
-    data: raw.data ?? ({ ...emptyData, root: { props: { title: raw.title } } } as Data),
-    status: raw.status,
-    updatedAt: raw.updated_at,
-    projectId: raw.project_id ?? null,
-    layout: raw.layout ?? null,
-  }
-}
 
 export async function listPages(): Promise<PageRecord[]> {
   const res = await api.get('/page-builder')
@@ -75,41 +48,95 @@ export async function createPage(title: string): Promise<PageRecord> {
   return toRecord(res.data.data.page)
 }
 
-/** Autosave: data only — leaves title and DRAFT/PUBLISHED status as they are. */
+/** Autosave: data only. On a live page this only changes the draft, visitors see it after Publish. */
 export async function autosavePage(id: string, data: Data): Promise<void> {
   await api.put(`/page-builder/${id}`, { data })
 }
 
-export async function savePage(id: string, data: Data): Promise<void> {
+/**
+ * Saves the content and makes it live as a new version. `force` = "publish anyway": skip the
+ * pre-publish check errors (the server otherwise answers 422 with the issues).
+ */
+export async function publishPage(id: string, data: Data, force = false): Promise<void> {
   const title = (data.root?.props?.title as string) || undefined
-  await api.put(`/page-builder/${id}`, {
+  await api.post(`/page-builder/${id}/publish`, {
     ...(title ? { title } : {}),
     data,
-    status: 'PUBLISHED',
+    ...(force ? { force } : {}),
   })
+}
+
+export interface PageIssue {
+  severity: 'error' | 'warning'
+  code: string
+  message: string
+  block_id: string | null
+  block_type: string | null
+}
+
+export interface PageChecks {
+  issues: PageIssue[]
+  errors: number
+  warnings: number
+  can_publish: boolean
+}
+
+/** Pre-publish checks of the content the editor is about to publish (not just the last autosave). */
+export async function checkPage(id: string, data: Data): Promise<PageChecks> {
+  const title = (data.root?.props?.title as string) || undefined
+  return (await api.post(`/page-builder/${id}/checks`, { ...(title ? { title } : {}), data })).data
+    .data
+}
+
+/** The issues a failed publish (422 PUBLISH_VALIDATION_FAILED) carries, else null. */
+export function issuesFromPublishError(err: unknown): PageIssue[] | null {
+  const body = (
+    err as {
+      response?: { status?: number; data?: { errors?: { code?: string; issues?: PageIssue[] } } }
+    }
+  )?.response
+  return body?.status === 422 && body.data?.errors?.code === 'PUBLISH_VALIDATION_FAILED'
+    ? (body.data.errors.issues ?? [])
+    : null
+}
+
+export async function unpublishPage(id: string): Promise<void> {
+  await api.post(`/page-builder/${id}/unpublish`)
+}
+
+export interface PageVersionInfo {
+  id: string
+  version: number
+  title: string
+  note: string | null
+  created_at: string
+  is_live: boolean
+}
+
+export async function listPageVersions(id: string): Promise<PageVersionInfo[]> {
+  return (await api.get(`/page-builder/${id}/versions`)).data.data.versions
+}
+
+/** Publishes an older version's content as a new version. */
+export async function restorePageVersion(id: string, versionId: string): Promise<void> {
+  await api.post(`/page-builder/${id}/versions/${versionId}/restore`)
 }
 
 export async function deletePage(id: string): Promise<void> {
   await api.delete(`/page-builder/${id}`)
 }
 
-export async function getPageBySlug(slug: string): Promise<PageRecord | undefined> {
-  try {
-    const res = await api.get(`/page-builder/public/${slug}`)
-    const raw = res.data.data.page
-    return raw ? toRecord(raw) : undefined
-  } catch {
-    return undefined
-  }
+/** Saves the page's own SEO; an empty object clears it. Leaves content, title and status alone. */
+export async function savePageSeo(id: string, seo: PageSeo): Promise<void> {
+  await api.put(`/page-builder/${id}`, { seo })
 }
 
-/** Clean public URLs: key "home" is "/", any other key is "/<key>" (see backend getPublishedBySiteKey). */
-export async function getPageBySiteKey(key: string): Promise<PageRecord | undefined> {
-  try {
-    const res = await api.get(`/page-builder/public/site/${encodeURIComponent(key)}`)
-    const raw = res.data.data.page
-    return raw ? toRecord(raw) : undefined
-  } catch {
-    return undefined
-  }
+export interface PreviewLink {
+  token: string
+  expires_at: string
+}
+
+/** A signed link to this page's working copy (unpublished draft included) for people without a login. */
+export async function createPreviewLink(id: string, ttlHours: number): Promise<PreviewLink> {
+  return (await api.post(`/page-builder/${id}/preview-link`, { ttl_hours: ttlHours })).data.data
 }

@@ -5,28 +5,30 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ExternalLink, LayoutTemplate, Pencil, Plus } from 'lucide-react'
+import { ExternalLink, LayoutTemplate, Palette, Pencil, Plus } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
-import { usePermissions } from '@/hooks/usePermissions'
+import { usePermissions } from '@/admin/hooks/usePermissions'
 import {
   landingEditorHref,
+  type LandingSite,
   useCreateLandingPage,
   useLandingSites,
   useLandingTemplates,
-} from '@/hooks/useLandingPages'
+} from '@/admin/hooks/useLandingPages'
 import { slugify } from '@/lib/utils'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { ModuleGuard } from '@/components/shared/ModuleGuard'
-import { PermissionGuard } from '@/components/shared/PermissionGuard'
+import { PageHeader } from '@/admin/components/layout/PageHeader'
+import { ModuleGuard } from '@/admin/components/shared/ModuleGuard'
+import { PermissionGuard } from '@/admin/components/shared/PermissionGuard'
 import { Modal } from '@/components/shared/Modal'
 import { ErrorAlert } from '@/components/shared/ErrorAlert'
 import { FormField } from '@/components/shared/FormField'
-import { StatusBadge } from '@/components/shared/StatusBadge'
+import { StatusBadge } from '@/admin/components/shared/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { EmptyState } from '@/components/ui/empty-state'
 import { LoadingState } from '@/components/ui/loading-state'
 import { cn } from '@/lib/utils'
+import { BrandingDialog } from './BrandingDialog'
 import { newLandingSchema, type NewLandingForm } from './_schemas'
 
 function NewLandingDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -127,6 +129,7 @@ function LandingPagesContent() {
   const { can } = usePermissions()
   const { data: sites, isLoading, error } = useLandingSites()
   const [open, setOpen] = useState(false)
+  const [branding, setBranding] = useState<LandingSite | null>(null)
 
   return (
     <div>
@@ -185,6 +188,12 @@ function LandingPagesContent() {
                       </Link>
                     </Button>
                   )}
+                  {can('projects:update') && (
+                    <Button size="sm" variant="ghost" onClick={() => setBranding(site)}>
+                      <Palette className="h-4 w-4" />
+                      Branding
+                    </Button>
+                  )}
                   {page?.status === 'PUBLISHED' && (
                     <Button asChild size="sm" variant="ghost">
                       <a href={`/p/${site.slug}`} target="_blank" rel="noreferrer">
@@ -201,6 +210,7 @@ function LandingPagesContent() {
       )}
 
       <NewLandingDialog open={open} onClose={() => setOpen(false)} />
+      {branding && <BrandingDialog site={branding} onClose={() => setBranding(null)} />}
     </div>
   )
 }

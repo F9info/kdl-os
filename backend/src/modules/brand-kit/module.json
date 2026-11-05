@@ -1,6 +1,6 @@
 {
   "slug": "brand-kit",
-  "name": "Brand Kit",
+  "name": "Brand Assets",
   "version": "1.0.0",
   "description": "Logo intake, OKLCH palette extraction, WCAG AA contrast report, and theme-token hand-off for Template Engine Mode A",
   "core": false,

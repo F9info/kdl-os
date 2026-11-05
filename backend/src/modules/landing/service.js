@@ -20,6 +20,7 @@ export const listLandingSites = async (client = prisma) => {
     orderBy: { created_at: 'desc' },
     select: {
       id: true,
+      project_id: true,
       slug: true,
       name: true,
       domain: true,

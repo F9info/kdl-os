@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { construction } from '@/app/admin/page-builder/packs/construction'
+import { construction } from '@/frontend/blocks/packs/construction'
 
 /**
  * Regression test for the "Insert a block" / Section Builder variant-preview

@@ -1,6 +1,6 @@
 // Pure palette helpers for the Simple Theme view (no React, no I/O).
 
-import { contrastRatio } from '@/lib/contrast'
+import { contrastRatio } from '@/admin/lib/contrast'
 
 export const HEX6 = /^#[0-9a-fA-F]{6}$/
 

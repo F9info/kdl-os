@@ -8,7 +8,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { AxiosRequestConfig } from 'axios'
 import { render, screen, waitFor, fireEvent } from '../utils'
-import { CloudImportDialog } from '@/components/media/CloudImportDialog'
+import { CloudImportDialog } from '@/admin/components/media/CloudImportDialog'
 
 vi.mock('@/lib/axios', () => ({
   default: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn(), patch: vi.fn() },

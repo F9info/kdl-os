@@ -1,13 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../../config/database.js', () => ({ prisma: {} }));
-vi.mock('../page-builder/service.js', () => ({ getPageBySlug: vi.fn() }));
 
 import { prisma } from '../../config/database.js';
-import { getPageBySlug } from '../page-builder/service.js';
 import {
   getOnboarding,
   answerOnboarding,
+  createStarterSite,
   buildPageData,
   STARTER_PAGES,
   ONBOARDING_KEY,
@@ -26,8 +25,9 @@ beforeEach(() => {
   prisma.site = { findFirst: vi.fn().mockResolvedValue({ id: 'site-1' }) };
   prisma.builderPage = {
     create: vi.fn().mockImplementation(async ({ data }) => ({ id: `id-${data.slug}` })),
+    findFirst: vi.fn().mockResolvedValue(null), // no page with that slug yet
+    findMany: vi.fn().mockResolvedValue([]),
   };
-  getPageBySlug.mockResolvedValue(null);
 });
 
 describe('onboarding — state', () => {
@@ -63,7 +63,7 @@ describe('onboarding — answer', () => {
   });
 
   it('is idempotent: pages whose slug exists are skipped', async () => {
-    getPageBySlug.mockImplementation(async (s) => (s === 'about' ? { id: 'x' } : null));
+    prisma.builderPage.findFirst.mockImplementation(async ({ where }) => (where.slug === 'about' ? { id: 'x' } : null));
     const r = await answerOnboarding('yes', 'u1');
     expect(r.skipped).toEqual(['about']);
     expect(r.created).toHaveLength(4);
@@ -93,4 +93,44 @@ describe('onboarding — page content', () => {
       expect(content[0].props.links.split('\n')).toHaveLength(5);
     }
   );
+});
+
+describe('createStarterSite — company name from Application Identity', () => {
+  const identity = (name) =>
+    prisma.appSetting.findUnique.mockImplementation(async ({ where }) =>
+      where.key === 'identity.app_name' && name !== undefined ? { value: name } : null
+    );
+  const homeTitle = () => {
+    const home = prisma.builderPage.create.mock.calls.find((c) => c[0].data.slug === 'home')[0].data;
+    return home.data;
+  };
+
+  it('uses the Identity company name in the generated pages (hero text, header and footer brand)', async () => {
+    identity('Acme Pvt Ltd');
+    await createStarterSite(prisma, 'u1');
+    const data = homeTitle();
+    const text = JSON.stringify(data);
+    expect(text).toContain('Welcome to Acme Pvt Ltd');
+    expect(text).not.toContain('Your Brand');
+    expect(data.content[0].props.brand).toBe('Acme Pvt Ltd'); // NavBar
+    expect(data.content.at(-1).props.copyright).toContain('Acme Pvt Ltd'); // Footer
+  });
+
+  it('falls back to the placeholder only when Identity has no name', async () => {
+    identity(undefined);
+    await createStarterSite(prisma, 'u1');
+    expect(JSON.stringify(homeTitle())).toContain('Welcome to Your Brand');
+  });
+
+  it('withCms: true adds the CMS pages even before the CMS module row is enabled (install seed)', async () => {
+    identity('Acme');
+    const r = await createStarterSite(prisma, null, { withCms: true });
+    expect(r.created).toEqual(expect.arrayContaining(['home', 'gallery', 'team', 'case-studies']));
+  });
+
+  it('a normal run without CMS creates only the five starter pages', async () => {
+    identity('Acme');
+    const r = await createStarterSite(prisma, null);
+    expect(r.created).toEqual(['home', 'about', 'services', 'contact', 'faq']);
+  });
 });

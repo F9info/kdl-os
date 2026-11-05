@@ -1,6 +1,6 @@
 'use client'
 
-import { isLegacyNumberedKey } from './packs/numbered-families'
+import { isLegacyNumberedKey } from '@/frontend/blocks/packs/numbered-families'
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePuck, AutoField, FieldLabel } from '@puckeditor/core'
@@ -26,8 +26,10 @@ import {
   Trash2,
 } from 'lucide-react'
 import { SectionPickerPopup, insertBlockComponent } from './insert-block-modal'
-import { BlockComposer } from './packs/composer/BlockComposer'
-import type { ComposedBlockConfig } from './packs/composer/render-composed-block'
+import { BlockComposer } from '@/frontend/blocks/packs/composer/BlockComposer'
+import type { ComposedBlockConfig } from '@/frontend/blocks/packs/composer/render-composed-block'
+import { LinkedSectionStatus } from './LinkedSection'
+import { fieldTab, isFieldHidden } from '@/frontend/blocks/section-schema'
 
 /** Odoo-style chrome colours, matched to the reference prototype. */
 const OD = { bg: '#1c1e24', panel: '#181b21', tile: '#23262e', tileBd: '#2d313a', muted: '#8b93a1' }
@@ -279,56 +281,9 @@ function ThemeEngineLink() {
   )
 }
 
-/**
- * A field key counts as "Style" (appearance/behaviour, not what it says) if
- * it's one of these exact names or ends in "Color" / starts with "show" —
- * every pack component in this app names its padding/background/align/
- * variant/colour/visibility-toggle fields this way, so this one heuristic
- * covers Style vs Content for every block without rewriting each
- * component's `fields` schema. Puck's own field editor (`children`, used by
- * the old single Style tab) can't be split by tag — it hands back one
- * opaque rendered tree — so this renders each field itself via Puck's
- * exported `AutoField`/`FieldLabel` instead, keyed straight off the
- * component's own `Config.components[type].fields`.
- *
- * Two more prefixes route to Style but render in their own collapsible
- * group instead of the flat list: `slider*` (arrows/dots/autoplay/loop/
- * fade-or-slide — the Slick-style carousel knobs) and `typo*` (per-element
- * font size/weight/color for title/tagline/paragraph/button). A block only
- * needs to name its fields this way — see `ConstructionHero` — to get both
- * accordions for free.
- */
-/** Fields kept in a component's `fields` schema (Puck requires an entry per
- *  prop — dropping one there breaks type-checking and any already-published
- *  page still carrying that prop's saved value) but hidden from both panel
- *  tabs for that one component — `variant`/`primaryColor`/`secondaryColor`
- *  on `ConstructionHero` are redundant now that the Slider Settings/
- *  Typography accordions cover styling, per explicit request. Scoped by
- *  component type so hiding `variant` here doesn't hide every other
- *  block's own design picker. */
-const HIDDEN_FIELDS: Record<string, Set<string>> = {
-  ConstructionHero: new Set(['variant', 'primaryColor', 'secondaryColor']),
-  ConstructionOurBrands: new Set([
-    'tab1Label',
-    'tab1Groups',
-    'tab2Label',
-    'tab2Groups',
-    'tab3Label',
-    'tab3Groups',
-  ]),
-}
-
-const STYLE_FIELD_KEYS = new Set(['padding', 'background', 'align', 'variant', 'spacing', 'gap'])
-function isStyleField(key: string): boolean {
-  return (
-    STYLE_FIELD_KEYS.has(key) ||
-    /Color$/.test(key) ||
-    /^show[A-Z]/.test(key) ||
-    /^slider/.test(key) ||
-    /^typo/.test(key)
-  )
-}
-
+// Which tab a field is on (and which are hidden) comes from the block's schema metadata:
+// frontend/blocks/section-schema.ts. `slider*` and `typo*` fields are Style fields that render in
+// their own collapsible groups below instead of the flat list.
 /** Direct-dispatch prop update for one field on the selected item — same
  *  `replace` action the Composer's "Edit in Composer" save path already
  *  uses (below), just merging one prop instead of swapping `config`. */
@@ -476,12 +431,11 @@ function SplitFieldEditor({ group }: { group: 'style' | 'content' }) {
   const fields = component?.resolveFields
     ? component.resolveFields(selectedItem, { fields: staticFields })
     : staticFields
-  const hidden = HIDDEN_FIELDS[selectedItem.type as string]
   const entries = Object.entries(fields).filter(
     ([key]) =>
-      !hidden?.has(key) &&
+      !isFieldHidden(selectedItem.type as string, key) &&
       !isLegacyNumberedKey(selectedItem.type as string, key) &&
-      isStyleField(key) === (group === 'style')
+      fieldTab(selectedItem.type as string, key) === group
   )
   if (entries.length === 0) {
     return (
@@ -555,6 +509,19 @@ export function BlocksPanel({
   const { selectedItem, dispatch, getSelectorForId } = usePuck()
   const isCustomBlock = selectedItem?.type === 'CustomComposedBlock'
 
+  // Merge `patch` into the selected block's props (used by the linked-section note).
+  function applyToSelected(patch: Record<string, unknown>) {
+    const id = selectedItem?.props?.id as string | undefined
+    const selector = id ? getSelectorForId(id) : null
+    if (!selectedItem || !selector) return
+    dispatch({
+      type: 'replace',
+      destinationIndex: selector.index,
+      destinationZone: selector.zone,
+      data: { type: selectedItem.type, props: { ...selectedItem.props, ...patch } },
+    })
+  }
+
   useEffect(() => {
     const nowSelected = !!itemSelector
     if (nowSelected && !hadSelection.current) setTab('style')
@@ -586,6 +553,13 @@ export function BlocksPanel({
       <div className="flex-1 overflow-auto">
         {tab === 'section' && <BlocksTab onOpenCategory={setModalCategory} />}
         {tab === 'reorder' && <ReorderTab />}
+        {tab === 'style' && isCustomBlock && selectedItem ? (
+          <LinkedSectionStatus
+            props={selectedItem.props as Parameters<typeof LinkedSectionStatus>[0]['props']}
+            projectId={projectId}
+            onApply={applyToSelected}
+          />
+        ) : null}
         {tab === 'style' && isCustomBlock ? (
           <div className="bg-white p-4">
             <button
@@ -634,6 +608,7 @@ export function BlocksPanel({
             status: 'DRAFT',
             isDefault: false,
             config: selectedItem.props.config as ComposedBlockConfig,
+            version: 0,
             updatedAt: '',
           }}
           onClose={() => setEditingInstance(false)}
@@ -646,7 +621,12 @@ export function BlocksPanel({
                 destinationZone: selector.zone,
                 data: {
                   type: 'CustomComposedBlock',
-                  props: { ...selectedItem.props, config: block.config },
+                  props: {
+                    ...selectedItem.props,
+                    config: block.config,
+                    // Edited on this page: it no longer follows its saved section.
+                    ...(selectedItem.props.templateId ? { templateDetached: true } : {}),
+                  },
                 },
               })
             }

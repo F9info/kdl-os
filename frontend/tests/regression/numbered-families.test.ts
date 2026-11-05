@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import families from '@/app/admin/page-builder/packs/numbered-families.json'
+import families from '@/frontend/blocks/packs/numbered-families.json'
 import {
   itemsFromLegacy,
   resolveItems,
   withNumberedFamilies,
-} from '@/app/admin/page-builder/packs/numbered-families'
-import { construction } from '@/app/admin/page-builder/packs/construction'
+} from '@/frontend/blocks/packs/numbered-families'
+import { construction } from '@/frontend/blocks/packs/construction'
 
 describe('numbered families', () => {
   it('builds rows from legacy slots and drops empty ones', () => {

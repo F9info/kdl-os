@@ -1,8 +1,8 @@
 'use client'
 
 import { Render } from '@puckeditor/core'
-import { config } from '@/app/admin/page-builder/puck.config'
-import { applyHeaderOverlay } from '@/lib/header-overlay'
+import { config } from '@/frontend/blocks/puck.config'
+import { applyHeaderOverlay } from '@/frontend/lib/header-overlay'
 
 // Same renderer + config as the admin's public /p/<slug> page.
 export default function SitePage({

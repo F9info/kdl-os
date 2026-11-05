@@ -1,8 +1,8 @@
 'use client'
 
-import { ModuleGuard } from '@/components/shared/ModuleGuard'
-import { PermissionGuard } from '@/components/shared/PermissionGuard'
-import { StudioStageRedirect } from '@/components/shared/StudioStageRedirect'
+import { ModuleGuard } from '@/admin/components/shared/ModuleGuard'
+import { PermissionGuard } from '@/admin/components/shared/PermissionGuard'
+import { StudioStageRedirect } from '@/admin/components/shared/StudioStageRedirect'
 import { openWebsiteView } from '@/app/admin/template-engine/website-ui-state'
 
 export default function BrandsPage() {

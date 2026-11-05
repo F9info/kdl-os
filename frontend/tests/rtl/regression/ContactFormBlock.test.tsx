@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '../utils'
-import { ContactFormBlock } from '@/app/admin/page-builder/packs/general/contact-form'
+import { ContactFormBlock } from '@/frontend/blocks/packs/general/contact-form'
 
 const form = {
   name: 'Enquiry',

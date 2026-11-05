@@ -16,6 +16,9 @@ model Site {
   // Custom host that resolves to this site (used by the public router, T5.2). Null = path-based.
   domain     String?   @unique
   is_default Boolean   @default(false)
+  // Overrides of the project's Application Identity for this site only (T5.5). Missing/empty key =
+  // inherit the project value. Keys: see SITE_IDENTITY_KEYS in projects/site-identity.js.
+  identity_overrides Json?
   deleted_at DateTime?
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt

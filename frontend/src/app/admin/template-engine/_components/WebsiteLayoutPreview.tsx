@@ -1,15 +1,15 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { construction } from '@/app/admin/page-builder/packs/construction'
-import { useCustomSlotNode } from '@/hooks/useLayoutChrome'
-import { useSiteLayout } from '@/hooks/useSiteLayout'
-import { useWebsiteBrandContext } from '@/hooks/useWebsiteBrandContext'
+import { construction } from '@/frontend/blocks/packs/construction'
+import { useCustomSlotNode } from '@/admin/hooks/useLayoutChrome'
+import { useSiteLayout } from '@/admin/hooks/useSiteLayout'
+import { useWebsiteBrandContext } from '@/admin/hooks/useWebsiteBrandContext'
 import {
   footerOverrides,
   headerFooterOverrides,
   topHeaderOverrides,
-} from '@/lib/website-layout-overrides'
+} from '@/admin/lib/website-layout-overrides'
 
 // Same non-null cast/rationale as website/layout/page.tsx's TOP_HEADER_CONFIG
 // et al — Puck's own PuckComponent type requires a `puck` field these

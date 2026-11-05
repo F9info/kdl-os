@@ -1,12 +1,12 @@
 // Blocks that used to keep repeating items in numbered flat props (faq1Question, faq2Question…)
 // now keep them in one array prop (faqs: [{ question, answer }]). The table lives with the editor
-// (frontend/.../packs/numbered-families.json) so frontend and backend share one definition.
+// (frontend/src/frontend/blocks/packs/numbered-families.json) so frontend and backend share one definition.
 // normalizeData() converts any page data still using the old shape — called on every page write
 // (seeders, API, imports) and by scripts/migrate-numbered-families.js.
 import fs from 'node:fs';
 import path from 'node:path';
 
-const TABLE_REL = 'src/app/admin/page-builder/packs/numbered-families.json';
+const TABLE_REL = 'src/frontend/blocks/packs/numbered-families.json';
 
 function loadTable() {
   const dirs = [process.env.FRONTEND_SRC_DIR, path.resolve(process.cwd(), '..', 'frontend')].filter(Boolean);

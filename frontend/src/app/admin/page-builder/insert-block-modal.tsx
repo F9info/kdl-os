@@ -5,9 +5,13 @@ import { useRouter } from 'next/navigation'
 import { usePuck } from '@puckeditor/core'
 import type { AppState, Config } from '@puckeditor/core'
 import { Check, Plus, Search, X } from 'lucide-react'
-import { blockVariants } from './puck.config'
-import { listCustomBlocks, type CustomBlockRecord } from './packs/composer/custom-blocks-store'
-import { renderComposedBlock } from './packs/composer/render-composed-block'
+import { blockVariants } from '@/frontend/blocks/puck.config'
+import {
+  listCustomBlocks,
+  sectionLinkProps,
+  type CustomBlockRecord,
+} from '@/frontend/blocks/packs/composer/custom-blocks-store'
+import { renderComposedBlock } from '@/frontend/blocks/packs/composer/render-composed-block'
 
 /**
  * Inserts `componentType` (optionally pinned to one of its `blockVariants`
@@ -372,7 +376,11 @@ export function InsertBlockModal({
       type: 'replace',
       destinationIndex,
       destinationZone,
-      data: { type: 'CustomComposedBlock', props: { config: block.config, id } },
+      data: {
+        type: 'CustomComposedBlock',
+        // templateId/templateVersion keep the block linked to its saved section ("update pages").
+        props: { config: block.config, id, ...sectionLinkProps(block) },
+      },
     })
     onClose()
   }

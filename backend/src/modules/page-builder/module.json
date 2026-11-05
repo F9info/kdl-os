@@ -1,8 +1,8 @@
 {
   "slug": "page-builder",
-  "name": "Page Builder",
+  "name": "Page Editor",
   "version": "1.0.0",
-  "description": "Visual block-based page builder engine — always-on",
+  "description": "Visual block-based page editor — always-on",
   "core": true,
   "visibleInCatalog": false,
   "apiPrefix": "/api/page-builder",

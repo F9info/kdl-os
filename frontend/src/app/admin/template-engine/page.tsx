@@ -3,8 +3,8 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
-import { ModuleGuard } from '@/components/shared/ModuleGuard'
-import { PermissionGuard } from '@/components/shared/PermissionGuard'
+import { ModuleGuard } from '@/admin/components/shared/ModuleGuard'
+import { PermissionGuard } from '@/admin/components/shared/PermissionGuard'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { useAuthStore } from '@/stores/auth.store'
 import api from '@/lib/axios'
@@ -61,7 +61,7 @@ function StudioRedirect() {
       <div className="max-w-xl mx-auto mt-12 rounded-xl border border-dashed bg-muted/30 p-8 text-center">
         <p className="text-sm font-medium text-muted-foreground">Projects module not available</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          The projects module (<code>/api/projects</code>) is required to use Studio.
+          The projects module (<code>/api/projects</code>) is required to use Templates.
         </p>
       </div>
     )

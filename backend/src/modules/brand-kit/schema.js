@@ -53,10 +53,3 @@ export const renderGuidelinesSchema = z.object({
   params: z.object({ projectId: z.string().min(1) }),
 });
 
-export const getContactFieldsSchema = projectParamsSchema;
-
-// Partial map of { [fieldKey]: value } — unknown keys are ignored by the service.
-export const saveContactFieldsSchema = z.object({
-  params: z.object({ projectId: z.string().min(1) }),
-  body: z.record(z.string().max(500).nullish()),
-});

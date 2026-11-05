@@ -10,6 +10,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../../brand-kit/service.js', () => ({
   getOrCreateKit:      vi.fn(),
+  adoptIdentityLogo:   vi.fn(async () => false),
   extractPaletteForKit: vi.fn(),
   inferBrandKit:       vi.fn(),
   getKit:              vi.fn(),
@@ -28,7 +29,7 @@ vi.mock('../../collateral/service.js', () => ({
   renderAsset:   vi.fn(),
 }));
 
-vi.mock('../../brand-kit/contact-fields.js', () => ({
+vi.mock('../../identity/company-info.js', () => ({
   getCompanyInfo: vi.fn(),
 }));
 
@@ -67,6 +68,7 @@ import {
   getKit,
   getTokens,
   renderGuidelines,
+  adoptIdentityLogo,
 } from '../../brand-kit/service.js';
 
 import { upsertValues } from '../../theme-engine/service.js';
@@ -78,7 +80,7 @@ import {
   renderAsset,
 } from '../../collateral/service.js';
 
-import { getCompanyInfo } from '../../brand-kit/contact-fields.js';
+import { getCompanyInfo } from '../../identity/company-info.js';
 import { getMediaById } from '../../media/service.js';
 
 import { createPage, updatePage, getPage, getPageBySlug } from '../../page-builder/service.js';
@@ -121,6 +123,33 @@ describe('intake driver', () => {
 
     expect(getOrCreateKit).toHaveBeenCalledWith('proj-A');
     expect(result.outputRef).toMatchObject({ brandKitId: 'kit-1', status: 'draft' });
+  });
+
+  it('a project with no logo adopts the company logo from Identity, then reports the fresh kit', async () => {
+    getOrCreateKit
+      .mockResolvedValueOnce({ id: 'kit-1', status: 'draft', logo_media_id: null })
+      .mockResolvedValueOnce({ id: 'kit-1', status: 'draft', logo_media_id: 'm1' });
+    adoptIdentityLogo.mockResolvedValue(true);
+
+    const result = await getDriver('intake').execute({ projectId: 'proj-B', userId: 'u1' });
+
+    expect(adoptIdentityLogo).toHaveBeenCalledWith('proj-B', 'u1');
+    expect(getOrCreateKit).toHaveBeenCalledTimes(2);
+    expect(result.outputRef.brandKitId).toBe('kit-1');
+  });
+
+  it('a project that already has its own logo keeps it (nothing adopted)', async () => {
+    getOrCreateKit.mockResolvedValue({ id: 'kit-2', status: 'draft', logo_media_id: 'own' });
+    await getDriver('intake').execute({ projectId: 'proj-C', userId: 'u1' });
+    expect(adoptIdentityLogo).not.toHaveBeenCalled();
+  });
+
+  it('adoption failing never fails the intake stage', async () => {
+    getOrCreateKit.mockResolvedValue({ id: 'kit-3', status: 'draft', logo_media_id: null });
+    adoptIdentityLogo.mockRejectedValue(new Error('storage down'));
+    await expect(getDriver('intake').execute({ projectId: 'proj-D', userId: 'u1' })).resolves.toMatchObject({
+      outputRef: { brandKitId: 'kit-3' },
+    });
   });
 });
 

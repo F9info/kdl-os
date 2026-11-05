@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { Trash2, CheckCheck } from 'lucide-react'
-import { ModuleGuard } from '@/components/shared/ModuleGuard'
-import { PageHeader } from '@/components/layout/PageHeader'
+import { ModuleGuard } from '@/admin/components/shared/ModuleGuard'
+import { PageHeader } from '@/admin/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
@@ -11,10 +11,10 @@ import {
   useMarkRead,
   useMarkAllRead,
   useDeleteNotification,
-} from '@/hooks/useNotifications'
-import { useNotificationStream } from '@/hooks/useNotificationStream'
+} from '@/admin/hooks/useNotifications'
+import { useNotificationStream } from '@/admin/hooks/useNotificationStream'
 import { toast } from '@/hooks/use-toast'
-import type { Notification } from '@/types/notifications.types'
+import type { Notification } from '@/admin/types/notifications.types'
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime()

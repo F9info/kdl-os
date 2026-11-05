@@ -21,7 +21,7 @@ vi.mock('@/components/providers/ThemeEngineProvider', async (orig) => ({
 }))
 // The real loader keeps module-level state and <link> tags in document.head across tests, which
 // would make "was this font requested" depend on test order. A spy asks the question directly.
-vi.mock('@/lib/load-google-font', () => ({ loadGoogleFont: loadFont }))
+vi.mock('@/admin/lib/load-google-font', () => ({ loadGoogleFont: loadFont }))
 // The real block bundle is ~16k lines of JSX; jsdom only needs to know which
 // blocks the preview asked for (and, below, what happens when it cannot render).
 vi.mock('@/app/admin/theme-engine/simple/PreviewBlocks', () => ({
@@ -1049,8 +1049,9 @@ describe('SimpleThemeView', () => {
 
       it('names the stylesheet the preview loads for the same family', async () => {
         // Preview and live site must fetch one and the same font: compare with the real loader.
-        const { loadGoogleFont } =
-          await vi.importActual<typeof import('@/lib/load-google-font')>('@/lib/load-google-font')
+        const { loadGoogleFont } = await vi.importActual<
+          typeof import('@/admin/lib/load-google-font')
+        >('@/admin/lib/load-google-font')
         loadGoogleFont('Source Sans 3')
         const link = document.head.querySelector('link[href*="Source+Sans+3"]')
         try {

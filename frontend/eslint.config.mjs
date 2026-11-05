@@ -26,6 +26,64 @@ export default [
       ])
     ),
   },
+  // ── Architecture boundaries (docs/planning/09-admin-frontend-architecture.md) ─────────────────
+  // The Admin controls the website, the Frontend renders it. Rendering code never imports admin UI,
+  // the shared layer imports neither area, and admin never imports a public route.
+  {
+    files: ['src/frontend/**/*.{ts,tsx}', 'src/app/(site)/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/admin/*', '@/app/admin/*'],
+              message: 'Public website code must not import admin code. Move what both need to the shared layer.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: [
+      'src/components/**/*.{ts,tsx}',
+      'src/hooks/**/*.{ts,tsx}',
+      'src/lib/**/*.{ts,tsx}',
+      'src/stores/**/*.{ts,tsx}',
+      'src/types/**/*.{ts,tsx}',
+    ],
+    ignores: ['**/*.stories.tsx'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/admin/*', '@/frontend/*', '@/app/*'],
+              message: 'The shared layer must not import from the admin area, the public website area, or routes.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/admin/**/*.{ts,tsx}', 'src/app/admin/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/app/(site)/*'],
+              message: 'Admin code must not import public route files.',
+            },
+          ],
+        },
+      ],
+    },
+  },
   {
     files: ['tests/**/*.{ts,tsx}', '**/*.test.{ts,tsx}'],
     rules: {

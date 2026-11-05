@@ -8,7 +8,7 @@ import React from 'react'
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { StudioStepper } from '@/app/admin/template-engine/_components/StudioStepper'
-import type { TemplateEngineRun } from '@/types/template-engine.types'
+import type { TemplateEngineRun } from '@/admin/types/template-engine.types'
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), forward: vi.fn() }),
@@ -141,7 +141,7 @@ describe('StudioStepper — only Overview (Color Palette and Brands moved to CMS
   it('shows a single tab based on the filtered list, not the full 9-stage DAG', () => {
     render(<StudioStepper run={makeRun()} projectId="proj-1" activeSlug="intake" />)
 
-    const nav = screen.getByRole('navigation', { name: /studio stages/i })
+    const nav = screen.getByRole('navigation', { name: /template stages/i })
     const buttons = nav.querySelectorAll('button')
     expect(buttons).toHaveLength(1)
   })

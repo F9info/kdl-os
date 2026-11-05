@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { useDefaultProjectId } from '@/hooks/useDefaultProjectId'
+import { useDefaultProjectId } from '@/admin/hooks/useDefaultProjectId'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   GripVertical,
@@ -15,11 +15,11 @@ import {
 } from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { ModuleGuard } from '@/components/shared/ModuleGuard'
-import { PermissionGuard } from '@/components/shared/PermissionGuard'
+import { PageHeader } from '@/admin/components/layout/PageHeader'
+import { ModuleGuard } from '@/admin/components/shared/ModuleGuard'
+import { PermissionGuard } from '@/admin/components/shared/PermissionGuard'
 import { Modal } from '@/components/shared/Modal'
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
+import { ConfirmDialog } from '@/admin/components/shared/ConfirmDialog'
 import { FormField } from '@/components/shared/FormField'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '../utils'
-import { SetupWizard } from '@/components/onboarding/SetupWizard'
-import { SetupWizardGate } from '@/components/onboarding/SetupWizardGate'
+import { SetupWizard } from '@/admin/components/onboarding/SetupWizard'
+import { SetupWizardGate } from '@/admin/components/onboarding/SetupWizardGate'
 import { useAuthStore } from '@/stores/auth.store'
 import { mockPathname } from '../../__mocks__/next-navigation'
 
@@ -57,6 +57,58 @@ beforeEach(() => {
   post.mockResolvedValue({ data: { data: { choice: 'no', created: [], skipped: [] } } })
 })
 
+describe('SetupWizard collects the company details once', () => {
+  it('step 1 asks for name, logo, favicon, email, phone and address and saves them all to Identity', async () => {
+    mockGet()
+    render(<SetupWizard open onClose={() => {}} />)
+    await screen.findByText(/tell us about your company/i)
+    await screen.findByDisplayValue('DemoLogo') // wait until the saved values have loaded
+    expect(screen.getByLabelText('Company name')).toBeTruthy()
+    expect(screen.getByTestId('upload-logo_light')).toBeTruthy()
+    expect(screen.getByTestId('upload-favicon')).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'hi@acme.com' } })
+    fireEvent.change(screen.getByLabelText('Phone'), { target: { value: '+91 99999' } })
+    fireEvent.change(screen.getByLabelText('Address'), { target: { value: '1 Main Rd' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+    await screen.findByText('What are you building?')
+    expect(put).toHaveBeenCalledWith(
+      '/identity',
+      expect.objectContaining({
+        contact_email: 'hi@acme.com',
+        contact_phone: '+91 99999',
+        contact_address: '1 Main Rd',
+      })
+    )
+  })
+
+  it('does not ask for a brand colour (nothing applies it; the palette comes from the logo)', async () => {
+    mockGet()
+    render(<SetupWizard open onClose={() => {}} />)
+    await screen.findByDisplayValue('DemoLogo')
+    expect(screen.queryByText(/brand colour/i)).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+    await screen.findByText('What are you building?')
+    expect(put.mock.calls[0]![1]).not.toHaveProperty('brand_primary')
+  })
+
+  it('the company logo is uploaded as asset=logo_light so it goes through the brand kit', async () => {
+    mockGet()
+    post.mockResolvedValueOnce({ data: { data: { path: 'media/l.png', url: 'https://x/l.png' } } })
+    render(<SetupWizard open onClose={() => {}} />)
+    await screen.findByDisplayValue('DemoLogo')
+    const input = await screen.findByTestId('upload-logo_light')
+    fireEvent.change(input, {
+      target: { files: [new File(['x'], 'l.png', { type: 'image/png' })] },
+    })
+    await waitFor(() =>
+      expect(post).toHaveBeenCalledWith('/identity/upload', expect.any(FormData), {
+        params: { asset: 'logo_light' },
+      })
+    )
+    expect(await screen.findByText('Logo set')).toBeTruthy()
+  })
+})
+
 describe('SetupWizard', () => {
   it('step 1 prefills identity, saves it, then shows products', async () => {
     mockGet()
@@ -65,7 +117,14 @@ describe('SetupWizard', () => {
     fireEvent.change(input, { target: { value: 'Acme' } })
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
     await screen.findByText('What are you building?')
-    expect(put).toHaveBeenCalledWith('/identity', { app_name: 'Acme', brand_primary: '' })
+    expect(put).toHaveBeenCalledWith('/identity', {
+      app_name: 'Acme',
+      logo_light: '',
+      favicon: '',
+      contact_email: '',
+      contact_phone: '',
+      contact_address: '',
+    })
   })
 
   it('without Website: applies products, records "no website" and finishes (no website step)', async () => {
@@ -73,7 +132,7 @@ describe('SetupWizard', () => {
     render(<SetupWizard open onClose={() => {}} />)
     await screen.findByDisplayValue('DemoLogo')
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
-    fireEvent.click(await screen.findByTestId('product-admin'))
+    await screen.findByTestId('product-website')
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
     await screen.findByText('You are set up')
     expect(put).toHaveBeenCalledWith('/modules/products', { products: ['admin'] })

@@ -4,9 +4,9 @@ import { useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
-import { ModuleGuard } from '@/components/shared/ModuleGuard'
-import { PermissionGuard } from '@/components/shared/PermissionGuard'
-import { PageHeader } from '@/components/layout/PageHeader'
+import { ModuleGuard } from '@/admin/components/shared/ModuleGuard'
+import { PermissionGuard } from '@/admin/components/shared/PermissionGuard'
+import { PageHeader } from '@/admin/components/layout/PageHeader'
 import { FormField } from '@/components/shared/FormField'
 import { ErrorAlert } from '@/components/shared/ErrorAlert'
 import { Button } from '@/components/ui/button'
@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { NotificationTemplate, NotificationChannel } from '@/types/notifications.types'
+import type { NotificationTemplate, NotificationChannel } from '@/admin/types/notifications.types'
 import type { RbacRole } from '@/types/models.types'
 
 const CHANNELS: NotificationChannel[] = ['IN_APP', 'EMAIL', 'SMS', 'WHATSAPP']

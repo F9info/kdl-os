@@ -1,204 +1,53 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Upload, CheckCircle2, AlertCircle, Loader2, ArrowRight, ExternalLink } from 'lucide-react'
-import api from '@/lib/axios'
-import { toast } from '@/hooks/use-toast'
-import { useDefaultProjectId } from '@/hooks/useDefaultProjectId'
-import {
-  useAdvanceStage,
-  useBrandKit,
-  useContinueToPalette,
-  useTemplateEngineRuns,
-  useUploadLogo,
-} from '@/hooks/useTemplateEngine'
-import { useSiteHomeHref } from '@/hooks/useSiteHomeHref'
-import { buildIdentityPatch } from '@/lib/company-identity'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { ModuleGuard } from '@/components/shared/ModuleGuard'
-import { PermissionGuard } from '@/components/shared/PermissionGuard'
+import { ArrowRight, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react'
+import { useDefaultProjectId } from '@/admin/hooks/useDefaultProjectId'
+import { useContinueToPalette, useTemplateEngineRuns } from '@/admin/hooks/useTemplateEngine'
+import { useIdentity } from '@/hooks/useIdentity'
+import { useSiteHomeHref } from '@/admin/hooks/useSiteHomeHref'
+import { PageHeader } from '@/admin/components/layout/PageHeader'
+import { ModuleGuard } from '@/admin/components/shared/ModuleGuard'
+import { PermissionGuard } from '@/admin/components/shared/PermissionGuard'
 import { Button } from '@/components/ui/button'
-import { FieldControl, type FieldState } from '@/app/admin/settings/_components/FieldControl'
 import { TypeSettingsForm } from '@/app/admin/settings/_components/TypeSettingsForm'
-import type { SettingField, Type } from '@/types/models.types'
 
-// Same global "brand-profile" settings type the Template Engine intake used —
-// this page is now the one place to edit it.
-const BRAND_PROFILE_TYPE_SLUG = 'brand-profile'
-// About / Vision / Mission / tagline copy — edited here too, on the same page.
+// About / Vision / Mission / tagline copy: the website-specific settings kept on this page.
 const WEBSITE_CONTENT_TYPE_SLUG = 'website-content'
 
-const PAIRED_ROWS: Array<[string, string]> = [
-  ['brand-profile-company-name', 'brand-profile-primary-email'],
-  ['brand-profile-secondary-email', 'brand-profile-primary-phone'],
-]
-const FULL_WIDTH_SLUGS = [
-  'brand-profile-secondary-phone',
-  'brand-profile-address-1',
-  'brand-profile-address-2',
+// Company name, logo and contact details are NOT edited here. They live once, in Settings >
+// Identity, and every module (this website, print layouts, ...) reads them from there.
+const SUMMARY_FIELDS: Array<[label: string, key: string]> = [
+  ['Company name', 'app_name'],
+  ['Email', 'contact_email'],
+  ['Secondary email', 'contact_email_secondary'],
+  ['Phone', 'contact_phone'],
+  ['Secondary phone', 'contact_phone_secondary'],
+  ['Address', 'contact_address'],
 ]
 
-function CompanyDetailsContent() {
+function WebsiteDetailsContent() {
+  const router = useRouter()
   const { projectId, isLoading: projectResolving } = useDefaultProjectId()
-  const { data: brandKit, isLoading: kitLoading } = useBrandKit(projectId)
-  const uploadLogo = useUploadLogo(projectId ?? '')
+  const { identity, isLoading: identityLoading } = useIdentity()
   const { data: runs } = useTemplateEngineRuns(projectId)
   const latestRun = runs?.[0]
-  const advance = useAdvanceStage(latestRun?.id ?? '', projectId ?? '')
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const qc = useQueryClient()
-  const router = useRouter()
   const continueToPalette = useContinueToPalette(projectId ?? '')
-  // true from a successful Save until the form is edited again — the Next button shows meanwhile
-  const [saved, setSaved] = useState(false)
-
-  const { data } = useQuery({
-    queryKey: ['setting-fields-by-type', BRAND_PROFILE_TYPE_SLUG],
-    queryFn: () =>
-      api
-        .get(`/setting-fields/by-type/${BRAND_PROFILE_TYPE_SLUG}`)
-        .then((r) => r.data.data as { type: Type; fields: SettingField[] }),
-  })
 
   const websiteOut = latestRun?.stages.find((st) => st.stage === 'WEBSITE')?.outputRef as
     { pageKeyToId?: Record<string, string> } | null | undefined
   const frontendHref = useSiteHomeHref(websiteOut?.pageKeyToId)
 
-  const fields = useMemo(() => data?.fields ?? [], [data])
-  const bySlug = useMemo(() => Object.fromEntries(fields.map((f) => [f.slug, f])), [fields])
-  const [form, setForm] = useState<Record<string, FieldState>>({})
-  const [showErrors, setShowErrors] = useState(false)
-
-  useEffect(() => {
-    setForm((prev) => {
-      if (Object.keys(prev).length > 0) return prev // don't clobber in-progress edits on refetch
-      const next: Record<string, FieldState> = {}
-      for (const f of fields) next[f.id] = { value: f.value ?? '', alt_text: f.alt_text ?? '' }
-      return next
-    })
-  }, [fields])
-
-  // Name and logo go live through Application Identity (T3.1), so they need no website re-sync.
-  // Phone, email and address are still baked into page JSON: re-sync an already-built site for
-  // those. No-op until the Website stage has run.
-  function resyncWebsiteIfBuilt() {
-    if (latestRun?.stages.find((st) => st.stage === 'WEBSITE')?.status !== 'DONE') return
-    let navigationPages: string[] = []
-    try {
-      const raw = window.localStorage.getItem(`te-website-ui:${projectId}:navigation`)
-      navigationPages = raw ? (JSON.parse(raw) as string[]) : []
-    } catch {
-      // storage unavailable/corrupt — falls back to the default page set
-    }
-    advance.mutate({ stage: 'WEBSITE', body: { navigationPages } })
-  }
-
-  // Copies the changed values into Identity. Returns false when that is not possible (no
-  // settings:edit, request failed) so the caller can fall back to the old website re-sync.
-  async function saveToIdentity(patch: Record<string, string>): Promise<boolean> {
-    if (Object.keys(patch).length === 0) return true
-    try {
-      await api.put('/identity', patch)
-      qc.invalidateQueries({ queryKey: ['app-config'] })
-      qc.invalidateQueries({ queryKey: ['identity'] })
-      return true
-    } catch {
-      return false
-    }
-  }
-
-  // The legacy `logo` field mirrors the brand-kit logo (storage path); Identity's light logo follows it.
-  async function syncLogoToIdentity() {
-    let ok = false
-    try {
-      const r = await api.get('/setting-fields/value/logo')
-      const path = (r.data.data.field as SettingField | null)?.value
-      ok = !!path && (await saveToIdentity({ logo_light: path }))
-    } catch {
-      ok = false
-    }
-    if (!ok) resyncWebsiteIfBuilt()
-  }
-
-  const saveMutation = useMutation({
-    mutationFn: async () => {
-      const editable = fields.filter((f) => f.slug !== 'brand-profile-logo') // logo is uploaded via brand-kit below
-      const values = editable.map((f) => ({
-        id: f.id,
-        value: form[f.id]?.value ?? '',
-        alt_text: null,
-      }))
-      await api.post('/setting-fields/values', { type_id: data!.type.id, values })
-      return buildIdentityPatch(
-        Object.fromEntries(editable.map((f) => [f.slug, f.value ?? ''])),
-        Object.fromEntries(editable.map((f) => [f.slug, form[f.id]?.value ?? '']))
-      )
-    },
-    onSuccess: async ({ patch, contactChanged }) => {
-      qc.invalidateQueries({ queryKey: ['setting-fields-by-type', BRAND_PROFILE_TYPE_SLUG] })
-      toast({ title: 'Company details saved' })
-      setSaved(true)
-      const synced = await saveToIdentity(patch)
-      if (contactChanged || !synced) resyncWebsiteIfBuilt()
-    },
-    onError: () => toast({ title: 'Could not save company details', variant: 'destructive' }),
-  })
-
-  const hasLogo = !!brandKit?.logo_media_id
-  const { data: logoMedia } = useQuery({
-    queryKey: ['media', brandKit?.logo_media_id],
-    queryFn: () =>
-      api
-        .get(`/media/${brandKit!.logo_media_id}`)
-        .then((r) => r.data.data.media as { url: string | null }),
-    enabled: hasLogo,
-  })
-
-  const companyField = bySlug['brand-profile-company-name']
-  const companyMissing = !(companyField ? (form[companyField.id]?.value ?? '') : '').trim()
-
-  function handleSave() {
-    if (companyMissing) {
-      setShowErrors(true)
-      return
-    }
-    setShowErrors(false)
-    saveMutation.mutate()
-  }
-
-  function fieldRow(slug: string, errorMessage?: string) {
-    const f = bySlug[slug]
-    if (!f) return <div key={slug} />
-    const displayField = {
-      ...f,
-      category: undefined,
-      field_name: slug === 'brand-profile-company-name' ? `${f.field_name} *` : f.field_name,
-    }
-    return (
-      <div key={f.id}>
-        <FieldControl
-          field={displayField}
-          state={form[f.id] ?? { value: '', alt_text: '' }}
-          onChange={(patch) => {
-            setSaved(false)
-            setForm((prev) => ({
-              ...prev,
-              [f.id]: { ...(prev[f.id] ?? { value: '', alt_text: '' }), ...patch },
-            }))
-          }}
-        />
-        {errorMessage && <p className="mt-1 text-xs text-destructive">{errorMessage}</p>}
-      </div>
-    )
-  }
+  const hasName = !!identity.app_name?.trim()
+  const hasLogo = !!identity.logo_light
+  const ready = hasName && hasLogo
 
   if (projectResolving) return null
   if (!projectId) {
     return (
       <div>
-        <PageHeader title="Company Details" />
+        <PageHeader title="Website Details" />
         <p className="mt-4 text-sm text-muted-foreground">
           No project exists yet. Create one first.
         </p>
@@ -209,8 +58,8 @@ function CompanyDetailsContent() {
   return (
     <div>
       <PageHeader
-        title="Company Details"
-        breadcrumbs={[{ label: 'CMS' }, { label: 'Company Details' }]}
+        title="Website Details"
+        breadcrumbs={[{ label: 'Content' }, { label: 'Website Details' }]}
         action={
           frontendHref ? (
             <Button asChild className="gap-2">
@@ -231,105 +80,89 @@ function CompanyDetailsContent() {
           )
         }
       />
-      <div className="rounded-lg border bg-card px-6 py-6 space-y-4 [&_.th-input]:!px-4 [&_.th-input]:!py-2.5">
-        <h3 className="text-sm font-medium">Logo &amp; Contact Details</h3>
 
-        <div className="space-y-2">
-          <p className="text-sm font-medium">Logo file</p>
-          <div className="flex items-center gap-3">
-            {kitLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            ) : hasLogo ? (
+      <section
+        className="max-w-3xl space-y-4 rounded-lg border bg-card px-6 py-6"
+        aria-labelledby="wd-company"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 id="wd-company" className="text-sm font-medium">
+              Company details
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Managed once in Settings &gt; Identity. Your website, print layouts and every other
+              module use these.
+            </p>
+          </div>
+          <Button size="sm" variant="outline" asChild>
+            <Link href="/admin/settings/identity">Edit in Identity</Link>
+          </Button>
+        </div>
+
+        {identityLoading ? (
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        ) : (
+          <div className="flex flex-col gap-5 sm:flex-row">
+            {hasLogo && (
+              // eslint-disable-next-line @next/next/no-img-element -- presigned storage URL
+              <img
+                src={identity.logo_light}
+                alt="Company logo"
+                className="h-16 w-16 shrink-0 rounded-md border bg-white object-contain p-1"
+              />
+            )}
+            <dl className="grid flex-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+              {SUMMARY_FIELDS.filter(([, key]) => identity[key]?.trim()).map(([label, key]) => (
+                <div key={key}>
+                  <dt className="text-xs text-muted-foreground">{label}</dt>
+                  <dd className="break-words">{identity[key]}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        )}
+
+        <div className="space-y-1.5 text-sm">
+          <p className="flex items-center gap-2">
+            {hasName ? (
               <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
             ) : (
               <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
             )}
-            <Button
-              size="sm"
-              variant={hasLogo ? 'outline' : 'default'}
-              className="gap-2"
-              disabled={uploadLogo.isPending}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {uploadLogo.isPending ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Uploading…
-                </>
-              ) : (
-                <>
-                  <Upload className="h-3.5 w-3.5" />
-                  {hasLogo ? 'Replace file' : 'Upload logo'}
-                </>
-              )}
-            </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/svg+xml,image/png,image/jpeg,image/webp"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) uploadLogo.mutate(file, { onSuccess: () => void syncLogoToIdentity() })
-                e.target.value = ''
-              }}
-            />
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Your brand colour palette is built from this image.
+            Company name {hasName ? 'set' : 'missing'}
           </p>
-          {hasLogo && logoMedia?.url && (
-            // eslint-disable-next-line @next/next/no-img-element -- external presigned MinIO URL
-            <img
-              src={logoMedia.url}
-              alt="Uploaded logo"
-              className="h-16 w-16 rounded-md border object-contain bg-white p-1"
-            />
-          )}
-        </div>
-
-        {PAIRED_ROWS.map(([left, right]) => (
-          <div key={left} className="grid grid-cols-2 gap-4">
-            {fieldRow(
-              left,
-              left === 'brand-profile-company-name' && showErrors && companyMissing
-                ? 'Company name is required.'
-                : undefined
+          <p className="flex items-center gap-2">
+            {hasLogo ? (
+              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+            ) : (
+              <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
             )}
-            {fieldRow(right)}
-          </div>
-        ))}
-        {FULL_WIDTH_SLUGS.map((slug) => fieldRow(slug))}
+            Logo {hasLogo ? 'set' : 'missing'} (your colour palette is built from it)
+          </p>
+        </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <Button size="sm" onClick={handleSave} disabled={saveMutation.isPending}>
-            {saveMutation.isPending ? 'Saving…' : 'Save'}
+          <Button
+            size="sm"
+            disabled={!ready || continueToPalette.isPending}
+            onClick={() =>
+              continueToPalette.mutate(latestRun, {
+                onSuccess: () =>
+                  router.push(`/admin/template-engine/projects/${projectId}/palette`),
+              })
+            }
+          >
+            {continueToPalette.isPending ? 'Opening…' : 'Next: Color Palette'}
+            <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
           </Button>
-          {/* Appears after a successful Save: continues the setup to the Color Palette page. */}
-          {saved && (
-            <>
-              <Button
-                size="sm"
-                disabled={!hasLogo || continueToPalette.isPending}
-                onClick={() =>
-                  continueToPalette.mutate(latestRun, {
-                    onSuccess: () =>
-                      router.push(`/admin/template-engine/projects/${projectId}/palette`),
-                  })
-                }
-              >
-                {continueToPalette.isPending ? 'Opening…' : 'Next'}
-                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-              </Button>
-              {!hasLogo && (
-                <span className="text-xs text-muted-foreground">
-                  Upload your logo above to continue to the Color Palette.
-                </span>
-              )}
-            </>
+          {!ready && (
+            <span className="text-xs text-muted-foreground">
+              Add the missing details in Identity to continue.
+            </span>
           )}
         </div>
-      </div>
+      </section>
 
       <div className="mt-6 max-w-3xl">
         <h3 className="mb-3 text-sm font-medium">Website Content</h3>
@@ -339,11 +172,11 @@ function CompanyDetailsContent() {
   )
 }
 
-export default function CompanyDetailsPage() {
+export default function WebsiteDetailsPage() {
   return (
     <ModuleGuard slug="menus">
       <PermissionGuard permission="menus:view">
-        <CompanyDetailsContent />
+        <WebsiteDetailsContent />
       </PermissionGuard>
     </ModuleGuard>
   )

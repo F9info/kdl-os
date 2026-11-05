@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PRODUCTS, PRODUCT_KEYS, resolveProducts, buildGraph, siteOnlyModules, hiddenByProducts } from './products.js';
+import { PRODUCTS, PRODUCT_KEYS, resolveProducts, inferProducts, buildGraph, siteOnlyModules, hiddenByProducts } from './products.js';
 
 // Real manifests from disk, so renamed or removed slugs break this test.
 const MODULES_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -129,5 +129,31 @@ describe('siteOnlyModules / hiddenByProducts (real manifests)', () => {
     expect(hiddenByProducts(['admin'], real).size).toBeGreaterThan(0);
     expect(hiddenByProducts(['admin', 'landing'], real).size).toBe(0);
     expect(hiddenByProducts(['website'], real).size).toBe(0);
+  });
+});
+
+describe('inferProducts (Products page shows the effective state)', () => {
+  const allOf = (...keys) => [...resolveProducts({ selected: keys, manifests: real }).modules];
+
+  it('a product whose modules are all enabled is on even though nobody chose it', () => {
+    expect(inferProducts({ manifests: real, enabled: allOf('website', 'landing'), stored: [] })).toEqual(
+      expect.arrayContaining(['website', 'landing'])
+    );
+  });
+
+  it('a product missing any required module is not inferred', () => {
+    const enabled = allOf('website').filter((m) => m !== 'menus');
+    expect(inferProducts({ manifests: real, enabled, stored: [] })).not.toContain('website');
+    expect(inferProducts({ manifests: real, enabled: [], stored: [] })).toEqual([]);
+  });
+
+  it('products already chosen are not repeated', () => {
+    expect(inferProducts({ manifests: real, enabled: allOf('website'), stored: ['website'] })).not.toContain('website');
+  });
+
+  it('buildGraph reports the inferred products alongside the selection', () => {
+    const g = buildGraph({ manifests: real, enabled: [], selected: ['website'], inferred: ['landing'] });
+    expect(g.selected).toEqual(['website']);
+    expect(g.inferred).toEqual(['landing']);
   });
 });

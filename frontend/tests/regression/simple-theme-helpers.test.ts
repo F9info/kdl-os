@@ -19,11 +19,11 @@ import {
   googleFontUrl,
   withGoogleFonts,
 } from '@/app/admin/theme-engine/simple/fonts'
-import { contrastRatio } from '@/lib/contrast'
+import { contrastRatio } from '@/admin/lib/contrast'
 import { PREVIEW_PACKS } from '@/app/admin/theme-engine/simple/preview-packs'
-import { construction } from '@/app/admin/page-builder/packs/construction'
-import { general } from '@/app/admin/page-builder/packs/general'
-import { medical } from '@/app/admin/page-builder/packs/medical'
+import { construction } from '@/frontend/blocks/packs/construction'
+import { general } from '@/frontend/blocks/packs/general'
+import { medical } from '@/frontend/blocks/packs/medical'
 
 // Stock Theme Engine values (backend schema/index.js, webapp.branding / webapp.buttons).
 const STOCK: Record<'light' | 'dark', Palette> = {

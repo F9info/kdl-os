@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
-import { AdminShell } from '@/components/layout/AdminShell'
+import { AdminShell } from '@/admin/components/layout/AdminShell'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api'

@@ -1,21 +1,32 @@
 'use client'
 
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useSearchParams } from 'next/navigation'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Puck, blocksPlugin, type Data, type ComponentData } from '@puckeditor/core'
 import '@puckeditor/core/puck.css'
 import '../../../page-builder/puck-overrides.css'
-import { ArrowLeft, Loader2 } from 'lucide-react'
-import { ModuleGuard } from '@/components/shared/ModuleGuard'
+import { ArrowLeft, Loader2, Search } from 'lucide-react'
+import { ModuleGuard } from '@/admin/components/shared/ModuleGuard'
 import { toast } from '@/hooks/use-toast'
 import { BlocksPanel } from '../../../page-builder/blocks-panel'
 import { InsertBlockButton } from '../../../page-builder/insert-block-modal'
-import { config } from '../../../page-builder/puck.config'
-import { autosavePage, getPage, savePage } from '../../../page-builder/store'
-import { useLayoutChrome } from '@/hooks/useLayoutChrome'
-import { useAutosave, type AutosaveStatus } from '@/hooks/useAutosave'
+import { config } from '../../../../../frontend/blocks/puck.config'
+import {
+  autosavePage,
+  checkPage,
+  getPage,
+  issuesFromPublishError,
+  publishPage,
+  type PageIssue,
+} from '../../../page-builder/store'
+import { PublishChecksDialog } from '../../../page-builder/PublishChecks'
+import { PublishStatus, VersionsButton } from '../../../page-builder/PublishControls'
+import { PreviewLinkButton } from '../../../page-builder/PreviewLink'
+import { SeoDialog } from '../../../page-builder/SeoDialog'
+import { useLayoutChrome } from '@/admin/hooks/useLayoutChrome'
+import { useAutosave, type AutosaveStatus } from '@/admin/hooks/useAutosave'
 
 // Top Header/Header/Footer are layout-managed — every page gets the same
 // one, picked once on the Layout page (website/layout), not per page here.
@@ -79,6 +90,9 @@ export default function TemplateEngineEditPage() {
     : '/admin/template-engine'
   const qc = useQueryClient()
   const { topHeaderNode, headerNode, footerNode } = useLayoutChrome(projectId)
+  const [seoOpen, setSeoOpen] = useState(false)
+  // True once an edit was autosaved as a draft since the page was loaded or last published.
+  const [editedSincePublish, setEditedSincePublish] = useState(false)
 
   const {
     data: page,
@@ -89,18 +103,38 @@ export default function TemplateEngineEditPage() {
     queryFn: () => getPage(params.id),
   })
 
+  // Publish flow: check first; if the page has problems or suggestions the author reviews them
+  // (PublishChecksDialog) before anything goes live. The server enforces the errors too.
+  const [pending, setPending] = useState<{ data: Data; issues: PageIssue[] } | null>(null)
   const saveMutation = useMutation({
-    mutationFn: (data: Data) => savePage(params.id, data),
+    mutationFn: ({ data, force }: { data: Data; force: boolean }) =>
+      publishPage(params.id, data, force),
     onSuccess: () => {
+      setEditedSincePublish(false)
+      setPending(null)
       void qc.invalidateQueries({ queryKey: ['page-builder-page', params.id] })
-      toast({ title: 'Saved', description: 'Page saved and published.' })
+      toast({ title: 'Published', description: 'Your changes are live.' })
     },
-    onError: () =>
+    onError: (err, vars) => {
+      // The server's own check caught something the editor's check did not see (e.g. a page was
+      // deleted meanwhile): show it the same way.
+      const issues = issuesFromPublishError(err)
+      if (issues) return setPending({ data: vars.data, issues })
       toast({
-        title: 'Save failed',
-        description: 'Could not save the page.',
+        title: 'Publish failed',
+        description: 'Could not publish the page.',
         variant: 'destructive',
-      }),
+      })
+    },
+  })
+  const checkMutation = useMutation({
+    mutationFn: (data: Data) => checkPage(params.id, data).then((checks) => ({ data, checks })),
+    onSuccess: ({ data, checks }) => {
+      if (checks.issues.length > 0) setPending({ data, issues: checks.issues })
+      else saveMutation.mutate({ data, force: false })
+    },
+    // A failed check must never block publishing: the server still enforces the errors.
+    onError: (_err, data) => saveMutation.mutate({ data, force: false }),
   })
 
   // Split out once per page load — `onPublish` below closes over this to
@@ -126,6 +160,9 @@ export default function TemplateEngineEditPage() {
   )
   const autosave = useAutosave<Data>((data) => autosavePage(params.id, data), baseline)
   const { schedule: scheduleAutosave } = autosave
+  useEffect(() => {
+    if (autosave.status === 'saving' || autosave.status === 'error') setEditedSincePublish(true)
+  }, [autosave.status])
   const handleChange = useCallback(
     (data: Data) => scheduleAutosave(buildFinal(data)),
     [scheduleAutosave, buildFinal]
@@ -149,7 +186,9 @@ export default function TemplateEngineEditPage() {
   function handlePublish(data: Data) {
     const final = buildFinal(data)
     autosave.markSaved(final) // supersedes any pending autosave
-    saveMutation.mutate(final)
+    // Autosave of the same content may still be in flight: the check reads the saved draft, so
+    // send the content with the publish and check what the server will actually publish.
+    checkMutation.mutate(final)
   }
 
   return (
@@ -223,8 +262,8 @@ export default function TemplateEngineEditPage() {
           headerPath={`/p/${page.slug}`}
           onChange={handleChange}
           onPublish={handlePublish}
-          // Saving here also publishes, so "Publish" confused users — call it Save.
-          dictionary={{ 'header-publish': 'Save' }}
+          // Edits autosave as a draft; this button makes them live as a new version.
+          dictionary={{ 'header-publish': 'Publish' }}
           overrides={{
             outline: () => <></>,
             // The canvas area (root render + all DropZone content) — wraps
@@ -255,6 +294,21 @@ export default function TemplateEngineEditPage() {
                   <ArrowLeft size={15} /> Back
                 </Link>
                 <InsertBlockButton projectId={projectId ?? undefined} />
+                <button
+                  type="button"
+                  onClick={() => setSeoOpen(true)}
+                  className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-1.5 text-sm text-foreground hover:bg-muted"
+                >
+                  <Search size={15} /> SEO
+                </button>
+                <PublishStatus
+                  page={{
+                    ...page,
+                    hasUnpublishedChanges: page.hasUnpublishedChanges || editedSincePublish,
+                  }}
+                />
+                <PreviewLinkButton pageId={params.id} />
+                <VersionsButton page={page} />
                 <AutosaveBadge status={autosave.status} />
                 {children}
               </>
@@ -266,6 +320,22 @@ export default function TemplateEngineEditPage() {
             ),
           }}
         />
+        {pending && (
+          <PublishChecksDialog
+            issues={pending.issues}
+            busy={saveMutation.isPending}
+            onBack={() => setPending(null)}
+            onPublish={(anyway) => saveMutation.mutate({ data: pending.data, force: anyway })}
+          />
+        )}
+        {seoOpen && (
+          <SeoDialog
+            pageId={params.id}
+            pageTitle={page.title}
+            seo={page.seo}
+            onClose={() => setSeoOpen(false)}
+          />
+        )}
       </div>
     </ModuleGuard>
   )

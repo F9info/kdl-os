@@ -8,9 +8,9 @@ import {
   useRetryStage,
   useBrandKit,
   useApproveBrandKit,
-} from '@/hooks/useTemplateEngine'
+} from '@/admin/hooks/useTemplateEngine'
 import { StageShell } from './StageShell'
-import type { TemplateEngineRun } from '@/types/template-engine.types'
+import type { TemplateEngineRun } from '@/admin/types/template-engine.types'
 
 export function ApprovalStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'APPROVAL')

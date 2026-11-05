@@ -43,7 +43,8 @@ export const NAV_GROUPS: Record<string, [string, string[]][]> = {
 }
 
 export const PLATFORMS = [
-  { id: 'webapp', icon: '🌐', label: 'Web App' },
+  { id: 'webapp', icon: '🌐', label: 'Website' },
+  { id: 'webapp_admin', icon: '🛠️', label: 'Admin App' },
   { id: 'tv', icon: '📺', label: 'TV' },
   { id: 'android', icon: '🤖', label: 'Android Native App' },
   { id: 'ios', icon: '🍎', label: 'iOS Native App' },

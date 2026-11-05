@@ -1,7 +1,7 @@
 'use client'
 
 // The Template Engine "Studio" bar (title + Overview tab) is gone: every step now lives under
-// CMS in the sidebar (Company Details, Color Palette, Brands, Pages). These routes still serve
+// CMS in the sidebar (Website Details, Color Palette, Brands, Pages). These routes still serve
 // those CMS entries, so this layout only renders the page content.
 export default function ProjectLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -1,4 +1,5 @@
 import { addPageToMenus } from '../menus/site-menus.js';
+import { getDefaultProjectId } from '../../shared/default-project.js';
 import {
   STARTER_PAGES,
   HEADER_SLUGS,
@@ -8,6 +9,7 @@ import {
   navLinksFor,
   headerLinksFor,
   insertPublishedPage,
+  brandName,
 } from '../projects/starter-site.js';
 
 // Website pages the CMS bundle adds on top of the 5 starter pages.
@@ -61,10 +63,11 @@ export async function applyCmsSite(client, { answered, actorId = null } = {}) {
     answered = row?.value === 'yes';
   }
   if (!answered) return result;
-  const project = await client.project.findFirst({ where: { is_default: true, deleted_at: null } });
-  if (!project) return result;
+  const projectId = await getDefaultProjectId(client);
+  if (!projectId) return result;
 
   const all = [...STARTER_PAGES, ...CMS_PAGES];
+  const brand = await brandName(client);
   const fullLinks = navLinksFor(all);
   const headerLinks = headerLinksFor(all);
   for (const { slug, title } of CMS_PAGES) {
@@ -72,12 +75,12 @@ export async function applyCmsSite(client, { answered, actorId = null } = {}) {
     const page = await insertPublishedPage(client, {
       slug,
       title,
-      data: wrapPage(slug, title, all, BODIES[slug](slug)),
-      projectId: project.id,
+      data: wrapPage(slug, title, all, BODIES[slug](slug), brand),
+      projectId,
       actorId,
     });
     await addPageToMenus(client, {
-      projectId: project.id,
+      projectId,
       page,
       header: HEADER_SLUGS.includes(slug),
     });
@@ -146,21 +149,21 @@ const SAMPLE_QUOTES = [
 const SAMPLE_TITLES = ['First', 'Second', 'Third'];
 
 export async function seedCmsSamples(client) {
-  const project = await client.project.findFirst({ where: { is_default: true, deleted_at: null } });
-  if (!project) return;
-  if ((await client.faqEntry.count({ where: { project_id: project.id } })) === 0) {
+  const projectId = await getDefaultProjectId(client);
+  if (!projectId) return;
+  if ((await client.faqEntry.count({ where: { project_id: projectId } })) === 0) {
     await client.faqEntry.createMany({
       data: SAMPLE_FAQS.map(([question, answer], order) => ({
         question,
         answer,
         order,
-        project_id: project.id,
+        project_id: projectId,
       })),
     });
   }
   const empty = async (model) =>
-    (await client[model].count({ where: { project_id: project.id } })) === 0;
-  const pid = project.id;
+    (await client[model].count({ where: { project_id: projectId } })) === 0;
+  const pid = projectId;
   if (await empty('galleryItem')) {
     await client.galleryItem.createMany({
       data: SAMPLE_GALLERY.map((g) => ({ ...g, project_id: pid })),

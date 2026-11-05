@@ -1,0 +1,524 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { usePathname, useSearchParams } from 'next/navigation'
+import { useQuery } from '@tanstack/react-query'
+import {
+  LayoutDashboard,
+  Users,
+  Image,
+  UserCog,
+  ListChecks,
+  Briefcase,
+  SlidersHorizontal,
+  Cog,
+  ChevronDown,
+  Shield,
+  KeyRound,
+  ClipboardList,
+  Package,
+  Box,
+  FileText,
+  Settings,
+  Activity,
+  Lock,
+  Sparkles,
+  CloudUpload,
+  HardDrive,
+  Palette,
+  LayoutTemplate,
+  Search,
+} from 'lucide-react'
+import { useUiStore } from '@/admin/stores/ui.store'
+import { useIsMobile } from '@/admin/hooks/useIsMobile'
+import { useAuth } from '@/admin/hooks/useAuth'
+import { usePermissions } from '@/admin/hooks/usePermissions'
+import { useModules } from '@/admin/hooks/useModules'
+import { useIdentity } from '@/hooks/useIdentity'
+import api from '@/lib/axios'
+import { cn } from '@/lib/utils'
+import { AppImage } from '@/components/shared/AppImage'
+import type { Type, SettingField } from '@/types/models.types'
+
+const MODULE_ICON_MAP: Record<string, React.ElementType> = {
+  Image,
+  Package,
+  Box,
+  FileText,
+  Settings,
+  Activity,
+  Lock,
+  Shield,
+  Users,
+  Cog,
+  Palette,
+  LayoutTemplate,
+  Search,
+  Sparkles,
+}
+
+// Slug of the setting field that holds the app logo (set under any Type).
+const LOGO_SLUG = 'logo'
+
+export interface NavLeaf {
+  label: string
+  href: string
+  icon: React.ElementType
+  permission?: string
+}
+
+export interface NavGroup {
+  label: string
+  icon: React.ElementType
+  children: NavLeaf[]
+}
+
+// Exported so CommandPalette (KDL-292) reuses this as its single source of
+// truth for "Navigate" results instead of duplicating the nav tree.
+export const FLAT_ITEMS: NavLeaf[] = [
+  { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
+  { label: 'Users', href: '/admin/users', icon: Users, permission: 'users:view' },
+  { label: 'Modules', href: '/admin/modules', icon: Package, permission: 'modules:view' },
+]
+
+export // CMS entries that open a project stage page (…/template-engine/projects/<id>/palette|website):
+// keep them highlighted (and CMS open) while you are on that page.
+function isStageNavActive(itemPath: string, pathname: string, search: string): boolean {
+  if (!pathname.startsWith('/admin/template-engine/projects/')) return false
+  const view = new URLSearchParams(search).get('view')
+  if (itemPath === '/admin/color-palette') return pathname.endsWith('/palette')
+  if (itemPath === '/admin/pages') return pathname.endsWith('/website') && view === 'pages'
+  if (itemPath === '/admin/layouts') return pathname.endsWith('/website') && view === 'layouts'
+  if (itemPath === '/admin/brands')
+    return pathname.endsWith('/website') && view !== 'pages' && view !== 'layouts'
+  return false
+}
+
+export const GROUPS: NavGroup[] = [
+  {
+    label: 'Media',
+    icon: Image,
+    children: [
+      { label: 'Library', href: '/admin/media', icon: Image, permission: 'media:view' },
+      {
+        label: 'AI Providers',
+        href: '/admin/media/ai',
+        icon: Sparkles,
+        permission: 'media:ai-providers',
+      },
+      {
+        label: 'Cloud Imports',
+        href: '/admin/media/import',
+        icon: CloudUpload,
+        permission: 'media:cloud-import',
+      },
+    ],
+  },
+  {
+    label: 'Access Control',
+    icon: Shield,
+    children: [
+      { label: 'Roles', href: '/admin/roles', icon: Shield, permission: 'roles:view' },
+      {
+        label: 'Permissions',
+        href: '/admin/permissions',
+        icon: KeyRound,
+        permission: 'permissions:view',
+      },
+      {
+        label: 'Activity Log',
+        href: '/admin/activity-log',
+        icon: ClipboardList,
+        permission: 'activity-log:view',
+      },
+    ],
+  },
+  {
+    label: 'Settings',
+    icon: UserCog,
+    children: [
+      {
+        label: 'Identity',
+        href: '/admin/settings/identity',
+        icon: Palette,
+        permission: 'settings:view',
+      },
+      {
+        label: 'SEO',
+        href: '/admin/settings/seo',
+        icon: Search,
+        permission: 'settings:view',
+      },
+      {
+        label: 'Products',
+        href: '/admin/settings/products',
+        icon: Package,
+        permission: 'modules:view',
+      },
+      {
+        label: 'Field Types',
+        href: '/admin/settings/types',
+        icon: ListChecks,
+        permission: 'types:view',
+      },
+      {
+        label: 'Field Categories',
+        href: '/admin/settings/categories',
+        icon: Briefcase,
+        permission: 'categories:view',
+      },
+      {
+        label: 'Custom Fields',
+        href: '/admin/settings/fields',
+        icon: SlidersHorizontal,
+        permission: 'setting-fields:view',
+      },
+      {
+        label: 'Storage',
+        href: '/admin/settings/storage',
+        icon: HardDrive,
+        permission: 'settings:view',
+      },
+    ],
+  },
+]
+
+export function AdminSidebar() {
+  const { sidebarOpen, setSidebarOpen, setIsMobile } = useUiStore()
+  const isMobile = useIsMobile()
+  const { isAdmin } = useAuth()
+  const { can } = usePermissions()
+  const { nonCoreNav, bundles } = useModules()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
+
+  // Sync viewport breakpoint into the store so other components can read it.
+  useEffect(() => {
+    setIsMobile(isMobile)
+    if (isMobile) setSidebarOpen(false)
+  }, [isMobile, setIsMobile, setSidebarOpen])
+
+  // Auto-close drawer on navigation (mobile only).
+  useEffect(() => {
+    if (isMobile) setSidebarOpen(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
+
+  // On mobile: always show labels inside the full-width drawer.
+  const showLabels = isMobile || sidebarOpen
+
+  const canViewSettings =
+    can('types:view') ||
+    can('categories:view') ||
+    can('setting-fields:view') ||
+    can('settings:view')
+
+  // Active types become top-level menu items automatically — one per type,
+  // each linking to its own settings page. New types appear as soon as created.
+  const { data: typesData } = useQuery({
+    queryKey: ['sidebar-types'],
+    enabled: isAdmin,
+    queryFn: () =>
+      api
+        .get('/types', {
+          params: { limit: 100, is_active: 'true', sortBy: 'name', sortOrder: 'asc' },
+        })
+        .then((r) => r.data.data as { types: Type[] }),
+  })
+  // Types edited inside another page (website-content lives in CMS → Website Details) get no
+  // sidebar entry of their own; their /admin/settings/view/<slug> route still works.
+  const EMBEDDED_TYPES = new Set(['website-content'])
+  const typeLeaves: NavLeaf[] = (typesData?.types ?? [])
+    .filter((t) => !EMBEDDED_TYPES.has(t.slug))
+    .map((t) => ({
+      label: t.name,
+      href: `/admin/settings/view/${t.slug}`,
+      icon: Cog,
+    }))
+
+  // Header logo: Application Identity first, then the legacy 'logo' setting field, then the
+  // application name as text.
+  const { data: logoUrl } = useQuery({
+    queryKey: ['app-logo'],
+    enabled: isAdmin,
+    retry: false,
+    queryFn: () =>
+      api
+        .get(`/setting-fields/value/${LOGO_SLUG}`)
+        .then((r) => (r.data.data.field as SettingField).value_url ?? null)
+        .catch(() => null),
+  })
+
+  const { identity, appName } = useIdentity()
+  const headerLogo = identity.logo_light || logoUrl
+
+  // Exact match: '/admin/settings/types' must not mark a sibling active, so
+  // leaves never use startsWith.
+  const isLeafActive = (href: string) => pathname === href
+  const childrenHaveActive = (children: NavLeaf[]) => children.some((c) => isLeafActive(c.href))
+  const isGroupOpen = (group: NavGroup) =>
+    openGroups[group.label] ?? childrenHaveActive(group.children)
+  const toggleGroup = (label: string) =>
+    setOpenGroups((prev) => ({ ...prev, [label]: !(prev[label] ?? false) }))
+
+  const visibleFlat = FLAT_ITEMS.filter((item) => !item.permission || can(item.permission))
+
+  const dynamicModuleItems = nonCoreNav.filter((item) => !item.permission || can(item.permission))
+  const visibleGroups = GROUPS.map((group) => ({
+    ...group,
+    children: group.children.filter((c) => !c.permission || can(c.permission)),
+  })).filter((group) => group.children.length > 0)
+
+  return (
+    <>
+      {/* Mobile backdrop — tapping outside closes the drawer */}
+      {isMobile && sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      <aside
+        data-testid="admin-sidebar"
+        aria-hidden={isMobile && !sidebarOpen ? true : undefined}
+        className={cn(
+          'flex flex-col border-r bg-card',
+          isMobile
+            ? cn(
+                'fixed inset-y-0 left-0 z-50 shadow-lg',
+                'transition-transform duration-200 ease-in-out',
+                sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+              )
+            : cn('transition-all duration-200', sidebarOpen ? '' : 'w-16')
+        )}
+        // Desktop: expanded width from TE sidebar-width token (KDL-209 contract).
+        // Mobile: same token drives drawer width; never uses icon-rail (w-16) on mobile.
+        style={isMobile || sidebarOpen ? { width: 'var(--th-layout-sidebar-width)' } : undefined}
+      >
+        {/* th-header keeps the logo row the same height as the TopBar when
+          Layout > Header Height changes. */}
+        <div className="th-header flex items-center border-b px-4">
+          {headerLogo ? (
+            // Expanded: logo_image class sizes the logo from the Template
+            // Engine's Images pane. Collapsed: the 64px rail is fixed chrome, so
+            // an inline style (beats the class) pins the logo to fit it.
+            <>
+              <AppImage
+                size="logo"
+                src={headerLogo}
+                alt={appName}
+                className={cn('max-w-full', identity.logo_dark && 'dark:hidden')}
+                style={showLabels ? undefined : { width: '2rem', height: '2rem' }}
+              />
+              {identity.logo_dark && (
+                <AppImage
+                  size="logo"
+                  src={identity.logo_dark}
+                  alt={appName}
+                  className="hidden max-w-full dark:block"
+                  style={showLabels ? undefined : { width: '2rem', height: '2rem' }}
+                />
+              )}
+            </>
+          ) : showLabels ? (
+            <span className="font-bold text-lg tracking-tight">{appName}</span>
+          ) : (
+            <span className="font-bold text-lg">{appName.charAt(0)}</span>
+          )}
+        </div>
+
+        <nav className="flex-1 space-y-1 overflow-y-auto p-2" aria-label="Main navigation">
+          {visibleFlat.map((item) => {
+            const active = isLeafActive(item.href) || pathname.startsWith(item.href + '/')
+            const Icon = item.icon
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  'flex items-center gap-3 rounded-md px-3 py-2 transition-colors',
+                  active
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                )}
+                title={!showLabels ? item.label : undefined}
+              >
+                <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                {showLabels && <span>{item.label}</span>}
+              </Link>
+            )
+          })}
+
+          {/* Module-driven nav — non-core modules add items here when enabled */}
+          {dynamicModuleItems.map((item) => {
+            const active = isLeafActive(item.path) || pathname.startsWith(item.path + '/')
+            const Icon = (item.icon ? MODULE_ICON_MAP[item.icon] : null) ?? Package
+            return (
+              <Link
+                key={item.path}
+                href={item.path}
+                className={cn(
+                  'flex items-center gap-3 rounded-md px-3 py-2 transition-colors',
+                  active
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                )}
+                title={!showLabels ? item.label : undefined}
+              >
+                <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                {showLabels && <span>{item.label}</span>}
+              </Link>
+            )
+          })}
+
+          {/* Bundles (CMS): one collapsible entry that holds all of the bundle's parts */}
+          {bundles.map((bundle) => {
+            const items = bundle.items.filter((item) => !item.permission || can(item.permission))
+            if (items.length === 0) return null
+            const isActive = (path: string) =>
+              pathname === path ||
+              pathname.startsWith(path + '/') ||
+              isStageNavActive(path, pathname, `?${searchParams.toString()}`)
+            const open = openGroups[bundle.name] ?? items.some((i) => isActive(i.path))
+            return (
+              <div key={bundle.slug} className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(bundle.name)}
+                  aria-expanded={open}
+                  className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  title={!showLabels ? bundle.name : undefined}
+                >
+                  <Package className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  {showLabels && (
+                    <>
+                      <span className="flex-1 text-left">{bundle.name}</span>
+                      <ChevronDown
+                        className={cn(
+                          'h-4 w-4 shrink-0 transition-transform',
+                          open ? 'rotate-0' : '-rotate-90'
+                        )}
+                        aria-hidden="true"
+                      />
+                    </>
+                  )}
+                </button>
+                {open && (
+                  <div className={cn('space-y-1', showLabels && 'ml-4 border-l pl-2')}>
+                    {items.map((item) => {
+                      const active = isActive(item.path)
+                      const Icon = (item.icon ? MODULE_ICON_MAP[item.icon] : null) ?? Package
+                      return (
+                        <Link
+                          key={item.path}
+                          href={item.path}
+                          className={cn(
+                            'flex items-center gap-3 rounded-md px-3 py-2 transition-colors',
+                            active
+                              ? 'bg-primary text-primary-foreground'
+                              : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                          )}
+                          title={!showLabels ? item.label : undefined}
+                        >
+                          <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                          {showLabels && <span>{item.label}</span>}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+
+          {/* Per-type settings screens — top-level items, right after the flat items */}
+          {canViewSettings &&
+            typeLeaves.map((item) => {
+              const active = isLeafActive(item.href)
+              const Icon = item.icon
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    'flex items-center gap-3 rounded-md px-3 py-2 transition-colors',
+                    active
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  )}
+                  title={!showLabels ? item.label : undefined}
+                >
+                  <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  {showLabels && <span>{item.label}</span>}
+                </Link>
+              )
+            })}
+
+          {visibleGroups.map((group) => {
+            const open = isGroupOpen(group)
+            const hasActive = childrenHaveActive(group.children)
+            const GroupIcon = group.icon
+            return (
+              <div key={group.label} className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(group.label)}
+                  aria-expanded={open}
+                  className={cn(
+                    'flex w-full items-center gap-3 rounded-md px-3 py-2 transition-colors',
+                    hasActive
+                      ? 'text-foreground font-medium'
+                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  )}
+                  title={!showLabels ? group.label : undefined}
+                >
+                  <GroupIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  {showLabels && (
+                    <>
+                      <span className="flex-1 text-left">{group.label}</span>
+                      <ChevronDown
+                        className={cn(
+                          'h-4 w-4 shrink-0 transition-transform',
+                          open ? 'rotate-0' : '-rotate-90'
+                        )}
+                        aria-hidden="true"
+                      />
+                    </>
+                  )}
+                </button>
+
+                {open && (
+                  <div className={cn('space-y-1', showLabels && 'ml-4 border-l pl-2')}>
+                    {group.children.map((child) => {
+                      const active = isLeafActive(child.href)
+                      const ChildIcon = child.icon
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          className={cn(
+                            'flex items-center gap-3 rounded-md px-3 py-2 transition-colors',
+                            active
+                              ? 'bg-primary text-primary-foreground'
+                              : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                          )}
+                          title={!showLabels ? child.label : undefined}
+                        >
+                          <ChildIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                          {showLabels && <span>{child.label}</span>}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </nav>
+      </aside>
+    </>
+  )
+}

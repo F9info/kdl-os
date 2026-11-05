@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import type { InputType } from '@/types/models.types'
-import { INPUT_TYPE_LABELS, OPTION_INPUT_TYPES } from '@/lib/inputTypes'
+import { INPUT_TYPE_LABELS, OPTION_INPUT_TYPES } from '@/admin/lib/inputTypes'
 
 const inputTypeKeys = Object.keys(INPUT_TYPE_LABELS) as [InputType, ...InputType[]]
 

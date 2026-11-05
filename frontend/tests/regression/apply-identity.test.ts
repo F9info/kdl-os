@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { applyIdentity } from '@/lib/apply-identity'
+import { applyIdentity, mergeIdentity } from '@/frontend/lib/apply-identity'
 
 type Page = { root: object; content: { type: string; props: Record<string, any> }[] }
 const page: Page = {
@@ -58,5 +58,26 @@ describe('applyIdentity', () => {
     expect(JSON.stringify(page)).toBe(copy)
     expect(applyIdentity(null, { app_name: 'x' })).toBeNull()
     expect(applyIdentity({ content: 'nope' }, { app_name: 'x' })).toEqual({ content: 'nope' })
+  })
+})
+
+describe('mergeIdentity (T5.5)', () => {
+  const base = { app_name: 'Project', logo_light: '/p.png', description: 'd' }
+  it('no overrides: the project identity as is', () => {
+    expect(mergeIdentity(base, null)).toBe(base)
+    expect(mergeIdentity(base, undefined)).toBe(base)
+  })
+  it('non-empty overrides win, empty or blank ones inherit, input not mutated', () => {
+    const merged = mergeIdentity(base, { app_name: 'Spring', logo_light: '', description: '  ' })
+    expect(merged).toEqual({ app_name: 'Spring', logo_light: '/p.png', description: 'd' })
+    expect(base.app_name).toBe('Project')
+  })
+  it('the merged identity drives the header/footer brand', () => {
+    const data = {
+      root: {},
+      content: [{ type: 'NavBar', props: { brand: 'Baked', logoUrl: '/b.png' } }],
+    }
+    const out = applyIdentity(data, mergeIdentity(base, { app_name: 'Spring' }))
+    expect(out.content[0]!.props).toMatchObject({ brand: 'Spring', logoUrl: '/p.png' })
   })
 })

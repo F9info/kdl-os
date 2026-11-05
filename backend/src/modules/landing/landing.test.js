@@ -36,11 +36,11 @@ beforeEach(() => {
 });
 
 describe('manifest', () => {
-  it('is a valid manifest with a landing:view nav entry', () => {
+  it('is a valid manifest with no sidebar entry (reached from the Brands page)', () => {
     const raw = JSON.parse(readFileSync(new URL('./module.json', import.meta.url), 'utf8'));
     const parsed = manifestSchema.safeParse(raw);
     expect(parsed.success).toBe(true);
-    expect(raw.nav[0].permission).toBe('landing:view');
+    expect(raw.nav).toEqual([]);
   });
 });
 

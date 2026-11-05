@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '../utils'
-import { AdminSidebar } from '@/components/layout/AdminSidebar'
+import { AdminSidebar } from '@/admin/components/layout/AdminSidebar'
 
 vi.mock('@/lib/axios', () => ({ default: { get: vi.fn() } }))
 vi.mock('next/navigation', () => ({

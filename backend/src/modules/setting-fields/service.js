@@ -5,6 +5,7 @@ import { uniqueSlug } from '../../shared/utils/slug.js';
 import * as storageService from '../../shared/services/storage.service.js';
 import { FILE_INPUT_TYPES } from '../../shared/constants/inputTypes.js';
 import { enqueueAllSiteBuilds, enqueueSiteBuild } from '../template-engine/site/queue.js';
+import { updateIdentity } from '../identity/service.js';
 
 const SORTABLE = ['field_name', 'created_at', 'sort'];
 const FIELD_INCLUDE = {
@@ -236,6 +237,9 @@ export const getValuesBySlugs = async (slugs, projectId = null) => {
 // Theme Settings upload. Silently no-ops if the field doesn't exist.
 export const setGlobalLogo = async (path) => {
   await prisma.settingField.updateMany({ where: { slug: 'logo' }, data: { value: path } });
+  // Application Identity is the source of truth for the company logo (T-identity): keep it in step,
+  // so a logo uploaded through the brand kit shows everywhere Identity is read.
+  await updateIdentity({ logo_light: path });
 };
 
 // Upload a file for a setting field and return its object path + presigned URL.

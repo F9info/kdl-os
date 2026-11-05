@@ -68,6 +68,30 @@ describe('getModuleGraph stored selection', () => {
   });
 });
 
+describe('getModuleGraph effective selection (Products page)', () => {
+  it('shows a product as on when all its modules are enabled, though nobody chose it', async () => {
+    enabled('users', 'user-management', 'settings', 'identity', 'media');
+    const g = await getModuleGraph();
+    expect(g.selected).toEqual(['admin']);
+    expect(g.inferred).toEqual(['admin']);
+  });
+
+  it('a saved choice stays as saved and is not listed as inferred', async () => {
+    enabled('users', 'user-management', 'settings', 'identity', 'media');
+    prisma.appSetting.findUnique.mockResolvedValue({ value: '["admin"]' });
+    const g = await getModuleGraph();
+    expect(g.selected).toEqual(['admin']);
+    expect(g.inferred).toEqual([]);
+  });
+
+  it('a preview of a selection is exactly what was asked for (nothing inferred)', async () => {
+    enabled('users', 'user-management', 'settings', 'identity', 'media');
+    const g = await getModuleGraph([]);
+    expect(g.selected).toEqual([]);
+    expect(g.inferred).toEqual([]);
+  });
+});
+
 describe('listEnabledModules hidden_by_products (T2.4, sidebar only)', () => {
   const site = ['cms', 'menus', 'page-builder-ui', 'theme-engine-ui'];
   beforeEach(() => {

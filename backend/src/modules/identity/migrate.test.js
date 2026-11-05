@@ -20,10 +20,11 @@ describe('planMigration', () => {
       app_title: 'Acme Pvt Ltd',
       contact_email: 'hi@acme.com',
       contact_phone: '+91 99999 00000',
+      contact_email_secondary: 'b@acme.com',
       contact_address: '1 Main Rd, Hyderabad',
       logo_light: 'settings/abc.png',
     });
-    expect(report.unmapped).toEqual(['brand-profile-secondary-email']);
+    expect(report.unmapped).toEqual([]);
   });
 
   it('never overwrites a non-empty identity value', () => {

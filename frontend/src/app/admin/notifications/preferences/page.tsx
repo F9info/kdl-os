@@ -1,17 +1,17 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ModuleGuard } from '@/components/shared/ModuleGuard'
-import { PageHeader } from '@/components/layout/PageHeader'
+import { ModuleGuard } from '@/admin/components/shared/ModuleGuard'
+import { PageHeader } from '@/admin/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { toast } from '@/hooks/use-toast'
-import { useNotificationPreferences, useSavePreferences } from '@/hooks/useNotifications'
+import { useNotificationPreferences, useSavePreferences } from '@/admin/hooks/useNotifications'
 import type {
   NotificationChannel,
   CategoryPreferenceRow,
   NotificationPreference,
-} from '@/types/notifications.types'
+} from '@/admin/types/notifications.types'
 
 const CHANNELS: NotificationChannel[] = ['IN_APP', 'EMAIL', 'SMS', 'WHATSAPP']
 const CHANNEL_LABELS: Record<NotificationChannel, string> = {

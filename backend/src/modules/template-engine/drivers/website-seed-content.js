@@ -5,7 +5,7 @@
  * every seeded page a real, editable, full page layout instead (nav bar,
  * hero, stats, feature cards, CTA, footer) — built only from block types
  * that already exist in the "general" Puck component pack
- * (frontend/src/app/admin/page-builder/packs/general/index.tsx), so nothing
+ * (frontend/src/frontend/blocks/packs/general/index.tsx), so nothing
  * new needs registering and content renders correctly immediately.
  *
  * Props are always passed in full here — Puck only applies a component's
@@ -279,8 +279,8 @@ function buildFooterBlock(pageKey, brand, pages, variant) {
   return block(pageKey, 'ConstructionFooter', { ...layoutFooterProps(brand, pages), variant });
 }
 
-// Mirrors ConstructionTopBar's own defaultProps (frontend/src/app/admin/
-// page-builder/packs/construction/index.tsx) — same generic placeholder
+// Mirrors ConstructionTopBar's own defaultProps (frontend/src/frontend/
+// blocks/packs/construction/index.tsx) — same generic placeholder
 // copy for the fields each of its 4 designs doesn't share, with the
 // contact-ish fields every design does share (address/phone/email/tagline)
 // pulled from the brand kit the same way constructionFooterProps does.
@@ -862,7 +862,7 @@ export function seedWebsitePageData(pageKey, pageTitle, brand = {}, pages) {
 // fine) with the real Medical* components for the body, matching the
 // design reference's "centered" (Medical · Clinic) template structurally.
 // Uses each MedicalX component's own defaultProps verbatim (frontend/src/
-// app/admin/page-builder/packs/medical/index.tsx) rather than inventing
+// frontend/blocks/packs/medical/index.tsx) rather than inventing
 // new copy, since those were already written to fit the components' pipe-
 // delimited-line formats exactly.
 

@@ -2,9 +2,9 @@
 
 import { FileText, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useAdvanceStage, useRetryStage, useSkipStage } from '@/hooks/useTemplateEngine'
+import { useAdvanceStage, useRetryStage, useSkipStage } from '@/admin/hooks/useTemplateEngine'
 import { StageShell } from './StageShell'
-import type { TemplateEngineRun } from '@/types/template-engine.types'
+import type { TemplateEngineRun } from '@/admin/types/template-engine.types'
 
 export function GuidelinesStage({ run }: { run: TemplateEngineRun }) {
   const stage = run.stages.find((s) => s.stage === 'GUIDELINES')

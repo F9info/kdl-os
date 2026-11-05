@@ -27,17 +27,19 @@ describe('CMS bundle manifest', () => {
         'sectors',
         'projects-content',
         'menus',
+        'landing',
+        'forms',
       ])
     );
   });
 
-  it('orders the CMS sidebar group: Company Details, Color Palette, Brands, Navigation, Layouts, Pages, Section Builder', () => {
+  it('orders the CMS sidebar group: Website Details, Color Palette, Brands, Navigation, Layouts, Pages, Sections', () => {
     const labels = load('menus').nav.map((n) => n.label);
-    expect(labels.indexOf('Color Palette')).toBe(labels.indexOf('Company Details') + 1);
+    expect(labels.indexOf('Color Palette')).toBe(labels.indexOf('Website Details') + 1);
     expect(labels.indexOf('Brands')).toBe(labels.indexOf('Color Palette') + 1);
     expect(labels.indexOf('Navigation')).toBe(labels.indexOf('Brands') + 1);
     expect(labels.indexOf('Layouts')).toBe(labels.indexOf('Navigation') + 1);
     expect(labels.indexOf('Pages')).toBe(labels.indexOf('Layouts') + 1);
-    expect(labels.indexOf('Section Builder')).toBe(labels.indexOf('Pages') + 1);
+    expect(labels.indexOf('Sections')).toBe(labels.indexOf('Pages') + 1);
   });
 });

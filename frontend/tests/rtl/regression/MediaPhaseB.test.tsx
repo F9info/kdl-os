@@ -6,11 +6,11 @@
 //   VersionHistoryPanel — list versions, restore (B5)
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor, fireEvent } from '../utils'
-import { MediaImage } from '@/components/media/MediaImage'
-import { WorkflowBadge } from '@/components/media/WorkflowBadge'
-import { CommentsThread } from '@/components/media/CommentsThread'
-import { ShareDialog } from '@/components/media/ShareDialog'
-import { VersionHistoryPanel } from '@/components/media/VersionHistoryPanel'
+import { MediaImage } from '@/admin/components/media/MediaImage'
+import { WorkflowBadge } from '@/admin/components/media/WorkflowBadge'
+import { CommentsThread } from '@/admin/components/media/CommentsThread'
+import { ShareDialog } from '@/admin/components/media/ShareDialog'
+import { VersionHistoryPanel } from '@/admin/components/media/VersionHistoryPanel'
 
 vi.mock('@/lib/axios', () => ({
   default: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn(), patch: vi.fn() },

@@ -25,11 +25,11 @@ import {
 } from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
-import { usePermissions } from '@/hooks/usePermissions'
+import { usePermissions } from '@/admin/hooks/usePermissions'
 import { useDebounce } from '@/hooks/useDebounce'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { PermissionGuard } from '@/components/shared/PermissionGuard'
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
+import { PageHeader } from '@/admin/components/layout/PageHeader'
+import { PermissionGuard } from '@/admin/components/shared/PermissionGuard'
+import { ConfirmDialog } from '@/admin/components/shared/ConfirmDialog'
 import { Modal } from '@/components/shared/Modal'
 import { AppImage } from '@/components/shared/AppImage'
 import { Button } from '@/components/ui/button'
@@ -64,17 +64,17 @@ import {
   TagManager,
   damApi,
   type SidebarView,
-} from '@/components/media/DamExtensions'
+} from '@/admin/components/media/DamExtensions'
 import {
   WebcamCaptureButton,
   ScreenCaptureButton,
   VoiceRecorderButton,
-} from '@/components/media/CaptureWidgets'
-import { CloudImportDialog } from '@/components/media/CloudImportDialog'
-import { CaptureDialog } from '@/components/media/capture/CaptureDialog'
-import { ImageEditorDialog } from '@/components/media/ImageEditorDialog'
-import { ShareDialog } from '@/components/media/ShareDialog'
-import { MediaLightbox } from '@/components/media/MediaLightbox'
+} from '@/admin/components/media/CaptureWidgets'
+import { CloudImportDialog } from '@/admin/components/media/CloudImportDialog'
+import { CaptureDialog } from '@/admin/components/media/capture/CaptureDialog'
+import { ImageEditorDialog } from '@/admin/components/media/ImageEditorDialog'
+import { ShareDialog } from '@/admin/components/media/ShareDialog'
+import { MediaLightbox } from '@/admin/components/media/MediaLightbox'
 
 // Mime types the backend image editor can actually process (KDL-153) — svg is
 // vector-edited or rasterized server-side, the rest go through sharp directly.

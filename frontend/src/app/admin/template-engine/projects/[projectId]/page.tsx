@@ -2,9 +2,9 @@
 
 import { useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { useTemplateEngineRuns } from '@/hooks/useTemplateEngine'
+import { useTemplateEngineRuns } from '@/admin/hooks/useTemplateEngine'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
-import { DAG_STAGES, stageEnumToSlug } from '@/types/template-engine.types'
+import { DAG_STAGES, stageEnumToSlug } from '@/admin/types/template-engine.types'
 
 export default function ProjectRootPage() {
   const { projectId } = useParams<{ projectId: string }>()

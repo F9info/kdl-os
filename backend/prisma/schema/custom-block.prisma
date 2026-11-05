@@ -17,6 +17,9 @@ model CustomBlockTemplate {
   status       CustomBlockStatus @default(DRAFT)
   is_default   Boolean           @default(false)
   config       Json
+  // Bumped each time `config` changes. Page instances remember the version they were made from
+  // (props.templateVersion), so "update instances" knows which pages are behind.
+  version      Int               @default(1)
   created_by   String?
   deleted_at   DateTime?
   created_at   DateTime          @default(now())

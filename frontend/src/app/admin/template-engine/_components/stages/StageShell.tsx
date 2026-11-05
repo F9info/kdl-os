@@ -3,7 +3,7 @@
 import { CheckCircle2, AlertCircle, Loader2, Clock, Play, SkipForward } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import type { TemplateEngineStage } from '@/types/template-engine.types'
+import type { TemplateEngineStage } from '@/admin/types/template-engine.types'
 
 interface StageShellProps {
   title: string

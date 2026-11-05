@@ -1,6 +1,6 @@
 // The set of input types a SettingField can be rendered as.
 // Mirrors INPUT_TYPES from the Laravel Application Settings module.
-// Keep this in sync with frontend/src/lib/inputTypes.ts.
+// Keep this in sync with frontend/src/admin/lib/inputTypes.ts.
 
 export const INPUT_TYPES = {
   heading: 'Heading',

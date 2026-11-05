@@ -22,11 +22,11 @@ const resolution = (selected: string[]) => ({
   conflicts: [],
   noLongerRequired: [],
 })
-const graph = (selected: string[]) => ({
-  data: { data: { products, selected, modules, resolution: resolution(selected) } },
+const graph = (selected: string[], inferred: string[] = []) => ({
+  data: { data: { products, selected, inferred, modules, resolution: resolution(selected) } },
 })
 
-function mockApi(perms: string[], stored: string[] = ['admin']) {
+function mockApi(perms: string[], stored: string[] = ['admin'], inferred: string[] = []) {
   vi.mocked(api.get).mockImplementation((url: string, cfg?: { params?: unknown }) => {
     if (url === '/auth/me/permissions')
       return Promise.resolve({
@@ -35,7 +35,7 @@ function mockApi(perms: string[], stored: string[] = ['admin']) {
     if (url === '/modules/graph') {
       const params = cfg?.params as { products?: string } | undefined
       const sel = params ? (params.products ?? '').split(',').filter(Boolean) : stored
-      return Promise.resolve(graph(sel)) as ReturnType<typeof api.get>
+      return Promise.resolve(graph(sel, params ? [] : inferred)) as ReturnType<typeof api.get>
     }
     return Promise.resolve({ data: { data: {} } }) as ReturnType<typeof api.get>
   })
@@ -51,10 +51,27 @@ describe('Products settings page', () => {
   it('shows stored selection and disables Apply until something changes', async () => {
     mockApi(['modules:view', 'modules:edit', 'modules:add'])
     render(<ProductsPage />)
-    const admin = await screen.findByTestId('product-admin')
-    expect(admin).toHaveAttribute('aria-checked', 'true')
+    // Admin is the base of every install: not offered as a card.
+    expect(await screen.findByTestId('product-website')).toBeInTheDocument()
+    expect(screen.queryByTestId('product-admin')).toBeNull()
     expect(screen.getByTestId('product-website')).toHaveAttribute('aria-checked', 'false')
     expect(screen.getByRole('button', { name: 'Apply products' })).toBeDisabled()
+  })
+
+  it('a product whose modules are all already enabled shows as On, with the reason, though never chosen here', async () => {
+    mockApi(['modules:view', 'modules:edit', 'modules:add'], ['admin', 'website'], ['website'])
+    render(<ProductsPage />)
+    expect(await screen.findByTestId('product-website')).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByTestId('inferred-products').textContent).toMatch(
+      /Website is on because all the modules it needs are already enabled/
+    )
+  })
+
+  it('says nothing extra when every product on was chosen here', async () => {
+    mockApi(['modules:view', 'modules:edit', 'modules:add'])
+    render(<ProductsPage />)
+    await screen.findByTestId('product-website')
+    expect(screen.queryByTestId('inferred-products')).toBeNull()
   })
 
   it('previews modules to turn on, then applies after confirm', async () => {
@@ -81,7 +98,7 @@ describe('Products settings page', () => {
   it('is read-only without modules:edit', async () => {
     mockApi(['modules:view'])
     render(<ProductsPage />)
-    expect(await screen.findByTestId('product-admin')).toBeDisabled()
+    expect(await screen.findByTestId('product-website')).toBeDisabled()
     expect(screen.queryByRole('button', { name: 'Apply products' })).not.toBeInTheDocument()
   })
 })

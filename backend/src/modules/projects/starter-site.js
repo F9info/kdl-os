@@ -4,6 +4,12 @@ import { ensureDefaultSite } from './sites.js';
 // Building blocks for the starter website pages (General pack only).
 export const BRAND = 'Your Brand';
 
+/** The company name for generated pages: Application Identity, else the placeholder. */
+export async function brandName(client) {
+  const row = await client.appSetting.findUnique({ where: { key: 'identity.app_name' } });
+  return row?.value?.trim() || BRAND;
+}
+
 // The 5 pages created when an admin answers "Yes, front-end website".
 export const STARTER_PAGES = [
   { slug: 'home', title: 'Home' },
@@ -47,30 +53,30 @@ const cards = (slug, sectionTitle, sectionSubtitle, items) =>
 
 export const blocks = { block, spacer, heading, text, hero, cards };
 
-const navBar = (slug, links) =>
+const navBar = (slug, links, brand) =>
   block(slug, 'NavBar', {
     variant: '1',
-    brand: BRAND,
+    brand,
     logoUrl: '',
     links,
     ctaLabel: 'Contact us',
     ctaHref: '/p/contact',
     primaryColor: '',
   });
-const footer = (slug, links) =>
+const footer = (slug, links, brand) =>
   block(slug, 'Footer', {
     variant: '1',
-    brand: BRAND,
+    brand,
     logoUrl: '',
     tagline: 'Building something great.',
     links,
-    copyright: `© ${new Date().getFullYear()} ${BRAND}. All rights reserved.`,
+    copyright: `© ${new Date().getFullYear()} ${brand}. All rights reserved.`,
   });
 
 // Wraps a page body with NavBar + Footer and numbers every block (Puck needs unique ids).
-export const wrapPage = (slug, title, pages, body) => ({
+export const wrapPage = (slug, title, pages, body, brand = BRAND) => ({
   root: { props: { title } },
-  content: [navBar(slug, headerLinksFor(pages)), ...body, footer(slug, navLinksFor(pages))].map(
+  content: [navBar(slug, headerLinksFor(pages), brand), ...body, footer(slug, navLinksFor(pages), brand)].map(
     (b, i) => ({
       ...b,
       props: { ...b.props, id: `${slug}-${b.type}-${i}` },
@@ -89,10 +95,10 @@ export const SAMPLE_FAQS = [
 ];
 
 const BODIES = {
-  home: (s) => [
+  home: (s, brand) => [
     hero(
       s,
-      `Welcome to ${BRAND}`,
+      `Welcome to ${brand}`,
       'A simple starting point for your website. Edit any text in the Page Builder.',
       'Our services',
       '/p/services'
@@ -103,13 +109,13 @@ const BODIES = {
       '🔒 | Reliable | Built to grow with you.',
     ]),
   ],
-  about: (s) => [
-    hero(s, 'About us', `Learn more about ${BRAND}.`),
+  about: (s, brand) => [
+    hero(s, 'About us', `Learn more about ${brand}.`),
     spacer(s),
     heading(s, 'Our story'),
     text(
       s,
-      `${BRAND} was started to make good work simple. Replace this text with your own story.`
+      `${brand} was started to make good work simple. Replace this text with your own story.`
     ),
     heading(s, 'Our mission'),
     text(s, 'Tell visitors what you stand for and who you help.'),
@@ -138,8 +144,8 @@ const BODIES = {
   ],
 };
 
-export const buildStarterPage = (slug, title, pages) =>
-  wrapPage(slug, title, pages, BODIES[slug](slug));
+export const buildStarterPage = (slug, title, pages, brand = BRAND) =>
+  wrapPage(slug, title, pages, BODIES[slug](slug, brand), brand);
 
 // Insert a PUBLISHED page row through any Prisma client (or transaction).
 export async function insertPublishedPage(

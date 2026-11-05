@@ -9,7 +9,7 @@ import {
   type DagStage,
   type TemplateEngineRun,
   type StepDisplayState,
-} from '@/types/template-engine.types'
+} from '@/admin/types/template-engine.types'
 
 // The Studio tab bar only shows Overview. Color Palette and Brands moved to the sidebar
 // (CMS → Color Palette / Brands); they still run as stages and open at .../palette and
@@ -31,7 +31,7 @@ export function StudioStepper({ run, projectId, activeSlug }: StudioStepperProps
   const visibleDefs = DAG_STAGES.filter((def) => VISIBLE_STAGES.includes(def.stage))
 
   return (
-    <nav aria-label="Studio stages" className="flex flex-row gap-1 overflow-x-auto">
+    <nav aria-label="Template stages" className="flex flex-row gap-1 overflow-x-auto">
       {visibleDefs.map((def, idx) => {
         const stageRow = stageMap[def.stage]
         const status = stageRow?.status ?? 'PENDING'

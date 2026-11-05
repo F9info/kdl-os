@@ -4,18 +4,19 @@ import { useEffect, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
-import { usePermissions } from '@/hooks/usePermissions'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { PermissionGuard } from '@/components/shared/PermissionGuard'
+import { usePermissions } from '@/admin/hooks/usePermissions'
+import { PageHeader } from '@/admin/components/layout/PageHeader'
+import { PermissionGuard } from '@/admin/components/shared/PermissionGuard'
 import { ErrorAlert } from '@/components/shared/ErrorAlert'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { Button } from '@/components/ui/button'
-import { SetupWizard } from '@/components/onboarding/SetupWizard'
+import { SetupWizard } from '@/admin/components/onboarding/SetupWizard'
 import {
   ProductPicker,
   sameSet,
+  withBase,
   type ModuleGraph as Graph,
-} from '@/components/products/ProductPicker'
+} from '@/admin/components/products/ProductPicker'
 
 export default function ProductsPage() {
   const { can } = usePermissions()
@@ -56,7 +57,9 @@ export default function ProductsPage() {
 
   const applyMutation = useMutation({
     mutationFn: () =>
-      api.put('/modules/products', { products: selected }).then((r) => r.data.data as Graph),
+      api
+        .put('/modules/products', { products: withBase(selected) })
+        .then((r) => r.data.data as Graph),
     onSuccess: (saved) => {
       queryClient.setQueryData(['module-graph', 'stored'], saved)
       queryClient.invalidateQueries({ queryKey: ['module-graph'] })
@@ -90,8 +93,9 @@ export default function ProductsPage() {
           </div>
         )}
         <p className="mb-6 text-sm text-muted-foreground">
-          Choose what you are building. Each product turns on the modules it needs. Turning a
-          product off never removes data or switches modules off.
+          The admin app (users, roles, settings, identity) is always on. Choose which public
+          products you are building. Each product turns on the modules it needs. Turning a product
+          off never removes data or switches modules off.
         </p>
 
         {isLoading ? (
@@ -101,6 +105,17 @@ export default function ProductsPage() {
         ) : (
           <div className="space-y-6">
             <ErrorAlert error={applyMutation.error ?? previewError} />
+
+            {!!stored?.inferred?.length && (
+              <p className="text-sm text-muted-foreground" data-testid="inferred-products">
+                {stored.inferred
+                  .map((k) => stored.products.find((p) => p.key === k)?.name ?? k)
+                  .join(', ')}{' '}
+                {stored.inferred.length === 1 ? 'is' : 'are'} on because all the modules{' '}
+                {stored.inferred.length === 1 ? 'it needs are' : 'they need are'} already enabled on
+                the Modules page. Press Apply to save it as your choice.
+              </p>
+            )}
 
             <ProductPicker
               products={stored?.products ?? []}

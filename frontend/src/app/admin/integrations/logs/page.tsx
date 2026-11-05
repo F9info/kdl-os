@@ -4,11 +4,11 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { ColumnDef } from '@tanstack/react-table'
 import api from '@/lib/axios'
-import { usePagination } from '@/hooks/usePagination'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { ModuleGuard } from '@/components/shared/ModuleGuard'
-import { PermissionGuard } from '@/components/shared/PermissionGuard'
-import { DataTable } from '@/components/shared/DataTable'
+import { usePagination } from '@/admin/hooks/usePagination'
+import { PageHeader } from '@/admin/components/layout/PageHeader'
+import { ModuleGuard } from '@/admin/components/shared/ModuleGuard'
+import { PermissionGuard } from '@/admin/components/shared/PermissionGuard'
+import { DataTable } from '@/admin/components/shared/DataTable'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -18,7 +18,11 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { cn, formatDate } from '@/lib/utils'
-import type { IntegrationChannel, IntegrationLog, MessageStatus } from '@/types/integrations.types'
+import type {
+  IntegrationChannel,
+  IntegrationLog,
+  MessageStatus,
+} from '@/admin/types/integrations.types'
 
 const CHANNELS: IntegrationChannel[] = ['EMAIL', 'SMS', 'WHATSAPP']
 const STATUSES: MessageStatus[] = ['QUEUED', 'SENT', 'DELIVERED', 'READ', 'FAILED']

@@ -49,6 +49,11 @@ describe('public GET /api/app-config', () => {
     expect(res.body.data.identity.app_name).toBe('');
   });
 
+  it('is revalidated on every request, so an Identity edit never shows stale for a minute', async () => {
+    const res = await request(app).get('/api/app-config');
+    expect(res.headers['cache-control']).toBe('no-cache');
+  });
+
   it('never leaks stray identity.* rows or non-identity settings (whitelist)', async () => {
     prismaMock.appSetting.findMany.mockResolvedValue([
       { key: 'identity.app_name', value: 'Acme' },

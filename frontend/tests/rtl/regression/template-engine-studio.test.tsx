@@ -1,9 +1,9 @@
 /**
  * RTL regression tests for KDL-570:
- *   Studio dead-end fix — "Start Studio run" CTA when no run exists.
+ *   Studio dead-end fix — "Start template setup" CTA when no run exists.
  *
  * Covers:
- *   A. No runs → NoRunPlaceholder renders with "Start Studio run" button
+ *   A. No runs → NoRunPlaceholder renders with "Start template setup" button
  *   B. Click → POST /template-engine/runs called with projectId
  *   C. Success → router.push to intake AND IntakeStage renders after refetch
  *   D. Failure → destructive toast shown
@@ -98,7 +98,7 @@ describe('Studio StagePage — no-run dead-end fix (KDL-570)', () => {
   })
 
   // A: No runs → placeholder with actionable button
-  it('renders "Start Studio run" button when the project has no runs', async () => {
+  it('renders "Start template setup" button when the project has no runs', async () => {
     apiGet.mockResolvedValue({ data: { success: true, data: [] } })
     const StagePage = await importStagePage()
     renderWithQC(<StagePage />)
@@ -106,7 +106,7 @@ describe('Studio StagePage — no-run dead-end fix (KDL-570)', () => {
     await waitFor(() => {
       expect(screen.getByTestId('btn-start-run')).toBeTruthy()
     })
-    expect(screen.getByText('Start Studio run')).toBeTruthy()
+    expect(screen.getByText('Start template setup')).toBeTruthy()
     // Dead-end link to landing page must be gone
     expect(screen.queryByText('Studio landing page')).toBeNull()
   })

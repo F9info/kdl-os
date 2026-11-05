@@ -39,10 +39,10 @@ beforeEach(() => {
 });
 
 describe('manifest', () => {
-  it('is valid and gates the nav on forms:view', () => {
+  it('is valid and has no sidebar entry (reached from the Brands page)', () => {
     const raw = JSON.parse(readFileSync(new URL('./module.json', import.meta.url), 'utf8'));
     expect(manifestSchema.safeParse(raw).success).toBe(true);
-    expect(raw.nav[0].permission).toBe('forms:view');
+    expect(raw.nav).toEqual([]);
   });
 });
 

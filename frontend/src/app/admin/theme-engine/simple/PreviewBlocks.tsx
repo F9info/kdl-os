@@ -10,7 +10,7 @@
 // block never fetches project data for the preview).
 
 import { memo, type ComponentType } from 'react'
-import { config } from '@/app/admin/page-builder/puck.config'
+import { config } from '@/frontend/blocks/puck.config'
 import { PreviewBoundary } from './PreviewBoundary'
 import { PREVIEW_CANVAS_WIDTH } from './preview-packs'
 

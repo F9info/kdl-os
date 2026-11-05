@@ -15,7 +15,7 @@ import { AlertTriangle, Check, Lock, Palette as PaletteIcon, Sun, Moon, Undo2 } 
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
-import { loadGoogleFont } from '@/lib/load-google-font'
+import { loadGoogleFont } from '@/admin/lib/load-google-font'
 import { refreshThemeEngineTokens } from '@/components/providers/ThemeEngineProvider'
 import {
   applyFonts,
@@ -37,8 +37,6 @@ import {
   type QuickKey,
 } from './simple/palette'
 import { ThemePreview } from './simple/ThemePreview'
-
-const PLATFORM = 'webapp'
 
 interface SimpleField {
   id: string
@@ -80,7 +78,8 @@ const FONT_LABELS: Record<FontKey, string> = { heading: 'Heading font', body: 'B
 
 const statusOf = (err: unknown) => (err as { response?: { status?: number } })?.response?.status
 
-export function SimpleThemeView() {
+// platform: 'webapp' (the public website) or 'webapp_admin' (this admin app). Same colour model for both.
+export function SimpleThemeView({ platform: PLATFORM = 'webapp' }: { platform?: string }) {
   const qc = useQueryClient()
   const [mode, setMode] = useState<Mode>('light')
   // fieldId → edited value (only colour fields the user changed)
@@ -250,7 +249,7 @@ export function SimpleThemeView() {
       const status = statusOf(err)
       setKitNote(
         status === 404 || status === 409
-          ? 'Your Brand Kit has no colours yet. Finish its Palette step in Template Engine first.'
+          ? 'Your Brand Kit has no colours yet. Finish its Palette step in Templates first.'
           : 'Could not reach your Brand Kit. Try again.'
       )
     },
@@ -312,7 +311,7 @@ export function SimpleThemeView() {
               : 'Publish failed',
         description:
           status === 409
-            ? 'A Template Engine run controls these settings. Use "Take over" first.'
+            ? 'A Templates run controls these settings. Use "Take over" first.'
             : coloursWentOut
               ? 'Your colours were published, but the fonts could not be saved. Try Publish again.'
               : 'Could not save the theme. Try again.',
@@ -366,7 +365,7 @@ export function SimpleThemeView() {
         title: status === 409 ? 'Colours are locked' : 'Restore failed',
         description:
           status === 409
-            ? 'A Template Engine run controls these colours. Use "Take over" first.'
+            ? 'A Templates run controls these colours. Use "Take over" first.'
             : 'Could not restore that version.',
         variant: 'destructive',
       })
@@ -387,8 +386,10 @@ export function SimpleThemeView() {
       <header>
         <h1 className="text-xl font-semibold text-foreground">Your theme</h1>
         <p className="text-sm text-muted-foreground">
-          Pick a look, check the preview, publish. Changes apply to your public website; this admin
-          panel keeps its own look.
+          Pick a look, check the preview, publish.{' '}
+          {PLATFORM === 'webapp_admin'
+            ? 'Changes apply to this admin app; your public website keeps its own look.'
+            : 'Changes apply to your public website; the admin app keeps its own look.'}
         </p>
       </header>
 
@@ -404,7 +405,7 @@ export function SimpleThemeView() {
         )}
         <span className="flex-1 text-foreground">
           {locked
-            ? 'Colours are set automatically from your approved Brand Kit by Template Engine, and are locked while it runs.'
+            ? 'Colours are set automatically from your approved Brand Kit by Templates, and are locked while it runs.'
             : lastSavedText
               ? `You control these colours. Last published ${lastSavedText}.`
               : 'You control these colours. Nothing published yet, so defaults are in use.'}
@@ -462,24 +463,28 @@ export function SimpleThemeView() {
                 </button>
               ))}
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              className="mt-2"
-              disabled={locked || brandKit.isPending}
-              onClick={() => brandKit.mutate()}
-            >
-              <PaletteIcon className="mr-1 h-4 w-4" />
-              Use my Brand Kit colours
-            </Button>
-            {kitNote && (
-              <p
-                className="mt-2 text-xs text-muted-foreground"
-                role="status"
-                data-testid="brand-kit-note"
-              >
-                {kitNote}
-              </p>
+            {PLATFORM === 'webapp' && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="mt-2"
+                  disabled={locked || brandKit.isPending}
+                  onClick={() => brandKit.mutate()}
+                >
+                  <PaletteIcon className="mr-1 h-4 w-4" />
+                  Use my Brand Kit colours
+                </Button>
+                {kitNote && (
+                  <p
+                    className="mt-2 text-xs text-muted-foreground"
+                    role="status"
+                    data-testid="brand-kit-note"
+                  >
+                    {kitNote}
+                  </p>
+                )}
+              </>
             )}
           </div>
 

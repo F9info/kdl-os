@@ -6,7 +6,7 @@
 import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
-import { MobileNavMenu, type HeaderMenuItem } from '@/app/admin/page-builder/packs/header-nav-menu'
+import { MobileNavMenu, type HeaderMenuItem } from '@/frontend/blocks/packs/header-nav-menu'
 
 const item = (id: string, label: string, extra: Partial<HeaderMenuItem> = {}): HeaderMenuItem => ({
   id,

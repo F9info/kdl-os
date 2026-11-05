@@ -38,6 +38,10 @@ export const IDENTITY_FIELDS = {
     message: 'Must be empty or a valid email',
   }),
   contact_phone: text(30),
+  contact_email_secondary: z.string().trim().max(150).refine((v) => v === '' || z.string().email().safeParse(v).success, {
+    message: 'Must be empty or a valid email',
+  }),
+  contact_phone_secondary: text(60),
   contact_address: text(300),
   copyright: text(200),
   social_facebook: url,

@@ -6,7 +6,7 @@ import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
 import { AppImage } from '@/components/shared/AppImage'
 import { FormField } from '@/components/shared/FormField'
-import { RichTextEditor } from '@/components/shared/RichTextEditor'
+import { RichTextEditor } from '@/admin/components/shared/RichTextEditor'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
-import { parseOptions } from '@/lib/inputTypes'
+import { parseOptions } from '@/admin/lib/inputTypes'
 import type { SettingField } from '@/types/models.types'
 
 export interface FieldState {

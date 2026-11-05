@@ -14,13 +14,14 @@
 import { ensureTwoDetailPages } from './ensure-two-detail-pages.js';
 import {
   getOrCreateKit,
+  adoptIdentityLogo,
   extractPaletteForKit,
   inferBrandKit,
   getKit,
   getTokens,
   renderGuidelines,
 } from '../../brand-kit/service.js';
-import { getCompanyInfo } from '../../brand-kit/contact-fields.js';
+import { getCompanyInfo } from '../../identity/company-info.js';
 import {
   buildThemeColors,
   buildThemeColorValues,
@@ -164,12 +165,16 @@ async function writeThemeColors(kit, platform, userId, projectId) {
 
 /**
  * intake — initialises (or retrieves) the brand-kit for the project.
- * The user fills in company data and uploads the logo via the brand-kit UI
- * before advancing this stage.
+ * Company data and the logo come from Application Identity (Settings > Identity); a project
+ * without its own logo adopts the company logo here.
  */
 const intakeDriver = {
-  async execute({ projectId }) {
-    const kit = await getOrCreateKit(projectId);
+  async execute({ projectId, userId }) {
+    let kit = await getOrCreateKit(projectId);
+    // No logo yet: start from the company logo in Application Identity (best effort).
+    if (!kit.logo_media_id && (await adoptIdentityLogo(projectId, userId).catch(() => false))) {
+      kit = await getOrCreateKit(projectId);
+    }
     return { outputRef: { brandKitId: kit.id, status: kit.status } };
   },
 };

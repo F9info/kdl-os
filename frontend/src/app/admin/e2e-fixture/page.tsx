@@ -1,7 +1,7 @@
 'use client'
 
-import { ModuleGuard } from '@/components/shared/ModuleGuard'
-import { PageHeader } from '@/components/layout/PageHeader'
+import { ModuleGuard } from '@/admin/components/shared/ModuleGuard'
+import { PageHeader } from '@/admin/components/layout/PageHeader'
 
 export default function E2eFixturePage() {
   return (

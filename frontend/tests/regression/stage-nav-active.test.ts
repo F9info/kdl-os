@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isStageNavActive } from '@/components/layout/AdminSidebar'
+import { isStageNavActive } from '@/admin/components/layout/AdminSidebar'
 
 const base = '/admin/template-engine/projects/p1'
 

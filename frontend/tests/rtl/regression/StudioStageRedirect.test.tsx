@@ -8,18 +8,27 @@ const h = vi.hoisted(() => ({
   replace: vi.fn(),
   cont: vi.fn(),
   hasLogo: { v: true },
+  identityLogo: { v: false },
   run: { v: { id: 'run-1', stages: [] } as unknown },
 }))
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: h.replace, push: vi.fn() }) }))
-vi.mock('@/hooks/useDefaultProjectId', () => ({
+vi.mock('@/admin/hooks/useDefaultProjectId', () => ({
   useDefaultProjectId: () => ({ projectId: 'proj-1', isLoading: false }),
 }))
-vi.mock('@/components/shared/ModuleGuard', () => ({ ModuleGuard: ({ children }: any) => children }))
-vi.mock('@/components/shared/PermissionGuard', () => ({
+vi.mock('@/admin/components/shared/ModuleGuard', () => ({
+  ModuleGuard: ({ children }: any) => children,
+}))
+vi.mock('@/admin/components/shared/PermissionGuard', () => ({
   PermissionGuard: ({ children }: any) => children,
 }))
-vi.mock('@/hooks/useTemplateEngine', () => ({
+vi.mock('@/hooks/useIdentity', () => ({
+  useIdentity: () => ({
+    identity: h.identityLogo.v ? { logo_light: 'https://x/l.png' } : {},
+    isLoading: false,
+  }),
+}))
+vi.mock('@/admin/hooks/useTemplateEngine', () => ({
   useTemplateEngineRuns: () => ({ data: [h.run.v], isLoading: false }),
   useBrandKit: () => ({ data: { logo_media_id: h.hasLogo.v ? 'm1' : null }, isLoading: false }),
   useContinueToPalette: () => ({
@@ -34,6 +43,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   window.localStorage.clear()
   h.hasLogo.v = true
+  h.identityLogo.v = false
 })
 
 describe('CMS → Color Palette / Brands', () => {
@@ -79,11 +89,21 @@ describe('CMS → Color Palette / Brands', () => {
     expect(h.cont).toHaveBeenCalledWith(h.run.v, expect.any(Object))
   })
 
-  it('without a logo it sends the user to Company Details instead', async () => {
+  it('a project with no logo of its own but a company logo in Identity opens the stage (it starts from the company logo)', async () => {
+    h.hasLogo.v = false
+    h.identityLogo.v = true
+    render(<ColorPalettePage />)
+    await waitFor(() =>
+      expect(h.replace).toHaveBeenCalledWith('/admin/template-engine/projects/proj-1/palette')
+    )
+    expect(screen.queryByRole('link', { name: /Go to Identity/ })).toBeNull()
+  })
+
+  it('without a logo it sends the user to Identity instead', async () => {
     h.hasLogo.v = false
     render(<ColorPalettePage />)
-    const link = await screen.findByRole('link', { name: /Go to Company Details/ })
-    expect(link.getAttribute('href')).toBe('/admin/website-details')
+    const link = await screen.findByRole('link', { name: /Go to Identity/ })
+    expect(link.getAttribute('href')).toBe('/admin/settings/identity')
     expect(h.cont).not.toHaveBeenCalled()
   })
 })

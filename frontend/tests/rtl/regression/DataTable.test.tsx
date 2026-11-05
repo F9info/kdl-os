@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '../utils'
-import { DataTable } from '@/components/shared/DataTable'
+import { DataTable } from '@/admin/components/shared/DataTable'
 import type { ColumnDef } from '@tanstack/react-table'
 
 interface Row {

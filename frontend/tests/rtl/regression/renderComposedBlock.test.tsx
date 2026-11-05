@@ -4,7 +4,7 @@ import {
   renderComposedBlock,
   DEFAULT_SETTINGS,
   type ComposedBlockConfig,
-} from '@/app/admin/page-builder/packs/composer/render-composed-block'
+} from '@/frontend/blocks/packs/composer/render-composed-block'
 
 function configWith(atoms: ComposedBlockConfig['atoms']): ComposedBlockConfig {
   return { category: 'general', atoms, settings: DEFAULT_SETTINGS }

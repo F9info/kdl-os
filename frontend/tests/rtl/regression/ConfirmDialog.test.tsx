@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '../utils'
 import userEvent from '@testing-library/user-event'
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
+import { ConfirmDialog } from '@/admin/components/shared/ConfirmDialog'
 
 describe('ConfirmDialog regression', () => {
   it('does not render when closed', () => {

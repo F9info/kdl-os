@@ -22,6 +22,8 @@ const config: Config = {
     './src/pages/**/*.{ts,tsx}',
     './src/components/**/*.{ts,tsx}',
     './src/app/**/*.{ts,tsx}',
+    './src/admin/**/*.{ts,tsx}',
+    './src/frontend/**/*.{ts,tsx}',
   ],
   theme: {
     container: {

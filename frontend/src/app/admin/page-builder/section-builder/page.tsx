@@ -20,20 +20,22 @@ import {
   PanelBottom,
   Share2,
 } from 'lucide-react'
-import { ModuleGuard } from '@/components/shared/ModuleGuard'
+import { ModuleGuard } from '@/admin/components/shared/ModuleGuard'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
-import { ComposerCanvas } from '../packs/composer/ComposerCanvas'
-import { ComposerProjectContext } from '../packs/composer/atoms'
-import { renderComposedBlock } from '../packs/composer/render-composed-block'
+import { SectionUsageDialog } from './SectionUsage'
+import { ComposerCanvas } from '../../../../frontend/blocks/packs/composer/ComposerCanvas'
+import { ComposerProjectContext } from '../../../../frontend/blocks/packs/composer/atoms'
+import { renderComposedBlock } from '../../../../frontend/blocks/packs/composer/render-composed-block'
 import {
+  type CustomBlockRecord,
   deleteCustomBlock,
   duplicateCustomBlock,
   getDefaultProjectId,
   listCustomBlocks,
   setDefaultCustomBlock,
-} from '../packs/composer/custom-blocks-store'
+} from '../../../../frontend/blocks/packs/composer/custom-blocks-store'
 
 /** The 16-category taxonomy from templateEnginesections.html — same names as
  *  the in-editor "Insert a block" section picker (puck.config.tsx /
@@ -103,7 +105,7 @@ export default function SectionBuilderPage() {
     return (
       <ModuleGuard slug="page-builder">
         <div className="mx-auto max-w-5xl p-8">
-          <h1 className="mb-1 text-xl font-bold">Section Builder</h1>
+          <h1 className="mb-1 text-xl font-bold">Sections</h1>
           <p className="mb-6 text-sm text-muted-foreground">
             Pick what kind of section you want to build.
           </p>
@@ -201,6 +203,7 @@ function BlockList({ category, projectId }: { category: string; projectId: strin
     enabled: Boolean(projectId),
   })
   const refresh = () => qc.invalidateQueries({ queryKey: ['custom-blocks', projectId, category] })
+  const [usageOf, setUsageOf] = useState<CustomBlockRecord | null>(null)
   const base = `/admin/page-builder/section-builder?category=${category}&projectId=${projectId}`
 
   return (
@@ -247,6 +250,9 @@ function BlockList({ category, projectId }: { category: string; projectId: strin
                   >
                     Edit
                   </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setUsageOf(b)}>
+                    Pages
+                  </Button>
                   <Button
                     size="sm"
                     variant="ghost"
@@ -286,6 +292,13 @@ function BlockList({ category, projectId }: { category: string; projectId: strin
             </div>
           ))}
         </div>
+      )}
+      {usageOf && (
+        <SectionUsageDialog
+          block={usageOf}
+          projectId={projectId}
+          onClose={() => setUsageOf(null)}
+        />
       )}
     </div>
   )

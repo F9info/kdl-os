@@ -65,8 +65,8 @@ export function useThemeEngineActions({
         toast({
           title: 'Field locked',
           description: fieldName
-            ? `"${fieldName}" is locked by an active Template Engine run. Use "Take over" to release it.`
-            : 'One or more fields are locked by an active Template Engine run.',
+            ? `"${fieldName}" is locked by an active Templates run. Use "Take over" to release it.`
+            : 'One or more fields are locked by an active Templates run.',
           variant: 'destructive',
         })
       } else {

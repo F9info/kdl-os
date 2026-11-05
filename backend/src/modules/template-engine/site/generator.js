@@ -9,7 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { prisma } from '../../../config/database.js';
 import { slugify } from '../../../shared/utils/slug.js';
-import { getCompanyInfo } from '../../brand-kit/contact-fields.js';
+import { getCompanyInfo } from '../../identity/company-info.js';
 
 const TEMPLATES_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'templates');
 const MARKER = '.kdl-site.json';
@@ -170,24 +170,25 @@ async function copyDir(src, dest) {
   }
 }
 
-// ─── admin-frontend code the generated app renders with ─────────────────────
-// The generated site renders pages with the SAME Puck config, components,
-// Tailwind config and theme CSS as the admin's /p/<slug> — copied (import
-// closure) from the admin frontend so both look identical.
+// ─── public-site code the generated app renders with ─────────────────────────
+// The generated site renders pages with the SAME Puck config (frontend/blocks), components,
+// Tailwind config and theme CSS as the live site's /p/<slug> — copied (import closure) from the
+// frontend app so both look identical. Paths are kept, so the `@/` imports keep working.
 
 export const frontendDir = () =>
   path.resolve(process.env.FRONTEND_SRC_DIR || path.join(process.cwd(), '..', 'frontend'));
 
-// Root layout + Puck config, plus the admin's public detail routes (/work/<slug>,
-// /catalog/<slug>, /sectors/<slug>) that block links such as "See Our Work" point at.
+// Root layout + Puck config, plus the public detail routes (/work/<slug>, /catalog/<slug>,
+// /sectors/<slug>) that block links such as "See Our Work" point at. All of it lives in the
+// frontend/ (public website) area and the app/(site) route group, never in admin code.
 const ROOT_FILES = [
   'src/app/layout.tsx',
-  'src/app/admin/page-builder/puck.config.tsx',
-  'src/lib/header-overlay.ts',
-  'src/app/work/[slug]/page.tsx',
-  'src/app/catalog/[slug]/page.tsx',
-  'src/app/sectors/[slug]/page.tsx',
-  'src/app/[prefix]/[slug]/page.tsx',
+  'src/frontend/blocks/puck.config.tsx',
+  'src/frontend/lib/header-overlay.ts',
+  'src/app/(site)/work/[slug]/page.tsx',
+  'src/app/(site)/catalog/[slug]/page.tsx',
+  'src/app/(site)/sectors/[slug]/page.tsx',
+  'src/app/(site)/[prefix]/[slug]/page.tsx',
 ];
 const CONFIG_FILES = ['tailwind.config.ts', 'postcss.config.js'];
 const IMPORT_RE =

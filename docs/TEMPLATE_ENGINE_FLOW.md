@@ -357,7 +357,7 @@ Data files are in `backend/scripts/seed-data/`; images in `frontend/public/seed/
 |---|---|
 | Engine | `backend/src/modules/template-engine/` |
 | Studio screens | `frontend/src/app/admin/template-engine/` and `.../_components/stages/` |
-| Sidebar | `frontend/src/components/layout/AdminSidebar.tsx` |
+| Sidebar | `frontend/src/admin/components/layout/AdminSidebar.tsx` |
 | Application Settings | `frontend/src/app/admin/settings/` |
 | Detail-page registry and templates | `backend/src/shared/detail-pages/` |
 | Design documents | `.agents/arch/TEMPLATE_ENGINE_ARCH.md`, `docs/superpowers/specs/` |

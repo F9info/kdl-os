@@ -8,7 +8,7 @@ vi.mock('../../config/database.js', () => ({ prisma: prismaMock }));
 vi.mock('../user-management/shared/activity-logger.js', () => ({ writeActivityAsync: vi.fn() }));
 vi.mock('../template-engine/site/queue.js', () => ({ enqueueSiteBuild: vi.fn() }));
 
-const { getPublishedBySiteKey } = await import('./service.js');
+const { getPublishedBySiteKey, listSitemapEntries } = await import('./service.js');
 
 const where = (call) => prismaMock.builderPage.findFirst.mock.calls[call][0].where;
 
@@ -63,5 +63,30 @@ describe('landing site root (T5.3)', () => {
     await getPublishedBySiteKey('p1', 'home', { siteId: 's1', isDefault: true });
     await getPublishedBySiteKey('p1', 'about', { siteId: 's2', isDefault: false });
     expect(prismaMock.builderPage.findFirst).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('listSitemapEntries (T6.1)', () => {
+  const page = (id, slug, seo = null) => ({ id, slug, seo, updated_at: new Date('2026-01-01') });
+
+  it('default site: clean URLs from the website stage ("/" for home), /p/<slug> for the rest, noindex dropped', async () => {
+    prismaMock.builderPage.findMany = vi.fn().mockResolvedValue([
+      page('a', 'demo-home'),
+      page('b', 'demo-about'),
+      page('c', 'demo-secret', { noindex: true }),
+      page('d', 'orphan'),
+    ]);
+    prismaMock.templateEngineStage.findMany.mockResolvedValue([{ outputRef: { pageKeyToId: { home: 'a', about: 'b', secret: 'c' } } }]);
+    const entries = await listSitemapEntries('p1', { siteId: 's1', isDefault: true });
+    expect(entries.map((e) => e.path)).toEqual(['/', '/about', '/p/orphan']);
+    expect(prismaMock.builderPage.findMany.mock.calls[0][0].where).toMatchObject({ status: 'PUBLISHED', template_id: null, OR: [{ site_id: 's1' }, { site_id: null }] });
+  });
+
+  it('landing (non-default) site: /p/<slug>, no stage lookup', async () => {
+    prismaMock.templateEngineStage.findMany.mockClear();
+    prismaMock.builderPage.findMany = vi.fn().mockResolvedValue([page('x', 'spring')]);
+    const entries = await listSitemapEntries('p1', { siteId: 's2', isDefault: false });
+    expect(entries).toEqual([{ path: '/p/spring', lastmod: new Date('2026-01-01') }]);
+    expect(prismaMock.templateEngineStage.findMany).not.toHaveBeenCalled();
   });
 });

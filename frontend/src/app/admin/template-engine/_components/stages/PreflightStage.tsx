@@ -1,9 +1,9 @@
 'use client'
 
 import { ClipboardCheck, CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
-import { useAdvanceStage, useRetryStage } from '@/hooks/useTemplateEngine'
+import { useAdvanceStage, useRetryStage } from '@/admin/hooks/useTemplateEngine'
 import { StageShell } from './StageShell'
-import type { TemplateEngineRun } from '@/types/template-engine.types'
+import type { TemplateEngineRun } from '@/admin/types/template-engine.types'
 
 interface PreflightResult {
   branch: string

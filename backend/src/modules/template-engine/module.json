@@ -1,8 +1,8 @@
 {
   "slug": "template-engine",
-  "name": "Template Engine",
+  "name": "Templates",
   "version": "1.0.0",
-  "description": "9-stage DAG orchestrator — drives brand-kit, theme-engine, page-builder, collateral, and credits via their public APIs (Mode A / Studio). No rendering logic lives here.",
+  "description": "Starter templates and the guided setup that builds a site from your brand, colours and pages.",
   "core": false,
   "apiPrefix": "/api/template-engine",
   "permissions": [

@@ -4,7 +4,7 @@
  * asserts on buildRamp, to confirm the port is faithful.
  */
 import { describe, it, expect } from 'vitest'
-import { buildRamp, rampFromHex, hexToRgb, rgbToHex, srgbToOklch } from '@/lib/oklch-ramp'
+import { buildRamp, rampFromHex, hexToRgb, rgbToHex, srgbToOklch } from '@/admin/lib/oklch-ramp'
 
 describe('hexToRgb / rgbToHex', () => {
   it('round-trips a 6-digit hex', () => {

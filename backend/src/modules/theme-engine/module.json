@@ -1,8 +1,8 @@
 {
   "slug": "theme-engine",
-  "name": "Theme Engine",
+  "name": "Design Tokens",
   "version": "1.0.0",
-  "description": "Design-system token compiler — always-on engine layer",
+  "description": "Design tokens behind Themes: colours, typography, spacing and radius applied across your site.",
   "core": true,
   "visibleInCatalog": false,
   "apiPrefix": "/api/theme-engine",

@@ -3,8 +3,8 @@
 import { useParams, useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/axios'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { PermissionGuard } from '@/components/shared/PermissionGuard'
+import { PageHeader } from '@/admin/components/layout/PageHeader'
+import { PermissionGuard } from '@/admin/components/shared/PermissionGuard'
 import type { SettingField, Type } from '@/types/models.types'
 import { TypeSettingsForm } from '../../_components/TypeSettingsForm'
 

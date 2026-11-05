@@ -7,7 +7,7 @@ import {
   WebcamCaptureButton,
   ScreenCaptureButton,
   VoiceRecorderButton,
-} from '@/components/media/CaptureWidgets'
+} from '@/admin/components/media/CaptureWidgets'
 
 class FakeMediaRecorder {
   static isTypeSupported = vi.fn(() => true)

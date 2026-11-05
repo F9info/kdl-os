@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import {
   ArrowLeft,
@@ -25,15 +26,15 @@ import {
   type MenuItemNode as NavNode,
 } from '@/app/admin/menus/_tree'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { fetchDetailPageTypes } from '@/lib/detail-page-types'
-import { useSiteHomeHref } from '@/hooks/useSiteHomeHref'
+import { fetchDetailPageTypes } from '@/admin/lib/detail-page-types'
+import { useSiteHomeHref } from '@/admin/hooks/useSiteHomeHref'
 import api from '@/lib/axios'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { MediaPicker } from '@/components/shared/MediaPicker'
 import { cn } from '@/lib/utils'
-import { loadGoogleFont, loadCustomFontFace } from '@/lib/load-google-font'
-import { useFetchSiteLayout } from '@/hooks/useSiteLayout'
+import { loadGoogleFont, loadCustomFontFace } from '@/admin/lib/load-google-font'
+import { useFetchSiteLayout } from '@/admin/hooks/useSiteLayout'
 import {
   useAdvanceStage,
   useBrandKit,
@@ -41,10 +42,10 @@ import {
   usePatchTypography,
   useRetryStage,
   useSkipStage,
-} from '@/hooks/useTemplateEngine'
+} from '@/admin/hooks/useTemplateEngine'
 import { StageShell } from './StageShell'
 import { WebsiteLayoutPreview } from '../WebsiteLayoutPreview'
-import type { BrandKitTypography, TemplateEngineRun } from '@/types/template-engine.types'
+import type { BrandKitTypography, TemplateEngineRun } from '@/admin/types/template-engine.types'
 import type { Media } from '@/types/media.types'
 
 // One entry per module registered with backend/src/shared/detail-pages/registry.js
@@ -67,58 +68,7 @@ interface DetailPageType {
 // flow before adding the rest (roadmap row 4a; the other cards are rows 4b/4c,
 // not yet spec'd). Unimplemented cards are intentionally omitted rather than
 // shown disabled — nothing to click through to yet.
-const BRAND_CARDS = [{ key: 'webapp', name: 'Web app' }] as const
-
-// Placeholder platform cards (text + button only, no flow yet) — each gets
-// wired one at a time as its flow is specified. "Web app" above is the live one.
-const PLATFORM_GROUPS: { label: string; note: string; items: string[] }[] = [
-  {
-    label: 'Web',
-    note: 'Responsive Web + WCAG',
-    items: ['Website', 'Landing Page', 'Portfolio', 'Admin Dashboard', 'Progressive Web App (PWA)'],
-  },
-  {
-    label: 'Mobile',
-    note: 'Material Design 3 / Apple HIG',
-    items: ['Android Native', 'iOS Native'],
-  },
-  {
-    label: 'Tablet',
-    note: 'MD3 / Apple HIG — large screens',
-    items: ['Android Tablet', 'iPad (iPadOS)'],
-  },
-  {
-    label: 'Desktop',
-    note: 'Multi-window + keyboard navigation',
-    items: ['Windows Desktop', 'macOS Desktop', 'Linux Desktop'],
-  },
-  {
-    label: 'TV',
-    note: '10-foot UI · remote / D-Pad focus',
-    items: [
-      'Android TV',
-      'Google TV',
-      'Apple TV (tvOS)',
-      'Samsung Smart TV (Tizen)',
-      'LG Smart TV (webOS)',
-      'Roku TV',
-      'Amazon Fire TV',
-    ],
-  },
-  {
-    label: 'Wearables',
-    note: 'Compact glanceable layouts',
-    items: ['Wear OS', 'watchOS (Apple Watch)', 'Samsung Galaxy Watch'],
-  },
-]
-
-// Only these cards are shown for now; the rest of PLATFORM_GROUPS stays defined and
-// appears once its name is added here (all platforms get integrated later).
-const VISIBLE_PLATFORMS = new Set(['Landing Page', 'Portfolio', 'Progressive Web App (PWA)'])
-const visiblePlatformGroups = PLATFORM_GROUPS.map((g) => ({
-  ...g,
-  items: g.items.filter((name) => VISIBLE_PLATFORMS.has(name)),
-})).filter((g) => g.items.length > 0)
+const BRAND_CARDS = [{ key: 'webapp', name: 'Website' }] as const
 
 // Curated starter sets matching the prototype's Web app Typography screen.
 const HEADING_FONTS = ['Poppins', 'Inter', 'Manrope', 'Space Grotesk']
@@ -322,9 +272,9 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
       {openBrand === null ? (
         <div className="space-y-3">
           <div>
-            <h3 className="text-base font-semibold">Types</h3>
+            <h3 className="text-base font-semibold">Brands</h3>
             <p className="text-sm text-muted-foreground">
-              Your brand surfaces. Click a card to open it.
+              Your website, landing pages and forms. Click a card to open it.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -341,25 +291,32 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
                 </div>
               </button>
             ))}
-          </div>
-          {visiblePlatformGroups.map((g) => (
-            <div key={g.label} className="space-y-2 pt-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {g.label} — <span className="font-normal normal-case">{g.note}</span>
-              </p>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {g.items.map((name) => (
-                  <button
-                    key={name}
-                    type="button"
-                    className="rounded-lg border bg-card p-4 text-left transition-colors hover:bg-accent"
-                  >
-                    <div className="text-sm font-semibold">{name}</div>
-                  </button>
-                ))}
+            <Link
+              href="/admin/landing-pages"
+              className="rounded-lg border-2 border-primary bg-primary/5 p-4 text-left transition-colors hover:bg-primary/10"
+            >
+              <div className="text-sm font-semibold">Landing Pages</div>
+              <div className="mt-1 flex items-center gap-1 text-xs font-medium text-primary">
+                Active · Open <ArrowRight className="h-3 w-3" />
               </div>
-            </div>
-          ))}
+            </Link>
+            <Link
+              href="/admin/forms"
+              className="rounded-lg border-2 border-primary bg-primary/5 p-4 text-left transition-colors hover:bg-primary/10"
+            >
+              <div className="text-sm font-semibold">Forms</div>
+              <div className="mt-1 flex items-center gap-1 text-xs font-medium text-primary">
+                Active · Open <ArrowRight className="h-3 w-3" />
+              </div>
+            </Link>
+          </div>
+          <p className="pt-2 text-sm text-muted-foreground">
+            Which products are on is set in{' '}
+            <Link href="/admin/settings/products" className="text-primary underline">
+              Settings &gt; Products
+            </Link>
+            .
+          </p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -372,7 +329,7 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
               className="gap-1.5 px-2"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
-              Back to Types
+              Back to Brands
             </Button>
           ) : webAppStep === 'assemble' ? (
             // The Pages grid is downstream of the page selection made in
@@ -460,7 +417,7 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
             <div className="space-y-3">
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
-                  <h3 className="text-base font-semibold">Web app · Pages</h3>
+                  <h3 className="text-base font-semibold">Website · Pages</h3>
                   <p className="text-sm text-muted-foreground">
                     {advance.isPending
                       ? 'Updating pages for your latest selection…'
@@ -549,7 +506,7 @@ function WebAppTypographyStep({
   return (
     <div className="rounded-lg border bg-card p-4 space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Web app</h3>
+        <h3 className="text-sm font-semibold">Website</h3>
         <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
           Digital
         </span>
@@ -1934,7 +1891,7 @@ function NavigationStep({
       </Button>
 
       <div>
-        <h3 className="text-base font-semibold">Web app · Navigation</h3>
+        <h3 className="text-base font-semibold">Website · Navigation</h3>
         <p className="text-sm text-muted-foreground">
           Choose the pages this platform&apos;s navigation should include, or add your own.
         </p>

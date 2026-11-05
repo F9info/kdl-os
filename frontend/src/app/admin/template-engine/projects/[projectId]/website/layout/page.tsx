@@ -9,16 +9,16 @@ import { Switch } from '@/components/ui/switch'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { ErrorAlert } from '@/components/shared/ErrorAlert'
-import { useAdvanceStage, useTemplateEngineRuns } from '@/hooks/useTemplateEngine'
-import { useWebsiteBrandContext } from '@/hooks/useWebsiteBrandContext'
-import { saveSiteLayout, siteLayoutKey, useSiteLayout } from '@/hooks/useSiteLayout'
-import { construction } from '@/app/admin/page-builder/packs/construction'
-import { ComposerProjectContext } from '@/app/admin/page-builder/packs/composer/atoms'
-import { renderComposedBlock } from '@/app/admin/page-builder/packs/composer/render-composed-block'
+import { useAdvanceStage, useTemplateEngineRuns } from '@/admin/hooks/useTemplateEngine'
+import { useWebsiteBrandContext } from '@/admin/hooks/useWebsiteBrandContext'
+import { saveSiteLayout, siteLayoutKey, useSiteLayout } from '@/admin/hooks/useSiteLayout'
+import { construction } from '@/frontend/blocks/packs/construction'
+import { ComposerProjectContext } from '@/frontend/blocks/packs/composer/atoms'
+import { renderComposedBlock } from '@/frontend/blocks/packs/composer/render-composed-block'
 import {
   listCustomBlocks,
   type CustomBlockRecord,
-} from '@/app/admin/page-builder/packs/composer/custom-blocks-store'
+} from '@/frontend/blocks/packs/composer/custom-blocks-store'
 import { cn } from '@/lib/utils'
 import {
   footerOverrides,
@@ -29,7 +29,7 @@ import {
   type LayoutSelection,
   type SectionState,
   type Variant,
-} from '@/lib/website-layout-overrides'
+} from '@/admin/lib/website-layout-overrides'
 
 // Non-null: these three block types are fixed parts of the general/
 // construction packs, not looked up dynamically. Cast to a plain

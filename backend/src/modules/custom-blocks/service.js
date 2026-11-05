@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from 'node:util';
 import { prisma } from '../../config/database.js';
 import { writeActivityAsync } from '../user-management/shared/activity-logger.js';
 
@@ -67,7 +68,15 @@ export const updateCustomBlock = async (id, projectId, patch, actorId) => {
   if (patch.name !== undefined) data.name = patch.name;
   if (patch.description !== undefined) data.description = patch.description;
   if (patch.status !== undefined) data.status = patch.status;
-  if (patch.config !== undefined) data.config = patch.config;
+  if (patch.config !== undefined) {
+    data.config = patch.config;
+    // A real change of the section's content is a new version (pages linked to it are then "behind").
+    const current = await prisma.customBlockTemplate.findFirst({
+      where: { id, project_id: projectId, deleted_at: null },
+      select: { config: true },
+    });
+    if (current && !isDeepStrictEqual(current.config, patch.config)) data.version = { increment: 1 };
+  }
   const { count } = await prisma.customBlockTemplate.updateMany({
     where: { id, project_id: projectId, deleted_at: null },
     data,

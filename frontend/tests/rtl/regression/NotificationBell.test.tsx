@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor, act } from '../utils'
-import { NotificationBell } from '@/components/notifications/NotificationBell'
+import { NotificationBell } from '@/admin/components/notifications/NotificationBell'
 import { useAuthStore } from '@/stores/auth.store'
 
 vi.mock('@/lib/axios', () => ({

@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { AllTheProvider } from '../utils'
-import { fetchSiteLayout, saveSiteLayout, useSiteLayout } from '@/hooks/useSiteLayout'
-import { websiteLayoutStorageKey } from '@/lib/website-layout-overrides'
+import { fetchSiteLayout, saveSiteLayout, useSiteLayout } from '@/admin/hooks/useSiteLayout'
+import { websiteLayoutStorageKey } from '@/admin/lib/website-layout-overrides'
 
 const h = vi.hoisted(() => ({ get: vi.fn(), put: vi.fn() }))
 vi.mock('@/lib/axios', () => ({ default: { get: h.get, put: h.put } }))

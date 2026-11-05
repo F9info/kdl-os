@@ -2,36 +2,26 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useQuery } from '@tanstack/react-query'
 import { CheckCircle2, AlertCircle } from 'lucide-react'
-import api from '@/lib/axios'
-import { useAdvanceStage, useBrandKit, useRetryStage } from '@/hooks/useTemplateEngine'
+import { useAdvanceStage, useBrandKit, useRetryStage } from '@/admin/hooks/useTemplateEngine'
+import { useIdentity } from '@/hooks/useIdentity'
 import { StageShell } from './StageShell'
 import { Button } from '@/components/ui/button'
-import type { SettingField, Type } from '@/types/models.types'
-import { DAG_STAGES, type TemplateEngineRun } from '@/types/template-engine.types'
+import { DAG_STAGES, type TemplateEngineRun } from '@/admin/types/template-engine.types'
 
-// Logo + contact details are edited under CMS → Company Details; this stage
+// Company name, logo and contact details are managed once in Settings → Identity; this stage
 // only checks they exist before letting the run move on.
 export function IntakeStage({ run }: { run: TemplateEngineRun }) {
   const router = useRouter()
   const stage = run.stages.find((s) => s.stage === 'INTAKE')
   const advance = useAdvanceStage(run.id, run.projectId)
   const retry = useRetryStage(run.id, run.projectId)
+  const { identity } = useIdentity()
   const { data: brandKit } = useBrandKit(run.projectId)
 
-  const { data } = useQuery({
-    queryKey: ['setting-fields-by-type', 'brand-profile'],
-    queryFn: () =>
-      api
-        .get('/setting-fields/by-type/brand-profile')
-        .then((r) => r.data.data as { type: Type; fields: SettingField[] }),
-  })
-
-  const hasLogo = !!brandKit?.logo_media_id
-  const hasCompany = !!data?.fields
-    .find((f) => f.slug === 'brand-profile-company-name')
-    ?.value?.trim()
+  // The project's own logo, or the company logo it starts from (adopted when this step runs).
+  const hasLogo = !!brandKit?.logo_media_id || !!identity.logo_light
+  const hasCompany = !!identity.app_name?.trim()
   const ready = hasLogo && hasCompany
   const isBusy = advance.isPending || retry.isPending
 
@@ -62,7 +52,7 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
   return (
     <StageShell
       title="Overview"
-      description="Your logo and contact details are managed under CMS → Company Details."
+      description="Your company name, logo and contact details are managed in Settings → Identity."
       stage={stage ?? null}
       hideRunButton
     >
@@ -71,7 +61,7 @@ export function IntakeStage({ run }: { run: TemplateEngineRun }) {
         <Row ok={hasCompany} label="Company name entered" />
         <div className="flex gap-2">
           <Button size="sm" variant="outline" asChild>
-            <Link href="/admin/website-details">Edit Company Details</Link>
+            <Link href="/admin/settings/identity">Edit in Identity</Link>
           </Button>
           <Button size="sm" onClick={handleNext} disabled={!ready || isBusy}>
             {isBusy ? 'Saving…' : 'Next'}

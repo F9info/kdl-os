@@ -5,7 +5,7 @@ import { prisma } from '../../config/database.js';
 import { loadedManifests } from '../../shared/modules/module-loader.js';
 import { invalidateModuleCache } from '../../middleware/module-gate.js';
 import { writeActivityAsync } from '../user-management/shared/activity-logger.js';
-import { buildGraph, resolveProducts, hiddenByProducts, PRODUCTS_SETTING_KEY } from './products.js';
+import { buildGraph, resolveProducts, inferProducts, hiddenByProducts, PRODUCTS_SETTING_KEY } from './products.js';
 import { resolvePermissionEntry, permissionModuleLabel } from '../../shared/modules/permission-actions.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -461,17 +461,31 @@ export async function disableModule(slug, actorId) {
   await invalidateModuleCache(slug);
 
   // Umbrella bundles (CMS) switch their hidden parts off with them, unless something else needs them.
+  // Parts can need each other (landing needs forms), so repeat until nothing more can go: each pass
+  // only counts modules that are still enabled, never the ones just switched off.
   const umbrella = loadedManifests.get(slug);
   if (umbrella?.umbrella) {
-    for (const partSlug of umbrella.dependsOn ?? []) {
-      const part = await prisma.module.findUnique({ where: { slug: partSlug } });
-      if (!part || part.status !== 'ENABLED') continue;
-      const stillNeeded = allEnabled.some(
-        (m) => m.slug !== slug && m.slug !== partSlug && loadedManifests.get(m.slug)?.dependsOn?.includes(partSlug)
-      );
-      if (stillNeeded) continue;
-      await prisma.module.update({ where: { slug: partSlug }, data: { status: 'DISABLED' } });
-      await invalidateModuleCache(partSlug);
+    const off = new Set([slug]);
+    const parts = umbrella.dependsOn ?? [];
+    for (let pass = 0; pass <= parts.length; pass++) {
+      let changed = false;
+      for (const partSlug of parts) {
+        if (off.has(partSlug)) continue;
+        const part = await prisma.module.findUnique({ where: { slug: partSlug } });
+        if (!part || part.status !== 'ENABLED') continue;
+        const stillNeeded = allEnabled.some(
+          (m) =>
+            !off.has(m.slug) &&
+            m.slug !== partSlug &&
+            loadedManifests.get(m.slug)?.dependsOn?.includes(partSlug)
+        );
+        if (stillNeeded) continue;
+        await prisma.module.update({ where: { slug: partSlug }, data: { status: 'DISABLED' } });
+        await invalidateModuleCache(partSlug);
+        off.add(partSlug);
+        changed = true;
+      }
+      if (!changed) break;
     }
   }
 
@@ -623,7 +637,8 @@ export async function listEnabledModules() {
         ?.slug ?? null;
     return {
       slug: m.slug,
-      name: m.name,
+      // The manifest is the source of truth for the label; the DB row keeps the name from install time.
+      name: manifest?.name ?? m.name,
       core: manifest?.core ?? false,
       parent,
       hidden_by_products: hidden.has(m.slug),
@@ -649,10 +664,18 @@ export async function getModuleGraph(products) {
     prisma.module.findMany({ where: { status: 'ENABLED' }, select: { slug: true } }),
     products ? Promise.resolve(null) : getSelectedProducts(),
   ]);
+  const enabled = dbModules.map((m) => m.slug);
+  // Showing the saved choice alone would say "Off" for a product whose modules are all installed
+  // and enabled (done on the Modules page). The effective state adds those; a preview
+  // (`products` given) is exactly what was asked for.
+  const inferred = stored
+    ? inferProducts({ manifests: loadedManifests, enabled, stored })
+    : [];
   return buildGraph({
     manifests: loadedManifests,
-    enabled: dbModules.map((m) => m.slug),
-    selected: products ?? stored,
+    enabled,
+    selected: products ?? [...stored, ...inferred],
+    inferred,
   });
 }
 

@@ -6,7 +6,7 @@ import './th-layout.css'
 import './th-components.css'
 import { Providers } from './providers'
 import { WebVitals } from '@/components/WebVitals'
-import { buildIdentityMetadata, fetchAppIdentity } from '@/lib/app-identity'
+import { buildIdentityMetadata, fetchAppIdentity } from '@/frontend/lib/app-identity'
 import { UUID_POLYFILL } from '@/lib/uuid-polyfill'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })

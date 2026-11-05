@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('../../../config/database.js', () => ({ prisma: {} }));
-vi.mock('../../brand-kit/contact-fields.js', () => ({ getCompanyInfo: vi.fn() }));
+vi.mock('../../identity/company-info.js', () => ({ getCompanyInfo: vi.fn() }));
 
 const { assignRoutes, buildSiteModel } = await import('./generator.js');
 

@@ -21,7 +21,7 @@ vi.mock('@/hooks/use-toast', () => ({
   toast: vi.fn(),
 }))
 
-vi.mock('@/components/shared/ModuleGuard', () => ({
+vi.mock('@/admin/components/shared/ModuleGuard', () => ({
   ModuleGuard: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 

@@ -4,10 +4,13 @@ import { useEffect, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
-import { usePermissions } from '@/hooks/usePermissions'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { PermissionGuard } from '@/components/shared/PermissionGuard'
+import { usePermissions } from '@/admin/hooks/usePermissions'
+import { useDefaultProjectId } from '@/admin/hooks/useDefaultProjectId'
+import { resyncBuiltWebsite } from '@/admin/hooks/useTemplateEngine'
+import { PageHeader } from '@/admin/components/layout/PageHeader'
+import { PermissionGuard } from '@/admin/components/shared/PermissionGuard'
 import { FormField } from '@/components/shared/FormField'
+import { ImageUploadField } from '@/admin/components/shared/ImageUploadField'
 import { ErrorAlert } from '@/components/shared/ErrorAlert'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { Button } from '@/components/ui/button'
@@ -38,7 +41,9 @@ const COLOR_FIELDS = [
 ]
 const CONTACT_FIELDS = [
   { key: 'contact_email', label: 'Contact email', type: 'email' },
+  { key: 'contact_email_secondary', label: 'Secondary email', type: 'email' },
   { key: 'contact_phone', label: 'Contact phone' },
+  { key: 'contact_phone_secondary', label: 'Secondary phone' },
   { key: 'contact_address', label: 'Address', multiline: true },
 ]
 const SOCIAL_FIELDS = [
@@ -60,13 +65,21 @@ const FAVICON: AssetDef = {
   label: 'Favicon',
   hint: 'Square image, .ico/.png/.svg.',
 }
+const CONTACT_KEYS = [
+  'contact_email',
+  'contact_email_secondary',
+  'contact_phone',
+  'contact_phone_secondary',
+  'contact_address',
+]
 const HEX = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i
 
 // Server is the source of truth; this only catches the obvious cases before a round trip.
 function clientErrors(f: Identity): Record<string, string> {
   const e: Record<string, string> = {}
-  if (f.contact_email && !/^\S+@\S+\.\S+$/.test(f.contact_email))
-    e.contact_email = 'Enter a valid email.'
+  for (const key of ['contact_email', 'contact_email_secondary']) {
+    if (f[key] && !/^\S+@\S+\.\S+$/.test(f[key])) e[key] = 'Enter a valid email.'
+  }
   for (const { key } of COLOR_FIELDS) {
     if (f[key] && !HEX.test(f[key])) e[key] = 'Use a hex color like #1a2b3c.'
   }
@@ -75,12 +88,13 @@ function clientErrors(f: Identity): Record<string, string> {
 
 export default function IdentityPage() {
   const queryClient = useQueryClient()
+  const { projectId } = useDefaultProjectId()
   const { can } = usePermissions()
   const [form, setForm] = useState<Identity>({})
   const [previews, setPreviews] = useState<Partial<Record<AssetKey, string>>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [formError, setFormError] = useState<unknown>(null)
-  const [uploading, setUploading] = useState<AssetKey | null>(null)
+  const [uploading, setUploading] = useState(false)
   const initialized = useRef(false)
 
   const {
@@ -103,7 +117,12 @@ export default function IdentityPage() {
   const saveMutation = useMutation({
     mutationFn: (payload: Identity) =>
       api.put('/identity', payload).then((r) => r.data.data as IdentityPayload),
-    onSuccess: (saved) => {
+    onSuccess: (saved, payload) => {
+      const before = queryClient.getQueryData<IdentityPayload>(['identity'])?.identity ?? {}
+      // Phone, email and address are baked into an already-built website's pages: refresh it.
+      if (projectId && CONTACT_KEYS.some((k) => (before[k] ?? '') !== (payload[k] ?? ''))) {
+        resyncBuiltWebsite(projectId).catch(() => {})
+      }
       queryClient.setQueryData(['identity'], saved)
       queryClient.invalidateQueries({ queryKey: ['app-config'] })
       setForm(saved.identity)
@@ -139,28 +158,6 @@ export default function IdentityPage() {
     })
   }
 
-  async function upload(key: AssetKey, file: File) {
-    setUploading(key)
-    setFormError(null)
-    try {
-      const body = new FormData()
-      body.append('file', file)
-      const res = await api.post('/identity/upload', body)
-      const { path, url } = res.data.data as { path: string; url: string }
-      set(key, path)
-      setPreviews((p) => ({ ...p, [key]: url }))
-    } catch (err) {
-      setFormError(err)
-    } finally {
-      setUploading(null)
-    }
-  }
-
-  function clearAsset(key: AssetKey) {
-    set(key, '')
-    setPreviews((p) => ({ ...p, [key]: '' }))
-  }
-
   function handleSave() {
     const found = clientErrors(form)
     setErrors(found)
@@ -194,47 +191,15 @@ export default function IdentityPage() {
 
   const renderAsset = (a: AssetDef) => (
     <FormField key={a.key} label={a.label} hint={a.hint} error={errors[a.key]}>
-      <div className="flex items-center gap-3">
-        <div className="flex h-16 w-24 shrink-0 items-center justify-center overflow-hidden rounded border bg-muted">
-          {previews[a.key] ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={previews[a.key]}
-              alt={`${a.label} preview`}
-              className="max-h-full max-w-full object-contain"
-            />
-          ) : (
-            <span className="text-xs text-muted-foreground">None</span>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <label className="inline-flex">
-            <input
-              type="file"
-              accept="image/*"
-              className="sr-only"
-              data-testid={`upload-${a.key}`}
-              disabled={uploading !== null}
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) void upload(a.key, file)
-                e.target.value = ''
-              }}
-            />
-            <span
-              className="inline-flex h-9 cursor-pointer items-center rounded-md border px-3 text-sm hover:bg-accent"
-              aria-disabled={uploading !== null}
-            >
-              {uploading === a.key ? 'Uploading…' : form[a.key] ? 'Replace' : 'Upload'}
-            </span>
-          </label>
-          {form[a.key] && (
-            <Button type="button" variant="ghost" size="sm" onClick={() => clearAsset(a.key)}>
-              Remove
-            </Button>
-          )}
-        </div>
-      </div>
+      <ImageUploadField
+        name={a.key}
+        value={form[a.key] ?? ''}
+        previewUrl={previews[a.key] ?? ''}
+        onChange={(v) => set(a.key, v)}
+        onBusyChange={setUploading}
+        emptyText="None"
+        setText="Image set"
+      />
     </FormField>
   )
 
@@ -274,6 +239,10 @@ export default function IdentityPage() {
               <h2 id="id-colors" className="text-lg font-semibold">
                 Colors
               </h2>
+              <p className="text-sm text-muted-foreground">
+                Reference colours for your company. Your website&apos;s colour palette is built from
+                your logo under CMS &gt; Color Palette.
+              </p>
               <div className="grid gap-4 sm:grid-cols-2">
                 {COLOR_FIELDS.map((f) => (
                   <FormField key={f.key} label={f.label} error={errors[f.key]}>
@@ -319,10 +288,7 @@ export default function IdentityPage() {
 
             {can('settings:edit') && (
               <div className="flex justify-end">
-                <Button
-                  onClick={handleSave}
-                  disabled={saveMutation.isPending || uploading !== null}
-                >
+                <Button onClick={handleSave} disabled={saveMutation.isPending || uploading}>
                   {saveMutation.isPending ? 'Saving…' : 'Save identity'}
                 </Button>
               </div>

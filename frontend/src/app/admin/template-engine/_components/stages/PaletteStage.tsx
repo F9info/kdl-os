@@ -10,17 +10,17 @@ import {
   useBrandKit,
   usePatchBrandKit,
   useRetryStage,
-} from '@/hooks/useTemplateEngine'
+} from '@/admin/hooks/useTemplateEngine'
 import { StageShell } from './StageShell'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { rampFromHex, srgbToOklch, hexToRgb } from '@/lib/oklch-ramp'
+import { rampFromHex, srgbToOklch, hexToRgb } from '@/admin/lib/oklch-ramp'
 import {
   type BrandKitPalette,
   type PaletteColor,
   type PaletteRole,
   type TemplateEngineRun,
-} from '@/types/template-engine.types'
+} from '@/admin/types/template-engine.types'
 
 // Display labels match the prototype's naming (Primary/Secondary/Tertiary/
 // Quaternary) — these map onto the backend's real field names

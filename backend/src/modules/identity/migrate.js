@@ -8,10 +8,12 @@ export const LEGACY_SLUGS = {
   'brand-profile-primary-phone': 'contact_phone',
   'brand-profile-address-1': 'contact_address',
   'brand-profile-address-2': 'contact_address',
+  'brand-profile-secondary-email': 'contact_email_secondary',
+  'brand-profile-secondary-phone': 'contact_phone_secondary',
   logo: 'logo_light',
 };
-// Legacy data with no identity field yet — reported, left in place.
-export const UNMAPPED_SLUGS = ['brand-profile-secondary-email', 'brand-profile-secondary-phone'];
+// Legacy data with no identity field — reported, left in place. Every brand-profile field has one now.
+export const UNMAPPED_SLUGS = [];
 
 const clean = (v) => (typeof v === 'string' ? v.trim() : '');
 

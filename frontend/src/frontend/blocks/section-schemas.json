@@ -1,0 +1,5990 @@
+{
+  "Button": {
+    "label": "Button",
+    "fields": {
+      "href": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "primary",
+          "secondary"
+        ]
+      }
+    }
+  },
+  "Columns": {
+    "label": "Columns",
+    "fields": {
+      "gap": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "left": {
+        "kind": "slot",
+        "tab": "content"
+      },
+      "right": {
+        "kind": "slot",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionAboutSplit": {
+    "label": "About (Split with Badge)",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "badgeLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "badgeNumber": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "brochureHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "brochureLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "check1Text": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "check2Text": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "check3Text": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "checks": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "members": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "membershipLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "paragraph": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "photo": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "useSettings": {
+        "kind": "toggle",
+        "tab": "content",
+        "options": [
+          true,
+          false
+        ]
+      }
+    }
+  },
+  "ConstructionApproachSplit": {
+    "label": "Approach Split (Highlights + Stats)",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "highlight1BiIcon": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "highlight1Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "highlight1Icon": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "snowflake",
+          "housegear",
+          "tv",
+          "plug",
+          "fire",
+          "lightbulb",
+          "shield",
+          "star",
+          "hardhat"
+        ]
+      },
+      "highlight1Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "highlight2BiIcon": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "highlight2Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "highlight2Icon": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "snowflake",
+          "housegear",
+          "tv",
+          "plug",
+          "fire",
+          "lightbulb",
+          "shield",
+          "star",
+          "hardhat"
+        ]
+      },
+      "highlight2Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "highlights": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "paragraph1": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "paragraph2": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "photo": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "stat1Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stat1Value": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stat2Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stat2Value": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stat3Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stat3Value": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stats": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2"
+        ]
+      }
+    }
+  },
+  "ConstructionBlogPosts": {
+    "label": "Blog Posts",
+    "fields": {
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "post1Category": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "post1Date": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "post1Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "post1Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "post2Category": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "post2Date": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "post2Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "post2Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "post3Category": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "post3Date": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "post3Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "post3Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "posts": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionBrandsCarousel": {
+    "label": "Brands Carousel",
+    "fields": {
+      "anchorId": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "logos": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionEyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionBrandsLogoGrid": {
+    "label": "Brands Logo Grid",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "logo1": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "logo2": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "logo3": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "logo4": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "logo5": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "logo6": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "logos": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      }
+    }
+  },
+  "ConstructionBrandsSpotlight": {
+    "label": "Brands Spotlight",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "otherLogo1": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "otherLogo2": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "otherLogo3": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "otherLogo4": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "otherLogos": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "spotlightDescription": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "spotlightLogo": {
+        "kind": "image",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionCaseStudyGrid": {
+    "label": "Case Study Grid",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "case1Client": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "case1Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "case1Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "case1LinkHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "case1LinkLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "case1Stat": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "case2Client": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "case2Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "case2Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "case2LinkHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "case2LinkLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "case2Stat": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "case3Client": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "case3Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "case3Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "case3LinkHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "case3LinkLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "case3Stat": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "cases": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      }
+    }
+  },
+  "ConstructionCertificationsBadges": {
+    "label": "Certifications & Safety Badges",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "badge1Detail": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "badge1Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "badge2Detail": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "badge2Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "badge3Detail": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "badge3Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "badge4Detail": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "badge4Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "badge5Detail": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "badge5Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "badge6Detail": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "badge6Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "badges": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionSubtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionClientsCaseHighlight": {
+    "label": "Clients Case Highlight",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "otherLogo1": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "otherLogo2": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "otherLogo3": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "otherLogo4": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "otherLogos": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "spotlightLogo": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "spotlightQuote": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "spotlightStat": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionClientsGrid": {
+    "label": "Clients (Paginated Grid)",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "items": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionEyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sectionSubtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionClientsMarquee": {
+    "label": "Clients Marquee",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "logo1": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "logo2": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "logo3": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "logo4": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "logo5": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "logo6": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "logos": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionClientsTestimonialStrip": {
+    "label": "Clients Testimonial Strip",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "client1Logo": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "client1Quote": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "client2Logo": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "client2Quote": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "client3Logo": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "client3Quote": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "clients": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionContactSplitMap": {
+    "label": "Contact + Map Split",
+    "fields": {
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "formAction": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "formEyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "formHeading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "infoItems": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "mapEmbedUrl": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "subcopy": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "submitLabel": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionDisciplineRows": {
+    "label": "Discipline Rows",
+    "fields": {
+      "anchorId": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "items": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionEyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sectionSubtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionDisciplinesGrid": {
+    "label": "Disciplines Grid",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "items": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionEyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sectionSubtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionFAQ": {
+    "label": "FAQ",
+    "fields": {
+      "faq1Answer": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "faq1Question": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "faq2Answer": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "faq2Question": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "faq3Answer": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "faq3Question": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "faq4Answer": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "faq4Question": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "faqs": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionFAQAccordionCategories": {
+    "label": "FAQ Accordion Categories",
+    "fields": {
+      "category1Faq1Answer": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "category1Faq1Question": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "category1Faq2Answer": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "category1Faq2Question": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "category1Faq3Answer": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "category1Faq3Question": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "category1Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "category2Faq1Answer": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "category2Faq1Question": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "category2Faq2Answer": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "category2Faq2Question": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "category2Faq3Answer": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "category2Faq3Question": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "category2Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionFAQTwoColumn": {
+    "label": "FAQ Two Column",
+    "fields": {
+      "faq1Answer": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "faq1Question": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "faq2Answer": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "faq2Question": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "faq3Answer": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "faq3Question": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "faq4Answer": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "faq4Question": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "faq5Answer": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "faq5Question": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "faq6Answer": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "faq6Question": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "faqs": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionFAQWithContact": {
+    "label": "FAQ with Contact",
+    "fields": {
+      "contactCtaHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "contactCtaLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "contactHeading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "faq1Answer": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "faq1Question": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "faq2Answer": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "faq2Question": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "faq3Answer": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "faq3Question": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "faqs": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionFeaturedProject": {
+    "label": "Featured Project",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "ctaHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "ctaLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "linkHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "linkLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "paragraph": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "scope1Icon": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "hardhat",
+          "shield",
+          "star"
+        ]
+      },
+      "scope1Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "scope2Icon": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "hardhat",
+          "shield",
+          "star"
+        ]
+      },
+      "scope2Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "scope3Icon": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "hardhat",
+          "shield",
+          "star"
+        ]
+      },
+      "scope3Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "scope4Icon": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "hardhat",
+          "shield",
+          "star"
+        ]
+      },
+      "scope4Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "scopes": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionFloatingActions": {
+    "label": "Floating Actions (WhatsApp + Brochure + Trust Badge)",
+    "fields": {
+      "actionsSide": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "left",
+          "right"
+        ]
+      },
+      "badgeLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "badgeNumber": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "badgeSide": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "left",
+          "right"
+        ]
+      },
+      "badgeYearLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "brochureHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "whatsappHref": {
+        "kind": "link",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionFooter": {
+    "label": "Construction Footer (4 Column)",
+    "fields": {
+      "aboutLinkHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "aboutLinkLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "aboutText": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "aboutTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "badge1Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "badge1Url": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "badge2Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "badge2Url": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "brand": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "companyLinksTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "contactAddress": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "contactEmail": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "contactEmail2": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "contactPhone": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "contactPhone2": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "contactTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "copyright": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "directionsHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "directionsLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "estdYear": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "group2Links": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "group2Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "group3Links": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "group3Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "group4Links": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "links": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "logoUrl": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "newsletterButtonLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "newsletterPlaceholder": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "newsletterTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "partnerLogo1Url": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "partnerLogo2Url": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "partnerLogo3Url": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "partnerLogo4Url": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "policyLinks": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "primaryColor": {
+        "kind": "color",
+        "tab": "style"
+      },
+      "qrCaption": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "qrImage": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "quaternaryColor": {
+        "kind": "color",
+        "tab": "style"
+      },
+      "regdOfficeAddress": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "regdOfficeTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "secondaryColor": {
+        "kind": "color",
+        "tab": "style"
+      },
+      "showroomAddress": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "showroomTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "social1Href": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "social1Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "social2Href": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "social2Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "social3Href": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "social3Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "social4Href": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "social4Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "tagline": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "tertiaryColor": {
+        "kind": "color",
+        "tab": "style"
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ]
+      }
+    }
+  },
+  "ConstructionFounder": {
+    "label": "Founder",
+    "fields": {
+      "founderName": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "founderTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "photo": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "quoteText": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionFounderProfile": {
+    "label": "Founder Profile",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "person1Bio": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "person1Facts": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "person1LinkHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "person1LinkLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "person1MemberId": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "person1Name": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "person1Photo": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "person1Quote": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "person1Role": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "person1Variant": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "dark",
+          "light"
+        ]
+      },
+      "person2Bio": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "person2Ctas": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "person2Facts": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "person2LinkHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "person2LinkLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "person2MemberId": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "person2MembershipLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "person2Memberships": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "person2Name": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "person2Photo": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "person2Role": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "person2Variant": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "orange",
+          "light"
+        ]
+      }
+    }
+  },
+  "ConstructionHeader": {
+    "label": "Construction Header",
+    "fields": {
+      "brand": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "ctaHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "ctaLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "ctaNewTab": {
+        "kind": "toggle",
+        "tab": "content",
+        "options": [
+          true,
+          false
+        ]
+      },
+      "email": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "lightText": {
+        "kind": "toggle",
+        "tab": "content",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "links": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "loginHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "loginLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "logoUrl": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "phoneNumber": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "primaryColor": {
+        "kind": "color",
+        "tab": "style"
+      },
+      "quaternaryColor": {
+        "kind": "color",
+        "tab": "style"
+      },
+      "secondaryColor": {
+        "kind": "color",
+        "tab": "style"
+      },
+      "social1Href": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "social2Href": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "social3Href": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "social4Href": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "solidOnScroll": {
+        "kind": "toggle",
+        "tab": "content",
+        "options": [
+          true,
+          false
+        ]
+      },
+      "tertiaryColor": {
+        "kind": "color",
+        "tab": "style"
+      },
+      "transparent": {
+        "kind": "toggle",
+        "tab": "content",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ]
+      },
+      "visible": {
+        "kind": "toggle",
+        "tab": "content",
+        "options": [
+          true,
+          false
+        ]
+      }
+    }
+  },
+  "ConstructionHero": {
+    "label": "Construction Hero",
+    "fields": {
+      "activeSlideIndex": {
+        "kind": "number",
+        "tab": "content"
+      },
+      "d1Slides": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "d2Avatar1": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d2Avatar2": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d2Avatar3": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d2BadgeText": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d2BrandsLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d2CtaHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "d2CtaLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d2SecondaryLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d2Slides": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "d2Stat1Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d2Stat1Value": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d2Stat2Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d2Stat2Value": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d2Stat3Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d2Stat3Value": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d2TrustText": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d3CtaHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "d3CtaLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d3Eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d3Headline": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d3Slides": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "d3Subheadline": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "d4CtaHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "d4CtaLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d4Headline": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d4Slides": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "d4Subheadline": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "primaryColor": {
+        "kind": "color",
+        "tab": "style",
+        "hidden": true
+      },
+      "secondaryColor": {
+        "kind": "color",
+        "tab": "style",
+        "hidden": true
+      },
+      "sliderAutoplay": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          true,
+          false
+        ]
+      },
+      "sliderAutoplaySpeed": {
+        "kind": "number",
+        "tab": "style"
+      },
+      "sliderLoop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          true,
+          false
+        ]
+      },
+      "sliderShowArrows": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          true,
+          false
+        ]
+      },
+      "sliderShowDots": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          true,
+          false
+        ]
+      },
+      "sliderTransition": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "slide",
+          "fade"
+        ]
+      },
+      "typoButtonColor": {
+        "kind": "color",
+        "tab": "style"
+      },
+      "typoButtonSize": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "",
+          "sm",
+          "base",
+          "lg",
+          "xl",
+          "2xl",
+          "3xl",
+          "4xl",
+          "5xl"
+        ]
+      },
+      "typoButtonWeight": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "",
+          "normal",
+          "medium",
+          "semibold",
+          "bold",
+          "extrabold"
+        ]
+      },
+      "typoParaColor": {
+        "kind": "color",
+        "tab": "style"
+      },
+      "typoParaSize": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "",
+          "sm",
+          "base",
+          "lg",
+          "xl",
+          "2xl",
+          "3xl",
+          "4xl",
+          "5xl"
+        ]
+      },
+      "typoParaWeight": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "",
+          "normal",
+          "medium",
+          "semibold",
+          "bold",
+          "extrabold"
+        ]
+      },
+      "typoTaglineColor": {
+        "kind": "color",
+        "tab": "style"
+      },
+      "typoTaglineSize": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "",
+          "sm",
+          "base",
+          "lg",
+          "xl",
+          "2xl",
+          "3xl",
+          "4xl",
+          "5xl"
+        ]
+      },
+      "typoTaglineWeight": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "",
+          "normal",
+          "medium",
+          "semibold",
+          "bold",
+          "extrabold"
+        ]
+      },
+      "typoTitleColor": {
+        "kind": "color",
+        "tab": "style"
+      },
+      "typoTitleSize": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "",
+          "sm",
+          "base",
+          "lg",
+          "xl",
+          "2xl",
+          "3xl",
+          "4xl",
+          "5xl"
+        ]
+      },
+      "typoTitleWeight": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "",
+          "normal",
+          "medium",
+          "semibold",
+          "bold",
+          "extrabold"
+        ]
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "hidden": true,
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "visible": {
+        "kind": "toggle",
+        "tab": "content",
+        "options": [
+          true,
+          false
+        ]
+      }
+    }
+  },
+  "ConstructionIconFeatureGrid": {
+    "label": "Icon Feature Grid",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "dark"
+        ]
+      },
+      "items": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionEyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2"
+        ]
+      }
+    }
+  },
+  "ConstructionInnerBanner": {
+    "label": "Inner Banner",
+    "fields": {
+      "backgroundImage": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "ctaPrimaryHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "ctaPrimaryLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "ctaSecondaryHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "ctaSecondaryLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "ctaTertiaryHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "ctaTertiaryLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "currentLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "headline": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "homeHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "imageAlt": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "parentHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "parentLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "subtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "visible": {
+        "kind": "toggle",
+        "tab": "content",
+        "options": [
+          true,
+          false
+        ]
+      }
+    }
+  },
+  "ConstructionLeadFormFAQ": {
+    "label": "Lead Form + FAQ",
+    "fields": {
+      "checklistItems": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "ctaLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "faqSource": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "module",
+          "block"
+        ]
+      },
+      "faqs": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "formHeading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "formPrivacyNote": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "formSubtext": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "interestOptions": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "introText": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionEyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sectionIntroLinkHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "sectionIntroLinkLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "showFaqs": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          true,
+          false
+        ]
+      },
+      "trustStats": {
+        "kind": "list",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionLeadershipGrid": {
+    "label": "Leadership Grid",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "leader1Bio": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "leader1Name": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "leader1Photo": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "leader1Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "leader2Bio": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "leader2Name": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "leader2Photo": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "leader2Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "leader3Bio": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "leader3Name": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "leader3Photo": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "leader3Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "leaders": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      }
+    }
+  },
+  "ConstructionMilestoneTimeline": {
+    "label": "Milestone Timeline",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "milestone1Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "milestone1Year": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "milestone2Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "milestone2Year": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "milestone3Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "milestone3Year": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "milestone4Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "milestone4Year": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "milestones": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      }
+    }
+  },
+  "ConstructionMissionVision": {
+    "label": "Mission & Vision",
+    "fields": {
+      "missionHeading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "missionParagraph1": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "missionParagraph2": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "visionHeading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "visionParagraph1": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "visionParagraph2": {
+        "kind": "textarea",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionNewsTicker": {
+    "label": "News Ticker",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "news1Date": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "news1Headline": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "news2Date": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "news2Headline": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "news3Date": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "news3Headline": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "news4Date": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "news4Headline": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "newss": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      }
+    }
+  },
+  "ConstructionOfferingsRows": {
+    "label": "Core Offerings (Alternating Rows)",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "offering1BrandNames": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "offering1Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "offering1Heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "offering1Href": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "offering1Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "offering1NumberTag": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "offering2BrandNames": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "offering2Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "offering2Heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "offering2Href": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "offering2Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "offering2NumberTag": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "offering3BrandNames": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "offering3Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "offering3Heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "offering3Href": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "offering3Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "offering3NumberTag": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "offerings": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionSubtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionOrgChart": {
+    "label": "Org Chart",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "report1Name": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "report1Photo": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "report1Role": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "report2Name": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "report2Photo": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "report2Role": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "report3Name": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "report3Photo": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "report3Role": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "reports": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "topName": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "topPhoto": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "topRole": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionOurBrands": {
+    "label": "Our Brands (Tabbed Categories)",
+    "fields": {
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionEyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sectionSubtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "tab1Groups": {
+        "kind": "textarea",
+        "tab": "content",
+        "hidden": true
+      },
+      "tab1Label": {
+        "kind": "text",
+        "tab": "content",
+        "hidden": true
+      },
+      "tab2Groups": {
+        "kind": "textarea",
+        "tab": "content",
+        "hidden": true
+      },
+      "tab2Label": {
+        "kind": "text",
+        "tab": "content",
+        "hidden": true
+      },
+      "tab3Groups": {
+        "kind": "textarea",
+        "tab": "content",
+        "hidden": true
+      },
+      "tab3Label": {
+        "kind": "text",
+        "tab": "content",
+        "hidden": true
+      },
+      "tabs": {
+        "kind": "list",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionProcessSteps": {
+    "label": "Process Steps (Horizontal)",
+    "fields": {
+      "items": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionEyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sectionSubtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2"
+        ]
+      }
+    }
+  },
+  "ConstructionProcessTimeline": {
+    "label": "Process Timeline",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionSubtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "step1Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "step1Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "step2Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "step2Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "step3Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "step3Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "step4Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "step4Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "step5Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "step5Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "steps": {
+        "kind": "list",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionProductsShowcase": {
+    "label": "Products Showcase (Tabbed)",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "categories": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "category1Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "category2Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "category3Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "category4Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "items": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionEyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sectionSubtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionProjectGallery": {
+    "label": "Project Gallery (Sectors Grid)",
+    "fields": {
+      "cardStyle": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "overlay",
+          "card"
+        ]
+      },
+      "items": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionEyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sectionSubtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "showFilters": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      }
+    }
+  },
+  "ConstructionProjectMapStrip": {
+    "label": "Project Locations Strip",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "location1City": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "location1Thumbnail": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "location2City": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "location2Thumbnail": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "location3City": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "location3Thumbnail": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "location4City": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "location4Thumbnail": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "locations": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      }
+    }
+  },
+  "ConstructionProjectPhotoSlider": {
+    "label": "Project Photo Slider",
+    "fields": {
+      "items": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionEyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sectionSubtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionProjectShowcaseSplit": {
+    "label": "Project Showcase Split",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "stat1Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stat1Value": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stat2Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stat2Value": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stats": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionProjectsGridCards": {
+    "label": "Projects Grid",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "project1Category": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "project1Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "project1Stat": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "project1Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "project2Category": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "project2Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "project2Stat": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "project2Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "project3Category": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "project3Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "project3Stat": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "project3Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "projects": {
+        "kind": "list",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionProjectsSlider": {
+    "label": "Featured Projects Slider",
+    "fields": {
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionEyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "slides": {
+        "kind": "list",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionQuoteCTA": {
+    "label": "Quote Request CTA",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "dark",
+          "accent",
+          "muted"
+        ]
+      },
+      "ctaHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "ctaLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "headline": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "phoneLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "phoneNumber": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "secondaryCtaHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "secondaryCtaLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "subtext": {
+        "kind": "textarea",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionQuoteRequestForm": {
+    "label": "Quote Request Form",
+    "fields": {
+      "heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "submitLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "trustText": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionSafetyRecord": {
+    "label": "Safety Record",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "dark",
+          "accent",
+          "muted"
+        ]
+      },
+      "complianceNote": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "incidentFreeDays": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "safetyRating": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sectionSubtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "trainedWorkers": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionSectorDetailList": {
+    "label": "Sector Detail List",
+    "fields": {
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionEyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sectionSubtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sectors": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      }
+    }
+  },
+  "ConstructionSectorsIconRow": {
+    "label": "Sectors Icon Row",
+    "fields": {
+      "heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sector1Icon": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "hardhat",
+          "shield",
+          "star"
+        ]
+      },
+      "sector1Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sector2Icon": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "hardhat",
+          "shield",
+          "star"
+        ]
+      },
+      "sector2Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sector3Icon": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "hardhat",
+          "shield",
+          "star"
+        ]
+      },
+      "sector3Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sector4Icon": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "hardhat",
+          "shield",
+          "star"
+        ]
+      },
+      "sector4Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sector5Icon": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "hardhat",
+          "shield",
+          "star"
+        ]
+      },
+      "sector5Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sectors": {
+        "kind": "list",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionSectorsRadial": {
+    "label": "Sectors Radial",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "centerLogo": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "centerTagline": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectors": {
+        "kind": "list",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionSectorsSplitFeature": {
+    "label": "Sectors Split Feature",
+    "fields": {
+      "featuredDescription": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "featuredImage": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "featuredTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "otherSector1": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "otherSector2": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "otherSector3": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "otherSector4": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "otherSectors": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      }
+    }
+  },
+  "ConstructionSectorsTabbed": {
+    "label": "Sectors Tabbed",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "tab1Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "tab1Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "tab2Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "tab2Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "tab3Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "tab3Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "tabs": {
+        "kind": "list",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionServicesGrid": {
+    "label": "Services Grid",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionSubtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "service1Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "service1Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "service2Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "service2Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "service3Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "service3Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "service4Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "service4Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "service5Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "service5Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "service6Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "service6Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "services": {
+        "kind": "list",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionSimpleContactForm": {
+    "label": "Simple Contact Form",
+    "fields": {
+      "heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "submitLabel": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionSocialFeedGrid": {
+    "label": "Social Feed Grid",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "post1Caption": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "post1Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "post1Platform": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "instagram",
+          "facebook",
+          "linkedin",
+          "youtube"
+        ]
+      },
+      "post2Caption": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "post2Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "post2Platform": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "instagram",
+          "facebook",
+          "linkedin",
+          "youtube"
+        ]
+      },
+      "post3Caption": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "post3Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "post3Platform": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "instagram",
+          "facebook",
+          "linkedin",
+          "youtube"
+        ]
+      },
+      "posts": {
+        "kind": "list",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionSocialFollowBanner": {
+    "label": "Social Follow Banner",
+    "fields": {
+      "facebookHandle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "followerCount": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "followerLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "instagramHandle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "linkedinHandle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "twitterHandle": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionSocialMedia": {
+    "label": "Social Media",
+    "fields": {
+      "facebookHandle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "instagramHandle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "linkedinHandle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionSubtitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "twitterHandle": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionSocialVideoHighlights": {
+    "label": "Social Video Highlights",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "highlight1Caption": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "highlight1Platform": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "instagram",
+          "facebook",
+          "linkedin",
+          "youtube"
+        ]
+      },
+      "highlight1Thumbnail": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "highlight2Caption": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "highlight2Platform": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "instagram",
+          "facebook",
+          "linkedin",
+          "youtube"
+        ]
+      },
+      "highlight2Thumbnail": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "highlight3Caption": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "highlight3Platform": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "instagram",
+          "facebook",
+          "linkedin",
+          "youtube"
+        ]
+      },
+      "highlight3Thumbnail": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "highlights": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      }
+    }
+  },
+  "ConstructionStatsStrip": {
+    "label": "Stats & Experience Strip",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "dark",
+          "accent",
+          "muted"
+        ]
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "stat1Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stat1Value": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stat2Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stat2Value": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stat3Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stat3Value": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stat4Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stat4Value": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stats": {
+        "kind": "list",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionTaglineStrip": {
+    "label": "Tagline Strip",
+    "fields": {
+      "brand": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "logoUrl": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "tagline": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionTeamCrew": {
+    "label": "Team & Crew",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "member1Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "member1Name": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "member1Role": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "member2Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "member2Name": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "member2Role": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "member3Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "member3Name": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "member3Role": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "member4Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "member4Name": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "member4Role": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "members": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionSubtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionTeamStats": {
+    "label": "Team Stats",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "crew1Name": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "crew1Photo": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "crew1YearsWithUs": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "crew2Name": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "crew2Photo": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "crew2YearsWithUs": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "crew3Name": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "crew3Photo": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "crew3YearsWithUs": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "crews": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "stat1Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stat1Value": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stat2Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stat2Value": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stat3Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stat3Value": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stats": {
+        "kind": "list",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionTestimonials": {
+    "label": "Testimonials",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "quote1Author": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "quote1Company": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "quote1Initials": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "quote1Text": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "quote2Author": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "quote2Company": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "quote2Initials": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "quote2Text": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "quote3Author": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "quote3Company": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "quote3Initials": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "quote3Text": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "quotes": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionTestimonialsCarousel": {
+    "label": "Testimonials Carousel",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "slides": {
+        "kind": "list",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionTestimonialsSlider": {
+    "label": "Testimonials Slider",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionEyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "slides": {
+        "kind": "list",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionTimelineHistory": {
+    "label": "Timeline History",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "entries": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "entry1Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "entry1Text": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "entry1Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "entry1Year": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "entry2Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "entry2Text": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "entry2Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "entry2Year": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "entry3Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "entry3Text": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "entry3Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "entry3Year": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "entry4Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "entry4Text": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "entry4Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "entry4Year": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "entry5Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "entry5Text": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "entry5Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "entry5Year": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "entry6Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "entry6Text": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "entry6Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "entry6Year": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "entry7Image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "entry7Text": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "entry7Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "entry7Year": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "subtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionTopBar": {
+    "label": "Top Bar",
+    "fields": {
+      "d1Address": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d1Email": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d1Link1Href": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "d1Link1Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d1Link2Href": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "d1Link2Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d1Link3Href": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "d1Link3Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d1Phone": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d1Social1Href": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "d1Social2Href": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "d1Social3Href": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "d1Social4Href": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "d2Item1Text": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d2Item2Text": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d2Item3Text": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d2Language": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d2TrackLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d3CtaHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "d3CtaLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d3Email": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d3Phone": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d3Tagline": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d4FaqHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "d4FaqLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d4HelpHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "d4HelpLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d4Language": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d4Social1Href": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "d4Social2Href": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "d4Social3Href": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "d4Social4Href": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "d4Tagline": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "d5FollowLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "primaryColor": {
+        "kind": "color",
+        "tab": "style"
+      },
+      "quaternaryColor": {
+        "kind": "color",
+        "tab": "style"
+      },
+      "secondaryColor": {
+        "kind": "color",
+        "tab": "style"
+      },
+      "tertiaryColor": {
+        "kind": "color",
+        "tab": "style"
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ]
+      },
+      "visible": {
+        "kind": "toggle",
+        "tab": "content",
+        "options": [
+          true,
+          false
+        ]
+      }
+    }
+  },
+  "ConstructionUrgencyBanner": {
+    "label": "Urgency Banner",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "accent",
+          "dark"
+        ]
+      },
+      "ctaHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "ctaLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "headline": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "phoneLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "phoneNumber": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionVideo": {
+    "label": "Video",
+    "fields": {
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionSubtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "thumbnail": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "videoUrl": {
+        "kind": "link",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionVideoGrid": {
+    "label": "Video Grid",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "video1Duration": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "video1Thumbnail": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "video1Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "video2Duration": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "video2Thumbnail": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "video2Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "video3Duration": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "video3Thumbnail": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "video3Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "videos": {
+        "kind": "list",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionVideoReel": {
+    "label": "Video Reel",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "caption": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "thumbnail": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "videoUrl": {
+        "kind": "link",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionVideoSplitStats": {
+    "label": "Video + Stats Split",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "stat1Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stat1Value": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stat2Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stat2Value": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stat3Label": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stat3Value": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "stats": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "thumbnail": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "videoUrl": {
+        "kind": "link",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionVideoTestimonials": {
+    "label": "Video Testimonials",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "testimonial1Name": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "testimonial1Quote": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "testimonial1Thumbnail": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "testimonial2Name": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "testimonial2Quote": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "testimonial2Thumbnail": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "testimonial3Name": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "testimonial3Quote": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "testimonial3Thumbnail": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "testimonials": {
+        "kind": "list",
+        "tab": "content"
+      }
+    }
+  },
+  "ConstructionWhyChooseUs": {
+    "label": "Why Choose Us",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "white",
+          "muted"
+        ]
+      },
+      "ctaHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "ctaLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      },
+      "point1Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "point1Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "point2Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "point2Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "point3Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "point3Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "point4Description": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "point4Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "points": {
+        "kind": "list",
+        "tab": "content"
+      },
+      "sectionSubtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ContactForm": {
+    "label": "Contact form",
+    "fields": {
+      "anchor": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "formSlug": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "ContentGrid": {
+    "label": "CMS content grid",
+    "fields": {
+      "columns": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "items": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "kind": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "team",
+          "testimonials",
+          "catalog",
+          "work",
+          "sectors",
+          "cases"
+        ]
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "source": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "module",
+          "block"
+        ]
+      }
+    }
+  },
+  "CustomComposedBlock": {
+    "label": "Custom Block",
+    "fields": {
+      "config": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "FaqList": {
+    "label": "FAQ list (CMS)",
+    "fields": {
+      "items": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "source": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "module",
+          "block"
+        ]
+      }
+    }
+  },
+  "FeatureCards": {
+    "label": "Feature Cards",
+    "fields": {
+      "cards": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionSubtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "custom",
+        "tab": "style"
+      }
+    }
+  },
+  "Footer": {
+    "label": "Footer",
+    "fields": {
+      "brand": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "copyright": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "links": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "logoUrl": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "menuLink": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "tagline": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "custom",
+        "tab": "style"
+      }
+    }
+  },
+  "GalleryGrid": {
+    "label": "Gallery (CMS)",
+    "fields": {
+      "columns": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "images": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "source": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "module",
+          "block"
+        ]
+      }
+    }
+  },
+  "Heading": {
+    "label": "Heading",
+    "fields": {
+      "align": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "left",
+          "center",
+          "right"
+        ]
+      },
+      "level": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "text": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "Hero": {
+    "label": "Hero",
+    "fields": {
+      "align": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "left",
+          "center",
+          "right"
+        ]
+      },
+      "ctaHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "ctaLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "primaryColor": {
+        "kind": "color",
+        "tab": "style"
+      },
+      "subtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "custom",
+        "tab": "style"
+      }
+    }
+  },
+  "Image": {
+    "label": "Image",
+    "fields": {
+      "alt": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "rounded": {
+        "kind": "toggle",
+        "tab": "content",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "src": {
+        "kind": "image",
+        "tab": "content"
+      }
+    }
+  },
+  "MedicalAppointmentCTA": {
+    "label": "Appointment CTA",
+    "fields": {
+      "headline": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "phoneNumber": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "primaryHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "primaryLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "secondaryHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "secondaryLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "subtext": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "custom",
+        "tab": "style"
+      }
+    }
+  },
+  "MedicalContactHours": {
+    "label": "Contact & Hours",
+    "fields": {
+      "address": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "email": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "emergencyNote": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hours": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "phone": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "custom",
+        "tab": "style"
+      }
+    }
+  },
+  "MedicalContactInfoCards": {
+    "label": "Contact Info Cards",
+    "fields": {
+      "cells": {
+        "kind": "textarea",
+        "tab": "content"
+      }
+    }
+  },
+  "MedicalDepartmentCards": {
+    "label": "Department Cards",
+    "fields": {
+      "departments": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionSubtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "custom",
+        "tab": "style"
+      }
+    }
+  },
+  "MedicalDoctorProfiles": {
+    "label": "Doctor Profiles",
+    "fields": {
+      "doctors": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionSubtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "custom",
+        "tab": "style"
+      }
+    }
+  },
+  "MedicalFAQ": {
+    "label": "Medical FAQ",
+    "fields": {
+      "items": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionSubtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "custom",
+        "tab": "style"
+      }
+    }
+  },
+  "MedicalHero": {
+    "label": "Medical Hero",
+    "fields": {
+      "align": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "left",
+          "center"
+        ]
+      },
+      "badge": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "ctaHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "ctaLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "headline": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "subheadline": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "custom",
+        "tab": "style"
+      }
+    }
+  },
+  "MedicalHeroSplit": {
+    "label": "Hero (split, two-line heading)",
+    "fields": {
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "headingLine1": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "headingLine2": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "primaryColor": {
+        "kind": "color",
+        "tab": "style"
+      },
+      "primaryHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "primaryLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "secondaryHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "secondaryLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "subtext": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "custom",
+        "tab": "style"
+      }
+    }
+  },
+  "MedicalInsuranceStrip": {
+    "label": "Insurance / Accreditation Strip",
+    "fields": {
+      "heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "logos": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "note": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "custom",
+        "tab": "style"
+      }
+    }
+  },
+  "MedicalPatientTestimonials": {
+    "label": "Patient Testimonials",
+    "fields": {
+      "sectionSubtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "testimonials": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "custom",
+        "tab": "style"
+      }
+    }
+  },
+  "MedicalServicesList": {
+    "label": "Medical Services List",
+    "fields": {
+      "sectionSubtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sectionTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "services": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "custom",
+        "tab": "style"
+      }
+    }
+  },
+  "MedicalTopNav": {
+    "label": "Top Nav (topbar + sticky nav)",
+    "fields": {
+      "brand": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "ctaHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "ctaLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hours": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "logoUrl": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "navLinks": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "phone": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "primaryColor": {
+        "kind": "color",
+        "tab": "style"
+      },
+      "variant": {
+        "kind": "custom",
+        "tab": "style"
+      },
+      "welcomeText": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "NavBar": {
+    "label": "Nav Bar",
+    "fields": {
+      "brand": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "ctaHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "ctaLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "links": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "logoUrl": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "menuLink": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "primaryColor": {
+        "kind": "color",
+        "tab": "style"
+      },
+      "variant": {
+        "kind": "custom",
+        "tab": "style"
+      }
+    }
+  },
+  "Section": {
+    "label": "Section",
+    "fields": {
+      "background": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "none",
+          "muted",
+          "accent"
+        ]
+      },
+      "content": {
+        "kind": "slot",
+        "tab": "content"
+      },
+      "padding": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      }
+    }
+  },
+  "Spacer": {
+    "label": "Spacer",
+    "fields": {
+      "size": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "sm",
+          "md",
+          "lg",
+          "xl"
+        ]
+      }
+    }
+  },
+  "StatsStrip": {
+    "label": "Stats Strip",
+    "fields": {
+      "stats": {
+        "kind": "textarea",
+        "tab": "content"
+      }
+    }
+  },
+  "TaglineStrip": {
+    "label": "Tagline Strip",
+    "fields": {
+      "accentColor": {
+        "kind": "color",
+        "tab": "style"
+      },
+      "brand": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "ctaHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "ctaLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "headline": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "highlightPhrase": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "logoUrl": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "primaryColor": {
+        "kind": "color",
+        "tab": "style"
+      },
+      "subtext": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "custom",
+        "tab": "style"
+      }
+    }
+  },
+  "Text": {
+    "label": "Text",
+    "fields": {
+      "align": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "left",
+          "center",
+          "right"
+        ]
+      },
+      "muted": {
+        "kind": "toggle",
+        "tab": "content",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "text": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "custom",
+        "tab": "style"
+      }
+    }
+  }
+}

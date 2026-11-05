@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { composePacks } from '@/app/admin/page-builder/packs/compose'
-import type { ComponentPack } from '@/app/admin/page-builder/packs/types'
+import { composePacks } from '@/frontend/blocks/packs/compose'
+import type { ComponentPack } from '@/frontend/blocks/packs/types'
 
 const root = {
   fields: { title: { type: 'text' as const } },

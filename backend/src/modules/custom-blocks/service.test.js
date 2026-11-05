@@ -121,6 +121,37 @@ describe('updateCustomBlock', () => {
   });
 });
 
+describe('updateCustomBlock: version (linked sections)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockPrisma.customBlockTemplate.updateMany.mockResolvedValue({ count: 1 });
+  });
+  const dataOfUpdate = () => mockPrisma.customBlockTemplate.updateMany.mock.calls[0][0].data;
+  // first findFirst = the current config, second = the row returned after the update
+  const current = (config) =>
+    mockPrisma.customBlockTemplate.findFirst
+      .mockResolvedValueOnce({ config })
+      .mockResolvedValueOnce({ id: 'cb-1', name: 'n' });
+
+  it('a changed config bumps the version', async () => {
+    current(CONFIG);
+    await service.updateCustomBlock('cb-1', 'proj-1', { config: { ...CONFIG, settings: { padding: 'lg' } } }, 'u');
+    expect(dataOfUpdate().version).toEqual({ increment: 1 });
+  });
+
+  it('saving the same config again is not a new version', async () => {
+    current(CONFIG);
+    await service.updateCustomBlock('cb-1', 'proj-1', { config: JSON.parse(JSON.stringify(CONFIG)) }, 'u');
+    expect(dataOfUpdate()).not.toHaveProperty('version');
+  });
+
+  it('renaming or changing status does not bump it', async () => {
+    mockPrisma.customBlockTemplate.findFirst.mockResolvedValue({ id: 'cb-1', name: 'n' });
+    await service.updateCustomBlock('cb-1', 'proj-1', { name: 'Renamed', status: 'PUBLISHED' }, 'u');
+    expect(dataOfUpdate()).not.toHaveProperty('version');
+  });
+});
+
 describe('duplicateCustomBlock', () => {
   beforeEach(() => vi.clearAllMocks());
 

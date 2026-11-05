@@ -1,104 +1,105 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '../utils'
-import CompanyDetailsPage from '@/app/admin/website-details/page'
+import WebsiteDetailsPage from '@/app/admin/website-details/page'
 
 const h = vi.hoisted(() => ({
   get: vi.fn(),
+  put: vi.fn(),
   post: vi.fn(),
   push: vi.fn(),
-  toast: vi.fn(),
-  hasLogo: { v: true },
   cont: vi.fn(),
-  contPending: { v: false },
+  identity: { v: {} as Record<string, string> },
 }))
 
-vi.mock('@/lib/axios', () => ({ default: { get: h.get, post: h.post } }))
-vi.mock('@/hooks/use-toast', () => ({ toast: h.toast, useToast: () => ({ toasts: [] }) }))
+vi.mock('@/lib/axios', () => ({ default: { get: h.get, put: h.put, post: h.post } }))
+vi.mock('@/hooks/use-toast', () => ({ toast: vi.fn(), useToast: () => ({ toasts: [] }) }))
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: h.push }) }))
-vi.mock('@/hooks/useDefaultProjectId', () => ({
+vi.mock('@/admin/hooks/useDefaultProjectId', () => ({
   useDefaultProjectId: () => ({ projectId: 'proj-1', isLoading: false }),
 }))
-vi.mock('@/components/shared/ModuleGuard', () => ({ ModuleGuard: ({ children }: any) => children }))
-vi.mock('@/components/shared/PermissionGuard', () => ({
+vi.mock('@/hooks/useIdentity', () => ({
+  useIdentity: () => ({ identity: h.identity.v, isLoading: false }),
+}))
+vi.mock('@/admin/hooks/useSiteHomeHref', () => ({ useSiteHomeHref: () => null }))
+vi.mock('@/admin/components/shared/ModuleGuard', () => ({
+  ModuleGuard: ({ children }: any) => children,
+}))
+vi.mock('@/admin/components/shared/PermissionGuard', () => ({
   PermissionGuard: ({ children }: any) => children,
 }))
-vi.mock('@/hooks/useTemplateEngine', () => ({
-  useAdvanceStage: () => ({ mutate: vi.fn() }),
-  useUploadLogo: () => ({ mutate: vi.fn(), isPending: false }),
+vi.mock('@/app/admin/settings/_components/TypeSettingsForm', () => ({
+  TypeSettingsForm: ({ slug }: { slug: string }) => <div data-testid="type-form">{slug}</div>,
+}))
+vi.mock('@/admin/hooks/useTemplateEngine', () => ({
   useTemplateEngineRuns: () => ({ data: [{ id: 'run-1', stages: [] }] }),
-  useBrandKit: () => ({
-    data: { logo_media_id: h.hasLogo.v ? 'm1' : null },
-    isLoading: false,
-  }),
-  useContinueToPalette: () => ({ mutate: h.cont, isPending: h.contPending.v }),
+  useContinueToPalette: () => ({ mutate: h.cont, isPending: false }),
 }))
 
-const field = (slug: string, name: string, value = '') => ({
-  id: slug,
-  slug,
-  field_name: name,
-  input_type: 'text',
-  value,
-  alt_text: null,
-})
+const FULL = {
+  app_name: 'Acme Pvt Ltd',
+  logo_light: 'https://minio.test/logo.png',
+  contact_email: 'hello@acme.com',
+  contact_phone: '+91 99999 00000',
+  contact_address: '1 Main Rd, Hyderabad',
+}
 
 beforeEach(() => {
   vi.clearAllMocks()
-  h.hasLogo.v = true
-  h.contPending.v = false
-  h.get.mockImplementation(async (url: string) => {
-    if (url.includes('by-type/brand-profile'))
-      return {
-        data: {
-          data: {
-            type: { id: 't1', slug: 'brand-profile' },
-            fields: [field('brand-profile-company-name', 'Company name', 'Acme')],
-          },
-        },
-      }
-    return { data: { data: { media: { url: null } } } }
-  })
-  h.post.mockResolvedValue({ data: { data: {} } })
+  h.identity.v = { ...FULL }
 })
 
-const clickSave = async () => {
-  await screen.findByDisplayValue('Acme') // wait until the saved company name has loaded
-  const save = await screen.findByRole('button', { name: 'Save' })
-  fireEvent.click(save)
-}
-
-describe('Company Details → Next → Color Palette', () => {
-  it('shows no Next button until the details are saved', async () => {
-    render(<CompanyDetailsPage />)
-    await screen.findByRole('button', { name: 'Save' })
-    expect(screen.queryByRole('button', { name: /Next/ })).toBeNull()
+describe('Website Details: company info comes from Identity, not a second form (single source)', () => {
+  it('has no company-name, email, phone, address or logo inputs, and never reads the legacy brand-profile fields', async () => {
+    render(<WebsiteDetailsPage />)
+    expect(await screen.findByText('Company details')).toBeTruthy()
+    expect(screen.queryByRole('textbox')).toBeNull() // nothing to type here
+    expect(screen.queryByText(/upload logo|replace file/i)).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Save' })).toBeNull()
+    expect(h.get).not.toHaveBeenCalledWith(expect.stringContaining('brand-profile'))
+    expect(h.put).not.toHaveBeenCalled()
   })
 
-  it('after Save shows Next, which continues to the Color Palette page', async () => {
+  it('shows the Identity values read-only, with a link to edit them in Identity', async () => {
+    render(<WebsiteDetailsPage />)
+    expect(await screen.findByText('Acme Pvt Ltd')).toBeTruthy()
+    expect(screen.getByText('hello@acme.com')).toBeTruthy()
+    expect(screen.getByText('1 Main Rd, Hyderabad')).toBeTruthy()
+    expect(screen.getByAltText('Company logo').getAttribute('src')).toBe(FULL.logo_light)
+    expect(screen.getByRole('link', { name: /edit in identity/i }).getAttribute('href')).toBe(
+      '/admin/settings/identity'
+    )
+  })
+
+  it('keeps the website-specific settings (Website Content) on the page', async () => {
+    render(<WebsiteDetailsPage />)
+    expect((await screen.findByTestId('type-form')).textContent).toBe('website-content')
+  })
+})
+
+describe('Website Details → Next → Color Palette', () => {
+  it('Next continues to the Color Palette page when Identity has a name and a logo', async () => {
     h.cont.mockImplementation((_run: unknown, opts: { onSuccess: () => void }) => opts.onSuccess())
-    render(<CompanyDetailsPage />)
-    await clickSave()
-    const next = await screen.findByRole('button', { name: /Next/ })
-    fireEvent.click(next)
+    render(<WebsiteDetailsPage />)
+    fireEvent.click(await screen.findByRole('button', { name: /Next: Color Palette/ }))
     await waitFor(() =>
       expect(h.push).toHaveBeenCalledWith('/admin/template-engine/projects/proj-1/palette')
     )
   })
 
-  it('without a logo the Next button is disabled and says why', async () => {
-    h.hasLogo.v = false
-    render(<CompanyDetailsPage />)
-    await clickSave()
-    const next = await screen.findByRole('button', { name: /Next/ })
+  it('without a logo Next is disabled and points to Identity', async () => {
+    h.identity.v = { app_name: 'Acme' }
+    render(<WebsiteDetailsPage />)
+    const next = await screen.findByRole('button', { name: /Next: Color Palette/ })
     expect((next as HTMLButtonElement).disabled).toBe(true)
-    expect(screen.getByText(/Upload your logo/)).toBeTruthy()
+    expect(screen.getByText(/Logo missing/)).toBeTruthy()
+    expect(screen.getByText(/Add the missing details in Identity/)).toBeTruthy()
   })
 
-  it('editing again hides Next until the next Save', async () => {
-    render(<CompanyDetailsPage />)
-    await clickSave()
-    await screen.findByRole('button', { name: /Next/ })
-    fireEvent.change(screen.getByDisplayValue('Acme'), { target: { value: 'Acme 2' } })
-    await waitFor(() => expect(screen.queryByRole('button', { name: /Next/ })).toBeNull())
+  it('without a company name Next is disabled', async () => {
+    h.identity.v = { logo_light: 'https://x/logo.png' }
+    render(<WebsiteDetailsPage />)
+    const next = await screen.findByRole('button', { name: /Next: Color Palette/ })
+    expect((next as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByText(/Company name missing/)).toBeTruthy()
   })
 })

@@ -3,9 +3,9 @@
 import { Sparkles, CreditCard } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/axios'
-import { useAdvanceStage, useRetryStage } from '@/hooks/useTemplateEngine'
+import { useAdvanceStage, useRetryStage } from '@/admin/hooks/useTemplateEngine'
 import { StageShell } from './StageShell'
-import type { TemplateEngineRun } from '@/types/template-engine.types'
+import type { TemplateEngineRun } from '@/admin/types/template-engine.types'
 
 interface CreditsBalance {
   balance_mc: string

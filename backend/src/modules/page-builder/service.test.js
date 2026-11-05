@@ -4,7 +4,7 @@ const create = vi.fn(async ({ data }) => ({ id: 'p1', title: data.title, project
 const update = vi.fn(async ({ data }) => ({ id: 'p1', title: 't', ...data }));
 vi.mock('../../config/database.js', () => ({
   prisma: {
-    builderPage: { create: (a) => create(a), update: (a) => update(a), findFirst: async () => null },
+    builderPage: { create: (a) => create(a), update: (a) => update(a), findFirst: async () => ({ id: 'p1', title: 't', status: 'DRAFT', template_id: null }) },
     site: { findFirst: async () => ({ id: 'site-1' }) },
     detailPageTemplate: { findUnique: async () => null, update: vi.fn() },
   },

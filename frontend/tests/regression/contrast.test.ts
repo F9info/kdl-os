@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { contrastRatio } from '@/lib/contrast'
+import { contrastRatio } from '@/admin/lib/contrast'
 
 describe('contrastRatio', () => {
   it('is 21 for black on white and 1 for identical colours', () => {

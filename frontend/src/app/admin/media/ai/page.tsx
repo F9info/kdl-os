@@ -5,10 +5,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Pencil, Trash2, RotateCcw } from 'lucide-react'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { PermissionGuard } from '@/components/shared/PermissionGuard'
+import { PageHeader } from '@/admin/components/layout/PageHeader'
+import { PermissionGuard } from '@/admin/components/shared/PermissionGuard'
 import { Modal } from '@/components/shared/Modal'
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
+import { ConfirmDialog } from '@/admin/components/shared/ConfirmDialog'
 import { FormField } from '@/components/shared/FormField'
 import { ErrorAlert } from '@/components/shared/ErrorAlert'
 import { Button } from '@/components/ui/button'
@@ -30,7 +30,7 @@ import {
   type AiDriverDef,
   type AiProvider,
   type AiFeatureStatus,
-} from '@/types/media-ai.types'
+} from '@/admin/types/media-ai.types'
 
 function fieldLabel(key: string) {
   return key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())

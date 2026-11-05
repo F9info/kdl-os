@@ -1,7 +1,7 @@
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
-import { useTemplateEngineRuns, useCreateRun } from '@/hooks/useTemplateEngine'
+import { useTemplateEngineRuns, useCreateRun } from '@/admin/hooks/useTemplateEngine'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/hooks/use-toast'
@@ -14,7 +14,7 @@ import { CollateralStage } from '../../../_components/stages/CollateralStage'
 import { WebsiteStage } from '../../../_components/stages/WebsiteStage'
 import { PreflightStage } from '../../../_components/stages/PreflightStage'
 import { ExportStage } from '../../../_components/stages/ExportStage'
-import type { TemplateEngineRun } from '@/types/template-engine.types'
+import type { TemplateEngineRun } from '@/admin/types/template-engine.types'
 
 const STAGE_COMPONENTS: Record<string, React.ComponentType<{ run: TemplateEngineRun }>> = {
   intake: IntakeStage,
@@ -77,7 +77,7 @@ function NoRunPlaceholder({ stageSlug, projectId }: { stageSlug: string; project
         toast({
           variant: 'destructive',
           title: 'Failed to start run',
-          description: 'Could not create a Studio run. Please try again.',
+          description: 'Could not start the template setup. Please try again.',
         })
       },
     })
@@ -85,7 +85,7 @@ function NoRunPlaceholder({ stageSlug, projectId }: { stageSlug: string; project
 
   return (
     <div className="flex h-64 flex-col items-center justify-center gap-3 text-center">
-      <p className="text-sm font-medium">No Studio run exists for this project yet.</p>
+      <p className="text-sm font-medium">No template setup exists for this project yet.</p>
       <p className="text-xs text-muted-foreground max-w-xs">
         Start a run to begin the {stageSlug} stage.
       </p>
@@ -95,7 +95,7 @@ function NoRunPlaceholder({ stageSlug, projectId }: { stageSlug: string; project
         disabled={createRun.isPending}
         data-testid="btn-start-run"
       >
-        {createRun.isPending ? 'Starting…' : 'Start Studio run'}
+        {createRun.isPending ? 'Starting…' : 'Start template setup'}
       </Button>
     </div>
   )
