@@ -5,6 +5,7 @@ import { enqueueSiteBuild } from '../template-engine/site/queue.js';
 import { normalizeData } from '../../shared/numbered-families.js';
 import { removePageFromMenus } from '../menus/site-menus.js';
 import { unregisterFromWebsiteStage } from '../template-engine/site/unregister-page.js';
+import { ensureDefaultSite } from '../projects/sites.js';
 
 export const listPages = async () => {
   return prisma.builderPage.findMany({
@@ -51,9 +52,15 @@ export const getPublishedBySlug = async (slug) => {
   });
 };
 
+// Which pages a site serves: those assigned to it, plus (for the project's default site) pages that
+// predate sites and have no site yet. No site given = no filtering (project-wide, as before sites).
+const siteScope = (site) =>
+  site?.siteId ? { OR: [{ site_id: site.siteId }, ...(site.isDefault ? [{ site_id: null }] : [])] } : {};
+
 // Clean public URLs: "/" is the site's `home` page and "/<key>" its other pages, where <key> is the
 // page key the website stage recorded (slugified title). Falls back to a plain slug match.
-export const getPublishedBySiteKey = async (projectId, key) => {
+// `site` = { siteId, isDefault } from resolvePublicSite; it keeps one site's pages off another's host.
+export const getPublishedBySiteKey = async (projectId, key, site) => {
   const select = { slug: true, title: true, data: true, project_id: true };
   const stages = await prisma.templateEngineStage.findMany({
     where: { stage: 'WEBSITE', run: { projectId } },
@@ -61,11 +68,23 @@ export const getPublishedBySiteKey = async (projectId, key) => {
   });
   for (const stage of stages) {
     const id = stage.outputRef?.pageKeyToId?.[key];
-    const page = id && (await prisma.builderPage.findFirst({ where: { id, status: 'PUBLISHED', deleted_at: null }, select }));
+    const page =
+      id &&
+      (await prisma.builderPage.findFirst({
+        where: { id, status: 'PUBLISHED', deleted_at: null, ...siteScope(site) },
+        select,
+      }));
     if (page) return page;
   }
+  const bySlug = await prisma.builderPage.findFirst({
+    where: { slug: key, project_id: projectId, status: 'PUBLISHED', deleted_at: null, ...siteScope(site) },
+    select,
+  });
+  if (bySlug || key !== 'home' || !site?.siteId || site.isDefault) return bySlug;
+  // A landing site's "/" is its first published page (its slug is not literally "home").
   return prisma.builderPage.findFirst({
-    where: { slug: key, project_id: projectId, status: 'PUBLISHED', deleted_at: null },
+    where: { site_id: site.siteId, status: 'PUBLISHED', deleted_at: null },
+    orderBy: { created_at: 'asc' },
     select,
   });
 };
@@ -79,6 +98,7 @@ export const createPage = async ({ title, slug, data, project_id }, actorId) => 
       data: normalizeData(data ?? { root: { props: { title } }, content: [], zones: {} }),
       created_by: actorId,
       project_id,
+      site_id: await ensureDefaultSite(prisma, project_id),
     },
   });
   writeActivityAsync({

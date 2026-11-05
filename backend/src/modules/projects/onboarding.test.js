@@ -23,6 +23,7 @@ beforeEach(() => {
     findFirst: vi.fn().mockResolvedValue(null),
     create: vi.fn().mockResolvedValue({}),
   };
+  prisma.site = { findFirst: vi.fn().mockResolvedValue({ id: 'site-1' }) };
   prisma.builderPage = {
     create: vi.fn().mockImplementation(async ({ data }) => ({ id: `id-${data.slug}` })),
   };
@@ -51,6 +52,7 @@ describe('onboarding — answer', () => {
     expect(r.created).toEqual(['home', 'about', 'services', 'contact', 'faq']);
     expect(prisma.builderPage.create).toHaveBeenCalledTimes(5);
     const first = prisma.builderPage.create.mock.calls[0][0].data;
+    expect(first.site_id).toBe('site-1'); // pages join the project's default site
     expect(first).toMatchObject({
       slug: 'home',
       status: 'PUBLISHED',

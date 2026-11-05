@@ -5,6 +5,7 @@
 model SiteLayout {
   id         String   @id @default(cuid())
   project_id String   @unique
+  top_header Json     @default("{}")
   header     Json     @default("{}")
   footer     Json     @default("{}")
   created_at DateTime @default(now())

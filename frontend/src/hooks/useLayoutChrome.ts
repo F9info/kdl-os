@@ -7,15 +7,13 @@ import { construction } from '@/app/admin/page-builder/packs/construction'
 import {
   footerOverrides,
   headerFooterOverrides,
-  mergeLayoutSelection,
   customBlockIdOf,
-  readLocal,
   type SectionVariant,
   topHeaderOverrides,
-  websiteLayoutStorageKey,
   type LayoutSelection,
 } from '@/lib/website-layout-overrides'
 import { useWebsiteBrandContext } from './useWebsiteBrandContext'
+import { useSiteLayout } from './useSiteLayout'
 
 type BlockRender = (props: Record<string, unknown>) => ReactNode
 const TOP_HEADER_CONFIG = construction.components.ConstructionTopBar!
@@ -55,10 +53,9 @@ export function useLayoutChrome(projectId: string | null): {
   footerNode: ReactNode | null
 } {
   const brand = useWebsiteBrandContext(projectId ?? '')
+  const saved = useSiteLayout(projectId).selection
   const selection: LayoutSelection = projectId
-    ? mergeLayoutSelection(
-        readLocal<Partial<LayoutSelection>>(websiteLayoutStorageKey(projectId), {})
-      )
+    ? saved
     : {
         topHeader: { enabled: false, variant: '1' },
         header: { enabled: false, variant: '1' },

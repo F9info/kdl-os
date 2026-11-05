@@ -1,15 +1,17 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { ErrorAlert } from '@/components/shared/ErrorAlert'
 import { useAdvanceStage, useTemplateEngineRuns } from '@/hooks/useTemplateEngine'
 import { useWebsiteBrandContext } from '@/hooks/useWebsiteBrandContext'
+import { saveSiteLayout, siteLayoutKey, useSiteLayout } from '@/hooks/useSiteLayout'
 import { construction } from '@/app/admin/page-builder/packs/construction'
 import { ComposerProjectContext } from '@/app/admin/page-builder/packs/composer/atoms'
 import { renderComposedBlock } from '@/app/admin/page-builder/packs/composer/render-composed-block'
@@ -21,11 +23,8 @@ import { cn } from '@/lib/utils'
 import {
   footerOverrides,
   headerFooterOverrides,
-  mergeLayoutSelection,
   readLocal,
   topHeaderOverrides,
-  websiteLayoutStorageKey,
-  writeLocal,
   type BrandContext,
   type LayoutSelection,
   type SectionState,
@@ -385,10 +384,18 @@ export default function WebsiteLayoutPage() {
   const { data: runs, isLoading } = useTemplateEngineRuns(projectId)
   const run = runs?.[0]
   const advance = useAdvanceStage(run?.id ?? '', projectId)
-  const storageKey = websiteLayoutStorageKey(projectId)
-  const [selection, setSelection] = useState<LayoutSelection>(() =>
-    mergeLayoutSelection(readLocal<Partial<LayoutSelection>>(storageKey, {}))
-  )
+  const saved = useSiteLayout(projectId)
+  const [selection, setSelection] = useState<LayoutSelection>(saved.selection)
+  // Start from what is saved on the server, once it has loaded (not from the placeholder).
+  const seeded = useRef(false)
+  useEffect(() => {
+    if (!saved.isLoading && !seeded.current) {
+      seeded.current = true
+      setSelection(saved.selection)
+    }
+  }, [saved.isLoading, saved.selection])
+  const qc = useQueryClient()
+  const [saveError, setSaveError] = useState<unknown>(null)
 
   const brand = useWebsiteBrandContext(projectId)
 
@@ -405,8 +412,15 @@ export default function WebsiteLayoutPage() {
 
   const backHref = `/admin/template-engine/projects/${projectId}/website`
 
-  function handleCreate() {
-    writeLocal(storageKey, selection)
+  async function handleCreate() {
+    setSaveError(null)
+    try {
+      // Saved on the server first, so the choice survives a new browser and reaches every teammate.
+      qc.setQueryData(siteLayoutKey(projectId), await saveSiteLayout(projectId, selection))
+    } catch (err) {
+      setSaveError(err)
+      return
+    }
     const navigationPages = readLocal<string[]>(`te-website-ui:${projectId}:navigation`, [])
     advance.mutate(
       { stage: 'WEBSITE', body: { navigationPages, layout: selection } },
@@ -460,6 +474,7 @@ export default function WebsiteLayoutPage() {
         />
       </div>
 
+      <ErrorAlert error={saveError} />
       <div className="flex justify-end">
         <Button onClick={handleCreate} disabled={advance.isPending || !run}>
           {advance.isPending ? 'Creating…' : 'Create layout'}

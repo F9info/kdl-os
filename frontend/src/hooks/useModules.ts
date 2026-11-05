@@ -19,15 +19,17 @@ export function useModules() {
     return enabledModules.some((m) => m.slug === slug)
   }
 
-  const nav = enabledModules.flatMap((m) => m.nav)
+  // Menus show only what the chosen products need. isEnabled above still sees every enabled module.
+  const visible = enabledModules.filter((m) => !m.hidden_by_products)
+  const nav = visible.flatMap((m) => m.nav)
   // Parts of a bundle (CMS) are listed under the bundle, not as separate top-level items.
-  const nonCoreNav = enabledModules.filter((m) => !m.core && !m.parent).flatMap((m) => m.nav)
-  const bundles = enabledModules
-    .filter((b) => enabledModules.some((m) => m.parent === b.slug))
+  const nonCoreNav = visible.filter((m) => !m.core && !m.parent).flatMap((m) => m.nav)
+  const bundles = visible
+    .filter((b) => visible.some((m) => m.parent === b.slug))
     .map((b) => ({
       slug: b.slug,
       name: b.name,
-      items: enabledModules.filter((m) => m.parent === b.slug).flatMap((m) => m.nav),
+      items: visible.filter((m) => m.parent === b.slug).flatMap((m) => m.nav),
     }))
 
   return { enabledModules, isEnabled, nav, nonCoreNav, bundles, isLoading }

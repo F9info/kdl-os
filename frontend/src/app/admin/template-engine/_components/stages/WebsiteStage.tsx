@@ -33,7 +33,7 @@ import { Input } from '@/components/ui/input'
 import { MediaPicker } from '@/components/shared/MediaPicker'
 import { cn } from '@/lib/utils'
 import { loadGoogleFont, loadCustomFontFace } from '@/lib/load-google-font'
-import { websiteLayoutStorageKey, mergeLayoutSelection } from '@/lib/website-layout-overrides'
+import { useFetchSiteLayout } from '@/hooks/useSiteLayout'
 import {
   useAdvanceStage,
   useBrandKit,
@@ -277,16 +277,18 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
   // of its own) — read it here, the one place that actually triggers page
   // generation, so a run builds the pages the user picked instead of always
   // the default Home/About/Contact set.
-  function runWebsiteAssembly() {
+  const fetchSiteLayout = useFetchSiteLayout()
+  async function runWebsiteAssembly() {
     const navigationPages = readLocal<string[]>(`te-website-ui:${run.projectId}:navigation`, [])
     // Without this, a page only ever touched through Navigation (not the
     // dedicated Website Layout page) never gets a header/footer design
     // applied at all — it's built from the seeder's raw, unbranded
     // NavBar/Footer instead of the project's actual chosen
     // ConstructionHeader/Footer, and looks like a different site. Reading
-    // the same stored selection the Layout page itself uses keeps every
-    // page in sync with whatever design is actually configured.
-    const layout = mergeLayoutSelection(readLocal(websiteLayoutStorageKey(run.projectId), {}))
+    // the same saved selection the Layout page itself uses keeps every
+    // page in sync with whatever design is actually configured. Read fresh from the
+    // server: sending defaults here would overwrite the saved design on every page.
+    const layout = await fetchSiteLayout(run.projectId)
     advance.mutate({ stage: 'WEBSITE', body: { navigationPages, layout } })
   }
 

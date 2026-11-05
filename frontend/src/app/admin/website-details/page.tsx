@@ -15,6 +15,7 @@ import {
   useUploadLogo,
 } from '@/hooks/useTemplateEngine'
 import { useSiteHomeHref } from '@/hooks/useSiteHomeHref'
+import { buildIdentityPatch } from '@/lib/company-identity'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { ModuleGuard } from '@/components/shared/ModuleGuard'
 import { PermissionGuard } from '@/components/shared/PermissionGuard'
@@ -79,8 +80,9 @@ function CompanyDetailsContent() {
     })
   }, [fields])
 
-  // Website pages bake brand name/logo in at generation time, so re-sync an
-  // already-built site after any change. No-op until the Website stage has run.
+  // Name and logo go live through Application Identity (T3.1), so they need no website re-sync.
+  // Phone, email and address are still baked into page JSON: re-sync an already-built site for
+  // those. No-op until the Website stage has run.
   function resyncWebsiteIfBuilt() {
     if (latestRun?.stages.find((st) => st.stage === 'WEBSITE')?.status !== 'DONE') return
     let navigationPages: string[] = []
@@ -93,18 +95,53 @@ function CompanyDetailsContent() {
     advance.mutate({ stage: 'WEBSITE', body: { navigationPages } })
   }
 
+  // Copies the changed values into Identity. Returns false when that is not possible (no
+  // settings:edit, request failed) so the caller can fall back to the old website re-sync.
+  async function saveToIdentity(patch: Record<string, string>): Promise<boolean> {
+    if (Object.keys(patch).length === 0) return true
+    try {
+      await api.put('/identity', patch)
+      qc.invalidateQueries({ queryKey: ['app-config'] })
+      qc.invalidateQueries({ queryKey: ['identity'] })
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  // The legacy `logo` field mirrors the brand-kit logo (storage path); Identity's light logo follows it.
+  async function syncLogoToIdentity() {
+    let ok = false
+    try {
+      const r = await api.get('/setting-fields/value/logo')
+      const path = (r.data.data.field as SettingField | null)?.value
+      ok = !!path && (await saveToIdentity({ logo_light: path }))
+    } catch {
+      ok = false
+    }
+    if (!ok) resyncWebsiteIfBuilt()
+  }
+
   const saveMutation = useMutation({
-    mutationFn: () => {
-      const values = fields
-        .filter((f) => f.slug !== 'brand-profile-logo') // logo is uploaded via brand-kit below
-        .map((f) => ({ id: f.id, value: form[f.id]?.value ?? '', alt_text: null }))
-      return api.post('/setting-fields/values', { type_id: data!.type.id, values })
+    mutationFn: async () => {
+      const editable = fields.filter((f) => f.slug !== 'brand-profile-logo') // logo is uploaded via brand-kit below
+      const values = editable.map((f) => ({
+        id: f.id,
+        value: form[f.id]?.value ?? '',
+        alt_text: null,
+      }))
+      await api.post('/setting-fields/values', { type_id: data!.type.id, values })
+      return buildIdentityPatch(
+        Object.fromEntries(editable.map((f) => [f.slug, f.value ?? ''])),
+        Object.fromEntries(editable.map((f) => [f.slug, form[f.id]?.value ?? '']))
+      )
     },
-    onSuccess: () => {
+    onSuccess: async ({ patch, contactChanged }) => {
       qc.invalidateQueries({ queryKey: ['setting-fields-by-type', BRAND_PROFILE_TYPE_SLUG] })
       toast({ title: 'Company details saved' })
       setSaved(true)
-      resyncWebsiteIfBuilt()
+      const synced = await saveToIdentity(patch)
+      if (contactChanged || !synced) resyncWebsiteIfBuilt()
     },
     onError: () => toast({ title: 'Could not save company details', variant: 'destructive' }),
   })
@@ -233,7 +270,7 @@ function CompanyDetailsContent() {
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0]
-                if (file) uploadLogo.mutate(file, { onSuccess: resyncWebsiteIfBuilt })
+                if (file) uploadLogo.mutate(file, { onSuccess: () => void syncLogoToIdentity() })
                 e.target.value = ''
               }}
             />

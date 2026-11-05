@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { Render } from '@puckeditor/core'
 import { applyHeaderOverlay } from '@/lib/header-overlay'
+import { applyIdentity } from '@/lib/apply-identity'
+import { applySiteLayout } from '@/lib/apply-site-layout'
+import { useIdentity } from '@/hooks/useIdentity'
 import { config } from '@/app/admin/page-builder/puck.config'
 import { getPageBySiteKey } from '@/app/admin/page-builder/store'
 
@@ -21,6 +24,7 @@ export function SitePage({
   fallbackToLogin?: boolean
 }) {
   const router = useRouter()
+  const { identity, isLoading: identityLoading } = useIdentity()
   const { data: page, isLoading } = useQuery({
     queryKey: ['public-site-page', pageKey],
     queryFn: () => getPageBySiteKey(pageKey),
@@ -31,7 +35,9 @@ export function SitePage({
     if (missing && fallbackToLogin) router.replace('/login')
   }, [missing, fallbackToLogin, router])
 
-  if (isLoading || (missing && fallbackToLogin)) return <div className="min-h-screen" />
+  // Wait for identity too, so the baked brand never flashes before the live one.
+  if (isLoading || identityLoading || (missing && fallbackToLogin))
+    return <div className="min-h-screen" />
   if (!page) {
     return (
       <div className="min-h-screen flex items-center justify-center text-slate-500">
@@ -42,7 +48,7 @@ export function SitePage({
   return (
     <Render
       config={config}
-      data={applyHeaderOverlay(page.data)}
+      data={applyHeaderOverlay(applyIdentity(applySiteLayout(page.data, page.layout), identity))}
       metadata={{ pageTitle: page.title, projectId: page.projectId ?? undefined }}
     />
   )

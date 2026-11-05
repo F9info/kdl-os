@@ -40,6 +40,8 @@ export interface EnabledModule {
   core: boolean
   /** Slug of the enabled bundle (e.g. 'cms') this module is a hidden part of. */
   parent?: string | null
+  /** Nav-only: the chosen products do not need this module, so the sidebar hides it (T2.4). */
+  hidden_by_products?: boolean
   nav: ModuleNavItem[]
 }
 

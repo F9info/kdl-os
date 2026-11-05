@@ -19,6 +19,7 @@ const { mockTx, mockPrisma } = vi.hoisted(() => {
     projectMember: {
       create: vi.fn(),
     },
+    site: { findFirst: vi.fn(async () => ({ id: 'site-1' })), create: vi.fn() },
     creditBalance: {
       create: vi.fn(),
     },
@@ -105,6 +106,20 @@ describe('(a) createProject seeds starter credits inside the transaction', () =>
 });
 
 // ─── (b) PROJECT_STARTER_CREDITS env var ──────────────────────────────────────
+
+describe('(a2) every new project gets its default site inside the transaction', () => {
+  it('ensures the default site for the new project', async () => {
+    vi.clearAllMocks();
+    setupNewProject();
+    mockTx.site.findFirst.mockResolvedValue(null);
+    mockTx.project.findFirst = vi.fn().mockResolvedValue({ name: 'Test' });
+    mockTx.site.create.mockResolvedValue({ id: 'site-new' });
+    await service.createProject({ name: 'Test', slug: 'test', actorId: 'user-1' });
+    expect(mockTx.site.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ project_id: 'proj-1', type: 'WEBSITE', slug: 'main', is_default: true }) })
+    );
+  });
+});
 
 describe('(b) PROJECT_STARTER_CREDITS env var takes priority over app setting', () => {
   beforeEach(() => {

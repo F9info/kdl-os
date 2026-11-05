@@ -1,0 +1,22 @@
+{
+  "slug": "landing",
+  "name": "Landing Pages",
+  "version": "1.0.0",
+  "description": "Campaign and product landing pages. Each landing page is its own site with its own slug, built with the shared page builder.",
+  "core": false,
+  "visibleInCatalog": true,
+  "apiPrefix": "/api/landing",
+  "permissions": ["landing"],
+  "nav": [
+    {
+      "label": "Landing Pages",
+      "path": "/admin/landing-pages",
+      "icon": "LayoutTemplate",
+      "permission": "landing:view"
+    }
+  ],
+  "dependsOn": ["page-builder", "forms"],
+  "conflictsWith": [],
+  "queues": [],
+  "env": []
+}

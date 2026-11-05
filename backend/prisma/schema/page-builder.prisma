@@ -19,6 +19,9 @@ model BuilderPage {
   created_at DateTime   @default(now())
   updated_at DateTime   @updatedAt
   project_id String?
+  // The site this page belongs to (null only for pages made before sites, or outside any project).
+  site_id    String?
+  site       Site?      @relation(fields: [site_id], references: [id], onDelete: SetNull)
   // Set only for a Details Page instance (e.g. one sector's page) whose
   // structure/design is governed by a shared DetailPageTemplate instead of
   // this row's own `data` — see detail-pages.prisma. `entity_id` is the
@@ -28,6 +31,7 @@ model BuilderPage {
 
   @@index([status])
   @@index([project_id])
+  @@index([site_id])
   @@index([template_id])
   @@map("builder_pages")
 }

@@ -6,6 +6,7 @@ import { variantField } from '../variant-field'
 import { imageField } from '../image-field'
 import { InlineEditableText } from '../inline-editable-text'
 import { NavLinks, flatten, useNavItems } from './nav-items'
+import { ContactFormBlock } from './contact-form'
 
 type Align = 'left' | 'center' | 'right'
 
@@ -131,6 +132,7 @@ type GeneralProps = {
     copyright: string
   }
   FaqList: { sectionTitle: string; source: 'module' | 'block'; items: string }
+  ContactForm: { formSlug: string; anchor: string; title: string }
   GalleryGrid: {
     sectionTitle: string
     source: 'module' | 'block'
@@ -171,7 +173,10 @@ const typedCategories: NonNullable<Config<GeneralProps>['categories']> = {
   bottombar: { title: 'Footer', components: ['Footer'] },
   counters: { title: 'Counters', components: ['StatsStrip'] },
   taglinestrip: { title: 'Tagline Strip', components: ['TaglineStrip'] },
-  content: { title: 'Content (CMS)', components: ['FaqList', 'GalleryGrid', 'ContentGrid'] },
+  content: {
+    title: 'Content (CMS)',
+    components: ['FaqList', 'ContactForm', 'GalleryGrid', 'ContentGrid'],
+  },
 }
 
 // ─── Shared helpers (mirrors the pipe-delimited-line pattern the medical/
@@ -1403,6 +1408,23 @@ const typedComponents: Config<GeneralProps>['components'] = {
             ))}
           </div>
         </section>
+      )
+    },
+  },
+  // Shows a form from the Forms module (Admin > Forms) by its slug. A button elsewhere on the page
+  // can point at `#<anchor>` to scroll here.
+  ContactForm: {
+    label: 'Contact form',
+    fields: { formSlug: { type: 'text' }, anchor: { type: 'text' }, title: { type: 'text' } },
+    defaultProps: { formSlug: 'contact', anchor: 'contact', title: 'Get in touch' },
+    render: function ContactFormRender({ formSlug, anchor, title, puck }) {
+      return (
+        <ContactFormBlock
+          formSlug={formSlug}
+          anchor={anchor}
+          title={title}
+          readOnly={Boolean(puck?.isEditing)}
+        />
       )
     },
   },

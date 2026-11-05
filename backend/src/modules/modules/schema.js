@@ -23,3 +23,17 @@ export const resolveConflictsSchema = z.object({
     .optional()
     .default({}),
 });
+
+// ?products=website,landing previews a selection (comma list); omitted = the stored selection.
+export const graphQuerySchema = z.object({
+  query: z.object({
+    products: z
+      .string()
+      .optional()
+      .transform((v) => (v === undefined ? undefined : v.split(',').map((p) => p.trim()).filter(Boolean))),
+  }),
+});
+
+export const productsBodySchema = z.object({
+  body: z.object({ products: z.array(z.string().regex(/^[a-z0-9-]+$/)).max(20) }),
+});

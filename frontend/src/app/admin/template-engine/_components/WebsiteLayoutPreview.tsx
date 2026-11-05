@@ -3,15 +3,12 @@
 import type { ReactNode } from 'react'
 import { construction } from '@/app/admin/page-builder/packs/construction'
 import { useCustomSlotNode } from '@/hooks/useLayoutChrome'
+import { useSiteLayout } from '@/hooks/useSiteLayout'
 import { useWebsiteBrandContext } from '@/hooks/useWebsiteBrandContext'
 import {
   footerOverrides,
   headerFooterOverrides,
-  mergeLayoutSelection,
-  readLocal,
   topHeaderOverrides,
-  websiteLayoutStorageKey,
-  type LayoutSelection,
 } from '@/lib/website-layout-overrides'
 
 // Same non-null cast/rationale as website/layout/page.tsx's TOP_HEADER_CONFIG
@@ -30,8 +27,7 @@ const FOOTER_CONFIG = construction.components.ConstructionFooter!
 // the Header/Footer/Top Header renders either side of it.
 export function WebsiteLayoutPreview({ projectId }: { projectId: string }) {
   const brand = useWebsiteBrandContext(projectId)
-  const stored = readLocal<Partial<LayoutSelection>>(websiteLayoutStorageKey(projectId), {})
-  const selection = mergeLayoutSelection(stored)
+  const { selection } = useSiteLayout(projectId)
 
   const customTop = useCustomSlotNode(projectId, 'top-bar', selection.topHeader.variant)
   const customHeader = useCustomSlotNode(projectId, 'header', selection.header.variant)

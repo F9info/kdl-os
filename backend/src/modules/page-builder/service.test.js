@@ -5,6 +5,7 @@ const update = vi.fn(async ({ data }) => ({ id: 'p1', title: 't', ...data }));
 vi.mock('../../config/database.js', () => ({
   prisma: {
     builderPage: { create: (a) => create(a), update: (a) => update(a), findFirst: async () => null },
+    site: { findFirst: async () => ({ id: 'site-1' }) },
     detailPageTemplate: { findUnique: async () => null, update: vi.fn() },
   },
 }));
@@ -25,6 +26,7 @@ describe('page-builder writes fold numbered slots into array props (seeders, API
     const saved = create.mock.calls[0][0].data.data;
     expect(saved.content[0].props.faqs).toEqual([{ question: 'Q', answer: 'A' }]);
     expect(saved.content[0].props).not.toHaveProperty('faq1Question');
+    expect(create.mock.calls[0][0].data.site_id).toBe('site-1'); // joins the project's default site
   });
 
   it('updatePage', async () => {

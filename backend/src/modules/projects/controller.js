@@ -1,6 +1,7 @@
 import { successResponse, errorResponse } from '../../shared/utils/response.js';
 import { getOnboarding, answerOnboarding } from './onboarding.js';
-import { listProjects, getProject, createProject, updateProject, deleteProject } from './service.js';
+import { getSiteLayout, saveSiteLayout } from './layout.js';
+import { listSites, listProjects, getProject, createProject, updateProject, deleteProject } from './service.js';
 
 export const handleList = async (req, res, next) => {
   try {
@@ -67,6 +68,31 @@ export const handleAnswerOnboarding = async (req, res, next) => {
     successResponse(res, await answerOnboarding(frontend, req.user?.id ?? null));
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+export const handleGetLayout = async (req, res, next) => {
+  try {
+    successResponse(res, { layout: await getSiteLayout(req.params.id) });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const handleSaveLayout = async (req, res, next) => {
+  try {
+    successResponse(res, { layout: await saveSiteLayout(req.params.id, req.validated.body) });
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+export const handleListSites = async (req, res, next) => {
+  try {
+    successResponse(res, { sites: await listSites(req.params.id) });
+  } catch (err) {
     next(err);
   }
 };

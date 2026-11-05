@@ -1,4 +1,5 @@
 import { prisma } from '../../config/database.js';
+import { ensureDefaultSite } from './sites.js';
 
 // Default starter credit grant for new projects: 100 credits (100_000_000 µc).
 // Covers: brand.inference (≤10 cr) + guidelines PDF (5 cr) + ≥15 collateral renders @ 5 cr each.
@@ -118,6 +119,9 @@ export async function createProject({ name, slug, is_default, actorId }) {
       select: { id: true, name: true, slug: true, is_default: true },
     });
 
+    // Every project starts with its main website site.
+    await ensureDefaultSite(tx, proj.id);
+
     // Grant the creator an owner-role membership row so ownership and membership
     // stay in sync and the membership model can be the single access-control source.
     if (actorId) {
@@ -196,3 +200,10 @@ export async function deleteProject(id) {
   }
   await prisma.project.update({ where: { id }, data: { deleted_at: new Date() } });
 }
+
+export const listSites = (projectId) =>
+  prisma.site.findMany({
+    where: { project_id: projectId, deleted_at: null },
+    orderBy: [{ is_default: 'desc' }, { created_at: 'asc' }],
+    select: { id: true, project_id: true, type: true, slug: true, name: true, domain: true, is_default: true },
+  });

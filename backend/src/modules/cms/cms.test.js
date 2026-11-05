@@ -31,6 +31,7 @@ function client({
   return {
     appSetting: { findUnique: vi.fn().mockResolvedValue(answer ? { value: answer } : null) },
     project: { findFirst: vi.fn().mockResolvedValue({ id: 'p1' }) },
+    site: { findFirst: vi.fn().mockResolvedValue({ id: 'site-1' }) },
     builderPage: {
       findFirst: vi.fn(async ({ where }) => (existing.includes(where.slug) ? { id: 'x' } : null)),
       create: vi.fn().mockResolvedValue({}),

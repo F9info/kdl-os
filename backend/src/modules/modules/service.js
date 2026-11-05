@@ -5,6 +5,7 @@ import { prisma } from '../../config/database.js';
 import { loadedManifests } from '../../shared/modules/module-loader.js';
 import { invalidateModuleCache } from '../../middleware/module-gate.js';
 import { writeActivityAsync } from '../user-management/shared/activity-logger.js';
+import { buildGraph, resolveProducts, hiddenByProducts, PRODUCTS_SETTING_KEY } from './products.js';
 import { resolvePermissionEntry, permissionModuleLabel } from '../../shared/modules/permission-actions.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -611,6 +612,8 @@ export async function listModules() {
 export async function listEnabledModules() {
   const dbModules = await prisma.module.findMany({ where: { status: 'ENABLED' } });
   const enabledSlugs = new Set(dbModules.map((m) => m.slug));
+  // Sidebar-only: modules stay enabled, their nav is hidden when the chosen products do not need them.
+  const hidden = hiddenByProducts(await getSelectedProducts(), loadedManifests);
   return dbModules.map((m) => {
     const manifest = loadedManifests.get(m.slug);
     const navSuppressed = (manifest?.navSuppressedByPeer ?? []).some((peer) => enabledSlugs.has(peer));
@@ -623,7 +626,86 @@ export async function listEnabledModules() {
       name: m.name,
       core: manifest?.core ?? false,
       parent,
+      hidden_by_products: hidden.has(m.slug),
       nav: navSuppressed ? [] : (manifest?.nav ?? []),
     };
   });
+}
+
+// Stored product selection (app_settings `products.enabled`, JSON array). Empty until T2.2 writes it.
+async function getSelectedProducts() {
+  const row = await prisma.appSetting.findUnique({ where: { key: PRODUCTS_SETTING_KEY } });
+  try {
+    const v = JSON.parse(row?.value ?? '[]');
+    return Array.isArray(v) ? v.filter((p) => typeof p === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Read-only module/product graph. `products` previews a selection without saving it. */
+export async function getModuleGraph(products) {
+  const [dbModules, stored] = await Promise.all([
+    prisma.module.findMany({ where: { status: 'ENABLED' }, select: { slug: true } }),
+    products ? Promise.resolve(null) : getSelectedProducts(),
+  ]);
+  return buildGraph({
+    manifests: loadedManifests,
+    enabled: dbModules.map((m) => m.slug),
+    selected: products ?? stored,
+  });
+}
+
+/**
+ * Apply a product selection: enable every module the products need (dependency order), then save
+ * the selection. Never disables or deletes anything: modules a removed product needed stay on.
+ */
+export async function applyProducts(selected, actorId) {
+  const dbEnabled = await prisma.module.findMany({ where: { status: 'ENABLED' }, select: { slug: true } });
+  const previous = await getSelectedProducts();
+  const resolution = resolveProducts({
+    selected,
+    previous,
+    manifests: loadedManifests,
+    enabled: dbEnabled.map((m) => m.slug),
+  });
+  if (!resolution.valid) {
+    const err = new Error('This product selection cannot be applied');
+    err.status = 409;
+    err.details = {
+      code: 'PRODUCT_SELECTION_INVALID',
+      unknownProducts: resolution.unknownProducts,
+      unknownModules: resolution.unknownModules,
+      conflicts: resolution.conflicts,
+    };
+    throw err;
+  }
+
+  for (const slug of resolution.toEnable) {
+    let row = await prisma.module.findUnique({ where: { slug } });
+    if (!row) await installModule(slug, actorId); // also installs missing dependencies
+    row = await prisma.module.findUnique({ where: { slug } });
+    if (row?.status !== 'ENABLED') await enableModule(slug, actorId);
+  }
+
+  const value = JSON.stringify(resolution.selected);
+  await prisma.appSetting.upsert({
+    where: { key: PRODUCTS_SETTING_KEY },
+    update: { value },
+    create: { key: PRODUCTS_SETTING_KEY, value, type: 'string', description: 'Selected KDL OS products', is_public: false },
+  });
+  try {
+    writeActivityAsync({
+      actor: actorId,
+      module: 'modules',
+      action: 'updated',
+      subject_type: 'Products',
+      subject_id: PRODUCTS_SETTING_KEY,
+      description: `Products set to: ${resolution.selected.join(', ') || 'none'}`,
+      properties: { enabled: resolution.toEnable, no_longer_required: resolution.noLongerRequired },
+    });
+  } catch {
+    // a logging failure must never break the response
+  }
+  return getModuleGraph(resolution.selected);
 }

@@ -1,6 +1,7 @@
 import type { Data } from '@puckeditor/core'
 import api from '@/lib/axios'
 import { emptyData } from './puck.config'
+import type { SiteLayoutValue } from '@/lib/apply-site-layout'
 
 /**
  * Backend persistence layer for the Page Builder.
@@ -22,9 +23,12 @@ export interface PageRecord {
   status: 'DRAFT' | 'PUBLISHED'
   updatedAt: string
   projectId: string | null
+  /** Public pages only: the project's saved header/footer layout (T4.2), if any. */
+  layout?: SiteLayoutValue | null
 }
 
-type ListItem = Omit<PageRecord, 'data' | 'projectId'> & {
+type ListItem = Omit<PageRecord, 'data' | 'projectId' | 'layout'> & {
+  layout?: SiteLayoutValue | null
   updated_at: string
   project_id: string | null
 }
@@ -38,6 +42,7 @@ function toRecord(raw: ListItem & { data?: Data }): PageRecord {
     status: raw.status,
     updatedAt: raw.updated_at,
     projectId: raw.project_id ?? null,
+    layout: raw.layout ?? null,
   }
 }
 

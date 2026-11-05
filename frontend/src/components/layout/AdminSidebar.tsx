@@ -143,6 +143,12 @@ export const GROUPS: NavGroup[] = [
         permission: 'settings:view',
       },
       {
+        label: 'Products',
+        href: '/admin/settings/products',
+        icon: Package,
+        permission: 'modules:view',
+      },
+      {
         label: 'Field Types',
         href: '/admin/settings/types',
         icon: ListChecks,

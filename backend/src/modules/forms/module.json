@@ -1,0 +1,22 @@
+{
+  "slug": "forms",
+  "name": "Forms",
+  "version": "1.0.0",
+  "description": "Lead and enquiry forms. Build a form, drop it on a page with the Contact form block, and read or get emailed the submissions.",
+  "core": false,
+  "visibleInCatalog": true,
+  "apiPrefix": "/api/forms",
+  "permissions": ["forms"],
+  "nav": [
+    {
+      "label": "Forms",
+      "path": "/admin/forms",
+      "icon": "FileText",
+      "permission": "forms:view"
+    }
+  ],
+  "dependsOn": [],
+  "conflictsWith": [],
+  "queues": [],
+  "env": []
+}

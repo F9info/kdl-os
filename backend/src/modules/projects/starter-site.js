@@ -1,4 +1,5 @@
 import { normalizeData } from '../../shared/numbered-families.js';
+import { ensureDefaultSite } from './sites.js';
 
 // Building blocks for the starter website pages (General pack only).
 export const BRAND = 'Your Brand';
@@ -152,6 +153,7 @@ export async function insertPublishedPage(
       status: 'PUBLISHED',
       data: normalizeData(data),
       project_id: projectId,
+      site_id: await ensureDefaultSite(client, projectId),
       created_by: actorId,
     },
   });

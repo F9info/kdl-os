@@ -1,0 +1,29 @@
+// A Site is one public thing a project publishes: the main website, or (later) a landing page.
+// Pages belong to a site (BuilderPage.site_id). Each project gets one default WEBSITE site
+// (created by the backfill migration and lazily by ensureDefaultSite). See docs/planning/02.
+
+enum SiteType {
+  WEBSITE
+  LANDING
+}
+
+model Site {
+  id         String    @id @default(cuid())
+  project_id String
+  type       SiteType  @default(WEBSITE)
+  slug       String
+  name       String
+  // Custom host that resolves to this site (used by the public router, T5.2). Null = path-based.
+  domain     String?   @unique
+  is_default Boolean   @default(false)
+  deleted_at DateTime?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  project Project       @relation(fields: [project_id], references: [id])
+  pages   BuilderPage[]
+
+  @@unique([project_id, slug])
+  @@index([project_id])
+  @@map("sites")
+}

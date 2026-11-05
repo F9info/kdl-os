@@ -2,6 +2,8 @@ import { successResponse, errorResponse } from '../../shared/utils/response.js';
 import {
   listModules,
   listEnabledModules,
+  getModuleGraph,
+  applyProducts,
   installModule,
   enableModule,
   disableModule,
@@ -83,6 +85,23 @@ export const patchSettings = async (req, res, next) => {
     successResponse(res, { module: mod });
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+export const getGraph = async (req, res, next) => {
+  try {
+    const { products } = req.validated?.query ?? {};
+    successResponse(res, await getModuleGraph(products));
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const putProducts = async (req, res, next) => {
+  try {
+    successResponse(res, await applyProducts(req.validated.body.products, req.user.id));
+  } catch (err) {
     next(err);
   }
 };

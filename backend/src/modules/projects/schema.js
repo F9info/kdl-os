@@ -28,3 +28,17 @@ export const updateProjectSchema = z.object({
 export const answerOnboardingSchema = z.object({
   body: z.object({ frontend: z.enum(['yes', 'no']) }),
 });
+
+const layoutSlot = z.object({
+  enabled: z.boolean(),
+  // '1'-'5' (built-in designs) or custom:<id> (a saved Section Builder block); same rule as template-engine.
+  variant: z.string().regex(/^([1-5]|custom:[A-Za-z0-9_-]+)$/),
+});
+
+export const saveLayoutSchema = z.object({
+  params: z.object({ id: z.string().min(1) }),
+  body: z
+    .object({ topHeader: layoutSlot.optional(), header: layoutSlot.optional(), footer: layoutSlot.optional() })
+    .strict()
+    .refine((b) => Object.keys(b).length > 0, { message: 'Send at least one of topHeader, header, footer' }),
+});

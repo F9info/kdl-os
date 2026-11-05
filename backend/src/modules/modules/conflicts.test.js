@@ -90,6 +90,8 @@ const DB_CREDITS_ENABLED = { slug: 'credits', name: 'Credits', status: 'ENABLED'
 beforeEach(() => {
   loadedManifests.clear();
   vi.clearAllMocks();
+  // listEnabledModules reads the saved product selection (none here = nothing hidden).
+  prisma.appSetting = { findUnique: vi.fn().mockResolvedValue(null) };
 });
 
 // ── Original tests (backward compat) ────────────────────────────────────────

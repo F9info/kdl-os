@@ -1,0 +1,40 @@
+// Forms module schema (T5.4).
+// A Form is a reusable set of fields (e.g. a landing page "enquiry" form). Visitors submit it from
+// a ContactForm page-builder block; each submission is stored and can email the owner.
+
+model Form {
+  id              String    @id @default(cuid())
+  project_id      String
+  name            String
+  // Public key used by the ContactForm block and POST /api/forms/public/:slug/submit.
+  slug            String
+  // [{ key, label, type: text | email | tel | textarea, required }]
+  fields          Json
+  submit_label    String    @default("Send")
+  success_message String    @default("Thank you. We will be in touch.")
+  // Where new submissions are emailed. Null = stored only.
+  notify_email    String?
+  is_active       Boolean   @default(true)
+  deleted_at      DateTime?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  submissions FormSubmission[]
+
+  @@unique([project_id, slug])
+  @@index([project_id])
+  @@map("forms")
+}
+
+model FormSubmission {
+  id         String   @id @default(cuid())
+  form_id    String
+  data       Json
+  ip_address String?
+  created_at DateTime @default(now())
+
+  form Form @relation(fields: [form_id], references: [id], onDelete: Cascade)
+
+  @@index([form_id, created_at])
+  @@map("form_submissions")
+}
