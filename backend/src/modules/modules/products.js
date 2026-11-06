@@ -24,6 +24,13 @@ export const PRODUCTS = {
 export const PRODUCT_KEYS = Object.keys(PRODUCTS);
 export const PRODUCTS_SETTING_KEY = 'products.enabled';
 
+// How the Website product is delivered. 'web-app' = the live site served with the admin and API;
+// 'static' = plain files exported from the admin, hostable anywhere; 'both' = a live web app that is
+// also exported as a static site. Unset (null) = not chosen yet, which behaves as 'both' (nothing
+// is hidden), so existing installs are unchanged.
+export const WEBSITE_DELIVERIES = ['web-app', 'static', 'both'];
+export const DELIVERY_SETTING_KEY = 'products.website_delivery';
+
 const sorted = (set) => [...set].sort();
 
 /**

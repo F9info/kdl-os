@@ -16,7 +16,9 @@ import { prisma } from '../src/config/database.js';
 import { redis } from '../src/config/redis.js';
 import { hashPassword, clearLoginLockout } from '../src/modules/auth/service.js';
 
-const MIN_PASSWORD_LENGTH = 12;
+// Production keeps the strict 12; elsewhere the minimum is the app's own (login, user and
+// change-password schemas all accept 8+), so a short local dev password can be set.
+const MIN_PASSWORD_LENGTH = process.env.NODE_ENV === 'production' ? 12 : 8;
 
 const { values } = parseArgs({
   options: {

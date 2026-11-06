@@ -1,5 +1,6 @@
 import type { Config } from '@puckeditor/core'
 import type { ComponentPack } from './types'
+import { withDeviceVisibility } from './device-visibility'
 
 export function composePacks(root: Config['root'], packs: ComponentPack[]): Config {
   const components: NonNullable<Config['components']> = {}
@@ -13,7 +14,8 @@ export function composePacks(root: Config['root'], packs: ComponentPack[]): Conf
             `Use a namespaced key (e.g. "${pack.key}:${key}") to keep packs isolated.`
         )
       }
-      components[key] = pack.components[key]!
+      // Every section gets the hide-on-mobile/tablet/desktop fields (see device-visibility.tsx).
+      components[key] = withDeviceVisibility(pack.components[key]!)
     }
 
     if (pack.categories) {

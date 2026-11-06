@@ -29,6 +29,17 @@ vi.mock('@/admin/hooks/useTemplateEngine', () => ({
   useTemplateEngineRuns: () => ({ data: [], isLoading: false }),
 }))
 
+const surfaceState = vi.hoisted(() => ({
+  delivery: null as 'web-app' | 'static' | 'both' | null,
+  off: [] as string[],
+}))
+vi.mock('@/admin/hooks/useModules', () => ({
+  useModules: () => ({ isEnabled: (slug: string) => !surfaceState.off.includes(slug) }),
+}))
+vi.mock('@/admin/hooks/useWebsiteDelivery', () => ({
+  useWebsiteDelivery: () => surfaceState.delivery,
+}))
+
 vi.mock('@/components/shared/MediaPicker', () => ({
   MediaPicker: () => null,
 }))
@@ -92,6 +103,11 @@ beforeEach(() => {
 })
 
 describe('WebsiteStage — Brands cards grid (KDL-558)', () => {
+  beforeEach(() => {
+    surfaceState.delivery = null
+    surfaceState.off = []
+  })
+
   it('lands on the Brands grid with the Web app card', () => {
     renderWithQC(<WebsiteStage run={makeRun()} />)
 
@@ -115,6 +131,35 @@ describe('WebsiteStage — Brands cards grid (KDL-558)', () => {
     expect(screen.queryByText('Visiting card')).not.toBeInTheDocument()
     // The stage's own assemble/skip controls stay hidden until a card is opened.
     expect(screen.queryByRole('button', { name: /^run$/i })).not.toBeInTheDocument()
+  })
+
+  it('static website: the live Web app card is hidden, the static export stays', () => {
+    surfaceState.delivery = 'static'
+    renderWithQC(<WebsiteStage run={makeRun()} />)
+    expect(screen.queryByText('Web app')).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Static website/ })).toBeInTheDocument()
+  })
+
+  it('web application: the static export card is hidden, the live Web app stays', () => {
+    surfaceState.delivery = 'web-app'
+    renderWithQC(<WebsiteStage run={makeRun()} />)
+    expect(screen.getByText('Web app')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Static website/ })).not.toBeInTheDocument()
+  })
+
+  it('both: web app and static export are offered', () => {
+    surfaceState.delivery = 'both'
+    renderWithQC(<WebsiteStage run={makeRun()} />)
+    expect(screen.getByText('Web app')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Static website/ })).toBeInTheDocument()
+  })
+
+  it('Landing Pages and Forms cards only show when those modules are enabled', () => {
+    surfaceState.off = ['landing', 'forms']
+    renderWithQC(<WebsiteStage run={makeRun()} />)
+    expect(screen.queryByRole('link', { name: /Landing Pages/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Forms/ })).not.toBeInTheDocument()
+    expect(screen.getByText('Web app')).toBeInTheDocument()
   })
 
   it('has no placeholder buttons that do nothing; other things point at the page that owns them', () => {

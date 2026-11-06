@@ -7,7 +7,13 @@
   "apiPrefix": "/api/users",
   "permissions": ["users"],
   "nav": [
-    { "label": "Users", "path": "/admin/users", "icon": "Users", "permission": "users:view" }
+    {
+      "label": "Users",
+      "path": "/admin/users",
+      "icon": "Users",
+      "permission": "users:view",
+      "order": 10
+    }
   ],
   "dependsOn": [],
   "queues": [],

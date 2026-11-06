@@ -7,12 +7,18 @@ const granted = vi.hoisted(() => ({ list: [] as string[] }))
 vi.mock('@/admin/hooks/usePermissions', () => ({
   usePermissions: () => ({ can: (p: string) => granted.list.includes(p), isLoading: false }),
 }))
+const enabled = vi.hoisted(() => ({ all: true, off: [] as string[] }))
+vi.mock('@/admin/hooks/useModules', () => ({
+  useModules: () => ({ isEnabled: (slug: string) => enabled.all && !enabled.off.includes(slug) }),
+}))
 import api from '@/lib/axios'
 
 const calledUrls = () => vi.mocked(api.get).mock.calls.map((c) => c[0])
 
 describe('Dashboard respects permissions', () => {
   beforeEach(() => {
+    enabled.all = true
+    enabled.off = []
     vi.mocked(api.get).mockReset()
     vi.mocked(api.get).mockResolvedValue({
       data: { data: { users: [], settings: [], pagination: { total: 7 } } },
@@ -47,5 +53,70 @@ describe('Dashboard respects permissions', () => {
     await waitFor(() =>
       expect(calledUrls()).toEqual(expect.arrayContaining(['/users', '/settings', '/media']))
     )
+  })
+
+  const links = () =>
+    screen.queryByTestId('quick-actions')
+      ? Array.from(screen.getByTestId('quick-actions').querySelectorAll('a')).map(
+          (a) => a.textContent
+        )
+      : []
+
+  const DEVELOPER = [
+    'users:view',
+    'settings:view',
+    'media:view',
+    'modules:view',
+    'theme-engine:edit',
+    'integrations:view',
+    'menus:view',
+    'page-builder:view',
+  ]
+  const ADMIN = [
+    'users:view',
+    'settings:view',
+    'media:view',
+    'menus:view',
+    'page-builder:view',
+    'theme-engine:view',
+  ]
+
+  it('developer dashboard: Build and Content quick actions', async () => {
+    granted.list = DEVELOPER
+    render(<DashboardPage />)
+    await screen.findByTestId('quick-actions')
+    expect(links()).toEqual([
+      'Modules',
+      'Themes',
+      'Integrations',
+      'Website',
+      'Pages',
+      'Sections',
+      'Media',
+      'Users',
+    ])
+  })
+
+  it('admin dashboard: Content only, no Build group (view-only theme access is not enough)', async () => {
+    granted.list = ADMIN
+    render(<DashboardPage />)
+    await screen.findByTestId('quick-actions')
+    expect(links()).toEqual(['Website', 'Pages', 'Sections', 'Media', 'Users'])
+    expect(screen.queryByText('Build')).not.toBeInTheDocument()
+  })
+
+  it('hides links whose module is disabled', async () => {
+    granted.list = DEVELOPER
+    enabled.off = ['page-builder', 'integrations']
+    render(<DashboardPage />)
+    await screen.findByTestId('quick-actions')
+    expect(links()).toEqual(['Modules', 'Themes', 'Website', 'Pages', 'Media', 'Users'])
+  })
+
+  it('no permissions: no quick actions at all', async () => {
+    granted.list = []
+    render(<DashboardPage />)
+    await screen.findByTestId('dashboard-empty')
+    expect(screen.queryByTestId('quick-actions')).not.toBeInTheDocument()
   })
 })

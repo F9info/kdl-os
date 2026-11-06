@@ -12,8 +12,9 @@
     {
       "label": "Notifications",
       "path": "/admin/notifications",
-      "icon": "Package",
-      "permission": "notifications:view"
+      "icon": "Bell",
+      "permission": "notifications:view",
+      "order": 30
     }
   ],
   "dependsOn": [],

@@ -1,10 +1,27 @@
 import { z } from 'zod';
 
+// One sidebar entry. This (not the frontend) is the single place navigation is configured.
+//   group / groupIcon / groupOrder  nest the entry under a collapsible sidebar group (e.g. "Settings")
+//   order                           position among siblings (default 100; ties keep manifest order)
+//   activeWhen                      highlight the entry on a different URL than `path`, for screens that
+//                                   open as a stage of another page (e.g. the website stage views)
+export const navActiveWhenSchema = z.object({
+  pathStartsWith: z.string().optional(),
+  pathEndsWith: z.string().optional(),
+  view: z.string().optional(),
+  viewNotIn: z.array(z.string()).optional(),
+});
+
 export const navItemSchema = z.object({
   label: z.string().min(1),
   path: z.string().startsWith('/'),
   icon: z.string().optional(),
   permission: z.string().optional(),
+  group: z.string().optional(),
+  groupIcon: z.string().optional(),
+  groupOrder: z.number().optional(),
+  order: z.number().optional(),
+  activeWhen: navActiveWhenSchema.optional(),
 });
 
 // A permission entry is either a bare module-name string (gets the default
@@ -20,6 +37,8 @@ export const manifestSchema = z.object({
   name: z.string().min(1),
   version: z.string().regex(/^\d+\.\d+\.\d+$/, 'version must be semver'),
   description: z.string().optional(),
+  // Icon of the module's own sidebar entry when it is a bundle (umbrella), e.g. Content.
+  icon: z.string().optional(),
   core: z.boolean().default(false),
   // Umbrella = a bundle whose dependsOn modules install/enable/disable together with it.
   umbrella: z.boolean().default(false),

@@ -1,3 +1,5 @@
+import { applyBlueprintsOnce } from '../../src/modules/user-management/shared/role-blueprints.js';
+
 // User Management RBAC system data (USER_MANAGEMENT_ARCH.md → Seeder).
 // Every block is upsert-safe: re-running the seeder never duplicates rows.
 
@@ -110,6 +112,10 @@ export async function seedUserManagement(prisma) {
     }
   }
 
+  // Developer role + the default Developer/Admin grants for every module registered so far
+  // (later module installs grant their own; see role-blueprints.js).
+  const blueprintGrants = await applyBlueprintsOnce(prisma);
+
   // The seeded admin user (SEED_ADMIN_EMAIL, default admin@kdl.com) gets super-admin
   const adminEmail = process.env.SEED_ADMIN_EMAIL || 'admin@kdl.com';
   const adminUser = await prisma.user.findUnique({
@@ -130,7 +136,8 @@ export async function seedUserManagement(prisma) {
 
   console.log(
     `Seeded RBAC: ${MODULES.length + (mediaModule ? 1 : 0)} modules, ${permIdByKey.size} permissions, ` +
-      `${ROLES.length} roles (admin role: ${adminPermissionIds.length} permissions)` +
+      `${ROLES.length} roles (admin role: ${adminPermissionIds.length} base permissions` +
+      `${blueprintGrants === null ? ', blueprint already applied' : `, +${blueprintGrants} blueprint grants`})` +
       (adminUser ? `, ${adminEmail} → super-admin` : ''),
   );
 }

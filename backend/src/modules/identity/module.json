@@ -6,7 +6,18 @@
   "core": true,
   "apiPrefix": "/api/identity",
   "permissions": [],
-  "nav": [],
+  "nav": [
+    {
+      "label": "Identity",
+      "path": "/admin/settings/identity",
+      "icon": "Palette",
+      "permission": "settings:view",
+      "order": 10,
+      "group": "Settings",
+      "groupIcon": "UserCog",
+      "groupOrder": 30
+    }
+  ],
   "dependsOn": ["settings"],
   "queues": [],
   "env": []

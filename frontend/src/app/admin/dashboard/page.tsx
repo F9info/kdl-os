@@ -3,7 +3,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { Users, Settings, Image, UserCheck, type LucideIcon } from 'lucide-react'
 import api from '@/lib/axios'
+import Link from 'next/link'
 import { usePermissions } from '@/admin/hooks/usePermissions'
+import { useModules } from '@/admin/hooks/useModules'
 import { PageHeader } from '@/admin/components/layout/PageHeader'
 import { DataTable } from '@/admin/components/shared/DataTable'
 import { StatusBadge } from '@/admin/components/shared/StatusBadge'
@@ -70,6 +72,51 @@ const recentColumns: ColumnDef<User>[] = [
   },
 ]
 
+// Quick actions follow what the signed-in role can actually open, so a Developer (builds the
+// project) and an Admin (runs the content) get different dashboards without role names in code.
+// A link needs its permission AND its module to be enabled.
+interface QuickAction {
+  label: string
+  href: string
+  permission: string
+  module?: string
+}
+const QUICK_GROUPS: { title: string; actions: QuickAction[] }[] = [
+  {
+    title: 'Build',
+    actions: [
+      { label: 'Modules', href: '/admin/modules', permission: 'modules:view' },
+      {
+        label: 'Themes',
+        href: '/admin/theme-engine',
+        permission: 'theme-engine:edit',
+        module: 'theme-engine',
+      },
+      {
+        label: 'Integrations',
+        href: '/admin/integrations',
+        permission: 'integrations:view',
+        module: 'integrations',
+      },
+    ],
+  },
+  {
+    title: 'Content',
+    actions: [
+      { label: 'Website', href: '/admin/brands', permission: 'menus:view', module: 'menus' },
+      { label: 'Pages', href: '/admin/pages', permission: 'menus:view', module: 'menus' },
+      {
+        label: 'Sections',
+        href: '/admin/page-builder/section-builder',
+        permission: 'page-builder:view',
+        module: 'page-builder',
+      },
+      { label: 'Media', href: '/admin/media', permission: 'media:view' },
+      { label: 'Users', href: '/admin/users', permission: 'users:view' },
+    ],
+  },
+]
+
 export default function DashboardPage() {
   // Each card calls an API behind its own permission. Asking for data the user may not see only
   // produced 403s and a misleading "0", so only query and show what the role can actually view.
@@ -77,6 +124,11 @@ export default function DashboardPage() {
   const canUsers = can('users:view')
   const canSettings = can('settings:view')
   const canMedia = can('media:view')
+  const { isEnabled } = useModules()
+  const groups = QUICK_GROUPS.map((g) => ({
+    ...g,
+    actions: g.actions.filter((a) => can(a.permission) && (!a.module || isEnabled(a.module))),
+  })).filter((g) => g.actions.length > 0)
   const { data: usersData, isLoading: usersLoading } = useQuery({
     queryKey: ['users', 'stats'],
     enabled: canUsers,
@@ -159,6 +211,27 @@ export default function DashboardPage() {
           />
         )}
       </div>
+
+      {groups.length > 0 && (
+        <div className="mt-8 grid gap-6 md:grid-cols-2" data-testid="quick-actions">
+          {groups.map((g) => (
+            <section key={g.title}>
+              <h2 className="text-lg font-semibold mb-3">{g.title}</h2>
+              <div className="flex flex-wrap gap-2">
+                {g.actions.map((a) => (
+                  <Link
+                    key={a.href}
+                    href={a.href}
+                    className="rounded-md border px-3 py-2 text-sm hover:bg-muted"
+                  >
+                    {a.label}
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
 
       {!canUsers && !canSettings && !canMedia && (
         <p className="text-sm text-muted-foreground" data-testid="dashboard-empty">

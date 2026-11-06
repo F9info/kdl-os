@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/axios'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import type { WebsiteDelivery } from '@/admin/lib/project-type'
 import { FormField } from '@/components/shared/FormField'
 import { ErrorAlert } from '@/components/shared/ErrorAlert'
 import { ImageUploadField } from '@/admin/components/shared/ImageUploadField'
@@ -58,6 +59,7 @@ export function SetupWizard({ open, onClose }: SetupWizardProps) {
   const [details, setDetails] = useState<Record<DetailKey, string>>(EMPTY_DETAILS)
   const setDetail = (key: DetailKey, value: string) => setDetails((d) => ({ ...d, [key]: value }))
   const [selected, setSelected] = useState<string[]>([])
+  const [delivery, setDelivery] = useState<WebsiteDelivery | null>(null)
   const [site, setSite] = useState<SiteResult | null>(null)
   const seeded = useRef(false)
 
@@ -81,6 +83,7 @@ export function SetupWizard({ open, onClose }: SetupWizardProps) {
         >
       )
       setSelected(stored.selected)
+      setDelivery(stored.delivery ?? null)
       seeded.current = true
     }
   }, [open, identity, stored])
@@ -116,8 +119,16 @@ export function SetupWizard({ open, onClose }: SetupWizardProps) {
   })
   const saveProducts = useMutation({
     mutationFn: async () => {
-      if (stored && !sameSet(withBase(selected), stored.selected))
-        await api.put('/modules/products', { products: withBase(selected) })
+      // A Website with no delivery chosen yet starts as a web application (the usual case).
+      const chosen = selected.includes('website') ? (delivery ?? 'web-app') : null
+      if (
+        stored &&
+        (!sameSet(withBase(selected), stored.selected) || (chosen && chosen !== stored.delivery))
+      )
+        await api.put('/modules/products', {
+          products: withBase(selected),
+          ...(chosen ? { delivery: chosen } : {}),
+        })
       // Only the Website product has a setup step; otherwise record "no website" so this stops asking.
       if (!selected.includes('website')) {
         return (await api.post('/projects/onboarding', { frontend: 'no' })).data.data as SiteResult
@@ -226,6 +237,8 @@ export function SetupWizard({ open, onClose }: SetupWizardProps) {
               onToggle={toggle}
               resolution={r}
               nameOf={nameOf}
+              delivery={delivery ?? (selected.includes('website') ? 'web-app' : null)}
+              onDeliveryChange={setDelivery}
             />
             <DialogFooter>
               <Button variant="ghost" onClick={() => setStep('identity')} disabled={busy}>

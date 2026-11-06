@@ -6,7 +6,7 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import AdmZip from 'adm-zip';
-import { sitesDir } from './generator.js';
+import { sitesDir, withSiteLock } from './generator.js';
 
 const jobs = new Map(); // slug -> { state, log, startedAt, finishedAt }
 const LOG_LINES = 40;
@@ -39,7 +39,10 @@ export function startStaticBuild(slug, { apiBase = '', exec = run } = {}) {
   // next build must run with NODE_ENV=production whatever the host process uses (dev containers set
   // 'development', which breaks prerendering of /404 with an <Html> import error).
   const env = { NODE_ENV: 'production', ...(apiBase ? { NEXT_PUBLIC_API_BASE: apiBase } : {}) };
-  (async () => {
+  // Held for the whole build: a regeneration (triggered by any admin edit) must not rewrite the
+  // folder while it is being copied, and vice versa. Edits made meanwhile are picked up by the next
+  // regeneration once the build finishes.
+  withSiteLock(slug, async () => {
     try {
       await exec('npm', ['install', '--include=dev', '--no-audit', '--no-fund'], root, {}, job);
       await exec('npm', ['run', 'build:static'], root, env, job);
@@ -52,7 +55,7 @@ export function startStaticBuild(slug, { apiBase = '', exec = run } = {}) {
     } finally {
       job.finishedAt = Date.now();
     }
-  })();
+  });
   return true;
 }
 

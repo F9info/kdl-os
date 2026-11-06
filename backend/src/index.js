@@ -8,6 +8,7 @@ import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 
 import { prisma } from './config/database.js';
+import { applyBlueprintsOnce } from './modules/user-management/shared/role-blueprints.js';
 import { redis } from './config/redis.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { successResponse, errorResponse } from './shared/utils/response.js';
@@ -166,6 +167,14 @@ app.use('/api/detail-page-types', detailPageTypesRoutes);
 
 // Mount plugin modules (those with module.json + routes.js) behind moduleGate
 await loadModules(app);
+// Existing databases get the default Developer/Admin permissions once (marker setting); a failure
+// must never stop the server from starting.
+try {
+  const granted = await applyBlueprintsOnce(prisma);
+  if (granted !== null) logger.info(`rbac: applied default role blueprint (${granted} new grants)`);
+} catch (err) {
+  logger.error(`rbac: role blueprint failed: ${err.message}`);
+}
 // Machine-readable API contract for native clients (admin-level: it lists every endpoint).
 app.get('/api/openapi.json', authenticate, requirePermission('modules', 'view'), openApiHandler(app));
 

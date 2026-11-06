@@ -9,6 +9,14 @@ test.describe('Command palette', () => {
     await page.getByPlaceholder('••••••••').fill(ADMIN.password)
     await page.getByRole('button', { name: 'Sign in' }).click()
     await expect(page).toHaveURL(/\/admin\/dashboard/)
+    // The first-run Setup Wizard (shown while company identity is incomplete) is a modal that traps
+    // focus, so the global shortcuts cannot reach the page until it is dismissed.
+    const later = page.getByRole('button', { name: 'Ask me later' })
+    await later.waitFor({ timeout: 4000 }).then(
+      () => later.click(),
+      () => {}
+    )
+    await expect(page.getByRole('dialog')).toHaveCount(0)
   })
 
   test('Cmd/Ctrl-K opens the palette, fuzzy search navigates, Escape closes', async ({ page }) => {

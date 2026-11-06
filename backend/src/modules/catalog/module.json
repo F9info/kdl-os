@@ -13,7 +13,7 @@
     {
       "label": "Catalog",
       "path": "/admin/catalog",
-      "icon": "Package",
+      "icon": "ShoppingBag",
       "permission": "catalog:view"
     }
   ],

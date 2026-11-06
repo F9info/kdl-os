@@ -274,7 +274,24 @@ async function copyFrontendCode(root, fe = frontendDir()) {
 
 const writeJson = (file, obj) => fs.writeFile(file, `${JSON.stringify(obj, null, 2)}\n`);
 
-export async function writeSite(model) {
+// One writer/reader at a time per site folder: writeSite() deletes and recreates `src/`, so a static
+// build (or a second regeneration) that touches the folder meanwhile sees it half written (ENOENT).
+// ponytail: in-process only, like the static-build job state; use a Redis lock if the backend is
+// ever scaled to several instances.
+const siteLocks = new Map();
+export function withSiteLock(slug, fn) {
+  const run = (siteLocks.get(slug) ?? Promise.resolve()).then(fn);
+  const tail = run.catch(() => {});
+  siteLocks.set(slug, tail);
+  tail.then(() => siteLocks.get(slug) === tail && siteLocks.delete(slug));
+  return run;
+}
+
+export function writeSite(model) {
+  return withSiteLock(model.site.slug, () => writeSiteLocked(model));
+}
+
+async function writeSiteLocked(model) {
   const root = path.resolve(sitesDir(), model.site.slug);
   if (!root.startsWith(sitesDir() + path.sep)) throw new Error('Unsafe site path');
   await fs.rm(path.join(root, 'src'), { recursive: true, force: true }); // managed dir

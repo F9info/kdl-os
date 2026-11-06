@@ -35,5 +35,9 @@ export const graphQuerySchema = z.object({
 });
 
 export const productsBodySchema = z.object({
-  body: z.object({ products: z.array(z.string().regex(/^[a-z0-9-]+$/)).max(20) }),
+  body: z.object({
+    products: z.array(z.string().regex(/^[a-z0-9-]+$/)).max(20),
+    // Optional: how the Website product is delivered (see products.js). Omitted = leave unchanged.
+    delivery: z.enum(['web-app', 'static', 'both']).optional(),
+  }),
 });

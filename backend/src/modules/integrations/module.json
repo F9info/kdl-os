@@ -12,8 +12,9 @@
     {
       "label": "Integrations",
       "path": "/admin/integrations",
-      "icon": "Package",
-      "permission": "integrations:view"
+      "icon": "Plug",
+      "permission": "integrations:view",
+      "order": 50
     }
   ],
   "dependsOn": [],

@@ -13,7 +13,7 @@
     {
       "label": "Sectors",
       "path": "/admin/sectors",
-      "icon": "Package",
+      "icon": "Factory",
       "permission": "sectors:view"
     }
   ],

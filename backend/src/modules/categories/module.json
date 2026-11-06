@@ -7,7 +7,18 @@
   "visibleInCatalog": false,
   "apiPrefix": "/api/categories",
   "permissions": ["categories"],
-  "nav": [],
+  "nav": [
+    {
+      "label": "Field Categories",
+      "path": "/admin/settings/categories",
+      "icon": "Briefcase",
+      "permission": "categories:view",
+      "order": 40,
+      "group": "Settings",
+      "groupIcon": "UserCog",
+      "groupOrder": 30
+    }
+  ],
   "dependsOn": ["types"],
   "queues": [],
   "env": []

@@ -211,6 +211,25 @@ describe('section schema checks (T7.1)', () => {
     expect(issues[0].message).toMatch(/Hero > align: "diagonal"/);
   });
 
+  it('hidden on mobile, tablet and desktop is a warning (no visitor would ever see it)', () => {
+    const [i] = run({
+      type: 'Hero',
+      props: { id: 'h', hideOnMobile: true, hideOnTablet: true, hideOnDesktop: true },
+    });
+    expect(i).toMatchObject({ severity: 'warning', code: 'BLOCK_HIDDEN_EVERYWHERE', block_type: 'Hero' });
+    expect(i.message).toMatch(/Hero is hidden on mobile, tablet and desktop/);
+  });
+
+  it('hidden on one or two devices, or false / missing flags, is fine', () => {
+    for (const props of [
+      { id: 'h', hideOnMobile: true },
+      { id: 'h', hideOnMobile: true, hideOnDesktop: true },
+      { id: 'h', hideOnMobile: true, hideOnTablet: true, hideOnDesktop: false },
+      { id: 'h', hideOnMobile: 'true', hideOnTablet: 'true', hideOnDesktop: 'true' }, // not real booleans
+    ])
+      expect(run({ type: 'Hero', props })).toEqual([]);
+  });
+
   it('no schemas available (frontend source not mounted): no schema checks at all', () => {
     expect(schemaIssues({ type: 'Ghost', props: {} }, null)).toEqual([]);
   });

@@ -7,7 +7,18 @@
   "visibleInCatalog": false,
   "apiPrefix": "/api/setting-fields",
   "permissions": ["setting-fields"],
-  "nav": [],
+  "nav": [
+    {
+      "label": "Custom Fields",
+      "path": "/admin/settings/fields",
+      "icon": "SlidersHorizontal",
+      "permission": "setting-fields:view",
+      "order": 50,
+      "group": "Settings",
+      "groupIcon": "UserCog",
+      "groupOrder": 30
+    }
+  ],
   "dependsOn": ["types", "settings"],
   "queues": [],
   "env": []

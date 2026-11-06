@@ -1,11 +1,20 @@
 import { join, dirname } from 'node:path';
+import { grantForPermissionModule } from '../user-management/shared/role-blueprints.js';
 import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
 import { prisma } from '../../config/database.js';
 import { loadedManifests } from '../../shared/modules/module-loader.js';
 import { invalidateModuleCache } from '../../middleware/module-gate.js';
 import { writeActivityAsync } from '../user-management/shared/activity-logger.js';
-import { buildGraph, resolveProducts, inferProducts, hiddenByProducts, PRODUCTS_SETTING_KEY } from './products.js';
+import {
+  buildGraph,
+  resolveProducts,
+  inferProducts,
+  hiddenByProducts,
+  PRODUCTS_SETTING_KEY,
+  DELIVERY_SETTING_KEY,
+  WEBSITE_DELIVERIES,
+} from './products.js';
 import { resolvePermissionEntry, permissionModuleLabel } from '../../shared/modules/permission-actions.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -97,6 +106,7 @@ async function registerPermissions(manifest, tx = prisma) {
     const { name, actions } = resolvePermissionEntry(entry);
     const label = permissionModuleLabel(name);
 
+    const existed = await tx.permissionModule.findUnique({ where: { name }, select: { id: true } });
     const pm = await tx.permissionModule.upsert({
       where: { name },
       create: { name, label, is_system: false },
@@ -110,6 +120,9 @@ async function registerPermissions(manifest, tx = prisma) {
         update: {},
       });
     }
+    // A brand-new permission module gets the default Developer/Admin grants; an existing one is left
+    // alone so permissions an owner revoked stay revoked.
+    if (!existed) await grantForPermissionModule(tx, name);
   }
 }
 
@@ -640,6 +653,7 @@ export async function listEnabledModules() {
       // The manifest is the source of truth for the label; the DB row keeps the name from install time.
       name: manifest?.name ?? m.name,
       core: manifest?.core ?? false,
+      icon: manifest?.icon ?? null,
       parent,
       hidden_by_products: hidden.has(m.slug),
       nav: navSuppressed ? [] : (manifest?.nav ?? []),
@@ -658,6 +672,12 @@ async function getSelectedProducts() {
   }
 }
 
+// Stored website delivery ('web-app' | 'static'), or null when the owner has not chosen yet.
+async function getDelivery() {
+  const row = await prisma.appSetting.findUnique({ where: { key: DELIVERY_SETTING_KEY } });
+  return WEBSITE_DELIVERIES.includes(row?.value) ? row.value : null;
+}
+
 /** Read-only module/product graph. `products` previews a selection without saving it. */
 export async function getModuleGraph(products) {
   const [dbModules, stored] = await Promise.all([
@@ -671,19 +691,22 @@ export async function getModuleGraph(products) {
   const inferred = stored
     ? inferProducts({ manifests: loadedManifests, enabled, stored })
     : [];
-  return buildGraph({
-    manifests: loadedManifests,
-    enabled,
-    selected: products ?? [...stored, ...inferred],
-    inferred,
-  });
+  return {
+    ...buildGraph({
+      manifests: loadedManifests,
+      enabled,
+      selected: products ?? [...stored, ...inferred],
+      inferred,
+    }),
+    delivery: await getDelivery(),
+  };
 }
 
 /**
  * Apply a product selection: enable every module the products need (dependency order), then save
  * the selection. Never disables or deletes anything: modules a removed product needed stay on.
  */
-export async function applyProducts(selected, actorId) {
+export async function applyProducts(selected, actorId, delivery) {
   const dbEnabled = await prisma.module.findMany({ where: { status: 'ENABLED' }, select: { slug: true } });
   const previous = await getSelectedProducts();
   const resolution = resolveProducts({
@@ -717,6 +740,20 @@ export async function applyProducts(selected, actorId) {
     update: { value },
     create: { key: PRODUCTS_SETTING_KEY, value, type: 'string', description: 'Selected KDL OS products', is_public: false },
   });
+  // The delivery choice only means something with the Website product on; omitted = unchanged.
+  if (delivery && resolution.selected.includes('website')) {
+    await prisma.appSetting.upsert({
+      where: { key: DELIVERY_SETTING_KEY },
+      update: { value: delivery },
+      create: {
+        key: DELIVERY_SETTING_KEY,
+        value: delivery,
+        type: 'string',
+        description: 'Website delivery: web-app (live site), static (exported files) or both',
+        is_public: false,
+      },
+    });
+  }
   try {
     writeActivityAsync({
       actor: actorId,
@@ -724,7 +761,7 @@ export async function applyProducts(selected, actorId) {
       action: 'updated',
       subject_type: 'Products',
       subject_id: PRODUCTS_SETTING_KEY,
-      description: `Products set to: ${resolution.selected.join(', ') || 'none'}`,
+      description: `Products set to: ${resolution.selected.join(', ') || 'none'}${delivery ? ` (website: ${delivery})` : ''}`,
       properties: { enabled: resolution.toEnable, no_longer_required: resolution.noLongerRequired },
     });
   } catch {

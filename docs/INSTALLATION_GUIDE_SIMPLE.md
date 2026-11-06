@@ -160,7 +160,7 @@ Run these inside the `kdl-os` folder.
 | Start it again | `docker compose up -d` |
 | See what is running | `docker compose ps` |
 | Update to the latest code | `git pull` then `docker compose up -d --build` |
-| I forgot my admin password | `docker compose exec backend node scripts/reset-admin-password.js --email admin@kdl.com --password 'NewPassword123'` |
+| I forgot my admin password | `docker compose exec backend node scripts/reset-admin-password.js --email admin@kdl.com --password 'Admin@123'` (at least 8 characters, then sign in with it) |
 
 **Warning:** `docker compose down -v` deletes **all your data**. Do not use it unless you want to start from zero.
 

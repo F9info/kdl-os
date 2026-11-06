@@ -7,6 +7,7 @@ import AdmZip from 'adm-zip';
 vi.mock('../../../config/database.js', () => ({ prisma: {} }));
 
 import { startStaticBuild, getStaticBuild, zipStaticBuild } from './static-build.js';
+import { withSiteLock, writeSite, buildSiteModel } from './generator.js';
 
 const until = async (slug, state) => {
   for (let i = 0; i < 50 && getStaticBuild(slug).state !== state; i++)
@@ -51,10 +52,66 @@ describe('one-click static build job', () => {
     const exec = () => new Promise((_, rej) => (release = () => rej(new Error('boom'))));
     expect(startStaticBuild('bad', { exec })).toBe(true);
     expect(startStaticBuild('bad', { exec })).toBe(false);
+    await new Promise((r) => setTimeout(r, 0)); // exec starts once the site lock is entered
     release();
     const s = await until('bad', 'failed');
     expect(s.state).toBe('failed');
     expect(s.log).toContain('boom');
     expect(zipStaticBuild('bad')).toBeNull();
+  });
+
+  it('withSiteLock serializes work per site, keeps order, and continues after a failure', async () => {
+    const order = [];
+    const slow = withSiteLock('lock-a', async () => {
+      await new Promise((r) => setTimeout(r, 30));
+      order.push('first');
+      throw new Error('boom');
+    });
+    const second = withSiteLock('lock-a', async () => order.push('second'));
+    const other = withSiteLock('lock-b', async () => order.push('other-site'));
+    await expect(slow).rejects.toThrow('boom');
+    await second;
+    await other;
+    expect(order.indexOf('other-site')).toBeLessThan(order.indexOf('first')); // different site: not blocked
+    expect(order.filter((x) => x !== 'other-site')).toEqual(['first', 'second']);
+  });
+
+  it('a static build never starts while the site folder is being regenerated (ENOENT race)', async () => {
+    const model = buildSiteModel({
+      project: { id: 'p1', name: 'Demo', slug: 'racy' },
+      kit: null,
+      company: {},
+      pages: [{ id: 'a', title: 'Home', slug: 'te-p1-home', data: { content: [], root: {} } }],
+      menus: [],
+    });
+    await writeSite(model); // folder exists with src/ from a previous generation
+    const layout = path.join(dir, 'racy', 'src', 'app', 'layout.tsx');
+    let regenDone = false;
+    const seen = [];
+    const exec = async (_c, args, cwd) => {
+      // What the build needs at each step: regeneration finished AND the folder complete.
+      seen.push({
+        regenDone,
+        layout: await fs.access(layout).then(
+          () => true,
+          () => false
+        ),
+      });
+      if (args[0] === 'run') {
+        await fs.mkdir(path.join(cwd, 'out'), { recursive: true });
+        await fs.writeFile(path.join(cwd, 'out', 'index.html'), '<html></html>');
+      }
+    };
+    // Regeneration (any admin edit) and the build start in the same tick; writeSite deletes src/ first.
+    const regen = writeSite(model).then(() => {
+      regenDone = true;
+    });
+    expect(startStaticBuild('racy', { exec })).toBe(true);
+    await regen;
+    expect((await until('racy', 'done')).state).toBe('done');
+    expect(seen).toEqual([
+      { regenDone: true, layout: true },
+      { regenDone: true, layout: true },
+    ]);
   });
 });

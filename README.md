@@ -49,7 +49,13 @@ docker compose exec backend node prisma/seed.js
 
 Then open http://localhost/login, sign in as `admin@kdl.com`, and the Setup Wizard walks you through company identity and which products (Website, Landing Pages) to turn on.
 
-Forgot the admin password: `docker compose exec backend node scripts/reset-admin-password.js --email admin@kdl.com --password 'NewPassword123'`
+Forgot the admin password (or locked out after too many failed sign-ins): reset it with
+
+```bash
+docker compose exec backend node scripts/reset-admin-password.js --email admin@kdl.com --password 'Admin@123'
+```
+
+Then sign in as `admin@kdl.com` with `Admin@123`. Outside production the password must be at least 8 characters; with `NODE_ENV=production` it must be at least 12 and `--force` is required. This is a development password: change it before any shared or production use.
 
 ---
 

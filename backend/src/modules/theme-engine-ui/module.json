@@ -7,7 +7,13 @@
   "apiPrefix": "/api/theme-engine-ui",
   "permissions": [],
   "nav": [
-    { "label": "Themes", "path": "/admin/theme-engine", "icon": "Palette", "permission": "theme-engine:view" }
+    {
+      "label": "Themes",
+      "path": "/admin/theme-engine",
+      "icon": "Palette",
+      "permission": "theme-engine:view",
+      "order": 40
+    }
   ],
   "dependsOn": ["theme-engine"],
   "conflictsWith": [],

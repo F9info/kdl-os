@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../../config/database.js', () => ({ prisma: {} }));
+// Keep the real CMS page builders; only observe the sample-content seeding.
+vi.mock('../cms/pages.js', async (orig) => ({ ...(await orig()), seedCmsSamples: vi.fn() }));
 
 import { prisma } from '../../config/database.js';
+import { seedCmsSamples } from '../cms/pages.js';
 import {
   getOnboarding,
   answerOnboarding,
@@ -78,6 +81,24 @@ describe('onboarding — answer', () => {
   it('409 when no default project exists', async () => {
     prisma.project.findFirst.mockResolvedValue(null);
     await expect(answerOnboarding('yes', 'u1')).rejects.toMatchObject({ status: 409 });
+  });
+});
+
+describe('onboarding — sample content for the CMS', () => {
+  it('"yes" with CMS installed also seeds the sample rows, before recording the answer', async () => {
+    prisma.module.findUnique.mockResolvedValue({ status: 'ENABLED' });
+    const order = [];
+    seedCmsSamples.mockImplementation(async () => order.push('samples'));
+    prisma.appSetting.upsert.mockImplementation(async () => order.push('saved'));
+    await answerOnboarding('yes', 'u1');
+    expect(seedCmsSamples).toHaveBeenCalledWith(prisma);
+    expect(order).toEqual(['samples', 'saved']);
+  });
+
+  it('"yes" without CMS seeds nothing extra, and "no" never seeds', async () => {
+    await answerOnboarding('yes', 'u1'); // CMS not installed in this setup
+    await answerOnboarding('no', 'u1');
+    expect(seedCmsSamples).not.toHaveBeenCalled();
   });
 });
 

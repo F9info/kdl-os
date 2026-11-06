@@ -13,7 +13,9 @@ import {
   CommandList,
   CommandSeparator,
 } from '@/components/ui/command'
-import { FLAT_ITEMS, GROUPS } from '@/admin/components/layout/AdminSidebar'
+import { useModules } from '@/admin/hooks/useModules'
+import { navIcon } from '@/admin/lib/nav-icons'
+import { flattenNav } from '@/admin/lib/nav-model'
 import { usePermissions } from '@/admin/hooks/usePermissions'
 import { useAuth } from '@/admin/hooks/useAuth'
 import { useUiStore } from '@/admin/stores/ui.store'
@@ -29,17 +31,15 @@ export function CommandPalette({ open, onOpenChange, onOpenShortcuts }: CommandP
   const { can } = usePermissions()
   const { logout } = useAuth()
   const { toggleSidebar } = useUiStore()
+  const { navModel } = useModules()
   const { resolvedTheme, setTheme } = useTheme()
 
-  // Same nav tree the sidebar renders (KDL-292) — filtered by the same
-  // permission gate so the palette never surfaces a link the user can't use.
-  const navCommands = useMemo(() => {
-    const flat = FLAT_ITEMS.filter((item) => !item.permission || can(item.permission))
-    const grouped = GROUPS.flatMap((group) => group.children).filter(
-      (item) => !item.permission || can(item.permission)
-    )
-    return [...flat, ...grouped]
-  }, [can])
+  // The sidebar's own nav model (module manifests), filtered by the same permission gate, so the
+  // palette lists exactly the links the sidebar can show and never one the user can't use.
+  const navCommands = useMemo(
+    () => flattenNav(navModel).filter((item) => !item.permission || can(item.permission)),
+    [navModel, can]
+  )
 
   const runAndClose = (action: () => void) => {
     onOpenChange(false)
@@ -53,12 +53,12 @@ export function CommandPalette({ open, onOpenChange, onOpenShortcuts }: CommandP
         <CommandEmpty>No results found.</CommandEmpty>
         <CommandGroup heading="Navigate">
           {navCommands.map((item) => {
-            const Icon = item.icon
+            const Icon = navIcon(item.icon)
             return (
               <CommandItem
-                key={item.href}
+                key={item.path}
                 value={item.label}
-                onSelect={() => runAndClose(() => router.push(item.href))}
+                onSelect={() => runAndClose(() => router.push(item.path))}
               >
                 <Icon className="mr-2 h-4 w-4" aria-hidden="true" />
                 {item.label}

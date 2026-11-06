@@ -100,7 +100,8 @@ export const getGraph = async (req, res, next) => {
 
 export const putProducts = async (req, res, next) => {
   try {
-    successResponse(res, await applyProducts(req.validated.body.products, req.user.id));
+    const { products, delivery } = req.validated.body;
+    successResponse(res, await applyProducts(products, req.user.id, delivery));
   } catch (err) {
     next(err);
   }

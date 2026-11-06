@@ -5,6 +5,7 @@
   "description": "Content management bundle: Landing Pages, Forms, FAQ, Gallery, Testimonials, Team, Products, Our Work, Sectors, Case studies and Menus. One install adds them all and generates a demo website from your company identity.",
   "core": false,
   "umbrella": true,
+  "icon": "LayoutGrid",
   "visibleInCatalog": true,
   "apiPrefix": "/api/cms",
   "permissions": [

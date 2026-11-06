@@ -35,6 +35,9 @@ import { MediaPicker } from '@/components/shared/MediaPicker'
 import { cn } from '@/lib/utils'
 import { loadGoogleFont, loadCustomFontFace } from '@/admin/lib/load-google-font'
 import { useFetchSiteLayout } from '@/admin/hooks/useSiteLayout'
+import { useModules } from '@/admin/hooks/useModules'
+import { useWebsiteDelivery } from '@/admin/hooks/useWebsiteDelivery'
+import { visibleSurfaces, type SurfaceKey } from '@/admin/lib/website-surfaces'
 import {
   useAdvanceStage,
   useBrandKit,
@@ -68,7 +71,23 @@ interface DetailPageType {
 // flow before adding the rest (roadmap row 4a; the other cards are rows 4b/4c,
 // not yet spec'd). Unimplemented cards are intentionally omitted rather than
 // shown disabled — nothing to click through to yet.
-const BRAND_CARDS = [{ key: 'webapp', name: 'Web app' }] as const
+const SURFACE_CARD_CLASS =
+  'rounded-lg border-2 border-primary bg-primary/5 p-4 text-left transition-colors hover:bg-primary/10'
+// Which of these show is decided by visibleSurfaces() (admin/lib/website-surfaces.ts): the owner's
+// web app / static choice and the enabled modules. `href` absent = opens the Web app flow in place.
+const SURFACE_CARDS: Record<SurfaceKey, { name: string; href?: (projectId: string) => string }> = {
+  webapp: { name: 'Web app' },
+  landing: { name: 'Landing Pages', href: () => '/admin/landing-pages' },
+  forms: { name: 'Forms', href: () => '/admin/forms' },
+  collateral: {
+    name: 'Collateral',
+    href: (projectId) => `/admin/template-engine/projects/${projectId}/collateral`,
+  },
+  static: {
+    name: 'Static website',
+    href: (projectId) => `/admin/static-website?projectId=${projectId}`,
+  },
+}
 
 // Curated starter sets matching the prototype's Web app Typography screen.
 const HEADING_FONTS = ['Poppins', 'Inter', 'Manrope', 'Space Grotesk']
@@ -100,6 +119,13 @@ function writeLocal(key: string, value: unknown) {
 }
 
 export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
+  const { isEnabled } = useModules()
+  const delivery = useWebsiteDelivery()
+  const surfaces = visibleSurfaces({
+    delivery,
+    landingEnabled: isEnabled('landing'),
+    formsEnabled: isEnabled('forms'),
+  })
   const stage = run.stages.find((s) => s.stage === 'WEBSITE')
   const advance = useAdvanceStage(run.id, run.projectId)
   const retry = useRetryStage(run.id, run.projectId)
@@ -108,10 +134,9 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
   const { data: brandKit } = useBrandKit(run.projectId)
   const patchTypography = usePatchTypography(run.projectId)
   const uiStateKey = `te-website-ui:${run.projectId}`
-  const [openBrand, setOpenBrand] = useState<(typeof BRAND_CARDS)[number]['key'] | null>(
-    () =>
-      readLocal(uiStateKey, { openBrand: null as (typeof BRAND_CARDS)[number]['key'] | null })
-        .openBrand
+  // The only in-place flow is the Web app one; the other cards are links.
+  const [openBrand, setOpenBrand] = useState<'webapp' | null>(
+    () => readLocal(uiStateKey, { openBrand: null as 'webapp' | null }).openBrand
   )
   const [webAppStep, setWebAppStep] = useState<
     'typography' | 'fontSettings' | 'navigation' | 'layouts' | 'assemble'
@@ -279,55 +304,27 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {BRAND_CARDS.map((b) => (
-              <button
-                key={b.key}
-                type="button"
-                onClick={openWebApp}
-                className="rounded-lg border-2 border-primary bg-primary/5 p-4 text-left transition-colors hover:bg-primary/10"
-              >
-                <div className="text-sm font-semibold">{b.name}</div>
-                <div className="mt-1 flex items-center gap-1 text-xs font-medium text-primary">
-                  Active · Open <ArrowRight className="h-3 w-3" />
-                </div>
-              </button>
-            ))}
-            <Link
-              href="/admin/landing-pages"
-              className="rounded-lg border-2 border-primary bg-primary/5 p-4 text-left transition-colors hover:bg-primary/10"
-            >
-              <div className="text-sm font-semibold">Landing Pages</div>
-              <div className="mt-1 flex items-center gap-1 text-xs font-medium text-primary">
-                Active · Open <ArrowRight className="h-3 w-3" />
-              </div>
-            </Link>
-            <Link
-              href="/admin/forms"
-              className="rounded-lg border-2 border-primary bg-primary/5 p-4 text-left transition-colors hover:bg-primary/10"
-            >
-              <div className="text-sm font-semibold">Forms</div>
-              <div className="mt-1 flex items-center gap-1 text-xs font-medium text-primary">
-                Active · Open <ArrowRight className="h-3 w-3" />
-              </div>
-            </Link>
-            <Link
-              href={`/admin/template-engine/projects/${run.projectId}/collateral`}
-              className="rounded-lg border-2 border-primary bg-primary/5 p-4 text-left transition-colors hover:bg-primary/10"
-            >
-              <div className="text-sm font-semibold">Collateral</div>
-              <div className="mt-1 flex items-center gap-1 text-xs font-medium text-primary">
-                Active · Open <ArrowRight className="h-3 w-3" />
-              </div>
-            </Link>
-            <Link
-              href={`/admin/static-website?projectId=${run.projectId}`}
-              className="rounded-lg border-2 border-primary bg-primary/5 p-4 text-left transition-colors hover:bg-primary/10"
-            >
-              <div className="text-sm font-semibold">Static website</div>
-              <div className="mt-1 flex items-center gap-1 text-xs font-medium text-primary">
-                Active · Open <ArrowRight className="h-3 w-3" />
-              </div>
-            </Link>
+            {surfaces.map((key) => {
+              const card = SURFACE_CARDS[key]
+              const body = (
+                <>
+                  <div className="text-sm font-semibold">{card.name}</div>
+                  <div className="mt-1 flex items-center gap-1 text-xs font-medium text-primary">
+                    Active · Open <ArrowRight className="h-3 w-3" />
+                  </div>
+                </>
+              )
+              const href = card.href?.(run.projectId)
+              return href ? (
+                <Link key={key} href={href} className={SURFACE_CARD_CLASS}>
+                  {body}
+                </Link>
+              ) : (
+                <button key={key} type="button" onClick={openWebApp} className={SURFACE_CARD_CLASS}>
+                  {body}
+                </button>
+              )
+            })}
           </div>
         </div>
       ) : (

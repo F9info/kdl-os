@@ -122,3 +122,56 @@ describe('listEnabledModules hidden_by_products (T2.4, sidebar only)', () => {
     expect((await listEnabledModules()).map((m) => m.slug)).toContain('cms');
   });
 });
+
+describe('website delivery (web app vs static website)', () => {
+  const WEBSITE_MODULES = ['cms', 'menus', 'page-builder-ui', 'theme-engine-ui'];
+  const ALL = ['users', 'user-management', 'settings', 'identity', 'media', ...WEBSITE_MODULES];
+  const settingsRows = (rows) =>
+    prisma.appSetting.findUnique.mockImplementation(async ({ where }) =>
+      rows[where.key] === undefined ? null : { value: rows[where.key] }
+    );
+  const savedKeys = () => prisma.appSetting.upsert.mock.calls.map((c) => c[0].where.key);
+
+  beforeEach(() => {
+    for (const s of WEBSITE_MODULES) loadedManifests.set(s, mf(s));
+    enabled(...ALL);
+  });
+
+  it.each(['web-app', 'static', 'both'])('saves "%s" when the Website product is selected', async (delivery) => {
+    await applyProducts(['admin', 'website'], 'u1', delivery);
+    const call = prisma.appSetting.upsert.mock.calls.find((c) => c[0].where.key === 'products.website_delivery');
+    expect(call[0].create.value).toBe(delivery);
+    expect(call[0].update.value).toBe(delivery);
+  });
+
+  it('leaves the stored choice alone when delivery is omitted', async () => {
+    await applyProducts(['admin', 'website'], 'u1');
+    expect(savedKeys()).toEqual(['products.enabled']);
+  });
+
+  it('ignores a delivery choice when Website is not selected (it means nothing then)', async () => {
+    await applyProducts(['admin', 'landing'], 'u1', 'static').catch(() => {});
+    expect(savedKeys()).not.toContain('products.website_delivery');
+    await applyProducts(['admin'], 'u1', 'static');
+    expect(savedKeys()).not.toContain('products.website_delivery');
+  });
+
+  it('the graph reports the stored delivery, null when unset or invalid', async () => {
+    settingsRows({ 'products.enabled': '["admin","website"]' });
+    expect((await getModuleGraph()).delivery).toBeNull();
+    settingsRows({ 'products.enabled': '["admin","website"]', 'products.website_delivery': 'static' });
+    expect((await getModuleGraph()).delivery).toBe('static');
+    settingsRows({ 'products.website_delivery': 'carrier-pigeon' });
+    expect((await getModuleGraph()).delivery).toBeNull();
+  });
+
+  it('the request schema accepts only the three values', async () => {
+    const { productsBodySchema } = await import('./schema.js');
+    const ok = (delivery) => productsBodySchema.safeParse({ body: { products: ['admin'], delivery } }).success;
+    expect(ok('web-app')).toBe(true);
+    expect(ok('static')).toBe(true);
+    expect(ok(undefined)).toBe(true);
+    expect(ok('both')).toBe(true);
+    expect(ok('neither')).toBe(false);
+  });
+});

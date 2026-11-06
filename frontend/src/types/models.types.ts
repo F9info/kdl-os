@@ -8,6 +8,19 @@ export interface ModuleNavItem {
   path: string
   icon?: string
   permission?: string
+  /** Collapsible sidebar group this entry belongs to (with its icon and position). */
+  group?: string
+  groupIcon?: string
+  groupOrder?: number
+  /** Position among siblings (default 100). */
+  order?: number
+  /** Highlight this entry on another URL than `path` (screens that open as a stage of another page). */
+  activeWhen?: {
+    pathStartsWith?: string
+    pathEndsWith?: string
+    view?: string
+    viewNotIn?: string[]
+  }
 }
 
 export interface ModuleConflict {
@@ -38,6 +51,8 @@ export interface EnabledModule {
   slug: string
   name: string
   core: boolean
+  /** Icon name of this module's own sidebar entry (used by bundles such as Content). */
+  icon?: string | null
   /** Slug of the enabled bundle (e.g. 'cms') this module is a hidden part of. */
   parent?: string | null
   /** Nav-only: the chosen products do not need this module, so the sidebar hides it (T2.4). */

@@ -226,6 +226,8 @@ All 6 phases are complete. Verified against the code on 2026-10-18 (the previous
 - *(Fixed 2026-11-06)* PII scrubber now also covers Aadhaar, PAN and Indian mobiles (`ai-services/src/governance/compliance.js`).
 - Mobile prerequisites: *(done 2026-11-06)* app-config endpoint (`/api/app-config`, T1.1) and API versioning (`/api/v1/*` alias via `backend/src/middleware/api-version.js`, `X-API-Version` header). ETag/304 (Express weak ETags, verified) and `?updated_since=<ISO>` on the 7 public lists (`shared/utils/updated-since.js`; cannot report deletions/deactivations, so clients still do an occasional full fetch). OpenAPI 3.0 spec generated at runtime from the real routers + Zod schemas, no new dependency: `GET /api/v1/openapi.json` (needs `modules:view`; code in `backend/src/shared/openapi/`, `validate()` tags its schema, mounts tracked via `trackMounts(app)` — never mount a router before that call). Response bodies and permissions are not described. *Still open:* device sessions + logout-all (Prisma migration, needs design review), push notifications (needs FCM/APNs credentials).
 
+**Roles (2026-11-06):** `super-admin` (owner, bypass), `developer` (builds: all modules), `admin` (runs content/people), `user` (none). Defaults live in ONE file, `backend/src/modules/user-management/shared/role-blueprints.js` (policy + `applyBlueprintsOnce` at backend start + grants for newly installed modules). A module nobody listed is Developer-only. Change the policy there and in `role-blueprints.test.js`; bump `ROLE_BLUEPRINT_VERSION` to re-apply on existing databases.
+
 *(Documentation Agent updates this after each phase)*
 
 ---

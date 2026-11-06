@@ -13,7 +13,7 @@
     {
       "label": "Team",
       "path": "/admin/team",
-      "icon": "Package",
+      "icon": "Contact",
       "permission": "team:view"
     }
   ],

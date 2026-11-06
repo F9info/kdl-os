@@ -7,7 +7,26 @@
   "apiPrefix": "/api/settings",
   "permissions": ["settings"],
   "nav": [
-    { "label": "Settings", "path": "/admin/settings", "icon": "Settings", "permission": "settings:view" }
+    {
+      "label": "SEO",
+      "path": "/admin/settings/seo",
+      "icon": "Search",
+      "permission": "settings:view",
+      "order": 20,
+      "group": "Settings",
+      "groupIcon": "UserCog",
+      "groupOrder": 30
+    },
+    {
+      "label": "Storage",
+      "path": "/admin/settings/storage",
+      "icon": "HardDrive",
+      "permission": "settings:view",
+      "order": 60,
+      "group": "Settings",
+      "groupIcon": "UserCog",
+      "groupOrder": 30
+    }
   ],
   "dependsOn": [],
   "queues": [],

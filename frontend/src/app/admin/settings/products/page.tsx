@@ -11,6 +11,7 @@ import { ErrorAlert } from '@/components/shared/ErrorAlert'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { Button } from '@/components/ui/button'
 import { SetupWizard } from '@/admin/components/onboarding/SetupWizard'
+import type { WebsiteDelivery } from '@/admin/lib/project-type'
 import {
   ProductPicker,
   sameSet,
@@ -22,6 +23,7 @@ export default function ProductsPage() {
   const { can } = usePermissions()
   const queryClient = useQueryClient()
   const [selected, setSelected] = useState<string[]>([])
+  const [delivery, setDelivery] = useState<WebsiteDelivery | null>(null)
   const [confirming, setConfirming] = useState(false)
   const [wizardOpen, setWizardOpen] = useState(false)
   const initialized = useRef(false)
@@ -39,6 +41,7 @@ export default function ProductsPage() {
   useEffect(() => {
     if (stored && !initialized.current) {
       setSelected(stored.selected)
+      setDelivery(stored.delivery ?? null)
       initialized.current = true
     }
   }, [stored])
@@ -58,13 +61,17 @@ export default function ProductsPage() {
   const applyMutation = useMutation({
     mutationFn: () =>
       api
-        .put('/modules/products', { products: withBase(selected) })
+        .put('/modules/products', {
+          products: withBase(selected),
+          ...(selected.includes('website') && delivery ? { delivery } : {}),
+        })
         .then((r) => r.data.data as Graph),
     onSuccess: (saved) => {
       queryClient.setQueryData(['module-graph', 'stored'], saved)
       queryClient.invalidateQueries({ queryKey: ['module-graph'] })
       queryClient.invalidateQueries({ queryKey: ['modules-enabled'] })
       setSelected(saved.selected)
+      setDelivery(saved.delivery ?? null)
       setConfirming(false)
       toast({ title: 'Products updated' })
     },
@@ -77,7 +84,9 @@ export default function ProductsPage() {
   }
 
   const r = preview?.resolution
-  const dirty = stored ? !sameSet(selected, stored.selected) : false
+  const deliveryDirty =
+    selected.includes('website') && !!delivery && delivery !== (stored?.delivery ?? null)
+  const dirty = stored ? !sameSet(selected, stored.selected) || deliveryDirty : false
   const canApply = can('modules:edit') && can('modules:add') && dirty && r?.valid
 
   return (
@@ -124,6 +133,11 @@ export default function ProductsPage() {
               disabled={!can('modules:edit')}
               resolution={r}
               nameOf={nameOf}
+              delivery={delivery}
+              onDeliveryChange={(v) => {
+                setConfirming(false)
+                setDelivery(v)
+              }}
             />
 
             {can('modules:edit') && (

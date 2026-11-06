@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/axios'
 import { useAuthStore } from '@/stores/auth.store'
 import type { EnabledModule } from '@/types/models.types'
+import { buildNavModel } from '@/admin/lib/nav-model'
 
 export function useModules() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
@@ -20,17 +21,8 @@ export function useModules() {
   }
 
   // Menus show only what the chosen products need. isEnabled above still sees every enabled module.
-  const visible = enabledModules.filter((m) => !m.hidden_by_products)
-  const nav = visible.flatMap((m) => m.nav)
-  // Parts of a bundle (CMS) are listed under the bundle, not as separate top-level items.
-  const nonCoreNav = visible.filter((m) => !m.core && !m.parent).flatMap((m) => m.nav)
-  const bundles = visible
-    .filter((b) => visible.some((m) => m.parent === b.slug))
-    .map((b) => ({
-      slug: b.slug,
-      name: b.name,
-      items: visible.filter((m) => m.parent === b.slug).flatMap((m) => m.nav),
-    }))
+  // The sidebar and command palette both render this one model (see admin/lib/nav-model.ts).
+  const navModel = buildNavModel(enabledModules)
 
-  return { enabledModules, isEnabled, nav, nonCoreNav, bundles, isLoading }
+  return { enabledModules, isEnabled, navModel, isLoading }
 }

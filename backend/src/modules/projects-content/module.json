@@ -13,7 +13,7 @@
     {
       "label": "Case Studies",
       "path": "/admin/projects-content",
-      "icon": "Package",
+      "icon": "FolderKanban",
       "permission": "projects-content:view"
     }
   ],

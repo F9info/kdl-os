@@ -7,7 +7,18 @@
   "visibleInCatalog": false,
   "apiPrefix": "/api/types",
   "permissions": ["types"],
-  "nav": [],
+  "nav": [
+    {
+      "label": "Field Types",
+      "path": "/admin/settings/types",
+      "icon": "ListChecks",
+      "permission": "types:view",
+      "order": 30,
+      "group": "Settings",
+      "groupIcon": "UserCog",
+      "groupOrder": 30
+    }
+  ],
   "dependsOn": [],
   "queues": [],
   "env": []

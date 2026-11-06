@@ -4,6 +4,7 @@ import { isLegacyNumberedKey } from '@/frontend/blocks/packs/numbered-families'
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePuck, AutoField, FieldLabel } from '@puckeditor/core'
+import { fieldDisplayLabel } from './field-label'
 import type { Field } from '@puckeditor/core'
 import {
   Plus,
@@ -382,7 +383,7 @@ function FieldList({
           Array.isArray(arrayValue) &&
           arrayValue.length > 0
         return (
-          <FieldLabel key={key} label={key}>
+          <FieldLabel key={key} label={fieldDisplayLabel(key, field)}>
             {showSlidePicker && (
               <SlidePreviewPicker
                 slides={arrayValue as Record<string, unknown>[]}

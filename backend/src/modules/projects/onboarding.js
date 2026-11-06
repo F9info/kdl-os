@@ -7,7 +7,7 @@ import {
   buildStarterPage,
   insertPublishedPage,
 } from './starter-site.js';
-import { cmsPages, cmsEnabled, applyCmsSite } from '../cms/pages.js';
+import { cmsPages, cmsEnabled, applyCmsSite, seedCmsSamples } from '../cms/pages.js';
 import { addPageToMenus } from '../menus/site-menus.js';
 
 export { STARTER_PAGES };
@@ -83,6 +83,9 @@ export async function answerOnboarding(choice, actorId) {
     return { choice, created: [], skipped: [] };
   }
   const { created, skipped } = await createStarterSite(prisma, actorId);
+  // "Sample website" also means the sample content its CMS pages show (FAQ, team, gallery ...), but
+  // only when CMS is installed. Without this the sample pages would render empty lists.
+  if (await cmsEnabled(prisma)) await seedCmsSamples(prisma);
   // Saved last: if anything above threw, the pop-up shows again and a retry fills the gaps.
   await saveChoice('yes');
   return { choice, created, skipped };

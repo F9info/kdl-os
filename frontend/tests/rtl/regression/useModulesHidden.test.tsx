@@ -28,10 +28,10 @@ const modules = [
 ]
 
 function Probe() {
-  const { nonCoreNav, bundles, isEnabled } = useModules()
+  const { navModel, isEnabled } = useModules()
   return (
     <p data-testid="out">
-      {nonCoreNav.map((n) => n.label).join(',')}|{bundles.length}|
+      {navModel.top.map((n) => n.label).join(',')}|{navModel.bundles.length}|
       {String(isEnabled('theme-engine-ui'))}
     </p>
   )

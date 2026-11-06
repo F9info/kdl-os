@@ -541,11 +541,23 @@ describe('installModule("collateral") — KDL-542 regression guard', () => {
       upsert:   vi.fn(),
     };
     prisma.permissionModule = {
+      findUnique: vi.fn().mockResolvedValue(null), // brand-new permission module
       upsert: vi.fn().mockResolvedValue({ id: 'pm-1', name: 'collateral' }),
     };
     prisma.permission = {
       upsert: vi.fn().mockResolvedValue({}),
+      findMany: vi.fn().mockResolvedValue([
+        { id: 'perm-view', action: 'view', module: { name: 'collateral' } },
+        { id: 'perm-del', action: 'delete', module: { name: 'collateral' } },
+      ]),
     };
+    prisma.rbacRole = {
+      findMany: vi.fn().mockResolvedValue([
+        { id: 'r-dev', slug: 'developer' },
+        { id: 'r-admin', slug: 'admin' },
+      ]),
+    };
+    prisma.rolePermission = { createMany: vi.fn().mockResolvedValue({ count: 0 }) };
     prisma.$transaction = vi.fn((fn) => fn(prisma));
   });
 
@@ -558,6 +570,27 @@ describe('installModule("collateral") — KDL-542 regression guard', () => {
       version: '1.0.0',
       status:  'INSTALLED',
     });
+  });
+
+  it('a brand-new permission module gets the default Developer and Admin grants', async () => {
+    await installModule('collateral', 'actor');
+
+    const grants = prisma.rolePermission.createMany.mock.calls.flatMap((c) => c[0].data);
+    // collateral is a content module: developer and admin both get view + delete
+    expect(grants).toEqual(
+      expect.arrayContaining([
+        { role_id: 'r-dev', permission_id: 'perm-view' },
+        { role_id: 'r-dev', permission_id: 'perm-del' },
+        { role_id: 'r-admin', permission_id: 'perm-view' },
+        { role_id: 'r-admin', permission_id: 'perm-del' },
+      ])
+    );
+  });
+
+  it('an already-registered permission module is NOT re-granted (revocations stay revoked)', async () => {
+    prisma.permissionModule.findUnique.mockResolvedValue({ id: 'pm-1' });
+    await installModule('collateral', 'actor');
+    expect(prisma.rolePermission.createMany).not.toHaveBeenCalled();
   });
 
   it('creates exactly one Module row', async () => {

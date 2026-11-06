@@ -101,6 +101,17 @@ export function schemaIssues(block, schemas) {
       ),
     ];
   const out = [];
+  // Hidden on mobile, tablet AND desktop (per-device visibility): nobody would ever see it.
+  const p = block.props ?? {};
+  if (p.hideOnMobile === true && p.hideOnTablet === true && p.hideOnDesktop === true)
+    out.push(
+      issue(
+        'warning',
+        'BLOCK_HIDDEN_EVERYWHERE',
+        `${schema.label ?? block.type} is hidden on mobile, tablet and desktop, so no visitor will see it.`,
+        block
+      )
+    );
   for (const [key, value] of Object.entries(block.props ?? {})) {
     const field = schema.fields[key];
     if (!field || value === undefined || value === null || value === '') continue;

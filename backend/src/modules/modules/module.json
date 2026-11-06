@@ -7,7 +7,13 @@
   "apiPrefix": "/api/modules",
   "permissions": ["modules"],
   "nav": [
-    { "label": "Modules", "path": "/admin/modules", "icon": "Package", "permission": "modules:view" }
+    {
+      "label": "Modules",
+      "path": "/admin/modules",
+      "icon": "Puzzle",
+      "permission": "modules:view",
+      "order": 20
+    }
   ],
   "dependsOn": [],
   "queues": [],
