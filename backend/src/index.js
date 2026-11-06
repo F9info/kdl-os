@@ -44,9 +44,13 @@ import projectRoutes from './modules/projects/routes.js';
 import detailPageTypesRoutes from './modules/detail-page-types/routes.js';
 import { verifyLocalPresignToken } from './shared/services/storage/drivers/local.driver.js';
 import { apiVersion } from './middleware/api-version.js';
+import { authenticate } from './middleware/auth.js';
+import { requirePermission } from './middleware/permission.js';
+import { trackMounts, openApiHandler } from './shared/openapi/spec.js';
 import { loadModules, checkDependencyIntegrity } from './shared/modules/module-loader.js';
 
 const app = express();
+trackMounts(app);
 const PORT = process.env.APP_PORT || 4000;
 
 app.set('trust proxy', 1);
@@ -162,6 +166,8 @@ app.use('/api/detail-page-types', detailPageTypesRoutes);
 
 // Mount plugin modules (those with module.json + routes.js) behind moduleGate
 await loadModules(app);
+// Machine-readable API contract for native clients (admin-level: it lists every endpoint).
+app.get('/api/openapi.json', authenticate, requirePermission('modules', 'view'), openApiHandler(app));
 
 // KDL-593: detect dependency drift — ENABLED modules whose deps are not ENABLED.
 // Logs loudly; never auto-enables dependencies.

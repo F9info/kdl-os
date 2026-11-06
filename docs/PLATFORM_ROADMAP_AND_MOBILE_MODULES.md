@@ -150,7 +150,7 @@ Estimates use AI-compressed effort for your 4-engineer team (no ML or mobile spe
 - **Exit:** safe to put two clients on one instance.
 
 ### Stage 2 — API spine for mobile _(2–3 weeks)_
-- [ ] **M1 `api-gateway`**: ~~`/api/v1`~~ (done 2026-11-06, alias + `X-API-Version`), OpenAPI from Zod (needs a new dependency: board approval), ETag, per-user rate limiting (ai-services done; backend limiter is still per IP).
+- [ ] **M1 `api-gateway`**: ~~`/api/v1`~~ (done 2026-11-06, alias + `X-API-Version`), ~~OpenAPI from Zod~~ (done 2026-11-06, no dependency: in-house generator, `GET /api/v1/openapi.json`), ~~ETag~~ (already served by Express; verified 304) and ~~`?updated_since=`~~ on the 7 public lists (done 2026-11-06), per-user rate limiting (ai-services done; backend limiter is still per IP).
 - [ ] **M2 `mobile-auth`**: `device_sessions`, sessions list, logout-all, step-up.
 - [ ] **M3 `mobile-config`**: min-version / force-update / maintenance / flags.
 - [ ] Real multi-project: membership everywhere (builds on Stage 1 D).

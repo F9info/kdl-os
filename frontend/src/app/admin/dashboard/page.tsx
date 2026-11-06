@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Users, Settings, Image, UserCheck, type LucideIcon } from 'lucide-react'
 import api from '@/lib/axios'
+import { usePermissions } from '@/admin/hooks/usePermissions'
 import { PageHeader } from '@/admin/components/layout/PageHeader'
 import { DataTable } from '@/admin/components/shared/DataTable'
 import { StatusBadge } from '@/admin/components/shared/StatusBadge'
@@ -70,8 +71,15 @@ const recentColumns: ColumnDef<User>[] = [
 ]
 
 export default function DashboardPage() {
+  // Each card calls an API behind its own permission. Asking for data the user may not see only
+  // produced 403s and a misleading "0", so only query and show what the role can actually view.
+  const { can } = usePermissions()
+  const canUsers = can('users:view')
+  const canSettings = can('settings:view')
+  const canMedia = can('media:view')
   const { data: usersData, isLoading: usersLoading } = useQuery({
     queryKey: ['users', 'stats'],
+    enabled: canUsers,
     queryFn: () =>
       api
         .get('/users', { params: { limit: 1 } })
@@ -80,6 +88,7 @@ export default function DashboardPage() {
 
   const { data: activeData, isLoading: activeLoading } = useQuery({
     queryKey: ['users', 'active-stats'],
+    enabled: canUsers,
     queryFn: () =>
       api
         .get('/users', { params: { limit: 1, is_active: true } })
@@ -88,11 +97,13 @@ export default function DashboardPage() {
 
   const { data: settingsData, isLoading: settingsLoading } = useQuery({
     queryKey: ['settings', 'stats'],
+    enabled: canSettings,
     queryFn: () => api.get('/settings').then((r) => r.data.data as { settings: unknown[] }),
   })
 
   const { data: recentUsers, isLoading: recentLoading } = useQuery({
     queryKey: ['users', 'recent'],
+    enabled: canUsers,
     queryFn: () =>
       api
         .get('/users', { params: { limit: 5, page: 1 } })
@@ -101,6 +112,7 @@ export default function DashboardPage() {
 
   const { data: mediaData, isLoading: mediaLoading } = useQuery({
     queryKey: ['media', 'stats'],
+    enabled: canMedia,
     queryFn: () =>
       api
         .get('/media', { params: { limit: 1, scope: 'all' } })
@@ -114,40 +126,56 @@ export default function DashboardPage() {
       {/* Gap between stat cards follows Theme Engine Layout > Card Spacing
           via th-card-grid (te-layout.css); gap-4 was the old static value. */}
       <div className="th-card-grid grid md:grid-cols-2 lg:grid-cols-4">
-        <StatsCard
-          title="Total Users"
-          value={usersData?.pagination.total ?? 0}
-          icon={Users}
-          isLoading={usersLoading}
-        />
-        <StatsCard
-          title="Active Users"
-          value={activeData?.pagination.total ?? 0}
-          icon={UserCheck}
-          isLoading={activeLoading}
-        />
-        <StatsCard
-          title="Settings"
-          value={settingsData?.settings.length ?? 0}
-          icon={Settings}
-          isLoading={settingsLoading}
-        />
-        <StatsCard
-          title="Media Files"
-          value={mediaData?.pagination.total ?? 0}
-          icon={Image}
-          isLoading={mediaLoading}
-        />
+        {canUsers && (
+          <StatsCard
+            title="Total Users"
+            value={usersData?.pagination.total ?? 0}
+            icon={Users}
+            isLoading={usersLoading}
+          />
+        )}
+        {canUsers && (
+          <StatsCard
+            title="Active Users"
+            value={activeData?.pagination.total ?? 0}
+            icon={UserCheck}
+            isLoading={activeLoading}
+          />
+        )}
+        {canSettings && (
+          <StatsCard
+            title="Settings"
+            value={settingsData?.settings.length ?? 0}
+            icon={Settings}
+            isLoading={settingsLoading}
+          />
+        )}
+        {canMedia && (
+          <StatsCard
+            title="Media Files"
+            value={mediaData?.pagination.total ?? 0}
+            icon={Image}
+            isLoading={mediaLoading}
+          />
+        )}
       </div>
 
-      <div className="mt-8">
-        <h2 className="text-lg font-semibold mb-4">Recent Users</h2>
-        <DataTable
-          columns={recentColumns}
-          data={recentUsers?.users ?? []}
-          isLoading={recentLoading}
-        />
-      </div>
+      {!canUsers && !canSettings && !canMedia && (
+        <p className="text-sm text-muted-foreground" data-testid="dashboard-empty">
+          Welcome. Use the menu to open the areas you have access to.
+        </p>
+      )}
+
+      {canUsers && (
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold mb-4">Recent Users</h2>
+          <DataTable
+            columns={recentColumns}
+            data={recentUsers?.users ?? []}
+            isLoading={recentLoading}
+          />
+        </div>
+      )}
     </div>
   )
 }

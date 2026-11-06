@@ -515,4 +515,61 @@ describe('sseStream — disconnect cleanup', () => {
 
     expect(redis.decr).toHaveBeenCalledWith('notif:sse:sse-user-2');
   });
+
+  // Regression: disconnect handlers used to be registered AFTER the awaits, so a client that
+  // reloaded mid-handshake leaked its slot (counter stuck at the cap, 0 real subscribers).
+  const fakeReq = (id) => {
+    const listeners = {};
+    return {
+      listeners,
+      req: { user: { id }, query: {}, headers: {}, on: vi.fn((e, cb) => { listeners[e] = cb; }) },
+      res: {
+        setHeader: vi.fn(), flushHeaders: vi.fn(), write: vi.fn(), writableEnded: false,
+        status: vi.fn().mockReturnThis(), json: vi.fn().mockReturnThis(),
+      },
+    };
+  };
+
+  it('registers disconnect handlers before any await', async () => {
+    const { req, res, listeners } = fakeReq('early-1');
+    let release;
+    redis.incr.mockReturnValue(new Promise((r) => { release = r; })); // hang the cap check
+    const pending = sseStream(req, res, vi.fn());
+    expect(typeof listeners.close).toBe('function');
+    expect(typeof listeners.aborted).toBe('function');
+    release(1);
+    await pending;
+  });
+
+  it('releases the slot when the client leaves while the cap check is still pending', async () => {
+    const { req, res, listeners } = fakeReq('early-2');
+    let release;
+    redis.incr.mockReturnValue(new Promise((r) => { release = r; }));
+    const pending = sseStream(req, res, vi.fn());
+    await listeners.close(); // client gone before incr resolved: cleanup runs with nothing counted yet
+    release(1);
+    await pending;
+    expect(redis.decr).toHaveBeenCalledTimes(1);
+    expect(redis.decr).toHaveBeenCalledWith('notif:sse:early-2');
+    expect(res.flushHeaders).not.toHaveBeenCalled(); // never opened the stream
+    expect(redis.duplicate).not.toHaveBeenCalled();
+  });
+
+  it('releases exactly once when close and aborted both fire', async () => {
+    const { req, res, listeners } = fakeReq('once-1');
+    await sseStream(req, res, vi.fn());
+    await listeners.close();
+    await listeners.aborted();
+    expect(redis.decr).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not decrement for a connection refused at the cap beyond the one release', async () => {
+    const { req, res, listeners } = fakeReq('cap-1');
+    redis.incr.mockResolvedValue(4); // over SSE_MAX_CONNECTIONS (3)
+    await sseStream(req, res, vi.fn());
+    expect(res.status).toHaveBeenCalledWith(429);
+    expect(redis.decr).toHaveBeenCalledTimes(1);
+    await listeners.close(); // later close of the refused request must not decrement again
+    expect(redis.decr).toHaveBeenCalledTimes(1);
+  });
 });

@@ -1,9 +1,11 @@
 import { z } from 'zod';
+import { updatedSinceField } from '../../shared/utils/updated-since.js';
 
 export const listFaqsSchema = z.object({
   query: z.object({
     project_id: z.string().min(1).optional(),
     is_active: z.enum(['true', 'false']).optional(),
+    updated_since: updatedSinceField,
   }),
 });
 

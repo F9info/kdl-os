@@ -1,4 +1,5 @@
 import { prisma } from '../../config/database.js';
+import { applyUpdatedSince } from '../../shared/utils/updated-since.js';
 import { deletePage } from '../page-builder/service.js';
 import { createDetailPageInstance } from '../../shared/detail-pages/templates.js';
 import { siteChrome } from '../sectors/service.js';
@@ -7,6 +8,7 @@ export const listCatalog = (query) => {
   const where = {};
   if (query.project_id) where.project_id = query.project_id;
   if (query.is_active !== undefined) where.is_active = query.is_active === 'true';
+  applyUpdatedSince(where, query);
 
   return prisma.catalogItem.findMany({
     where,

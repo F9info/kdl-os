@@ -433,6 +433,19 @@ export const sseStream = async (req, res, next) => {
   let subscriber = null;
   let heartbeat = null;
   let closed = false;
+  let counted = false; // true only while this connection holds one slot of the per-user cap
+
+  // Give back this connection's slot, but only if it actually took one (idempotent).
+  const release = async () => {
+    if (!counted) return;
+    counted = false;
+    try {
+      const count = await redis.decr(sseCountKey);
+      if (count <= 0) await redis.del(sseCountKey);
+    } catch {
+      // best-effort
+    }
+  };
 
   const cleanup = async () => {
     if (closed) return;
@@ -448,24 +461,27 @@ export const sseStream = async (req, res, next) => {
       }
     }
 
-    // Decrement SSE counter
-    try {
-      const count = await redis.decr(sseCountKey);
-      if (count <= 0) await redis.del(sseCountKey);
-    } catch {
-      // best-effort
-    }
+    await release();
   };
+
+  // Register the disconnect handlers FIRST. They used to be added after several awaits, so a client
+  // that reloaded mid-handshake never fired them and leaked its slot (counter stuck at the cap with
+  // zero real subscribers, locking the user out of live notifications for up to an hour).
+  req.on('close', cleanup);
+  req.on('aborted', cleanup);
 
   try {
     // Check / enforce SSE connection cap
     const currentCount = await redis.incr(sseCountKey);
+    counted = true;
     await redis.expire(sseCountKey, 3600); // 1h safety TTL
 
     if (currentCount > SSE_MAX_CONNECTIONS) {
-      await redis.decr(sseCountKey);
+      await release();
       return errorResponse(res, 'Too many concurrent SSE connections', 429);
     }
+    // The client left while we were counting: cleanup() already ran before `counted` was set.
+    if (closed) return await release();
 
     // SSE headers
     res.setHeader('Content-Type', 'text/event-stream');
@@ -484,7 +500,7 @@ export const sseStream = async (req, res, next) => {
     // Dedicated subscriber connection (ioredis requirement)
     subscriber = redis.duplicate();
 
-    subscriber.on('error', (err) => {
+    subscriber.on('error', () => {
       // Log but don't crash — client will reconnect via EventSource retry
     });
 
@@ -496,14 +512,15 @@ export const sseStream = async (req, res, next) => {
       res.write(`data: ${message}\n\n`);
     });
 
-    // Handle client disconnect
-    req.on('close', async () => {
-      await cleanup();
-    });
-
-    req.on('aborted', async () => {
-      await cleanup();
-    });
+    // The client may have gone while we were subscribing: cleanup() ran against a half-open
+    // subscriber, so make sure it is really closed.
+    if (closed) {
+      try {
+        subscriber.disconnect();
+      } catch {
+        // best-effort
+      }
+    }
   } catch (err) {
     await cleanup();
     next(err);
