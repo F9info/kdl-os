@@ -13,6 +13,9 @@ import {
 import {
   createRun,
   createSite,
+  startStatic,
+  staticStatus,
+  staticDownload,
   listRuns,
   getRun,
   resumeRun,
@@ -34,6 +37,11 @@ router.get('/runs/:runId', requirePermission('template-engine', 'view'), validat
 
 // Generate the project's standalone Next.js site folder (frontend/projects/<slug>).
 router.post('/site', requirePermission('template-engine', 'run'), validate(createRunBodySchema), requireProject('body'), createSite);
+
+// One-click static export: start a build, poll status, download the zip.
+router.post('/site/static', requirePermission('template-engine', 'run'), requireProject(), startStatic);
+router.get('/site/static', requirePermission('template-engine', 'view'), requireProject(), staticStatus);
+router.get('/site/static/download', requirePermission('template-engine', 'export'), requireProject(), staticDownload);
 
 // Crash-recovery: call at startup to flip RUNNING → FAILED(INTERRUPTED).
 router.post('/runs/:runId/resume', requirePermission('template-engine', 'run'), validate(runParamSchema), requireProject(), resumeRun);

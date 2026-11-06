@@ -18,7 +18,7 @@ export class ResearchAgent extends BaseAgent {
   }
 
   async run(task, context = {}) {
-    const ragResult = await ragChain(task, this.sessionId, 'HIGH');
+    const ragResult = await ragChain(task, this.sessionId, 'HIGH', { tenantId: this.tenantId });
     if (ragResult.error) return { error: ragResult.error, iterations: 0 };
     const enrichedContext = { ...context, ragContext: ragResult.content };
     return super.run(task, enrichedContext);

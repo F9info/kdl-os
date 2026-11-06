@@ -6,6 +6,7 @@ const openrouterBrainMock = vi.hoisted(() => vi.fn());
 const checkBudgetMock = vi.hoisted(() => vi.fn());
 const recordSpendMock = vi.hoisted(() => vi.fn());
 const auditLoggerMock = vi.hoisted(() => vi.fn());
+const recordClaudeSpendMock = vi.hoisted(() => vi.fn());
 
 vi.mock('fs/promises', () => ({
   writeFile: writeFileMock,
@@ -21,6 +22,7 @@ vi.mock('../src/brains/openrouter.js', () => ({
 vi.mock('../src/orchestrator/budget-tracker.js', () => ({
   checkBudget: checkBudgetMock,
   recordSpend: recordSpendMock,
+  recordClaudeSpend: recordClaudeSpendMock,
 }));
 vi.mock('../src/governance/audit-logger.js', () => ({
   auditLogger: auditLoggerMock,
@@ -62,6 +64,7 @@ const openrouterResponse = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  recordClaudeSpendMock.mockResolvedValue(undefined);
   claudeBrainMock.mockResolvedValue(claudeResponse);
   openrouterBrainMock.mockResolvedValue(openrouterResponse);
   checkBudgetMock.mockResolvedValue(true);
@@ -74,6 +77,15 @@ describe('brainRouter routing contract (KDL-488)', () => {
     expect(claudeBrainMock).toHaveBeenCalledWith('do the thing', { sessionId: 's1' });
     expect(openrouterBrainMock).not.toHaveBeenCalled();
     expect(result).toEqual(claudeResponse);
+    // Claude is metered in its own ledger (not the gated OpenRouter one), and never gated.
+    expect(recordClaudeSpendMock).toHaveBeenCalledTimes(1);
+    expect(recordSpendMock).not.toHaveBeenCalled();
+    expect(checkBudgetMock).not.toHaveBeenCalled();
+  });
+
+  it('a failing Claude ledger write never fails the call', async () => {
+    recordClaudeSpendMock.mockRejectedValueOnce(new Error('redis down'));
+    await expect(brainRouter('do the thing', 'HIGH')).resolves.toEqual(claudeResponse);
   });
 
   it('routes MEDIUM priority to openrouterBrain with the payload untouched', async () => {
@@ -164,7 +176,7 @@ describe('existing brainRouter callers keep their contract (KDL-488)', () => {
 
   it('BaseAgent.run sends a flat string prompt at its default MEDIUM priority', async () => {
     openrouterBrainMock.mockResolvedValue({ ...openrouterResponse, content: 'task complete' });
-    const agent = new BaseAgent({ sessionId: 'agent-sess' });
+    const agent = new BaseAgent({ sessionId: 'agent-sess', tenantId: 't1' });
     const { result, iterations } = await agent.run('sort the files');
     expect(iterations).toBe(1);
     expect(result).toBe('task complete');
@@ -176,7 +188,7 @@ describe('existing brainRouter callers keep their contract (KDL-488)', () => {
 
   it('BaseAgent.run surfaces the BUDGET_EXHAUSTED error envelope unchanged', async () => {
     checkBudgetMock.mockResolvedValue(false);
-    const agent = new BaseAgent({ sessionId: 'agent-sess' });
+    const agent = new BaseAgent({ sessionId: 'agent-sess', tenantId: 't1' });
     const result = await agent.run('anything');
     expect(result).toEqual({ error: 'BUDGET_EXHAUSTED', iterations: 1 });
   });

@@ -8,6 +8,7 @@
 import { Router } from 'express';
 import { authenticate } from '../../middleware/auth.js';
 import { requirePermission } from '../../middleware/permission.js';
+import { requireProject } from '../../middleware/project.js';
 import { validate } from '../../middleware/validate.js';
 import { upload } from '../../middleware/upload.js';
 import {
@@ -41,6 +42,7 @@ const router = Router();
 router.get(
   '/:projectId',
   authenticate, requirePermission('brand-kit', 'view'),
+  requireProject('param'),
   validate(getKitSchema),
   getKitHandler,
 );
@@ -50,6 +52,7 @@ router.get(
 router.get(
   '/:projectId/tokens',
   authenticate, requirePermission('brand-kit', 'view'),
+  requireProject('param'),
   validate(getTokensSchema),
   getTokensHandler,
 );
@@ -59,6 +62,7 @@ router.get(
 router.get(
   '/:projectId/theme-colors',
   authenticate, requirePermission('brand-kit', 'view'),
+  requireProject('param'),
   validate(getThemeColorsSchema),
   getThemeColorsHandler,
 );
@@ -68,6 +72,7 @@ router.get(
 router.post(
   '/:projectId/logo',
   authenticate, requirePermission('brand-kit', 'edit'),
+  requireProject('param'),
   upload.single('file'),
   validate(uploadLogoSchema),
   uploadLogoHandler,
@@ -76,6 +81,7 @@ router.post(
 router.post(
   '/:projectId/extract',
   authenticate, requirePermission('brand-kit', 'edit'),
+  requireProject('param'),
   validate(extractSchema),
   extractHandler,
 );
@@ -85,6 +91,7 @@ router.post(
 router.post(
   '/:projectId/infer',
   authenticate, requirePermission('brand-kit', 'edit'),
+  requireProject('param'),
   validate(inferSchema),
   inferHandler,
 );
@@ -92,6 +99,7 @@ router.post(
 router.patch(
   '/:projectId',
   authenticate, requirePermission('brand-kit', 'edit'),
+  requireProject('param'),
   validate(patchKitSchema),
   patchKitHandler,
 );
@@ -99,6 +107,7 @@ router.patch(
 router.post(
   '/:projectId/approve',
   authenticate, requirePermission('brand-kit', 'approve'),
+  requireProject('param'),
   validate(approveSchema),
   approveHandler,
 );
@@ -106,6 +115,7 @@ router.post(
 router.post(
   '/:projectId/reopen',
   authenticate, requirePermission('brand-kit', 'edit'),
+  requireProject('param'),
   validate(getKitSchema),
   reopenHandler,
 );
@@ -113,6 +123,7 @@ router.post(
 router.post(
   '/:projectId/guidelines/render',
   authenticate, requirePermission('brand-kit', 'render'),
+  requireProject('param'),
   validate(renderGuidelinesSchema),
   renderGuidelinesHandler,
 );

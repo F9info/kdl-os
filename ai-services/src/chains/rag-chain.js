@@ -3,8 +3,10 @@ import { brainRouter } from '../orchestrator/brain-router.js';
 import { addMessage, getContext } from '../orchestrator/context-manager.js';
 
 export async function ragChain(query, sessionId, priority = 'MEDIUM', options = {}) {
+  // tenantId scopes the vector lookup; it is not a brain option, so keep it out of the model call.
+  const { tenantId, ...brainOptions } = options;
   const [chunks, history] = await Promise.all([
-    retrieveChunks(query, 5),
+    retrieveChunks(query, 5, tenantId),
     getContext(sessionId),
   ]);
 
@@ -25,7 +27,7 @@ export async function ragChain(query, sessionId, priority = 'MEDIUM', options = 
   const response = await brainRouter(messages, priority, {
     system: systemPrompt,
     sessionId,
-    ...options,
+    ...brainOptions,
   });
 
   if (!response.error) {

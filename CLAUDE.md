@@ -220,11 +220,11 @@ All 6 phases are complete. Verified against the code on 2026-10-18 (the previous
 **Fixed since the earlier review (do not re-open):** M1 logger (`ai-services/src/utils/logger.js`), M2 `redis.keys()` → `scan`, M4 bounded embeds (`p-limit`), M5 scoped Meili key, M6 `import.meta.url` paths, M7 `jwt.verify` HS256, M3 mostly (message is scrubbed and now collapsed to one line). Whisper transcription (`controllers/transcribe.js`) and forgot-password (`POST /api/auth/forgot-password`) are implemented.
 
 **Open (see `docs/PLATFORM_ROADMAP_AND_MOBILE_MODULES.md` §3 for the full list):**
-- Chroma knowledge base has no tenant isolation (`ai-services/src/knowledge/*` uses one shared collection).
-- ai-services has no per-user rate limit or role check; Claude/embed/brand-inference spend is not recorded against the budget.
-- Project-membership checks are missing on credits / brand-kit / collateral routes (latent while only one project is allowed).
-- PII scrubber covers US formats only (no Aadhaar / PAN / +91).
-- No push notifications, device/session tracking, API versioning, OpenAPI spec or app-config endpoint — all needed for the Android/iOS apps.
+- *(Fixed 2026-11-06)* Chroma tenant isolation: one collection per tenant (`ai-services/src/knowledge/tenant.js`, name = base + sha256(tenant)), tenant from the verified JWT (`tenantId` claim, else `user:<id>`; never the request body), missing tenant throws (fail closed). Applies to knowledge, long-term memory, RAG, agents. Org-wide shared knowledge now needs a signed `tenantId` claim from the backend (none is issued yet).
+- *(Fixed 2026-11-06)* ai-services per-caller rate limits (`AI_LIMIT_CHAT|EMBED|TRANSCRIBE|BRAND_INFERENCE`, per 15 min, in-memory), role gates (brand-inference = backend service JWT only; embed = service or admin), embed budget gate + embed cost metering, Claude spend in its own un-gated Redis ledger `budget:claude:<day>` (`getBudgetStatus().claude_spent`). Still open: Claude spend has no cap, limits are per instance.
+- *(Fixed 2026-11-06)* Project-membership checks on credits / brand-kit / collateral routes: `requireProject` now takes `'param'` or a resolver `(req) => projectId` (asset / render / hold lookups); tests in `backend/src/modules/project-scoping.route.test.js`.
+- *(Fixed 2026-11-06)* PII scrubber now also covers Aadhaar, PAN and Indian mobiles (`ai-services/src/governance/compliance.js`).
+- Mobile prerequisites: *(done 2026-11-06)* app-config endpoint (`/api/app-config`, T1.1) and API versioning (`/api/v1/*` alias via `backend/src/middleware/api-version.js`, `X-API-Version` header). *Still open:* OpenAPI spec (needs a zod-to-openapi style dependency — stack is locked, needs board approval), ETag / `updated_since`, device sessions + logout-all, push notifications.
 
 *(Documentation Agent updates this after each phase)*
 

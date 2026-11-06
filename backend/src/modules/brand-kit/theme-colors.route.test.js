@@ -26,6 +26,7 @@ vi.mock('../../middleware/permission.js', () => ({
       ? next()
       : res.status(403).json({ success: false, message: 'Forbidden' }),
 }));
+vi.mock('../../middleware/project.js', () => ({ requireProject: () => (_req, _res, next) => next() }));
 vi.mock('../../middleware/upload.js', () => ({ upload: { single: () => (_req, _res, next) => next() } }));
 vi.mock('../../shared/utils/logger.js', () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
 

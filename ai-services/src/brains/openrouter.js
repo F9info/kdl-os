@@ -1,4 +1,5 @@
 import OpenAI, { toFile } from 'openai';
+import { recordSpend } from '../orchestrator/budget-tracker.js';
 
 const client = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
@@ -14,6 +15,7 @@ const client = new OpenAI({
 
 const MODEL = process.env.OPENROUTER_DEFAULT_MODEL ?? 'moonshot-ai/moonshot-v1-32k';
 const COST_PER_TOKEN = 0.000002;
+const EMBED_COST_PER_TOKEN = 0.02 / 1_000_000;
 
 export async function openrouterBrain(messages, options = {}) {
   const userMessages = Array.isArray(messages)
@@ -74,5 +76,7 @@ export async function openrouterEmbed(text) {
     model: 'openai/text-embedding-3-small',
     input: typeof text === 'string' ? text : text.join(' '),
   });
+  // text-embedding-3-small: $0.02 per 1M tokens. Best-effort: metering never fails an embed.
+  await recordSpend((response.usage?.prompt_tokens ?? 0) * EMBED_COST_PER_TOKEN).catch(() => {});
   return response.data[0]?.embedding ?? [];
 }

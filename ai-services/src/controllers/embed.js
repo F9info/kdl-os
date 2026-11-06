@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { openrouterEmbed } from '../brains/openrouter.js';
 import { successResponse, errorResponse } from '../utils/response.js';
+import { checkBudget } from '../orchestrator/budget-tracker.js';
 import { logger } from '../utils/logger.js';
 
 const embedSchema = z.object({
@@ -12,6 +13,10 @@ export async function embedController(req, res) {
     const parsed = embedSchema.safeParse(req.body);
     if (!parsed.success) {
       return errorResponse(res, 'Validation error', 400, parsed.error.flatten().fieldErrors);
+    }
+
+    if (!(await checkBudget())) {
+      return errorResponse(res, 'AI budget exhausted for today. Try again tomorrow.', 503);
     }
 
     const embedding = await openrouterEmbed(parsed.data.text);

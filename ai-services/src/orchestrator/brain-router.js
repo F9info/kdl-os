@@ -3,7 +3,8 @@ import { fileURLToPath } from 'url';
 import { join } from 'path';
 import { claudeBrain, claudeModel } from '../brains/claude.js';
 import { openrouterBrain } from '../brains/openrouter.js';
-import { checkBudget, recordSpend } from './budget-tracker.js';
+import { checkBudget, recordSpend, recordClaudeSpend } from './budget-tracker.js';
+import { estimateCostUsd } from '../config/model-pricing.js';
 import { auditLogger } from '../governance/audit-logger.js';
 
 const __dir = fileURLToPath(new URL('.', import.meta.url));
@@ -64,6 +65,10 @@ export async function brainRouter(task, priority = 'MEDIUM', options = {}) {
 
   if (!useClaude && response.cost) {
     await recordSpend(response.cost);
+  }
+  if (useClaude) {
+    // Metering must never fail the call the user already paid for.
+    await recordClaudeSpend(estimateCostUsd(response.model, response.usage)).catch(() => {});
   }
 
   return response;

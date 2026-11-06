@@ -9,6 +9,7 @@ import { embedController } from './controllers/embed.js';
 import { transcribeController } from './controllers/transcribe.js';
 import { brandInferenceController } from './controllers/brand-inference.js';
 import { authenticate } from './middleware/auth.js';
+import { callerLimit, allow } from './middleware/caller-limit.js';
 import { successResponse, errorResponse } from './utils/response.js';
 import { logger } from './utils/logger.js';
 
@@ -46,10 +47,14 @@ app.get('/health', (req, res) => {
   successResponse(res, { status: 'ok', service: 'ai-services', ts: new Date().toISOString() });
 });
 
-app.post('/api/ai/chat', authenticate, chatController);
-app.post('/api/ai/embed', authenticate, embedController);
-app.post('/api/ai/transcribe', authenticate, transcribeController);
-app.post('/api/ai/brand-inference', authenticate, brandInferenceController);
+// authenticate -> (role gate) -> per-caller limit -> handler.
+// embed and brand-inference are internal: only our backend (service JWT) or admins may call them;
+// chat/transcribe are end-user features, limited per caller and (chat) clamped by role.
+const ADMINS = ['super-admin', 'admin'];
+app.post('/api/ai/chat', authenticate, callerLimit('chat', 60), chatController);
+app.post('/api/ai/embed', authenticate, allow({ service: true, roles: ADMINS }), callerLimit('embed', 120), embedController);
+app.post('/api/ai/transcribe', authenticate, callerLimit('transcribe', 20), transcribeController);
+app.post('/api/ai/brand-inference', authenticate, allow({ service: true }), callerLimit('brand_inference', 20), brandInferenceController);
 
 app.use((req, res) => errorResponse(res, 'Not found', 404));
 

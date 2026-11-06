@@ -2,7 +2,10 @@ import { successResponse, errorResponse } from '../../shared/utils/response.js';
 import { writeActivityAsync, getClientIp } from '../user-management/shared/activity-logger.js';
 import { resolvePermissions } from '../user-management/shared/permission-resolver.js';
 import * as service from './service.js';
-import { buildSite } from './site/generator.js';
+import { z } from 'zod';
+import { buildSite, siteExists } from './site/generator.js';
+import { getStaticBuild, startStaticBuild, zipStaticBuild } from './site/static-build.js';
+import { prisma } from '../../config/database.js';
 
 // Project scope (req.projectId) is injected by the requireProject shared middleware
 // (backend/src/middleware/project.js) on every route that reads X-Project-Id — see
@@ -188,6 +191,49 @@ export const skipStage = async (req, res, next) => {
   } catch (err) {
     if (err.status === 409) return errorResponse(res, err.message, 409, { code: err.code });
     if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+// One-click static export (needs the site folder from createSite first).
+const apiBaseSchema = z.string().url().optional();
+
+async function siteSlug(projectId) {
+  const project = await prisma.project.findFirst({ where: { id: projectId, deleted_at: null } });
+  return project && (await siteExists(project.slug)) ? project.slug : null;
+}
+
+export const startStatic = async (req, res, next) => {
+  try {
+    const parsed = apiBaseSchema.safeParse(req.body?.apiBase || undefined);
+    if (!parsed.success) return errorResponse(res, 'apiBase must be a full URL', 422);
+    const slug = await siteSlug(req.projectId);
+    if (!slug) return errorResponse(res, 'Prepare the project folder first', 409);
+    if (!startStaticBuild(slug, { apiBase: parsed.data })) return errorResponse(res, 'A build is already running', 409);
+    return successResponse(res, getStaticBuild(slug), 202);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const staticStatus = async (req, res, next) => {
+  try {
+    const slug = await siteSlug(req.projectId);
+    return successResponse(res, slug ? getStaticBuild(slug) : { state: 'idle', log: '' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const staticDownload = async (req, res, next) => {
+  try {
+    const slug = await siteSlug(req.projectId);
+    const buf = slug ? zipStaticBuild(slug) : null;
+    if (!buf) return errorResponse(res, 'No finished static build', 404);
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${slug}-static.zip"`);
+    return res.end(buf);
+  } catch (err) {
     next(err);
   }
 };

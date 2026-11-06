@@ -10,8 +10,11 @@ const BLOCKERS_PATH = join(__dir, '../../../BLOCKERS.md');
 const MAX_ITERATIONS = 10;
 
 export class BaseAgent {
-  constructor({ sessionId, priority = 'MEDIUM', tools = [], maxIterations = MAX_ITERATIONS }) {
+  constructor({ sessionId, tenantId, priority = 'MEDIUM', tools = [], maxIterations = MAX_ITERATIONS }) {
+    // Required: long-term memory and RAG are tenant-namespaced (no shared fallback).
+    if (!tenantId) throw new Error('tenantId is required to construct an agent');
     this.sessionId = sessionId;
+    this.tenantId = tenantId;
     this.priority = priority;
     this.tools = tools;
     this.maxIterations = maxIterations;
@@ -25,7 +28,7 @@ export class BaseAgent {
     while (iterations < this.maxIterations) {
       iterations++;
 
-      const relevantMemory = await searchMemory(currentTask, 3);
+      const relevantMemory = await searchMemory(currentTask, 3, this.tenantId);
       const memoryContext = relevantMemory.map((m) => m.document).join('\n');
 
       const prompt = this._buildPrompt(currentTask, memoryContext, context);

@@ -81,4 +81,19 @@ describe('chatController', () => {
     expect(written.trim().split('\n')).toHaveLength(1);
     expect(written).toContain('## Injected heading'); // text is kept, just not on its own line
   });
+
+  it('scopes retrieval to the tenant from the verified token, never from the body', async () => {
+    const res = mockRes();
+    await chatController(
+      req({ body: { message: 'hello', sessionId: 's1', tenantId: 'victim', tenant_id: 'victim' } }),
+      res
+    );
+    expect(ragChain.mock.calls[0][3]).toEqual({ tenantId: 'user:u1' });
+  });
+
+  it('uses a signed tenantId claim when the token has one', async () => {
+    const res = mockRes();
+    await chatController(req({ user: { userId: 'u1', roles: ['user'], tenantId: 'org-7' } }), res);
+    expect(ragChain.mock.calls[0][3]).toEqual({ tenantId: 'org-7' });
+  });
 });

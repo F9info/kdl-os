@@ -124,6 +124,48 @@ export function useCreateSite(projectId: string) {
   })
 }
 
+export interface StaticBuildStatus {
+  state: 'idle' | 'running' | 'done' | 'failed'
+  log: string
+}
+
+/** One-click static export: status (polled while running), start, and zip download. */
+export function useStaticBuild(projectId: string) {
+  const qc = useQueryClient()
+  const key = ['static-build', projectId]
+  const status = useQuery({
+    queryKey: key,
+    enabled: !!projectId,
+    queryFn: () =>
+      api
+        .get<{ data: StaticBuildStatus }>(`${BASE}/site/static`, projectScope(projectId))
+        .then((r) => r.data.data),
+    // Slow poll: the API limiter is 100 requests / 15 min in production.
+    refetchInterval: (q) => (q.state.data?.state === 'running' ? 10_000 : false),
+  })
+  const start = useMutation({
+    mutationFn: (apiBase: string) =>
+      api.post(`${BASE}/site/static`, { apiBase }, projectScope(projectId)),
+    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    onError: (err) => toast({ title: extractErrorCode(err), variant: 'destructive' }),
+  })
+  const download = async () => {
+    const r = await api.get<Blob>(`${BASE}/site/static/download`, {
+      ...projectScope(projectId),
+      responseType: 'blob',
+    })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(r.data)
+    a.download = 'static-site.zip'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    // Revoking right after click() can cancel the download before the browser starts it.
+    setTimeout(() => URL.revokeObjectURL(a.href), 10_000)
+  }
+  return { status, start, download }
+}
+
 type AdvanceStagePayload = DagStage | { stage: DagStage; body?: Record<string, unknown> }
 
 export function useAdvanceStage(runId: string, projectId: string) {

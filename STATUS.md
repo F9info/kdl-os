@@ -111,6 +111,7 @@ Recent per-issue detail is in the rolling changelog below; full history in
      Prepend new entries at the top; move anything older into .agents/STATUS_ARCHIVE.md.
      Full history: .agents/STATUS_ARCHIVE.md (and git log). -->
 
+- **2026-11-06 — KDL OS roadmap complete (T1.x–T8.2, Q1–Q14), uncommitted**: see `.agents/HANDOFF.md` top entry and `docs/planning/KDL_OS_IMPLEMENTATION_TRACKER.md`. Latest: T8.2 one-click static build + download (backend in-memory job, e2e added). Backend 1789 / frontend 615 green.
 - **2026-10-18 — Issues 1–9 of CURRENT_ISSUES_AND_SOLUTIONS.md resolved (uncommitted)**: P0 test drift fixed (backend 1329 / frontend 307 green), editor autosave, mobile 3-level menu drawer, server-side sector metadata, per-project setting copy via new `project_setting_values` table. Details in `.agents/HANDOFF.md`.
 - **2026-09-26 — Web app · Pages wizard grid now lists all 11 real Sector Detail pages**: stray
   recurring "Sector Detail" test-debris page/nav-item cleaned up (again — 3rd occurrence, root

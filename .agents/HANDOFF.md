@@ -1,3 +1,37 @@
+## 2026-11-06 (final) — API versioning `/api/v1` (uncommitted)
+
+`backend/src/middleware/api-version.js` (mounted first in `index.js`): rewrites `/api/v1/<p>` to `/api/<p>` before routing, so every core and auto-mounted module is reachable under v1; `X-API-Version: 1` on all `/api` responses; `/api/v10` is not v1. `req.originalUrl` keeps the v1 path. Test `middleware/api-version.test.js` (4); backend 1823 passed/3 skipped. Live (rebuilt): v1 and plain app-config 200, v1 modules 401 without token / 200 with, unknown v1 404, header present, none on /health, works through :3001.
+
+**Mobile list now:** app-config done (T1.1), versioning done. **Open:** OpenAPI (new dependency => needs board approval per locked stack; hand-written spec is the no-dependency alternative), ETag/`updated_since`, `device_sessions` + logout-all (M2, needs a Prisma migration), push (M4, needs FCM/APNs credentials from you).
+
+## 2026-11-06 (last) — Chroma tenant isolation (uncommitted)
+
+`ai-services/src/knowledge/tenant.js`: `getTenantCollection(base, tenantId)` (collection = `<base>_<sha256(tenant)[:24]>`, cached), `tenantOf(jwtPayload)` (`tenantId` claim else `user:<id>`), fails closed on a missing tenant. `ingestDocument/retrieveChunks/storeMemory/searchMemory/deleteMemory` take `tenantId` as the LAST arg; `ragChain` takes `options.tenantId` (stripped before the model call); `BaseAgent` requires `tenantId` in its constructor; `createRagTool(session, priority, tenantId)`, `createMemoryTool(tenantId)`. Chat controller passes `tenantOf(req.user)`. Tests: `tests/tenant-isolation.test.js` + chat additions; ai-services 141 passed. Live on real ChromaDB (rebuilt container): A's doc invisible to B; legacy shared collections `kdl_knowledge` / `kdl_long_term_memory` do not exist, so nothing was migrated.
+
+**Behaviour change:** every user now has a PRIVATE knowledge base and memory. Org-shared knowledge needs the backend to sign a `tenantId` claim into tokens (not built; nothing ingests today — there is no ingest endpoint). **Still open:** Claude spend cap, mobile-app prerequisites (push, sessions, API versioning, OpenAPI, app-config).
+
+## 2026-11-06 (later still) — ai-services limits, role gates, spend metering (uncommitted)
+
+`ai-services/src/middleware/caller-limit.js`: `callerLimit(name, max)` (per caller id, not IP; env `AI_LIMIT_<NAME>`; in-memory store) and `allow({service, roles})`. `index.js`: brand-inference = service JWT only (backend brand-kit signs `{id:'svc:brand-kit', service:true}`), embed = service or admin/super-admin, chat/transcribe open to users but limited (60 / 20 per 15 min). `/embed` now checks the daily budget (503) and `openrouterEmbed` records its cost. Claude calls: `brain-router` records `estimateCostUsd` via `recordClaudeSpend` into `budget:claude:<day>` (not gated, so HIGH never waits on the OpenRouter budget; failures swallowed). Tests: `tests/spend-and-limits.test.js`, `tests/embed.controller.test.js`, router contract extended. ai-services 123 passed. Live (rebuilt container): user 403 / admin+service pass the gates as designed.
+
+**Heads up:** any NEW caller of embed/brand-inference must use a service JWT or an admin account. **Still open:** Claude spend cap (metered only), Chroma tenant isolation, mobile-app prerequisites.
+
+## 2026-11-06 (later) — Owner-decision items 1–2 closed (uncommitted)
+
+**PII scrubber:** `ai-services/src/governance/compliance.js` now scrubs Aadhaar, PAN, Indian mobiles (order: card, phone_in, aadhaar, pan, then old patterns — order matters, see `compliance.test.js`). ai-services 114 passed.
+
+**Project scoping:** `middleware/project.js` `requireProject` accepts `'param'` and a resolver fn (undefined = 404). Wired into all credits routes (incl. hold release via hold->project), all 10 brand-kit `/:projectId` routes, and collateral (list=query, create=body, asset/render routes via row lookup). Test `modules/project-scoping.route.test.js` (30 cases: outsider 403, member passes, shared open, unknown id 404). `theme-colors.route.test.js` now mocks the middleware. Backend 1819 passed/3 skipped. Live check as admin: 200/404/401 as expected.
+
+**Still open:** ai-services per-user limits + budget accounting, Chroma tenant isolation, mobile-app prerequisites.
+
+## 2026-11-06 — KDL OS roadmap complete (T1.x–T8.2, Q1–Q14) on akhil_kdl (uncommitted)
+
+Source of truth: `docs/planning/KDL_OS_IMPLEMENTATION_TRACKER.md` (every row Completed; per-task files, tests, limits there). Highlights: Application Identity is the ONLY company-details store (`identity.*`, Settings > Identity); products/modules resolver; Site/landing/forms/SEO/versions (Phases 3–6); linked sections + section schema JSON; Brands cards (Web app, Landing Pages, Forms, Collateral, Static website); docs in `docs/how-to` + `docs/reference`; T7.5 removed legacy brand-profile stores.
+
+**T8.2 (latest):** one-click static export. `POST/GET /api/template-engine/site/static` + `GET .../static/download` (`site/static-build.js`, in-memory job: `npm install --include=dev` + `build:static` in the generated site folder, forces `NODE_ENV=production` — the container's `development` breaks next build). UI `/admin/static-website`, status poll 10 s (prod API limit is 100/15 min). e2e: `E2E_BASE_URL=http://localhost:3001 E2E_ADMIN_PASSWORD=... pnpm e2e e2e/static-website.spec.ts`. Limits: job state lost on backend restart, single instance, zip in memory.
+
+**Tests at close:** backend 1789 passed/3 skipped; frontend 615 passed; tsc/eslint/prettier clean. **Palette ratchet:** remaining classes are deliberate (on-photo white, scrims, error reds, picker thumbnails) — do not migrate. **Open (owner decision, from 2026-10-18 list):** Chroma tenant isolation, ai-services per-user limits/budget accounting, `requireProject` on credits/brand-kit/collateral, Aadhaar/PAN/+91 PII scrubber, mobile-app prerequisites (push, API versioning, OpenAPI).
+
 ## 2026-10-18 (later) — Full-code audit: security hardening + roadmap/mobile module plan (uncommitted)
 
 Audits (backend, ai-services, mobile-readiness) → fixes with tests: `publicOnlyActive` on 6 public list routes; register/forgot-password limiters (authLimiter skipped successes = unlimited); menus URL allowlist (open redirect) + ownership/depth checks; shared `utils/safe-url.js` on sectors/case-study links; atomic refresh-token claim; SSRF guard on AI provider `base_url` + image-op output URL; ai-services chat: clamp client `priority`, per-user session key, one-line MANUAL_TASKS note; LLM client timeouts; `claude.brain.test` mock made vitest-4-safe. CLAUDE.md "not built yet" corrected. Backend 1385 / ai-services 101 / frontend 307 green.

@@ -1,19 +1,10 @@
-import { chroma } from '../config/chroma.js';
+import { getTenantCollection } from '../knowledge/tenant.js';
 import { openrouterEmbed } from '../brains/openrouter.js';
 
 const COLLECTION = 'kdl_long_term_memory';
 
-let col = null;
-
-async function getCollection() {
-  if (!col) {
-    col = await chroma.getOrCreateCollection({ name: COLLECTION });
-  }
-  return col;
-}
-
-export async function storeMemory(id, document, metadata = {}) {
-  const c = await getCollection();
+export async function storeMemory(id, document, metadata = {}, tenantId) {
+  const c = await getTenantCollection(COLLECTION, tenantId);
   const embedding = await openrouterEmbed(document);
   await c.upsert({
     ids: [id],
@@ -23,8 +14,8 @@ export async function storeMemory(id, document, metadata = {}) {
   });
 }
 
-export async function searchMemory(query, nResults = 5) {
-  const c = await getCollection();
+export async function searchMemory(query, nResults = 5, tenantId) {
+  const c = await getTenantCollection(COLLECTION, tenantId);
   const embedding = await openrouterEmbed(query);
   const results = await c.query({
     queryEmbeddings: [embedding],
@@ -37,7 +28,7 @@ export async function searchMemory(query, nResults = 5) {
   }));
 }
 
-export async function deleteMemory(id) {
-  const c = await getCollection();
+export async function deleteMemory(id, tenantId) {
+  const c = await getTenantCollection(COLLECTION, tenantId);
   await c.delete({ ids: [id] });
 }

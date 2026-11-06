@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ragChain } from '../chains/rag-chain.js';
+import { tenantOf } from '../knowledge/tenant.js';
 import { scrubMessages } from '../governance/compliance.js';
 import { successResponse, errorResponse } from '../utils/response.js';
 import { logger } from '../utils/logger.js';
@@ -45,7 +46,9 @@ export async function chatController(req, res) {
 
     // History is keyed per user: a client-chosen sessionId alone must never let one
     // user read or poison another user's conversation.
-    const response = await ragChain(scrubbed, `${userId}:${sessionId}`, priority);
+    const response = await ragChain(scrubbed, `${userId}:${sessionId}`, priority, {
+      tenantId: tenantOf(req.user),
+    });
 
     if (response.error === 'BUDGET_EXHAUSTED') {
       const line = `\n- [${new Date().toISOString()}] Chat task deferred (budget exhausted). Session: ${oneLine(sessionId)}. Message: ${oneLine(scrubbed).slice(0, 100)}\n`;

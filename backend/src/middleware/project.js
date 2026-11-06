@@ -3,6 +3,8 @@
 //
 // Usage — pass the source where the route exposes the project id:
 //   requireProject()          reads X-Project-Id header (default)
+//   requireProject('param')   reads req.params.projectId
+//   requireProject(fn)        fn(req) resolves the id (undefined = 404), e.g. asset -> project
 //   requireProject('body')    reads req.validated.body.projectId  (run validate() first)
 //   requireProject('query')   reads req.validated.query.projectId (run validate() first)
 //
@@ -27,12 +29,22 @@ import { errorResponse } from '../shared/utils/response.js';
 export function requireProject(source = 'header') {
   return async function requireProjectMiddleware(req, res, next) {
     let projectId;
-    if (source === 'header') {
-      projectId = req.headers['x-project-id'];
-    } else if (source === 'body') {
-      projectId = req.validated?.body?.projectId;
-    } else {
-      projectId = req.validated?.query?.projectId;
+    try {
+      if (typeof source === 'function') {
+        // Resolver: (req) => projectId | null, e.g. look up the project an asset belongs to.
+        projectId = await source(req);
+        if (projectId === undefined) return errorResponse(res, 'Project not found', 404);
+      } else if (source === 'header') {
+        projectId = req.headers['x-project-id'];
+      } else if (source === 'param') {
+        projectId = req.params?.projectId;
+      } else if (source === 'body') {
+        projectId = req.validated?.body?.projectId;
+      } else {
+        projectId = req.validated?.query?.projectId;
+      }
+    } catch (err) {
+      return next(err);
     }
 
     if (!projectId) {

@@ -1,7 +1,15 @@
 const PII_PATTERNS = [
+  // Card numbers (13-16 digits) go first so the shorter Indian patterns cannot eat part of one.
+  { name: 'credit_card', re: /\b(?:\d[ \-]?){13,16}\b/g,                                 replacement: '[CC]'    },
+  // Indian formats next: the generic digit patterns below would otherwise eat parts of them.
+  // Indian mobile: 10 digits starting 6-9, optional +91 / 91 / 0 prefix, optional 5-5 split.
+  { name: 'phone_in',    re: /(?<![\d])(?:(?:\+|00)?91[ \-]?|0)?[6-9]\d{4}[ \-]?\d{5}(?!\d)/g, replacement: '[PHONE]' },
+  // Aadhaar: 12 digits, first digit 2-9, optional space/dash grouping 4-4-4.
+  { name: 'aadhaar',     re: /(?<!\d)[2-9]\d{3}[ \-]?\d{4}[ \-]?\d{4}(?!\d)/g,          replacement: '[AADHAAR]' },
+  // PAN: 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F).
+  { name: 'pan',         re: /\b[A-Z]{5}\d{4}[A-Z]\b/gi,                                replacement: '[PAN]'     },
   { name: 'email',       re: /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g,       replacement: '[EMAIL]' },
   { name: 'phone_us',    re: /(\+?1[\s\-.]?)?\(?\d{3}\)?[\s\-.]?\d{3}[\s\-.]?\d{4}/g,   replacement: '[PHONE]' },
-  { name: 'credit_card', re: /\b(?:\d[ \-]?){13,16}\b/g,                                 replacement: '[CC]'    },
   { name: 'ssn',         re: /\b\d{3}[- ]?\d{2}[- ]?\d{4}\b/g,                          replacement: '[SSN]'   },
 ];
 

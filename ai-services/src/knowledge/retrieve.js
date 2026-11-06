@@ -1,19 +1,10 @@
-import { chroma } from '../config/chroma.js';
+import { getTenantCollection } from './tenant.js';
 import { openrouterEmbed } from '../brains/openrouter.js';
 
 const COLLECTION = 'kdl_knowledge';
 
-let col = null;
-
-async function getCollection() {
-  if (!col) {
-    col = await chroma.getOrCreateCollection({ name: COLLECTION });
-  }
-  return col;
-}
-
-export async function retrieveChunks(query, nResults = 5) {
-  const c = await getCollection();
+export async function retrieveChunks(query, nResults = 5, tenantId) {
+  const c = await getTenantCollection(COLLECTION, tenantId);
   const embedding = await openrouterEmbed(query);
   const results = await c.query({
     queryEmbeddings: [embedding],

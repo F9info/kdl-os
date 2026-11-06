@@ -28,7 +28,7 @@ describe('knowledge ingest regression — bounded embed concurrency (KDL-26 M4)'
     const content = 'word '.repeat(600);
     const metadata = { source: 'test-doc' };
 
-    const result = await ingestDocument(content, metadata);
+    const result = await ingestDocument(content, metadata, 'tenant-a');
 
     expect(result.chunks).toBeGreaterThan(1);
     expect(mocks.openrouterEmbed).toHaveBeenCalledTimes(result.chunks);

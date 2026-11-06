@@ -43,12 +43,14 @@ import customBlocksRoutes from './modules/custom-blocks/routes.js';
 import projectRoutes from './modules/projects/routes.js';
 import detailPageTypesRoutes from './modules/detail-page-types/routes.js';
 import { verifyLocalPresignToken } from './shared/services/storage/drivers/local.driver.js';
+import { apiVersion } from './middleware/api-version.js';
 import { loadModules, checkDependencyIntegrity } from './shared/modules/module-loader.js';
 
 const app = express();
 const PORT = process.env.APP_PORT || 4000;
 
 app.set('trust proxy', 1);
+app.use(apiVersion);
 app.use(helmet());
 
 // CORS: explicit origin allowlist (comma-separated). Fail fast when unset —

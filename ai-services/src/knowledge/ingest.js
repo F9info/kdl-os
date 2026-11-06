@@ -1,5 +1,5 @@
 import pLimit from 'p-limit';
-import { chroma } from '../config/chroma.js';
+import { getTenantCollection } from './tenant.js';
 import { openrouterEmbed } from '../brains/openrouter.js';
 import { randomUUID } from 'crypto';
 
@@ -7,15 +7,6 @@ const COLLECTION = 'kdl_knowledge';
 const CHUNK_SIZE = 512;
 const CHUNK_OVERLAP = 64;
 const EMBED_CONCURRENCY = 10;
-
-let col = null;
-
-async function getCollection() {
-  if (!col) {
-    col = await chroma.getOrCreateCollection({ name: COLLECTION });
-  }
-  return col;
-}
 
 function chunkText(text, size = CHUNK_SIZE, overlap = CHUNK_OVERLAP) {
   const chunks = [];
@@ -27,8 +18,8 @@ function chunkText(text, size = CHUNK_SIZE, overlap = CHUNK_OVERLAP) {
   return chunks;
 }
 
-export async function ingestDocument(content, metadata = {}) {
-  const c = await getCollection();
+export async function ingestDocument(content, metadata = {}, tenantId) {
+  const c = await getTenantCollection(COLLECTION, tenantId);
   const chunks = chunkText(content);
   const ids = chunks.map(() => randomUUID());
   const limit = pLimit(EMBED_CONCURRENCY);
