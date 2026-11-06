@@ -1040,7 +1040,7 @@ function insuranceStripBody(props: MedicalProps['MedicalInsuranceStrip']) {
               />
             ))}
           </div>
-          {note ? <p className="text-xs text-slate-500">{note}</p> : null}
+          {note ? <p className="text-xs text-faint">{note}</p> : null}
         </div>
       </section>
     )

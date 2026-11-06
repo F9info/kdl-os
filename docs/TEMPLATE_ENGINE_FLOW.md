@@ -12,7 +12,7 @@ Items that could not be verified in a browser are marked **unverified**.
  1 Select Platform    Sidebar > Application Settings opens "Step 1 - Select Platform"
         |             Pick ONE platform per project. Web Application = the active platform.
         |
- 2 Company details    Application Settings > Brand Profile: company name, emails, phones, addresses
+ 2 Company details    Settings > Identity: company name, emails, phones, addresses
         |
  3 Modules check      Sidebar > Modules: Template Engine, Theme Engine, Page Builder,
         |             Menus, Sectors, Catalog, Work, FAQ are switched on
@@ -84,14 +84,12 @@ After signing in, the user clicks **Application Settings** (the Theme Engine / S
 ## Step 2. Application Settings (company details)
 
 - **Click:** sidebar > **Application Settings**. The group opens with four items:
-  - **Types**: named groups of settings (for example Brand Profile, Theme Settings).
+  - **Types**: named groups of settings (for example Theme Settings).
   - **Categories**: sub-groups inside a type.
   - **Fields**: the individual settings (text boxes, images, colors) that belong to a type.
   - **Storage**: where uploaded files are kept.
-- Every active **Type** also appears as its own sidebar item. Open **Brand Profile** (`/admin/settings/view/brand-profile`).
-- **You do:** enter the company name (required), primary and secondary email, primary and secondary phone, and address lines 1 and 2.
-- **Behind the scenes:** the values are saved as setting fields of the `brand-profile` type. They are seeded by `backend/prisma/seeders/brand-profile-fields.seed.js` and are **global**, not per project.
-- **Why here first:** the Studio's Overview screen shows these same fields. Filling them here means the Overview opens pre-filled, and the header, footer and Contact page pick them up. You can also fill them later, directly in the Overview screen.
+- **Company details** (name, email, phone, address, logo) are entered once in **Settings > Identity** (Application Identity). It is the only store; the old Brand Profile fields were retired.
+- **Why here first:** the Studio's Overview screen shows the same details. Filling them in Identity means the Overview opens pre-filled, and the header, footer and Contact page pick them up.
 - **Result:** company details are stored once and reused everywhere.
 
 ## Step 3. Confirm the modules
@@ -250,7 +248,7 @@ Public pages:
 # 4. How the screens connect
 
 ```
- Select Platform (Web Application) --> Application Settings > Brand Profile ----+
+ Select Platform (Web Application) --> Settings > Identity ----------------+
                                           v
  Template Engine > Overview (logo + contact) --> Brand Kit --> Color Palette
                                                      |
@@ -276,7 +274,7 @@ Public pages:
 | Modules | Modules | `/admin/modules` |
 | Select Platform (Step 1) | Application Settings (first screen) | Intended screen, not in the current code. Today: Theme Engine platform bar at `/admin/theme-engine` |
 | Application Settings | Application Settings > Types / Categories / Fields / Storage | `/admin/settings/types`, `/categories`, `/fields`, `/storage` |
-| Brand Profile | Application Settings > (Type) Brand Profile | `/admin/settings/view/brand-profile` |
+| Company details | Settings > Identity | `/admin/settings/identity` |
 | Template Engine | Template Engine | `/admin/template-engine` |
 | Overview (Intake) | (tab) | `/admin/template-engine/projects/<id>/intake` |
 | Color Palette | (tab) | `.../palette` |
@@ -333,7 +331,7 @@ INTAKE -> PALETTE -> INFERENCE -> APPROVAL -+-> GUIDELINES (optional) --+
 # 8. Things to watch for
 
 1. **Palette jumps to Brands.** On a new project, run Inference and Approval first, or Website is refused with "stage gate failed".
-2. **Brand Profile is global.** Changing it here changes it for every project.
+2. **Company details (Identity) are global.** Changing it here changes it for every project.
 3. **Website only refreshes pages, never rebuilds them.** To get new built-in content on an existing page, edit it in the editor.
 4. **Font settings live in the browser.** Clearing browser data resets them.
 5. **Inference is generic.** It does not receive industry or company name, so its suggestions are not industry specific.

@@ -15,8 +15,21 @@ const TEMPLATES_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 't
 const MARKER = '.kdl-site.json';
 // Paths owned by the admin app / nginx (infra/nginx/nginx.conf) or the site shell.
 const RESERVED = new Set([
-  'api', 'ai', '_next', 'static', 'site-assets', 'seed', 'vendor', 'p',
-  'login', 'register', 'forgot-password', 'reset-password', 'change-password', 'admin', 'share',
+  'api',
+  'ai',
+  '_next',
+  'static',
+  'site-assets',
+  'seed',
+  'vendor',
+  'p',
+  'login',
+  'register',
+  'forgot-password',
+  'reset-password',
+  'change-password',
+  'admin',
+  'share',
 ]);
 
 export const sitesDir = () =>
@@ -49,9 +62,7 @@ export function assignRoutes(pages) {
 }
 
 function menuTree(items, hrefFor) {
-  const nodes = new Map(
-    items.filter((i) => i.is_active).map((i) => [i.id, { i, children: [] }])
-  );
+  const nodes = new Map(items.filter((i) => i.is_active).map((i) => [i.id, { i, children: [] }]));
   const roots = [];
   for (const n of nodes.values()) {
     const parent = n.i.parent_id && nodes.get(n.i.parent_id);
@@ -91,7 +102,9 @@ export function buildSiteModel({ project, kit, company, pages, menus }) {
   // Links saved in the admin (button hrefs, multi-line nav text) are `/p/<slug>`; point them at the friendly route.
   const friendly = (v) =>
     typeof v === 'string'
-      ? v.replace(/\/p\/([a-z0-9-]+)/g, (m, slug) => (routeOf(slug) === undefined ? m : toHref(routeOf(slug))))
+      ? v.replace(/\/p\/([a-z0-9-]+)/g, (m, slug) =>
+          routeOf(slug) === undefined ? m : toHref(routeOf(slug))
+        )
       : Array.isArray(v)
         ? v.map(friendly)
         : v && typeof v === 'object'
@@ -120,7 +133,14 @@ export function buildSiteModel({ project, kit, company, pages, menus }) {
     menus: { header: menuOf('header'), footer: menuOf('footer') },
     pages: routed.map((p) => ({
       file: p.route === '' ? 'index' : p.route,
-      json: { route: p.route, slug: p.slug, projectId: project.id, title: p.title, status: p.status, data: friendly(p.data) },
+      json: {
+        route: p.route,
+        slug: p.slug,
+        projectId: project.id,
+        title: p.title,
+        status: p.status,
+        data: friendly(p.data),
+      },
     })),
   };
 }
@@ -195,7 +215,11 @@ const IMPORT_RE =
   /(?:import|export)\s+(?:[^'"()]*?\s+from\s+)?['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]\s*\)/g;
 const EXTS = ['', '.ts', '.tsx', '.js', '.jsx', '.css', '/index.ts', '/index.tsx'];
 
-const isFile = (f) => fs.stat(f).then((s) => s.isFile(), () => false);
+const isFile = (f) =>
+  fs.stat(f).then(
+    (s) => s.isFile(),
+    () => false
+  );
 
 async function resolveLocal(fe, spec, from) {
   const base = spec.startsWith('@/')
@@ -205,8 +229,7 @@ async function resolveLocal(fe, spec, from) {
   return null;
 }
 
-const pkgName = (spec) =>
-  spec.startsWith('@') ? spec.split('/').slice(0, 2).join('/') : spec.split('/')[0];
+const pkgName = (spec) => (spec.startsWith('@') ? spec.split('/').slice(0, 2).join('/') : spec.split('/')[0]);
 
 /** Import closure of ROOT_FILES → { files: absolute paths, packages: Set }. */
 export async function collectFrontendClosure(fe = frontendDir()) {
@@ -239,7 +262,8 @@ async function copyFrontendCode(root, fe = frontendDir()) {
     await fs.copyFile(f, dest);
   }
   // tailwind/postcss are used by config files, not always imported.
-  for (const p of ['tailwindcss', 'postcss', 'autoprefixer', 'typescript', 'next', 'react', 'react-dom']) packages.add(p);
+  for (const p of ['tailwindcss', 'postcss', 'autoprefixer', 'typescript', 'next', 'react', 'react-dom'])
+    packages.add(p);
   const fePkg = JSON.parse(await fs.readFile(path.join(fe, 'package.json'), 'utf8'));
   const versions = { ...fePkg.devDependencies, ...fePkg.dependencies };
   const deps = {};
@@ -257,11 +281,21 @@ export async function writeSite(model) {
   await copyDir(TEMPLATES_DIR, root);
   const deps = await copyFrontendCode(root);
   await fs.mkdir(path.join(root, 'content', 'pages'), { recursive: true });
+  // Static export (npm run build:static) has no admin app to serve /seed and /vendor from.
+  for (const dir of ['seed', 'vendor']) {
+    const from = path.join(frontendDir(), 'public', dir);
+    await fs.cp(from, path.join(root, 'static-assets', dir), { recursive: true }).catch(() => {});
+  }
 
   await writeJson(path.join(root, 'package.json'), {
     name: `site-${model.site.slug}`,
     private: true,
-    scripts: { dev: 'next dev', build: 'next build', start: 'next start' },
+    scripts: {
+      dev: 'next dev',
+      build: 'next build',
+      start: 'next start',
+      'build:static': 'node scripts/build-static.mjs',
+    },
     dependencies: deps,
   });
   await writeJson(path.join(root, 'content', 'site.json'), model.site);
@@ -313,4 +347,7 @@ export async function listGeneratedProjectIds() {
 }
 
 export const siteExists = async (slug) =>
-  fs.access(path.join(sitesDir(), slug, MARKER)).then(() => true, () => false);
+  fs.access(path.join(sitesDir(), slug, MARKER)).then(
+    () => true,
+    () => false
+  );

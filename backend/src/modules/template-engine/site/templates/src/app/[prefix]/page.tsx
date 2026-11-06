@@ -1,9 +1,15 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import SitePage from '@/components/SitePage'
-import { getPage } from '@/lib/content'
+import { getPage, listRoutes } from '@/lib/content'
 
 export const dynamic = 'force-dynamic'
+
+export function generateStaticParams() {
+  return listRoutes()
+    .filter(Boolean)
+    .map((prefix) => ({ prefix }))
+}
 
 type Params = { params: Promise<{ prefix: string }> }
 

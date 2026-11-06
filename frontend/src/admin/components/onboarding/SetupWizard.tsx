@@ -216,8 +216,7 @@ export function SetupWizard({ open, onClose }: SetupWizardProps) {
             <DialogHeader>
               <DialogTitle>What are you building?</DialogTitle>
               <DialogDescription>
-                Step 2 of 2. Each product turns on the modules it needs. You can change this any
-                time in Settings &gt; Products.
+                Step 2 of 2. Each product turns on the modules it needs.
               </DialogDescription>
             </DialogHeader>
             <ErrorAlert error={error} />

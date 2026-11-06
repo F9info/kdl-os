@@ -1,6 +1,6 @@
 {
   "src/frontend/blocks/packs/construction/index.tsx": 167,
-  "src/frontend/blocks/packs/medical/index.tsx": 64,
+  "src/frontend/blocks/packs/medical/index.tsx": 63,
   "src/frontend/blocks/packs/general/index.tsx": 7,
   "src/frontend/blocks/packs/composer/atoms.tsx": 59,
   "src/frontend/blocks/packs/composer/render-composed-block.tsx": 2,

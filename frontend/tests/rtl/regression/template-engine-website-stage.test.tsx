@@ -92,16 +92,24 @@ beforeEach(() => {
 })
 
 describe('WebsiteStage — Brands cards grid (KDL-558)', () => {
-  it('lands on the Brands grid with the Website card', () => {
+  it('lands on the Brands grid with the Web app card', () => {
     renderWithQC(<WebsiteStage run={makeRun()} />)
 
     expect(screen.getByText('Brands')).toBeInTheDocument()
-    expect(screen.getByText('Website')).toBeInTheDocument()
+    expect(screen.getByText('Web app')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Landing Pages/ })).toHaveAttribute(
       'href',
       '/admin/landing-pages'
     )
     expect(screen.getByRole('link', { name: /Forms/ })).toHaveAttribute('href', '/admin/forms')
+    expect(screen.getByRole('link', { name: /Collateral/ })).toHaveAttribute(
+      'href',
+      expect.stringMatching(/\/projects\/.+\/collateral$/)
+    )
+    expect(screen.getByRole('link', { name: /Static website/ })).toHaveAttribute(
+      'href',
+      expect.stringMatching(/^\/admin\/static-website\?projectId=/)
+    )
     // No other brand cards yet — Admin app / Visiting card / etc. aren't wired up.
     expect(screen.queryByText('Admin app')).not.toBeInTheDocument()
     expect(screen.queryByText('Visiting card')).not.toBeInTheDocument()
@@ -116,43 +124,41 @@ describe('WebsiteStage — Brands cards grid (KDL-558)', () => {
     for (const name of ['Landing Page', 'Portfolio', 'Progressive Web App (PWA)']) {
       expect(screen.queryByText(name)).not.toBeInTheDocument()
     }
-    expect(screen.getByRole('link', { name: /Settings > Products/ })).toHaveAttribute(
-      'href',
-      '/admin/settings/products'
-    )
+    // Products are not a Settings entry any more: the cards here are the entry points.
+    expect(screen.queryByRole('link', { name: /Settings > Products/ })).not.toBeInTheDocument()
   })
 
   it('opens the Web app flow (Typography step) on click, and Back returns to the grid', () => {
     renderWithQC(<WebsiteStage run={makeRun()} />)
 
-    fireEvent.click(screen.getByText('Website'))
+    fireEvent.click(screen.getByText('Web app'))
     expect(screen.getByText(/pick the heading and body fonts/i)).toBeInTheDocument()
     expect(screen.queryByText('Brands')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /back to brands/i }))
     expect(screen.getByText('Brands')).toBeInTheDocument()
-    expect(screen.getByText('Website')).toBeInTheDocument()
+    expect(screen.getByText('Web app')).toBeInTheDocument()
   })
 
   it('generates the project site folder when the Web app card is clicked', () => {
     renderWithQC(<WebsiteStage run={makeRun()} />)
     expect(mockCreateSite).not.toHaveBeenCalled()
 
-    fireEvent.click(screen.getByText('Website'))
+    fireEvent.click(screen.getByText('Web app'))
     expect(mockCreateSite).toHaveBeenCalledTimes(1)
   })
 })
 
 describe('WebsiteStage — Web app Typography step (KDL-558)', () => {
-  it('defaults to Poppins/Inter, saves the selection, and advances to Font settings', async () => {
+  it('defaults to Poppins/Inter and saves the selection (Save stays on the Typography step)', async () => {
     renderWithQC(<WebsiteStage run={makeRun()} />)
-    fireEvent.click(screen.getByText('Website'))
+    fireEvent.click(screen.getByText('Web app'))
 
     // Defaults pre-selected (first curated option per role).
     const poppinsTile = screen.getByText('Poppins').closest('button')!
     expect(poppinsTile.querySelector('input[type="checkbox"]')).toBeChecked()
 
-    fireEvent.click(screen.getByRole('button', { name: /^next/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^save/i }))
 
     await waitFor(() => expect(mockPatchTypography).toHaveBeenCalled())
     expect(mockPatchTypography).toHaveBeenCalledWith(
@@ -163,8 +169,8 @@ describe('WebsiteStage — Web app Typography step (KDL-558)', () => {
       expect.objectContaining({ onSuccess: expect.any(Function) })
     )
 
-    // Simulate the mutation's onSuccess firing (mutate is a bare vi.fn()).
-    // onSuccess receives the updated brand kit and moves on to Font settings.
+    // The mutation's onSuccess hands back the saved kit; the step stays put (Font settings is
+    // reached from its own step, not by Save).
     const [, opts] = mockPatchTypography.mock.calls[0] as [
       unknown,
       { onSuccess: (kit: { typography: unknown }) => void },
@@ -174,12 +180,12 @@ describe('WebsiteStage — Web app Typography step (KDL-558)', () => {
         typography: { heading: { family: 'Poppins' }, body: { family: 'Inter' } },
       })
     )
-    expect(screen.queryByText(/pick the heading and body fonts/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/pick the heading and body fonts/i)).toBeInTheDocument()
   })
 
   it('is a true multi-select — picking another heading font keeps the first one checked too', () => {
     renderWithQC(<WebsiteStage run={makeRun()} />)
-    fireEvent.click(screen.getByText('Website'))
+    fireEvent.click(screen.getByText('Web app'))
 
     fireEvent.click(screen.getByText('Manrope'))
 
@@ -192,7 +198,7 @@ describe('WebsiteStage — Web app Typography step (KDL-558)', () => {
 
   it('never lets the last selected font in a role be unchecked', () => {
     renderWithQC(<WebsiteStage run={makeRun()} />)
-    fireEvent.click(screen.getByText('Website'))
+    fireEvent.click(screen.getByText('Web app'))
 
     // Poppins is the only heading font selected by default — clicking it
     // again must not drop the selection to zero.
@@ -205,7 +211,7 @@ describe('WebsiteStage — Web app Typography step (KDL-558)', () => {
 
   it('adding a custom Google Font name selects it immediately', () => {
     renderWithQC(<WebsiteStage run={makeRun()} />)
-    fireEvent.click(screen.getByText('Website'))
+    fireEvent.click(screen.getByText('Web app'))
 
     const [headingInput] = screen.getAllByPlaceholderText(/google font name/i)
     fireEvent.change(headingInput!, { target: { value: 'Sora' } })
@@ -217,7 +223,7 @@ describe('WebsiteStage — Web app Typography step (KDL-558)', () => {
 
   it('supports adding and removing custom font rows ("+ Add row" from the prototype)', () => {
     renderWithQC(<WebsiteStage run={makeRun()} />)
-    fireEvent.click(screen.getByText('Website'))
+    fireEvent.click(screen.getByText('Web app'))
 
     // Starts with 1 custom-font row per section (Heading + Body = 2 total).
     expect(screen.getAllByPlaceholderText(/google font name/i)).toHaveLength(2)

@@ -24,3 +24,13 @@ export function routeForSlug(slug: string): string | null {
   const r = read<{ bySlug: Record<string, string> }>('routes.json').bySlug[slug]
   return r === undefined ? null : r
 }
+
+/** Every friendly route that has a page ('' is Home). Used to pre-render the static export. */
+export function listRoutes(): string[] {
+  const dir = path.join(root, 'pages')
+  return fs
+    .readdirSync(dir)
+    .filter((f) => f.endsWith('.json'))
+    .map((f) => f.slice(0, -5))
+    .map((r) => (r === 'index' ? '' : r))
+}

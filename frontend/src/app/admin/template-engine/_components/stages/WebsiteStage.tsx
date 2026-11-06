@@ -68,7 +68,7 @@ interface DetailPageType {
 // flow before adding the rest (roadmap row 4a; the other cards are rows 4b/4c,
 // not yet spec'd). Unimplemented cards are intentionally omitted rather than
 // shown disabled — nothing to click through to yet.
-const BRAND_CARDS = [{ key: 'webapp', name: 'Website' }] as const
+const BRAND_CARDS = [{ key: 'webapp', name: 'Web app' }] as const
 
 // Curated starter sets matching the prototype's Web app Typography screen.
 const HEADING_FONTS = ['Poppins', 'Inter', 'Manrope', 'Space Grotesk']
@@ -274,7 +274,8 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
           <div>
             <h3 className="text-base font-semibold">Brands</h3>
             <p className="text-sm text-muted-foreground">
-              Your website, landing pages and forms. Click a card to open it.
+              Your web app, static website, landing pages, forms and collateral. Click a card to
+              open it.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -309,14 +310,25 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
                 Active · Open <ArrowRight className="h-3 w-3" />
               </div>
             </Link>
-          </div>
-          <p className="pt-2 text-sm text-muted-foreground">
-            Which products are on is set in{' '}
-            <Link href="/admin/settings/products" className="text-primary underline">
-              Settings &gt; Products
+            <Link
+              href={`/admin/template-engine/projects/${run.projectId}/collateral`}
+              className="rounded-lg border-2 border-primary bg-primary/5 p-4 text-left transition-colors hover:bg-primary/10"
+            >
+              <div className="text-sm font-semibold">Collateral</div>
+              <div className="mt-1 flex items-center gap-1 text-xs font-medium text-primary">
+                Active · Open <ArrowRight className="h-3 w-3" />
+              </div>
             </Link>
-            .
-          </p>
+            <Link
+              href={`/admin/static-website?projectId=${run.projectId}`}
+              className="rounded-lg border-2 border-primary bg-primary/5 p-4 text-left transition-colors hover:bg-primary/10"
+            >
+              <div className="text-sm font-semibold">Static website</div>
+              <div className="mt-1 flex items-center gap-1 text-xs font-medium text-primary">
+                Active · Open <ArrowRight className="h-3 w-3" />
+              </div>
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="space-y-3">

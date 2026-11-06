@@ -7,7 +7,7 @@
 // generic-field half). Standalone fields (owner_module: null), editable
 // through the generic setting-fields API/admin UI at
 // /admin/settings/view/website-content, same mechanism as any other
-// Application Settings Type — mirrors brand-profile-fields.seed.js exactly.
+// Application Settings Type.
 //
 // This function seeds FIELD DEFINITIONS ONLY (empty values) — safe for the
 // generic, client-agnostic `prisma/seed.js` pipeline. Demo copy is
