@@ -1,17 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ExternalLink, LayoutTemplate, Palette, Pencil, Plus } from 'lucide-react'
+import { Eye, ExternalLink, LayoutTemplate, Palette, Pencil, Plus, Trash2 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { usePermissions } from '@/admin/hooks/usePermissions'
 import {
   landingEditorHref,
   type LandingSite,
+  type LandingTemplate,
   useCreateLandingPage,
+  useDeleteLandingSite,
   useLandingSites,
   useLandingTemplates,
 } from '@/admin/hooks/useLandingPages'
@@ -20,6 +22,7 @@ import { PageHeader } from '@/admin/components/layout/PageHeader'
 import { ModuleGuard } from '@/admin/components/shared/ModuleGuard'
 import { PermissionGuard } from '@/admin/components/shared/PermissionGuard'
 import { Modal } from '@/components/shared/Modal'
+import { ConfirmDialog } from '@/admin/components/shared/ConfirmDialog'
 import { ErrorAlert } from '@/components/shared/ErrorAlert'
 import { FormField } from '@/components/shared/FormField'
 import { StatusBadge } from '@/admin/components/shared/StatusBadge'
@@ -31,7 +34,87 @@ import { cn } from '@/lib/utils'
 import { BrandingDialog } from './BrandingDialog'
 import { newLandingSchema, type NewLandingForm } from './_schemas'
 
-function NewLandingDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+// Preview pictures of the starter templates live in /public/landing-templates/<key>.jpg.
+// A template without a picture (Blank, or one added later) simply shows none.
+function TemplateThumb({ templateKey, className }: { templateKey: string; className?: string }) {
+  const [missing, setMissing] = useState(false)
+  if (templateKey === 'blank' || missing) return null
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- small static preview
+    <img
+      src={`/landing-templates/${templateKey}.jpg`}
+      alt=""
+      loading="lazy"
+      onError={() => setMissing(true)}
+      className={cn('w-full object-cover object-top', className)}
+    />
+  )
+}
+
+function TemplateGallery({
+  templates,
+  onUse,
+}: {
+  templates: LandingTemplate[]
+  onUse: (key: string) => void
+}) {
+  const starters = templates.filter((t) => t.key !== 'blank')
+  if (!starters.length) return null
+  return (
+    <section aria-labelledby="lp-templates" className="mb-8">
+      <h2 id="lp-templates" className="text-base font-semibold">
+        Start from a template
+      </h2>
+      <p className="mb-4 text-sm text-muted-foreground">
+        Four ready-made designs. Pick one, then change every word, picture and colour in the editor.
+      </p>
+      <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {starters.map((t) => (
+          <li
+            key={t.key}
+            data-testid={`template-card-${t.key}`}
+            className="flex flex-col overflow-hidden rounded-lg border bg-card"
+          >
+            <div className="aspect-[64/45] overflow-hidden border-b bg-muted/40">
+              <TemplateThumb templateKey={t.key} className="h-full" />
+            </div>
+            <div className="flex flex-1 flex-col gap-3 p-4">
+              <div>
+                <h3 className="font-medium">{t.name}</h3>
+                <p className="text-sm text-muted-foreground">{t.description}</p>
+              </div>
+              <div className="mt-auto flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => onUse(t.key)}
+                  data-testid={`use-template-${t.key}`}
+                >
+                  Use this template
+                </Button>
+                <Button asChild size="sm" variant="outline" data-testid={`view-template-${t.key}`}>
+                  <Link href={`/admin/landing-pages/preview/${t.key}`}>
+                    <Eye className="h-4 w-4" />
+                    View template
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+function NewLandingDialog({
+  open,
+  initialTemplate,
+  onClose,
+}: {
+  open: boolean
+  initialTemplate: string | null
+  onClose: () => void
+}) {
   const router = useRouter()
   const { data: templates = [] } = useLandingTemplates()
   const create = useCreateLandingPage()
@@ -47,6 +130,14 @@ function NewLandingDialog({ open, onClose }: { open: boolean; onClose: () => voi
     defaultValues: { name: '', slug: '', template: 'blank' },
   })
   const template = watch('template')
+
+  // Opened from a gallery card: that template is chosen and the name starts as its name.
+  useEffect(() => {
+    if (!open || !initialTemplate) return
+    const t = templates.find((x) => x.key === initialTemplate)
+    if (!t) return
+    reset({ name: t.name, slug: slugify(t.name), template: t.key })
+  }, [open, initialTemplate, templates, reset])
 
   const close = () => {
     reset()
@@ -116,6 +207,10 @@ function NewLandingDialog({ open, onClose }: { open: boolean; onClose: () => voi
                 {t.name}
               </span>
               <span className="ml-6 text-muted-foreground">{t.description}</span>
+              <TemplateThumb
+                templateKey={t.key}
+                className="ml-6 mt-2 h-24 w-auto max-w-[calc(100%-1.5rem)] rounded border"
+              />
             </label>
           ))}
         </fieldset>
@@ -128,8 +223,14 @@ function NewLandingDialog({ open, onClose }: { open: boolean; onClose: () => voi
 function LandingPagesContent() {
   const { can } = usePermissions()
   const { data: sites, isLoading, error } = useLandingSites()
-  const [open, setOpen] = useState(false)
+  const { data: templates = [] } = useLandingTemplates()
+  // Coming back from "View template" > "Use this template": open the dialog on that template.
+  const useParam = useSearchParams().get('use')
+  const [open, setOpen] = useState(Boolean(useParam))
+  const [startWith, setStartWith] = useState<string | null>(useParam)
   const [branding, setBranding] = useState<LandingSite | null>(null)
+  const [removing, setRemoving] = useState<LandingSite | null>(null)
+  const remove = useDeleteLandingSite()
 
   return (
     <div>
@@ -138,7 +239,12 @@ function LandingPagesContent() {
         breadcrumbs={[{ label: 'Landing Pages' }]}
         action={
           can('landing:add') ? (
-            <Button onClick={() => setOpen(true)}>
+            <Button
+              onClick={() => {
+                setStartWith(null)
+                setOpen(true)
+              }}
+            >
               <Plus className="h-4 w-4" />
               New landing page
             </Button>
@@ -146,6 +252,17 @@ function LandingPagesContent() {
         }
       />
 
+      {can('landing:add') && (
+        <TemplateGallery
+          templates={templates}
+          onUse={(key) => {
+            setStartWith(key)
+            setOpen(true)
+          }}
+        />
+      )}
+
+      <h2 className="mb-3 text-base font-semibold">Your landing pages</h2>
       {isLoading ? (
         <LoadingState />
       ) : error ? (
@@ -194,6 +311,18 @@ function LandingPagesContent() {
                       Branding
                     </Button>
                   )}
+                  {can('landing:delete') && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="ml-auto text-destructive hover:text-destructive"
+                      onClick={() => setRemoving(site)}
+                      data-testid={`delete-landing-${site.slug}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete
+                    </Button>
+                  )}
                   {page?.status === 'PUBLISHED' && (
                     <Button asChild size="sm" variant="ghost">
                       <a href={`/p/${site.slug}`} target="_blank" rel="noreferrer">
@@ -209,8 +338,31 @@ function LandingPagesContent() {
         </ul>
       )}
 
-      <NewLandingDialog open={open} onClose={() => setOpen(false)} />
+      <NewLandingDialog
+        open={open}
+        initialTemplate={startWith}
+        onClose={() => {
+          setOpen(false)
+          setStartWith(null)
+        }}
+      />
       {branding && <BrandingDialog site={branding} onClose={() => setBranding(null)} />}
+      <ConfirmDialog
+        open={removing !== null}
+        onClose={() => setRemoving(null)}
+        isLoading={remove.isPending}
+        title={`Delete "${removing?.name ?? ''}"?`}
+        description={`The page, its branding and its enquiry form are removed, and /p/${removing?.slug ?? ''} stops working. This cannot be undone. People's earlier form answers are kept.`}
+        onConfirm={() =>
+          removing &&
+          remove.mutate(removing.id, {
+            onSuccess: () => {
+              toast({ title: 'Landing page deleted' })
+              setRemoving(null)
+            },
+          })
+        }
+      />
     </div>
   )
 }

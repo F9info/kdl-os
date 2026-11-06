@@ -33,14 +33,14 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                 size="logo"
                 src={identity.logo_light}
                 alt={appName}
-                className={identity.logo_dark ? 'dark:hidden' : undefined}
+                className={identity.logo_dark ? '[[data-theme=dark]_&]:hidden' : undefined}
               />
               {identity.logo_dark && (
                 <AppImage
                   size="logo"
                   src={identity.logo_dark}
                   alt={appName}
-                  className="hidden dark:block"
+                  className="hidden [[data-theme=dark]_&]:block"
                 />
               )}
             </h1>

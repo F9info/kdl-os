@@ -1,86 +1,41 @@
 import { describe, it, expect } from 'vitest'
-import { projectTypeLabel, DELIVERY_OPTIONS, type WebsiteDelivery } from '@/admin/lib/project-type'
+import { projectTypeLabel } from '@/admin/lib/project-type'
 import { visibleSurfaces } from '@/admin/lib/website-surfaces'
 
-describe('projectTypeLabel: the seven supported combinations', () => {
-  const cases: [string, string[], WebsiteDelivery | null, string][] = [
-    ['1 Admin project only', ['admin'], null, 'Admin project'],
-    ['2 Web application', ['admin', 'website'], 'web-app', 'Web application'],
-    ['3 Static website only', ['admin', 'website'], 'static', 'Static website'],
-    ['4 Landing pages only', ['admin', 'landing'], null, 'Landing pages'],
-    [
-      '5 Web application + Landing pages',
-      ['admin', 'website', 'landing'],
-      'web-app',
-      'Web application + Landing pages',
-    ],
-    [
-      '6 Static website + Landing pages',
-      ['admin', 'website', 'landing'],
-      'static',
-      'Static website + Landing pages',
-    ],
-    [
-      '7 Web application + Static website + Landing pages',
-      ['admin', 'website', 'landing'],
-      'both',
-      'Web application + Static website + Landing pages',
-    ],
+describe('projectTypeLabel: one website product, the Web app', () => {
+  const cases: [string, string[], string][] = [
+    ['Admin project only', ['admin'], 'Admin project'],
+    ['Web app', ['admin', 'website'], 'Web app'],
+    ['Landing pages only', ['admin', 'landing'], 'Landing pages'],
+    ['Web app + Landing pages', ['admin', 'website', 'landing'], 'Web app + Landing pages'],
   ]
-  it.each(cases)('%s', (_n, selected, delivery, label) => {
-    expect(projectTypeLabel(selected, delivery)).toBe(label)
+  it.each(cases)('%s', (_name, selected, label) => {
+    expect(projectTypeLabel(selected)).toBe(label)
   })
 
-  it('a Website with no delivery chosen yet is just "Website"; delivery is ignored without the Website product', () => {
-    expect(projectTypeLabel(['admin', 'website'], null)).toBe('Website')
-    expect(projectTypeLabel(['admin', 'landing'], 'static')).toBe('Landing pages')
-    expect(projectTypeLabel([], null)).toBe('Admin project')
-  })
-
-  it('offers exactly the three deliveries the backend accepts', () => {
-    expect(DELIVERY_OPTIONS.map((o) => o.value)).toEqual(['web-app', 'static', 'both'])
+  it('has no separate "static website" type: a static copy is a conversion of the Web app', () => {
+    for (const selected of [
+      ['admin', 'website'],
+      ['admin', 'website', 'landing'],
+    ]) {
+      expect(projectTypeLabel(selected)).not.toMatch(/static/i)
+    }
+    expect(projectTypeLabel([])).toBe('Admin project')
   })
 })
 
-describe('visibleSurfaces: Brands cards follow the choice and the enabled modules', () => {
-  const on = { landingEnabled: true, formsEnabled: true }
-  it('not chosen yet: nothing is hidden (existing installs are unchanged)', () => {
-    expect(visibleSurfaces({ delivery: null, ...on })).toEqual([
-      'webapp',
-      'landing',
-      'forms',
-      'collateral',
-      'static',
-    ])
+describe('visibleSurfaces: Brands cards', () => {
+  it('Web app, Landing Pages and Collateral', () => {
+    expect(visibleSurfaces({ landingEnabled: true })).toEqual(['webapp', 'landing', 'collateral'])
   })
-  it('web application: no static-export card', () => {
-    expect(visibleSurfaces({ delivery: 'web-app', ...on })).toEqual([
-      'webapp',
-      'landing',
-      'forms',
-      'collateral',
-    ])
+
+  it('no Landing Pages card without the Landing module', () => {
+    expect(visibleSurfaces({ landingEnabled: false })).toEqual(['webapp', 'collateral'])
   })
-  it('static website: no live Web app card', () => {
-    expect(visibleSurfaces({ delivery: 'static', ...on })).toEqual([
-      'landing',
-      'forms',
-      'collateral',
-      'static',
-    ])
-  })
-  it('both: everything', () => {
-    expect(visibleSurfaces({ delivery: 'both', ...on })).toEqual([
-      'webapp',
-      'landing',
-      'forms',
-      'collateral',
-      'static',
-    ])
-  })
-  it('Landing Pages and Forms cards need their modules enabled', () => {
-    expect(
-      visibleSurfaces({ delivery: 'both', landingEnabled: false, formsEnabled: false })
-    ).toEqual(['webapp', 'collateral', 'static'])
+
+  it('Forms and the static export are inside the Web app, never cards of their own', () => {
+    const all = visibleSurfaces({ landingEnabled: true }) as string[]
+    expect(all).not.toContain('forms')
+    expect(all).not.toContain('static')
   })
 })

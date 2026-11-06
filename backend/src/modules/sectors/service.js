@@ -24,7 +24,7 @@ export const getSectorById = (id) => prisma.sector.findUnique({ where: { id } })
 // itself. Works for any project: a brand-new one with no other pages yet
 // just gets a starter page with no chrome, same as any first page would.
 export async function siteChrome(projectId) {
-  if (!projectId) return { header: null, footer: null };
+  if (!projectId) return { topBar: null, header: null, footer: null };
   const candidates = await prisma.builderPage.findMany({
     where: { project_id: projectId, deleted_at: null },
     orderBy: [{ status: 'asc' }, { updated_at: 'desc' }], // PUBLISHED sorts before DRAFT
@@ -32,11 +32,12 @@ export async function siteChrome(projectId) {
     take: 10,
   });
   for (const { data } of candidates) {
-    const header = data?.content?.find((b) => b.type === 'ConstructionHeader');
-    const footer = data?.content?.find((b) => b.type === 'ConstructionFooter');
-    if (header || footer) return { header, footer };
+    const find = (type) => data?.content?.find((b) => b.type === type) ?? null;
+    const header = find('ConstructionHeader');
+    const footer = find('ConstructionFooter');
+    if (header || footer) return { topBar: find('ConstructionTopBar'), header, footer };
   }
-  return { header: null, footer: null };
+  return { topBar: null, header: null, footer: null };
 }
 
 // A generic starter page — the SAME reusable block library every other
@@ -48,11 +49,12 @@ export async function siteChrome(projectId) {
 // editor, same as Home/About.
 async function starterPageContent(sector) {
   const firstParagraph = (sector.description ?? '').split('\n\n')[0] ?? '';
-  const { header, footer } = await siteChrome(sector.project_id);
+  const { topBar, header, footer } = await siteChrome(sector.project_id);
   return {
     root: { props: { title: sector.name } },
     zones: {},
     content: [
+      ...(topBar ? [topBar] : []),
       ...(header ? [header] : []),
       {
         type: 'ConstructionInnerBanner',

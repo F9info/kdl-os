@@ -205,6 +205,7 @@ const ROOT_FILES = [
   'src/app/layout.tsx',
   'src/frontend/blocks/puck.config.tsx',
   'src/frontend/lib/header-overlay.ts',
+  'src/frontend/lib/static-site.ts',
   'src/app/(site)/work/[slug]/page.tsx',
   'src/app/(site)/catalog/[slug]/page.tsx',
   'src/app/(site)/sectors/[slug]/page.tsx',

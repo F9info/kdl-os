@@ -9,7 +9,8 @@ const h = vi.hoisted(() => ({
 }));
 vi.mock('../../config/database.js', () => ({ prisma: h.prisma }));
 
-const { validateContent, validatePage, linkTargets, summarize, schemaIssues } = await import('./validate.js');
+const { validateContent, validatePage, linkTargets, summarize, schemaIssues, isSafeLinkTarget } =
+  await import('./validate.js');
 
 const block = (type, props = {}) => ({ type, props: { id: `${type}-1`, ...props } });
 const ctx = (over = {}) => ({
@@ -102,6 +103,9 @@ describe('forms', () => {
   it('a form block needs an active form', () => {
     expect(codes(page([block('ContactForm', { formSlug: '' })]))).toContain('FORM_NOT_SET');
     expect(codes(page([block('ContactForm', { formSlug: 'ghost' })]))).toContain('FORM_MISSING');
+    expect(codes(page([block('LandingForm', { formSlug: 'ghost' })]))).toContain('FORM_MISSING');
+    expect(codes(page([block('LandingForm', { formSlug: '' })]))).toContain('FORM_NOT_SET');
+    expect(codes(page([block('LandingForm', { formSlug: 'enquiry' })]))).not.toContain('FORM_MISSING');
     expect(codes(page([block('ContactForm', { formSlug: 'enquiry', anchor: 'c' })]))).toEqual([]);
   });
 });
@@ -261,5 +265,50 @@ describe('section schema checks (T7.1)', () => {
     };
     const issues = validateContent({ ...base, data: { content: [nested] } }, ctx);
     expect(issues.find((i) => i.code === 'BLOCK_UNKNOWN')?.block_id).toBe('inner');
+  });
+});
+
+describe('unsafe links (LINK_UNSAFE)', () => {
+  const unsafe = [
+    'javascript:alert(1)',
+    'JaVaScRiPt:alert(1)',
+    ' javascript:alert(1)',
+    'java\tscript:alert(1)',
+    'java\nscript:alert(1)',
+    'jav&#x61;script:alert(1)'.replace('&#x61;', 'a'),
+    'data:text/html,<script>alert(1)</script>',
+    'vbscript:msgbox(1)',
+  ];
+  const safe = [
+    'https://example.com',
+    'http://example.com/a?b=c',
+    'mailto:hi@example.com',
+    'tel:+911234567890',
+    '#contact',
+    '/p/about',
+    '/',
+    'about',
+    '//cdn.example.com/x',
+    '?x=1',
+  ];
+
+  it.each(unsafe)('flags %j as an error that blocks publishing', (target) => {
+    expect(isSafeLinkTarget(target)).toBe(false);
+    const result = summarize(validateContent(page([block('Button', { href: target })]), ctx()));
+    expect(result.issues.map((i) => i.code)).toContain('LINK_UNSAFE');
+    expect(result.can_publish).toBe(false);
+  });
+
+  it.each(safe)('accepts %j', (target) => {
+    expect(isSafeLinkTarget(target)).toBe(true);
+    expect(codes(page([block('Button', { href: target })]))).not.toContain('LINK_UNSAFE');
+  });
+
+  it('also checks the landing blocks\' link fields and "Label|target" menu lines', () => {
+    expect(codes(page([block('LandingHero', { ctaHref: 'javascript:alert(1)' })]))).toContain('LINK_UNSAFE');
+    // "Label|target" lines (any prop ending in `links`) are checked too. Header and footer blocks are
+    // not: they are managed on the Layout page, and their menu links go through the menus module.
+    const withLines = page([block('Text', { text: 'Hi', links: 'Home|/\nBad|javascript:alert(1)' })]);
+    expect(codes(withLines)).toContain('LINK_UNSAFE');
   });
 });

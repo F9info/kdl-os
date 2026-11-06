@@ -1,4 +1,5 @@
 import { useHeaderMenuTree, type HeaderMenuItem } from '../header-nav-menu'
+import { safeHref } from '@/frontend/lib/safe-href'
 
 // One shape for header/footer links, whether they come from the Menus module (Admin > CMS >
 // Navigation) or from the block's own "Title|/link" fallback lines.
@@ -8,17 +9,10 @@ export type NavItem = { label: string; href: string; newTab?: boolean; children:
 // never overflows (and "Contact us" is never pushed off-screen).
 export const MAX_VISIBLE = 7
 
-const safe = (url: string | null) => {
-  const u = (url ?? '').trim().toLowerCase()
-  return u.startsWith('javascript:') || u.startsWith('data:') || u.startsWith('vbscript:')
-    ? '#'
-    : url || '#'
-}
-
 const fromMenu = (items: HeaderMenuItem[]): NavItem[] =>
   items.map((i) => ({
     label: i.label,
-    href: i.no_page ? '' : safe(i.url),
+    href: i.no_page ? '' : safeHref(i.url),
     newTab: i.open_in_new_tab,
     children: fromMenu(i.children),
   }))
@@ -28,7 +22,7 @@ const fromLines = (links: string): NavItem[] =>
     .split('\n')
     .map((l) => l.split('|').map((p) => p.trim()))
     .filter((p) => p.length >= 2 && p[0])
-    .map(([label, href]) => ({ label: label!, href: safe(href ?? '#'), children: [] }))
+    .map(([label, href]) => ({ label: label!, href: safeHref(href ?? '#'), children: [] }))
 
 /** Menu module first (once it has items); the block's own lines are only the fallback. */
 export function useNavItems(

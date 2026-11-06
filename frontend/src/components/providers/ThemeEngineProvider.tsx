@@ -19,8 +19,17 @@ function resolveTheme(activeTheme: ActiveTheme): 'dark' | 'light' {
   return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
 }
 
-function applyResolvedTheme(activeTheme: ActiveTheme) {
-  document.documentElement.setAttribute('data-theme', resolveTheme(activeTheme))
+// The Theme Engine decides light or dark for the whole app. `data-theme` drives its own token CSS;
+// the `dark` class drives Tailwind's `dark:` variants and the `.dark` rules in the stylesheets, so
+// both are set from the same resolved value. Left to the OS, a dark OS with a light Active Theme
+// gave a light screen with dark-mode logos and buttons on it (white logo on white, dark outline
+// button with dark text).
+export function applyResolvedTheme(activeTheme: ActiveTheme) {
+  const resolved = resolveTheme(activeTheme)
+  const root = document.documentElement
+  root.setAttribute('data-theme', resolved)
+  root.classList.toggle('dark', resolved === 'dark')
+  root.classList.toggle('light', resolved === 'light')
 }
 
 function injectCss(css: string) {
@@ -65,6 +74,20 @@ export function ThemeEngineProvider({ children }: { children: React.ReactNode })
   const activeThemeRef = useRef<ActiveTheme>('system')
 
   useEffect(() => {
+    // A static website (Convert to Static Website) has its theme baked in as /th-tokens.css and has no
+    // server to ask: only the light/dark choice is applied here, from the value saved at conversion.
+    if (process.env.NEXT_PUBLIC_STATIC_SITE === '1') {
+      const baked = (process.env.NEXT_PUBLIC_THEME_ACTIVE as ActiveTheme | undefined) ?? 'system'
+      activeThemeRef.current = baked
+      applyResolvedTheme(baked)
+      const mq = window.matchMedia('(prefers-color-scheme: light)')
+      const onChange = () => {
+        if (baked === 'system') applyResolvedTheme('system')
+      }
+      mq.addEventListener('change', onChange)
+      return () => mq.removeEventListener('change', onChange)
+    }
+
     let cancelled = false
 
     const load = async () => {

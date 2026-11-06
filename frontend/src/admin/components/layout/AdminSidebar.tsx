@@ -224,7 +224,7 @@ export function AdminSidebar() {
                 size="logo"
                 src={headerLogo}
                 alt={appName}
-                className={cn('max-w-full', identity.logo_dark && 'dark:hidden')}
+                className={cn('max-w-full', identity.logo_dark && '[[data-theme=dark]_&]:hidden')}
                 style={showLabels ? undefined : { width: '2rem', height: '2rem' }}
               />
               {identity.logo_dark && (
@@ -232,7 +232,7 @@ export function AdminSidebar() {
                   size="logo"
                   src={identity.logo_dark}
                   alt={appName}
-                  className="hidden max-w-full dark:block"
+                  className="hidden max-w-full [[data-theme=dark]_&]:block"
                   style={showLabels ? undefined : { width: '2rem', height: '2rem' }}
                 />
               )}

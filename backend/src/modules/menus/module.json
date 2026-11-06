@@ -36,7 +36,8 @@
         "pathEndsWith": "/website",
         "viewNotIn": [
           "pages",
-          "layouts"
+          "layouts",
+          "navigation"
         ]
       }
     },
@@ -44,7 +45,12 @@
       "label": "Navigation",
       "path": "/admin/menus",
       "icon": "Menu",
-      "permission": "menus:view"
+      "permission": "menus:view",
+      "activeWhen": {
+        "pathStartsWith": "/admin/template-engine/projects/",
+        "pathEndsWith": "/website",
+        "view": "navigation"
+      }
     },
     {
       "label": "Layouts",

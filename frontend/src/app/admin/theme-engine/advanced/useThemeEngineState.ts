@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/axios'
 import { parseRows as parseFontRows } from '../controls/FontsEditorControl'
-import { NAV_GROUPS, LS_PLATFORM, LS_PANE, lsGet, lsSet } from './constants'
+import { NAV_GROUPS, LS_PLATFORM, LS_PANE, PLATFORMS, lsGet, lsSet } from './constants'
 import {
   groupTag,
   normalizeSchema,
@@ -19,7 +19,11 @@ import {
 // (save/reset/active-theme/take-over) lives in useThemeEngineActions.
 export function useThemeEngineState() {
   // ── UI prefs (localStorage only) ──────────────────────────────────────────
-  const [platform, setPlatformState] = useState(() => lsGet(LS_PLATFORM, 'webapp'))
+  const [platform, setPlatformState] = useState(() => {
+    // A remembered website/TV/native choice from before this screen became admin-only is ignored.
+    const saved = lsGet(LS_PLATFORM, PLATFORMS[0]!.id)
+    return PLATFORMS.some((x) => x.id === saved) ? saved : PLATFORMS[0]!.id
+  })
   const [activePane, setActivePaneState] = useState(() => lsGet(LS_PANE, ''))
   const [search, setSearch] = useState('')
   // Per-pane active mode/device selectors (sub-tabs within a pane)

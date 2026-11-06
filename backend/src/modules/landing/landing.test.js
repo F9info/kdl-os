@@ -3,13 +3,13 @@ import { readFileSync } from 'node:fs';
 
 const prismaMock = vi.hoisted(() => {
   const tx = {
-    site: { create: vi.fn() },
-    builderPage: { create: vi.fn() },
-    form: { create: vi.fn() },
+    site: { create: vi.fn(), update: vi.fn() },
+    builderPage: { create: vi.fn(), update: vi.fn() },
+    form: { create: vi.fn(), findFirst: vi.fn(), update: vi.fn() },
   };
   return {
     project: { findFirst: vi.fn() },
-    site: { findMany: vi.fn() },
+    site: { findMany: vi.fn(), findFirst: vi.fn() },
     $transaction: vi.fn(async (fn) => fn(tx)),
     tx,
   };
@@ -17,8 +17,9 @@ const prismaMock = vi.hoisted(() => {
 vi.mock('../../config/database.js', () => ({ prisma: prismaMock }));
 vi.mock('../user-management/shared/activity-logger.js', () => ({ writeActivityAsync: vi.fn() }));
 
-const { listLandingSites, createLandingPage } = await import('./service.js');
+const { listLandingSites, createLandingPage, deleteLandingSite } = await import('./service.js');
 const { listTemplates, buildLandingData, TEMPLATE_KEYS } = await import('./templates.js');
+const { handlePreview } = await import('./controller.js');
 const { createLandingSchema } = await import('./schema.js');
 const { manifestSchema } = await import('../../shared/modules/manifest-schema.js');
 
@@ -50,10 +51,10 @@ describe('templates', () => {
     expect(listTemplates().every((t) => t.name && t.description)).toBe(true);
   });
 
-  it('blank has no blocks; the others have a Hero first', () => {
+  it('blank has no blocks; the others have a Landing hero first', () => {
     expect(buildLandingData('blank', 's', 'S').content).toEqual([]);
     for (const key of TEMPLATE_KEYS.filter((k) => k !== 'blank')) {
-      expect(buildLandingData(key, 's', 'S').content[0].type).toBe('Hero');
+      expect(buildLandingData(key, 's', 'S').content[0].type).toBe('LandingHero');
     }
   });
 
@@ -106,7 +107,7 @@ describe('createLandingPage', () => {
       project_id: 'p1',
     });
     const block = prismaMock.tx.builderPage.create.mock.calls[0][0].data.data.content.find(
-      (b) => b.type === 'ContactForm'
+      (b) => b.type === 'LandingForm'
     );
     expect(block.props).toMatchObject({ formSlug: 'spring-enquiry', anchor: 'contact' });
     prismaMock.tx.form.create.mockClear();
@@ -138,5 +139,92 @@ describe('listLandingSites', () => {
       type: 'LANDING',
       deleted_at: null,
     });
+  });
+});
+
+describe('handlePreview (View template)', () => {
+  const call = (key) => {
+    const res = {
+      statusCode: 200,
+      body: null,
+      status(c) {
+        this.statusCode = c;
+        return this;
+      },
+      json(b) {
+        this.body = b;
+        return this;
+      },
+    };
+    handlePreview({ params: { key } }, res);
+    return res;
+  };
+
+  it('returns the page a template would create, without creating anything', () => {
+    const res = call('lead-gen');
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data.name).toBe('Lead generation');
+    expect(res.body.data.data.content[0].type).toBe('LandingHero');
+    expect(prismaMock.tx.builderPage.create).not.toHaveBeenCalled();
+  });
+
+  it('404 for an unknown template, including inherited object keys', () => {
+    expect(call('nope').statusCode).toBe(404);
+    expect(call('constructor').statusCode).toBe(404);
+    expect(call('__proto__').statusCode).toBe(404);
+  });
+});
+
+describe('deleteLandingSite', () => {
+  const live = {
+    id: 's1',
+    slug: 'spring',
+    name: 'Spring',
+    pages: [{ id: 'pg1', slug: 'spring' }],
+  };
+
+  it('soft-deletes the site, its pages and its enquiry form, and frees every slug for reuse', async () => {
+    prismaMock.site.findFirst.mockResolvedValue(live);
+    prismaMock.tx.form.findFirst.mockResolvedValue({ id: 'f1', slug: 'spring-enquiry' });
+    await deleteLandingSite('s1', 'u1');
+
+    const page = prismaMock.tx.builderPage.update.mock.calls[0][0];
+    expect(page.where).toEqual({ id: 'pg1' });
+    expect(page.data.deleted_at).toBeInstanceOf(Date);
+    expect(page.data.slug).toMatch(/^spring--deleted-\d+$/);
+
+    const form = prismaMock.tx.form.update.mock.calls[0][0];
+    expect(form.where).toEqual({ id: 'f1' });
+    expect(form.data.slug).toMatch(/^spring-enquiry--deleted-\d+$/);
+    expect(form.data.deleted_at).toBeInstanceOf(Date);
+
+    const site = prismaMock.tx.site.update.mock.calls[0][0];
+    expect(site.data).toMatchObject({ domain: null });
+    expect(site.data.slug).toMatch(/^spring--deleted-\d+$/);
+    expect(site.data.deleted_at).toBeInstanceOf(Date);
+  });
+
+  it('only looks at a live LANDING site of the default project (never a website or another project)', async () => {
+    prismaMock.site.findFirst.mockResolvedValue(live);
+    prismaMock.tx.form.findFirst.mockResolvedValue(null);
+    await deleteLandingSite('s1', 'u1');
+    expect(prismaMock.site.findFirst.mock.calls[0][0].where).toEqual({
+      id: 's1',
+      project_id: 'p1',
+      type: 'LANDING',
+      deleted_at: null,
+    });
+    expect(prismaMock.tx.form.update).not.toHaveBeenCalled(); // blank template: no form to remove
+  });
+
+  it('404 when the landing page does not exist, is not a landing site, or is already deleted', async () => {
+    prismaMock.site.findFirst.mockResolvedValue(null);
+    await expect(deleteLandingSite('nope', 'u1')).rejects.toMatchObject({ status: 404 });
+    expect(prismaMock.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('404 when there is no project', async () => {
+    prismaMock.project.findFirst.mockResolvedValue(null);
+    await expect(deleteLandingSite('s1', 'u1')).rejects.toMatchObject({ status: 404 });
   });
 });

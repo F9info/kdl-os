@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('@/admin/components/shared/ModuleGuard', () => ({
@@ -16,21 +16,18 @@ vi.mock('@/app/admin/theme-engine/advanced/AdvancedThemeEditor', () => ({
 
 import ThemeEnginePage from '@/app/admin/theme-engine/page'
 
-describe('Themes: one screen for the website and the admin app', () => {
+describe('Themes: the admin app only', () => {
   beforeEach(() => localStorage.clear())
 
-  it('edits the website theme first and switches to the admin theme', () => {
+  it('themes the admin app and offers no website, TV or native switch', () => {
     render(<ThemeEnginePage />)
-    expect(screen.getByTestId('simple').textContent).toBe('webapp')
-    fireEvent.click(screen.getByTestId('surface-webapp_admin'))
     expect(screen.getByTestId('simple').textContent).toBe('webapp_admin')
-    expect(screen.getByTestId('surface-webapp_admin')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.queryByTestId('surface-webapp')).toBeNull()
+    expect(screen.queryByTestId('surface-webapp_admin')).toBeNull()
   })
 
-  it('remembers the chosen surface', () => {
-    const { unmount } = render(<ThemeEnginePage />)
-    fireEvent.click(screen.getByTestId('surface-webapp_admin'))
-    unmount()
+  it('ignores a website surface remembered from before the screen became admin-only', () => {
+    localStorage.setItem('th_platform', 'webapp')
     render(<ThemeEnginePage />)
     expect(screen.getByTestId('simple').textContent).toBe('webapp_admin')
   })

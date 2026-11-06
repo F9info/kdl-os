@@ -37,6 +37,7 @@ const THEMES = ['dark', 'light', 'focus']
 
 const PLATFORMS = [
   { id: 'webapp', label: 'Webapp' },
+  { id: 'webapp_admin', label: 'Admin app' },
   { id: 'tv', label: 'TV' },
   { id: 'android', label: 'Android Native' },
   { id: 'ios', label: 'iOS Native' },
@@ -136,6 +137,12 @@ async function showTargetField(page: Page): Promise<Locator> {
   await expect(paneBtn, 'pane sidebar did not render from the real /schema payload').toBeVisible({
     timeout: 15_000,
   })
+  // The first-run Setup Wizard (shown while Identity is incomplete) covers the page; dismiss it.
+  const later = page.getByRole('button', { name: 'Ask me later' })
+  await later.waitFor({ timeout: 2000 }).then(
+    () => later.click(),
+    () => {}
+  )
   await paneBtn.click()
   if (targetMode) await page.getByTestId(`mode-tab-${targetMode}`).click()
 
@@ -173,7 +180,7 @@ async function editAndSave(page: Page, color: string) {
 // saved rows (scoped to this one Type — only webapp.branding setting_values are deleted), then
 // the rows that existed before the run are saved again.
 async function restoreTargetPane() {
-  const body = { platform: 'webapp', type_id: targetTypeCuid }
+  const body = { platform: 'webapp_admin', type_id: targetTypeCuid }
   const reset = await api.post(`${API_URL}/theme-engine/reset`, {
     headers: authHeaders(),
     data: body,
@@ -204,8 +211,8 @@ test.beforeAll(async () => {
   // Pick a real color field of the Web App 'branding' pane. Plain /tokens?platform=webapp compiles
   // untagged + dark groups into :root and json (light lands in [data-theme="light"] only), so only
   // those qualify. Prefer a field nobody has saved yet: the run never starts from a custom value.
-  const pane = (await fetchSchema('webapp')).schema.find((p) => p.id === 'branding')
-  if (!pane) throw new Error("webapp schema has no 'branding' pane")
+  const pane = (await fetchSchema('webapp_admin')).schema.find((p) => p.id === 'branding')
+  if (!pane) throw new Error("webapp_admin schema has no 'branding' pane")
   const candidates = pane.groups.flatMap((group) => {
     const last = group.slug.split('.').pop() ?? ''
     const mode = pane.modes?.some((m) => m.id === last) ? last : null
@@ -265,7 +272,7 @@ test('Gate 1 — admin UI edit → Save → /tokens reflects new value (css + js
   await editAndSave(page, NEW_COLOR)
 
   // Round-trip: public tokens endpoint must reflect the new value in css AND json.
-  const tokens = await fetchTokens('webapp')
+  const tokens = await fetchTokens('webapp_admin')
   expect(tokens.css, `css missing ${expectedCssVar}: ${NEW_COLOR}`).toContain(
     `${expectedCssVar}: ${NEW_COLOR}`
   )
@@ -278,7 +285,7 @@ test('Gate 2 — core module: disable refused → routes mounted, schema/tokens/
   // Pre-attempt snapshot across all 4 platforms + tokens.
   const schemaBefore: Record<string, string> = {}
   for (const { id } of PLATFORMS) schemaBefore[id] = JSON.stringify(await fetchSchema(id))
-  const tokensBefore = JSON.stringify(await fetchTokens('webapp'))
+  const tokensBefore = JSON.stringify(await fetchTokens('webapp_admin'))
 
   // theme-engine is the always-on engine layer (core): the lifecycle API must refuse to disable it.
   const dis = await api.post(`${API_URL}/modules/theme-engine/disable`, {
@@ -295,9 +302,10 @@ test('Gate 2 — core module: disable refused → routes mounted, schema/tokens/
       `schema ${id} changed by the disable attempt`
     ).toBe(schemaBefore[id])
   }
-  expect(JSON.stringify(await fetchTokens('webapp')), 'tokens changed by the disable attempt').toBe(
-    tokensBefore
-  )
+  expect(
+    JSON.stringify(await fetchTokens('webapp_admin')),
+    'tokens changed by the disable attempt'
+  ).toBe(tokensBefore)
 
   // UI: the editor page still renders.
   await loginUi(page)
@@ -325,59 +333,37 @@ async function noPointerBlockingAncestor(locator: Locator): Promise<boolean> {
 test.describe('KDL-631 — platform navigation clickable with template-engine enabled', () => {
   test.describe.configure({ mode: 'serial' })
 
-  test('platform buttons have no pointer-events-none ancestor (blanket wrapper gone)', async ({
-    page,
-  }) => {
+  test('the screen themes the admin app only: no platform switcher', async ({ page }) => {
     await loginUi(page)
     await page.goto('/admin/theme-engine')
-    await expect(page.getByTestId('platform-bar')).toBeVisible({ timeout: 15_000 })
-
-    for (const { id, label } of PLATFORMS) {
-      const button = page.getByTestId(`platform-btn-${id}`)
-      await expect(button).toBeVisible()
-      const clean = await noPointerBlockingAncestor(button)
-      expect(clean, `An ancestor of the ${label} platform button carries pointer-events:none`).toBe(
-        true
-      )
+    await expect(page.getByTestId('theme-engine-page')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByTestId('platform-bar')).toHaveCount(0)
+    for (const { id } of PLATFORMS.filter((p) => p.id !== 'webapp_admin')) {
+      await expect(page.getByTestId(`platform-btn-${id}`)).toHaveCount(0)
     }
   })
 
-  for (const { id, label } of PLATFORMS) {
-    test(`${label} — platform button click → editor renders with ≥1 editable input`, async ({
-      page,
-    }) => {
-      const platformRowIds = new Set(
-        (await fetchSchema(id)).schema.flatMap((p) =>
-          p.groups.flatMap((g) => g.fields.map((f) => `field-row-${f.id}`))
-        )
+  test('Admin app — editor renders with its own fields and editable inputs', async ({ page }) => {
+    const rowIds = new Set(
+      (await fetchSchema('webapp_admin')).schema.flatMap((p) =>
+        p.groups.flatMap((g) => g.fields.map((f) => `field-row-${f.id}`))
       )
-      await loginUi(page)
-      await page.goto('/admin/theme-engine')
+    )
+    await loginUi(page)
+    await page.goto('/admin/theme-engine')
+    await expect(page.getByTestId('theme-engine-page')).toBeVisible({ timeout: 15_000 })
+    const fieldInputs = page.locator(
+      '[data-testid^="field-row-"] input, [data-testid^="field-row-"] select, [data-testid^="field-row-"] button'
+    )
+    await expect(fieldInputs.first()).toBeVisible({ timeout: 15_000 })
+    const firstRow = await page
+      .locator('[data-testid^="field-row-"]')
+      .first()
+      .getAttribute('data-testid')
+    expect(rowIds.has(firstRow ?? ''), "editor shows another platform's fields").toBe(true)
+  })
 
-      await page.getByTestId(`platform-btn-${id}`).click()
-      await expect(page.getByTestId('theme-engine-page')).toBeVisible({ timeout: 15_000 })
-
-      // At least one input or button inside the field area (editor loaded real schema).
-      const fieldInputs = page.locator(
-        '[data-testid^="field-row-"] input, [data-testid^="field-row-"] select, [data-testid^="field-row-"] button'
-      )
-      await expect(fieldInputs.first()).toBeVisible({ timeout: 15_000 })
-      const count = await fieldInputs.count()
-      expect(count, `${label} editor rendered 0 editable inputs`).toBeGreaterThan(0)
-
-      // ...and the rows are THIS platform's (an inert button would leave the default Web App editor).
-      const firstRow = await page
-        .locator('[data-testid^="field-row-"]')
-        .first()
-        .getAttribute('data-testid')
-      expect(
-        platformRowIds.has(firstRow ?? ''),
-        `${label} editor shows another platform's fields`
-      ).toBe(true)
-    })
-  }
-
-  test('Webapp — edit one color, save, reload, value persisted', async ({ page }) => {
+  test('Admin app — edit one color, save, reload, value persisted', async ({ page }) => {
     await loginUi(page)
     await page.goto('/admin/theme-engine')
     await editAndSave(page, EDIT_COLOR)

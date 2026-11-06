@@ -9,6 +9,7 @@ import {
   useSiteIdentity,
   type LandingSite,
   type SiteIdentity,
+  type SiteIdentityData,
 } from '@/admin/hooks/useLandingPages'
 import { ImageUploadField } from '@/admin/components/shared/ImageUploadField'
 import { Modal } from '@/components/shared/Modal'
@@ -16,30 +17,75 @@ import { ErrorAlert } from '@/components/shared/ErrorAlert'
 import { FormField } from '@/components/shared/FormField'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { LoadingState } from '@/components/ui/loading-state'
 
 type Values = Record<(typeof SITE_IDENTITY_KEYS)[number], string>
-type AssetKey = 'logo_light' | 'favicon'
-const ASSETS: { key: AssetKey; label: string }[] = [
-  { key: 'logo_light', label: 'Logo' },
+type AssetKey = 'logo_light' | 'logo_dark' | 'favicon'
+const ASSETS: { key: AssetKey; label: string; hint?: string }[] = [
+  { key: 'logo_light', label: 'Logo (light background)' },
+  {
+    key: 'logo_dark',
+    label: 'Logo (dark background)',
+    hint: 'Used in the footer. Leave it empty and the footer puts your logo on a white tile.',
+  },
   { key: 'favicon', label: 'Favicon' },
 ]
 
-const toValues = (identity: SiteIdentity): Values => ({
-  app_name: identity.app_name ?? '',
-  app_title: identity.app_title ?? '',
-  description: identity.description ?? '',
-  logo_light: identity.logo_light ?? '',
-  favicon: identity.favicon ?? '',
-})
+type TextKey = Exclude<keyof Values, AssetKey>
+interface TextField {
+  key: TextKey
+  label: string
+  hint?: string
+  type?: string
+  multiline?: boolean
+}
+// Every field starts empty and shows the project's Identity value as its placeholder, so the page
+// uses the company's details until a field is filled in here.
+const GROUPS: { title: string; fields: TextField[] }[] = [
+  {
+    title: 'Name and description',
+    fields: [
+      { key: 'app_name', label: 'Site name', hint: 'Shown in the header and footer.' },
+      { key: 'app_title', label: 'Browser tab title' },
+      { key: 'description', label: 'Description', hint: 'Shown in the footer.' },
+    ],
+  },
+  {
+    title: 'Contact details (footer)',
+    fields: [
+      { key: 'contact_email', label: 'Contact email', type: 'email' },
+      { key: 'contact_email_secondary', label: 'Secondary email', type: 'email' },
+      { key: 'contact_phone', label: 'Contact phone' },
+      { key: 'contact_phone_secondary', label: 'Secondary phone' },
+      { key: 'contact_address', label: 'Address', multiline: true },
+    ],
+  },
+  {
+    title: 'Social links (footer)',
+    fields: [
+      { key: 'social_facebook', label: 'Facebook URL' },
+      { key: 'social_x', label: 'X (Twitter) URL' },
+      { key: 'social_instagram', label: 'Instagram URL' },
+      { key: 'social_linkedin', label: 'LinkedIn URL' },
+      { key: 'social_youtube', label: 'YouTube URL' },
+    ],
+  },
+  { title: 'Footer text', fields: [{ key: 'copyright', label: 'Copyright notice' }] },
+]
+
+const toValues = (identity: SiteIdentity): Values =>
+  Object.fromEntries(SITE_IDENTITY_KEYS.map((k) => [k, identity[k] ?? ''])) as Values
 
 function BrandingForm({
   site,
   initial,
+  resolved,
   onClose,
 }: {
   site: LandingSite
   initial: SiteIdentity
+  resolved: SiteIdentityData['resolved']
   onClose: () => void
 }) {
   const { identity: project } = useIdentity()
@@ -58,27 +104,41 @@ function BrandingForm({
   return (
     <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
       <p className="text-sm text-muted-foreground">
-        Only for this landing page. Leave a field empty to use the project&apos;s Identity.
+        Only for this landing page. Leave a field empty to use the project&apos;s Identity (shown in
+        grey).
       </p>
-      <FormField label="Site name" hint="Shown in the header and footer.">
-        <Input placeholder={project.app_name || 'Project name'} {...register('app_name')} />
-      </FormField>
-      <FormField label="Browser tab title">
-        <Input placeholder={project.app_title || project.app_name} {...register('app_title')} />
-      </FormField>
-      <FormField label="Description">
-        <Input placeholder={project.description} {...register('description')} />
-      </FormField>
-      {ASSETS.map(({ key, label }) => (
-        <FormField key={key} label={label}>
-          <ImageUploadField
-            name={key}
-            value={watch(key)}
-            onChange={(v) => setValue(key, v, { shouldDirty: true })}
-            emptyText="Using the project image"
-          />
-        </FormField>
-      ))}
+      <div className="max-h-[60vh] space-y-6 overflow-y-auto pr-1">
+        {GROUPS.map((group) => (
+          <fieldset key={group.title} className="space-y-4">
+            <legend className="mb-1 text-sm font-semibold">{group.title}</legend>
+            {group.fields.map((f) => (
+              <FormField key={f.key} label={f.label} hint={f.hint}>
+                {f.multiline ? (
+                  <Textarea rows={3} placeholder={project[f.key]} {...register(f.key)} />
+                ) : (
+                  <Input type={f.type} placeholder={project[f.key]} {...register(f.key)} />
+                )}
+              </FormField>
+            ))}
+          </fieldset>
+        ))}
+        <fieldset className="space-y-4">
+          <legend className="mb-1 text-sm font-semibold">Pictures</legend>
+          {ASSETS.map(({ key, label, hint }) => (
+            <FormField key={key} label={label} hint={hint}>
+              <ImageUploadField
+                name={key}
+                value={watch(key)}
+                onChange={(v) => setValue(key, v, { shouldDirty: true })}
+                emptyText="Using the project image"
+                previewUrl={resolved[key] ?? ''}
+                inheritedUrl={project[key] ?? ''}
+                darkBackground={key === 'logo_dark'}
+              />
+            </FormField>
+          ))}
+        </fieldset>
+      </div>
       {save.error ? <ErrorAlert error={save.error} /> : null}
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={onClose}>
@@ -101,7 +161,12 @@ export function BrandingDialog({ site, onClose }: { site: LandingSite; onClose: 
       ) : error || !data ? (
         <ErrorAlert error={error ?? new Error('Could not load branding')} />
       ) : (
-        <BrandingForm site={site} initial={data} onClose={onClose} />
+        <BrandingForm
+          site={site}
+          initial={data.identity}
+          resolved={data.resolved}
+          onClose={onClose}
+        />
       )}
     </Modal>
   )

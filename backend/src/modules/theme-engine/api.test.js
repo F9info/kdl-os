@@ -464,7 +464,11 @@ describe('B3 — compileTokens', () => {
     prisma.settingField = { findMany: vi.fn().mockResolvedValue(fields) };
     // compileTokens now embeds the saved Active Theme (KDL-198) — no row set
     // means getActiveTheme falls back to 'system'.
-    prisma.appSetting = { findUnique: vi.fn().mockResolvedValue(null) };
+    // ...and the website button / form-field style (site-styles.js): none chosen = the defaults.
+    prisma.appSetting = {
+      findUnique: vi.fn().mockResolvedValue(null),
+      findMany: vi.fn().mockResolvedValue([]),
+    };
   }
 
   it('returns a { css, json } object', async () => {
@@ -997,3 +1001,4 @@ describe('B9 — postActiveThemeBodySchema', () => {
     expect(bad.success).toBe(false);
   });
 });
+

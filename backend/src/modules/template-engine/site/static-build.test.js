@@ -26,6 +26,78 @@ describe('one-click static build job', () => {
     await fs.rm(dir, { recursive: true, force: true });
   });
 
+  it('marks the build as a static site, passes the contact details, and reports its folder', async () => {
+    let buildEnv = null;
+    const exec = async (cmd, args, cwd, env) => {
+      if (args[0] === 'run') {
+        buildEnv = env;
+        await fs.mkdir(path.join(cwd, 'out'), { recursive: true });
+        await fs.writeFile(path.join(cwd, 'out', 'index.html'), '<html></html>');
+      }
+    };
+    await fs.mkdir(path.join(dir, 'meta'));
+    startStaticBuild('meta', { contact: { email: 'info@kdl.com', phone: '7337337778' }, exec });
+    expect(getStaticBuild('meta')).toMatchObject({ slug: 'meta', folder: 'frontend/projects/meta/out' });
+    await until('meta', 'done');
+    expect(buildEnv).toMatchObject({
+      NEXT_PUBLIC_STATIC_SITE: '1',
+      NEXT_PUBLIC_CONTACT_EMAIL: 'info@kdl.com',
+      NEXT_PUBLIC_CONTACT_PHONE: '7337337778',
+    });
+    expect(buildEnv.NEXT_PUBLIC_API_BASE).toBeUndefined();
+    expect(getStaticBuild('meta').folder).toBe('frontend/projects/meta/out');
+  });
+
+  it('writes the theme CSS into static-assets before building, and passes the active theme', async () => {
+    let seen = null;
+    let env = null;
+    const exec = async (cmd, args, cwd, e) => {
+      if (args[0] === 'run') {
+        seen = await fs.readFile(path.join(cwd, 'static-assets', 'th-tokens.css'), 'utf8');
+        env = e;
+        await fs.mkdir(path.join(cwd, 'out'), { recursive: true });
+        await fs.writeFile(path.join(cwd, 'out', 'index.html'), '<html></html>');
+      }
+    };
+    await fs.mkdir(path.join(dir, 'themed'));
+    startStaticBuild('themed', { tokens: { css: ':root{--x:1}', activeTheme: 'light' }, exec });
+    await until('themed', 'done');
+    expect(seen).toBe(':root{--x:1}');
+    expect(env.NEXT_PUBLIC_THEME_ACTIVE).toBe('light');
+  });
+
+  it('without tokens it writes no theme file and lets the site follow the visitor system theme', async () => {
+    let env = null;
+    const exec = async (cmd, args, cwd, e) => {
+      if (args[0] === 'run') {
+        env = e;
+        await fs.mkdir(path.join(cwd, 'out'), { recursive: true });
+        await fs.writeFile(path.join(cwd, 'out', 'index.html'), '<html></html>');
+      }
+    };
+    await fs.mkdir(path.join(dir, 'plain'));
+    startStaticBuild('plain', { exec });
+    await until('plain', 'done');
+    expect(env.NEXT_PUBLIC_THEME_ACTIVE).toBe('system');
+    await expect(fs.stat(path.join(dir, 'plain', 'static-assets', 'th-tokens.css'))).rejects.toThrow();
+  });
+
+  it('without contact details the build still gets empty values (nothing undefined in the env)', async () => {
+    let buildEnv = null;
+    const exec = async (cmd, args, cwd, env) => {
+      if (args[0] === 'run') {
+        buildEnv = env;
+        await fs.mkdir(path.join(cwd, 'out'), { recursive: true });
+        await fs.writeFile(path.join(cwd, 'out', 'index.html'), '<html></html>');
+      }
+    };
+    await fs.mkdir(path.join(dir, 'bare'));
+    startStaticBuild('bare', { exec });
+    await until('bare', 'done');
+    expect(buildEnv.NEXT_PUBLIC_CONTACT_EMAIL).toBe('');
+    expect(buildEnv.NEXT_PUBLIC_CONTACT_PHONE).toBe('');
+  });
+
   it('runs install then build, passes apiBase, and zips out/', async () => {
     const calls = [];
     const exec = async (cmd, args, cwd, env) => {

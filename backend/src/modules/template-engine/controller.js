@@ -5,6 +5,8 @@ import * as service from './service.js';
 import { z } from 'zod';
 import { buildSite, siteExists } from './site/generator.js';
 import { getStaticBuild, startStaticBuild, zipStaticBuild } from './site/static-build.js';
+import { getIdentity } from '../identity/service.js';
+import { compileTokens } from '../theme-engine/service.js';
 import { prisma } from '../../config/database.js';
 
 // Project scope (req.projectId) is injected by the requireProject shared middleware
@@ -209,7 +211,13 @@ export const startStatic = async (req, res, next) => {
     if (!parsed.success) return errorResponse(res, 'apiBase must be a full URL', 422);
     const slug = await siteSlug(req.projectId);
     if (!slug) return errorResponse(res, 'Prepare the project folder first', 409);
-    if (!startStaticBuild(slug, { apiBase: parsed.data })) return errorResponse(res, 'A build is already running', 409);
+    // The company's contact details travel into the build: a form on the static site shows them.
+    const identity = await getIdentity();
+    const contact = { email: identity.contact_email, phone: identity.contact_phone };
+    // The site's theme is baked into the folder: a static site cannot ask a server for it later.
+    const tokens = await compileTokens('webapp');
+    if (!startStaticBuild(slug, { apiBase: parsed.data, contact, tokens: { css: tokens.css, activeTheme: tokens.activeTheme } }))
+      return errorResponse(res, 'A build is already running', 409);
     return successResponse(res, getStaticBuild(slug), 202);
   } catch (err) {
     next(err);

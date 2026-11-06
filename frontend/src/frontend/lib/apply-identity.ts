@@ -67,5 +67,7 @@ export function mergeIdentity(base: Identity, overrides?: Identity | null): Iden
   for (const [key, value] of Object.entries(overrides)) {
     if (value?.trim()) merged[key] = value
   }
+  // A page with its own logo but no dark one must not show the project's dark logo next to it.
+  if (overrides.logo_light?.trim() && !overrides.logo_dark?.trim()) delete merged.logo_dark
   return merged
 }

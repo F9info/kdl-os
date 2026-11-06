@@ -81,7 +81,7 @@ for (const s of SCENARIOS) {
       await expect(nav.getByText(label, { exact: true }).first()).toBeVisible()
     }
     // Content (the website/landing area) shows only when a public product is on.
-    const content = nav.getByText('Content', { exact: true })
+    const content = nav.getByText('Frontend', { exact: true })
     if (s.siteNav) await expect(content.first()).toBeVisible()
     else await expect(content).toHaveCount(0)
 

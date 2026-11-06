@@ -45,12 +45,26 @@ export const saveLayoutSchema = z.object({
 });
 
 // Identity fields a site may override (T5.5). Missing or empty = inherit the project's value.
+// Colours are not on the list: they are not applied to sites.
 export const SITE_IDENTITY_KEYS = [
   'app_name',
   'app_title',
   'description',
   'logo_light',
+  'logo_dark',
   'favicon',
+  // Footer details: a landing page may show other contact details than the company.
+  'contact_email',
+  'contact_email_secondary',
+  'contact_phone',
+  'contact_phone_secondary',
+  'contact_address',
+  'copyright',
+  'social_facebook',
+  'social_x',
+  'social_instagram',
+  'social_linkedin',
+  'social_youtube',
 ];
 const siteIdentityFields = Object.fromEntries(SITE_IDENTITY_KEYS.map((k) => [k, IDENTITY_FIELDS[k]]));
 

@@ -22,7 +22,6 @@ const resolution = (selected: string[]) => ({
   conflicts: [],
   noLongerRequired: [],
 })
-let storedDelivery: string | null = null
 const graph = (selected: string[], inferred: string[] = []) => ({
   data: {
     data: {
@@ -31,7 +30,6 @@ const graph = (selected: string[], inferred: string[] = []) => ({
       inferred,
       modules,
       resolution: resolution(selected),
-      delivery: storedDelivery,
     },
   },
 })
@@ -56,7 +54,6 @@ describe('Products settings page', () => {
     vi.mocked(api.get).mockReset()
     vi.mocked(api.put).mockReset()
     useAuthStore.setState({ isAuthenticated: true } as never)
-    storedDelivery = null
   })
 
   it('shows stored selection and disables Apply until something changes', async () => {
@@ -113,55 +110,35 @@ describe('Products settings page', () => {
     expect(screen.queryByRole('button', { name: 'Apply products' })).not.toBeInTheDocument()
   })
 
-  describe('website delivery (web application / static website)', () => {
+  describe('one website product: the Web app', () => {
     const PERMS = ['modules:view', 'modules:edit', 'modules:add']
 
-    it('is offered only while the Website product is on, and names what you are building', async () => {
+    it('names what you are building and offers no web-or-static choice', async () => {
       mockApi(PERMS)
       render(<ProductsPage />)
       await screen.findByTestId('product-website')
-      expect(screen.queryByTestId('delivery')).toBeNull()
       expect(screen.getByTestId('project-type')).toHaveTextContent('Admin project')
-
       fireEvent.click(screen.getByTestId('product-website'))
-      expect(await screen.findByTestId('delivery')).toBeInTheDocument()
-      for (const v of ['web-app', 'static', 'both'])
-        expect(screen.getByTestId(`delivery-${v}`)).toHaveAttribute('aria-checked', 'false')
-      expect(screen.getByTestId('project-type')).toHaveTextContent('Website')
-
-      fireEvent.click(screen.getByTestId('delivery-static'))
-      expect(screen.getByTestId('delivery-static')).toHaveAttribute('aria-checked', 'true')
-      expect(screen.getByTestId('project-type')).toHaveTextContent('Static website')
-      fireEvent.click(screen.getByTestId('delivery-both'))
-      expect(screen.getByTestId('project-type')).toHaveTextContent(
-        'Web application + Static website'
-      )
+      expect(screen.getByTestId('project-type')).toHaveTextContent('Web app')
+      expect(screen.queryByTestId('delivery')).toBeNull()
+      expect(screen.getByTestId('project-type')).not.toHaveTextContent(/static/i)
     })
 
-    it('saves the chosen delivery together with the products', async () => {
+    it('saves just the products', async () => {
       mockApi(PERMS)
       vi.mocked(api.put).mockResolvedValue(graph(['admin', 'website']))
       render(<ProductsPage />)
       fireEvent.click(await screen.findByTestId('product-website'))
-      fireEvent.click(await screen.findByTestId('delivery-static'))
-      fireEvent.click(screen.getByRole('button', { name: 'Apply products' }))
-      fireEvent.click(screen.getByRole('button', { name: 'Confirm' }))
+      // The preview of what the selection does loads first; Apply is enabled once it has.
+      const apply = screen.getByRole('button', { name: 'Apply products' })
+      await waitFor(() => expect(apply).toBeEnabled())
+      fireEvent.click(apply)
+      fireEvent.click(await screen.findByRole('button', { name: 'Confirm' }))
       await waitFor(() =>
         expect(api.put).toHaveBeenCalledWith('/modules/products', {
           products: ['admin', 'website'],
-          delivery: 'static',
         })
       )
-    })
-
-    it('changing only the delivery is a change that can be applied', async () => {
-      storedDelivery = 'web-app'
-      mockApi(PERMS, ['admin', 'website'])
-      render(<ProductsPage />)
-      expect(await screen.findByTestId('delivery-web-app')).toHaveAttribute('aria-checked', 'true')
-      expect(screen.getByRole('button', { name: 'Apply products' })).toBeDisabled()
-      fireEvent.click(screen.getByTestId('delivery-static'))
-      expect(screen.getByRole('button', { name: 'Apply products' })).toBeEnabled()
     })
   })
 })

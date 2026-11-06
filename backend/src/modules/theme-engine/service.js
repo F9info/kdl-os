@@ -1,6 +1,13 @@
 import { prisma } from '../../config/database.js';
 import { redis } from '../../config/redis.js';
 import { PLAT_TABS, PLATFORMS, slug as slugify } from './schema/index.js';
+import {
+  BUTTON_KEYS,
+  FORM_KEYS,
+  buttonKeyOrDefault,
+  formKeyOrDefault,
+  siteStyleCss,
+} from './site-styles.js';
 
 const TOKEN_TTL = 600; // seconds
 const tokenKey = (platform, theme, device) => `th:tokens:${platform}:${theme ?? 'all'}:${device ?? 'all'}`;
@@ -770,7 +777,14 @@ export async function compileTokens(platform, theme, device) {
   ].filter(Boolean).join('\n\n');
 
   const activeTheme = await getActiveTheme(platform);
-  const result = { css, json: jsonTree, activeTheme };
+  // The chosen website button and form-field style rides along with the theme, so everything that loads
+  // the theme (live site, editor, static export) gets it. Only the two platforms that render the website.
+  const styles = SITE_STYLE_PLATFORMS.includes(platform) ? await getSiteStyles() : null;
+  const result = {
+    css: styles ? `${css}\n\n${siteStyleCss(styles.button, styles.form)}` : css,
+    json: jsonTree,
+    activeTheme,
+  };
 
   try {
     await redis.set(cacheKey, JSON.stringify(result), 'EX', TOKEN_TTL);
@@ -815,4 +829,43 @@ export async function setActiveTheme(platform, theme) {
   // serve the old choice until TTL expiry otherwise.
   await invalidateTokenCache(platform);
   return { activeTheme: theme };
+}
+
+// ── Website button and form-field style ──────────────────────────────────────
+// One choice for the whole website (see site-styles.js). Stored as AppSetting rows like the other
+// cross-cutting flags of this module, and applied through compileTokens.
+
+// The website is drawn with the `webapp` theme, and with `webapp_admin` while it is previewed or served by
+// the admin app itself. Both get the style; the CSS is scoped to website content, so admin screens are not touched.
+export const SITE_STYLE_PLATFORMS = ['webapp', 'webapp_admin'];
+const siteStyleKey = (kind) => `theme_engine.site_style.${kind}`;
+
+export async function getSiteStyles() {
+  const rows = await prisma.appSetting.findMany({
+    where: { key: { in: [siteStyleKey('button'), siteStyleKey('form')] } },
+    select: { key: true, value: true },
+  });
+  const byKey = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+  return {
+    button: buttonKeyOrDefault(byKey[siteStyleKey('button')]),
+    form: formKeyOrDefault(byKey[siteStyleKey('form')]),
+  };
+}
+
+export async function setSiteStyles({ button, form }) {
+  const errors = [];
+  if (button !== undefined && !BUTTON_KEYS.includes(button)) errors.push(`button must be one of: ${BUTTON_KEYS.join(', ')}`);
+  if (form !== undefined && !FORM_KEYS.includes(form)) errors.push(`form must be one of: ${FORM_KEYS.join(', ')}`);
+  if (errors.length) return { errors };
+  for (const [kind, value] of [['button', button], ['form', form]]) {
+    if (value === undefined) continue;
+    await prisma.appSetting.upsert({
+      where: { key: siteStyleKey(kind) },
+      create: { key: siteStyleKey(kind), value, type: 'string', is_public: true },
+      update: { value },
+    });
+  }
+  // Compiled tokens are cached per platform; they now contain this CSS.
+  await Promise.all(SITE_STYLE_PLATFORMS.map((p) => invalidateTokenCache(p)));
+  return getSiteStyles();
 }

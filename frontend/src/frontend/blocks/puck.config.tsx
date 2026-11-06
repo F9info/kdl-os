@@ -4,6 +4,7 @@ import { composePacks } from './packs/compose'
 import { composer } from './packs/composer'
 import { construction } from './packs/construction'
 import { general } from './packs/general'
+import { landing } from './packs/landing'
 import { medical } from './packs/medical'
 
 /**
@@ -21,11 +22,13 @@ const root: Config['root'] = {
   fields: { title: { type: 'text' } },
   defaultProps: { title: 'Untitled page' },
   render: ({ children }: { children: ReactNode }) => (
-    <main className="min-h-screen bg-surface text-body">{children}</main>
+    // `kdl-site` marks website content: the chosen website button and form-field style applies only here,
+    // never to admin screens (backend theme-engine/site-styles.js).
+    <main className="kdl-site min-h-screen bg-surface text-body">{children}</main>
   ),
 }
 
-const composed = composePacks(root, [general, construction, medical, composer])
+const composed = composePacks(root, [general, construction, medical, composer, landing])
 
 // Top Header/Header/Hero Slider each ship multiple selectable designs
 // (Insert-a-block picker: one card per design) — pulled into their own
@@ -51,6 +54,7 @@ const categoriesUnordered: NonNullable<Config['categories']> = {
 // (e.g. a future pack's new category) still renders — just appended after
 // the ones below, instead of silently disappearing.
 const CATEGORY_ORDER = [
+  'landing',
   'top-bar',
   'header',
   'hero',
@@ -102,6 +106,7 @@ export const blockVariants: Record<string, string[]> = {
   ...general.variants,
   ...construction.variants,
   ...medical.variants,
+  ...landing.variants,
 }
 
 export const emptyData: Data = {

@@ -195,6 +195,7 @@ export default function IdentityPage() {
         name={a.key}
         value={form[a.key] ?? ''}
         previewUrl={previews[a.key] ?? ''}
+        darkBackground={a.key === 'logo_dark'}
         onChange={(v) => set(a.key, v)}
         onBusyChange={setUploading}
         emptyText="None"
@@ -217,10 +218,13 @@ export default function IdentityPage() {
         ) : loadError ? (
           <ErrorAlert error={loadError} />
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-6">
             <ErrorAlert error={formError} />
 
-            <section className="space-y-4" aria-labelledby="id-branding">
+            <section
+              className="space-y-4 rounded-lg border bg-card p-6"
+              aria-labelledby="id-branding"
+            >
               <h2 id="id-branding" className="text-lg font-semibold">
                 Branding
               </h2>
@@ -235,7 +239,10 @@ export default function IdentityPage() {
               </details>
             </section>
 
-            <section className="space-y-4" aria-labelledby="id-colors">
+            <section
+              className="space-y-4 rounded-lg border bg-card p-6"
+              aria-labelledby="id-colors"
+            >
               <h2 id="id-colors" className="text-lg font-semibold">
                 Colors
               </h2>
@@ -269,14 +276,17 @@ export default function IdentityPage() {
               </div>
             </section>
 
-            <section className="space-y-4" aria-labelledby="id-contact">
+            <section
+              className="space-y-4 rounded-lg border bg-card p-6"
+              aria-labelledby="id-contact"
+            >
               <h2 id="id-contact" className="text-lg font-semibold">
                 Contact
               </h2>
               {CONTACT_FIELDS.map(renderField)}
             </section>
 
-            <details className="rounded border p-3">
+            <details className="rounded-lg border bg-card p-6">
               <summary className="cursor-pointer text-sm font-medium">
                 Advanced: social links and legal
               </summary>

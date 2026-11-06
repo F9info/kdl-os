@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { DELIVERY_OPTIONS, projectTypeLabel, type WebsiteDelivery } from '@/admin/lib/project-type'
+import { projectTypeLabel } from '@/admin/lib/project-type'
 
 export interface Product {
   key: string
@@ -26,8 +26,6 @@ export interface ModuleGraph {
   inferred?: string[]
   modules: { slug: string; name: string }[]
   resolution: Resolution
-  /** How the Website product is delivered; null until the owner chooses. */
-  delivery?: WebsiteDelivery | null
 }
 
 // Admin is the base every install starts with, so it is never offered as a card.
@@ -44,9 +42,6 @@ interface ProductPickerProps {
   disabled?: boolean
   resolution?: Resolution
   nameOf: (slug: string) => string
-  /** Website delivery choice (shown while the Website product is on). */
-  delivery?: WebsiteDelivery | null
-  onDeliveryChange?: (value: WebsiteDelivery) => void
 }
 
 // Product cards plus the "what this selection does" preview. Shared by Settings > Products
@@ -58,8 +53,6 @@ export function ProductPicker({
   disabled,
   resolution: r,
   nameOf,
-  delivery,
-  onDeliveryChange,
 }: ProductPickerProps) {
   return (
     <div className="space-y-6">
@@ -92,38 +85,8 @@ export function ProductPicker({
           })}
       </div>
 
-      {selected.includes('website') && onDeliveryChange && (
-        <fieldset className="space-y-2 rounded-lg border p-4" data-testid="delivery">
-          <legend className="px-1 text-sm font-semibold">How will the website be delivered?</legend>
-          <div
-            className="grid gap-2 sm:grid-cols-3"
-            role="radiogroup"
-            aria-label="Website delivery"
-          >
-            {DELIVERY_OPTIONS.map((o) => (
-              <button
-                key={o.value}
-                type="button"
-                role="radio"
-                aria-checked={delivery === o.value}
-                data-testid={`delivery-${o.value}`}
-                disabled={disabled}
-                onClick={() => onDeliveryChange(o.value)}
-                className={cn(
-                  'rounded-md border p-3 text-left text-sm transition-colors disabled:opacity-60',
-                  delivery === o.value ? 'border-primary bg-primary/5' : 'hover:bg-accent'
-                )}
-              >
-                <span className="font-medium">{o.label}</span>
-                <span className="mt-1 block text-xs text-muted-foreground">{o.description}</span>
-              </button>
-            ))}
-          </div>
-        </fieldset>
-      )}
-
       <p className="text-sm" data-testid="project-type">
-        Your project: <strong>{projectTypeLabel(selected, delivery)}</strong>
+        Your project: <strong>{projectTypeLabel(selected)}</strong>
       </p>
 
       {r && (

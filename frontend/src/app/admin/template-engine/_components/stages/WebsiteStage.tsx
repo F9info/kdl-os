@@ -1,31 +1,19 @@
 'use client'
 
 import Link from 'next/link'
+import { SiteStylesStep } from './SiteStylesStep'
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import {
   ArrowLeft,
+  Download,
+  FileText,
   ArrowRight,
-  ChevronDown,
-  ChevronRight,
-  Eye,
-  EyeOff,
-  Globe,
   ExternalLink,
-  GripVertical,
-  Link2Off,
-  Pencil,
   Plus,
   Upload as UploadIcon,
   X,
 } from 'lucide-react'
-import {
-  MAX_DEPTH as NAV_MAX_DEPTH,
-  moveNode as moveNavNode,
-  flattenForApi as flattenNavForApi,
-  type DropZone as NavDropZone,
-  type MenuItemNode as NavNode,
-} from '@/app/admin/menus/_tree'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchDetailPageTypes } from '@/admin/lib/detail-page-types'
 import { useSiteHomeHref } from '@/admin/hooks/useSiteHomeHref'
 import api from '@/lib/axios'
@@ -36,7 +24,6 @@ import { cn } from '@/lib/utils'
 import { loadGoogleFont, loadCustomFontFace } from '@/admin/lib/load-google-font'
 import { useFetchSiteLayout } from '@/admin/hooks/useSiteLayout'
 import { useModules } from '@/admin/hooks/useModules'
-import { useWebsiteDelivery } from '@/admin/hooks/useWebsiteDelivery'
 import { visibleSurfaces, type SurfaceKey } from '@/admin/lib/website-surfaces'
 import {
   useAdvanceStage,
@@ -48,22 +35,11 @@ import {
 } from '@/admin/hooks/useTemplateEngine'
 import { StageShell } from './StageShell'
 import { WebsiteLayoutPreview } from '../WebsiteLayoutPreview'
+import { NavPagesGrid } from './NavPagesGrid'
+import { NavigationStep, type DetailPageType } from './NavigationStep'
+import { readLocal, writeLocal } from '../../website-ui-state'
 import type { BrandKitTypography, TemplateEngineRun } from '@/admin/types/template-engine.types'
 import type { Media } from '@/types/media.types'
-
-// One entry per module registered with backend/src/shared/detail-pages/registry.js
-// (GET /detail-page-types) — Sectors, Work, and any future type, with zero
-// per-type code in this file.
-interface DetailPageType {
-  typeKey: string
-  label: string
-  navParentLabel: string
-  deletable?: boolean
-  count: number
-  sectionHref: string
-  listHref: string
-  entities: { id: string; name: string; detail_page_id: string; publicPath: string }[]
-}
 
 // Mirrors the design prototype's "Brands" grid (a card per brand surface —
 // web app, admin app, visiting card, letterhead, t-shirt, ID card). Only
@@ -73,20 +49,45 @@ interface DetailPageType {
 // shown disabled — nothing to click through to yet.
 const SURFACE_CARD_CLASS =
   'rounded-lg border-2 border-primary bg-primary/5 p-4 text-left transition-colors hover:bg-primary/10'
-// Which of these show is decided by visibleSurfaces() (admin/lib/website-surfaces.ts): the owner's
-// web app / static choice and the enabled modules. `href` absent = opens the Web app flow in place.
+// Which of these show is decided by visibleSurfaces() (admin/lib/website-surfaces.ts): the enabled
+// modules. `href` absent = opens the Web app flow in place. Forms and the static export live inside
+// the Web app (see WebAppTools), not as cards.
 const SURFACE_CARDS: Record<SurfaceKey, { name: string; href?: (projectId: string) => string }> = {
   webapp: { name: 'Web app' },
   landing: { name: 'Landing Pages', href: () => '/admin/landing-pages' },
-  forms: { name: 'Forms', href: () => '/admin/forms' },
   collateral: {
     name: 'Collateral',
     href: (projectId) => `/admin/template-engine/projects/${projectId}/collateral`,
   },
-  static: {
-    name: 'Static website',
-    href: (projectId) => `/admin/static-website?projectId=${projectId}`,
-  },
+}
+
+/**
+ * What belongs to the Web app besides its pages: its forms (and their submissions), and the one-click
+ * conversion to a static copy that can be hosted anywhere.
+ */
+function WebAppTools({ projectId }: { projectId: string }) {
+  const { isEnabled } = useModules()
+  return (
+    <div className="flex flex-wrap items-center justify-end gap-2" data-testid="webapp-tools">
+      {isEnabled('forms') && (
+        <Button asChild variant="outline" size="sm">
+          <Link href="/admin/forms" data-testid="webapp-forms-link">
+            <FileText className="h-4 w-4" />
+            Forms
+          </Link>
+        </Button>
+      )}
+      <Button asChild size="sm">
+        <Link
+          href={`/admin/static-website?projectId=${projectId}`}
+          data-testid="convert-static-link"
+        >
+          <Download className="h-4 w-4" />
+          Convert to Static Website
+        </Link>
+      </Button>
+    </div>
+  )
 }
 
 // Curated starter sets matching the prototype's Web app Typography screen.
@@ -99,33 +100,9 @@ const BODY_FONTS = ['Inter', 'Roboto', 'Open Sans', 'Work Sans']
 // it to localStorage, scoped per project, keeps you on the same step/edits
 // across a refresh without adding backend/schema work for state that's
 // still just in-progress UI, not saved brand data.
-function readLocal<T>(key: string, fallback: T): T {
-  if (typeof window === 'undefined') return fallback
-  try {
-    const raw = window.localStorage.getItem(key)
-    return raw ? (JSON.parse(raw) as T) : fallback
-  } catch {
-    return fallback
-  }
-}
-
-function writeLocal(key: string, value: unknown) {
-  if (typeof window === 'undefined') return
-  try {
-    window.localStorage.setItem(key, JSON.stringify(value))
-  } catch {
-    // best-effort — a private window or full storage shouldn't break the UI
-  }
-}
-
 export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
   const { isEnabled } = useModules()
-  const delivery = useWebsiteDelivery()
-  const surfaces = visibleSurfaces({
-    delivery,
-    landingEnabled: isEnabled('landing'),
-    formsEnabled: isEnabled('forms'),
-  })
+  const surfaces = visibleSurfaces({ landingEnabled: isEnabled('landing') })
   const stage = run.stages.find((s) => s.stage === 'WEBSITE')
   const advance = useAdvanceStage(run.id, run.projectId)
   const retry = useRetryStage(run.id, run.projectId)
@@ -139,7 +116,7 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
     () => readLocal(uiStateKey, { openBrand: null as 'webapp' | null }).openBrand
   )
   const [webAppStep, setWebAppStep] = useState<
-    'typography' | 'fontSettings' | 'navigation' | 'layouts' | 'assemble'
+    'typography' | 'fontSettings' | 'styles' | 'navigation' | 'layouts' | 'assemble'
   >(() => readLocal(uiStateKey, { webAppStep: 'typography' as const }).webAppStep)
   // Snapshot of what Typography's Next just saved — read straight from the
   // mutation result instead of waiting on brandKit's invalidate-refetch, so
@@ -159,7 +136,6 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
     | null
     | undefined
   const pages = Object.entries(outputRef?.pageKeyToId ?? {})
-  const pageCount = outputRef?.pageIds?.length ?? pages.length
   // Every registered Details Page type (Sectors, Work, ... — see
   // backend/src/shared/detail-pages/registry.js) reports itself here: real
   // per-entity assembled pages that live in their own table, not
@@ -299,8 +275,8 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
           <div>
             <h3 className="text-base font-semibold">Brands</h3>
             <p className="text-sm text-muted-foreground">
-              Your web app, static website, landing pages, forms and collateral. Click a card to
-              open it.
+              Your web app, landing pages and collateral. Click a card to open it. Forms and
+              &ldquo;Convert to Static Website&rdquo; are inside the Web app.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -329,6 +305,7 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
         </div>
       ) : (
         <div className="space-y-3">
+          <WebAppTools projectId={run.projectId} />
           {webAppStep === 'typography' ? (
             <Button
               type="button"
@@ -360,10 +337,11 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
             <WebAppTypographyStep
               typography={brandKit?.typography ?? null}
               isSaving={patchTypography.isPending}
-              onNext={(typography) =>
+              onNext={(typography, then) =>
                 patchTypography.mutate(typography, {
                   onSuccess: (updatedKit) => {
                     setSavedTypography(updatedKit.typography)
+                    if (then) setWebAppStep(then) // Save alone stays here; the other buttons move on
                   },
                 })
               }
@@ -373,6 +351,13 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
               projectId={run.projectId}
               typography={savedTypography ?? brandKit?.typography ?? null}
               onBack={() => setWebAppStep('typography')}
+              onNext={() => setWebAppStep('styles')}
+              onSkip={() => setWebAppStep('navigation')}
+            />
+          ) : webAppStep === 'styles' ? (
+            <SiteStylesStep
+              onBack={() => setWebAppStep('fontSettings')}
+              onNext={() => setWebAppStep('navigation')}
             />
           ) : webAppStep === 'layouts' ? (
             <LayoutSettingsPanel
@@ -416,13 +401,14 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
             <NavigationStep
               projectId={run.projectId}
               runId={run.id}
-              onBack={() => setWebAppStep('fontSettings')}
+              onBack={() => setWebAppStep('styles')}
+              onLayouts={() => setWebAppStep('layouts')}
               onNext={() => {
                 pendingRegenRef.current = true
                 setWebAppStep('assemble')
               }}
             />
-          ) : pageCount > 0 ? (
+          ) : (
             <div className="space-y-3">
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
@@ -430,7 +416,7 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
                   <p className="text-sm text-muted-foreground">
                     {advance.isPending
                       ? 'Updating pages for your latest selection…'
-                      : `${pageCount} page${pageCount !== 1 ? 's' : ''} assembled in the page-builder engine. Open a page to edit it, or view all pages to step through the whole site.`}
+                      : 'One page for every Navigation item, plus Home. Open a page to edit it.'}
                   </p>
                 </div>
                 {demoSiteHref && (
@@ -442,37 +428,7 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
                   </Button>
                 )}
               </div>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {pages.map(([key, id]) => (
-                  <div key={id} className="overflow-hidden rounded-lg border bg-card">
-                    <div className="h-1.5 bg-gradient-to-r from-primary to-secondary" />
-                    <div className="flex min-h-[110px] flex-col gap-2 p-4">
-                      <span className="w-fit rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                        Page
-                      </span>
-                      <b className="text-sm">{pageLabel(key)}</b>
-                      <Button size="sm" asChild className="mt-auto w-fit">
-                        <a
-                          href={`/admin/template-engine/edit/${id}?projectId=${run.projectId}`}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          <Pencil className="mr-2 h-3.5 w-3.5" />
-                          Edit
-                        </a>
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-              <Globe className="h-4 w-4 shrink-0" />
-              <span>
-                No pages assembled yet. Requires brand approval (stage 4) and the relevant component
-                pack for your industry.
-              </span>
+              <NavPagesGrid projectId={run.projectId} homeId={outputRef?.pageKeyToId?.home} />
             </div>
           )}
         </div>
@@ -496,10 +452,14 @@ function WebAppTypographyStep({
     body: { family: string; families?: string[] } | null
   } | null
   isSaving: boolean
-  onNext: (typography: {
-    heading: { family: string; families: string[] }
-    body: { family: string; families: string[] }
-  }) => void
+  /** Saves the fonts; `then` is where to go once they are saved (nowhere = stay on this step). */
+  onNext: (
+    typography: {
+      heading: { family: string; families: string[] }
+      body: { family: string; families: string[] }
+    },
+    then?: 'fontSettings' | 'navigation'
+  ) => void
 }) {
   const [heading, setHeading] = useState<string[]>(() =>
     seedSelection(typography?.heading, HEADING_FONTS)
@@ -511,6 +471,15 @@ function WebAppTypographyStep({
   const [bodyOptions, setBodyOptions] = useState<string[]>(() =>
     dedupePrependAll(BODY_FONTS, typography?.body?.families ?? [])
   )
+  const cannotSave = isSaving || heading.length === 0 || body.length === 0
+  const save = (then?: 'fontSettings' | 'navigation') =>
+    onNext(
+      {
+        heading: { family: heading[0]!, families: heading },
+        body: { family: body[0]!, families: body },
+      },
+      then
+    )
 
   return (
     <div className="rounded-lg border bg-card p-4 space-y-6">
@@ -556,17 +525,31 @@ function WebAppTypographyStep({
         }}
       />
 
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {/* Each button saves the fonts first, then moves on, so a choice is never lost. */}
         <Button
-          onClick={() =>
-            onNext({
-              heading: { family: heading[0]!, families: heading },
-              body: { family: body[0]!, families: body },
-            })
-          }
-          disabled={isSaving || heading.length === 0 || body.length === 0}
+          variant="outline"
+          onClick={() => save()}
+          disabled={cannotSave}
+          data-testid="typography-save"
         >
           {isSaving ? 'Saving…' : 'Save'}
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => save('navigation')}
+          disabled={cannotSave}
+          data-testid="typography-skip"
+        >
+          Skip to Navigation
+        </Button>
+        <Button
+          onClick={() => save('fontSettings')}
+          disabled={cannotSave}
+          data-testid="typography-next"
+        >
+          Next: Typography
+          <ArrowRight className="ml-1.5 h-4 w-4" />
         </Button>
       </div>
     </div>
@@ -1002,6 +985,8 @@ function FontSettingsStep({
   projectId,
   typography,
   onBack,
+  onNext,
+  onSkip,
 }: {
   projectId: string
   typography: {
@@ -1009,6 +994,8 @@ function FontSettingsStep({
     body: { family: string; families?: string[] } | null
   } | null
   onBack: () => void
+  onNext: () => void
+  onSkip: () => void
 }) {
   const storageKey = `te-website-ui:${projectId}:typeScale`
   const headingOptions = typography?.heading?.families?.length
@@ -1154,8 +1141,26 @@ function FontSettingsStep({
             </table>
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={saveRows}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={saveRows}
+              data-testid="fontsettings-save"
+            >
               {saved ? 'Saved' : 'Save'}
+            </Button>
+            {/* The type-scale rows autosave, so moving on needs no extra save. */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onSkip}
+              data-testid="fontsettings-skip"
+            >
+              Skip to Navigation
+            </Button>
+            <Button type="button" onClick={onNext} data-testid="fontsettings-next">
+              Next: Buttons and form fields
+              <ArrowRight className="ml-1.5 h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -1290,790 +1295,6 @@ function LayoutSettingsPanel({
         ))}
       </div>
       <WebsiteLayoutPreview projectId={projectId} />
-    </div>
-  )
-}
-
-// Mirrors the design prototype's Navigation step page suggestions.
-const SUGGESTED_PAGES = [
-  'Home',
-  'About',
-  'Services',
-  'Service detail',
-  'Products',
-  'Product detail',
-  'Pricing',
-  'Portfolio',
-  'Portfolio detail',
-  'Blog',
-  'Blog detail',
-  'Team',
-  'Team member',
-  'Careers',
-  'Job detail',
-  'Gallery',
-  'Testimonials',
-  'Contact',
-  'FAQ',
-  'Privacy Policy',
-  'Terms',
-  'Admin panel',
-  'Settings',
-]
-
-// Content types with a real per-item module (registered via
-// backend/src/shared/detail-pages/registry.js — Sectors, Work, ...) already
-// generate their own real detail page per entry, reachable from the
-// "Layout <type> (N)" button in Layout settings above — typing one of
-// these labels into the custom-page box below would instead create ONE
-// unrelated generic scaffold page with the same name, which is confusing
-// (two different things sharing a label) and was the repeated source of a
-// stray/empty page bug. See `addCustomPage`'s `reservedType` lookup and the
-// `detailPageTypeStates` chip row below — both keyed off the same
-// `detailPageTypes` query, not a hardcoded list.
-
-// Same "header" Menu the Menus admin module (`/admin/menus`) and
-// `ConstructionHeader` read at render time — editing navigation in this
-// wizard step IS editing the live site's real nav, not a separate local
-// draft. (A previous version of this step only wrote a flat list to
-// localStorage and never touched the real Menu/MenuItem tables, so
-// changes made here never appeared on the actual header.)
-const NAV_MENU_KEY = 'header'
-const NAV_MENU_NAME = 'Header Navigation'
-const FOOTER_MENU_KEY = 'footer'
-const FOOTER_MENU_NAME = 'Footer Navigation'
-
-interface WizardMenu {
-  id: string
-  project_id: string | null
-  key: string
-  name: string
-  items: NavNode[]
-}
-
-function navFindByLabel(nodes: NavNode[], label: string): NavNode | null {
-  for (const n of nodes) {
-    if (n.label === label) return n
-    const found = navFindByLabel(n.children, label)
-    if (found) return found
-  }
-  return null
-}
-
-function navContainsLabel(nodes: NavNode[], label: string): boolean {
-  return navFindByLabel(nodes, label) !== null
-}
-
-/** Depth-first labels, for the flat `navigationPages: string[]` the backend scaffolding contract expects — nesting here is real-Menu-only. */
-function navFlattenLabels(nodes: NavNode[]): string[] {
-  return nodes.flatMap((n) => [n.label, ...navFlattenLabels(n.children)])
-}
-
-/** Depth-first node ids — used to cascade a visibility change onto every descendant. */
-function navFlattenIds(nodes: NavNode[]): string[] {
-  return nodes.flatMap((n) => [n.id, ...navFlattenIds(n.children)])
-}
-
-/** Depth-first nodes (not just labels) — used to search the footer tree for a mirrored item. */
-function navFlattenNodes(nodes: NavNode[]): NavNode[] {
-  return nodes.flatMap((n) => [n, ...navFlattenNodes(n.children)])
-}
-
-// Mirrors backend/src/shared/utils/slug.js's `slugify` exactly — the
-// website driver derives every assembled page's slug this way
-// (`te-{runId}-{key}`), so a menu item created here for a page name needs
-// the identical algorithm to link to the real page instead of a dead `#`.
-function slugifyLikeBackend(input: string) {
-  return input
-    .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-}
-
-function NavigationStep({
-  projectId,
-  runId,
-  onBack,
-  onNext,
-}: {
-  projectId: string
-  runId: string
-  onBack: () => void
-  onNext: () => void
-}) {
-  const storageKey = `te-website-ui:${projectId}:navigation`
-  const queryClient = useQueryClient()
-  const menuQueryKey = ['menu', projectId, NAV_MENU_KEY]
-
-  const { data: menu } = useQuery({
-    queryKey: menuQueryKey,
-    queryFn: () =>
-      api
-        .post('/menus/ensure', { project_id: projectId, key: NAV_MENU_KEY, name: NAV_MENU_NAME })
-        .then((r) => r.data.data.menu as WizardMenu),
-    enabled: Boolean(projectId),
-  })
-
-  // Footer is a genuinely separate Menu (see `/admin/menus?key=footer`) —
-  // fetched here too only so each header row can show/toggle whether a
-  // mirrored copy of itself already exists in the footer, without making
-  // the admin rebuild the footer tree by hand for the common "same link in
-  // both" case.
-  const footerMenuQueryKey = ['menu', projectId, FOOTER_MENU_KEY]
-  const { data: footerMenu } = useQuery({
-    queryKey: footerMenuQueryKey,
-    queryFn: () =>
-      api
-        .post('/menus/ensure', {
-          project_id: projectId,
-          key: FOOTER_MENU_KEY,
-          name: FOOTER_MENU_NAME,
-        })
-        .then((r) => r.data.data.menu as WizardMenu),
-    enabled: Boolean(projectId),
-  })
-  const footerNodes = footerMenu ? navFlattenNodes(footerMenu.items) : []
-  function findFooterMirror(node: NavNode): NavNode | null {
-    return (
-      footerNodes.find(
-        (f) =>
-          f.label === node.label && (node.page_id ? f.page_id === node.page_id : f.url === node.url)
-      ) ?? null
-    )
-  }
-
-  // Same query/key WebsiteStage's Layout pill row uses — shared cache. One
-  // entry per registered Details Page type (Sectors, Work, ...); adding a
-  // new type never touches this component.
-  const { data: detailPageTypes } = useQuery({
-    queryKey: ['detail-page-types', projectId],
-    queryFn: () =>
-      api
-        .get('/detail-page-types', { params: { project_id: projectId } })
-        .then((r) => r.data.data.items as DetailPageType[]),
-    enabled: Boolean(projectId),
-  })
-
-  // Local, editable copy of the tree — drag-and-drop mutates this
-  // instantly for a responsive feel, `dirty` stops a background refetch
-  // from clobbering an in-flight edit before its own mutation resolves.
-  const [tree, setTree] = useState<NavNode[]>([])
-  const [dirty, setDirty] = useState(false)
-  useEffect(() => {
-    if (menu && !dirty) setTree(menu.items)
-  }, [menu, dirty])
-
-  const invalidate = () => {
-    setDirty(false)
-    queryClient.invalidateQueries({ queryKey: menuQueryKey })
-    // `useHeaderMenuTree` (ConstructionHeader, WebsiteLayoutPreview,
-    // useLayoutChrome) reads this same Menu under its own cache key —
-    // without invalidating it too, those previews keep showing whatever
-    // they last fetched until an unrelated remount happens to refire it.
-    // Broad prefix match — invalidates every key's public cache
-    // (header/footer/...), not just NAV_MENU_KEY.
-    queryClient.invalidateQueries({ queryKey: ['menu-public'] })
-  }
-
-  const createItemMutation = useMutation({
-    mutationFn: (body: {
-      label: string
-      order: number
-      parent_id?: string
-      // Sector/Work detail links are real page links (link_type 'page', a
-      // real page_id + entity's own route) — a plain custom label stays the
-      // synthetic te-{runId}-{slug} scaffold-page link — 'external' is a
-      // third-party URL with no page behind it at all.
-      link_type?: 'custom' | 'page' | 'external'
-      page_id?: string
-      url?: string
-      open_in_new_tab?: boolean
-    }) =>
-      api.post(`/menus/${menu!.id}/items`, {
-        label: body.label,
-        order: body.order,
-        parent_id: body.parent_id ?? null,
-        link_type: body.link_type ?? 'custom',
-        page_id: body.page_id ?? null,
-        open_in_new_tab: body.open_in_new_tab ?? false,
-        // Doesn't account for the resolveSeedPages dedup suffix
-        // (`-2`, `-3`, ...) the backend applies when the same label
-        // appears twice in one run — rare, and worth a wrong link over
-        // the complexity of replicating that counter here.
-        url: body.url ?? `/p/te-${runId}-${slugifyLikeBackend(body.label) || 'page'}`,
-      }),
-    onSuccess: invalidate,
-  })
-  const deleteItemMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/menus/items/${id}`),
-    onSuccess: invalidate,
-  })
-  const saveOrderMutation = useMutation({
-    mutationFn: (nodes: NavNode[]) =>
-      api.patch(`/menus/${menu!.id}/items/reorder`, { items: flattenNavForApi(nodes) }),
-    onSuccess: invalidate,
-  })
-  // Visibility toggle — the page/link stays real and reachable by URL, it
-  // just stops appearing in the rendered header/footer nav (`getPublicMenu`
-  // already filters `is_active: false` out server-side).
-  const updateItemMutation = useMutation({
-    mutationFn: ({ id, ...patch }: { id: string; is_active?: boolean; no_page?: boolean }) =>
-      api.patch(`/menus/items/${id}`, patch),
-    onSuccess: invalidate,
-  })
-
-  // "No page" — item (and its dropdown, if any) stays in the nav, but its
-  // own label stops being a clickable link. For a parent that only exists
-  // to group children (e.g. "About Us" over "About"/"Leadership").
-  function toggleNoPage(node: NavNode) {
-    updateItemMutation.mutate({ id: node.id, no_page: !node.no_page })
-  }
-
-  // Hiding a parent hides every descendant too — a child left "visible"
-  // under a hidden parent just confused (it's still gone from the rendered
-  // nav, but its own row looked unaffected). One-way: showing the parent
-  // again does NOT auto-restore children, in case one was hidden on
-  // purpose for its own reason before the parent was.
-  function toggleVisibility(node: NavNode) {
-    const nextActive = !node.is_active
-    updateItemMutation.mutate({ id: node.id, is_active: nextActive })
-    if (!nextActive) {
-      for (const childId of navFlattenIds(node.children)) {
-        updateItemMutation.mutate({ id: childId, is_active: false })
-      }
-    }
-  }
-
-  const invalidateFooter = () => {
-    queryClient.invalidateQueries({ queryKey: footerMenuQueryKey })
-    queryClient.invalidateQueries({ queryKey: ['menu-public'] })
-  }
-  // Mirrors (or un-mirrors) one header item into the Footer menu — same
-  // label/link_type/target, flat (no nesting) since the footer rarely needs
-  // the header's exact hierarchy. Only ever touches the mirror; the header
-  // original is never modified by this.
-  const footerAddMutation = useMutation({
-    mutationFn: (node: NavNode) =>
-      api.post(`/menus/${footerMenu!.id}/items`, {
-        label: node.label,
-        order: footerMenu?.items.length ?? 0,
-        parent_id: null,
-        link_type: node.link_type,
-        page_id: node.page_id,
-        url: node.url,
-        open_in_new_tab: node.open_in_new_tab,
-      }),
-    onSuccess: invalidateFooter,
-  })
-  const footerRemoveMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/menus/items/${id}`),
-    onSuccess: invalidateFooter,
-  })
-  function toggleFooterMirror(node: NavNode) {
-    if (!footerMenu) return
-    const mirror = findFooterMirror(node)
-    if (mirror) footerRemoveMutation.mutate(mirror.id)
-    else footerAddMutation.mutate(node)
-  }
-
-  const [customName, setCustomName] = useState('')
-  const [customNameError, setCustomNameError] = useState<string | null>(null)
-  const [showExternalForm, setShowExternalForm] = useState(false)
-  const [externalLabel, setExternalLabel] = useState('')
-  const [externalUrl, setExternalUrl] = useState('')
-  const [externalNewTab, setExternalNewTab] = useState(true)
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
-  const [dragId, setDragId] = useState<string | null>(null)
-  const [dropTarget, setDropTarget] = useState<{ id: string; zone: NavDropZone } | null>(null)
-  const selectedLabels = navFlattenLabels(tree)
-  // Entity names already nested under a synced type (e.g. every Sector/Work
-  // entry) are managed via that type's own chip + count badge above — they
-  // shouldn't ALSO show up as 44 individually-togglable duplicates here.
-  const registryEntityLabels = new Set(
-    (detailPageTypes ?? []).flatMap((t) => t.entities.map((e) => e.name))
-  )
-  const extras = selectedLabels.filter(
-    (n) => !SUGGESTED_PAGES.includes(n) && !registryEntityLabels.has(n)
-  )
-  // One reserved chip per registered Details Page type — "synced" reflects
-  // whether every real entity page is already nested under that type's nav
-  // parent (e.g. "Sectors", "Work"), not just whether any entity exists —
-  // so a chip un-checks itself again once a new entity gets added after the
-  // last sync. `sync` nests one real link per entity (link_type 'page',
-  // pointing at its own real detail-page route) under that parent, creating
-  // the parent nav item first if it isn't selected yet. Only adds what's
-  // missing — safe to click again later.
-  const detailPageTypeStates = (detailPageTypes ?? []).map((type) => {
-    const navNode = navFindByLabel(tree, type.navParentLabel)
-    const syncedLabels = new Set((navNode?.children ?? []).map((c) => c.label))
-    const hasPages = type.entities.length > 0
-    const synced = hasPages && type.entities.every((e) => syncedLabels.has(e.name))
-    async function sync() {
-      if (!menu || type.entities.length === 0) return
-      setDirty(true)
-      try {
-        let parentId = navNode?.id
-        let order = navNode?.children.length ?? 0
-        if (!parentId) {
-          const res = await createItemMutation.mutateAsync({
-            label: type.navParentLabel,
-            order: tree.length,
-          })
-          parentId = res.data.data.item.id as string
-          order = 0
-        }
-        for (const e of type.entities) {
-          if (syncedLabels.has(e.name)) continue
-          await createItemMutation.mutateAsync({
-            label: e.name,
-            order: order++,
-            parent_id: parentId,
-            link_type: 'page',
-            page_id: e.detail_page_id,
-            url: e.publicPath,
-          })
-        }
-      } finally {
-        setDirty(false)
-      }
-    }
-    return { label: type.label, parentLabel: type.navParentLabel, hasPages, synced, sync }
-  })
-  // No optimistic local update on add/remove/reorder below — every change
-  // only ever reflects in `tree` once the server round-trip actually
-  // completes and refetches. Without this, clicking a pill then reloading
-  // (or clicking Next) before that request finishes silently drops the
-  // change — it was never saved, but nothing on screen said so. This is
-  // the one thing to actually watch/disable against, not a cosmetic spinner.
-  const isSavingNav =
-    createItemMutation.isPending || deleteItemMutation.isPending || saveOrderMutation.isPending
-
-  // Disabling the in-app Back/Next/pill buttons stops navigating away
-  // mid-save, but not an actual browser refresh/tab-close — that's a real
-  // way to lose an add/remove/reorder that hasn't finished its round trip
-  // yet, and is exactly what was reported ("added a page, refreshed, it
-  // was gone"). The native confirm dialog is the only way to warn against
-  // that specific case.
-  useEffect(() => {
-    if (!isSavingNav) return
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault()
-      e.returnValue = ''
-    }
-    window.addEventListener('beforeunload', handler)
-    return () => window.removeEventListener('beforeunload', handler)
-  }, [isSavingNav])
-
-  // navigationPages still has to be a flat string[] for the site-scaffolding
-  // driver's existing contract (which page rows get created) — that's
-  // separate from, and unaffected by, the real Menu's nesting above.
-  useEffect(() => {
-    writeLocal(storageKey, selectedLabels)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storageKey, tree])
-
-  function togglePage(name: string) {
-    if (!menu) return
-    const existing = navFindByLabel(tree, name)
-    setDirty(true)
-    if (existing) deleteItemMutation.mutate(existing.id)
-    else createItemMutation.mutate({ label: name, order: tree.length })
-  }
-
-  function addCustomPage() {
-    const name = customName.trim()
-    if (!name || !menu || navContainsLabel(tree, name)) return
-    // A registered type's own label (e.g. "Sector detail") is reserved —
-    // typing it here would create ONE unrelated generic scaffold page with
-    // the same name, which is confusing (two different things sharing a
-    // name) and was the repeated source of a stray/empty page bug. The
-    // type's own chip (above) is the real way to get these pages into nav.
-    const reservedType = (detailPageTypes ?? []).find(
-      (t) => t.label.toLowerCase() === name.toLowerCase()
-    )
-    if (reservedType) {
-      setCustomNameError(
-        `${reservedType.label} pages are managed per entry, not as a single custom page — use the "${reservedType.label}" chip above to nest each entry's real page under "${reservedType.navParentLabel}" in the nav.`
-      )
-      return
-    }
-    setCustomNameError(null)
-    setDirty(true)
-    createItemMutation.mutate({ label: name, order: tree.length })
-    setCustomName('')
-  }
-
-  function addExternalLink() {
-    const label = externalLabel.trim()
-    const url = externalUrl.trim()
-    if (!label || !url || !menu) return
-    setDirty(true)
-    createItemMutation.mutate({
-      label,
-      order: tree.length,
-      link_type: 'external',
-      url,
-      open_in_new_tab: externalNewTab,
-    })
-    setExternalLabel('')
-    setExternalUrl('')
-    setShowExternalForm(false)
-  }
-
-  function removeNavNode(id: string) {
-    setDirty(true)
-    deleteItemMutation.mutate(id)
-  }
-
-  function toggleCollapse(id: string) {
-    setCollapsed((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
-
-  function rowDragOver(e: React.DragEvent, id: string) {
-    e.preventDefault()
-    const rect = e.currentTarget.getBoundingClientRect()
-    const ratio = (e.clientY - rect.top) / rect.height
-    const zone: NavDropZone = ratio < 0.25 ? 'before' : ratio > 0.75 ? 'after' : 'inside'
-    setDropTarget({ id, zone })
-  }
-
-  function handleDrop(targetId: string, zone: NavDropZone) {
-    if (!dragId) return
-    const moved = moveNavNode(tree, dragId, targetId, zone)
-    if (moved) {
-      setTree(moved)
-      setDirty(true)
-      saveOrderMutation.mutate(moved)
-    }
-    setDragId(null)
-    setDropTarget(null)
-  }
-
-  function renderNavRow(node: NavNode, depth: number) {
-    const hasChildren = node.children.length > 0
-    const isCollapsed = collapsed.has(node.id)
-    const isDropBefore = dropTarget?.id === node.id && dropTarget.zone === 'before'
-    const isDropAfter = dropTarget?.id === node.id && dropTarget.zone === 'after'
-    const isDropInside = dropTarget?.id === node.id && dropTarget.zone === 'inside'
-    return (
-      <div key={node.id}>
-        {isDropBefore && <div className="mx-2 h-0.5 rounded bg-primary" />}
-        <div
-          draggable
-          onDragStart={() => setDragId(node.id)}
-          onDragOver={(e) => rowDragOver(e, node.id)}
-          onDragLeave={() => setDropTarget((t) => (t?.id === node.id ? null : t))}
-          onDrop={() => handleDrop(node.id, dropTarget?.zone ?? 'after')}
-          onDragEnd={() => {
-            setDragId(null)
-            setDropTarget(null)
-          }}
-          style={{ marginLeft: (depth - 1) * 24 }}
-          className={cn(
-            'flex items-center gap-1.5 rounded-md bg-primary py-1.5 pl-2 pr-1.5 text-xs font-semibold text-primary-foreground',
-            isDropInside && 'ring-2 ring-primary ring-offset-1',
-            dragId === node.id && 'opacity-40',
-            !node.is_active && 'opacity-50'
-          )}
-        >
-          <button
-            type="button"
-            onClick={() => toggleCollapse(node.id)}
-            className={cn('shrink-0', !hasChildren && 'invisible')}
-          >
-            {isCollapsed ? (
-              <ChevronRight className="h-3 w-3" />
-            ) : (
-              <ChevronDown className="h-3 w-3" />
-            )}
-          </button>
-          <GripVertical className="h-3.5 w-3.5 shrink-0 cursor-grab opacity-70" />
-          <span className="flex-1 truncate">{node.label}</span>
-          {node.link_type === 'external' && (
-            <ExternalLink className="h-3 w-3 shrink-0 opacity-70" />
-          )}
-          <button
-            type="button"
-            aria-label={
-              node.is_active ? `Hide ${node.label} from nav` : `Show ${node.label} in nav`
-            }
-            title={
-              node.is_active
-                ? 'Shown in the main menu — click to hide it (and its sub-items) from the main menu; the page stays reachable by URL'
-                : 'Hidden from the main menu — click to show it again'
-            }
-            onClick={() => toggleVisibility(node)}
-            className={cn(
-              'flex h-4.5 shrink-0 items-center justify-center gap-1 rounded-full px-1.5 text-[10px] leading-none',
-              node.is_active ? 'bg-white text-primary' : 'bg-white/25'
-            )}
-          >
-            {node.is_active ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-            Main menu
-          </button>
-          {(() => {
-            const mirrored = Boolean(findFooterMirror(node))
-            return (
-              <button
-                type="button"
-                aria-label={
-                  mirrored
-                    ? `Remove ${node.label} from footer`
-                    : `Also show ${node.label} on footer`
-                }
-                title={
-                  mirrored
-                    ? 'Also shown on the footer — click to remove it from the footer'
-                    : 'Also show this in the footer menu'
-                }
-                onClick={() => toggleFooterMirror(node)}
-                className={cn(
-                  'flex h-4.5 shrink-0 items-center justify-center gap-1 rounded-full px-1.5 text-[10px] leading-none',
-                  mirrored ? 'bg-white text-primary' : 'bg-white/25'
-                )}
-              >
-                <Globe className="h-3 w-3" />
-                Footer
-              </button>
-            )
-          })()}
-          <button
-            type="button"
-            aria-label={
-              node.no_page
-                ? `Make ${node.label} clickable again`
-                : `Make ${node.label} a non-clickable label`
-            }
-            title={
-              node.no_page
-                ? 'Label only — click to make it a link again'
-                : 'Keep in nav (and its dropdown, if any) but make the label non-clickable'
-            }
-            onClick={() => toggleNoPage(node)}
-            className={cn(
-              'flex h-4.5 shrink-0 items-center justify-center gap-1 rounded-full px-1.5 text-[10px] leading-none',
-              node.no_page ? 'bg-white text-primary' : 'bg-white/25'
-            )}
-          >
-            <Link2Off className="h-3 w-3" />
-            No page
-          </button>
-          <button
-            type="button"
-            aria-label={`Remove ${node.label}`}
-            onClick={() => removeNavNode(node.id)}
-            className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full bg-white/25 leading-none"
-          >
-            ✕
-          </button>
-        </div>
-        {isDropAfter && <div className="mx-2 h-0.5 rounded bg-primary" />}
-        {hasChildren && !isCollapsed && (
-          <div className="space-y-1.5 pt-1.5">
-            {node.children.map((c) => renderNavRow(c, depth + 1))}
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-3">
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={onBack}
-        disabled={isSavingNav}
-        className="gap-1.5 px-2"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        Back to type scale
-      </Button>
-
-      <div>
-        <h3 className="text-base font-semibold">Website · Navigation</h3>
-        <p className="text-sm text-muted-foreground">
-          Choose the pages this platform&apos;s navigation should include, or add your own.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[3fr_2fr]">
-        <div className="rounded-lg border bg-card p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold">Pages</span>
-            <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-              {selectedLabels.length} selected
-            </span>
-          </div>
-          <p className="text-xs font-medium text-muted-foreground">Common pages — tap to add</p>
-          <div className="flex flex-wrap gap-2">
-            {[...SUGGESTED_PAGES, ...extras].map((name) => {
-              const on = selectedLabels.includes(name)
-              return (
-                <button
-                  key={name}
-                  type="button"
-                  disabled={isSavingNav}
-                  onClick={() => togglePage(name)}
-                  className={cn(
-                    'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50',
-                    on ? 'border-primary bg-primary/10 text-primary' : 'hover:bg-accent'
-                  )}
-                >
-                  <span className="text-[11px]">{on ? '✓' : '+'}</span>
-                  {name}
-                </button>
-              )
-            })}
-            {detailPageTypeStates.map((r) => (
-              <button
-                key={r.label}
-                type="button"
-                disabled={isSavingNav || !r.hasPages}
-                onClick={() => r.sync()}
-                title={
-                  !r.hasPages
-                    ? `No ${r.parentLabel.toLowerCase()} pages yet — add entries in the ${r.parentLabel} module first`
-                    : r.synced
-                      ? `Every ${r.parentLabel.toLowerCase()} page is already linked under "${r.parentLabel}" in the nav`
-                      : `Nest a real link to each ${r.parentLabel.toLowerCase()} page under "${r.parentLabel}" in the nav`
-                }
-                className={cn(
-                  'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50',
-                  r.synced
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-dashed text-muted-foreground hover:bg-accent'
-                )}
-              >
-                <span className="text-[11px]">{r.synced ? '✓' : '+'}</span>
-                {r.label}
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-2 pt-2">
-            <Input
-              placeholder="Add a custom page (e.g. Case studies)"
-              value={customName}
-              disabled={isSavingNav}
-              onChange={(e) => {
-                setCustomName(e.target.value)
-                setCustomNameError(null)
-              }}
-              onKeyDown={(e) => e.key === 'Enter' && addCustomPage()}
-            />
-            <Button type="button" onClick={addCustomPage} disabled={isSavingNav}>
-              Add
-            </Button>
-          </div>
-          {customNameError && <p className="text-xs text-destructive">{customNameError}</p>}
-
-          {showExternalForm ? (
-            <div className="space-y-2 rounded-md border border-dashed p-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold">External link</span>
-                <button
-                  type="button"
-                  onClick={() => setShowExternalForm(false)}
-                  className="text-xs text-muted-foreground hover:underline"
-                >
-                  Cancel
-                </button>
-              </div>
-              <Input
-                placeholder="Label (e.g. Partner Portal)"
-                value={externalLabel}
-                disabled={isSavingNav}
-                onChange={(e) => setExternalLabel(e.target.value)}
-              />
-              <Input
-                placeholder="https://..."
-                value={externalUrl}
-                disabled={isSavingNav}
-                onChange={(e) => setExternalUrl(e.target.value)}
-              />
-              <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <input
-                  type="checkbox"
-                  checked={externalNewTab}
-                  onChange={(e) => setExternalNewTab(e.target.checked)}
-                />
-                Open in new tab
-              </label>
-              <Button
-                type="button"
-                size="sm"
-                onClick={addExternalLink}
-                disabled={isSavingNav || !externalLabel.trim() || !externalUrl.trim()}
-              >
-                Add external link
-              </Button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setShowExternalForm(true)}
-              className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
-            >
-              <ExternalLink className="h-3 w-3" />+ External link
-            </button>
-          )}
-
-          <a
-            href={`/admin/menus?key=footer&projectId=${projectId}`}
-            className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:underline"
-          >
-            Manage footer navigation separately →
-          </a>
-        </div>
-
-        <div className="rounded-lg border bg-card p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold">Selected navigation</span>
-            <span
-              className={cn(
-                'rounded-full px-2.5 py-1 text-xs font-medium',
-                isSavingNav ? 'bg-amber-100 text-amber-700' : 'bg-muted text-muted-foreground'
-              )}
-            >
-              {isSavingNav ? 'Saving…' : 'Live'}
-            </span>
-          </div>
-          {isSavingNav && (
-            <p className="text-xs text-amber-700">
-              Saving your change — don&apos;t refresh or leave this step yet.
-            </p>
-          )}
-          {tree.length > 0 ? (
-            <>
-              <p className="text-[11px] text-muted-foreground">
-                Drag a page onto another to nest it (up to {NAV_MAX_DEPTH} levels); drag to the
-                top/bottom edge of a row to reorder instead.
-              </p>
-              <div className="space-y-1.5">{tree.map((n) => renderNavRow(n, 1))}</div>
-            </>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              No pages yet — pick from the list or add your own.
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div className="flex justify-end">
-        <Button type="button" onClick={onNext} disabled={isSavingNav}>
-          Next
-          <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-        </Button>
-      </div>
     </div>
   )
 }

@@ -33,6 +33,23 @@ describe('AdminSidebar header identity', () => {
     expect(img.getAttribute('src')).toContain('logo.png')
   })
 
+  // The surface colours come from the Theme Engine (`data-theme`), not from the OS-driven Tailwind
+  // `dark` class. Keying the logo off `dark:` showed the white dark-background logo on a light
+  // sidebar (a blank header) whenever the OS was dark but the saved Active Theme was light.
+  it('swaps to the dark logo by the Theme Engine theme, never by the OS dark class', async () => {
+    mockIdentity({
+      app_name: 'Acme Console',
+      logo_light: 'https://cdn.test/light.png',
+      logo_dark: 'https://cdn.test/dark.png',
+    })
+    render(<AdminSidebar />)
+    const imgs = await screen.findAllByAltText('Acme Console')
+    const [light, dark] = imgs
+    expect(light!.className).toContain('[[data-theme=dark]_&]:hidden')
+    expect(dark!.className).toContain('[[data-theme=dark]_&]:block')
+    for (const img of imgs) expect(img.className).not.toMatch(/(^|\s)dark:/)
+  })
+
   it('falls back to KDL Admin when identity is empty', async () => {
     mockIdentity({})
     render(<AdminSidebar />)

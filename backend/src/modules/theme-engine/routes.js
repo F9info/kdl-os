@@ -12,8 +12,9 @@ import {
   getTokensQuerySchema,
   getVersionsQuerySchema,
   postRestoreVersionSchema,
+  putSiteStylesBodySchema,
 } from './schema.js';
-import { getSchema, getValues, postValues, postReset, postActiveTheme, releaseLocks, getTokens, getVersions, postRestoreVersion } from './controller.js';
+import { getSchema, getValues, postValues, postReset, postActiveTheme, releaseLocks, getTokens, getVersions, postRestoreVersion, getSiteStyles, putSiteStyles } from './controller.js';
 
 const router = Router();
 
@@ -29,5 +30,8 @@ router.post('/active-theme', authenticate, requirePermission('theme-engine', 'ed
 router.post('/locks/release', authenticate, requirePermission('theme-engine', 'edit'), validate(postLocksReleaseBodySchema), releaseLocks);
 router.get('/versions', authenticate, requirePermission('theme-engine', 'view'), validate(getVersionsQuerySchema), getVersions);
 router.post('/versions/:id/restore', authenticate, requirePermission('theme-engine', 'edit'), validate(postRestoreVersionSchema), postRestoreVersion);
+
+router.get('/site-styles', authenticate, requirePermission('theme-engine', 'view'), getSiteStyles);
+router.put('/site-styles', authenticate, requirePermission('theme-engine', 'edit'), validate(putSiteStylesBodySchema), putSiteStyles);
 
 export default router;

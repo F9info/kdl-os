@@ -36,11 +36,12 @@ export const getPublicWorkBySlug = async (slug, projectId) => {
 // by the seeder (seed-content.js), same as sectors' real copy comes from its
 // own seeder rather than this starter shape.
 async function starterPageContent(work) {
-  const { header, footer } = await siteChrome(work.project_id);
+  const { topBar, header, footer } = await siteChrome(work.project_id);
   return {
     root: { props: { title: work.name } },
     zones: {},
     content: [
+      ...(topBar ? [topBar] : []),
       ...(header ? [header] : []),
       {
         type: 'ConstructionInnerBanner',

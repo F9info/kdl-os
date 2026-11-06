@@ -3,8 +3,9 @@
 import { useEffect } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
-import { Render } from '@puckeditor/core'
-import { config } from '@/frontend/blocks/puck.config'
+import { useIdentity } from '@/hooks/useIdentity'
+import { PageRender } from '@/frontend/rendering/PageRender'
+import type { PageRecord } from '@/frontend/pages/page-record'
 import api from '@/lib/axios'
 import { siteProjectId } from '@/lib/site-project'
 
@@ -31,10 +32,17 @@ export default function DetailEntryPage() {
         .get(`/detail-page-types/public/${params.prefix}/${params.slug}`, {
           params: { project_id: projectId ?? undefined },
         })
-        .then((r) => r.data.data as { entry: PublicEntry; page: { data: unknown } | null }),
+        .then(
+          (r) =>
+            r.data.data as {
+              entry: PublicEntry
+              page: { data: unknown; layout?: PageRecord['layout']; project_id?: string } | null
+            }
+        ),
     retry: false,
   })
 
+  const { identity } = useIdentity()
   const entry = data?.entry
   useEffect(() => {
     if (entry) document.title = entry.title
@@ -60,10 +68,16 @@ export default function DetailEntryPage() {
   }
   return (
     <div className="detail-page-inter">
-      <Render
-        config={config}
-        data={data.page.data as never}
-        metadata={{ pageTitle: entry.title, projectId: projectId ?? undefined }}
+      <PageRender
+        page={
+          {
+            data: data.page.data,
+            title: entry.title,
+            layout: data.page.layout ?? null,
+            projectId: data.page.project_id ?? projectId,
+          } as PageRecord
+        }
+        identity={identity}
       />
     </div>
   )

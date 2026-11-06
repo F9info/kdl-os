@@ -5,6 +5,7 @@
 // DetailPageTemplate, so editing any entry's sections edits them for all.
 import { prisma } from '../../config/database.js';
 import { deletePage } from '../page-builder/service.js';
+import { withServiceSections } from '../../shared/detail-pages/service-sections.js';
 import { siteChrome } from '../sectors/service.js';
 import { createDetailPageInstance } from '../../shared/detail-pages/templates.js';
 import { getDetailPageType, registerDetailPageTypeProvider } from '../../shared/detail-pages/registry.js';
@@ -117,12 +118,13 @@ registerDetailPageTypeProvider(async (projectId) =>
 );
 
 async function starterContent(type, entry) {
-  const { header, footer } = await siteChrome(type.project_id);
+  const { topBar, header, footer } = await siteChrome(type.project_id);
   const k = type.type_key;
-  return {
+  const page = {
     root: { props: { title: entry.title } },
     zones: {},
     content: [
+      ...(topBar ? [topBar] : []),
       ...(header ? [header] : []),
       {
         type: 'ConstructionInnerBanner',
@@ -138,11 +140,13 @@ async function starterContent(type, entry) {
       },
       {
         type: 'Text',
-        props: { id: `${k}-body`, variant: '1', text: entry.body ?? entry.description ?? '', align: 'left', muted: false },
+        props: { id: `${k}-body`, variant: '3', text: entry.body ?? entry.description ?? '', align: 'left', muted: false },
       },
       ...(footer ? [footer] : []),
     ],
   };
+  // The service type gets the service sections too (stats, what is included, process, FAQ, call to action).
+  return k === 'service' ? withServiceSections(page, k) : page;
 }
 
 // Only these columns are ever written from request input (never project_id, type_key, detail_page_id...).
@@ -189,6 +193,18 @@ export async function createEntry(projectId, typeKey, input, actorId) {
 const LOREM =
   'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.';
 
+// The two placeholder entries every new type starts with. They carry a bundled photo
+// (frontend/public/seed/demologo) so the banner is never an empty box; the owner replaces it per entry.
+export const SAMPLE_ENTRY_IMAGE = '/seed/demologo/hero.jpg';
+export const sampleEntries = (base) =>
+  [1, 2].map((n) => ({
+    title: `Sample ${base} ${n}`,
+    slug: `page${n}`,
+    description: `Sample ${base} ${n} summary.`,
+    body: LOREM,
+    image: SAMPLE_ENTRY_IMAGE,
+  }));
+
 // Creating a type also seeds two dummy entries so it shows up in Layout
 // Settings with a working pill + numbered links immediately.
 export async function createType(projectId, { name, label, nav_parent_label, slug_prefix }, actorId) {
@@ -208,14 +224,7 @@ export async function createType(projectId, { name, label, nav_parent_label, slu
     },
   });
   try {
-    for (const n of [1, 2]) {
-      await createEntry(
-        projectId,
-        typeKey,
-        { title: `Sample ${base} ${n}`, slug: `page${n}`, description: `Sample ${base} ${n} summary.`, body: LOREM },
-        actorId
-      );
-    }
+    for (const sample of sampleEntries(base)) await createEntry(projectId, typeKey, sample, actorId);
   } catch (err) {
     await deleteType(projectId, typeKey, actorId).catch(() => {}); // no half-built type left behind
     throw err;
@@ -331,5 +340,15 @@ export async function getPublicEntry(projectId, prefix, slug) {
     const template = await prisma.detailPageTemplate.findUnique({ where: { id: row.template_id } });
     if (template) data = resolveEntryBindings(template.data, toEntity(entry));
   }
-  return { entry, page: { data, title: row.title } };
+  return { entry, page: { data: await withLiveChrome(projectId, data), title: row.title } };
+}
+
+// A detail page holds a copy of the site's top bar / header / footer made when it was created, so
+// it drifts from the site (older ones never had the top bar). Show the site's current ones instead.
+const CHROME_TYPES = ['ConstructionTopBar', 'ConstructionHeader', 'ConstructionFooter'];
+async function withLiveChrome(projectId, data) {
+  const { topBar, header, footer } = await siteChrome(projectId);
+  if (!header || !Array.isArray(data?.content)) return data;
+  const body = data.content.filter((b) => !CHROME_TYPES.includes(b.type));
+  return { ...data, content: [...(topBar ? [topBar] : []), header, ...body, ...(footer ? [footer] : [])] };
 }

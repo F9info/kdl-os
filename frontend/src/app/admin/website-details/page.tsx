@@ -2,11 +2,10 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowRight, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react'
+import { ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react'
 import { useDefaultProjectId } from '@/admin/hooks/useDefaultProjectId'
 import { useContinueToPalette, useTemplateEngineRuns } from '@/admin/hooks/useTemplateEngine'
 import { useIdentity } from '@/hooks/useIdentity'
-import { useSiteHomeHref } from '@/admin/hooks/useSiteHomeHref'
 import { PageHeader } from '@/admin/components/layout/PageHeader'
 import { ModuleGuard } from '@/admin/components/shared/ModuleGuard'
 import { PermissionGuard } from '@/admin/components/shared/PermissionGuard'
@@ -35,10 +34,6 @@ function WebsiteDetailsContent() {
   const latestRun = runs?.[0]
   const continueToPalette = useContinueToPalette(projectId ?? '')
 
-  const websiteOut = latestRun?.stages.find((st) => st.stage === 'WEBSITE')?.outputRef as
-    { pageKeyToId?: Record<string, string> } | null | undefined
-  const frontendHref = useSiteHomeHref(websiteOut?.pageKeyToId)
-
   const hasName = !!identity.app_name?.trim()
   const hasLogo = !!identity.logo_light
   const ready = hasName && hasLogo
@@ -59,114 +54,105 @@ function WebsiteDetailsContent() {
     <div>
       <PageHeader
         title="Website Details"
-        breadcrumbs={[{ label: 'Content' }, { label: 'Website Details' }]}
-        action={
-          frontendHref ? (
-            <Button asChild className="gap-2">
-              <a href={frontendHref} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="h-4 w-4" />
-                View Frontend
-              </a>
-            </Button>
-          ) : (
-            <Button
-              className="gap-2"
-              disabled
-              title="No website generated yet — enable CMS and complete the Website step"
-            >
-              <ExternalLink className="h-4 w-4" />
-              View Frontend
-            </Button>
-          )
-        }
+        breadcrumbs={[{ label: 'Frontend' }, { label: 'Website Details' }]}
       />
 
-      <section
-        className="max-w-3xl space-y-4 rounded-lg border bg-card px-6 py-6"
-        aria-labelledby="wd-company"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h3 id="wd-company" className="text-sm font-medium">
-              Company details
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              Managed once in Settings &gt; Identity. Your website, print layouts and every other
-              module use these.
+      {/* Company details on the left, Website Content on the right; stacked on narrow screens. */}
+      <div className="grid items-start gap-6 lg:grid-cols-2">
+        <section
+          className="space-y-4 rounded-lg border bg-card px-6 py-6"
+          aria-labelledby="wd-company"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 id="wd-company" className="text-sm font-medium">
+                Company details
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                Managed once in Settings &gt; Identity. Your website, print layouts and every other
+                module use these.
+              </p>
+            </div>
+            <Button size="sm" variant="outline" asChild>
+              <Link href="/admin/settings/identity">Edit in Identity</Link>
+            </Button>
+          </div>
+
+          {identityLoading ? (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          ) : (
+            <div className="flex flex-col gap-5 sm:flex-row">
+              {hasLogo && (
+                // eslint-disable-next-line @next/next/no-img-element -- presigned storage URL
+                <img
+                  src={identity.logo_light}
+                  alt="Company logo"
+                  className="h-16 w-16 shrink-0 rounded-md border bg-white object-contain p-1"
+                />
+              )}
+              <dl className="grid flex-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+                {SUMMARY_FIELDS.filter(([, key]) => identity[key]?.trim()).map(([label, key]) => (
+                  <div key={key}>
+                    <dt className="text-xs text-muted-foreground">{label}</dt>
+                    <dd className="break-words">{identity[key]}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
+
+          <div className="space-y-1.5 text-sm">
+            <p className="flex items-center gap-2">
+              {hasName ? (
+                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+              ) : (
+                <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              )}
+              Company name {hasName ? 'set' : 'missing'}
+            </p>
+            <p className="flex items-center gap-2">
+              {hasLogo ? (
+                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+              ) : (
+                <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              )}
+              Logo {hasLogo ? 'set' : 'missing'} (your colour palette is built from it)
             </p>
           </div>
-          <Button size="sm" variant="outline" asChild>
-            <Link href="/admin/settings/identity">Edit in Identity</Link>
-          </Button>
-        </div>
 
-        {identityLoading ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
-        ) : (
-          <div className="flex flex-col gap-5 sm:flex-row">
-            {hasLogo && (
-              // eslint-disable-next-line @next/next/no-img-element -- presigned storage URL
-              <img
-                src={identity.logo_light}
-                alt="Company logo"
-                className="h-16 w-16 shrink-0 rounded-md border bg-white object-contain p-1"
-              />
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              size="sm"
+              disabled={!ready || continueToPalette.isPending}
+              onClick={() =>
+                continueToPalette.mutate(latestRun, {
+                  onSuccess: () =>
+                    router.push(`/admin/template-engine/projects/${projectId}/palette`),
+                })
+              }
+            >
+              {continueToPalette.isPending ? 'Opening…' : 'Next: Color Palette'}
+              <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+            </Button>
+            {/* The colour palette is optional: go straight to Brands when none is needed. */}
+            <Button size="sm" variant="outline" asChild>
+              <Link href="/admin/brands" data-testid="skip-to-brands">
+                Skip to Brands
+                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+              </Link>
+            </Button>
+            {!ready && (
+              <span className="text-xs text-muted-foreground">
+                Add the missing details in Identity to continue.
+              </span>
             )}
-            <dl className="grid flex-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
-              {SUMMARY_FIELDS.filter(([, key]) => identity[key]?.trim()).map(([label, key]) => (
-                <div key={key}>
-                  <dt className="text-xs text-muted-foreground">{label}</dt>
-                  <dd className="break-words">{identity[key]}</dd>
-                </div>
-              ))}
-            </dl>
           </div>
-        )}
+        </section>
 
-        <div className="space-y-1.5 text-sm">
-          <p className="flex items-center gap-2">
-            {hasName ? (
-              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-            ) : (
-              <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-            )}
-            Company name {hasName ? 'set' : 'missing'}
-          </p>
-          <p className="flex items-center gap-2">
-            {hasLogo ? (
-              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-            ) : (
-              <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-            )}
-            Logo {hasLogo ? 'set' : 'missing'} (your colour palette is built from it)
-          </p>
+        <div className="min-w-0">
+          <h3 className="mb-3 text-sm font-medium">Website Content</h3>
+          <TypeSettingsForm slug={WEBSITE_CONTENT_TYPE_SLUG} />
         </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <Button
-            size="sm"
-            disabled={!ready || continueToPalette.isPending}
-            onClick={() =>
-              continueToPalette.mutate(latestRun, {
-                onSuccess: () =>
-                  router.push(`/admin/template-engine/projects/${projectId}/palette`),
-              })
-            }
-          >
-            {continueToPalette.isPending ? 'Opening…' : 'Next: Color Palette'}
-            <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-          </Button>
-          {!ready && (
-            <span className="text-xs text-muted-foreground">
-              Add the missing details in Identity to continue.
-            </span>
-          )}
-        </div>
-      </section>
-
-      <div className="mt-6 max-w-3xl">
-        <h3 className="mb-3 text-sm font-medium">Website Content</h3>
-        <TypeSettingsForm slug={WEBSITE_CONTENT_TYPE_SLUG} />
       </div>
     </div>
   )

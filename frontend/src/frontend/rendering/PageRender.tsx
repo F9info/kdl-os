@@ -19,16 +19,18 @@ export function PageRender({
   page: PageRecord
   identity: Record<string, string>
 }) {
+  const live = mergeIdentity(identity, page.identity)
   return (
     <Render
       config={config}
-      data={applyHeaderOverlay(
-        applyIdentity(
-          applySiteLayout(page.data, page.layout),
-          mergeIdentity(identity, page.identity)
-        )
-      )}
-      metadata={{ pageTitle: page.title, projectId: page.projectId ?? undefined }}
+      data={applyHeaderOverlay(applyIdentity(applySiteLayout(page.data, page.layout), live))}
+      // `identity` (project identity plus this site's overrides) feeds blocks that show company
+      // details themselves, such as the Landing footer.
+      metadata={{
+        pageTitle: page.title,
+        projectId: page.projectId ?? undefined,
+        identity: live,
+      }}
     />
   )
 }

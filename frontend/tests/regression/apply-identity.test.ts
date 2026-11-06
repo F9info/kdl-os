@@ -72,6 +72,14 @@ describe('mergeIdentity (T5.5)', () => {
     expect(merged).toEqual({ app_name: 'Spring', logo_light: '/p.png', description: 'd' })
     expect(base.app_name).toBe('Project')
   })
+  it("a page's own logo replaces the project's dark logo too, unless it has its own dark one", () => {
+    const withDark = { ...base, logo_dark: '/p-dark.png' }
+    expect(mergeIdentity(withDark, { logo_light: '/s.png' })).not.toHaveProperty('logo_dark')
+    expect(
+      mergeIdentity(withDark, { logo_light: '/s.png', logo_dark: '/s-dark.png' }).logo_dark
+    ).toBe('/s-dark.png')
+    expect(mergeIdentity(withDark, { app_name: 'Spring' }).logo_dark).toBe('/p-dark.png')
+  })
   it('the merged identity drives the header/footer brand', () => {
     const data = {
       root: {},

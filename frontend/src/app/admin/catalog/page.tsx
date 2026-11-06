@@ -10,6 +10,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import api from '@/lib/axios'
 import { toast } from '@/hooks/use-toast'
 import { PageHeader } from '@/admin/components/layout/PageHeader'
+import { OrderStatusFields } from '@/admin/components/shared/OrderStatusFields'
 import { ModuleGuard } from '@/admin/components/shared/ModuleGuard'
 import { PermissionGuard } from '@/admin/components/shared/PermissionGuard'
 import { DataTable } from '@/admin/components/shared/DataTable'
@@ -21,7 +22,6 @@ import { FormField } from '@/components/shared/FormField'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Switch } from '@/components/ui/switch'
 import { catalogItemSchema, type CatalogItemFormData } from './_schemas'
 
 interface CatalogItem {
@@ -309,19 +309,12 @@ function CatalogPageContent() {
           <FormField label="Brand tag" error={errors.brand_tag?.message}>
             <Input placeholder="Polycab · RR Kabel" {...register('brand_tag')} />
           </FormField>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FormField label="Order" error={errors.order?.message}>
-              <Input type="number" {...register('order', { valueAsNumber: true })} />
-            </FormField>
-            <FormField label="Status">
-              <div className="flex items-center gap-2">
-                <Switch checked={isActive} onCheckedChange={(v) => setValue('is_active', v)} />
-                <span className="text-sm text-muted-foreground">
-                  {isActive ? 'Active' : 'Inactive'}
-                </span>
-              </div>
-            </FormField>
-          </div>
+          <OrderStatusFields
+            register={register}
+            setValue={setValue}
+            isActive={isActive}
+            orderError={errors.order?.message}
+          />
           {formError && <ErrorAlert error={formError} />}
         </form>
       </Modal>

@@ -12,7 +12,10 @@
       "path": "/admin/theme-engine",
       "icon": "Palette",
       "permission": "theme-engine:view",
-      "order": 40
+      "order": 40,
+      "group": "Admin Settings",
+      "groupIcon": "UserCog",
+      "groupOrder": 5
     }
   ],
   "dependsOn": ["theme-engine"],

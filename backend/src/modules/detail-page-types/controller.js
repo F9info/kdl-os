@@ -1,6 +1,7 @@
 import { getDetailPageTypesForProject } from './service.js';
 import { convertLegacyDetailGroups, createType, deleteType, createEntry, listEntries, updateEntry, deleteEntry, getPublicEntry } from './entries.service.js';
 import { addDetailTypeToHeaderMenu } from '../menus/service.js';
+import { getSiteLayout } from '../projects/layout.js';
 import { getDefaultProjectId } from '../../shared/default-project.js';
 import { prisma } from '../../config/database.js';
 import { successResponse, errorResponse } from '../../shared/utils/response.js';
@@ -72,7 +73,11 @@ export const getPublic = async (req, res, next) => {
   try {
     const projectId = req.query.project_id ?? (await getDefaultProjectId(prisma));
     const result = projectId && (await getPublicEntry(projectId, req.params.prefix, req.params.slug));
-    return result ? successResponse(res, result) : errorResponse(res, 'Not found', 404);
+    if (!result) return errorResponse(res, 'Not found', 404);
+    // Same as a /p/<slug> page: the saved header/footer layout rides along so the detail page
+    // looks like the rest of the site instead of the template's own default header.
+    const layout = result.page ? await getSiteLayout(projectId) : null;
+    return successResponse(res, { ...result, page: result.page && { ...result.page, layout, project_id: projectId } });
   } catch (err) {
     next(err);
   }

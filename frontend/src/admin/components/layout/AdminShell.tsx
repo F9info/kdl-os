@@ -2,6 +2,7 @@
 
 import { useIdentity } from '@/hooks/useIdentity'
 import { AdminSidebar } from './AdminSidebar'
+import { IdentityBrandColors } from './IdentityBrandColors'
 import { TopBar } from './TopBar'
 import { CommandMenu } from '@/admin/components/command/CommandMenu'
 import { SetupWizardGate } from '@/admin/components/onboarding/SetupWizardGate'
@@ -27,6 +28,7 @@ export function AdminShell({ children }: AdminShellProps) {
           {appName}
         </footer>
       </div>
+      <IdentityBrandColors />
       <CommandMenu />
       <SetupWizardGate />
     </div>

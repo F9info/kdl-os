@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { BUTTON_KEYS, FORM_KEYS } from './site-styles.js';
 import { PLATFORMS as PLATFORM_DEFS } from './schema/index.js';
 
 // Derived from the real PLATFORMS list, not hand-duplicated — a platform id
@@ -88,5 +89,18 @@ export const getTokensQuerySchema = z.object({
           message: `device "${q.device}" does not belong to platform "${q.platform}"`,
         });
       }
+    }),
+});
+
+// Website button and form-field style (site-styles.js). At least one of the two.
+export const putSiteStylesBodySchema = z.object({
+  body: z
+    .object({
+      button: z.enum(BUTTON_KEYS).optional(),
+      form: z.enum(FORM_KEYS).optional(),
+    })
+    .strict()
+    .refine((b) => b.button !== undefined || b.form !== undefined, {
+      message: 'Send button, form or both',
     }),
 });

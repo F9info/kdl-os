@@ -1,7 +1,7 @@
 import { successResponse, errorResponse } from '../../shared/utils/response.js';
 import { getOnboarding, answerOnboarding } from './onboarding.js';
 import { getSiteLayout, saveSiteLayout } from './layout.js';
-import { getSiteIdentity, saveSiteIdentity } from './site-identity.js';
+import { getSiteIdentityWithPreviews, saveSiteIdentity } from './site-identity.js';
 import { listSites, listProjects, getProject, createProject, updateProject, deleteProject } from './service.js';
 
 export const handleList = async (req, res, next) => {
@@ -101,7 +101,7 @@ export const handleListSites = async (req, res, next) => {
 export const handleGetSiteIdentity = async (req, res, next) => {
   try {
     const { id, siteId } = req.validated.params;
-    successResponse(res, { identity: await getSiteIdentity(id, siteId) });
+    successResponse(res, await getSiteIdentityWithPreviews(id, siteId));
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);
     next(err);

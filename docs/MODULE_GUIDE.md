@@ -63,7 +63,7 @@ frontend/src/app/admin/<slug>/page.tsx  wrapped in <ModuleGuard slug="<slug>">
 }
 ```
 
-**Navigation is configured in one place.** The sidebar and the command palette are both built from the enabled modules' manifests (`frontend/src/admin/lib/nav-model.ts`); the only entry that is not a module is the Dashboard (the app shell). To add a menu entry, add it to your `module.json`; to add an icon, add it to `nav-icons.ts`. Parts of an umbrella bundle (CMS > Content) are listed under the bundle automatically.
+**Navigation is configured in one place.** The sidebar and the command palette are both built from the enabled modules' manifests (`frontend/src/admin/lib/nav-model.ts`); the only entry that is not a module is the Dashboard (the app shell). To add a menu entry, add it to your `module.json`; to add an icon, add it to `nav-icons.ts`. Parts of an umbrella bundle (CMS > Frontend) are listed under the bundle automatically.
 
 ---
 

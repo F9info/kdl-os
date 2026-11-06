@@ -127,6 +127,10 @@ export function useCreateSite(projectId: string) {
 export interface StaticBuildStatus {
   state: 'idle' | 'running' | 'done' | 'failed'
   log: string
+  /** Project slug and where the finished folder is on the host (frontend/projects/<slug>/out). */
+  slug?: string
+  folder?: string
+  finishedAt?: number
 }
 
 /** One-click static export: status (polled while running), start, and zip download. */

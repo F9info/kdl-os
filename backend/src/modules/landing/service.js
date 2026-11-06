@@ -78,3 +78,52 @@ export const createLandingPage = async ({ name, slug, template }, actorId, clien
     throw err;
   }
 };
+
+/**
+ * Deletes a landing page: its site, its pages and its own enquiry form (`<slug>-enquiry`, created with
+ * the template) are soft-deleted, so the public page stops working and the list no longer shows it.
+ * Page slugs are globally unique and a soft-deleted row keeps its slug, so each slug (and the custom
+ * domain) is renamed on the way out: the same address can be used again for a new landing page.
+ */
+export const deleteLandingSite = async (siteId, actorId, client = prisma) => {
+  const projectId = await projectIdOrThrow(client);
+  const site = await client.site.findFirst({
+    where: { id: siteId, project_id: projectId, type: 'LANDING', deleted_at: null },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      pages: { where: { deleted_at: null }, select: { id: true, slug: true } },
+    },
+  });
+  if (!site) throw httpError(404, 'Landing page not found');
+
+  const now = new Date();
+  const tag = `--deleted-${now.getTime()}`;
+  await client.$transaction(async (tx) => {
+    for (const page of site.pages) {
+      await tx.builderPage.update({
+        where: { id: page.id },
+        data: { deleted_at: now, slug: `${page.slug}${tag}` },
+      });
+    }
+    const form = await tx.form.findFirst({
+      where: { project_id: projectId, slug: formSlugFor(site.slug), deleted_at: null },
+      select: { id: true, slug: true },
+    });
+    if (form)
+      await tx.form.update({ where: { id: form.id }, data: { deleted_at: now, slug: `${form.slug}${tag}` } });
+    await tx.site.update({
+      where: { id: site.id },
+      data: { deleted_at: now, slug: `${site.slug}${tag}`, domain: null },
+    });
+  });
+  writeActivityAsync({
+    actor: actorId,
+    module: 'landing',
+    action: 'deleted',
+    subject_type: 'Site',
+    subject_id: site.id,
+    description: `Landing page "${site.name}" deleted`,
+  });
+};

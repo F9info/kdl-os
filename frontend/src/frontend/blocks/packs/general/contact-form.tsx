@@ -11,6 +11,15 @@ interface PublicForm {
 
 const INPUT_TYPE = { text: 'text', email: 'email', tel: 'tel' } as const
 
+// "Convert to Static Website" builds the site with NEXT_PUBLIC_STATIC_SITE=1. A static site has no server
+// to receive a form's messages, unless a backend address was given (NEXT_PUBLIC_API_BASE). Without one,
+// the form is replaced by the company's contact details (from Application Identity, passed in at build
+// time) rather than a form that cannot send. The admin app never sets these, so it is unaffected.
+const STATIC_NO_SERVER =
+  process.env.NEXT_PUBLIC_STATIC_SITE === '1' && !process.env.NEXT_PUBLIC_API_BASE
+const STATIC_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? ''
+const STATIC_PHONE = process.env.NEXT_PUBLIC_CONTACT_PHONE ?? ''
+
 /**
  * Public form block. Reads the form definition from /api/forms/public/<slug> and posts the answers
  * to its /submit route. `readOnly` (page editor) keeps the editor from creating real submissions.
@@ -34,7 +43,7 @@ export function ContactFormBlock({
       if (!r.ok) throw new Error('not found')
       return (await r.json()).data.form as PublicForm
     },
-    enabled: Boolean(formSlug),
+    enabled: Boolean(formSlug) && !(STATIC_NO_SERVER && !readOnly),
     retry: false,
   })
   const [status, setStatus] = useState<'idle' | 'sending' | 'done'>('idle')
@@ -65,6 +74,39 @@ export function ContactFormBlock({
       setMessage('Could not send. Please try again.')
     }
     setStatus('idle')
+  }
+
+  if (STATIC_NO_SERVER && !readOnly) {
+    const phone = STATIC_PHONE.replace(/[^+\d]/g, '')
+    return (
+      <section id={anchor || undefined} className="mx-auto max-w-xl px-6 py-12">
+        {title && <h2 className="mb-6 text-center text-3xl font-bold text-title">{title}</h2>}
+        <div
+          data-testid="static-contact"
+          className="space-y-3 rounded-xl border border-divider bg-card p-6 text-center"
+        >
+          <p className="text-body">
+            {STATIC_EMAIL || STATIC_PHONE
+              ? 'Please get in touch with us directly:'
+              : 'Please use the contact details on this page to get in touch.'}
+          </p>
+          {STATIC_EMAIL && (
+            <p>
+              <a className="font-medium text-primary underline" href={`mailto:${STATIC_EMAIL}`}>
+                {STATIC_EMAIL}
+              </a>
+            </p>
+          )}
+          {STATIC_PHONE && (
+            <p>
+              <a className="font-medium text-primary underline" href={`tel:${phone}`}>
+                {STATIC_PHONE}
+              </a>
+            </p>
+          )}
+        </div>
+      </section>
+    )
   }
 
   return (

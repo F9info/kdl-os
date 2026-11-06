@@ -7,8 +7,10 @@ const h = vi.hoisted(() => ({
 vi.mock('../../config/database.js', () => ({ prisma: h.prisma }));
 vi.mock('../identity/service.js', () => ({ resolveAssetUrls: h.resolveAssetUrls }));
 
-const { getSiteIdentity, saveSiteIdentity, getPublicSiteIdentity } = await import('./site-identity.js');
+const { getSiteIdentity, saveSiteIdentity, getPublicSiteIdentity, getSiteIdentityWithPreviews } =
+  await import('./site-identity.js');
 const { saveSiteIdentitySchema, SITE_IDENTITY_KEYS } = await import('./schema.js');
+const { IDENTITY_KEYS } = await import('../identity/schema.js');
 
 const site = (identity_overrides) =>
   h.prisma.site.findFirst.mockResolvedValue({ id: 's1', identity_overrides });
@@ -23,14 +25,28 @@ describe('saveSiteIdentitySchema', () => {
   it('accepts overridable keys and empty strings (clear)', () => {
     expect(parse({ app_name: 'Spring', description: 'Hi', logo_light: '' }).success).toBe(true);
   });
+  it('accepts the footer details too: contact, social links, copyright and the dark logo', () => {
+    expect(
+      parse({
+        contact_email: 'a@b.co',
+        contact_phone: '+91 73373 37778',
+        contact_address: 'Hyderabad',
+        copyright: '© Spring 2026',
+        social_facebook: 'https://facebook.com/spring',
+        logo_dark: '',
+      }).success
+    ).toBe(true);
+  });
   it('rejects keys a site may not override, bad values and unknown keys', () => {
-    expect(parse({ contact_email: 'a@b.co' }).success).toBe(false);
     expect(parse({ brand_primary: '#fff' }).success).toBe(false); // colours are not applied to sites
     expect(parse({ nope: 'x' }).success).toBe(false);
     expect(parse({ logo_light: 'a b' }).success).toBe(false);
+    expect(parse({ contact_email: 'not an email' }).success).toBe(false);
+    expect(parse({ social_x: 'javascript:alert(1)' }).success).toBe(false); // same rule as the project Identity
   });
   it('every overridable key exists in the project identity', () => {
     expect(SITE_IDENTITY_KEYS.length).toBeGreaterThan(0);
+    for (const key of SITE_IDENTITY_KEYS) expect(IDENTITY_KEYS, key).toContain(key);
   });
 });
 
@@ -69,6 +85,24 @@ describe('getSiteIdentity / getPublicSiteIdentity', () => {
     expect(await getPublicSiteIdentity('s1')).toEqual({
       app_name: 'Spring',
       logo_light: 'https://signed/logo.png',
+    });
+  });
+});
+
+describe('getSiteIdentityWithPreviews (the Branding form)', () => {
+  it('returns the stored paths plus a URL for each picture the page overrides', async () => {
+    site({ app_name: 'Spring', logo_light: 'media/l.png' });
+    expect(await getSiteIdentityWithPreviews('p1', 's1')).toEqual({
+      identity: { app_name: 'Spring', logo_light: 'media/l.png' },
+      resolved: { logo_light: 'https://signed/logo.png' },
+    });
+  });
+
+  it('has no previews when the page overrides no picture (it uses the project images)', async () => {
+    site({ app_name: 'Spring' });
+    expect(await getSiteIdentityWithPreviews('p1', 's1')).toEqual({
+      identity: { app_name: 'Spring' },
+      resolved: {},
     });
   });
 });

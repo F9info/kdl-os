@@ -667,7 +667,7 @@ const typedComponents: Config<GeneralProps>['components'] = {
       }
       if (variant === '3') {
         return (
-          <div className="px-6">
+          <div className="px-6 py-10">
             <p
               className={`mx-auto max-w-3xl rounded-xl border border-divider bg-background p-6 leading-relaxed ${alignCls} ${colorCls}`}
             >

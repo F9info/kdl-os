@@ -101,7 +101,7 @@ const QUICK_GROUPS: { title: string; actions: QuickAction[] }[] = [
     ],
   },
   {
-    title: 'Content',
+    title: 'Frontend',
     actions: [
       { label: 'Website', href: '/admin/brands', permission: 'menus:view', module: 'menus' },
       { label: 'Pages', href: '/admin/pages', permission: 'menus:view', module: 'menus' },

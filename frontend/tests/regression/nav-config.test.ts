@@ -152,28 +152,26 @@ describe('navigation built from the real manifests', () => {
       'Users',
       'Modules',
       'Notifications',
-      'Themes',
       'Integrations',
     ])
   })
 
-  it('groups: Media, Access Control, Settings, with their entries in order', () => {
-    expect(model.groups.map((g) => g.label)).toEqual(['Media', 'Access Control', 'Settings'])
+  it('groups: Admin Settings, Media, Access Control, Settings, with their entries in order', () => {
+    expect(model.groups.map((g) => g.label)).toEqual([
+      'Admin Settings',
+      'Media',
+      'Access Control',
+      'Settings',
+    ])
     const by = Object.fromEntries(model.groups.map((g) => [g.label, g.items.map((i) => i.label)]))
     expect(by['Media']).toEqual(['Library', 'AI Providers', 'Cloud Imports'])
     expect(by['Access Control']).toEqual(['Roles', 'Permissions', 'Activity Log'])
-    expect(by['Settings']).toEqual([
-      'Identity',
-      'SEO',
-      'Field Types',
-      'Field Categories',
-      'Custom Fields',
-      'Storage',
-    ])
+    expect(by['Admin Settings']).toEqual(['Identity', 'SEO', 'Themes'])
+    expect(by['Settings']).toEqual(['Field Types', 'Field Categories', 'Custom Fields', 'Storage'])
   })
 
   it('the CMS bundle (Content) owns the website parts and none of them leak to the top level', () => {
-    const content = model.bundles.find((b) => b.label === 'Content')!
+    const content = model.bundles.find((b) => b.label === 'Frontend')!
     expect(content.icon).toBe('LayoutGrid')
     const labels = content.items.map((i) => i.label)
     for (const l of [
@@ -207,6 +205,6 @@ describe('navigation built from the real manifests', () => {
     )
     const noCms = buildNavModel(enabledFrom(manifests.filter((m) => m.slug !== 'cms')))
     // Without the umbrella its parts are no longer bundled: they surface as plain top-level entries.
-    expect(noCms.bundles.map((b) => b.label)).not.toContain('Content')
+    expect(noCms.bundles.map((b) => b.label)).not.toContain('Frontend')
   })
 })

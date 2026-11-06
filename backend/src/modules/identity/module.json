@@ -13,9 +13,9 @@
       "icon": "Palette",
       "permission": "settings:view",
       "order": 10,
-      "group": "Settings",
+      "group": "Admin Settings",
       "groupIcon": "UserCog",
-      "groupOrder": 30
+      "groupOrder": 5
     }
   ],
   "dependsOn": ["settings"],

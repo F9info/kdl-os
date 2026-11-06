@@ -7572,6 +7572,884 @@
       }
     }
   },
+  "LandingBenefits": {
+    "label": "Landing benefits",
+    "fields": {
+      "columns": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "font": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "lobster",
+          "fraunces",
+          "playfair",
+          "bricolage"
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "items": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "palette": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sunset",
+          "ocean",
+          "violet",
+          "aurora",
+          "blaze"
+        ]
+      },
+      "subtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "tone": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "light",
+          "dark"
+        ]
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      }
+    }
+  },
+  "LandingCta": {
+    "label": "Landing call to action",
+    "fields": {
+      "buttonHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "buttonLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "font": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "lobster",
+          "fraunces",
+          "playfair",
+          "bricolage"
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "palette": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sunset",
+          "ocean",
+          "violet",
+          "aurora",
+          "blaze"
+        ]
+      },
+      "text": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      }
+    }
+  },
+  "LandingFaq": {
+    "label": "Landing questions",
+    "fields": {
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "font": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "lobster",
+          "fraunces",
+          "playfair",
+          "bricolage"
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "items": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "palette": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sunset",
+          "ocean",
+          "violet",
+          "aurora",
+          "blaze"
+        ]
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      }
+    }
+  },
+  "LandingFooter": {
+    "label": "Landing footer",
+    "fields": {
+      "font": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "lobster",
+          "fraunces",
+          "playfair",
+          "bricolage"
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "links": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "note": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "palette": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sunset",
+          "ocean",
+          "violet",
+          "aurora",
+          "blaze"
+        ]
+      }
+    }
+  },
+  "LandingForm": {
+    "label": "Landing form",
+    "fields": {
+      "anchor": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "font": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "lobster",
+          "fraunces",
+          "playfair",
+          "bricolage"
+        ]
+      },
+      "formSlug": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "palette": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sunset",
+          "ocean",
+          "violet",
+          "aurora",
+          "blaze"
+        ]
+      },
+      "subtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "LandingHero": {
+    "label": "Landing hero",
+    "fields": {
+      "avatars": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "badgeLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "badgeValue": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "chartTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "ctaHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "ctaLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "font": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "lobster",
+          "fraunces",
+          "playfair",
+          "bricolage"
+        ]
+      },
+      "headline": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "highlight": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "noteText": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "noteTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "palette": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sunset",
+          "ocean",
+          "violet",
+          "aurora",
+          "blaze"
+        ]
+      },
+      "proofText": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "secondaryHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "secondaryLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "subtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      }
+    }
+  },
+  "LandingPeople": {
+    "label": "Landing people",
+    "fields": {
+      "columns": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "font": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "lobster",
+          "fraunces",
+          "playfair",
+          "bricolage"
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "items": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "palette": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sunset",
+          "ocean",
+          "violet",
+          "aurora",
+          "blaze"
+        ]
+      },
+      "subtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "LandingShowcase": {
+    "label": "Landing picture and points",
+    "fields": {
+      "bullets": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "ctaHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "ctaLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "font": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "lobster",
+          "fraunces",
+          "playfair",
+          "bricolage"
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "palette": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sunset",
+          "ocean",
+          "violet",
+          "aurora",
+          "blaze"
+        ]
+      },
+      "reverse": {
+        "kind": "toggle",
+        "tab": "content",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "text": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      }
+    }
+  },
+  "LandingStats": {
+    "label": "Landing numbers",
+    "fields": {
+      "font": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "lobster",
+          "fraunces",
+          "playfair",
+          "bricolage"
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "palette": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sunset",
+          "ocean",
+          "violet",
+          "aurora",
+          "blaze"
+        ]
+      },
+      "stats": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      }
+    }
+  },
+  "LandingSteps": {
+    "label": "Landing steps or agenda",
+    "fields": {
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "font": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "lobster",
+          "fraunces",
+          "playfair",
+          "bricolage"
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "items": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "layout": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "cards",
+          "list"
+        ]
+      },
+      "palette": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sunset",
+          "ocean",
+          "violet",
+          "aurora",
+          "blaze"
+        ]
+      },
+      "subtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "LandingTestimonials": {
+    "label": "Landing quotes",
+    "fields": {
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "font": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "lobster",
+          "fraunces",
+          "playfair",
+          "bricolage"
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "items": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "palette": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sunset",
+          "ocean",
+          "violet",
+          "aurora",
+          "blaze"
+        ]
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      }
+    }
+  },
   "MedicalAppointmentCTA": {
     "label": "Appointment CTA",
     "fields": {

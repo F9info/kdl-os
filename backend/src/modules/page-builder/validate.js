@@ -36,6 +36,14 @@ const APP_ROUTES = new Set([
 
 const EXTERNAL = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i; // https:, mailto:, tel:, //host
 
+// Address types a link may use. `javascript:` / `data:` / `vbscript:` addresses run in the visitor's
+// browser when clicked. Browsers ignore tabs, newlines and spaces inside a URL, so strip those first.
+const SAFE_SCHEMES = new Set(['http:', 'https:', 'mailto:', 'tel:']);
+export const isSafeLinkTarget = (target) => {
+  const scheme = /^([a-z][a-z0-9+.-]*:)/i.exec(String(target).replace(/[\u0000-\u0020\u007f]/g, ''));
+  return !scheme || SAFE_SCHEMES.has(scheme[1].toLowerCase());
+};
+
 const issue = (severity, code, message, block) => ({
   severity,
   code,
@@ -180,7 +188,8 @@ export function validateContent(page, ctx) {
         );
     }
 
-    if (block.type === 'ContactForm') {
+    // ContactForm and the Landing pack's LandingForm both show a form from the Forms module.
+    if (block.type === 'ContactForm' || block.type === 'LandingForm') {
       const slug = String(props.formSlug ?? '').trim();
       if (!slug)
         issues.push(issue('error', 'FORM_NOT_SET', 'A contact form block has no form selected.', block));
@@ -191,6 +200,17 @@ export function validateContent(page, ctx) {
     }
 
     for (const target of linkTargets(props)) {
+      if (!isSafeLinkTarget(target)) {
+        issues.push(
+          issue(
+            'error',
+            'LINK_UNSAFE',
+            `A link uses an address type that is not allowed (${target.slice(0, 40)}). Use http, https, mailto or tel, or a page on this site.`,
+            block
+          )
+        );
+        continue;
+      }
       if (EXTERNAL.test(target)) continue;
       if (target.startsWith('#')) {
         const name = target.slice(1);

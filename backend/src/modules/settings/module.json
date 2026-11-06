@@ -13,9 +13,9 @@
       "icon": "Search",
       "permission": "settings:view",
       "order": 20,
-      "group": "Settings",
+      "group": "Admin Settings",
       "groupIcon": "UserCog",
-      "groupOrder": 30
+      "groupOrder": 5
     },
     {
       "label": "Storage",

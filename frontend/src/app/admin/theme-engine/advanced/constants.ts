@@ -42,13 +42,10 @@ export const NAV_GROUPS: Record<string, [string, string[]][]> = {
   ],
 }
 
-export const PLATFORMS = [
-  { id: 'webapp', icon: '🌐', label: 'Website' },
-  { id: 'webapp_admin', icon: '🛠️', label: 'Admin App' },
-  { id: 'tv', icon: '📺', label: 'TV' },
-  { id: 'android', icon: '🤖', label: 'Android Native App' },
-  { id: 'ios', icon: '🍎', label: 'iOS Native App' },
-]
+// This screen themes the admin app only. The website palette lives under Frontend; the TV and native
+// app targets are not offered here.
+export const PLATFORMS = [{ id: 'webapp_admin', icon: '🛠️', label: 'Admin App' }]
+export const ADMIN_PLATFORM = 'webapp_admin'
 
 export const LS_PLATFORM = 'th_platform'
 export const LS_PANE = 'te_pane'

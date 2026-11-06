@@ -66,14 +66,14 @@ It applies Admin only, Website, Landing, Website + Landing and Full platform thr
 sidebar in a browser, then restores your saved selection. It also times creating and publishing a first
 page and opening it as a visitor.
 
-## 8. Export the website as static files
-1. **Content > Brands > Static website**, press **Prepare project folder**.
-2. In a terminal:
-   ```bash
-   cd frontend/projects/<project-slug>
-   npm install
-   NEXT_PUBLIC_API_BASE=https://your-backend.example.com npm run build:static
-   ```
-3. Upload the `out/` folder to any static host. Leave `NEXT_PUBLIC_API_BASE` out for a fully offline site.
+## 7b. Choose the website's button and form-field style
+In **Frontend > Brands > Web app**, after Font settings press **Next: Buttons and form fields** (or **Skip to Navigation**). Pick one of 12 button styles (airy pill, classic, leaf, outline, soft tint, soft and hard shadows, glow, two gradients and more) and one of 8 form-field styles, then **Save**. Every main button and every text box, text area and drop-down on the website uses them, in your theme's colours; admin screens do not change. The choice is also part of the static copy, so convert again to update it.
 
-Not included: work, catalog and sector detail pages, and `/p/<slug>` redirects. Rebuild after publishing changes.
+## 8. Convert the Web app to a static website
+The Web app is the only website product. When you also need a copy that any static host can serve (no server, no database), convert it; the Web app itself is not changed.
+1. Open **Frontend > Brands > Web app** and press **Convert to Static Website** (top right). Forms are right next to it.
+2. Press **Convert to Static Website** on the next screen. It collects your latest pages, menus, brand and images, then builds the files. A minute or so.
+3. When it says ready, copy the folder `frontend/projects/<project-slug>/out` from your computer (or press **Download as .zip**) and upload its contents to your host. Host it at the root of a domain or subdomain.
+4. After you change the Web app, press **Convert again with the latest changes** and replace the files on your host.
+
+The folder is independent: it needs no server. Brand colours and fonts are baked in. Forms cannot save messages without a server, so each form shows your contact email and phone from Settings > Identity. To keep forms working, open **Forms on the static website** and enter the public address of your Web app. Not included: work, catalog and sector detail pages, `/p/<slug>` links, and landing pages.

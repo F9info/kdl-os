@@ -61,7 +61,7 @@ export function StudioStageRedirect({
 
   return (
     <div>
-      <PageHeader title={title} breadcrumbs={[{ label: 'Content' }, { label: title }]} />
+      <PageHeader title={title} breadcrumbs={[{ label: 'Frontend' }, { label: title }]} />
       {loading || (hasLogo && !open.isError) ? (
         <LoadingSpinner />
       ) : !hasLogo ? (

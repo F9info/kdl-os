@@ -7,13 +7,13 @@ import api from '@/lib/axios'
 import { usePermissions } from '@/admin/hooks/usePermissions'
 import { SetupWizard } from './SetupWizard'
 
-// Same keys as the dialog this replaces, so an install that already answered stays answered and a
-// "Ask me later" still lasts the browser session.
+// Same keys as the dialog this replaces, so an install that already answered stays answered and closing it
+// (Ask me later, X, Escape) lasts for good in this browser. Settings > Identity is where to edit.
 const LATER_KEY = 'kdl_frontend_onboarding_later'
 
 function askedLater(): boolean {
   try {
-    return sessionStorage.getItem(LATER_KEY) === '1'
+    return localStorage.getItem(LATER_KEY) === '1'
   } catch {
     return false
   }
@@ -48,9 +48,9 @@ export function SetupWizardGate() {
 
   const close = () => {
     try {
-      sessionStorage.setItem(LATER_KEY, '1')
+      localStorage.setItem(LATER_KEY, '1')
     } catch {
-      /* private mode: the wizard simply returns on the next page load */
+      /* private mode: the wizard may return on the next page load */
     }
     setLater(true)
     setActive(false)

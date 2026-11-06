@@ -51,7 +51,7 @@ function mockGet(
 beforeEach(() => {
   vi.clearAllMocks()
   mockPathname.value = '/admin/dashboard'
-  sessionStorage.clear()
+  localStorage.clear()
   useAuthStore.setState({ isAuthenticated: true } as never)
   put.mockResolvedValue({ data: { data: {} } })
   post.mockResolvedValue({ data: { data: { choice: 'no', created: [], skipped: [] } } })
@@ -160,36 +160,18 @@ describe('SetupWizard', () => {
 })
 
 describe('SetupWizardGate', () => {
-  it('with Website: asks how it is delivered (default web application) and saves the choice with the products', async () => {
-    mockGet()
-    render(<SetupWizard open onClose={() => {}} />)
-    await screen.findByDisplayValue('DemoLogo')
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
-    expect(screen.queryByTestId('delivery')).toBeNull() // only once Website is chosen
-    fireEvent.click(await screen.findByTestId('product-website'))
-    expect(await screen.findByTestId('delivery-web-app')).toHaveAttribute('aria-checked', 'true')
-    fireEvent.click(screen.getByTestId('delivery-static'))
-    expect(screen.getByTestId('project-type')).toHaveTextContent('Static website')
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
-    await screen.findByText('Create a starter website?')
-    expect(put).toHaveBeenCalledWith('/modules/products', {
-      products: ['admin', 'website'],
-      delivery: 'static',
-    })
-  })
-
-  it('with Website and no change to the default: saves the web application default', async () => {
+  it('with Website: there is one Web app, no web-or-static choice, and the products are saved on their own', async () => {
     mockGet()
     render(<SetupWizard open onClose={() => {}} />)
     await screen.findByDisplayValue('DemoLogo')
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
     fireEvent.click(await screen.findByTestId('product-website'))
+    expect(screen.queryByTestId('delivery')).toBeNull() // the static copy is a button inside the Web app
+    expect(screen.getByTestId('project-type')).toHaveTextContent('Web app')
+    expect(screen.getByTestId('project-type')).not.toHaveTextContent(/static/i)
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
     await screen.findByText('Create a starter website?')
-    expect(put).toHaveBeenCalledWith('/modules/products', {
-      products: ['admin', 'website'],
-      delivery: 'web-app',
-    })
+    expect(put).toHaveBeenCalledWith('/modules/products', { products: ['admin', 'website'] })
   })
 
   it('stays closed when the old onboarding question was already answered', async () => {
@@ -204,7 +186,7 @@ describe('SetupWizardGate', () => {
     render(<SetupWizardGate />)
     fireEvent.click(await screen.findByRole('button', { name: 'Ask me later' }))
     await waitFor(() => expect(screen.queryByTestId('setup-wizard')).toBeNull())
-    expect(sessionStorage.getItem('kdl_frontend_onboarding_later')).toBe('1')
+    expect(localStorage.getItem('kdl_frontend_onboarding_later')).toBe('1')
     expect(post).not.toHaveBeenCalled()
   })
 

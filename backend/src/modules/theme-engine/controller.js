@@ -1,6 +1,7 @@
 import { successResponse, errorResponse } from '../../shared/utils/response.js';
 import { writeActivityAsync, getClientIp } from '../user-management/shared/activity-logger.js';
 import { resolvePermissions } from '../user-management/shared/permission-resolver.js';
+import { styleOptions } from './site-styles.js';
 import * as service from './service.js';
 
 export const getSchema = async (req, res, next) => {
@@ -152,6 +153,32 @@ export const postRestoreVersion = async (req, res, next) => {
       ip_address: getClientIp(req),
     });
     return successResponse(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getSiteStyles = async (_req, res, next) => {
+  try {
+    return successResponse(res, { ...(await service.getSiteStyles()), options: styleOptions() });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const putSiteStyles = async (req, res, next) => {
+  try {
+    const result = await service.setSiteStyles(req.validated.body);
+    if (result.errors) return errorResponse(res, 'Validation failed', 422, { fieldErrors: {}, formErrors: result.errors });
+    writeActivityAsync({
+      actor: req.user?.id,
+      module: 'theme-engine',
+      action: 'site_styles_saved',
+      description: `Website styles: buttons=${result.button}, form fields=${result.form}`,
+      properties: result,
+      ip_address: getClientIp(req),
+    });
+    return successResponse(res, { ...result, options: styleOptions() });
   } catch (err) {
     next(err);
   }

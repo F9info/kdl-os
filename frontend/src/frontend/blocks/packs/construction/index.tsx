@@ -5063,12 +5063,14 @@ const typedComponents: Config<ConstructionProps>['components'] = {
               <span className="mt-4 h-1 w-16 rounded bg-primary" />
             </div>
             <div className="relative min-h-[280px]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={backgroundImage}
-                alt={imageAlt}
-                className="absolute inset-0 h-full w-full object-cover"
-              />
+              {backgroundImage && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={backgroundImage}
+                  alt={imageAlt}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              )}
             </div>
           </section>
         )
@@ -5089,8 +5091,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       if (variant === '4') {
         return (
           <section className="relative overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={backgroundImage} alt={imageAlt} className="h-[380px] w-full object-cover" />
+            {backgroundImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={backgroundImage} alt={imageAlt} className="h-[380px] w-full object-cover" />
+            ) : (
+              <div className="h-[380px] w-full bg-inverse" />
+            )}
             <div className="absolute bottom-6 left-6 max-w-md rounded-2xl border border-white/30 bg-white/15 p-6 backdrop-blur-md">
               {breadcrumb}
               <h1 className="text-2xl font-extrabold text-white md:text-3xl">{title}</h1>
@@ -5108,10 +5114,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       // not the bottom-left-anchored, fixed-height treatment this used to
       // have (see after-delete-folder/assets/css/style.css `.page-banner`).
       return (
-        <section className="relative overflow-hidden py-24 text-center text-white lg:py-[150px]">
+        <section className="relative overflow-hidden bg-inverse py-24 text-center text-white lg:py-[150px]">
           <div className="absolute inset-0 z-0">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={backgroundImage} alt={imageAlt} className="h-full w-full object-cover" />
+            {backgroundImage && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={backgroundImage} alt={imageAlt} className="h-full w-full object-cover" />
+            )}
             <div
               className="absolute inset-0"
               style={{

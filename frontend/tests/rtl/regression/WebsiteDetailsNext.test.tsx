@@ -20,7 +20,6 @@ vi.mock('@/admin/hooks/useDefaultProjectId', () => ({
 vi.mock('@/hooks/useIdentity', () => ({
   useIdentity: () => ({ identity: h.identity.v, isLoading: false }),
 }))
-vi.mock('@/admin/hooks/useSiteHomeHref', () => ({ useSiteHomeHref: () => null }))
 vi.mock('@/admin/components/shared/ModuleGuard', () => ({
   ModuleGuard: ({ children }: any) => children,
 }))
@@ -70,6 +69,12 @@ describe('Website Details: company info comes from Identity, not a second form (
     )
   })
 
+  it('has no View Frontend button', async () => {
+    render(<WebsiteDetailsPage />)
+    await screen.findByText('Acme Pvt Ltd')
+    expect(screen.queryByText('View Frontend')).toBeNull()
+  })
+
   it('keeps the website-specific settings (Website Content) on the page', async () => {
     render(<WebsiteDetailsPage />)
     expect((await screen.findByTestId('type-form')).textContent).toBe('website-content')
@@ -84,6 +89,13 @@ describe('Website Details → Next → Color Palette', () => {
     await waitFor(() =>
       expect(h.push).toHaveBeenCalledWith('/admin/template-engine/projects/proj-1/palette')
     )
+  })
+
+  it('Skip to Brands goes straight to Brands, even before Identity is complete', async () => {
+    h.identity.v = {}
+    render(<WebsiteDetailsPage />)
+    const link = await screen.findByRole('link', { name: /Skip to Brands/ })
+    expect(link.getAttribute('href')).toBe('/admin/brands')
   })
 
   it('without a logo Next is disabled and points to Identity', async () => {

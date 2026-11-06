@@ -18,6 +18,13 @@ interface ImageUploadFieldProps {
    * uploaded here shows its own preview straight away. Leave undefined for the compact text form.
    */
   previewUrl?: string
+  /**
+   * The picture used while `value` is empty (the project's own image, for a per-page override). It
+   * is shown in the thumbnail box, so the user sees what they would get by leaving the field empty.
+   */
+  inheritedUrl?: string
+  /** Draw the thumbnail on a dark tile: for a picture made for dark backgrounds (a white logo). */
+  darkBackground?: boolean
   /** Called with true while a file is uploading, so the form can hold its Save button. */
   onBusyChange?: (busy: boolean) => void
 }
@@ -33,6 +40,8 @@ export function ImageUploadField({
   emptyText,
   setText = 'Custom image set',
   previewUrl,
+  inheritedUrl,
+  darkBackground = false,
   onBusyChange,
 }: ImageUploadFieldProps) {
   const [uploading, setUploading] = useState(false)
@@ -59,13 +68,15 @@ export function ImageUploadField({
     }
   }
 
-  const shown = value ? uploadedUrl || previewUrl || '' : ''
+  const shown = value ? uploadedUrl || previewUrl || '' : (inheritedUrl ?? '')
 
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-3">
-        {previewUrl !== undefined && (
-          <div className="flex h-16 w-24 shrink-0 items-center justify-center overflow-hidden rounded border bg-muted">
+        {(previewUrl !== undefined || inheritedUrl !== undefined) && (
+          <div
+            className={`flex h-16 w-24 shrink-0 items-center justify-center overflow-hidden rounded border ${darkBackground ? 'bg-slate-800' : 'bg-muted'}`}
+          >
             {shown ? (
               // eslint-disable-next-line @next/next/no-img-element -- presigned storage URL
               <img

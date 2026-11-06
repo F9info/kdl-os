@@ -1,6 +1,7 @@
 import { prisma } from '../../config/database.js';
 import { SITE_IDENTITY_KEYS } from './schema.js';
 import { resolveAssetUrls } from '../identity/service.js';
+import { ASSET_KEYS } from '../identity/schema.js';
 
 // Per-site overrides of the project's Application Identity (T5.5): a landing page can carry its own
 // name, logo, favicon, colours and description. A missing or empty key inherits the project value.
@@ -28,6 +29,19 @@ const clean = (raw) =>
 /** Stored overrides as-is (storage paths for assets), {} when none. Used by the admin form. */
 export const getSiteIdentity = async (projectId, siteId) =>
   clean((await findSite(projectId, siteId)).identity_overrides);
+
+/**
+ * The admin form's data: the stored overrides (storage paths, what the form saves back) plus the same
+ * pictures as fresh URLs, so the form can show them.
+ */
+export async function getSiteIdentityWithPreviews(projectId, siteId) {
+  const identity = await getSiteIdentity(projectId, siteId);
+  const urls = await resolveAssetUrls(identity);
+  return {
+    identity,
+    resolved: Object.fromEntries(ASSET_KEYS.filter((k) => identity[k] && urls[k]).map((k) => [k, urls[k]])),
+  };
+}
 
 /**
  * Applies `patch` (validated by siteIdentitySchema): a non-empty value sets the override, an empty

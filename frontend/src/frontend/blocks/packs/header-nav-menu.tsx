@@ -1,20 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
-
-// Defense-in-depth: the backend schema already blocks javascript:/data:/
-// vbscript: on write, but old rows or a direct DB edit could still carry one.
-function safeHref(url: string | null) {
-  const trimmed = (url ?? '').trim().toLowerCase()
-  if (
-    trimmed.startsWith('javascript:') ||
-    trimmed.startsWith('data:') ||
-    trimmed.startsWith('vbscript:')
-  ) {
-    return '#'
-  }
-  return url || '#'
-}
+import { safeHref } from '@/frontend/lib/safe-href'
 
 // `no_page` items keep their dropdown (hover is on the wrapping div, not
 // this element) but stop being a clickable link — same className either

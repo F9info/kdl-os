@@ -28,8 +28,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider
         attribute="class"
-        defaultTheme="system"
-        enableSystem
+        // Light or dark is decided by the Theme Engine's Active Theme (ThemeEngineProvider sets the
+        // `dark` class and `data-theme` together). next-themes must not read the OS on its own, or
+        // the two disagree. Light is only the first-paint default before the tokens arrive.
+        defaultTheme="light"
+        enableSystem={false}
         disableTransitionOnChange
         // next-themes writes its own `color-scheme` INLINE style on <html>
         // by default (enableColorScheme defaults true) — inline styles beat

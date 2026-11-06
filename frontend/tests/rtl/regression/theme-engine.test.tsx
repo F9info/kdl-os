@@ -199,27 +199,21 @@ describe('Theme Engine page (KDL-177 C1 gates)', () => {
     })
   })
 
-  // Platform bar replaces the two-level landing screen: clicking a platform
-  // button fires the schema query for that platform in place and persists the
-  // selection — no navigation, no unmount of the editor.
-  it('clicking a platform-bar button fires the schema query with the correct platform param', async () => {
+  // The screen themes the admin app only: no platform bar, and a website/TV/native choice remembered
+  // from before it became admin-only is ignored.
+  it('themes the admin app only: no platform bar, a remembered tv choice is ignored', async () => {
+    localStorageMock.setItem('th_platform', 'tv')
     const Page = await importPage()
     wrapWithQueryClient(<Page />)
 
-    await waitFor(() => screen.getByTestId('platform-bar'))
-
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('platform-btn-tv'))
-    })
-
-    await waitFor(() => {
-      const calls = apiGet.mock.calls
-      const tvCall = calls.find((c) => String(c[0]).includes('platform=tv'))
-      expect(tvCall).toBeTruthy()
-    })
-
-    // localStorage updated for the new platform
-    expect(localStorageMock.getItem('th_platform')).toBe('tv')
+    await waitFor(() => screen.getByTestId('theme-engine-page'))
+    await waitFor(() =>
+      expect(apiGet.mock.calls.some((c) => String(c[0]).includes('platform=webapp_admin'))).toBe(
+        true
+      )
+    )
+    expect(screen.queryByTestId('platform-bar')).toBeNull()
+    expect(apiGet.mock.calls.some((c) => String(c[0]).includes('platform=tv'))).toBe(false)
   })
 
   it('dirty flag appears after editing a field; Save posts values to API', async () => {
@@ -264,7 +258,7 @@ describe('Theme Engine page (KDL-177 C1 gates)', () => {
       expect(apiPost).toHaveBeenCalledWith(
         '/theme-engine/values',
         expect.objectContaining({
-          platform: 'webapp',
+          platform: 'webapp_admin',
           type_id: 'type-branding',
           values: expect.arrayContaining([
             expect.objectContaining({ field_id: 'field-branding-bg', value: '#ff0000' }),
@@ -295,7 +289,7 @@ describe('Theme Engine page (KDL-177 C1 gates)', () => {
       expect(apiPost).toHaveBeenCalledWith(
         '/theme-engine/reset',
         expect.objectContaining({
-          platform: 'webapp',
+          platform: 'webapp_admin',
           type_id: 'type-branding',
         })
       )
@@ -451,13 +445,13 @@ describe('Theme Engine page (KDL-177 C1 gates)', () => {
   // KDL-637 regression guard: the two-step wizard was deleted and replaced
   // with an always-visible platform-bar. This test locks that in so a future
   // reintroduction of landing-card/sub-card testids is caught immediately.
-  it('KDL-637 regression: editor renders on first paint — platform-bar visible, no landing cards', async () => {
+  it('KDL-637 regression: editor renders on first paint — no platform bar, no landing cards', async () => {
     const Page = await importPage()
     wrapWithQueryClient(<Page />)
 
-    // platform-bar present before any user interaction
-    await waitFor(() => screen.getByTestId('platform-bar'))
-    expect(screen.getByTestId('theme-engine-page')).toBeTruthy()
+    // editor present before any user interaction, and no platform switcher
+    await waitFor(() => screen.getByTestId('theme-engine-page'))
+    expect(screen.queryByTestId('platform-bar')).toBeNull()
 
     // no wizard / landing-card testids anywhere in the DOM
     expect(screen.queryByTestId('landing-card-webapp')).toBeNull()
@@ -555,43 +549,6 @@ describe('Theme Engine page (KDL-177 C1 gates)', () => {
     expect(screen.getByTestId('footer').textContent).toContain('Unsaved changes')
   })
 
-  // The same guard for a Reset that finishes after the user switched platform: that platform's
-  // schema query is no longer active, and a default invalidate would leave it stale (then re-seeded
-  // from the pre-reset cache once the user comes back).
-  it('Reset refreshes the schema even when the user switched platform while it was running', async () => {
-    let finishReset: () => void = () => {}
-    apiPost.mockImplementation((url: string) =>
-      url === '/theme-engine/reset'
-        ? new Promise((resolve) => {
-            finishReset = () => resolve({ data: { saved: 1 } })
-          })
-        : Promise.resolve({ data: { saved: 1 } })
-    )
-    const webappGets = () =>
-      apiGet.mock.calls.filter((c) => String(c[0]).includes('platform=webapp')).length
-
-    const Page = await importPage()
-    wrapWithQueryClient(<Page />)
-    await enterWebapp()
-    await waitFor(() => screen.getByTestId('field-row-field-branding-bg'))
-
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('btn-reset')) // POST held open
-    })
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('platform-btn-tv'))
-    })
-    await waitFor(() =>
-      expect(apiGet.mock.calls.some((c) => String(c[0]).includes('platform=tv'))).toBe(true)
-    )
-
-    const before = webappGets()
-    await act(async () => {
-      finishReset()
-    })
-    await waitFor(() => expect(webappGets()).toBe(before + 1))
-  })
-
   // Pre-existing a11y gaps moved verbatim by the split: the current choice of every toggle-style
   // button was only visible as a colour, and section headers did not say if they were open.
   it('exposes the current choice on toggle-style buttons via aria-pressed', async () => {
@@ -617,15 +574,13 @@ describe('Theme Engine page (KDL-177 C1 gates)', () => {
 
     // The fixture sends no activeTheme, so the Active Theme bar falls back to "system".
     expect([
-      pressed('platform-btn-webapp'),
-      pressed('platform-btn-tv'),
       pressed('active-theme-btn-system'),
       pressed('active-theme-btn-light'),
       pressed('mode-tab-dark'),
       pressed('mode-tab-light'),
       pressed('device-tab-phone'),
       pressed('device-tab-tablet'),
-    ]).toEqual(['true', 'false', 'true', 'false', 'true', 'false', 'true', 'false'])
+    ]).toEqual(['true', 'false', 'true', 'false', 'true', 'false'])
 
     await click('active-theme-btn-light')
     await click('mode-tab-light')

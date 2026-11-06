@@ -51,7 +51,7 @@ async function installMocks(page: Page, initial: Record<string, string> = {}): P
     favicon: mock.state.favicon ? '/__e2e/logo.png' : '',
   })
   // Same as clicking "Ask me later" on the first-run onboarding dialog: client-only, no server write.
-  await page.addInitScript(() => sessionStorage.setItem('kdl_frontend_onboarding_later', '1'))
+  await page.addInitScript(() => localStorage.setItem('kdl_frontend_onboarding_later', '1'))
   await page.route('**/__e2e/logo.png', (r) => r.fulfill({ contentType: 'image/png', body: PNG }))
   await page.route('**/api/identity', async (route) => {
     const req = route.request()

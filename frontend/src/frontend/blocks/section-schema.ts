@@ -39,7 +39,17 @@ export type SectionSchemas = Record<string, SectionSchema>
 // ── The rules the schema is generated from (used ONLY by the generator and as a fallback for a
 // block that has no schema entry, such as one registered after the file was generated) ────────────
 
-const STYLE_FIELD_KEYS = new Set(['padding', 'background', 'align', 'variant', 'spacing', 'gap'])
+const STYLE_FIELD_KEYS = new Set([
+  'padding',
+  'background',
+  'align',
+  'variant',
+  'spacing',
+  'gap',
+  'palette', // Landing blocks: colour set
+  'font', // Landing blocks: headline font pair
+  'tone', // Landing blocks: light or dark section
+])
 
 /**
  * Name-based default for the tab of a field: Style (appearance/behaviour, not what it says) when it

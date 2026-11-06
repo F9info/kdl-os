@@ -63,28 +63,30 @@ export function AdvancedThemeEditor() {
       </div>
 
       {/* ── Platform bar ─────────────────────────────────────────────────── */}
-      <div
-        className="flex flex-shrink-0 items-center gap-1 border-b bg-sidebar px-4 py-2"
-        data-testid="platform-bar"
-      >
-        {PLATFORMS.map((p) => (
-          <button
-            key={p.id}
-            data-testid={`platform-btn-${p.id}`}
-            aria-pressed={platform === p.id}
-            onClick={() => setPlatform(p.id)}
-            className={cn(
-              'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-              platform === p.id
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-            )}
-          >
-            <span>{p.icon}</span>
-            <span>{p.label}</span>
-          </button>
-        ))}
-      </div>
+      {PLATFORMS.length > 1 && (
+        <div
+          className="flex flex-shrink-0 items-center gap-1 border-b bg-sidebar px-4 py-2"
+          data-testid="platform-bar"
+        >
+          {PLATFORMS.map((p) => (
+            <button
+              key={p.id}
+              data-testid={`platform-btn-${p.id}`}
+              aria-pressed={platform === p.id}
+              onClick={() => setPlatform(p.id)}
+              className={cn(
+                'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                platform === p.id
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+              )}
+            >
+              <span>{p.icon}</span>
+              <span>{p.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ── Active theme bar ─────────────────────────────────────────────── */}
       {/* Platform-wide "the running app should render in ___" — distinct from

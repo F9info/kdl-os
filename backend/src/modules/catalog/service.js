@@ -27,12 +27,13 @@ export const getCatalogById = (id) => prisma.catalogItem.findUnique({ where: { i
 // block type (see resolveCatalogBindings) — the props here are only the
 // structure/design defaults.
 export async function starterPageContent(item) {
-  const { header, footer } = await siteChrome(item.project_id);
+  const { topBar, header, footer } = await siteChrome(item.project_id);
   const id = (suffix) => `${item.slug}-${suffix}`;
   return {
     root: { props: { title: item.name } },
     zones: {},
     content: [
+      ...(topBar ? [topBar] : []),
       ...(header ? [header] : []),
       {
         type: 'ConstructionInnerBanner',
