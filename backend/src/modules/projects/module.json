@@ -9,7 +9,9 @@
   "permissions": [
     { "name": "projects", "actions": ["view", "create", "update", "delete"] }
   ],
-  "nav": [],
+  "nav": [
+    { "label": "Projects", "path": "/admin/projects", "icon": "FolderKanban", "permission": "projects:view", "order": 5 }
+  ],
   "dependsOn": [],
   "queues": [],
   "env": []

@@ -147,8 +147,9 @@ function enabledFrom(list: Manifest[]): EnabledModule[] {
 describe('navigation built from the real manifests', () => {
   const model = buildNavModel(enabledFrom(manifests))
 
-  it('top level: Users, Modules, then the optional modules in their configured order', () => {
+  it('top level: Projects, Users, Modules, then the optional modules in their configured order', () => {
     expect(model.top.map((i) => i.label)).toEqual([
+      'Projects',
       'Users',
       'Modules',
       'Notifications',

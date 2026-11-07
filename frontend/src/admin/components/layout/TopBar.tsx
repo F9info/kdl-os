@@ -14,6 +14,7 @@ import {
 import { useUiStore } from '@/admin/stores/ui.store'
 import { useAuth } from '@/admin/hooks/useAuth'
 import { NotificationBell } from '@/admin/components/notifications/NotificationBell'
+import { ProjectSwitcher } from '@/admin/components/layout/ProjectSwitcher'
 
 function getInitials(name: string): string {
   return name
@@ -32,9 +33,12 @@ export function TopBar() {
   // (te-layout.css); h-16 was the old static value.
   return (
     <header className="th-header sticky top-0 z-30 border-b bg-background/95 backdrop-blur flex items-center justify-between px-4">
-      <Button variant="ghost" size="icon" onClick={toggleSidebar} aria-label="Toggle sidebar">
-        <Menu className="h-5 w-5" />
-      </Button>
+      <div className="flex items-center gap-1">
+        <Button variant="ghost" size="icon" onClick={toggleSidebar} aria-label="Toggle sidebar">
+          <Menu className="h-5 w-5" />
+        </Button>
+        <ProjectSwitcher />
+      </div>
 
       <div className="flex items-center gap-1">
         <NotificationBell />

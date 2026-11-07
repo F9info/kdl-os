@@ -6,6 +6,9 @@ import api from '@/lib/axios'
 import Link from 'next/link'
 import { usePermissions } from '@/admin/hooks/usePermissions'
 import { useModules } from '@/admin/hooks/useModules'
+import { useProjects } from '@/admin/hooks/useProjects'
+import { kindsLabel, STATUS_LABELS } from '@/admin/lib/project-kinds'
+import { resolveActiveProject, useProjectStore } from '@/admin/stores/project.store'
 import { PageHeader } from '@/admin/components/layout/PageHeader'
 import { DataTable } from '@/admin/components/shared/DataTable'
 import { StatusBadge } from '@/admin/components/shared/StatusBadge'
@@ -124,7 +127,11 @@ export default function DashboardPage() {
   const canUsers = can('users:view')
   const canSettings = can('settings:view')
   const canMedia = can('media:view')
+  const canProjects = can('projects:view')
   const { isEnabled } = useModules()
+  const { data: projects } = useProjects({ enabled: canProjects })
+  const activeProjectId = useProjectStore((st) => st.activeProjectId)
+  const activeProject = resolveActiveProject(projects, activeProjectId)
   const groups = QUICK_GROUPS.map((g) => ({
     ...g,
     actions: g.actions.filter((a) => can(a.permission) && (!a.module || isEnabled(a.module))),
@@ -212,6 +219,33 @@ export default function DashboardPage() {
         )}
       </div>
 
+      {canProjects && projects && projects.length > 0 && (
+        <section className="mt-8" aria-labelledby="dash-projects" data-testid="dashboard-projects">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 id="dash-projects" className="text-lg font-semibold">
+              Projects
+            </h2>
+            <Link href="/admin/projects" className="text-sm text-primary hover:underline">
+              Manage projects
+            </Link>
+          </div>
+          <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {projects.map((p) => (
+              <li key={p.id} className="rounded-lg border bg-card p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="truncate font-medium">{p.name}</h3>
+                  <span className="text-xs text-muted-foreground">{STATUS_LABELS[p.status]}</span>
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">{kindsLabel(p.kinds)}</p>
+                {activeProject?.id === p.id && (
+                  <p className="mt-2 text-xs text-primary">Working in this project</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {groups.length > 0 && (
         <div className="mt-8 grid gap-6 md:grid-cols-2" data-testid="quick-actions">
           {groups.map((g) => (
@@ -233,7 +267,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {!canUsers && !canSettings && !canMedia && (
+      {!canUsers && !canSettings && !canMedia && !canProjects && (
         <p className="text-sm text-muted-foreground" data-testid="dashboard-empty">
           Welcome. Use the menu to open the areas you have access to.
         </p>
