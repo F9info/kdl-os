@@ -7,6 +7,7 @@ import { ModuleGuard } from '@/admin/components/shared/ModuleGuard'
 import { PermissionGuard } from '@/admin/components/shared/PermissionGuard'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { useAuthStore } from '@/stores/auth.store'
+import { pickProject } from '@/stores/project.store'
 import api from '@/lib/axios'
 
 interface Project {
@@ -17,7 +18,8 @@ interface Project {
 }
 
 // No more project-picker landing page (KDL-558) — clicking "Template Engine"
-// in the nav always lands on the default project's Overview/Intake stage,
+// in the nav always lands on the active project's Overview/Intake stage (the project chosen in the
+// top bar switcher, else the default project),
 // not wherever /projects/[projectId]/page.tsx's resume logic would otherwise
 // jump to (e.g. Export, for a run that's already 9/9 complete).
 export default function StudioLandingPage() {
@@ -51,7 +53,7 @@ function StudioRedirect() {
 
   useEffect(() => {
     if (isLoading || !projects || projects.length === 0) return
-    const target = projects.find((p) => p.is_default) ?? projects[0]
+    const target = pickProject(projects)
     if (!target) return
     router.replace(`/admin/template-engine/projects/${target.id}/intake`)
   }, [isLoading, projects, router])

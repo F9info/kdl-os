@@ -13,6 +13,7 @@ import { useMemo, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Check, Lock, Palette as PaletteIcon, Sun, Moon, Undo2 } from 'lucide-react'
 import api from '@/lib/axios'
+import { pickProject } from '@/stores/project.store'
 import { toast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { loadGoogleFont } from '@/admin/lib/load-google-font'
@@ -228,9 +229,9 @@ export function SimpleThemeView({ platform: PLATFORM = 'webapp' }: { platform?: 
   const brandKit = useMutation({
     mutationFn: async () => {
       const projects = await api
-        .get<{ data: { id: string; is_default?: boolean }[] }>('/projects')
+        .get<{ data: { id: string; status?: string; is_default?: boolean }[] }>('/projects')
         .then((r) => r.data.data)
-      const project = projects.find((p) => p.is_default) ?? projects[0]
+      const project = pickProject(projects)
       if (!project) return null
       return api
         .get<{ data: BrandKitColours }>(`/brand-kit/${project.id}/theme-colors`)

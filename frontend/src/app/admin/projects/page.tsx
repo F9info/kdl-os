@@ -10,7 +10,7 @@ import {
   useUpdateProject,
   type Project,
 } from '@/admin/hooks/useProjects'
-import { resolveActiveProject, useProjectStore } from '@/admin/stores/project.store'
+import { resolveActiveProject, useProjectStore } from '@/stores/project.store'
 import { kindsLabel, STATUS_LABELS } from '@/admin/lib/project-kinds'
 import { PageHeader } from '@/admin/components/layout/PageHeader'
 import { PermissionGuard } from '@/admin/components/shared/PermissionGuard'

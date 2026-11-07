@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { usePermissions } from '@/admin/hooks/usePermissions'
 import { useProjects } from '@/admin/hooks/useProjects'
-import { resolveActiveProject, useProjectStore } from '@/admin/stores/project.store'
+import { resolveActiveProject, useProjectStore } from '@/stores/project.store'
 import { kindsLabel } from '@/admin/lib/project-kinds'
 
 /** Shows the project you are working in and lets you switch. Hidden without `projects:view`. */

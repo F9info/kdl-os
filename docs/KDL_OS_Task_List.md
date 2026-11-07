@@ -236,7 +236,7 @@ Effort is a rough planning guess: S (hours), M (about a day), L (several days).
 | S7 | Template Engine export security | [ ] |
 | T01 | Project model: type, status, config | [x] code and tests done; migration not yet applied to a real DB; not committed |
 | T02 | Projects UI and dashboard | [x] code and tests done; not checked in a browser; not committed |
-| T03 | Remove default-project assumption | [ ] |
+| T03 | Remove default-project assumption | [~] frontend half done (screens follow the active project); backend half and NOT NULL migration open |
 | T04 | Per-project pages and slugs | [ ] |
 | T05 | Per-project theme and identity | [ ] |
 | T06 | Isolation tests | [ ] |

@@ -1,4 +1,5 @@
 import api from '@/lib/axios'
+import { pickProject } from '@/stores/project.store'
 import type { ComposedBlockConfig } from './render-composed-block'
 
 export interface CustomBlockRecord {
@@ -120,17 +121,16 @@ export async function listCustomBlocks(
   return items.map(toRecord)
 }
 
-// Resolves the org-wide default project's id — new custom blocks save here
-// when no project context is available (the legacy Page Builder editor's
-// "Create new" flow). `GET /projects` orders is_default first, and that
-// project is seeded with is_shared=true, so every authenticated user
-// already has implicit access to it via requireProject's is_shared check.
-// Looked up by the `is_default` flag rather than a hardcoded id, since the
-// project's cuid differs per environment/seed run.
+// Resolves the project new custom blocks save to when no project context is
+// available (the legacy Page Builder editor's "Create new" flow): the project
+// chosen in the top bar switcher, else the org-wide default project (seeded with
+// is_shared=true, so every authenticated user can reach it via requireProject),
+// else the first. Looked up by flag, not a hardcoded id, since the project's cuid
+// differs per environment/seed run.
 export async function getDefaultProjectId(): Promise<string> {
   const res = await api.get('/projects')
-  const items: { id: string; is_default: boolean }[] = res.data.data ?? []
-  const found = items.find((p) => p.is_default) ?? items[0]
+  const items: { id: string; status?: string; is_default: boolean }[] = res.data.data ?? []
+  const found = pickProject(items)
   if (!found) throw new Error('No default project found')
   return found.id
 }

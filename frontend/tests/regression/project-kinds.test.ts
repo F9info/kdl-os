@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { kindsLabel, OPTIONAL_KINDS, PROJECT_KINDS } from '@/admin/lib/project-kinds'
-import { resolveActiveProject } from '@/admin/stores/project.store'
+import { resolveActiveProject } from '@/stores/project.store'
 import { projectFormSchema } from '@/app/admin/projects/_schemas'
 
 describe('kindsLabel', () => {
@@ -54,6 +54,22 @@ describe('resolveActiveProject', () => {
 
   it('never works in an archived project, even if it is stored', () => {
     expect(resolveActiveProject(projects, 'c')?.id).toBe('a')
+  })
+
+  it('prefers the project flagged default over list order when nothing is stored', () => {
+    const list = [
+      { id: 'a', status: 'ACTIVE', is_default: false },
+      { id: 'd', status: 'ACTIVE', is_default: true },
+    ]
+    expect(resolveActiveProject(list, null)?.id).toBe('d')
+  })
+
+  it('does not fall back to an archived default project', () => {
+    const list = [
+      { id: 'd', status: 'ARCHIVED', is_default: true },
+      { id: 'a', status: 'ACTIVE', is_default: false },
+    ]
+    expect(resolveActiveProject(list, null)?.id).toBe('a')
   })
 
   it('returns null when every project is archived', () => {
