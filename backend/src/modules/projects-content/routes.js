@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../../middleware/auth.js';
 import { requirePermission } from '../../middleware/permission.js';
 import { validate } from '../../middleware/validate.js';
+import { contentProject, recordProject } from '../../middleware/content-project.js';
 import { publicOnlyActive } from '../../middleware/public-only-active.js';
 import {
   listCaseStudiesSchema,
@@ -26,6 +27,9 @@ router.get('/public', validate(listCaseStudiesSchema), publicOnlyActive, listCas
 
 // Admin CRUD — authenticated + RBAC-gated.
 router.use(authenticate);
+// Project isolation: the project a request names, and the project of the row addressed by :id.
+router.use(contentProject());
+router.param('id', recordProject('projectCaseStudy'));
 router.get('/', requirePermission('projects-content', 'view'), validate(listCaseStudiesSchema), listCaseStudies);
 router.get('/:id', requirePermission('projects-content', 'view'), validate(getCaseStudySchema), getCaseStudy);
 router.post('/', requirePermission('projects-content', 'add'), validate(createCaseStudySchema), createCaseStudy);

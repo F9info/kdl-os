@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../../middleware/auth.js';
 import { requirePermission } from '../../middleware/permission.js';
 import { validate } from '../../middleware/validate.js';
+import { contentProject, recordProject } from '../../middleware/content-project.js';
 import { publicOnlyActive } from '../../middleware/public-only-active.js';
 import {
   listCatalogSchema,
@@ -42,6 +43,9 @@ router.get('/public/:slug', validate(getPublicCatalogSchema), getPublicCatalog);
 
 // Admin CRUD — authenticated + RBAC-gated.
 router.use(authenticate);
+// Project isolation: the project a request names, and the project of the row addressed by :id.
+router.use(contentProject());
+router.param('id', recordProject('catalogItem'));
 router.get('/', requirePermission('catalog', 'view'), validate(listCatalogSchema), listCatalog);
 router.get('/:id', requirePermission('catalog', 'view'), validate(getCatalogSchema), getCatalog);
 router.post('/', requirePermission('catalog', 'add'), validate(createCatalogSchema), createCatalog);

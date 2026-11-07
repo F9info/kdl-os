@@ -241,7 +241,7 @@ Effort is a rough planning guess: S (hours), M (about a day), L (several days).
 | T04b | NOT NULL project_id on the content tables (team, faq, sectors, catalog, work, gallery, testimonials, case studies, menus) with backfill | [ ] |
 | T05 | Per-project theme and identity | [x] website theme (webapp) is per project; admin theme stays install-wide by design; identity uses the existing per-site overrides. Media scoping not done (T05b). Migration applied to dev DB; not browser-checked |
 | T05b | Scope media by project (or project tags) | [ ] |
-| T06 | Isolation tests | [ ] |
+| T06 | Isolation tests | [x] found and fixed a real gap: content modules had no project access check. Guard + 26 tests. Not yet run against the live container |
 | T07 | Seed Admin and Developer, one-command setup | [ ] |
 | T08 | Settings: names, logos, theme mode | [ ] |
 | T09 | Automatic demo project | [ ] |

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../../middleware/auth.js';
 import { requirePermission } from '../../middleware/permission.js';
 import { validate } from '../../middleware/validate.js';
+import { contentProject, recordProject } from '../../middleware/content-project.js';
 import { publicOnlyActive } from '../../middleware/public-only-active.js';
 import {
   listSectorsSchema,
@@ -46,6 +47,9 @@ router.get('/public/:slug', validate(getPublicSectorSchema), getPublicSector);
 
 // Admin CRUD — authenticated + RBAC-gated.
 router.use(authenticate);
+// Project isolation: the project a request names, and the project of the row addressed by :id.
+router.use(contentProject());
+router.param('id', recordProject('sector'));
 router.get('/', requirePermission('sectors', 'view'), validate(listSectorsSchema), listSectors);
 router.get('/:id', requirePermission('sectors', 'view'), validate(getSectorSchema), getSector);
 router.post('/', requirePermission('sectors', 'add'), validate(createSectorSchema), createSector);

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../../middleware/auth.js';
 import { requirePermission } from '../../middleware/permission.js';
 import { validate } from '../../middleware/validate.js';
+import { contentProject, recordProject } from '../../middleware/content-project.js';
 import { publicOnlyActive } from '../../middleware/public-only-active.js';
 import {
   listTeamMembersSchema,
@@ -26,6 +27,9 @@ router.get('/public', validate(listTeamMembersSchema), publicOnlyActive, listTea
 
 // Admin CRUD — authenticated + RBAC-gated.
 router.use(authenticate);
+// Project isolation: the project a request names, and the project of the row addressed by :id.
+router.use(contentProject());
+router.param('id', recordProject('teamMember'));
 router.get('/', requirePermission('team', 'view'), validate(listTeamMembersSchema), listTeamMembers);
 router.get('/:id', requirePermission('team', 'view'), validate(getTeamMemberSchema), getTeamMember);
 router.post('/', requirePermission('team', 'add'), validate(createTeamMemberSchema), createTeamMember);

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../../middleware/auth.js';
 import { requirePermission } from '../../middleware/permission.js';
 import { validate } from '../../middleware/validate.js';
+import { contentProject, recordProject } from '../../middleware/content-project.js';
 import {
   listMenusSchema,
   getMenuSchema,
@@ -38,6 +39,10 @@ router.get('/public', validate(publicMenuSchema), getPublicMenu);
 
 // Admin CRUD — authenticated + RBAC-gated.
 router.use(authenticate);
+// Project isolation: the project a request names, and the project of the menu or menu item addressed by id.
+router.use(contentProject());
+router.param('id', recordProject('menu', { itemModel: 'menuItem' }));
+router.param('menuId', recordProject('menu'));
 router.get('/', requirePermission('menus', 'view'), validate(listMenusSchema), listMenus);
 // Site-wide menu options (footer = same links as header). Registered before /:id.
 router.get('/options', requirePermission('menus', 'view'), getOptions);
