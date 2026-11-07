@@ -222,7 +222,8 @@ describe('approval driver', () => {
     contrast_report: { adjustments: [] },
   };
 
-  const LOCK = { lockedByModule: 'template-engine' };
+  // Approval saves the brand into the project being approved, never into the shared base theme.
+  const LOCK = { lockedByModule: 'template-engine', projectId: 'proj-A' };
   const execute = () =>
     getDriver('approval').execute({ projectId: 'proj-A', userId: 'user-1', stageRecord: makeStageRecord() });
 

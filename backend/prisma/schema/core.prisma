@@ -152,6 +152,7 @@ model SettingField {
   category       Category?      @relation(fields: [category_id], references: [id], onDelete: SetNull)
   setting_values SettingValue[]
   project_values ProjectSettingValue[]
+  theme_overrides ProjectThemeValue[]
 
   @@index([type_id])
   @@index([category_id])
@@ -168,11 +169,14 @@ model ThemeValueVersion {
   id         String   @id @default(cuid())
   platform   String
   type_id    String
+  // The project whose overrides this snapshot belongs to. Null = the install-wide base values (older rows).
+  project_id String?
   snapshot   String
   created_by String?
   created_at DateTime @default(now())
 
   @@index([platform, type_id, created_at])
+  @@index([project_id, platform, type_id, created_at])
   @@map("theme_value_versions")
 }
 
@@ -189,6 +193,28 @@ model SettingValue {
 
   @@index([platform])
   @@map("setting_values")
+}
+
+// A project's own theme values (colors, fonts, spacing, ...) on top of the install-wide base in
+// SettingValue. No row = the project uses the base value; a row wins for that project only. Edits always
+// write here, so changing one project's theme never changes another's. A new project starts from the base.
+model ProjectThemeValue {
+  id         String   @id @default(cuid())
+  project_id String
+  field_id   String
+  platform   String
+  value      String
+  updated_by String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  project Project      @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  field   SettingField @relation(fields: [field_id], references: [id], onDelete: Cascade)
+
+  @@unique([project_id, field_id])
+  @@index([project_id, platform])
+  @@index([field_id])
+  @@map("project_theme_values")
 }
 
 // Per-project override of a standalone SettingField's global `value` (Vision/

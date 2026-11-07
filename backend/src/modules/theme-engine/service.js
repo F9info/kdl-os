@@ -10,7 +10,15 @@ import {
 } from './site-styles.js';
 
 const TOKEN_TTL = 600; // seconds
-const tokenKey = (platform, theme, device) => `th:tokens:${platform}:${theme ?? 'all'}:${device ?? 'all'}`;
+// Only the website theme is per project. The admin panel's own look (`webapp_admin`) and the native-app
+// platforms are install-wide, so switching project never re-themes the admin screens. Everything below
+// that takes a projectId passes it through this first.
+export const PROJECT_THEME_PLATFORMS = ['webapp'];
+const scopeFor = (platform, projectId) => (projectId && PROJECT_THEME_PLATFORMS.includes(platform) ? projectId : null);
+
+// Compiled tokens are cached per project (a project's own values differ). No project = the install-wide base.
+const tokenKey = (platform, theme, device, projectId) =>
+  `th:tokens:${platform}:${projectId ? `p:${projectId}:` : ''}${theme ?? 'all'}:${device ?? 'all'}`;
 
 // ── Value validation ──────────────────────────────────────────────────────────
 
@@ -234,7 +242,19 @@ export async function getSchemaTree(platform) {
 
 // ── Values for one pane (GET /values) ────────────────────────────────────────
 
-export async function getValues(platform, typeId) {
+// A project's own values for some fields, as field_id -> value. Empty without a project.
+async function overridesFor(projectId, fieldIds) {
+  if (!projectId) return new Map();
+  const rows = await prisma.projectThemeValue.findMany({
+    where: { project_id: projectId, ...(fieldIds && { field_id: { in: fieldIds } }) },
+    select: { field_id: true, value: true },
+  });
+  return new Map(rows.map((r) => [r.field_id, r.value]));
+}
+
+// Values of a pane. With a project: that project's own value, else the base value, else the field default.
+export async function getValues(platform, typeId, requestedProjectId) {
+  const projectId = scopeFor(platform, requestedProjectId);
   // Same ownership guard as /values and /reset — no cross-platform reads.
   const type = await prisma.type.findUnique({ where: { id: typeId }, select: { slug: true } });
   if (!type || !type.slug.startsWith(`${platform}.`)) {
@@ -249,9 +269,10 @@ export async function getValues(platform, typeId) {
     },
     orderBy: { sort: 'asc' },
   });
+  const own = await overridesFor(projectId, fields.map((f) => f.id));
   const result = {};
   for (const f of fields) {
-    result[f.slug] = f.setting_values?.[0]?.value ?? f.value ?? null;
+    result[f.slug] = own.get(f.id) ?? f.setting_values?.[0]?.value ?? f.value ?? null;
   }
   return result;
 }
@@ -260,7 +281,9 @@ export async function getValues(platform, typeId) {
 
 // opts.lockedByModule: when set (e.g. 'template-engine'), the caller is the owning
 // module itself — skip the user-facing lock check and re-acquire locks on written fields.
-export async function upsertValues(platform, typeId, values, actorId, { lockedByModule = null } = {}) {
+// opts.projectId: save to that project's own values (never the shared base). Without it the base is written.
+export async function upsertValues(platform, typeId, values, actorId, { lockedByModule = null, projectId: requestedProjectId = null } = {}) {
+  const projectId = scopeFor(platform, requestedProjectId);
   // Guard against cross-platform writes
   const type = await prisma.type.findUnique({ where: { id: typeId }, select: { slug: true } });
   if (!type || !type.slug.startsWith(`${platform}.`)) {
@@ -277,7 +300,7 @@ export async function upsertValues(platform, typeId, values, actorId, { lockedBy
 
   // Lock guard: block user writes when a non-terminal template-engine run holds the field.
   // When lockedByModule is set the caller IS the owning module — bypass the check.
-  if (!lockedByModule) await assertNotLocked(fields);
+  if (!lockedByModule) await assertNotLocked(fields, projectId);
 
   // The whole pane's fields (including "Custom Fonts") save in one request —
   // pull any custom font names out of this same batch so Font Family selects
@@ -308,16 +331,22 @@ export async function upsertValues(platform, typeId, values, actorId, { lockedBy
 
   // User saves snapshot the previous state first so the publish can be undone.
   if (!lockedByModule) {
-    await captureVersion(platform, typeId, upserts, byId, actorId);
+    await captureVersion(platform, typeId, upserts, byId, actorId, projectId);
   }
 
   await prisma.$transaction(
     upserts.map((u) =>
-      prisma.settingValue.upsert({
-        where: { field_id: u.field_id },
-        create: u,
-        update: { value: u.value, updated_by: u.updated_by },
-      })
+      projectId
+        ? prisma.projectThemeValue.upsert({
+            where: { project_id_field_id: { project_id: projectId, field_id: u.field_id } },
+            create: { ...u, project_id: projectId },
+            update: { value: u.value, updated_by: u.updated_by },
+          })
+        : prisma.settingValue.upsert({
+            where: { field_id: u.field_id },
+            create: u,
+            update: { value: u.value, updated_by: u.updated_by },
+          })
     )
   );
 
@@ -330,7 +359,7 @@ export async function upsertValues(platform, typeId, values, actorId, { lockedBy
     });
   }
 
-  await invalidateTokenCache(platform);
+  await invalidateTokenCache(platform, projectId);
   return { saved: upserts.length };
 }
 
@@ -338,11 +367,13 @@ export async function upsertValues(platform, typeId, values, actorId, { lockedBy
 
 const MAX_VERSIONS = 20;
 
-async function assertNotLocked(fields) {
+// A field is locked while a Template Engine run is open. With a project only ITS run counts, so a run
+// in one project never blocks editing another project's theme.
+async function assertNotLocked(fields, projectId) {
   const lockedFields = fields.filter((f) => f.locked_by);
   if (lockedFields.length === 0) return;
   const activeRun = await prisma.templateEngineRun.findFirst({
-    where: { status: { in: ['IN_PROGRESS', 'AWAITING_APPROVAL'] } },
+    where: { status: { in: ['IN_PROGRESS', 'AWAITING_APPROVAL'] }, ...(projectId && { projectId }) },
     select: { id: true },
   });
   if (activeRun) {
@@ -354,21 +385,34 @@ async function assertNotLocked(fields) {
 
 // Store the pre-change value of every field about to be written — but only if
 // something actually changes, so pressing Publish twice doesn't add noise.
-async function captureVersion(platform, typeId, upserts, fieldsById, actorId) {
-  const existing = await prisma.settingValue.findMany({
-    where: { field_id: { in: upserts.map((u) => u.field_id) } },
-    select: { field_id: true, value: true },
-  });
-  const before = new Map(existing.map((v) => [v.field_id, v.value]));
-  const changed = upserts.some((u) => (before.get(u.field_id) ?? fieldsById.get(u.field_id)?.value) !== u.value);
+async function captureVersion(platform, typeId, upserts, fieldsById, actorId, projectId = null) {
+  const ids = upserts.map((u) => u.field_id);
+  // What the scope being saved holds today: the project's own values, or the base without a project.
+  const before = projectId
+    ? await overridesFor(projectId, ids)
+    : new Map(
+        (await prisma.settingValue.findMany({ where: { field_id: { in: ids } }, select: { field_id: true, value: true } })).map(
+          (v) => [v.field_id, v.value]
+        )
+      );
+  // A project field with no own value shows the base value, so compare against that.
+  const base = projectId
+    ? new Map(
+        (await prisma.settingValue.findMany({ where: { field_id: { in: ids } }, select: { field_id: true, value: true } })).map(
+          (v) => [v.field_id, v.value]
+        )
+      )
+    : new Map();
+  const shown = (id) => before.get(id) ?? base.get(id) ?? fieldsById.get(id)?.value;
+  const changed = upserts.some((u) => shown(u.field_id) !== u.value);
   if (!changed) return;
 
   const snapshot = JSON.stringify(upserts.map((u) => ({ field_id: u.field_id, value: before.get(u.field_id) ?? null })));
   await prisma.themeValueVersion.create({
-    data: { platform, type_id: typeId, snapshot, created_by: actorId ?? null },
+    data: { platform, type_id: typeId, project_id: projectId, snapshot, created_by: actorId ?? null },
   });
   const stale = await prisma.themeValueVersion.findMany({
-    where: { platform, type_id: typeId },
+    where: { platform, type_id: typeId, project_id: projectId },
     orderBy: { created_at: 'desc' },
     skip: MAX_VERSIONS,
     select: { id: true },
@@ -378,9 +422,10 @@ async function captureVersion(platform, typeId, upserts, fieldsById, actorId) {
   }
 }
 
-export async function listVersions(platform, typeId) {
+export async function listVersions(platform, typeId, requestedProjectId = null) {
+  const projectId = scopeFor(platform, requestedProjectId);
   const rows = await prisma.themeValueVersion.findMany({
-    where: { platform, type_id: typeId },
+    where: { platform, type_id: typeId, project_id: projectId },
     orderBy: { created_at: 'desc' },
     take: MAX_VERSIONS,
   });
@@ -394,16 +439,19 @@ export async function listVersions(platform, typeId) {
 
 // Put a pane back to the state captured in `versionId`. The current state is
 // captured first, so a restore can itself be undone.
-export async function restoreVersion(versionId, actorId) {
+export async function restoreVersion(versionId, actorId, requestedProjectId = null) {
   const version = await prisma.themeValueVersion.findUnique({ where: { id: versionId } });
   if (!version) return { notFound: true };
+  const projectId = scopeFor(version.platform, requestedProjectId);
+  // A version belongs to one project; another project's version is "not found", never restorable here.
+  if ((version.project_id ?? null) !== projectId) return { notFound: true };
 
   const entries = JSON.parse(version.snapshot);
   const fields = await prisma.settingField.findMany({
     where: { id: { in: entries.map((e) => e.field_id) } },
     select: { id: true, locked_by: true, value: true },
   });
-  await assertNotLocked(fields);
+  await assertNotLocked(fields, projectId);
   const byId = new Map(fields.map((f) => [f.id, f]));
   const live = entries.filter((e) => byId.has(e.field_id)); // fields may have been removed since
 
@@ -412,29 +460,44 @@ export async function restoreVersion(versionId, actorId) {
     version.type_id,
     live.map((e) => ({ field_id: e.field_id, value: e.value ?? byId.get(e.field_id).value })),
     byId,
-    actorId
+    actorId,
+    projectId
   );
 
   const writes = [];
   for (const e of live) {
-    writes.push(
-      e.value === null
-        ? prisma.settingValue.deleteMany({ where: { field_id: e.field_id } })
-        : prisma.settingValue.upsert({
-            where: { field_id: e.field_id },
-            create: { field_id: e.field_id, platform: version.platform, value: e.value, updated_by: actorId ?? null },
-            update: { value: e.value, updated_by: actorId ?? null },
-          })
-    );
+    if (projectId) {
+      writes.push(
+        e.value === null
+          ? prisma.projectThemeValue.deleteMany({ where: { project_id: projectId, field_id: e.field_id } })
+          : prisma.projectThemeValue.upsert({
+              where: { project_id_field_id: { project_id: projectId, field_id: e.field_id } },
+              create: { project_id: projectId, field_id: e.field_id, platform: version.platform, value: e.value, updated_by: actorId ?? null },
+              update: { value: e.value, updated_by: actorId ?? null },
+            })
+      );
+    } else {
+      writes.push(
+        e.value === null
+          ? prisma.settingValue.deleteMany({ where: { field_id: e.field_id } })
+          : prisma.settingValue.upsert({
+              where: { field_id: e.field_id },
+              create: { field_id: e.field_id, platform: version.platform, value: e.value, updated_by: actorId ?? null },
+              update: { value: e.value, updated_by: actorId ?? null },
+            })
+      );
+    }
   }
   await prisma.$transaction(writes);
-  await invalidateTokenCache(version.platform);
+  await invalidateTokenCache(version.platform, projectId);
   return { restored: live.length, platform: version.platform, type_id: version.type_id };
 }
 
 // ── Reset pane to defaults (POST /reset) ─────────────────────────────────────
 
-export async function resetValues(platform, typeId) {
+// With a project this drops the project's own values (the pane goes back to the base); without, the base is cleared.
+export async function resetValues(platform, typeId, requestedProjectId = null) {
+  const projectId = scopeFor(platform, requestedProjectId);
   // Guard against cross-platform writes
   const type = await prisma.type.findUnique({ where: { id: typeId }, select: { slug: true } });
   if (!type || !type.slug.startsWith(`${platform}.`)) {
@@ -446,10 +509,10 @@ export async function resetValues(platform, typeId) {
     select: { id: true },
   });
   const fieldIds = fields.map((f) => f.id);
-  const { count } = await prisma.settingValue.deleteMany({
-    where: { field_id: { in: fieldIds } },
-  });
-  await invalidateTokenCache(platform);
+  const { count } = projectId
+    ? await prisma.projectThemeValue.deleteMany({ where: { project_id: projectId, field_id: { in: fieldIds } } })
+    : await prisma.settingValue.deleteMany({ where: { field_id: { in: fieldIds } } });
+  await invalidateTokenCache(platform, projectId);
   return { deleted: count };
 }
 
@@ -478,11 +541,11 @@ export async function releaseLocks({ platform, type_id } = {}, actorId) {
 
 // ── Token cache invalidation ──────────────────────────────────────────────────
 
-async function invalidateTokenCache(platform) {
+async function invalidateTokenCache(platform, projectId) {
   const themes = ['dark', 'light', 'focus', 'all'];
   const plat = PLATFORMS.find((p) => p.id === platform);
   const devices = plat ? [...plat.devices.map((d) => d.id), 'all'] : ['all'];
-  const keys = themes.flatMap((t) => devices.map((d) => tokenKey(platform, t, d)));
+  const keys = themes.flatMap((t) => devices.map((d) => tokenKey(platform, t, d, projectId)));
   await Promise.allSettled(keys.map((k) => redis.del(k)));
 }
 
@@ -542,8 +605,9 @@ export function deviceMediaQuery(plat, deviceId) {
   return base;
 }
 
-export async function compileTokens(platform, theme, device) {
-  const cacheKey = tokenKey(platform, theme, device);
+export async function compileTokens(platform, theme, device, requestedProjectId) {
+  const projectId = scopeFor(platform, requestedProjectId);
+  const cacheKey = tokenKey(platform, theme, device, projectId);
 
   try {
     const cached = await redis.get(cacheKey);
@@ -568,6 +632,8 @@ export async function compileTokens(platform, theme, device) {
   });
 
   const typeById = new Map(types.map((t) => [t.id, t]));
+  // The project's own values win over the base ones (none without a project).
+  const own = await overridesFor(projectId);
 
   // Real device ids for this platform — same source as invalidateTokenCache.
   // A field is device-tagged only when its 3rd slug segment is one of these.
@@ -595,7 +661,7 @@ export async function compileTokens(platform, theme, device) {
   const deviceImgClasses = {}; // deviceId → { cls: rules }
 
   for (const f of fields) {
-    const effectiveValue = f.setting_values?.[0]?.value ?? f.value;
+    const effectiveValue = own.get(f.id) ?? f.setting_values?.[0]?.value ?? f.value;
     if (effectiveValue == null) continue;
 
     // Never compile secrets into the public token payload.
@@ -776,10 +842,10 @@ export async function compileTokens(platform, theme, device) {
     ...deviceCss,
   ].filter(Boolean).join('\n\n');
 
-  const activeTheme = await getActiveTheme(platform);
+  const activeTheme = await getActiveTheme(platform, projectId);
   // The chosen website button and form-field style rides along with the theme, so everything that loads
   // the theme (live site, editor, static export) gets it. Only the two platforms that render the website.
-  const styles = SITE_STYLE_PLATFORMS.includes(platform) ? await getSiteStyles() : null;
+  const styles = SITE_STYLE_PLATFORMS.includes(platform) ? await getSiteStyles(projectId) : null;
   const result = {
     css: styles ? `${css}\n\n${siteStyleCss(styles.button, styles.form)}` : css,
     json: jsonTree,
@@ -808,26 +874,34 @@ export async function isTokensPublic() {
 // same shape instead of adding a migration.
 
 export const ACTIVE_THEMES = ['dark', 'light', 'system'];
-const activeThemeKey = (platform) => `theme_engine.active_theme.${platform}`;
+const activeThemeKey = (platform, projectId) =>
+  `theme_engine.active_theme.${platform}${projectId ? `.p.${projectId}` : ''}`;
 
-export async function getActiveTheme(platform) {
-  const setting = await prisma.appSetting.findUnique({ where: { key: activeThemeKey(platform) } });
-  return setting && ACTIVE_THEMES.includes(setting.value) ? setting.value : 'system';
+// The project's own choice, else the install-wide one, else 'system'.
+export async function getActiveTheme(platform, requestedProjectId) {
+  const projectId = scopeFor(platform, requestedProjectId);
+  const keys = projectId ? [activeThemeKey(platform, projectId), activeThemeKey(platform)] : [activeThemeKey(platform)];
+  for (const key of keys) {
+    const setting = await prisma.appSetting.findUnique({ where: { key } });
+    if (setting && ACTIVE_THEMES.includes(setting.value)) return setting.value;
+  }
+  return 'system';
 }
 
-export async function setActiveTheme(platform, theme) {
+export async function setActiveTheme(platform, theme, requestedProjectId) {
+  const projectId = scopeFor(platform, requestedProjectId);
   if (!ACTIVE_THEMES.includes(theme)) {
     return { errors: [`theme must be one of: ${ACTIVE_THEMES.join(', ')}`] };
   }
   await prisma.appSetting.upsert({
-    where: { key: activeThemeKey(platform) },
-    create: { key: activeThemeKey(platform), value: theme, type: 'string', is_public: true },
+    where: { key: activeThemeKey(platform, projectId) },
+    create: { key: activeThemeKey(platform, projectId), value: theme, type: 'string', is_public: true },
     update: { value: theme },
   });
   // The tokens payload embeds activeTheme (see compileTokens) so the public
   // runtime consumer can pick it up in the same request — stale cache would
   // serve the old choice until TTL expiry otherwise.
-  await invalidateTokenCache(platform);
+  await invalidateTokenCache(platform, projectId);
   return { activeTheme: theme };
 }
 
@@ -838,21 +912,19 @@ export async function setActiveTheme(platform, theme) {
 // The website is drawn with the `webapp` theme, and with `webapp_admin` while it is previewed or served by
 // the admin app itself. Both get the style; the CSS is scoped to website content, so admin screens are not touched.
 export const SITE_STYLE_PLATFORMS = ['webapp', 'webapp_admin'];
-const siteStyleKey = (kind) => `theme_engine.site_style.${kind}`;
+const siteStyleKey = (kind, projectId) => `theme_engine.site_style.${kind}${projectId ? `.p.${projectId}` : ''}`;
 
-export async function getSiteStyles() {
-  const rows = await prisma.appSetting.findMany({
-    where: { key: { in: [siteStyleKey('button'), siteStyleKey('form')] } },
-    select: { key: true, value: true },
-  });
+// The project's own choice, else the install-wide one, else the default.
+export async function getSiteStyles(projectId) {
+  const kinds = ['button', 'form'];
+  const keys = kinds.flatMap((k) => (projectId ? [siteStyleKey(k, projectId), siteStyleKey(k)] : [siteStyleKey(k)]));
+  const rows = await prisma.appSetting.findMany({ where: { key: { in: keys } }, select: { key: true, value: true } });
   const byKey = Object.fromEntries(rows.map((r) => [r.key, r.value]));
-  return {
-    button: buttonKeyOrDefault(byKey[siteStyleKey('button')]),
-    form: formKeyOrDefault(byKey[siteStyleKey('form')]),
-  };
+  const pick = (kind) => byKey[siteStyleKey(kind, projectId)] ?? byKey[siteStyleKey(kind)];
+  return { button: buttonKeyOrDefault(pick('button')), form: formKeyOrDefault(pick('form')) };
 }
 
-export async function setSiteStyles({ button, form }) {
+export async function setSiteStyles({ button, form }, projectId) {
   const errors = [];
   if (button !== undefined && !BUTTON_KEYS.includes(button)) errors.push(`button must be one of: ${BUTTON_KEYS.join(', ')}`);
   if (form !== undefined && !FORM_KEYS.includes(form)) errors.push(`form must be one of: ${FORM_KEYS.join(', ')}`);
@@ -860,12 +932,13 @@ export async function setSiteStyles({ button, form }) {
   for (const [kind, value] of [['button', button], ['form', form]]) {
     if (value === undefined) continue;
     await prisma.appSetting.upsert({
-      where: { key: siteStyleKey(kind) },
-      create: { key: siteStyleKey(kind), value, type: 'string', is_public: true },
+      where: { key: siteStyleKey(kind, projectId) },
+      create: { key: siteStyleKey(kind, projectId), value, type: 'string', is_public: true },
       update: { value },
     });
   }
   // Compiled tokens are cached per platform; they now contain this CSS.
-  await Promise.all(SITE_STYLE_PLATFORMS.map((p) => invalidateTokenCache(p)));
-  return getSiteStyles();
+  // The project's styles only reach the website theme (webapp); the admin-app theme keeps the install-wide ones.
+  await Promise.all(SITE_STYLE_PLATFORMS.map((p) => invalidateTokenCache(p, scopeFor(p, projectId))));
+  return getSiteStyles(projectId);
 }

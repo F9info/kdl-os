@@ -40,6 +40,7 @@ model Project {
   credit_ledger  CreditLedgerEntry[]
   members        ProjectMember[]
   setting_values ProjectSettingValue[]
+  theme_values   ProjectThemeValue[]
   sites          Site[]
 
   @@map("projects")

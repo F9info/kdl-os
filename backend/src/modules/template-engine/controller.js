@@ -215,7 +215,7 @@ export const startStatic = async (req, res, next) => {
     const identity = await getIdentity();
     const contact = { email: identity.contact_email, phone: identity.contact_phone };
     // The site's theme is baked into the folder: a static site cannot ask a server for it later.
-    const tokens = await compileTokens('webapp');
+    const tokens = await compileTokens('webapp', undefined, undefined, req.projectId);
     if (!startStaticBuild(slug, { apiBase: parsed.data, contact, tokens: { css: tokens.css, activeTheme: tokens.activeTheme } }))
       return errorResponse(res, 'A build is already running', 409);
     return successResponse(res, getStaticBuild(slug), 202);

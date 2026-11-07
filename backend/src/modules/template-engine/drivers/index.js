@@ -148,7 +148,7 @@ async function writeThemeColors(kit, platform, userId, projectId) {
   try {
     for (const [pane, values] of panes) {
       const typeId = await resolveThemeTypeId(platform, pane);
-      const result = await upsertValues(platform, typeId, values, userId, { lockedByModule: 'template-engine' });
+      const result = await upsertValues(platform, typeId, values, userId, { lockedByModule: 'template-engine', projectId });
       if (result?.errors) {
         logger.warn(`approval: Theme Engine rejected the ${pane} colours for project ${projectId}: ${result.errors.join('; ')}`);
         errors.push(...result.errors);
@@ -235,7 +235,7 @@ const approvalDriver = {
     // Exit action: brand-kit tokens → theme-engine values.
     const tokenPayload = await getTokens(projectId, 'webapp');
     const resolvedTypeId = await resolveThemeTypeId(tokenPayload.platform, tokenPayload.type_id);
-    const writeResult = await upsertValues(tokenPayload.platform, resolvedTypeId, tokenPayload.values, userId, { lockedByModule: 'template-engine' });
+    const writeResult = await upsertValues(tokenPayload.platform, resolvedTypeId, tokenPayload.values, userId, { lockedByModule: 'template-engine', projectId });
 
     // Exit action, part 2: the semantic colours (a thrown write fails the stage, see above).
     const themeColorErrors = await writeThemeColors(kit, tokenPayload.platform, userId, projectId);

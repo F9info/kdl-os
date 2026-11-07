@@ -10,6 +10,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ── Database / Redis / activity-logger mocks must be hoisted before imports ──
 vi.mock('../../config/database.js', () => ({ prisma: {} }));
+// The public tokens route resolves its project from the request (header / query / default project).
+vi.mock('../../middleware/request-project.js', () => ({
+  resolveRequestedProjectId: vi.fn().mockResolvedValue('proj-1'),
+  requestProject: (_req, _res, next) => next(),
+}));
 vi.mock('../../config/redis.js', () => ({
   redis: { get: vi.fn(), set: vi.fn(), del: vi.fn() },
 }));

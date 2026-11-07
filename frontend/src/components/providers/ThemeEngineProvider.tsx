@@ -54,9 +54,13 @@ const THEME_PLATFORM = process.env.NEXT_PUBLIC_THEME_PLATFORM || 'webapp_admin'
 // public-facing site, a separate consumer that fetches this same endpoint
 // with platform=webapp itself). Native clients (tv/android/ios) likewise
 // fetch this endpoint with their own `platform` and apply the JSON form.
+// A generated client site belongs to one project (generator.js writes its id), and the website theme is per
+// project, so it asks for its own project's tokens. The admin app sends the project it works in as a header.
+const SITE_PROJECT_ID = process.env.NEXT_PUBLIC_SITE_PROJECT_ID
+
 async function fetchAndApply(): Promise<ActiveTheme> {
   const res = await api.get<TokensResponse>('/theme-engine/tokens', {
-    params: { platform: THEME_PLATFORM },
+    params: { platform: THEME_PLATFORM, ...(SITE_PROJECT_ID && { project_id: SITE_PROJECT_ID }) },
   })
   const { css, activeTheme } = res.data.data
   injectCss(css)

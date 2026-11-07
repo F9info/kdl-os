@@ -2,6 +2,7 @@ import { successResponse, errorResponse } from '../../shared/utils/response.js';
 import { writeActivityAsync, getClientIp } from '../user-management/shared/activity-logger.js';
 import { resolvePermissions } from '../user-management/shared/permission-resolver.js';
 import { styleOptions } from './site-styles.js';
+import { resolveRequestedProjectId } from '../../middleware/request-project.js';
 import * as service from './service.js';
 
 export const getSchema = async (req, res, next) => {
@@ -9,7 +10,7 @@ export const getSchema = async (req, res, next) => {
     const { platform } = req.validated.query;
     const tree = await service.getSchemaTree(platform);
     if (!tree) return errorResponse(res, 'Platform not found', 404);
-    const activeTheme = await service.getActiveTheme(platform);
+    const activeTheme = await service.getActiveTheme(platform, req.projectId);
     return successResponse(res, { platform, schema: tree, activeTheme });
   } catch (err) {
     next(err);
@@ -19,7 +20,7 @@ export const getSchema = async (req, res, next) => {
 export const postActiveTheme = async (req, res, next) => {
   try {
     const { platform, theme } = req.validated.body;
-    const result = await service.setActiveTheme(platform, theme);
+    const result = await service.setActiveTheme(platform, theme, req.projectId);
     if (result.errors) return errorResponse(res, 'Validation failed', 422, { fieldErrors: {}, formErrors: result.errors });
     writeActivityAsync({
       actor: req.user?.id,
@@ -38,7 +39,7 @@ export const postActiveTheme = async (req, res, next) => {
 export const getValues = async (req, res, next) => {
   try {
     const { platform, type } = req.validated.query;
-    const values = await service.getValues(platform, type);
+    const values = await service.getValues(platform, type, req.projectId);
     if (values.errors) return errorResponse(res, 'Validation failed', 422, { fieldErrors: {}, formErrors: values.errors });
     return successResponse(res, { platform, type_id: type, values });
   } catch (err) {
@@ -49,7 +50,7 @@ export const getValues = async (req, res, next) => {
 export const postValues = async (req, res, next) => {
   try {
     const { platform, type_id, values } = req.validated.body;
-    const result = await service.upsertValues(platform, type_id, values, req.user?.id);
+    const result = await service.upsertValues(platform, type_id, values, req.user?.id, { projectId: req.projectId });
     if (result.errors) return errorResponse(res, 'Validation failed', 422, { fieldErrors: {}, formErrors: result.errors });
     writeActivityAsync({
       actor: req.user?.id,
@@ -68,7 +69,7 @@ export const postValues = async (req, res, next) => {
 export const postReset = async (req, res, next) => {
   try {
     const { platform, type_id } = req.validated.body;
-    const result = await service.resetValues(platform, type_id);
+    const result = await service.resetValues(platform, type_id, req.projectId);
     if (result.errors) return errorResponse(res, 'Validation failed', 422, { fieldErrors: {}, formErrors: result.errors });
     writeActivityAsync({
       actor: req.user?.id,
@@ -116,7 +117,9 @@ export const getTokens = async (req, res, next) => {
       }
     }
 
-    const tokens = await service.compileTokens(platform, theme, device);
+    // Public: the project comes from the header / ?project_id / the default. Tokens are the site's own CSS,
+    // so no access check is needed here (the tokens_public flag and theme-engine:view above still apply).
+    const tokens = await service.compileTokens(platform, theme, device, await resolveRequestedProjectId(req));
     // If caller wants CSS (via Accept: text/css or ?format=css), serve raw CSS
     const format = req.query.format;
     if (format === 'css' || req.headers.accept?.includes('text/css')) {
@@ -132,7 +135,7 @@ export const getTokens = async (req, res, next) => {
 export const getVersions = async (req, res, next) => {
   try {
     const { platform, type_id } = req.validated.query;
-    const versions = await service.listVersions(platform, type_id);
+    const versions = await service.listVersions(platform, type_id, req.projectId);
     return successResponse(res, { platform, type_id, versions });
   } catch (err) {
     next(err);
@@ -142,7 +145,7 @@ export const getVersions = async (req, res, next) => {
 export const postRestoreVersion = async (req, res, next) => {
   try {
     const { id } = req.validated.params;
-    const result = await service.restoreVersion(id, req.user?.id);
+    const result = await service.restoreVersion(id, req.user?.id, req.projectId);
     if (result.notFound) return errorResponse(res, 'Version not found', 404);
     writeActivityAsync({
       actor: req.user?.id,
@@ -158,9 +161,9 @@ export const postRestoreVersion = async (req, res, next) => {
   }
 };
 
-export const getSiteStyles = async (_req, res, next) => {
+export const getSiteStyles = async (req, res, next) => {
   try {
-    return successResponse(res, { ...(await service.getSiteStyles()), options: styleOptions() });
+    return successResponse(res, { ...(await service.getSiteStyles(req.projectId)), options: styleOptions() });
   } catch (err) {
     next(err);
   }
@@ -168,7 +171,7 @@ export const getSiteStyles = async (_req, res, next) => {
 
 export const putSiteStyles = async (req, res, next) => {
   try {
-    const result = await service.setSiteStyles(req.validated.body);
+    const result = await service.setSiteStyles(req.validated.body, req.projectId);
     if (result.errors) return errorResponse(res, 'Validation failed', 422, { fieldErrors: {}, formErrors: result.errors });
     writeActivityAsync({
       actor: req.user?.id,

@@ -239,7 +239,8 @@ Effort is a rough planning guess: S (hours), M (about a day), L (several days).
 | T03 | Remove default-project assumption | [x] admin screens, landing and forms follow the active project. Moved on: page list and slugs to T04, identity to T05, seeds and onboarding to T09, public forms to T17, NOT NULL on pages done in T04, on the content tables is T04b |
 | T04 | Per-project pages and slugs | [x] done and migration applied to dev DB; not browser-checked |
 | T04b | NOT NULL project_id on the content tables (team, faq, sectors, catalog, work, gallery, testimonials, case studies, menus) with backfill | [ ] |
-| T05 | Per-project theme and identity | [ ] |
+| T05 | Per-project theme and identity | [x] website theme (webapp) is per project; admin theme stays install-wide by design; identity uses the existing per-site overrides. Media scoping not done (T05b). Migration applied to dev DB; not browser-checked |
+| T05b | Scope media by project (or project tags) | [ ] |
 | T06 | Isolation tests | [ ] |
 | T07 | Seed Admin and Developer, one-command setup | [ ] |
 | T08 | Settings: names, logos, theme mode | [ ] |
