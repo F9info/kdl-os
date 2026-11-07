@@ -107,23 +107,23 @@ jobs:
             --label "billing-alert" \
             --body "## GitHub Actions Spending Alert
 
-**Triggered**: $(date -u +%Y-%m-%dT%H:%M:%SZ)
-**Minutes used**: ${USED}
-**Included (free) minutes**: ${INCLUDED}
-**Paid overage minutes**: ${PAID}
+          **Triggered**: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+          **Minutes used**: ${USED}
+          **Included (free) minutes**: ${INCLUDED}
+          **Paid overage minutes**: ${PAID}
 
----
+          ---
 
-### Immediate actions
+          ### Immediate actions
 
-- [ ] **Resolve billing** — top up or raise spending limit:
-  https://github.com/organizations/F9info/settings/billing
-- [ ] **Verify CI is still running** — check a recent workflow run
-- [ ] If CI is blocked: follow the [local verification runbook](../blob/master/docs/CI_LOCAL_VERIFICATION.md)
-- [ ] Close this issue once billing is healthy
+          - [ ] **Resolve billing** — top up or raise spending limit:
+            https://github.com/organizations/F9info/settings/billing
+          - [ ] **Verify CI is still running** — check a recent workflow run
+          - [ ] If CI is blocked: follow the [local verification runbook](../blob/master/docs/CI_LOCAL_VERIFICATION.md)
+          - [ ] Close this issue once billing is healthy
 
-### Why this matters
+          ### Why this matters
 
-A spending-limit lapse kills **all** CI org-wide instantly (every job dies in ~3 s).
-See [docs/BILLING_OUTAGE_RUNBOOK.md](../blob/master/docs/BILLING_OUTAGE_RUNBOOK.md) for the full incident response.
-"
+          A spending-limit lapse kills **all** CI org-wide instantly (every job dies in ~3 s).
+          See [docs/BILLING_OUTAGE_RUNBOOK.md](../blob/master/docs/BILLING_OUTAGE_RUNBOOK.md) for the full incident response.
+          "
