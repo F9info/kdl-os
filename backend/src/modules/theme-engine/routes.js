@@ -14,8 +14,12 @@ import {
   getVersionsQuerySchema,
   postRestoreVersionSchema,
   putSiteStylesBodySchema,
+  createPresetSchema,
+  updatePresetSchema,
+  presetKeyParams,
+  duplicatePresetSchema,
 } from './schema.js';
-import { getSchema, getValues, postValues, postReset, postActiveTheme, releaseLocks, getTokens, getVersions, postRestoreVersion, getSiteStyles, putSiteStyles } from './controller.js';
+import { getSchema, getValues, postValues, postReset, postActiveTheme, releaseLocks, getTokens, getVersions, postRestoreVersion, getSiteStyles, putSiteStyles, getPresets, postPreset, putPreset, postPresetDuplicate, removePreset } from './controller.js';
 
 const router = Router();
 
@@ -34,5 +38,12 @@ router.post('/versions/:id/restore', authenticate, requirePermission('theme-engi
 
 router.get('/site-styles', authenticate, requirePermission('theme-engine', 'view'), requestProject, getSiteStyles);
 router.put('/site-styles', authenticate, requirePermission('theme-engine', 'edit'), requestProject, validate(putSiteStylesBodySchema), putSiteStyles);
+
+// Theme presets: the looks offered in the Simple view. Browse, save the current colours, rename, duplicate, delete.
+router.get('/presets', authenticate, requirePermission('theme-engine', 'view'), getPresets);
+router.post('/presets', authenticate, requirePermission('theme-engine', 'edit'), validate(createPresetSchema), postPreset);
+router.put('/presets/:key', authenticate, requirePermission('theme-engine', 'edit'), validate(updatePresetSchema), putPreset);
+router.post('/presets/:key/duplicate', authenticate, requirePermission('theme-engine', 'edit'), validate(duplicatePresetSchema), postPresetDuplicate);
+router.delete('/presets/:key', authenticate, requirePermission('theme-engine', 'edit'), validate(presetKeyParams), removePreset);
 
 export default router;

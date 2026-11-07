@@ -5,7 +5,17 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Eye, ExternalLink, LayoutTemplate, Palette, Pencil, Plus, Trash2 } from 'lucide-react'
+import {
+  Copy,
+  Eye,
+  ExternalLink,
+  LayoutTemplate,
+  Palette,
+  Pencil,
+  Plus,
+  Save,
+  Trash2,
+} from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { usePermissions } from '@/admin/hooks/usePermissions'
 import {
@@ -16,6 +26,7 @@ import {
   useDeleteLandingSite,
   useLandingSites,
   useLandingTemplates,
+  useTemplateLibrary,
 } from '@/admin/hooks/useLandingPages'
 import { slugify } from '@/lib/utils'
 import { PageHeader } from '@/admin/components/layout/PageHeader'
@@ -54,9 +65,15 @@ function TemplateThumb({ templateKey, className }: { templateKey: string; classN
 function TemplateGallery({
   templates,
   onUse,
+  onDuplicate,
+  onRename,
+  onDelete,
 }: {
   templates: LandingTemplate[]
   onUse: (key: string) => void
+  onDuplicate?: (t: LandingTemplate) => void
+  onRename?: (t: LandingTemplate) => void
+  onDelete?: (t: LandingTemplate) => void
 }) {
   const starters = templates.filter((t) => t.key !== 'blank')
   if (!starters.length) return null
@@ -66,7 +83,8 @@ function TemplateGallery({
         Start from a template
       </h2>
       <p className="mb-4 text-sm text-muted-foreground">
-        Four ready-made designs. Pick one, then change every word, picture and colour in the editor.
+        Pick a design, then change every word, picture and colour in the editor. Duplicate one to
+        make it your own, or save any landing page below as a template.
       </p>
       <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {starters.map((t) => (
@@ -98,6 +116,44 @@ function TemplateGallery({
                   </Link>
                 </Button>
               </div>
+              {(onDuplicate || onRename || onDelete) && (
+                <div className="flex flex-wrap gap-1 border-t pt-3">
+                  {onDuplicate && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => onDuplicate(t)}
+                      data-testid={`duplicate-template-${t.key}`}
+                    >
+                      <Copy className="h-4 w-4" />
+                      Duplicate
+                    </Button>
+                  )}
+                  {onRename && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => onRename(t)}
+                      data-testid={`rename-template-${t.key}`}
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Rename
+                    </Button>
+                  )}
+                  {onDelete && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="ml-auto text-destructive hover:text-destructive"
+                      onClick={() => onDelete(t)}
+                      data-testid={`delete-template-${t.key}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           </li>
         ))}
@@ -220,6 +276,67 @@ function NewLandingDialog({
   )
 }
 
+function TemplateNameDialog({
+  naming,
+  busy,
+  error,
+  onClose,
+  onSubmit,
+}: {
+  naming:
+    | { mode: 'duplicate'; template: LandingTemplate }
+    | { mode: 'rename'; template: LandingTemplate }
+    | { mode: 'save'; site: LandingSite }
+  busy: boolean
+  error: unknown
+  onClose: () => void
+  onSubmit: (name: string) => void
+}) {
+  const initial =
+    naming.mode === 'save'
+      ? naming.site.name
+      : naming.mode === 'rename'
+        ? naming.template.name
+        : `${naming.template.name} (copy)`
+  const [name, setName] = useState(initial)
+  const title =
+    naming.mode === 'save'
+      ? 'Save as template'
+      : naming.mode === 'rename'
+        ? 'Rename template'
+        : 'Duplicate template'
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={title}
+      description={
+        naming.mode === 'save'
+          ? 'The page body becomes a template you can start new landing pages from.'
+          : undefined
+      }
+      footer={
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => name.trim() && onSubmit(name.trim())}
+            disabled={busy || !name.trim()}
+          >
+            {naming.mode === 'rename' ? 'Rename' : 'Save'}
+          </Button>
+        </div>
+      }
+    >
+      <FormField label="Template name" required>
+        <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={200} autoFocus />
+      </FormField>
+      {error ? <ErrorAlert error={error} /> : null}
+    </Modal>
+  )
+}
+
 function LandingPagesContent() {
   const { can } = usePermissions()
   const { data: sites, isLoading, error } = useLandingSites()
@@ -231,6 +348,15 @@ function LandingPagesContent() {
   const [branding, setBranding] = useState<LandingSite | null>(null)
   const [removing, setRemoving] = useState<LandingSite | null>(null)
   const remove = useDeleteLandingSite()
+  const library = useTemplateLibrary()
+  // One small name dialog serves three actions: duplicate, rename, save a page as a template.
+  const [naming, setNaming] = useState<
+    | { mode: 'duplicate'; template: LandingTemplate }
+    | { mode: 'rename'; template: LandingTemplate }
+    | { mode: 'save'; site: LandingSite }
+    | null
+  >(null)
+  const [deletingTemplate, setDeletingTemplate] = useState<LandingTemplate | null>(null)
 
   return (
     <div>
@@ -259,6 +385,11 @@ function LandingPagesContent() {
             setStartWith(key)
             setOpen(true)
           }}
+          onDuplicate={(t) => setNaming({ mode: 'duplicate', template: t })}
+          onRename={
+            can('landing:edit') ? (t) => setNaming({ mode: 'rename', template: t }) : undefined
+          }
+          onDelete={can('landing:delete') ? (t) => setDeletingTemplate(t) : undefined}
         />
       )}
 
@@ -311,6 +442,17 @@ function LandingPagesContent() {
                       Branding
                     </Button>
                   )}
+                  {can('landing:add') && page && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setNaming({ mode: 'save', site })}
+                      data-testid={`save-template-${site.slug}`}
+                    >
+                      <Save className="h-4 w-4" />
+                      Save as template
+                    </Button>
+                  )}
                   {can('landing:delete') && (
                     <Button
                       size="sm"
@@ -347,6 +489,58 @@ function LandingPagesContent() {
         }}
       />
       {branding && <BrandingDialog site={branding} onClose={() => setBranding(null)} />}
+      {naming && (
+        <TemplateNameDialog
+          naming={naming}
+          busy={
+            library.duplicate.isPending ||
+            library.update.isPending ||
+            library.saveFromPage.isPending
+          }
+          error={library.duplicate.error ?? library.update.error ?? library.saveFromPage.error}
+          onClose={() => setNaming(null)}
+          onSubmit={(name) => {
+            const finish = (title: string) => () => {
+              toast({ title })
+              setNaming(null)
+            }
+            if (naming.mode === 'duplicate')
+              library.duplicate.mutate(
+                { key: naming.template.key, name },
+                { onSuccess: finish('Template duplicated') }
+              )
+            else if (naming.mode === 'rename')
+              library.update.mutate(
+                { key: naming.template.key, name },
+                { onSuccess: finish('Template renamed') }
+              )
+            else {
+              const pageId = naming.site.pages[0]?.id
+              if (pageId)
+                library.saveFromPage.mutate(
+                  { pageId, name },
+                  { onSuccess: finish('Saved as a template') }
+                )
+            }
+          }}
+        />
+      )}
+      <ConfirmDialog
+        open={deletingTemplate !== null}
+        onClose={() => setDeletingTemplate(null)}
+        isLoading={library.remove.isPending}
+        title={`Delete the template "${deletingTemplate?.name ?? ''}"?`}
+        description="Pages already made from it are not changed. A built-in template that you delete is not brought back."
+        onConfirm={() =>
+          deletingTemplate &&
+          library.remove.mutate(deletingTemplate.key, {
+            onSuccess: () => {
+              toast({ title: 'Template deleted' })
+              setDeletingTemplate(null)
+            },
+          })
+        }
+      />
       <ConfirmDialog
         open={removing !== null}
         onClose={() => setRemoving(null)}

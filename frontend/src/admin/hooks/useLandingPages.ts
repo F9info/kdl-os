@@ -22,6 +22,8 @@ export interface LandingTemplate {
   key: string
   name: string
   description: string
+  /** Shipped with the product; false for a template someone duplicated or saved. */
+  builtin?: boolean
 }
 
 const sitesKey = ['landing-sites'] as const
@@ -38,8 +40,46 @@ export function useLandingTemplates() {
     queryKey: ['landing-templates'],
     queryFn: () =>
       api.get('/landing/templates').then((r) => r.data.data.templates as LandingTemplate[]),
-    staleTime: Infinity,
+    staleTime: 60_000,
   })
+}
+
+const templatesKey = ['landing-templates'] as const
+
+/** Duplicate, rename, delete and "save a landing page as a template" (the template library). */
+export function useTemplateLibrary() {
+  const qc = useQueryClient()
+  const done = () => {
+    qc.invalidateQueries({ queryKey: templatesKey })
+    qc.invalidateQueries({ queryKey: ['landing-template-preview'] })
+  }
+  const duplicate = useMutation({
+    mutationFn: (input: { key: string; name?: string }) =>
+      api
+        .post(`/landing/templates/${encodeURIComponent(input.key)}/duplicate`, { name: input.name })
+        .then((r) => r.data.data.template as LandingTemplate),
+    onSuccess: done,
+  })
+  const update = useMutation({
+    mutationFn: (input: { key: string; name?: string; description?: string }) => {
+      const { key, ...body } = input
+      return api
+        .put(`/landing/templates/${encodeURIComponent(key)}`, body)
+        .then((r) => r.data.data.template as LandingTemplate)
+    },
+    onSuccess: done,
+  })
+  const remove = useMutation({
+    mutationFn: (key: string) =>
+      api.delete(`/landing/templates/${encodeURIComponent(key)}`).then((r) => r.data.data),
+    onSuccess: done,
+  })
+  const saveFromPage = useMutation({
+    mutationFn: (input: { pageId: string; name: string; description?: string }) =>
+      api.post('/landing/templates', input).then((r) => r.data.data.template as LandingTemplate),
+    onSuccess: done,
+  })
+  return { duplicate, update, remove, saveFromPage }
 }
 
 /** The page a template would create (nothing is stored): for the "View template" screen. */

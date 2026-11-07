@@ -2,7 +2,8 @@ import { prisma } from '../../config/database.js';
 import { getDefaultProjectId } from '../../shared/default-project.js';
 import { writeActivityAsync } from '../user-management/shared/activity-logger.js';
 import { createForm } from '../forms/service.js';
-import { LANDING_TEMPLATES, buildLandingData, formSlugFor } from './templates.js';
+import { formSlugFor } from './templates.js';
+import { getLibraryTemplate, buildLandingData } from './template-library.js';
 
 const httpError = (status, message) => Object.assign(new Error(message), { status });
 
@@ -42,6 +43,7 @@ export const listLandingSites = async (client = prisma, requestedProjectId) => {
  */
 export const createLandingPage = async ({ name, slug, template }, actorId, client = prisma, requestedProjectId) => {
   const projectId = await projectIdOrThrow(client, requestedProjectId);
+  const tpl = await getLibraryTemplate(template, client); // 404 for a key that does not exist (or was deleted)
   try {
     const { site, page } = await client.$transaction(async (tx) => {
       const site = await tx.site.create({
@@ -53,14 +55,14 @@ export const createLandingPage = async ({ name, slug, template }, actorId, clien
           title: name,
           slug,
           status: 'DRAFT',
-          data: buildLandingData(template, slug, name),
+          data: buildLandingData(tpl, slug, name),
           created_by: actorId,
           project_id: projectId,
           site_id: site.id,
         },
         select: { id: true, slug: true, title: true, status: true },
       });
-      if (LANDING_TEMPLATES[template].hasForm) {
+      if (tpl.has_form) {
         await createForm({ name: `${name} enquiry`, slug: formSlugFor(slug) }, actorId, tx, projectId);
       }
       return { site, page };

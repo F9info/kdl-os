@@ -245,7 +245,7 @@ Effort is a rough planning guess: S (hours), M (about a day), L (several days).
 | T07 | Seed Admin and Developer, one-command setup | [x] developer@kdl.com and siteadmin@kdl.com seeded (dev only, random one-time passwords, forced change); new setup.sh replaces the old bootstrap. Users created in the dev DB. Fresh-clone run not tested end to end |
 | T08 | Settings: names, logos, theme mode | [x] company_name + company logos next to app name/logo (fallback to app values), Appearance (Light/Dark/System) in core Identity settings, wizard asks both names. Wizard still takes one logo; landing per-site overrides not split |
 | T09 | Demo content follows the answer | [x] module install seeds add DemoLogo rows only after "yes" (answering yes later seeds installed modules), menus seed no longer creates dead /p/demo-* links (cleanup on answer). Kept in the default project per D4; not a separate Demo project |
-| T10 | Template and theme library in DB | [ ] |
+| T10 | Template and theme library in the database | [x] templates + theme_presets tables, built-ins seeded from the constants (insert if missing, never overwritten, deleted ones stay deleted), landing create reads the DB, API + UI to duplicate, rename, delete, save a landing page as a template, save/delete theme looks. Not done: page and section templates (landing only), editing a template body in place (done by duplicate, edit the page, save as template) |
 | T11 | Page duplicate and reusable layouts | [ ] |
 | T12 | Guided 11-step workflow | [ ] |
 | T13 | Project preview and Launch | [ ] |

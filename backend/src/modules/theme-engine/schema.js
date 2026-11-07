@@ -104,3 +104,25 @@ export const putSiteStylesBodySchema = z.object({
       message: 'Send button, form or both',
     }),
 });
+
+// ── Theme presets (T10) ──────────────────────────────────────────────────────
+const hex6 = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Use a 6-digit hex colour like #1a2b3c');
+const paletteSchema = z
+  .object({ primary: hex6, secondary: hex6, accent: hex6, highlight: hex6, background: hex6, text: hex6 })
+  .strict();
+const presetKey = z.string().trim().min(1).max(100);
+export const createPresetSchema = z.object({
+  body: z.object({ name: z.string().trim().min(1).max(60), light: paletteSchema, dark: paletteSchema }),
+});
+export const updatePresetSchema = z.object({
+  params: z.object({ key: presetKey }),
+  body: z
+    .object({ name: z.string().trim().min(1).max(60), light: paletteSchema, dark: paletteSchema })
+    .partial()
+    .strict(),
+});
+export const presetKeyParams = z.object({ params: z.object({ key: presetKey }) });
+export const duplicatePresetSchema = z.object({
+  params: z.object({ key: presetKey }),
+  body: z.object({ name: z.string().trim().max(60).optional() }).default({}),
+});

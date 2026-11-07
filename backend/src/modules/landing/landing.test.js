@@ -10,6 +10,7 @@ const prismaMock = vi.hoisted(() => {
   return {
     project: { findFirst: vi.fn() },
     site: { findMany: vi.fn(), findFirst: vi.fn() },
+    template: { findMany: vi.fn(), upsert: vi.fn(), findFirst: vi.fn() },
     $transaction: vi.fn(async (fn) => fn(tx)),
     tx,
   };
@@ -18,13 +19,21 @@ vi.mock('../../config/database.js', () => ({ prisma: prismaMock }));
 vi.mock('../user-management/shared/activity-logger.js', () => ({ writeActivityAsync: vi.fn() }));
 
 const { listLandingSites, createLandingPage, deleteLandingSite } = await import('./service.js');
-const { listTemplates, buildLandingData, TEMPLATE_KEYS } = await import('./templates.js');
+const { listTemplates, buildLandingData, TEMPLATE_KEYS, LANDING_TEMPLATES } = await import('./templates.js');
 const { handlePreview } = await import('./controller.js');
 const { createLandingSchema } = await import('./schema.js');
 const { manifestSchema } = await import('../../shared/modules/manifest-schema.js');
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // The library table, seeded from the constants (what ensureBuiltinTemplates does).
+  prismaMock.template.findMany.mockResolvedValue(Object.keys(LANDING_TEMPLATES).map((key) => ({ key })));
+  prismaMock.template.findFirst.mockImplementation(async ({ where }) => {
+    const t = LANDING_TEMPLATES[where.key];
+    return t && Object.hasOwn(LANDING_TEMPLATES, where.key)
+      ? { id: where.key, key: where.key, name: t.name, data: t.body('__slug__'), has_form: !!t.hasForm }
+      : null;
+  });
   prismaMock.project.findFirst.mockResolvedValue({ id: 'p1' });
   prismaMock.tx.site.create.mockResolvedValue({ id: 's1', slug: 'spring', name: 'Spring' });
   prismaMock.tx.form.create.mockResolvedValue({ id: 'f1', name: 'Spring enquiry' });
@@ -73,10 +82,9 @@ describe('createLandingSchema', () => {
   it('defaults the template to blank', () => {
     expect(parse({ name: 'A', slug: 'a' }).data.body.template).toBe('blank');
   });
-  it('rejects a bad slug, an empty name and an unknown template', () => {
+  it('rejects a bad slug and an empty name (an unknown template is a 404 from the library)', () => {
     expect(parse({ name: 'A', slug: 'Bad Slug' }).success).toBe(false);
     expect(parse({ name: ' ', slug: 'a' }).success).toBe(false);
-    expect(parse({ name: 'A', slug: 'a', template: 'nope' }).success).toBe(false);
   });
 });
 
@@ -122,6 +130,11 @@ describe('createLandingPage', () => {
     });
   });
 
+  it('404 for a template key that is not in the library (or was deleted)', async () => {
+    await expect(createLandingPage({ name: 'A', slug: 'a', template: 'nope' }, 'u1')).rejects.toMatchObject({ status: 404 });
+    expect(prismaMock.tx.site.create).not.toHaveBeenCalled();
+  });
+
   it('404 when there is no project', async () => {
     prismaMock.project.findFirst.mockResolvedValue(null);
     await expect(createLandingPage({ name: 'A', slug: 'a', template: 'blank' }, 'u1')).rejects.toMatchObject({
@@ -143,7 +156,7 @@ describe('listLandingSites', () => {
 });
 
 describe('handlePreview (View template)', () => {
-  const call = (key) => {
+  const call = async (key) => {
     const res = {
       statusCode: 200,
       body: null,
@@ -156,22 +169,22 @@ describe('handlePreview (View template)', () => {
         return this;
       },
     };
-    handlePreview({ params: { key } }, res);
+    await handlePreview({ params: { key } }, res, vi.fn());
     return res;
   };
 
-  it('returns the page a template would create, without creating anything', () => {
-    const res = call('lead-gen');
+  it('returns the page a template would create, without creating anything', async () => {
+    const res = await call('lead-gen');
     expect(res.statusCode).toBe(200);
     expect(res.body.data.name).toBe('Lead generation');
     expect(res.body.data.data.content[0].type).toBe('LandingHero');
     expect(prismaMock.tx.builderPage.create).not.toHaveBeenCalled();
   });
 
-  it('404 for an unknown template, including inherited object keys', () => {
-    expect(call('nope').statusCode).toBe(404);
-    expect(call('constructor').statusCode).toBe(404);
-    expect(call('__proto__').statusCode).toBe(404);
+  it('404 for an unknown template, including inherited object keys', async () => {
+    expect((await call('nope')).statusCode).toBe(404);
+    expect((await call('constructor')).statusCode).toBe(404);
+    expect((await call('__proto__')).statusCode).toBe(404);
   });
 });
 

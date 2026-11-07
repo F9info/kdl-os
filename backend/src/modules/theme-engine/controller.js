@@ -186,3 +186,54 @@ export const putSiteStyles = async (req, res, next) => {
     next(err);
   }
 };
+
+// ── Theme presets (T10): the looks offered in the Simple view ────────────────
+import * as presets from './presets.js';
+
+const presetFail = (res, next, err) => (err.status ? errorResponse(res, err.message, err.status) : next(err));
+const presetLog = (req, action, description) =>
+  writeActivityAsync({ actor: req.user?.id, module: 'theme-engine', action, description, ip_address: getClientIp(req) });
+
+export const getPresets = async (_req, res, next) => {
+  try {
+    return successResponse(res, { presets: await presets.listPresets() });
+  } catch (err) {
+    presetFail(res, next, err);
+  }
+};
+export const postPreset = async (req, res, next) => {
+  try {
+    const preset = await presets.createPreset(req.validated.body, req.user?.id ?? null);
+    presetLog(req, 'preset_created', `Theme preset "${preset.name}" created`);
+    return successResponse(res, { preset }, 201);
+  } catch (err) {
+    presetFail(res, next, err);
+  }
+};
+export const putPreset = async (req, res, next) => {
+  try {
+    const preset = await presets.updatePreset(req.params.key, req.validated.body);
+    presetLog(req, 'preset_updated', `Theme preset "${preset.name}" updated`);
+    return successResponse(res, { preset });
+  } catch (err) {
+    presetFail(res, next, err);
+  }
+};
+export const postPresetDuplicate = async (req, res, next) => {
+  try {
+    const preset = await presets.duplicatePreset(req.params.key, req.validated.body, req.user?.id ?? null);
+    presetLog(req, 'preset_created', `Theme preset "${preset.name}" duplicated`);
+    return successResponse(res, { preset }, 201);
+  } catch (err) {
+    presetFail(res, next, err);
+  }
+};
+export const removePreset = async (req, res, next) => {
+  try {
+    await presets.deletePreset(req.params.key);
+    presetLog(req, 'preset_deleted', `Theme preset "${req.params.key}" deleted`);
+    return successResponse(res, { deleted: true });
+  } catch (err) {
+    presetFail(res, next, err);
+  }
+};

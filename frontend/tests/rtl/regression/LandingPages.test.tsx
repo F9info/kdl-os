@@ -349,3 +349,76 @@ describe('Deleting a landing page', () => {
     expect(screen.queryByTestId('delete-landing-spring')).toBeNull()
   })
 })
+
+describe('Template library (T10)', () => {
+  it('duplicates a template under a new name', async () => {
+    mockSites([])
+    h.post.mockResolvedValue({
+      data: { data: { template: { key: 'copy-1', name: 'Spring offer' } } },
+    })
+    render(<LandingPagesPage />)
+    fireEvent.click(await screen.findByTestId('duplicate-template-lead-gen'))
+    const input = (await screen.findByLabelText(/template name/i)) as HTMLInputElement
+    expect(input.value).toBe('Lead generation (copy)')
+    fireEvent.change(input, { target: { value: 'Spring offer' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() =>
+      expect(h.post).toHaveBeenCalledWith('/landing/templates/lead-gen/duplicate', {
+        name: 'Spring offer',
+      })
+    )
+  })
+
+  it('renames and deletes a template', async () => {
+    mockSites([])
+    h.put.mockResolvedValue({ data: { data: { template: {} } } })
+    h.del.mockResolvedValue({ data: { data: { deleted: true } } })
+    render(<LandingPagesPage />)
+    fireEvent.click(await screen.findByTestId('rename-template-event'))
+    fireEvent.change(await screen.findByLabelText(/template name/i), {
+      target: { value: 'Webinar' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Rename' }))
+    await waitFor(() =>
+      expect(h.put).toHaveBeenCalledWith('/landing/templates/event', { name: 'Webinar' })
+    )
+
+    fireEvent.click(await screen.findByTestId('delete-template-event'))
+    fireEvent.click(await screen.findByRole('button', { name: /^delete$/i }))
+    await waitFor(() => expect(h.del).toHaveBeenCalledWith('/landing/templates/event'))
+  })
+
+  it('saves a landing page as a template', async () => {
+    mockSites([
+      {
+        id: 's1',
+        slug: 'spring',
+        name: 'Spring sale',
+        domain: null,
+        pages: [{ id: 'pg1', slug: 'spring', title: 'Spring sale', status: 'DRAFT' }],
+      },
+    ])
+    h.post.mockResolvedValue({
+      data: { data: { template: { key: 'saved', name: 'Spring sale' } } },
+    })
+    render(<LandingPagesPage />)
+    fireEvent.click(await screen.findByTestId('save-template-spring'))
+    fireEvent.click(await screen.findByRole('button', { name: 'Save' }))
+    await waitFor(() =>
+      expect(h.post).toHaveBeenCalledWith('/landing/templates', {
+        pageId: 'pg1',
+        name: 'Spring sale',
+      })
+    )
+  })
+
+  it('without landing:add there is no duplicate or save button; without edit and delete, no rename or delete', async () => {
+    mockSites([])
+    h.can.mockImplementation((p: string) => p === 'landing:view')
+    render(<LandingPagesPage />)
+    await screen.findByText('No landing pages yet')
+    expect(screen.queryByTestId('duplicate-template-lead-gen')).toBeNull()
+    expect(screen.queryByTestId('rename-template-lead-gen')).toBeNull()
+    expect(screen.queryByTestId('delete-template-lead-gen')).toBeNull()
+  })
+})

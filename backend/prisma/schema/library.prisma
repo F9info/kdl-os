@@ -1,0 +1,38 @@
+// The template and theme library (T10). Starting points used to be code constants; they are rows now, so a
+// user can duplicate, edit and delete them without a code change. Built-in rows are inserted from the code
+// constants only when their key is missing, and are never overwritten afterwards, so edits and deletions stick.
+
+model Template {
+  id          String    @id @default(cuid())
+  key         String    @unique
+  kind        String    @default("LANDING") // LANDING for now; page and section templates can share the table
+  name        String
+  description String    @default("")
+  // The page body: Puck content blocks. The page's own slug is stored as the token __slug__ and filled in on use.
+  data        Json
+  has_form    Boolean   @default(false)
+  builtin     Boolean   @default(false)
+  created_by  String?
+  deleted_at  DateTime?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  @@index([kind])
+  @@map("templates")
+}
+
+// A colour look for the Simple theme view: six quick colours for light and for dark.
+model ThemePreset {
+  id         String    @id @default(cuid())
+  key        String    @unique
+  name       String
+  light      Json
+  dark       Json
+  builtin    Boolean   @default(false)
+  created_by String?
+  deleted_at DateTime?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  @@map("theme_presets")
+}

@@ -16,6 +16,9 @@ import api from '@/lib/axios'
 import { pickProject } from '@/stores/project.store'
 import { toast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { usePermissions } from '@/admin/hooks/usePermissions'
+import { useThemePresets } from '@/admin/hooks/useThemePresets'
 import { loadGoogleFont } from '@/admin/lib/load-google-font'
 import { refreshThemeEngineTokens } from '@/components/providers/ThemeEngineProvider'
 import {
@@ -30,7 +33,6 @@ import {
 } from './simple/fonts'
 import {
   HEX6,
-  PRESETS,
   QUICK,
   contrastWarnings,
   tokenVar,
@@ -82,6 +84,9 @@ const statusOf = (err: unknown) => (err as { response?: { status?: number } })?.
 // platform: 'webapp' (the public website) or 'webapp_admin' (this admin app). Same colour model for both.
 export function SimpleThemeView({ platform: PLATFORM = 'webapp' }: { platform?: string }) {
   const qc = useQueryClient()
+  const { can } = usePermissions()
+  const { presets, create: createPreset, remove: removePreset } = useThemePresets()
+  const [presetName, setPresetName] = useState('')
   const [mode, setMode] = useState<Mode>('light')
   // fieldId → edited value (only colour fields the user changed)
   const [edits, setEdits] = useState<Record<string, string>>({})
@@ -156,6 +161,35 @@ export function SimpleThemeView({ platform: PLATFORM = 'webapp' }: { platform?: 
     return f ? (edits[f.id] ?? f.value ?? '') : ''
   }
   const palette = Object.fromEntries(QUICK.map((q) => [q.key, valueOf(q.key)])) as Palette
+  // The six colours of either mode as they stand (edited or published), to save them as a look.
+  const paletteOfMode = (m: Mode): Palette =>
+    Object.fromEntries(
+      QUICK.map((q) => {
+        const f = brandingFields.find((x) => x.slug === `${PLATFORM}.branding.${m}.${q.path}`)
+        return [q.key, f ? (edits[f.id] ?? f.value ?? '') : '']
+      })
+    ) as Palette
+  const saveAsPreset = () => {
+    const name = presetName.trim()
+    const light = paletteOfMode('light')
+    const dark = paletteOfMode('dark')
+    if (![...Object.values(light), ...Object.values(dark)].every((v) => HEX6.test(v))) {
+      toast({
+        title: 'Cannot save yet',
+        description: 'Every colour must be a 6-digit hex like #1a2b3c.',
+      })
+      return
+    }
+    createPreset.mutate(
+      { name, light, dark },
+      {
+        onSuccess: () => {
+          setPresetName('')
+          toast({ title: 'Look saved', description: `"${name}" is now in Start from a look.` })
+        },
+      }
+    )
+  }
   // Published value of every other colour in this mode (and of the button text colour), so the
   // preview shows exactly what Publish leaves alone and never borrows the admin panel's own
   // theme for a token the quick colours skip.
@@ -451,19 +485,56 @@ export function SimpleThemeView({ platform: PLATFORM = 'webapp' }: { platform?: 
           <div>
             <p className="mb-2 text-xs text-muted-foreground">Start from a look</p>
             <div className="flex flex-wrap gap-2">
-              {PRESETS.map((p) => (
-                <button
-                  key={p.name}
-                  type="button"
-                  disabled={locked}
-                  onClick={() => applyPalette(p[mode])}
-                  className="flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:bg-muted disabled:opacity-50"
+              {presets.map((p) => (
+                <span
+                  key={p.key}
+                  className="flex items-center rounded-md border border-border text-sm text-foreground"
                 >
-                  <span className="h-3 w-3 rounded-full" style={{ background: p[mode].primary }} />
-                  {p.name}
-                </button>
+                  <button
+                    type="button"
+                    disabled={locked}
+                    onClick={() => applyPalette(p[mode])}
+                    className="flex items-center gap-2 rounded-md px-3 py-1.5 hover:bg-muted disabled:opacity-50"
+                  >
+                    <span
+                      className="h-3 w-3 rounded-full"
+                      style={{ background: p[mode].primary }}
+                    />
+                    {p.name}
+                  </button>
+                  {can('theme-engine:edit') && (
+                    <button
+                      type="button"
+                      aria-label={`Delete the look ${p.name}`}
+                      disabled={removePreset.isPending}
+                      onClick={() => removePreset.mutate(p.key)}
+                      className="px-2 py-1.5 text-muted-foreground hover:text-destructive"
+                    >
+                      ×
+                    </button>
+                  )}
+                </span>
               ))}
             </div>
+            {can('theme-engine:edit') && (
+              <div className="mt-3 flex max-w-sm gap-2">
+                <Input
+                  value={presetName}
+                  onChange={(e) => setPresetName(e.target.value)}
+                  placeholder="Name this look"
+                  aria-label="Name for the new look"
+                  maxLength={60}
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={!presetName.trim() || createPreset.isPending}
+                  onClick={saveAsPreset}
+                >
+                  Save these colours
+                </Button>
+              </div>
+            )}
             {PLATFORM === 'webapp' && (
               <>
                 <Button
