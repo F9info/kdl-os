@@ -183,29 +183,104 @@ describe('(c) balance > 0 after createProject', () => {
   });
 });
 
-// ─── (e) single-project guard: this app is self-hosted, single-site ──────────
+// ─── (e) many projects per installation (T01; replaces the old single-project guard) ───
 
-describe('(e) createProject refuses a second project', () => {
+describe('(e) createProject allows many projects', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setupNewProject();
   });
 
-  it('throws 409 when a project already exists', async () => {
+  it('creates a second project even when one already exists', async () => {
     mockPrisma.project.findFirst.mockResolvedValue({ id: 'proj-existing' });
 
     await expect(
       service.createProject({ name: 'Second', slug: 'second', actorId: 'user-1' })
+    ).resolves.toMatchObject({ id: 'proj-1' });
+    expect(mockTx.project.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('still rejects a duplicate slug with 409', async () => {
+    mockPrisma.project.findUnique.mockResolvedValue({ id: 'proj-existing' });
+
+    await expect(
+      service.createProject({ name: 'Second', slug: 'taken', actorId: 'user-1' })
     ).rejects.toMatchObject({ status: 409 });
     expect(mockTx.project.create).not.toHaveBeenCalled();
   });
+});
 
-  it('allows creation when no project exists yet', async () => {
-    mockPrisma.project.findFirst.mockResolvedValue(null);
+// ─── (f) project kinds, status, config (T01) ──────────────────────────────────
 
-    await expect(
-      service.createProject({ name: 'Test', slug: 'test', actorId: 'user-1' })
-    ).resolves.toMatchObject({ id: 'proj-1' });
+describe('(f) createProject stores kinds, status and config', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setupNewProject();
+  });
+
+  const createdData = () => mockTx.project.create.mock.calls[0][0].data;
+
+  it('defaults kinds to [ADMIN] and leaves status to the DB default (DRAFT)', async () => {
+    await service.createProject({ name: 'A', slug: 'a', actorId: 'user-1' });
+    expect(createdData().kinds).toEqual(['ADMIN']);
+    expect(createdData()).not.toHaveProperty('status');
+  });
+
+  it('always includes ADMIN and keeps a stable order', async () => {
+    await service.createProject({ name: 'F', slug: 'f', kinds: ['LANDING', 'STATIC', 'WEBSITE'], actorId: 'user-1' });
+    expect(createdData().kinds).toEqual(['ADMIN', 'WEBSITE', 'LANDING', 'STATIC']);
+  });
+
+  it('adds ADMIN when it is not sent and drops duplicates', async () => {
+    await service.createProject({ name: 'B', slug: 'b', kinds: ['WEBSITE', 'WEBSITE'], actorId: 'user-1' });
+    expect(createdData().kinds).toEqual(['ADMIN', 'WEBSITE']);
+  });
+
+  it('passes status and config through', async () => {
+    await service.createProject({ name: 'C', slug: 'c', status: 'ACTIVE', config: { region: 'in' }, actorId: 'user-1' });
+    expect(createdData().status).toBe('ACTIVE');
+    expect(createdData().config).toEqual({ region: 'in' });
+  });
+});
+
+describe('(f2) updateProject changes kinds, status and config', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockPrisma.project.findFirst.mockResolvedValue({ id: 'proj-1', slug: 'test' });
+    mockPrisma.project.update.mockResolvedValue({ id: 'proj-1' });
+    mockTx.project.update = vi.fn().mockResolvedValue({ id: 'proj-1' });
+  });
+
+  it('updates only the fields that were sent', async () => {
+    await service.updateProject('proj-1', { status: 'ARCHIVED' });
+    expect(mockTx.project.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'proj-1' }, data: { status: 'ARCHIVED' } })
+    );
+  });
+
+  it('normalizes kinds on update', async () => {
+    await service.updateProject('proj-1', { kinds: ['LANDING'] });
+    expect(mockTx.project.update.mock.calls[0][0].data.kinds).toEqual(['ADMIN', 'LANDING']);
+  });
+});
+
+describe('(f3) request validation', () => {
+  it('rejects an unknown kind', async () => {
+    const { createProjectSchema } = await import('./schema.js');
+    const r = createProjectSchema.safeParse({ body: { name: 'X', slug: 'x', kinds: ['MOBILE'] } });
+    expect(r.success).toBe(false);
+  });
+
+  it('rejects an unknown status and an empty kinds list', async () => {
+    const { createProjectSchema } = await import('./schema.js');
+    expect(createProjectSchema.safeParse({ body: { name: 'X', slug: 'x', status: 'LIVE' } }).success).toBe(false);
+    expect(createProjectSchema.safeParse({ body: { name: 'X', slug: 'x', kinds: [] } }).success).toBe(false);
+  });
+
+  it('accepts a valid body', async () => {
+    const { createProjectSchema } = await import('./schema.js');
+    const r = createProjectSchema.safeParse({ body: { name: 'X', slug: 'x', kinds: ['WEBSITE'], status: 'DRAFT', config: {} } });
+    expect(r.success).toBe(true);
   });
 });
 

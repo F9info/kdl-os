@@ -2,11 +2,31 @@
 // Full tenancy scoping per PROJECTS_ARCH.md lands in the projects build.
 // credits.prisma FKs project_id to this table; do not rename or retype id.
 
+// What a project provides. A project holds a SET of kinds, so one project can combine them
+// (admin + website + landing + static). ADMIN is always implied: every project has the admin panel.
+enum ProjectKind {
+  ADMIN
+  WEBSITE
+  LANDING
+  STATIC
+}
+
+// Lifecycle of a project. DRAFT = being built, ACTIVE = launched/in use, ARCHIVED = kept, not in use.
+enum ProjectStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
 model Project {
   id         String    @id @default(cuid())
   name       String
   slug       String    @unique
   is_default Boolean   @default(false)
+  kinds      ProjectKind[] @default([ADMIN])
+  status     ProjectStatus @default(DRAFT)
+  // Free-form per-project settings (JSON object). Typed keys are added as features need them.
+  config     Json      @default("{}")
   // Explicit visibility flag replacing the null-created_by org-shared convention (KDL-635).
   // Seeded Default Project has is_shared=true; new user-created projects default to false.
   is_shared  Boolean   @default(false)

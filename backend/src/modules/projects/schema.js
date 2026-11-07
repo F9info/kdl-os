@@ -1,6 +1,16 @@
 import { z } from 'zod';
 import { IDENTITY_FIELDS } from '../identity/schema.js';
 
+export const PROJECT_KINDS = ['ADMIN', 'WEBSITE', 'LANDING', 'STATIC'];
+export const PROJECT_STATUSES = ['DRAFT', 'ACTIVE', 'ARCHIVED'];
+
+// A project holds a SET of kinds (it can combine admin, website, landing, static). ADMIN is always implied,
+// so it is added by normalizeKinds() and never needs to be sent.
+const kindsField = z.array(z.enum(PROJECT_KINDS)).min(1).max(PROJECT_KINDS.length);
+const configField = z.record(z.string(), z.unknown());
+
+export const normalizeKinds = (kinds) => ['ADMIN', ...PROJECT_KINDS.filter((k) => k !== 'ADMIN' && kinds?.includes(k))];
+
 export const createProjectSchema = z.object({
   body: z.object({
     name: z.string().min(1).max(200),
@@ -10,6 +20,9 @@ export const createProjectSchema = z.object({
       .max(100)
       .regex(/^[a-z0-9-]+$/, 'Slug must be lowercase alphanumeric with hyphens'),
     is_default: z.boolean().optional().default(false),
+    kinds: kindsField.optional(),
+    status: z.enum(PROJECT_STATUSES).optional(),
+    config: configField.optional(),
   }),
 });
 
@@ -23,6 +36,9 @@ export const updateProjectSchema = z.object({
       .regex(/^[a-z0-9-]+$/, 'Slug must be lowercase alphanumeric with hyphens')
       .optional(),
     is_default: z.boolean().optional(),
+    kinds: kindsField.optional(),
+    status: z.enum(PROJECT_STATUSES).optional(),
+    config: configField.optional(),
   }),
 });
 

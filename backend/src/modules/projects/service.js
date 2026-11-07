@@ -1,5 +1,9 @@
 import { prisma } from '../../config/database.js';
 import { ensureDefaultSite } from './sites.js';
+import { normalizeKinds } from './schema.js';
+
+// Fields returned for a project everywhere (list, get, create, update).
+const PROJECT_SELECT = { id: true, name: true, slug: true, is_default: true, kinds: true, status: true, config: true };
 
 // Default starter credit grant for new projects: 100 credits (100_000_000 µc).
 // Covers: brand.inference (≤10 cr) + guidelines PDF (5 cr) + ≥15 collateral renders @ 5 cr each.
@@ -31,14 +35,14 @@ export async function listProjects() {
   return prisma.project.findMany({
     where: { deleted_at: null },
     orderBy: [{ is_default: 'desc' }, { created_at: 'asc' }],
-    select: { id: true, name: true, slug: true, is_default: true },
+    select: PROJECT_SELECT,
   });
 }
 
 export async function getProject(id) {
   const project = await prisma.project.findFirst({
     where: { id, deleted_at: null },
-    select: { id: true, name: true, slug: true, is_default: true },
+    select: PROJECT_SELECT,
   });
   if (!project) {
     const err = new Error('Project not found');
@@ -83,22 +87,9 @@ export async function getProjectForAccessCheck(id) {
   return project;
 }
 
-export async function createProject({ name, slug, is_default, actorId }) {
-  // This app is single-project by design (KDL open-source self-host model —
-  // one clone = one site, not a multi-tenant "projects" workspace). The
-  // Project/ProjectMember scaffolding stays as an internal scoping key for
-  // brand-kit/custom-blocks/collateral/credits (removing it means migrating
-  // 6 tables' FKs for zero user-visible benefit — see the "only one project"
-  // decision this guards), but a second row must never be creatable. Seeding
-  // (seed.js) writes the one default project directly via prisma, bypassing
-  // this guard entirely, so this only ever blocks a SECOND project.
-  const anyExisting = await prisma.project.findFirst({ where: { deleted_at: null } });
-  if (anyExisting) {
-    const err = new Error('Only one project is supported — the default project already exists');
-    err.status = 409;
-    throw err;
-  }
-
+export async function createProject({ name, slug, is_default, kinds, status, config, actorId }) {
+  // One installation manages many projects (admin, website, landing, static, any mix).
+  // The old single-project guard was removed in T01; see docs/KDL_OS_Task_List.md.
   const existing = await prisma.project.findUnique({ where: { slug } });
   if (existing) {
     const err = new Error(`A project with slug "${slug}" already exists`);
@@ -115,8 +106,16 @@ export async function createProject({ name, slug, is_default, actorId }) {
       await tx.project.updateMany({ where: { is_default: true }, data: { is_default: false } });
     }
     const proj = await tx.project.create({
-      data: { name, slug, is_default: is_default ?? false, created_by: actorId ?? null },
-      select: { id: true, name: true, slug: true, is_default: true },
+      data: {
+        name,
+        slug,
+        is_default: is_default ?? false,
+        kinds: normalizeKinds(kinds),
+        ...(status !== undefined && { status }),
+        ...(config !== undefined && { config }),
+        created_by: actorId ?? null,
+      },
+      select: PROJECT_SELECT,
     });
 
     // Every project starts with its main website site.
@@ -153,7 +152,7 @@ export async function createProject({ name, slug, is_default, actorId }) {
   return project;
 }
 
-export async function updateProject(id, { name, slug, is_default }) {
+export async function updateProject(id, { name, slug, is_default, kinds, status, config }) {
   const existing = await prisma.project.findFirst({ where: { id, deleted_at: null } });
   if (!existing) {
     const err = new Error('Project not found');
@@ -180,8 +179,11 @@ export async function updateProject(id, { name, slug, is_default }) {
         ...(name !== undefined && { name }),
         ...(slug !== undefined && { slug }),
         ...(is_default !== undefined && { is_default }),
+        ...(kinds !== undefined && { kinds: normalizeKinds(kinds) }),
+        ...(status !== undefined && { status }),
+        ...(config !== undefined && { config }),
       },
-      select: { id: true, name: true, slug: true, is_default: true },
+      select: PROJECT_SELECT,
     });
   });
 }

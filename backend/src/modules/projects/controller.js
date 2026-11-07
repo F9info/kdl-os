@@ -25,8 +25,8 @@ export const handleGet = async (req, res, next) => {
 
 export const handleCreate = async (req, res, next) => {
   try {
-    const { name, slug, is_default } = req.validated?.body ?? req.body;
-    const data = await createProject({ name, slug, is_default, actorId: req.user?.id ?? null });
+    const { name, slug, is_default, kinds, status, config } = req.validated?.body ?? req.body;
+    const data = await createProject({ name, slug, is_default, kinds, status, config, actorId: req.user?.id ?? null });
     successResponse(res, data, 201);
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);
@@ -36,8 +36,8 @@ export const handleCreate = async (req, res, next) => {
 
 export const handleUpdate = async (req, res, next) => {
   try {
-    const { name, slug, is_default } = req.validated?.body ?? req.body;
-    const data = await updateProject(req.params.id, { name, slug, is_default });
+    const { name, slug, is_default, kinds, status, config } = req.validated?.body ?? req.body;
+    const data = await updateProject(req.params.id, { name, slug, is_default, kinds, status, config });
     successResponse(res, data);
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);
