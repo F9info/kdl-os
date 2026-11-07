@@ -1,46 +1,93 @@
+# Production overlay. Use it on top of the base file, with real values in .env:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Required in .env (compose refuses to start without them, on purpose):
+#   IMAGE_TAG             a release version tag. Never `latest`: it is not reproducible.
+#   SEED_ADMIN_PASSWORD   12+ characters. There is no default admin password in production.
+#   SMTP_HOST SMTP_USER SMTP_PASS SMTP_FROM   real mail, for password reset (SMTP_PORT defaults to 587)
+# Optional:
+#   NGINX_CONF            default ./infra/nginx/nginx.prod.conf (TLS). Use ./infra/nginx/nginx.conf only when a load
+#                         balancer in front terminates TLS.
+#   TLS_CERT_DIR          default ./infra/certs (fullchain.pem and privkey.pem)
+#
+# Third-party images are pinned by digest (the tag is in the comment). Refresh a digest on purpose, after
+# checking the new image: docker buildx imagetools inspect <image>:<tag>
+
 services:
   postgres:
+    image: postgres@sha256:3b0d656f5fff31c7d8a64f500a703dcf3f35e98ce78f602831a73059a5e6a012 # postgres:15
     restart: always
     ports: !reset []
 
   redis:
+    image: redis@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99 # redis:7-alpine
     restart: always
     ports: !reset []
 
   minio:
+    image: minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e # minio/minio
     restart: always
     ports: !reset []
 
   meilisearch:
+    image: getmeili/meilisearch@sha256:010341a778fe82592cff7a4f85d05eb89d2618141defea005616a476064fa56a # v1.7
     restart: always
     ports: !reset []
 
   chromadb:
+    image: chromadb/chroma@sha256:1e0b73a187a28757c572acba508c46f48c9e8b0acaf5c20e6d95cdedce1acdf6 # chromadb/chroma
     restart: always
     ports: !reset []
 
+  # Development mail catcher. In production mail goes to the real SMTP server below, and MailHog only
+  # starts with `--profile dev`.
+  mailhog:
+    profiles: ["dev"]
+
   backend:
-    image: ghcr.io/kalamdreamlabs/kdl-starter-kit/backend:${IMAGE_TAG:-latest}
+    image: ghcr.io/kalamdreamlabs/kdl-starter-kit/backend:${IMAGE_TAG:?IMAGE_TAG is required in production (a version tag, never latest)}
     restart: always
     environment:
       NODE_ENV: production
+      # The base file has a development default for the first admin password. Production has none.
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:?SEED_ADMIN_PASSWORD is required in production (12+ characters)}
+      # The base file points mail at MailHog. Production uses a real SMTP server.
+      SMTP_HOST: ${SMTP_HOST:?SMTP_HOST is required in production}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:?SMTP_USER is required in production}
+      SMTP_PASS: ${SMTP_PASS:?SMTP_PASS is required in production}
+      SMTP_FROM: ${SMTP_FROM:?SMTP_FROM is required in production}
     ports: !reset []
 
   frontend:
-    image: ghcr.io/kalamdreamlabs/kdl-starter-kit/frontend:${IMAGE_TAG:-latest}
+    image: ghcr.io/kalamdreamlabs/kdl-starter-kit/frontend:${IMAGE_TAG:?IMAGE_TAG is required in production (a version tag, never latest)}
     restart: always
     environment:
       NODE_ENV: production
     ports: !reset []
 
   ai-services:
-    image: ghcr.io/kalamdreamlabs/kdl-starter-kit/ai-services:${IMAGE_TAG:-latest}
+    image: ghcr.io/kalamdreamlabs/kdl-starter-kit/ai-services:${IMAGE_TAG:?IMAGE_TAG is required in production (a version tag, never latest)}
     restart: always
     environment:
       NODE_ENV: production
     ports: !reset []
 
-  nginx:
+  # The public website. The base file runs `next dev` (hot reload, verbose errors, a dev websocket). Production
+  # builds once and runs `next start`. After you regenerate the site, restart this service to serve the new build.
+  site-preview:
+    image: node@sha256:16e22a550f3863206a3f701448c45f7912c6896a62de43add43bb9c86130c3e2 # node:22-alpine
     restart: always
-    ports:
-      - "80:80"
+    command: >
+      sh -c "until [ -f package.json ]; do sleep 3; done;
+      npm install --no-audit --no-fund && npx next build && NODE_ENV=production npx next start -p 3000"
+
+  nginx:
+    image: nginx@sha256:54f2a904c251d5a34adf545a72d32515a15e08418dae0266e23be2e18c66fefa # nginx:alpine
+    restart: always
+    ports: !override
+      - "80:80" # only redirects to https (and answers /health)
+      - "443:443"
+    volumes: !override
+      - ${NGINX_CONF:-./infra/nginx/nginx.prod.conf}:/etc/nginx/nginx.conf:ro
+      - ${TLS_CERT_DIR:-./infra/certs}:/etc/nginx/certs:ro

@@ -61,3 +61,6 @@ frontend/projects/*
 backups/
 *.sql
 !backend/prisma/migrations/**/*.sql
+
+# TLS certificates for the production nginx (infra/nginx/nginx.prod.conf). Never commit keys.
+infra/certs/

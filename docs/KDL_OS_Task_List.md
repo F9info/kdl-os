@@ -228,8 +228,8 @@ Effort is a rough planning guess: S (hours), M (about a day), L (several days).
 | ID | Task | Status |
 |---|---|---|
 | S1 | Purge committed DB dump | [~] untracked and ignored; history kept by decision; credential rotation is yours |
-| S2 | TLS, HSTS, headers | [ ] |
-| S3 | Production compose hardening | [ ] |
+| S2 | TLS, HSTS, headers | [x] nginx.prod.conf (TLS 1.2+, HSTS, redirect); dev config hardened; verified in a container. Needs a real certificate to go live |
+| S3 | Production compose hardening | [~] done: required IMAGE_TAG and seed password, real SMTP, no MailHog, next start, digest-pinned images. Open: per-service env_file, Chroma auth, Postgres app role |
 | S4 | Secret scanning and CI supply chain | [ ] |
 | S5 | Auth hardening | [ ] |
 | S6 | AI services spend and tenant safety | [ ] |

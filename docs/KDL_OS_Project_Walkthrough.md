@@ -391,15 +391,33 @@ Open http://localhost/login in your normal Windows browser.
 
 # Part 11. Production run
 
+Use the production overlay on top of the base file:
+
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 
-The production overrides set `restart: always` and `NODE_ENV=production`, and expose only Nginx on port 80. In production the seed refuses to run without `SEED_ADMIN_PASSWORD` (12 or more characters). There is deliberately no default password. Before going live:
+Compose refuses to start unless these are set in `.env`. This is on purpose:
+
+| Variable | Why |
+|---|---|
+| `IMAGE_TAG` | A release version tag. Never `latest` |
+| `SEED_ADMIN_PASSWORD` | 12 or more characters. Production has no default admin password |
+| `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | Real mail for password reset. `SMTP_PORT` defaults to 587 |
+
+What the production overlay does differently from development:
+
+- Only nginx is reachable. It listens on 443 with TLS 1.2 and newer and HSTS, and port 80 only redirects to https.
+- Put your certificate and key in `infra/certs/` as `fullchain.pem` and `privkey.pem`. The folder is git-ignored.
+- The public website runs a production build (`next start`), not the development server.
+- MailHog does not start. Third-party images are pinned by digest.
+- Behind a load balancer that handles TLS, set `NGINX_CONF=./infra/nginx/nginx.conf`. See `infra/nginx/README.md`.
+
+Before going live:
 
 - Replace every secret and password in `.env`.
 - Set real `CORS_ORIGIN`, `FRONTEND_URL` and `BACKEND_URL` values.
-- Keep Nginx SSE settings for `/api/notifications/stream` (`proxy_buffering off`). The shipped `infra/nginx.conf` has them.
+- After you regenerate the website, restart the `site-preview` service so it serves the new build.
 
 # Part 12. Troubleshooting
 
