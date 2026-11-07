@@ -10,6 +10,20 @@ import { sitesDir, withSiteLock } from './generator.js';
 
 const jobs = new Map(); // slug -> { state, log, startedAt, finishedAt }
 const LOG_LINES = 40;
+// A build runs the site's dependencies' code. Only this many at once across ALL projects (each is CPU and RAM heavy),
+// and none may run longer than the timeout.
+const MAX_CONCURRENT_BUILDS = () => Math.max(1, Number(process.env.STATIC_BUILD_MAX) || 1);
+const BUILD_TIMEOUT_MS = () => Number(process.env.STATIC_BUILD_TIMEOUT_MS) || 15 * 60 * 1000;
+
+// The build subprocess gets ONLY these variables. It used to inherit the backend's whole environment: the JWT secrets,
+// database and Redis passwords, MinIO and API keys, readable by any npm package script or by the site's own build code.
+const SAFE_ENV_KEYS = ['PATH', 'HOME', 'LANG', 'LC_ALL', 'TMPDIR', 'TERM', 'TZ', 'SSL_CERT_FILE', 'HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY'];
+export const buildEnv = (extra = {}) => ({
+  ...Object.fromEntries(SAFE_ENV_KEYS.filter((k) => process.env[k] !== undefined).map((k) => [k, process.env[k]])),
+  ...extra,
+});
+
+const runningCount = () => [...jobs.values()].filter((j) => j.state === 'running').length;
 
 const siteRoot = (slug) => path.join(sitesDir(), slug);
 
@@ -17,7 +31,12 @@ export const getStaticBuild = (slug) => jobs.get(slug) ?? { state: 'idle', log: 
 
 function run(cmd, args, cwd, env, job) {
   return new Promise((resolve, reject) => {
-    const p = spawn(cmd, args, { cwd, env: { ...process.env, ...env } });
+    const p = spawn(cmd, args, { cwd, env: buildEnv(env) });
+    const timer = setTimeout(() => {
+      job.log += '\nBuild timed out and was stopped.';
+      p.kill('SIGKILL');
+    }, BUILD_TIMEOUT_MS());
+    p.on('close', () => clearTimeout(timer));
     const push = (d) => {
       job.log = (job.log + d).split('\n').slice(-LOG_LINES).join('\n');
     };
@@ -30,9 +49,13 @@ function run(cmd, args, cwd, env, job) {
   });
 }
 
-/** Starts a build; returns false if one is already running for this slug. `exec` is injectable for tests. */
+/**
+ * Starts a build. Returns true, or the reason it did not start: 'running' (this project already has one) or
+ * 'busy' (the global limit is reached). `exec` is injectable for tests.
+ */
 export function startStaticBuild(slug, { apiBase = '', contact = {}, tokens = null, exec = run } = {}) {
-  if (jobs.get(slug)?.state === 'running') return false;
+  if (jobs.get(slug)?.state === 'running') return 'running';
+  if (runningCount() >= MAX_CONCURRENT_BUILDS()) return 'busy';
   // `folder` is where the finished site appears on the host: SITES_DIR is the bind mount of
   // frontend/projects (docker-compose.yml), so the user can copy it straight from their machine.
   const job = {
@@ -69,7 +92,8 @@ export function startStaticBuild(slug, { apiBase = '', contact = {}, tokens = nu
         await fs.promises.mkdir(path.join(root, 'static-assets'), { recursive: true });
         await fs.promises.writeFile(path.join(root, 'static-assets', 'th-tokens.css'), tokens.css);
       }
-      await exec('npm', ['install', '--include=dev', '--no-audit', '--no-fund'], root, {}, job);
+      // --ignore-scripts: no dependency may run an install/postinstall script. Next ships its compiler as a prebuilt package.
+      await exec('npm', ['install', '--include=dev', '--no-audit', '--no-fund', '--ignore-scripts'], root, {}, job);
       await exec('npm', ['run', 'build:static'], root, env, job);
       if (!fs.existsSync(path.join(root, 'out', 'index.html')))
         throw new Error('build produced no out/index.html');

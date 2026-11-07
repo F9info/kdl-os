@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
+import { RedisRateLimitStore } from '../../shared/utils/redis-rate-limit-store.js';
 import { authenticate } from '../../middleware/auth.js';
 import { requirePermission } from '../../middleware/permission.js';
 import { requireProject } from '../../middleware/project.js';
@@ -39,7 +41,18 @@ router.get('/runs/:runId', requirePermission('template-engine', 'view'), validat
 router.post('/site', requirePermission('template-engine', 'run'), validate(createRunBodySchema), requireProject('body'), createSite);
 
 // One-click static export: start a build, poll status, download the zip.
-router.post('/site/static', requirePermission('template-engine', 'run'), requireProject(), startStatic);
+// A build runs npm and the site's dependencies, so it is limited per person as well as globally (static-build.js).
+// Needs the export permission, like the download: the result is a copy of the whole site that leaves the system.
+export const staticBuildLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 6,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: new RedisRateLimitStore('static-build'),
+  keyGenerator: (req) => String(req.user?.id ?? req.ip),
+  message: { success: false, message: 'Too many exports started. Try again in an hour.' },
+});
+router.post('/site/static', requirePermission('template-engine', 'export'), staticBuildLimiter, requireProject(), startStatic);
 router.get('/site/static', requirePermission('template-engine', 'view'), requireProject(), staticStatus);
 router.get('/site/static/download', requirePermission('template-engine', 'export'), requireProject(), staticDownload);
 

@@ -111,7 +111,7 @@ describe('one-click static build job', () => {
     expect(startStaticBuild('ok', { apiBase: 'https://api.example.com', exec })).toBe(true);
     expect((await until('ok', 'done')).state).toBe('done');
     expect(calls).toEqual([
-      ['install --include=dev --no-audit --no-fund', undefined, undefined],
+      ['install --include=dev --no-audit --no-fund --ignore-scripts', undefined, undefined],
       ['run build:static', 'https://api.example.com', 'production'],
     ]);
     const names = new AdmZip(zipStaticBuild('ok')).getEntries().map((e) => e.entryName);
@@ -123,7 +123,7 @@ describe('one-click static build job', () => {
     let release;
     const exec = () => new Promise((_, rej) => (release = () => rej(new Error('boom'))));
     expect(startStaticBuild('bad', { exec })).toBe(true);
-    expect(startStaticBuild('bad', { exec })).toBe(false);
+    expect(startStaticBuild('bad', { exec })).toBe('running');
     await new Promise((r) => setTimeout(r, 0)); // exec starts once the site lock is entered
     release();
     const s = await until('bad', 'failed');

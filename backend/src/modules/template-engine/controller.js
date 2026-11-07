@@ -198,7 +198,21 @@ export const skipStage = async (req, res, next) => {
 };
 
 // One-click static export (needs the site folder from createSite first).
-const apiBaseSchema = z.string().url().optional();
+// The site's forms post to this address from every visitor's browser: https only, no credentials in it, no internal
+// hosts, and, when STATIC_API_BASE_ALLOWLIST (comma separated hostnames) is set, only those hosts.
+export const checkApiBase = (value) => {
+  if (!value) return { ok: true, value: undefined };
+  let u;
+  try { u = new URL(value); } catch { return { ok: false, reason: 'apiBase must be a full URL' }; }
+  if (u.protocol !== 'https:') return { ok: false, reason: 'apiBase must start with https://' };
+  if (u.username || u.password) return { ok: false, reason: 'apiBase must not contain a username or password' };
+  const host = u.hostname.toLowerCase();
+  if (/^(localhost|.*\.local|.*\.internal)$/.test(host) || /^(127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|0\.|\[?::1\]?$)/.test(host))
+    return { ok: false, reason: 'apiBase must be a public address' };
+  const allowed = (process.env.STATIC_API_BASE_ALLOWLIST || '').split(',').map((h) => h.trim().toLowerCase()).filter(Boolean);
+  if (allowed.length && !allowed.includes(host)) return { ok: false, reason: 'apiBase host is not on the allowed list' };
+  return { ok: true, value: u.origin + u.pathname.replace(/\/$/, '') };
+};
 
 async function siteSlug(projectId) {
   const project = await prisma.project.findFirst({ where: { id: projectId, deleted_at: null } });
@@ -207,8 +221,8 @@ async function siteSlug(projectId) {
 
 export const startStatic = async (req, res, next) => {
   try {
-    const parsed = apiBaseSchema.safeParse(req.body?.apiBase || undefined);
-    if (!parsed.success) return errorResponse(res, 'apiBase must be a full URL', 422);
+    const parsed = checkApiBase(req.body?.apiBase || undefined);
+    if (!parsed.ok) return errorResponse(res, parsed.reason, 422);
     const slug = await siteSlug(req.projectId);
     if (!slug) return errorResponse(res, 'Prepare the project folder first', 409);
     // The company's contact details travel into the build: a form on the static site shows them.
@@ -216,8 +230,19 @@ export const startStatic = async (req, res, next) => {
     const contact = { email: identity.contact_email, phone: identity.contact_phone };
     // The site's theme is baked into the folder: a static site cannot ask a server for it later.
     const tokens = await compileTokens('webapp', undefined, undefined, req.projectId);
-    if (!startStaticBuild(slug, { apiBase: parsed.data, contact, tokens: { css: tokens.css, activeTheme: tokens.activeTheme } }))
-      return errorResponse(res, 'A build is already running', 409);
+    const started = startStaticBuild(slug, { apiBase: parsed.value, contact, tokens: { css: tokens.css, activeTheme: tokens.activeTheme } });
+    if (started === 'running') return errorResponse(res, 'A build is already running', 409);
+    if (started === 'busy') return errorResponse(res, 'The server is busy with another export. Try again in a few minutes.', 429);
+    writeActivityAsync({
+      actor: req.user.id,
+      module: 'template-engine',
+      action: 'static_export_started',
+      subject_type: 'Project',
+      subject_id: req.projectId,
+      description: `Started static export of "${slug}"`,
+      properties: { projectId: req.projectId, apiBase: parsed.value ?? null },
+      ip_address: getClientIp(req),
+    });
     return successResponse(res, getStaticBuild(slug), 202);
   } catch (err) {
     next(err);
@@ -238,6 +263,16 @@ export const staticDownload = async (req, res, next) => {
     const slug = await siteSlug(req.projectId);
     const buf = slug ? zipStaticBuild(slug) : null;
     if (!buf) return errorResponse(res, 'No finished static build', 404);
+    writeActivityAsync({
+      actor: req.user.id,
+      module: 'template-engine',
+      action: 'static_export_downloaded',
+      subject_type: 'Project',
+      subject_id: req.projectId,
+      description: `Downloaded static export of "${slug}"`,
+      properties: { projectId: req.projectId, bytes: buf.length },
+      ip_address: getClientIp(req),
+    });
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', `attachment; filename="${slug}-static.zip"`);
     return res.end(buf);
