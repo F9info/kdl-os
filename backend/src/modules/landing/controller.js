@@ -12,9 +12,9 @@ export const handlePreview = (req, res) => {
   successResponse(res, { name, data: buildLandingData(key, 'preview', name) });
 };
 
-export const handleList = async (_req, res, next) => {
+export const handleList = async (req, res, next) => {
   try {
-    successResponse(res, { sites: await listLandingSites() });
+    successResponse(res, { sites: await listLandingSites(undefined, req.projectId) });
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);
     next(err);
@@ -23,7 +23,7 @@ export const handleList = async (_req, res, next) => {
 
 export const handleCreate = async (req, res, next) => {
   try {
-    successResponse(res, { site: await createLandingPage(req.validated.body, req.user?.id ?? null) }, 201);
+    successResponse(res, { site: await createLandingPage(req.validated.body, req.user?.id ?? null, undefined, req.projectId) }, 201);
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);
     next(err);
@@ -32,7 +32,7 @@ export const handleCreate = async (req, res, next) => {
 
 export const handleDelete = async (req, res, next) => {
   try {
-    await deleteLandingSite(req.params.siteId, req.user?.id ?? null);
+    await deleteLandingSite(req.params.siteId, req.user?.id ?? null, undefined, req.projectId);
     successResponse(res, { deleted: true });
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);

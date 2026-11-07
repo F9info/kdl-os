@@ -1,5 +1,6 @@
 import axios, { type InternalAxiosRequestConfig, type AxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/stores/auth.store'
+import { useProjectStore } from '@/stores/project.store'
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api',
@@ -12,6 +13,12 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const { accessToken } = useAuthStore.getState()
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`
+    // Tell the API which project the admin is working in (the top bar switcher). A call that sets its
+    // own X-Project-Id wins. Routes that do not scope by project ignore the header.
+    const { activeProjectId } = useProjectStore.getState()
+    if (activeProjectId && !config.headers.has('X-Project-Id')) {
+      config.headers.set('X-Project-Id', activeProjectId)
+    }
   }
   // For file uploads, drop the JSON default so the browser sets
   // multipart/form-data with the correct boundary — otherwise the server

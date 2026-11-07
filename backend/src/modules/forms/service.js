@@ -7,15 +7,16 @@ import { DEFAULT_FIELDS, validateSubmission, notificationHtml } from './fields.j
 
 const httpError = (status, message, extra) => Object.assign(new Error(message), { status, ...extra });
 
-const projectIdOrThrow = async () => {
-  const id = await getDefaultProjectId(prisma);
+// The project the request is for (req.projectId from the requestProject middleware), else the default one.
+const projectIdOrThrow = async (requestedProjectId) => {
+  const id = requestedProjectId ?? (await getDefaultProjectId(prisma));
   if (!id) throw httpError(404, 'No project found');
   return id;
 };
 
-const findForm = async (id) => {
+const findForm = async (id, projectId) => {
   const form = await prisma.form.findFirst({
-    where: { id, project_id: await projectIdOrThrow(), deleted_at: null },
+    where: { id, project_id: await projectIdOrThrow(projectId), deleted_at: null },
   });
   if (!form) throw httpError(404, 'Form not found');
   return form;
@@ -24,15 +25,15 @@ const findForm = async (id) => {
 // notify_email '' means "clear it".
 const clean = (body) => ({ ...body, ...(body.notify_email === '' ? { notify_email: null } : {}) });
 
-export const listForms = async () =>
+export const listForms = async (projectId) =>
   prisma.form.findMany({
-    where: { project_id: await projectIdOrThrow(), deleted_at: null },
+    where: { project_id: await projectIdOrThrow(projectId), deleted_at: null },
     orderBy: { created_at: 'desc' },
     include: { _count: { select: { submissions: true } } },
   });
 
 export const createForm = async (body, actorId, client = prisma, projectId) => {
-  const project_id = projectId ?? (await projectIdOrThrow());
+  const project_id = await projectIdOrThrow(projectId);
   try {
     const form = await client.form.create({
       data: { fields: DEFAULT_FIELDS, ...clean(body), project_id },
@@ -52,8 +53,8 @@ export const createForm = async (body, actorId, client = prisma, projectId) => {
   }
 };
 
-export const updateForm = async (id, body, actorId) => {
-  await findForm(id);
+export const updateForm = async (id, body, actorId, projectId) => {
+  await findForm(id, projectId);
   const form = await prisma.form.update({ where: { id }, data: clean(body) });
   writeActivityAsync({
     actor: actorId,
@@ -66,8 +67,8 @@ export const updateForm = async (id, body, actorId) => {
   return form;
 };
 
-export const deleteForm = async (id, actorId) => {
-  const form = await findForm(id);
+export const deleteForm = async (id, actorId, projectId) => {
+  const form = await findForm(id, projectId);
   await prisma.form.update({ where: { id }, data: { deleted_at: new Date() } });
   writeActivityAsync({
     actor: actorId,
@@ -79,8 +80,8 @@ export const deleteForm = async (id, actorId) => {
   });
 };
 
-export const listSubmissions = async (id, limit) => {
-  await findForm(id);
+export const listSubmissions = async (id, limit, projectId) => {
+  await findForm(id, projectId);
   return prisma.formSubmission.findMany({
     where: { form_id: id },
     orderBy: { created_at: 'desc' },

@@ -3,6 +3,7 @@ import rateLimit from 'express-rate-limit';
 import { authenticate } from '../../middleware/auth.js';
 import { requirePermission } from '../../middleware/permission.js';
 import { validate } from '../../middleware/validate.js';
+import { requestProject } from '../../middleware/request-project.js';
 import {
   createFormSchema,
   updateFormSchema,
@@ -34,13 +35,14 @@ router.post('/public/:slug/submit', submitLimiter, validate(slugParamSchema), ha
 
 // Admin CRUD: authenticated + RBAC-gated.
 router.use(authenticate);
-router.get('/', requirePermission('forms', 'view'), handleList);
-router.post('/', requirePermission('forms', 'add'), validate(createFormSchema), handleCreate);
-router.patch('/:id', requirePermission('forms', 'edit'), validate(updateFormSchema), handleUpdate);
-router.delete('/:id', requirePermission('forms', 'delete'), validate(idParamSchema), handleDelete);
+router.get('/', requirePermission('forms', 'view'), requestProject, handleList);
+router.post('/', requirePermission('forms', 'add'), requestProject, validate(createFormSchema), handleCreate);
+router.patch('/:id', requirePermission('forms', 'edit'), requestProject, validate(updateFormSchema), handleUpdate);
+router.delete('/:id', requirePermission('forms', 'delete'), requestProject, validate(idParamSchema), handleDelete);
 router.get(
   '/:id/submissions',
   requirePermission('forms', 'view'),
+  requestProject,
   validate(submissionsQuerySchema),
   handleSubmissions
 );

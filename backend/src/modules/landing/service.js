@@ -6,15 +6,16 @@ import { LANDING_TEMPLATES, buildLandingData, formSlugFor } from './templates.js
 
 const httpError = (status, message) => Object.assign(new Error(message), { status });
 
-const projectIdOrThrow = async (client) => {
-  const id = await getDefaultProjectId(client);
+// The project the request is for (req.projectId from the requestProject middleware), else the default one.
+const projectIdOrThrow = async (client, projectId) => {
+  const id = projectId ?? (await getDefaultProjectId(client));
   if (!id) throw httpError(404, 'No project found');
   return id;
 };
 
 /** Landing sites of the project, each with its pages. */
-export const listLandingSites = async (client = prisma) => {
-  const projectId = await projectIdOrThrow(client);
+export const listLandingSites = async (client = prisma, requestedProjectId) => {
+  const projectId = await projectIdOrThrow(client, requestedProjectId);
   return client.site.findMany({
     where: { project_id: projectId, type: 'LANDING', deleted_at: null },
     orderBy: { created_at: 'desc' },
@@ -39,8 +40,8 @@ export const listLandingSites = async (client = prisma) => {
  * The page slug equals the site slug, so it is also reachable at /p/<slug>. Both slugs must be free.
  * A template with a form also gets its enquiry form (forms module), created in the same transaction.
  */
-export const createLandingPage = async ({ name, slug, template }, actorId, client = prisma) => {
-  const projectId = await projectIdOrThrow(client);
+export const createLandingPage = async ({ name, slug, template }, actorId, client = prisma, requestedProjectId) => {
+  const projectId = await projectIdOrThrow(client, requestedProjectId);
   try {
     const { site, page } = await client.$transaction(async (tx) => {
       const site = await tx.site.create({
@@ -85,8 +86,8 @@ export const createLandingPage = async ({ name, slug, template }, actorId, clien
  * Page slugs are globally unique and a soft-deleted row keeps its slug, so each slug (and the custom
  * domain) is renamed on the way out: the same address can be used again for a new landing page.
  */
-export const deleteLandingSite = async (siteId, actorId, client = prisma) => {
-  const projectId = await projectIdOrThrow(client);
+export const deleteLandingSite = async (siteId, actorId, client = prisma, requestedProjectId) => {
+  const projectId = await projectIdOrThrow(client, requestedProjectId);
   const site = await client.site.findFirst({
     where: { id: siteId, project_id: projectId, type: 'LANDING', deleted_at: null },
     select: {

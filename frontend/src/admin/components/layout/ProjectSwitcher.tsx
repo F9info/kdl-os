@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { Check, ChevronsUpDown, FolderKanban } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -24,9 +25,16 @@ export function ProjectSwitcher() {
   const activeProjectId = useProjectStore((s) => s.activeProjectId)
   const setActiveProjectId = useProjectStore((s) => s.setActiveProjectId)
 
+  const active = resolveActiveProject(projects, activeProjectId)
+
+  // Heal a stale choice (the project was deleted or archived, possibly from another tab) so requests stop
+  // carrying an id the API would answer 404 for.
+  useEffect(() => {
+    if (active && active.id !== activeProjectId) setActiveProjectId(active.id)
+  }, [active, activeProjectId, setActiveProjectId])
+
   if (!allowed || !projects || projects.length === 0) return null
 
-  const active = resolveActiveProject(projects, activeProjectId)
   const choices = projects.filter((p) => p.status !== 'ARCHIVED')
 
   return (

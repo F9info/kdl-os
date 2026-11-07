@@ -46,7 +46,13 @@ function ProjectsPageInner() {
   const setStatus = (p: Project, status: 'ACTIVE' | 'ARCHIVED') =>
     update.mutate(
       { id: p.id, status },
-      { onSuccess: () => toast({ title: status === 'ARCHIVED' ? 'Project archived' : 'Project restored' }) }
+      {
+        onSuccess: () => {
+          // Never keep working in a project that was just archived.
+          if (status === 'ARCHIVED' && p.id === activeProjectId) setActiveProjectId(null)
+          toast({ title: status === 'ARCHIVED' ? 'Project archived' : 'Project restored' })
+        },
+      }
     )
 
   return (

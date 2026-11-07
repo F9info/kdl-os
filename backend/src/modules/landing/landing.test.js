@@ -228,3 +228,40 @@ describe('deleteLandingSite', () => {
     await expect(deleteLandingSite('s1', 'u1')).rejects.toMatchObject({ status: 404 });
   });
 });
+
+describe('project from the request (T03b)', () => {
+  it('lists the landing pages of the requested project and never asks for the default', async () => {
+    prismaMock.site.findMany.mockResolvedValue([]);
+    await listLandingSites(undefined, 'p2');
+    expect(prismaMock.site.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ project_id: 'p2', type: 'LANDING' }) })
+    );
+    expect(prismaMock.project.findFirst).not.toHaveBeenCalled();
+  });
+
+  it('creates the landing page in the requested project', async () => {
+    await createLandingPage({ name: 'Spring', slug: 'spring', template: 'blank' }, 'u1', undefined, 'p2');
+    expect(prismaMock.tx.site.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ project_id: 'p2' }) })
+    );
+    expect(prismaMock.tx.builderPage.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ project_id: 'p2' }) })
+    );
+  });
+
+  it('will not delete a landing page that belongs to another project', async () => {
+    prismaMock.site.findFirst.mockResolvedValue(null);
+    await expect(deleteLandingSite('s1', 'u1', undefined, 'p2')).rejects.toMatchObject({ status: 404 });
+    expect(prismaMock.site.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ id: 's1', project_id: 'p2' }) })
+    );
+  });
+
+  it('falls back to the default project when none is given', async () => {
+    prismaMock.site.findMany.mockResolvedValue([]);
+    await listLandingSites();
+    expect(prismaMock.site.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ project_id: 'p1' }) })
+    );
+  });
+});

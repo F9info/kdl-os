@@ -12,28 +12,28 @@ const handle = (fn) => async (req, res, next) => {
   }
 };
 
-export const handleList = handle(async (_req, res) =>
-  successResponse(res, { items: await service.listForms() })
+export const handleList = handle(async (req, res) =>
+  successResponse(res, { items: await service.listForms(req.projectId) })
 );
 
 export const handleCreate = handle(async (req, res) =>
-  successResponse(res, { item: await service.createForm(req.validated.body, req.user?.id ?? null) }, 201)
+  successResponse(res, { item: await service.createForm(req.validated.body, req.user?.id ?? null, undefined, req.projectId) }, 201)
 );
 
 export const handleUpdate = handle(async (req, res) =>
   successResponse(res, {
-    item: await service.updateForm(req.validated.params.id, req.validated.body, req.user?.id ?? null),
+    item: await service.updateForm(req.validated.params.id, req.validated.body, req.user?.id ?? null, req.projectId),
   })
 );
 
 export const handleDelete = handle(async (req, res) => {
-  await service.deleteForm(req.validated.params.id, req.user?.id ?? null);
+  await service.deleteForm(req.validated.params.id, req.user?.id ?? null, req.projectId);
   successResponse(res, null);
 });
 
 export const handleSubmissions = handle(async (req, res) =>
   successResponse(res, {
-    items: await service.listSubmissions(req.validated.params.id, req.validated.query.limit),
+    items: await service.listSubmissions(req.validated.params.id, req.validated.query.limit, req.projectId),
   })
 );
 
