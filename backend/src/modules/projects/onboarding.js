@@ -55,7 +55,7 @@ export async function createStarterSite(client, actorId = null, { withCms } = {}
   const includeCms = withCms ?? (await cmsEnabled(client));
   const navPages = [...STARTER_PAGES, ...(includeCms ? cmsPages() : [])];
   for (const { slug, title } of STARTER_PAGES) {
-    if (await client.builderPage.findFirst({ where: { slug } })) {
+    if (await client.builderPage.findFirst({ where: { slug, project_id: projectId } })) {
       skipped.push(slug);
       continue;
     }

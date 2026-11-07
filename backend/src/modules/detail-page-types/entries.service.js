@@ -19,12 +19,12 @@ export const slugify = (s) =>
 // Top-level site routes a public /<prefix>/<slug> must never shadow.
 export const RESERVED_PREFIXES = new Set(['admin', 'api', 'p', 'share', 'work', 'sectors', 'catalog']);
 
-// BuilderPage.slug is globally unique and soft-deleted pages keep theirs, so a re-created
+// BuilderPage.slug is unique per project and soft-deleted pages keep theirs, so a re-created
 // type/entry (same name after a delete) needs the next free suffix.
 async function pageSlugFor(projectId, typeKey, slug) {
   const base = `${typeKey}-detail-${projectId}-${slug}`;
   let candidate = base;
-  for (let n = 2; await prisma.builderPage.findFirst({ where: { slug: candidate }, select: { id: true } }); n += 1) {
+  for (let n = 2; await prisma.builderPage.findFirst({ where: { slug: candidate, project_id: projectId }, select: { id: true } }); n += 1) {
     candidate = `${base}-${n}`;
   }
   return candidate;

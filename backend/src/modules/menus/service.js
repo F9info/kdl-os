@@ -63,7 +63,7 @@ async function withCleanUrls(projectId, items) {
   // Items may carry only the url (no page_id) — resolve those through the page's slug.
   const slugs = items.filter((i) => isPageUrl(i) && !i.page_id).map((i) => i.url.slice(3));
   const idBySlug = new Map(
-    (await prisma.builderPage.findMany({ where: { slug: { in: slugs }, deleted_at: null }, select: { id: true, slug: true } })).map(
+    (await prisma.builderPage.findMany({ where: { slug: { in: slugs }, project_id: projectId, deleted_at: null }, select: { id: true, slug: true } })).map(
       (p) => [p.slug, p.id]
     )
   );

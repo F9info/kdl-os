@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { usePermissions } from '@/admin/hooks/usePermissions'
-import { useProjects } from '@/admin/hooks/useProjects'
+import { useProjects, useSetActiveProject } from '@/admin/hooks/useProjects'
 import { resolveActiveProject, useProjectStore } from '@/stores/project.store'
 import { kindsLabel } from '@/admin/lib/project-kinds'
 
@@ -23,7 +23,7 @@ export function ProjectSwitcher() {
   const allowed = can('projects:view')
   const { data: projects } = useProjects({ enabled: allowed })
   const activeProjectId = useProjectStore((s) => s.activeProjectId)
-  const setActiveProjectId = useProjectStore((s) => s.setActiveProjectId)
+  const setActiveProjectId = useSetActiveProject()
 
   const active = resolveActiveProject(projects, activeProjectId)
 

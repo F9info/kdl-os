@@ -7,6 +7,7 @@ import { usePermissions } from '@/admin/hooks/usePermissions'
 import {
   useDeleteProject,
   useProjects,
+  useSetActiveProject,
   useUpdateProject,
   type Project,
 } from '@/admin/hooks/useProjects'
@@ -30,7 +31,7 @@ function ProjectsPageInner() {
   const update = useUpdateProject()
   const remove = useDeleteProject()
   const activeProjectId = useProjectStore((s) => s.activeProjectId)
-  const setActiveProjectId = useProjectStore((s) => s.setActiveProjectId)
+  const setActiveProjectId = useSetActiveProject()
   const active = resolveActiveProject(projects, activeProjectId)
 
   const [dialog, setDialog] = useState<{ open: boolean; project: Project | null }>({

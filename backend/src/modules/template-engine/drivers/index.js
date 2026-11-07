@@ -472,7 +472,7 @@ const websiteDriver = {
       // a blind createPage() would then unique-constraint-crash on every
       // future retry, forever. Look it up by its own slug before creating.
       if (!existing) {
-        existing = await getPageBySlug(slug).catch(() => null);
+        existing = await getPageBySlug(slug, run.projectId).catch(() => null);
       }
 
       // Every page's own nav/footer links to every OTHER page in this same

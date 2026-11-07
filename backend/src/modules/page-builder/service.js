@@ -10,10 +10,12 @@ import { normalizeData } from '../../shared/numbered-families.js';
 import { removePageFromMenus } from '../menus/site-menus.js';
 import { unregisterFromWebsiteStage } from '../template-engine/site/unregister-page.js';
 import { ensureDefaultSite } from '../projects/sites.js';
+import { getDefaultProjectId } from '../../shared/default-project.js';
 
-export const listPages = async () => {
+// The pages of one project. Slugs are unique per project, so every page query names its project.
+export const listPages = async (projectId) => {
   return prisma.builderPage.findMany({
-    where: { deleted_at: null },
+    where: { deleted_at: null, project_id: projectId },
     orderBy: { updated_at: 'desc' },
     select: {
       id: true,
@@ -40,20 +42,27 @@ export const getPage = async (id) => {
   return withPublishState(page);
 };
 
-// Deliberately matches soft-deleted rows too — `slug` is globally @unique
+// Deliberately matches soft-deleted rows too — `slug` is unique per project
 // with no soft-delete awareness, so a deleted page's slug is reserved
-// forever; the only caller (template-engine's website driver, crash/orphan
+// forever in that project; the only caller (template-engine's website driver, crash/orphan
 // recovery) needs to find and resurrect whatever row already holds a given
 // deterministic slug rather than crash trying to create a duplicate.
-export const getPageBySlug = async (slug) => {
-  return prisma.builderPage.findFirst({ where: { slug } });
+export const getPageBySlug = async (slug, projectId) => {
+  return prisma.builderPage.findFirst({ where: { slug, ...(projectId && { project_id: projectId }) } });
 };
 
+// The legacy public address /p/<slug> has no project in it. Two projects may now share a slug, so the
+// answer is deterministic: the default project's page, else the oldest one. (A site's own address or
+// custom domain always names its project, see getPublishedBySiteKey.)
 export const getPublishedBySlug = async (slug) => {
-  return prisma.builderPage.findFirst({
+  const rows = await prisma.builderPage.findMany({
     where: { slug, status: 'PUBLISHED', deleted_at: null },
+    orderBy: { created_at: 'asc' },
     select: { slug: true, title: true, data: true, seo: true, project_id: true, site_id: true },
   });
+  if (rows.length < 2) return rows[0] ?? null;
+  const defaultId = await getDefaultProjectId(prisma);
+  return rows.find((r) => r.project_id === defaultId) ?? rows[0];
 };
 
 // Which pages a site serves: those assigned to it, plus (for the project's default site) pages that
@@ -126,6 +135,10 @@ export const listSitemapEntries = async (projectId, site) => {
 };
 
 export const createPage = async ({ title, slug, data, project_id }, actorId) => {
+  // Every page belongs to a project. Callers that still pass none (legacy content rows with no project)
+  // get the default project, which is what a page with no project meant before.
+  const projectId = project_id ?? (await getDefaultProjectId(prisma));
+  if (!projectId) throw Object.assign(new Error('No project found to create the page in'), { status: 409 });
   const page = await prisma.builderPage.create({
     data: {
       title,
@@ -133,8 +146,8 @@ export const createPage = async ({ title, slug, data, project_id }, actorId) => 
       status: 'DRAFT',
       data: normalizeData(data ?? { root: { props: { title } }, content: [], zones: {} }),
       created_by: actorId,
-      project_id,
-      site_id: await ensureDefaultSite(prisma, project_id),
+      project_id: projectId,
+      site_id: await ensureDefaultSite(prisma, projectId),
     },
   });
   writeActivityAsync({

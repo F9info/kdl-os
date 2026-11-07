@@ -71,7 +71,7 @@ export async function applyCmsSite(client, { answered, actorId = null } = {}) {
   const fullLinks = navLinksFor(all);
   const headerLinks = headerLinksFor(all);
   for (const { slug, title } of CMS_PAGES) {
-    if (await client.builderPage.findFirst({ where: { slug } })) continue;
+    if (await client.builderPage.findFirst({ where: { slug, project_id: projectId } })) continue;
     const page = await insertPublishedPage(client, {
       slug,
       title,

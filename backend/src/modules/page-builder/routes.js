@@ -3,6 +3,9 @@ import rateLimit from 'express-rate-limit';
 import { authenticate } from '../../middleware/auth.js';
 import { requirePermission } from '../../middleware/permission.js';
 import { validate } from '../../middleware/validate.js';
+import { requireProject } from '../../middleware/project.js';
+import { requestProject } from '../../middleware/request-project.js';
+import { prisma } from '../../config/database.js';
 import { z } from 'zod';
 import { seoDefaultsSchema } from './seo.js';
 import {
@@ -50,10 +53,17 @@ router.put(
   putSeoDefaultsHandler
 );
 
+// Routes addressed by page id: the caller must be allowed to use the page's own project
+// (404 for an unknown page, 403 for another project's page).
+const pageProject = requireProject(
+  async (req) =>
+    (await prisma.builderPage.findFirst({ where: { id: req.params.id }, select: { project_id: true } }))?.project_id
+);
+
 // Admin CRUD — authenticated + RBAC-gated.
-router.get('/', authenticate, requirePermission('page-builder', 'view'), getAll);
-router.get('/:id', authenticate, requirePermission('page-builder', 'view'), getOne);
-router.post('/', authenticate, requirePermission('page-builder', 'add'), postCreate);
+router.get('/', authenticate, requirePermission('page-builder', 'view'), requestProject, getAll);
+router.get('/:id', authenticate, requirePermission('page-builder', 'view'), pageProject, getOne);
+router.post('/', authenticate, requirePermission('page-builder', 'add'), requestProject, postCreate);
 // Changing `status` (publish / unpublish) needs the publish permission on top of edit, same as
 // the dedicated /publish and /unpublish routes.
 const requirePublishWhenStatusSet = (req, res, next) =>
@@ -64,19 +74,21 @@ router.put(
   authenticate,
   requirePermission('page-builder', 'edit'),
   requirePublishWhenStatusSet,
+  pageProject,
   putUpdate
 );
-router.post('/:id/publish', authenticate, requirePermission('page-builder', 'publish'), postPublish);
-router.post('/:id/unpublish', authenticate, requirePermission('page-builder', 'publish'), postUnpublish);
-router.post('/:id/preview-link', authenticate, requirePermission('page-builder', 'edit'), postPreviewLink);
-router.post('/:id/checks', authenticate, requirePermission('page-builder', 'view'), postPageChecks);
-router.get('/:id/versions', authenticate, requirePermission('page-builder', 'view'), getVersions);
+router.post('/:id/publish', authenticate, requirePermission('page-builder', 'publish'), pageProject, postPublish);
+router.post('/:id/unpublish', authenticate, requirePermission('page-builder', 'publish'), pageProject, postUnpublish);
+router.post('/:id/preview-link', authenticate, requirePermission('page-builder', 'edit'), pageProject, postPreviewLink);
+router.post('/:id/checks', authenticate, requirePermission('page-builder', 'view'), pageProject, postPageChecks);
+router.get('/:id/versions', authenticate, requirePermission('page-builder', 'view'), pageProject, getVersions);
 router.post(
   '/:id/versions/:versionId/restore',
   authenticate,
   requirePermission('page-builder', 'publish'),
+  pageProject,
   postRestore
 );
-router.delete('/:id', authenticate, requirePermission('page-builder', 'delete'), remove);
+router.delete('/:id', authenticate, requirePermission('page-builder', 'delete'), pageProject, remove);
 
 export default router;

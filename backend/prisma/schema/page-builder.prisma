@@ -10,7 +10,8 @@ enum PageStatus {
 
 model BuilderPage {
   id         String     @id @default(cuid())
-  slug       String     @unique
+  // Unique within a project (see @@unique below), so two projects can both have a "home" page.
+  slug       String
   title      String
   status     PageStatus @default(DRAFT)
   // Live content (what visitors see while status = PUBLISHED).
@@ -23,7 +24,7 @@ model BuilderPage {
   deleted_at DateTime?
   created_at DateTime   @default(now())
   updated_at DateTime   @updatedAt
-  project_id String?
+  project_id String
   // The site this page belongs to (null only for pages made before sites, or outside any project).
   site_id    String?
   site       Site?      @relation(fields: [site_id], references: [id], onDelete: SetNull)
@@ -36,6 +37,7 @@ model BuilderPage {
 
   versions PageVersion[]
 
+  @@unique([project_id, slug])
   @@index([status])
   @@index([project_id])
   @@index([site_id])

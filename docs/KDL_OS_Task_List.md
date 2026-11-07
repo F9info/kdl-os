@@ -236,8 +236,9 @@ Effort is a rough planning guess: S (hours), M (about a day), L (several days).
 | S7 | Template Engine export security | [ ] |
 | T01 | Project model: type, status, config | [x] code and tests done; migration not yet applied to a real DB; not committed |
 | T02 | Projects UI and dashboard | [x] code and tests done; not checked in a browser; not committed |
-| T03 | Remove default-project assumption | [x] admin screens, landing and forms follow the active project. Moved on: page list and slugs to T04, identity to T05, seeds and onboarding to T09, public forms to T17, NOT NULL migration to T04 |
-| T04 | Per-project pages and slugs | [ ] |
+| T03 | Remove default-project assumption | [x] admin screens, landing and forms follow the active project. Moved on: page list and slugs to T04, identity to T05, seeds and onboarding to T09, public forms to T17, NOT NULL on pages done in T04, on the content tables is T04b |
+| T04 | Per-project pages and slugs | [x] done and migration applied to dev DB; not browser-checked |
+| T04b | NOT NULL project_id on the content tables (team, faq, sectors, catalog, work, gallery, testimonials, case studies, menus) with backfill | [ ] |
 | T05 | Per-project theme and identity | [ ] |
 | T06 | Isolation tests | [ ] |
 | T07 | Seed Admin and Developer, one-command setup | [ ] |

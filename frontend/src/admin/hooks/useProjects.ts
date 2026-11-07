@@ -1,5 +1,7 @@
+import { useCallback } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/axios'
+import { useProjectStore } from '@/stores/project.store'
 import type { ProjectKind, ProjectStatus } from '@/admin/lib/project-kinds'
 
 export interface Project {
@@ -54,4 +56,21 @@ export function useDeleteProject() {
     mutationFn: (id: string) => api.delete(`/projects/${id}`).then((r) => r.data.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: projectsKey }),
   })
+}
+
+/**
+ * Switch the project the admin works in. Cached lists (pages, team, forms, ...) belong to the project that
+ * was active, so they are refetched; the projects list itself is the same for every project and is kept.
+ */
+export function useSetActiveProject() {
+  const qc = useQueryClient()
+  const setActiveProjectId = useProjectStore((s) => s.setActiveProjectId)
+  return useCallback(
+    (id: string | null) => {
+      if (id === useProjectStore.getState().activeProjectId) return
+      setActiveProjectId(id)
+      void qc.invalidateQueries({ predicate: (q) => q.queryKey[0] !== projectsKey[0] })
+    },
+    [qc, setActiveProjectId]
+  )
 }

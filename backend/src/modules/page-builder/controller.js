@@ -11,7 +11,7 @@ import { createPreviewLink, getPreviewPage, previewLinkSchema } from './preview.
 
 export const getAll = async (req, res, next) => {
   try {
-    const items = await service.listPages();
+    const items = await service.listPages(req.projectId);
     successResponse(res, { items });
   } catch (err) {
     next(err);
@@ -104,7 +104,8 @@ export const postCreate = async (req, res, next) => {
   try {
     const parsed = createPageSchema.safeParse(req.body);
     if (!parsed.success) return errorResponse(res, 'Validation failed', 422, parsed.error.flatten());
-    const page = await service.createPage(parsed.data, req.user?.id);
+    // The project comes from the request (checked by requestProject), never from the body.
+    const page = await service.createPage({ ...parsed.data, project_id: req.projectId }, req.user?.id);
     successResponse(res, { page }, 201);
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);

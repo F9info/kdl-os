@@ -15,11 +15,11 @@ async function findDonorContent(projectId) {
   return pages.map((p) => p.data?.content ?? []).find((c) => c.some((b) => b.type === 'ConstructionHeader'));
 }
 
-async function uniqueSlug(label) {
+async function uniqueSlug(label, projectId) {
   const base = `page-${slugify(label) || 'page'}`;
   for (let n = 1; n <= MAX_SLUG_TRIES; n += 1) {
     const slug = n === 1 ? base : `${base}-${n}`;
-    if (!(await prisma.builderPage.findFirst({ where: { slug }, select: { id: true } }))) return slug;
+    if (!(await prisma.builderPage.findFirst({ where: { slug, project_id: projectId }, select: { id: true } }))) return slug;
   }
   throw Object.assign(new Error('Could not find a free page slug'), { status: 409 });
 }
@@ -58,7 +58,7 @@ async function registerInWebsiteStage(projectId, baseKey, page) {
  * publish it, and list it in the Pages view. Returns the page, or null if nothing was made.
  */
 export async function scaffoldPageForLabel(projectId, label, actorId) {
-  const slug = await uniqueSlug(label);
+  const slug = await uniqueSlug(label, projectId);
   const donor = (await findDonorContent(projectId)) ?? [];
   const banner = donor.find((b) => b.type === 'ConstructionInnerBanner');
   const content = [];
