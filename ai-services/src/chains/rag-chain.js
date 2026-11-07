@@ -1,5 +1,6 @@
 import { retrieveChunks } from '../knowledge/retrieve.js';
 import { brainRouter } from '../orchestrator/brain-router.js';
+import { wrapUntrusted } from '../governance/compliance.js';
 import { addMessage, getContext } from '../orchestrator/context-manager.js';
 
 export async function ragChain(query, sessionId, priority = 'MEDIUM', options = {}) {
@@ -10,9 +11,7 @@ export async function ragChain(query, sessionId, priority = 'MEDIUM', options = 
     getContext(sessionId),
   ]);
 
-  const contextBlock = chunks.length > 0
-    ? `Relevant context:\n${chunks.map((c, i) => `[${i + 1}] ${c.content}`).join('\n\n')}`
-    : '';
+  const contextBlock = wrapUntrusted(chunks.map((c) => c.content));
 
   const systemPrompt = [
     'You are a helpful AI assistant for the KDL Starter Kit platform.',
@@ -27,6 +26,7 @@ export async function ragChain(query, sessionId, priority = 'MEDIUM', options = 
   const response = await brainRouter(messages, priority, {
     system: systemPrompt,
     sessionId,
+    tenantId,
     ...brainOptions,
   });
 

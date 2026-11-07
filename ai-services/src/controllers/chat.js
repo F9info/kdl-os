@@ -48,6 +48,7 @@ export async function chatController(req, res) {
     // user read or poison another user's conversation.
     const response = await ragChain(scrubbed, `${userId}:${sessionId}`, priority, {
       tenantId: tenantOf(req.user),
+      actor: String(userId),
     });
 
     if (response.error === 'BUDGET_EXHAUSTED') {

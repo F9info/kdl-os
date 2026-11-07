@@ -1,9 +1,11 @@
 import { getTenantCollection } from '../knowledge/tenant.js';
 import { openrouterEmbed } from '../brains/openrouter.js';
+import { scrubInput } from '../governance/compliance.js';
 
 const COLLECTION = 'kdl_long_term_memory';
 
-export async function storeMemory(id, document, metadata = {}, tenantId) {
+export async function storeMemory(id, rawDocument, metadata = {}, tenantId) {
+  const document = scrubInput(rawDocument);
   const c = await getTenantCollection(COLLECTION, tenantId);
   const embedding = await openrouterEmbed(document);
   await c.upsert({

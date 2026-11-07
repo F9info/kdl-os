@@ -6,7 +6,8 @@ const openrouterBrainMock = vi.hoisted(() => vi.fn());
 const checkBudgetMock = vi.hoisted(() => vi.fn());
 const recordSpendMock = vi.hoisted(() => vi.fn());
 const auditLoggerMock = vi.hoisted(() => vi.fn());
-const recordClaudeSpendMock = vi.hoisted(() => vi.fn());
+const recordClaudeSpendMock = vi.hoisted(() => vi.fn()); // settleClaudeSpend
+const reserveMock = vi.hoisted(() => vi.fn());
 
 vi.mock('fs/promises', () => ({
   writeFile: writeFileMock,
@@ -22,7 +23,8 @@ vi.mock('../src/brains/openrouter.js', () => ({
 vi.mock('../src/orchestrator/budget-tracker.js', () => ({
   checkBudget: checkBudgetMock,
   recordSpend: recordSpendMock,
-  recordClaudeSpend: recordClaudeSpendMock,
+  reserveClaudeBudget: reserveMock,
+  settleClaudeSpend: recordClaudeSpendMock,
 }));
 vi.mock('../src/governance/audit-logger.js', () => ({
   auditLogger: auditLoggerMock,
@@ -65,6 +67,7 @@ const openrouterResponse = {
 beforeEach(() => {
   vi.clearAllMocks();
   recordClaudeSpendMock.mockResolvedValue(undefined);
+  reserveMock.mockResolvedValue(true);
   claudeBrainMock.mockResolvedValue(claudeResponse);
   openrouterBrainMock.mockResolvedValue(openrouterResponse);
   checkBudgetMock.mockResolvedValue(true);
@@ -183,7 +186,7 @@ describe('existing brainRouter callers keep their contract (KDL-488)', () => {
     const [prompt, options] = openrouterBrainMock.mock.calls[0];
     expect(typeof prompt).toBe('string');
     expect(prompt).toContain('Task: sort the files');
-    expect(options).toEqual({ sessionId: 'agent-sess' });
+    expect(options).toEqual({ sessionId: 'agent-sess', tenantId: 't1' });
   });
 
   it('BaseAgent.run surfaces the BUDGET_EXHAUSTED error envelope unchanged', async () => {

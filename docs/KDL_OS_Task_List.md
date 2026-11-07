@@ -232,7 +232,7 @@ Effort is a rough planning guess: S (hours), M (about a day), L (several days).
 | S3 | Production compose hardening | [~] done: required IMAGE_TAG and seed password, real SMTP, no MailHog, next start, digest-pinned images. Open: per-service env_file, Chroma auth, Postgres app role |
 | S4 | Secret scanning and CI supply chain | [x] scripts/secret-scan.mjs (pre-commit + CI), actions pinned to SHAs, token permissions, billing-check.yml YAML fixed; SBOM/provenance not done |
 | S5 | Auth hardening | [x] IP-keyed Redis limiter, atomic lockout, escaped reset email, reset-token race, audit events, password 12 chars / 72 bytes, /refresh limited. Not done: generic register response (would break signup auto-login), Redis dependency left as custom store |
-| S6 | AI services spend and tenant safety | [ ] |
+| S6 | AI services: spend and tenant safety | [x] Claude daily cap (atomic reserve, 503), per-run agent cap, tenant-scoped session keys, Meili tool removed (unused), retrieved text wrapped as data, scrub before ingest, audit has actor+tenant and goes to stdout. Not done: DB-persisted audit, per-instance caller limits |
 | S7 | Template Engine export security | [ ] |
 | T01 | Project model: type, status, config | [x] code and tests done; migration not yet applied to a real DB; not committed |
 | T02 | Projects UI and dashboard | [x] code and tests done; not checked in a browser; not committed |

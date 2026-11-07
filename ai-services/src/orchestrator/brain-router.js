@@ -3,8 +3,8 @@ import { fileURLToPath } from 'url';
 import { join } from 'path';
 import { claudeBrain, claudeModel } from '../brains/claude.js';
 import { openrouterBrain } from '../brains/openrouter.js';
-import { checkBudget, recordSpend, recordClaudeSpend } from './budget-tracker.js';
-import { estimateCostUsd } from '../config/model-pricing.js';
+import { checkBudget, recordSpend, reserveClaudeBudget, settleClaudeSpend } from './budget-tracker.js';
+import { estimateCostUsd, rateFor } from '../config/model-pricing.js';
 import { auditLogger } from '../governance/audit-logger.js';
 
 const __dir = fileURLToPath(new URL('.', import.meta.url));
@@ -30,6 +30,16 @@ function hasImageContent(task) {
   );
 }
 
+// Worst-case cost of a Claude call, before it runs: input at ~3 chars per token (images a flat 1600
+// tokens, their base64 is not text) plus the full max_tokens as output.
+function estimateClaudeMax(task, options) {
+  const text = JSON.stringify(task ?? '', (k, v) => (k === 'data' && typeof v === 'string' && v.length > 1000 ? '' : v));
+  const images = (text.match(/"type":"image"/g) || []).length;
+  const inTok = Math.ceil((text.length + String(options.system ?? '').length) / 3) + images * 1600;
+  const rate = rateFor(claudeModel());
+  return (inTok * rate.in + (options.max_tokens ?? 4096) * rate.out) / 1_000_000;
+}
+
 export async function brainRouter(task, priority = 'MEDIUM', options = {}) {
   const useClaude =
     HIGH_PRIORITY.has(priority?.toUpperCase()) || hasImageContent(task);
@@ -41,9 +51,21 @@ export async function brainRouter(task, priority = 'MEDIUM', options = {}) {
     }
   }
 
-  const response = useClaude
-    ? await claudeBrain(task, options)
-    : await openrouterBrain(task, options);
+  let reserved = 0;
+  if (useClaude) {
+    reserved = estimateClaudeMax(task, options);
+    if (!(await reserveClaudeBudget(reserved))) {
+      return { error: 'BUDGET_EXHAUSTED', message: 'Daily Claude budget exhausted.' };
+    }
+  }
+
+  let response;
+  try {
+    response = useClaude ? await claudeBrain(task, options) : await openrouterBrain(task, options);
+  } catch (err) {
+    if (useClaude) await settleClaudeSpend(reserved, 0); // nothing was billed: give the reservation back
+    throw err;
+  }
 
   try {
     await auditLogger({
@@ -53,6 +75,8 @@ export async function brainRouter(task, priority = 'MEDIUM', options = {}) {
       output_tokens: response.usage?.output_tokens ?? 0,
       cost_estimate: response.cost ?? 0,
       session_id: options.sessionId ?? null,
+      actor: options.actor ?? null,
+      tenant: options.tenantId ?? null,
     });
   } catch (auditErr) {
     try {
@@ -68,7 +92,7 @@ export async function brainRouter(task, priority = 'MEDIUM', options = {}) {
   }
   if (useClaude) {
     // Metering must never fail the call the user already paid for.
-    await recordClaudeSpend(estimateCostUsd(response.model, response.usage)).catch(() => {});
+    await settleClaudeSpend(reserved, estimateCostUsd(response.model, response.usage)).catch(() => {});
   }
 
   return response;

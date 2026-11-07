@@ -2,6 +2,7 @@ import pLimit from 'p-limit';
 import { getTenantCollection } from './tenant.js';
 import { openrouterEmbed } from '../brains/openrouter.js';
 import { randomUUID } from 'crypto';
+import { scrubInput } from '../governance/compliance.js';
 
 const COLLECTION = 'kdl_knowledge';
 const CHUNK_SIZE = 512;
@@ -20,7 +21,8 @@ function chunkText(text, size = CHUNK_SIZE, overlap = CHUNK_OVERLAP) {
 
 export async function ingestDocument(content, metadata = {}, tenantId) {
   const c = await getTenantCollection(COLLECTION, tenantId);
-  const chunks = chunkText(content);
+  // Scrub before embedding: PII stored in the vector store is returned to other users' prompts later.
+  const chunks = chunkText(scrubInput(content));
   const ids = chunks.map(() => randomUUID());
   const limit = pLimit(EMBED_CONCURRENCY);
   const embeddings = await Promise.all(chunks.map((chunk) => limit(() => openrouterEmbed(chunk))));
