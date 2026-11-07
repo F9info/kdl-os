@@ -18,7 +18,7 @@ export function useWebsiteBrandContext(projectId: string): BrandContext {
   const run = runs?.[0]
   const { identity } = useIdentity()
 
-  const companyName = identity.app_name || ''
+  const companyName = identity.company_name || identity.app_name || ''
   const email = identity.contact_email || ''
   const secondaryEmail = identity.contact_email_secondary || ''
   const phone = identity.contact_phone || ''
@@ -26,7 +26,7 @@ export function useWebsiteBrandContext(projectId: string): BrandContext {
   // Identity holds one address; a line break splits it into the two lines the headers show.
   const [address = '', ...rest] = (identity.contact_address || '').split(/\r?\n/)
   const address2 = rest.join(', ')
-  const logoUrl = identity.logo_light || ''
+  const logoUrl = identity.company_logo_light || identity.logo_light || ''
 
   // Real assembled-page titles for the nav links preview, same outputRef
   // shape WebsiteStage.tsx reads (pageKeyToTitle) — empty until the

@@ -920,9 +920,9 @@ function FooterBlock(props: LandingProps['LandingFooter'] & { metaIdentity?: Ide
   const id = props.metaIdentity ?? live
   const { p, f } = look(props)
   const get = (k: string) => id[k]?.trim() ?? ''
-  const name = get('app_name')
-  const darkLogo = get('logo_dark')
-  const logo = darkLogo || get('logo_light')
+  const name = get('company_name') || get('app_name')
+  const darkLogo = get('company_logo_dark') || get('logo_dark')
+  const logo = darkLogo || get('company_logo_light') || get('logo_light')
   const emails = [get('contact_email'), get('contact_email_secondary')].filter(Boolean)
   const phones = [get('contact_phone'), get('contact_phone_secondary')].filter(Boolean)
   const address = get('contact_address')

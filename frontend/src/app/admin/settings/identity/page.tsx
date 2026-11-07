@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 
 type Identity = Record<string, string>
-type AssetKey = 'logo_light' | 'logo_dark' | 'favicon'
+type AssetKey = 'logo_light' | 'logo_dark' | 'favicon' | 'company_logo_light' | 'company_logo_dark'
 interface IdentityPayload {
   identity: Identity
   resolved: Record<AssetKey, string>
@@ -31,9 +31,20 @@ const TEXT_FIELDS: {
   multiline?: boolean
   type?: string
 }[] = [
-  { key: 'app_name', label: 'Application name', hint: 'Shown in the sidebar and login screen.' },
+  {
+    key: 'app_name',
+    label: 'Application name',
+    hint: 'Shown in the admin sidebar and login screen.',
+  },
   { key: 'app_title', label: 'Browser tab title' },
   { key: 'description', label: 'Description', multiline: true },
+]
+const COMPANY_FIELDS = [
+  {
+    key: 'company_name',
+    label: 'Company name',
+    hint: 'Shown on your website, print layouts and landing pages. Empty = the application name.',
+  },
 ]
 const COLOR_FIELDS = [
   { key: 'brand_primary', label: 'Primary brand color' },
@@ -58,8 +69,17 @@ interface AssetDef {
   label: string
   hint?: string
 }
-const LOGO_LIGHT: AssetDef = { key: 'logo_light', label: 'Logo (light background)' }
-const LOGO_DARK: AssetDef = { key: 'logo_dark', label: 'Logo (dark background)' }
+const LOGO_LIGHT: AssetDef = { key: 'logo_light', label: 'Application logo (light background)' }
+const LOGO_DARK: AssetDef = { key: 'logo_dark', label: 'Application logo (dark background)' }
+const COMPANY_LOGO_LIGHT: AssetDef = {
+  key: 'company_logo_light',
+  label: 'Company logo (light background)',
+  hint: 'Empty = the application logo.',
+}
+const COMPANY_LOGO_DARK: AssetDef = {
+  key: 'company_logo_dark',
+  label: 'Company logo (dark background)',
+}
 const FAVICON: AssetDef = {
   key: 'favicon',
   label: 'Favicon',
@@ -84,6 +104,56 @@ function clientErrors(f: Identity): Record<string, string> {
     if (f[key] && !HEX.test(f[key])) e[key] = 'Use a hex color like #1a2b3c.'
   }
   return e
+}
+
+// Light, dark or follow the visitor's system, for the admin panel. Lives here (core Settings) rather than
+// in the Themes screens, so an install without the Themes module can still choose.
+function AppearanceSection() {
+  const queryClient = useQueryClient()
+  const { can } = usePermissions()
+  const { data } = useQuery({
+    queryKey: ['admin-active-theme'],
+    queryFn: () =>
+      api
+        .get('/theme-engine/tokens', { params: { platform: 'webapp_admin' } })
+        .then(
+          (r) => (r.data.data.activeTheme as 'light' | 'dark' | 'system' | undefined) ?? 'system'
+        ),
+  })
+  const mutation = useMutation({
+    mutationFn: (theme: string) =>
+      api.post('/theme-engine/active-theme', { platform: 'webapp_admin', theme }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-active-theme'] })
+      // The theme provider re-reads the tokens when told to.
+      window.dispatchEvent(new Event('th-tokens-refresh'))
+      toast({ title: 'Appearance saved' })
+    },
+  })
+  const editable = can('theme-engine:edit')
+  return (
+    <section className="space-y-4 rounded-lg border bg-card p-6" aria-labelledby="id-appearance">
+      <h2 id="id-appearance" className="text-lg font-semibold">
+        Appearance
+      </h2>
+      <p className="text-sm text-muted-foreground">How the admin panel looks.</p>
+      <div className="flex gap-2" role="radiogroup" aria-label="Appearance">
+        {(['light', 'dark', 'system'] as const).map((mode) => (
+          <Button
+            key={mode}
+            type="button"
+            role="radio"
+            aria-checked={data === mode}
+            variant={data === mode ? 'default' : 'outline'}
+            disabled={!editable || mutation.isPending}
+            onClick={() => mutation.mutate(mode)}
+          >
+            {mode === 'system' ? 'System' : mode === 'light' ? 'Light' : 'Dark'}
+          </Button>
+        ))}
+      </div>
+    </section>
+  )
 }
 
 export default function IdentityPage() {
@@ -226,8 +296,11 @@ export default function IdentityPage() {
               aria-labelledby="id-branding"
             >
               <h2 id="id-branding" className="text-lg font-semibold">
-                Branding
+                Application
               </h2>
+              <p className="text-sm text-muted-foreground">
+                The admin panel itself: its name, logo and browser tab.
+              </p>
               {TEXT_FIELDS.map(renderField)}
               {renderAsset(LOGO_LIGHT)}
               {renderAsset(FAVICON)}
@@ -238,6 +311,28 @@ export default function IdentityPage() {
                 <div className="mt-3">{renderAsset(LOGO_DARK)}</div>
               </details>
             </section>
+
+            <section
+              className="space-y-4 rounded-lg border bg-card p-6"
+              aria-labelledby="id-company"
+            >
+              <h2 id="id-company" className="text-lg font-semibold">
+                Company
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Your business, as visitors see it on your website and print layouts.
+              </p>
+              {COMPANY_FIELDS.map(renderField)}
+              {renderAsset(COMPANY_LOGO_LIGHT)}
+              <details className="rounded border p-3">
+                <summary className="cursor-pointer text-sm font-medium">
+                  Advanced: dark company logo
+                </summary>
+                <div className="mt-3">{renderAsset(COMPANY_LOGO_DARK)}</div>
+              </details>
+            </section>
+
+            <AppearanceSection />
 
             <section
               className="space-y-4 rounded-lg border bg-card p-6"

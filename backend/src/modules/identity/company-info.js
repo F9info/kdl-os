@@ -10,7 +10,8 @@ export async function getCompanyInfo(_projectId) {
   const value = (key) => identity[key]?.trim() || null;
   const address = value('contact_address');
   return {
-    company_name: value('app_name'),
+    // The company name, else the application name (installs that only ever set the one name).
+    company_name: value('company_name') || value('app_name'),
     email: value('contact_email'),
     phone: value('contact_phone'),
     secondaryEmail: value('contact_email_secondary'),

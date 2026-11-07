@@ -25,8 +25,15 @@ const hex = z
   .trim()
   .refine((v) => v === '' || /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v), { message: 'Must be empty or a hex color' });
 
+// Two things are named here, on purpose:
+//   app_*      the application itself: the admin panel, login screen and browser tab. `logo_*` is its logo.
+//   company_*  the business: what the website, print layouts and landing pages show.
+// A company value left empty falls back to the app one, so an install that never sets them behaves as before.
 export const IDENTITY_FIELDS = {
   app_name: text(100),
+  company_name: text(100),
+  company_logo_light: asset,
+  company_logo_dark: asset,
   app_title: text(150),
   description: text(500),
   logo_light: asset,
@@ -51,7 +58,7 @@ export const IDENTITY_FIELDS = {
   social_youtube: url,
 };
 
-export const ASSET_KEYS = ['logo_light', 'logo_dark', 'favicon'];
+export const ASSET_KEYS = ['logo_light', 'logo_dark', 'favicon', 'company_logo_light', 'company_logo_dark'];
 export const IDENTITY_KEYS = Object.keys(IDENTITY_FIELDS);
 export const KEY_PREFIX = 'identity.';
 

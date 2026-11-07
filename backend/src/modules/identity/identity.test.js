@@ -84,6 +84,8 @@ describe('admin routes', () => {
       logo_light: 'https://cdn.test/settings/abc.png?sig=1',
       logo_dark: '',
       favicon: '',
+      company_logo_light: '',
+      company_logo_dark: '',
     });
   });
 

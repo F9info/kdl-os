@@ -54,3 +54,12 @@ describe('getCompanyInfo', () => {
     expect(prisma.settingField.findMany).not.toHaveBeenCalled();
   });
 });
+
+describe('company name (T08)', () => {
+  it('prefers company_name, falls back to the application name', async () => {
+    readIdentity.mockResolvedValue({ app_name: 'KDL Admin', company_name: 'Acme Builders' });
+    expect((await getCompanyInfo()).company_name).toBe('Acme Builders');
+    readIdentity.mockResolvedValue({ app_name: 'KDL Admin', company_name: '' });
+    expect((await getCompanyInfo()).company_name).toBe('KDL Admin');
+  });
+});

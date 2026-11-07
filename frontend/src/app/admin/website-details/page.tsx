@@ -18,7 +18,7 @@ const WEBSITE_CONTENT_TYPE_SLUG = 'website-content'
 // Company name, logo and contact details are NOT edited here. They live once, in Settings >
 // Identity, and every module (this website, print layouts, ...) reads them from there.
 const SUMMARY_FIELDS: Array<[label: string, key: string]> = [
-  ['Company name', 'app_name'],
+  ['Company name', 'company_name'],
   ['Email', 'contact_email'],
   ['Secondary email', 'contact_email_secondary'],
   ['Phone', 'contact_phone'],
@@ -29,13 +29,19 @@ const SUMMARY_FIELDS: Array<[label: string, key: string]> = [
 function WebsiteDetailsContent() {
   const router = useRouter()
   const { projectId, isLoading: projectResolving } = useDefaultProjectId()
-  const { identity, isLoading: identityLoading } = useIdentity()
+  const { identity: raw, isLoading: identityLoading } = useIdentity()
+  // The company name and logo, else the application's (an install that never set the company ones).
+  const identity: Record<string, string> = {
+    ...raw,
+    company_name: raw.company_name || raw.app_name || '',
+    company_logo_light: raw.company_logo_light || raw.logo_light || '',
+  }
   const { data: runs } = useTemplateEngineRuns(projectId)
   const latestRun = runs?.[0]
   const continueToPalette = useContinueToPalette(projectId ?? '')
 
-  const hasName = !!identity.app_name?.trim()
-  const hasLogo = !!identity.logo_light
+  const hasName = !!identity.company_name?.trim()
+  const hasLogo = !!identity.company_logo_light
   const ready = hasName && hasLogo
 
   if (projectResolving) return null
@@ -85,7 +91,7 @@ function WebsiteDetailsContent() {
               {hasLogo && (
                 // eslint-disable-next-line @next/next/no-img-element -- presigned storage URL
                 <img
-                  src={identity.logo_light}
+                  src={identity.company_logo_light}
                   alt="Company logo"
                   className="h-16 w-16 shrink-0 rounded-md border bg-white object-contain p-1"
                 />

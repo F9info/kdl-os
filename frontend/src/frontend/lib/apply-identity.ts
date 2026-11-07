@@ -39,8 +39,9 @@ function patchAtoms(atoms: Atom[], name: string, logo: string): Atom[] {
 }
 
 export function applyIdentity<T>(data: T, identity: Identity | null | undefined): T {
-  const name = identity?.app_name?.trim() ?? ''
-  const logo = identity?.logo_light?.trim() ?? ''
+  // The website shows the company, not the admin application: company values first, app values as fallback.
+  const name = (identity?.company_name?.trim() || identity?.app_name?.trim()) ?? ''
+  const logo = (identity?.company_logo_light?.trim() || identity?.logo_light?.trim()) ?? ''
   const content = (data as { content?: Block[] } | null)?.content
   if (!Array.isArray(content) || (!name && !logo)) return data
   const patched = content.map((b) => {

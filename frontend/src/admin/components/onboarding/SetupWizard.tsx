@@ -30,6 +30,7 @@ type Step = 'identity' | 'products' | 'website' | 'done'
 // Identity), the single place every module reads them from, and are never asked again. Colours are
 // not asked: a website's palette is built from its logo (Color Palette), not typed in here.
 const DETAIL_KEYS = [
+  'company_name',
   'app_name',
   'logo_light',
   'favicon',
@@ -153,12 +154,20 @@ export function SetupWizard({ open, onClose }: SetupWizardProps) {
               </DialogDescription>
             </DialogHeader>
             <ErrorAlert error={error} />
-            <FormField label="Company name">
-              <Input
-                value={details.app_name}
-                onChange={(e) => setDetail('app_name', e.target.value)}
-              />
-            </FormField>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField label="Company name" hint="Shown on your website and print layouts.">
+                <Input
+                  value={details.company_name}
+                  onChange={(e) => setDetail('company_name', e.target.value)}
+                />
+              </FormField>
+              <FormField label="Application name" hint="Shown in the admin. Empty = company name.">
+                <Input
+                  value={details.app_name}
+                  onChange={(e) => setDetail('app_name', e.target.value)}
+                />
+              </FormField>
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField label="Logo" hint="PNG, JPEG, WebP or SVG.">
                 <ImageUploadField

@@ -118,6 +118,7 @@ describe('SetupWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
     await screen.findByText('What are you building?')
     expect(put).toHaveBeenCalledWith('/identity', {
+      company_name: '',
       app_name: 'Acme',
       logo_light: '',
       favicon: '',
@@ -125,6 +126,19 @@ describe('SetupWizard', () => {
       contact_phone: '',
       contact_address: '',
     })
+  })
+
+  it('asks for the company name and the application name separately', async () => {
+    mockGet()
+    render(<SetupWizard open onClose={() => {}} />)
+    await screen.findByDisplayValue('DemoLogo')
+    fireEvent.change(screen.getByLabelText('Company name'), { target: { value: 'Acme Builders' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+    await screen.findByText('What are you building?')
+    expect(put).toHaveBeenCalledWith(
+      '/identity',
+      expect.objectContaining({ company_name: 'Acme Builders', app_name: 'DemoLogo' })
+    )
   })
 
   it('without Website: applies products, records "no website" and finishes (no website step)', async () => {
