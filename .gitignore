@@ -56,3 +56,8 @@ frontend/test-results/
 # Generated per-project Next.js apps (template-engine site generator)
 frontend/projects/*
 !frontend/projects/.gitkeep
+
+# Database dumps and backups (contain password hashes, never commit)
+backups/
+*.sql
+!backend/prisma/migrations/**/*.sql
