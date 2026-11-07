@@ -1,4 +1,5 @@
 import { prisma } from '../../config/database.js';
+import { demoAccepted } from '../../shared/demo-content.js';
 import { getDefaultProjectId } from '../../shared/default-project.js';
 
 // Generic DemoLogo placeholder team for the default project.
@@ -8,6 +9,8 @@ const MEMBERS = [
 ];
 
 export async function seedTeam(prismaClient = prisma) {
+  // Sample content only after the owner said yes to a starter website.
+  if (!(await demoAccepted(prismaClient))) return;
   const projectId = await getDefaultProjectId(prismaClient);
   if (!projectId) return;
   for (const member of MEMBERS) {

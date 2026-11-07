@@ -8,7 +8,13 @@ import {
   insertPublishedPage,
 } from './starter-site.js';
 import { cmsPages, cmsEnabled, applyCmsSite, seedCmsSamples } from '../cms/pages.js';
-import { addPageToMenus } from '../menus/site-menus.js';
+import { addPageToMenus, removeDeadDemoLinks } from '../menus/site-menus.js';
+import { ONBOARDING_KEY } from '../../shared/demo-content.js';
+
+export { ONBOARDING_KEY };
+import { seedFaq } from '../faq/seed.js';
+import { seedTeam } from '../team/seed.js';
+import { seedProjectsContent } from '../projects-content/seed.js';
 
 export { STARTER_PAGES };
 export const buildPageData = (slug, title, pages = STARTER_PAGES, brand) =>
@@ -16,7 +22,6 @@ export const buildPageData = (slug, title, pages = STARTER_PAGES, brand) =>
 
 // First-run question: "Do you need a front-end website?"
 // Answer lives in app_settings (absent = not answered yet, so the pop-up keeps showing).
-export const ONBOARDING_KEY = 'onboarding.frontend';
 
 export async function getOnboarding() {
   const row = await prisma.appSetting.findUnique({ where: { key: ONBOARDING_KEY } });
@@ -77,16 +82,42 @@ export async function createStarterSite(client, actorId = null, { withCms } = {}
   return { created, skipped };
 }
 
+// Sample rows of the content modules that are already installed. A module installed LATER seeds its own
+// rows (its install seed checks the same answer), so nothing is missed and nothing is added twice.
+const DEMO_SEEDS = { faq: seedFaq, team: seedTeam, 'projects-content': seedProjectsContent };
+export async function seedInstalledDemoContent(client) {
+  const seeded = [];
+  for (const [slug, seed] of Object.entries(DEMO_SEEDS)) {
+    const mod = await client.module.findUnique({ where: { slug } });
+    if (mod?.status !== 'ENABLED') continue;
+    await seed(client);
+    seeded.push(slug);
+  }
+  return seeded;
+}
+
 export async function answerOnboarding(choice, actorId) {
   if (choice === 'no') {
     await saveChoice('no');
+    await removeDeadDemoLinks(prisma);
     return { choice, created: [], skipped: [] };
   }
-  const { created, skipped } = await createStarterSite(prisma, actorId);
-  // "Sample website" also means the sample content its CMS pages show (FAQ, team, gallery ...), but
-  // only when CMS is installed. Without this the sample pages would render empty lists.
-  if (await cmsEnabled(prisma)) await seedCmsSamples(prisma);
-  // Saved last: if anything above threw, the pop-up shows again and a retry fills the gaps.
-  await saveChoice('yes');
-  return { choice, created, skipped };
+  const before = await getOnboarding();
+  try {
+    const { created, skipped } = await createStarterSite(prisma, actorId);
+    // "Sample website" also means the sample content its CMS pages show (FAQ, team, gallery ...), but
+    // only when CMS is installed. Without this the sample pages would render empty lists.
+    if (await cmsEnabled(prisma)) await seedCmsSamples(prisma);
+    // The answer must be stored before the module seeds run: they only add sample rows after a "yes".
+    await saveChoice('yes');
+    await seedInstalledDemoContent(prisma);
+    await removeDeadDemoLinks(prisma);
+    return { choice, created, skipped };
+  } catch (err) {
+    // If anything threw, put the answer back as it was: the pop-up shows again and a retry fills the gaps.
+    if (before.answered) await saveChoice(before.choice);
+    else await prisma.appSetting.deleteMany({ where: { key: ONBOARDING_KEY } });
+    throw err;
+  }
 }
+

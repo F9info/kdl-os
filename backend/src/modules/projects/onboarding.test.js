@@ -17,12 +17,14 @@ import {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  prisma.appSetting = { findUnique: vi.fn(), upsert: vi.fn().mockResolvedValue({}) };
+  prisma.appSetting = { findUnique: vi.fn(), upsert: vi.fn().mockResolvedValue({}), deleteMany: vi.fn().mockResolvedValue({}) };
   prisma.project = { findFirst: vi.fn().mockResolvedValue({ id: 'p1' }) };
   prisma.module = { findUnique: vi.fn().mockResolvedValue(null) }; // CMS not installed
   prisma.menu = { upsert: vi.fn().mockResolvedValue({ id: 'm1' }) };
   prisma.menuItem = {
     findFirst: vi.fn().mockResolvedValue(null),
+    findMany: vi.fn().mockResolvedValue([]),
+    delete: vi.fn().mockResolvedValue({}),
     create: vi.fn().mockResolvedValue({}),
   };
   prisma.site = { findFirst: vi.fn().mockResolvedValue({ id: 'site-1' }) };
@@ -153,5 +155,36 @@ describe('createStarterSite — company name from Application Identity', () => {
     identity('Acme');
     const r = await createStarterSite(prisma, null);
     expect(r.created).toEqual(['home', 'about', 'services', 'contact', 'faq']);
+  });
+});
+
+describe('T09: sample content follows the answer', () => {
+  it('"yes" seeds the sample rows of the content modules that are installed, after the answer is stored', async () => {
+    prisma.module.findUnique.mockImplementation(async ({ where }) => ({ status: where.slug === 'team' ? 'ENABLED' : 'DISABLED' }));
+    prisma.teamMember = { findFirst: vi.fn().mockResolvedValue(null), create: vi.fn().mockResolvedValue({}) };
+    prisma.faqEntry = { findFirst: vi.fn(), create: vi.fn() };
+    // seed reads the stored answer
+    prisma.appSetting.findUnique.mockImplementation(async () => ({ value: 'yes' }));
+    await answerOnboarding('yes', 'u1');
+    expect(prisma.teamMember.create).toHaveBeenCalled(); // team installed: seeded
+    expect(prisma.faqEntry.create).not.toHaveBeenCalled(); // faq not installed: left alone
+  });
+
+  it('a failure puts the previous answer back, so the pop-up returns', async () => {
+    prisma.appSetting.findUnique.mockResolvedValue(null);
+    prisma.project.findFirst.mockResolvedValue(null); // no default project: createStarterSite throws 409
+    await expect(answerOnboarding('yes', 'u1')).rejects.toMatchObject({ status: 409 });
+    expect(prisma.appSetting.upsert).not.toHaveBeenCalled();
+  });
+
+  it('dead /p/demo-* links are removed on "yes" and on "no"; links whose page exists are kept', async () => {
+    prisma.menuItem.findMany.mockResolvedValue([
+      { id: 'dead', url: '/p/demo-home' },
+      { id: 'live', url: '/p/demo-about' },
+    ]);
+    prisma.builderPage.findFirst.mockImplementation(async ({ where }) => (where.slug === 'demo-about' ? { id: 'pg' } : null));
+    await answerOnboarding('no', 'u1');
+    expect(prisma.menuItem.delete).toHaveBeenCalledTimes(1);
+    expect(prisma.menuItem.delete).toHaveBeenCalledWith({ where: { id: 'dead' } });
   });
 });

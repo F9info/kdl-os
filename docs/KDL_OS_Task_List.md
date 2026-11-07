@@ -244,7 +244,7 @@ Effort is a rough planning guess: S (hours), M (about a day), L (several days).
 | T06 | Isolation tests | [x] found and fixed a real gap: content modules had no project access check. Guard + 26 tests. Not yet run against the live container |
 | T07 | Seed Admin and Developer, one-command setup | [x] developer@kdl.com and siteadmin@kdl.com seeded (dev only, random one-time passwords, forced change); new setup.sh replaces the old bootstrap. Users created in the dev DB. Fresh-clone run not tested end to end |
 | T08 | Settings: names, logos, theme mode | [x] company_name + company logos next to app name/logo (fallback to app values), Appearance (Light/Dark/System) in core Identity settings, wizard asks both names. Wizard still takes one logo; landing per-site overrides not split |
-| T09 | Automatic demo project | [ ] |
+| T09 | Demo content follows the answer | [x] module install seeds add DemoLogo rows only after "yes" (answering yes later seeds installed modules), menus seed no longer creates dead /p/demo-* links (cleanup on answer). Kept in the default project per D4; not a separate Demo project |
 | T10 | Template and theme library in DB | [ ] |
 | T11 | Page duplicate and reusable layouts | [ ] |
 | T12 | Guided 11-step workflow | [ ] |

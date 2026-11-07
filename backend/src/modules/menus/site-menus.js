@@ -12,6 +12,23 @@ async function ensureMenu(client, projectId, { key, name }) {
   });
 }
 
+// Removes the links an earlier menus seed created to /p/demo-<page> when no such page exists. Links to demo pages
+// that DO exist (scripts/seed-demo-site.js was run) are kept. Returns how many were removed.
+export async function removeDeadDemoLinks(client) {
+  const items = await client.menuItem.findMany({
+    where: { link_type: 'custom', url: { startsWith: '/p/demo-' } },
+    select: { id: true, url: true },
+  });
+  let removed = 0;
+  for (const { id, url } of items) {
+    const page = await client.builderPage.findFirst({ where: { slug: url.slice('/p/'.length), deleted_at: null }, select: { id: true } });
+    if (page) continue;
+    await client.menuItem.delete({ where: { id } });
+    removed++;
+  }
+  return removed;
+}
+
 // Adds a page as a top-level link at the end of the header and/or footer menu.
 // Only called for a NEW page: a link the user later removes or moves is never put back.
 export async function addPageToMenus(client, { projectId, page, header = true, footer = true }) {
