@@ -103,6 +103,38 @@ describe('the project a request names', () => {
   });
 });
 
+describe('every project id a handler could read is checked (no mixing a allowed id with a denied one)', () => {
+  it('refuses a body and a query naming different projects (400), even when the caller may use both', async () => {
+    const res = await request(app).get('/t?project_id=pb').set('x-user', 'admin').send({ project_id: 'pa' });
+    expect(res.status).toBe(400);
+  });
+
+  it('refuses a JSON body that names an allowed project while the query names a denied one', async () => {
+    const res = await request(app).get('/t?project_id=pb').set('x-user', 'member-a').send({ project_id: 'pa' });
+    expect(res.status).toBe(400);
+  });
+
+  it('on a write, a denied project in the query cannot ride along with an allowed one in the body', async () => {
+    const res = await request(app).patch('/t/row-a?project_id=pb').set('x-user', 'member-a').send({ project_id: 'pa' });
+    expect(res.status).toBe(400);
+  });
+
+  it('accepts the same project named twice', async () => {
+    const res = await request(app).patch('/t/row-a?project_id=pa').set('x-user', 'member-a').send({ project_id: 'pa' });
+    expect(res.status).toBe(200);
+  });
+
+  it('checks the project it will act on, whichever of body or query carries it', async () => {
+    expect((await request(app).get('/t').set('x-user', 'member-a').send({ project_id: 'pb' })).status).toBe(403);
+  });
+
+  it('ignores the header once a project is named, so a stale header cannot block or redirect the call', async () => {
+    const res = await request(app).get('/t?project_id=pa').set('x-user', 'member-a').set('x-project-id', 'pb');
+    expect(res.status).toBe(200);
+    expect(res.body.query).toBe('pa');
+  });
+});
+
 describe('defaults', () => {
   it('a list without a project shows only the request project (header), never every project', async () => {
     const res = await request(app).get('/t').set('x-project-id', 'pa').set('x-user', 'member-a');

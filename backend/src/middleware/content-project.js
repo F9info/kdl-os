@@ -13,22 +13,42 @@
 import { requireProject } from './project.js';
 import { prisma } from '../config/database.js';
 import { getDefaultProjectId } from '../shared/default-project.js';
+import { errorResponse } from '../shared/utils/response.js';
 
 const str = (v) => (typeof v === 'string' && v !== '' ? v : undefined);
 
-// A named project wins (body, then query), then the one the admin app is working in, then the default.
-const requestedProject = requireProject(
-  async (req) =>
-    str(req.body?.project_id) ??
-    str(req.query?.project_id) ??
-    str(req.headers?.['x-project-id']) ??
-    (await getDefaultProjectId()) ??
-    undefined // no project exists at all: requireProject answers 404
-);
+// Run requireProject for one id and report whether the caller may use it. When it refuses, requireProject has
+// already answered (403 / 404); `error` is set only for an unexpected failure.
+const mayUse = async (req, res, projectId) => {
+  let ok = false;
+  let error;
+  await requireProject(() => projectId)(req, res, (err) => {
+    ok = !err;
+    error = err;
+  });
+  return { ok, error };
+};
 
-export const contentProject = () => (req, res, next) =>
-  requestedProject(req, res, (err) => {
-    if (err) return next(err);
+export const contentProject = () => async (req, res, next) => {
+  try {
+    // Handlers read project_id from the body (writes) and the query (lists), so EVERY id a handler could read
+    // must pass the check, and two different ids are refused: one could pass while the handler acts on the other.
+    const named = [...new Set([str(req.body?.project_id), str(req.query?.project_id)].filter(Boolean))];
+    if (named.length > 1) return errorResponse(res, 'project_id in the body and the query must be the same project', 400);
+
+    // Nothing named: the project the admin app is working in, else the default. (Only the header or default is
+    // used then, so only it needs checking; a named project makes the header irrelevant to the handler.)
+    const toCheck = named.length
+      ? named
+      : [str(req.headers?.['x-project-id']) ?? (await getDefaultProjectId()) ?? undefined]; // none at all: 404
+
+    for (const projectId of toCheck) {
+      const { ok, error } = await mayUse(req, res, projectId);
+      if (error) return next(error);
+      if (!ok) return; // requireProject already answered
+    }
+    req.projectId = toCheck[0];
+
     // A list without a project shows the request project, not every project's rows.
     if (req.method === 'GET' && req.path === '/' && !str(req.query?.project_id)) {
       // Express 5 builds req.query on every read, so the value has to be pinned on the request.
@@ -42,8 +62,11 @@ export const contentProject = () => (req, res, next) =>
     if (req.method === 'POST' && req.path === '/' && req.body && !str(req.body.project_id)) {
       req.body.project_id = req.projectId;
     }
-    next();
-  });
+    return next();
+  } catch (err) {
+    return next(err);
+  }
+};
 
 // How to find the project of a row. Most rows have project_id; a menu item belongs to its menu's project.
 const LOOKUPS = {
