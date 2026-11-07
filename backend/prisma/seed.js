@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '../src/config/database.js';
 import { resolveSeedAdminCredentials } from './seed-credentials.js';
 import { seedUserManagement } from './seeders/user-management.seed.js';
+import { seedTeamUsers } from './seed-team-users.js';
 import { seedCoreModules } from './seeders/modules.seed.js';
 import { seedBrandKit } from './seeders/brand-kit.seed.js';
 import { seedWebsiteContentFields } from './seeders/website-content-fields.seed.js';
@@ -42,6 +43,8 @@ async function main() {
   await seedCoreModules(prisma);
   await seedProjects(prisma);
   await seedUserManagement(prisma);
+  // Developer and Admin sign-ins for development (needs the roles above; skipped in production).
+  await seedTeamUsers(prisma);
   await seedBrandKit(prisma);
   await seedWebsiteContentFields(prisma);
   await seedThemeEngine(prisma);
