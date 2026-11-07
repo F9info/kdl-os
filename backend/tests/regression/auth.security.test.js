@@ -25,6 +25,12 @@ vi.mock('../../src/shared/queues/email.queue.js', () => ({
   emailQueue: { add: vi.fn().mockResolvedValue({}) },
 }));
 
+const writeActivityAsync = vi.hoisted(() => vi.fn());
+vi.mock('../../src/modules/user-management/shared/activity-logger.js', () => ({
+  writeActivityAsync,
+  getClientIp: () => '203.0.113.9',
+}));
+
 const makeApp = () => agent([{ path: '/api/auth', router: authRoutes }]);
 
 const passwordHash = (password) => bcrypt.hashSync(password, 12);
@@ -46,6 +52,19 @@ const mockUser = (overrides = {}) => ({
 describe('auth security regressions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  describe('audit trail (S5)', () => {
+    it('records a failed sign-in, a successful one, and never the password', async () => {
+      prisma.user.findUnique.mockResolvedValue(mockUser());
+      prisma.refreshToken.create.mockResolvedValue({ id: 'rt1' });
+      await makeApp().post('/api/auth/login').send({ email: 'alice@example.com', password: 'wrong-password' }).expect(401);
+      await makeApp().post('/api/auth/login').send({ email: 'alice@example.com', password: 'Password123!' }).expect(200);
+      const events = writeActivityAsync.mock.calls.map(([e]) => e.action);
+      expect(events).toEqual(expect.arrayContaining(['login_failed', 'login']));
+      expect(JSON.stringify(writeActivityAsync.mock.calls)).not.toMatch(/wrong-password|Password123/);
+      expect(writeActivityAsync.mock.calls[0][0].ip_address).toBe('203.0.113.9');
+    });
   });
 
   describe('login cookie flags', () => {
@@ -147,14 +166,16 @@ describe('auth security regressions', () => {
         user,
       });
       prisma.user.update.mockResolvedValue({ ...user, password_hash: 'new-hash' });
+      prisma.$transaction.mockImplementationOnce(async (fn) => fn(prisma));
+      prisma.passwordResetToken.updateMany.mockResolvedValueOnce({ count: 1 });
 
       const res = await makeApp()
         .post('/api/auth/reset-password')
         .send({ token: rawToken, password: 'NewPassword123!' });
 
       expect(res.status).toBe(200);
-      expect(prisma.passwordResetToken.update).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ used: true }) })
+      expect(prisma.passwordResetToken.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'prt1', used: false }, data: { used: true } })
       );
       expect(prisma.user.update).toHaveBeenCalledWith(
         expect.objectContaining({

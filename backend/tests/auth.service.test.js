@@ -112,15 +112,19 @@ describe('auth service regression', () => {
         user,
       });
 
+      // The token is claimed inside an interactive transaction: updateMany used:false -> true.
+      prismaMock.$transaction.mockImplementationOnce(async (fn) => fn(prismaMock));
+      prismaMock.passwordResetToken.updateMany.mockResolvedValueOnce({ count: 1 });
+
       const updated = await resetPassword('rawtokendoesnotmatter', 'NewPass1!');
 
       expect(updated).toEqual(user);
       expect(prismaMock.user.update).toHaveBeenCalledOnce();
-      expect(prismaMock.passwordResetToken.update).toHaveBeenCalledOnce();
       const pwdData = prismaMock.user.update.mock.calls[0][0].data;
       expect(pwdData.password_hash).not.toBe('NewPass1!');
-      const tokenData = prismaMock.passwordResetToken.update.mock.calls[0][0].data;
-      expect(tokenData.used).toBe(true);
+      expect(prismaMock.passwordResetToken.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'rt1', used: false }, data: { used: true } }),
+      );
     });
 
     it('returns null when reset token is invalid or used', async () => {

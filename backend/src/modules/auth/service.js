@@ -31,6 +31,10 @@ export const DUMMY_HASH = bcrypt.hashSync('__kdl_timing_dummy__', SALT_ROUNDS);
 export const hashPassword = (password) => bcrypt.hash(password, SALT_ROUNDS);
 export const comparePassword = (password, hash) => bcrypt.compare(password, hash);
 
+// The name is user-chosen and goes into an HTML email.
+export const escapeHtml = (v) =>
+  String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
 const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
 // H1 + L2 + L1 + I1: type claim distinguishes access vs refresh; iss/aud added; algorithm pinned
@@ -147,6 +151,7 @@ export const revokeFamilyById = (familyId) =>
 
 // M1: Progressive per-account lockout keys (stored in Redis)
 const LOCKOUT_KEY = (email) => `auth:lockout:${email.toLowerCase()}`;
+const LOCK_UNTIL_KEY = (email) => `auth:lockuntil:${email.toLowerCase()}`;
 const LOCKOUT_WINDOW_SECS = 30 * 60; // max TTL 30 min
 
 const LOCKOUT_THRESHOLDS = [
@@ -157,21 +162,19 @@ const LOCKOUT_THRESHOLDS = [
 
 export const checkAccountLockout = async (email) => {
   try {
-    const raw = await redis.get(LOCKOUT_KEY(email));
-    if (!raw) return null;
-    const { lockedUntil } = JSON.parse(raw);
+    const lockedUntil = Number(await redis.get(LOCK_UNTIL_KEY(email)));
     return lockedUntil && Date.now() < lockedUntil ? lockedUntil : null;
   } catch {
     return null; // Redis unavailable — fail open (rate limiter still protects)
   }
 };
 
+// Atomic: INCR is one Redis command, so two simultaneous failures can never both read the same count
+// and write back the same number (the old get-then-set let parallel guesses slip past the threshold).
 export const recordFailedLoginAttempt = async (email) => {
   try {
     const key = LOCKOUT_KEY(email);
-    const raw = await redis.get(key);
-    const { attempts = 0 } = raw ? JSON.parse(raw) : {};
-    const newAttempts = attempts + 1;
+    const newAttempts = await redis.incr(key);
 
     let lockedUntil = null;
     let ttlSecs = LOCKOUT_WINDOW_SECS;
@@ -183,7 +186,9 @@ export const recordFailedLoginAttempt = async (email) => {
       }
     }
 
-    await redis.set(key, JSON.stringify({ attempts: newAttempts, lockedUntil }), 'EX', ttlSecs);
+    // The counter key holds the count; a separate key holds the lock so the count survives a lock expiring.
+    await redis.expire(key, LOCKOUT_WINDOW_SECS);
+    if (lockedUntil) await redis.set(LOCK_UNTIL_KEY(email), String(lockedUntil), 'EX', ttlSecs);
     return lockedUntil;
   } catch {
     return null;
@@ -192,7 +197,7 @@ export const recordFailedLoginAttempt = async (email) => {
 
 export const clearLoginLockout = async (email) => {
   try {
-    await redis.del(LOCKOUT_KEY(email));
+    await redis.del(LOCKOUT_KEY(email), LOCK_UNTIL_KEY(email));
   } catch {
     // ignore
   }
@@ -226,7 +231,7 @@ export const createPasswordResetToken = async (email) => {
     to: user.email,
     subject: 'Reset your KDL account password',
     html: `
-      <p>Hi ${user.name},</p>
+      <p>Hi ${escapeHtml(user.name)},</p>
       <p>You requested a password reset. Click the link below to set a new password. It expires in 1 hour.</p>
       <p><a href="${resetUrl}">${resetUrl}</a></p>
       <p>If you didn't request this, you can safely ignore this email.</p>
@@ -256,24 +261,26 @@ export const resetPassword = async (token, password) => {
 
   const password_hash = await hashPassword(password);
 
-  await prisma.$transaction([
-    prisma.user.update({
+  // Claim the token first, inside the transaction. Two requests with the same token used to both
+  // pass the lookup above and both set a password; now only the one whose updateMany flips
+  // used:false -> true (count 1) goes on.
+  const claimed = await prisma.$transaction(async (tx) => {
+    const { count } = await tx.passwordResetToken.updateMany({
+      where: { id: record.id, used: false },
+      data: { used: true },
+    });
+    if (count !== 1) return false;
+    await tx.user.update({
       where: { id: record.user.id },
       // A reset password is user-chosen, so any pending forced change is satisfied.
       data: { password_hash, must_change_password: false },
-    }),
-    prisma.passwordResetToken.update({
-      where: { id: record.id },
-      data: { used: true },
-    }),
+    });
     // M2: revoke all refresh tokens so all sessions are invalidated atomically
-    prisma.refreshToken.updateMany({
-      where: { user_id: record.user.id },
-      data: { revoked: true },
-    }),
-  ]);
+    await tx.refreshToken.updateMany({ where: { user_id: record.user.id }, data: { revoked: true } });
+    return true;
+  });
 
-  return record.user;
+  return claimed ? record.user : null;
 };
 
 export const changePassword = async (userId, currentPassword, newPassword) => {

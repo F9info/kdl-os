@@ -7,6 +7,19 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import express from 'express';
 import request from 'supertest';
 
+// In-memory stand-in for the Redis the limiter store talks to.
+vi.mock('../../config/redis.js', () => {
+  const m = new Map();
+  return {
+    redis: {
+      incr: async (k) => { m.set(k, (m.get(k) || 0) + 1); return m.get(k); },
+      decr: async (k) => { m.set(k, (m.get(k) || 1) - 1); },
+      del: async (k) => { m.delete(k); },
+      pexpire: async () => 1,
+      pttl: async () => 60000,
+    },
+  };
+});
 vi.mock('../../middleware/validate.js', () => ({ validate: () => (_q, _r, n) => n() }));
 vi.mock('../../middleware/auth.js', () => ({
   authenticate: (_q, _r, n) => n(),

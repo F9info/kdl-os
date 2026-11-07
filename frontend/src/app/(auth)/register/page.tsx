@@ -20,7 +20,7 @@ const registerSchema = z
     email: z.string().email('Invalid email address'),
     password: z
       .string()
-      .min(8, 'Password must be at least 8 characters')
+      .min(12, 'Password must be at least 12 characters')
       .regex(/[A-Z]/, 'Must contain an uppercase letter')
       .regex(/[0-9]/, 'Must contain a number'),
     confirmPassword: z.string(),

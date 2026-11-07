@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { validate } from '../../middleware/validate.js';
+import { RedisRateLimitStore } from '../../shared/utils/redis-rate-limit-store.js';
 import {
   registerSchema,
   loginSchema,
@@ -27,11 +28,11 @@ import {
 
 const router = Router();
 
-// M1: Dedicated auth rate limiter — 10 req / 15 min per IP+email combination
-// in production. Keyed on both so neither IP rotation nor email cycling
-// alone bypasses the limit. Progressive per-account lockout (5/10/20
-// attempts → 1/5/30 min) is enforced inside the login controller via Redis
-// counters — that protection is unaffected by this limiter's threshold.
+// M1: Dedicated auth rate limiter — 10 failed req / 15 min per IP in production.
+// Keyed on the IP only: keying on IP+email let one address try unlimited different
+// emails (credential stuffing). Per-account protection is the progressive lockout
+// (5/10/20 attempts → 1/5/30 min) in the login controller, via Redis counters.
+// Counters live in Redis (see RedisRateLimitStore), not in process memory.
 // Dev raised to 2000: shares one bucket (keyed by IP+email) across every
 // request proxied through Next.js — a real browser session and any
 // Playwright-driven re-logins together, not per tab/run. A single local
@@ -42,10 +43,8 @@ const authLimiter = rateLimit({
   max: process.env.NODE_ENV === 'production' ? 10 : 2000,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    const email = (req.body?.email || '').toLowerCase().trim();
-    return `${req.ip}:${email}`;
-  },
+  keyGenerator: (req) => req.ip,
+  store: new RedisRateLimitStore('auth'),
   message: { success: false, message: 'Too many attempts. Try again in 15 minutes.' },
   skipSuccessfulRequests: true,
 });
@@ -54,8 +53,9 @@ const authLimiter = rateLimit({
 // successful signup or a forgot-password call (which always answers 200): an
 // attacker could create unlimited accounts, or email-bomb any address. These
 // count EVERY request. Dev is effectively unlimited (see authLimiter comment).
-const strictLimiter = ({ max, keyGenerator, message }) =>
+const strictLimiter = ({ name, max, keyGenerator, message }) =>
   rateLimit({
+    store: new RedisRateLimitStore(name),
     windowMs: 60 * 60 * 1000,
     max: process.env.NODE_ENV === 'production' ? max : 2000,
     standardHeaders: true,
@@ -65,16 +65,19 @@ const strictLimiter = ({ max, keyGenerator, message }) =>
   });
 const emailOf = (req) => (req.body?.email || '').toLowerCase().trim();
 export const registerLimiter = strictLimiter({
+  name: 'register',
   max: 5,
   keyGenerator: (req) => req.ip,
   message: 'Too many sign-ups from this address. Try again in an hour.',
 });
 export const forgotIpLimiter = strictLimiter({
+  name: 'forgot-ip',
   max: 10,
   keyGenerator: (req) => req.ip,
   message: 'Too many reset requests. Try again in an hour.',
 });
 export const forgotEmailLimiter = strictLimiter({
+  name: 'forgot-email',
   max: 3,
   keyGenerator: emailOf,
   message: 'Too many reset requests for this account. Try again in an hour.',
@@ -82,7 +85,15 @@ export const forgotEmailLimiter = strictLimiter({
 
 router.post('/register', registerLimiter, authLimiter, validate(registerSchema), register);
 router.post('/login', authLimiter, validate(loginSchema), login);
-router.post('/refresh', validate(refreshSchema), refresh);
+// Refresh is called by every logged-in tab, so the limit is generous: it only stops token-guessing floods.
+export const refreshLimiter = strictLimiter({
+  name: 'refresh',
+  max: 300,
+  keyGenerator: (req) => req.ip,
+  message: 'Too many refresh attempts. Try again later.',
+});
+
+router.post('/refresh', refreshLimiter, validate(refreshSchema), refresh);
 router.post('/logout', validate(logoutSchema), logout);
 router.post(
   '/forgot-password',

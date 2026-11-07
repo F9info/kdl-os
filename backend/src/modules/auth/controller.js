@@ -2,6 +2,20 @@ import * as authService from './service.js';
 import { successResponse, errorResponse } from '../../shared/utils/response.js';
 import { resolvePermissions } from '../user-management/shared/permission-resolver.js';
 import { prisma } from '../../config/database.js';
+import { writeActivityAsync, getClientIp } from '../user-management/shared/activity-logger.js';
+
+// Audit trail for sign-in events. Never put the password or a token in `properties`.
+const audit = (req, action, description, { actor = null, subject = null, properties = null } = {}) =>
+  writeActivityAsync({
+    actor,
+    module: 'auth',
+    action,
+    subject_type: subject ? 'User' : null,
+    subject_id: subject,
+    description,
+    properties,
+    ip_address: getClientIp(req),
+  });
 
 const IS_PROD = process.env.NODE_ENV === 'production';
 
@@ -88,6 +102,7 @@ export const login = async (req, res, next) => {
     const lockedUntil = await authService.checkAccountLockout(email);
     if (lockedUntil) {
       const retryAfter = Math.ceil((lockedUntil - Date.now()) / 1000);
+      audit(req, 'login_blocked', 'Sign-in refused: account locked', { properties: { email, retry_after_s: retryAfter } });
       return errorResponse(res, `Account temporarily locked. Retry after ${retryAfter}s.`, 429);
     }
 
@@ -97,17 +112,22 @@ export const login = async (req, res, next) => {
     if (!user || !user.is_active || user.status === 'SUSPENDED' || user.deleted_at) {
       await authService.comparePassword(password, authService.DUMMY_HASH);
       await authService.recordFailedLoginAttempt(email);
+      audit(req, 'login_failed', 'Sign-in failed', { properties: { email } });
       return errorResponse(res, 'Invalid credentials', 401);
     }
 
     const valid = await authService.comparePassword(password, user.password_hash);
     if (!valid) {
-      await authService.recordFailedLoginAttempt(email);
+      const lockedNow = await authService.recordFailedLoginAttempt(email);
+      audit(req, lockedNow ? 'account_locked' : 'login_failed', lockedNow ? 'Account locked after repeated failures' : 'Sign-in failed', {
+        actor: user.id, subject: user.id, properties: { email },
+      });
       return errorResponse(res, 'Invalid credentials', 401);
     }
 
     // Successful login — clear lockout counter
     await authService.clearLoginLockout(email);
+    audit(req, 'login', 'Signed in', { actor: user.id, subject: user.id });
 
     const roleSlugs = user.roles?.map((ur) => ur.role?.slug).filter(Boolean) || [];
     const roleObjects = user.roles?.map((ur) => ur.role).filter(Boolean) || [];
@@ -217,7 +237,8 @@ export const logout = async (req, res, next) => {
 export const forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.validated.body;
-    await authService.createPasswordResetToken(email);
+    const { user } = await authService.createPasswordResetToken(email);
+    if (user) audit(req, 'password_reset_requested', 'Password reset link requested', { actor: user.id, subject: user.id });
     // Return a generic message regardless of whether the email exists to prevent enumeration.
     return successResponse(res, { message: 'If an account exists, a reset link has been sent.' });
   } catch (err) {
@@ -230,6 +251,7 @@ export const resetPassword = async (req, res, next) => {
     const { token, password } = req.validated.body;
     const user = await authService.resetPassword(token, password);
     if (!user) return errorResponse(res, 'Invalid or expired reset token', 400);
+    audit(req, 'password_reset', 'Password reset with an emailed link', { actor: user.id, subject: user.id });
     return successResponse(res, { message: 'Password reset successfully' });
   } catch (err) {
     next(err);
@@ -241,12 +263,14 @@ export const changePassword = async (req, res, next) => {
     const { currentPassword, newPassword } = req.validated.body;
     const result = await authService.changePassword(req.user.id, currentPassword, newPassword);
     if (!result.ok) {
+      audit(req, 'password_change_failed', `Password change refused: ${result.reason}`, { actor: req.user.id, subject: req.user.id });
       if (result.reason === 'invalid_current_password') {
         return errorResponse(res, 'Current password is incorrect', 401);
       }
       return errorResponse(res, 'Account is inactive', 403);
     }
 
+    audit(req, 'password_changed', 'Password changed', { actor: req.user.id, subject: req.user.id });
     // changePassword revoked every refresh token for the user — issue a fresh
     // pair so this session survives the rotation.
     const roleSlugs = await authService.getUserRoleSlugs(req.user.id);
