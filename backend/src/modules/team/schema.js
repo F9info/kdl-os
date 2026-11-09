@@ -23,7 +23,7 @@ export const getTeamMemberSchema = z.object({
 
 export const createTeamMemberSchema = z.object({
   body: z.object({
-    project_id: z.string().min(1).nullish(),
+    project_id: z.string().min(1).optional(),
     name: z.string().min(1).max(150),
     role: z.string().min(1).max(150),
     bio: z.string().max(2000).nullish(),
@@ -38,7 +38,7 @@ export const updateTeamMemberSchema = z.object({
     id: z.string().min(1),
   }),
   body: z.object({
-    project_id: z.string().min(1).nullish(),
+    project_id: z.string().min(1).optional(),
     name: z.string().min(1).max(150).optional(),
     role: z.string().min(1).max(150).optional(),
     bio: z.string().max(2000).nullish(),

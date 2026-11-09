@@ -12,7 +12,7 @@ export const listGallerySchema = z.object({
 export const idParamSchema = z.object({ params: z.object({ id: z.string().min(1) }) });
 
 const fields = {
-  project_id: z.string().min(1).nullish(),
+  project_id: z.string().min(1).optional(),
   title: z.string().min(1).max(200),
   image_url: z.string().min(1).max(2000),
   caption: z.string().max(1000).nullish(),

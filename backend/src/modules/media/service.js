@@ -208,6 +208,7 @@ export const uploadMedia = async (file, userId, folderId, opts = {}) => {
       exif,
       checksum,
       ...(opts.visibility === 'SHARED' ? { visibility: 'SHARED' } : {}),
+      ...(opts.projectId ? { project_id: opts.projectId } : {}),
     },
   });
 
@@ -235,7 +236,7 @@ export const uploadMedia = async (file, userId, folderId, opts = {}) => {
   return record;
 };
 
-export const listMedia = async (userId, query, { bypass = false } = {}) => {
+export const listMedia = async (userId, query, { bypass = false, projectId } = {}) => {
   const { page, limit, skip } = getPaginationParams(query);
   const { folder_id, type, search, date_from, date_to, sort, archived, scope } = query;
 
@@ -275,6 +276,8 @@ export const listMedia = async (userId, query, { bypass = false } = {}) => {
   } else if (!bypass) {
     andClauses.push({ OR: [{ user_id: userId }, { visibility: 'SHARED' }] });
   }
+  // T05b: the active project's files plus untagged ones (uploaded before projects existed).
+  if (projectId) andClauses.push({ OR: [{ project_id: projectId }, { project_id: null }] });
   if (andClauses.length) where.AND = andClauses;
 
   const sortMap = {

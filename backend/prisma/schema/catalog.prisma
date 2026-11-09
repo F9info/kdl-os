@@ -8,7 +8,7 @@
 
 model CatalogItem {
   id             String   @id @default(cuid())
-  project_id     String?
+  project_id     String
   name           String
   slug           String
   category       String?

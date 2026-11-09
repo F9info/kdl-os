@@ -6,6 +6,7 @@ import { deletePage } from '../page-builder/service.js';
 import { createType, deleteType } from '../detail-page-types/entries.service.js';
 import { getDetailPageType } from '../../shared/detail-pages/registry.js';
 import { slugify } from '../../shared/utils/slug.js';
+import { getDefaultProjectId } from '../../shared/default-project.js';
 import { getFooterSameAsHeader, setFooterSameAsHeader } from './site-menus.js';
 
 const MAX_DEPTH = 3;
@@ -127,9 +128,12 @@ export const getPublicMenu = async (projectId, key) => {
 };
 
 export const ensureMenu = async ({ project_id, key, name }) => {
+  // A menu always belongs to a project (T04b): none named means the default project.
+  const projectId = project_id ?? (await getDefaultProjectId());
+  if (!projectId) throw Object.assign(new Error('No project found to create the menu in'), { status: 409 });
   const menu = await prisma.menu.upsert({
-    where: { project_id_key: { project_id: project_id ?? null, key } },
-    create: { project_id: project_id ?? null, key, name },
+    where: { project_id_key: { project_id: projectId, key } },
+    create: { project_id: projectId, key, name },
     update: {},
     include: { items: true },
   });

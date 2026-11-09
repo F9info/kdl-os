@@ -8,7 +8,7 @@
 
 model Menu {
   id         String     @id @default(cuid())
-  project_id String?
+  project_id String
   key        String
   name       String
   created_at DateTime   @default(now())

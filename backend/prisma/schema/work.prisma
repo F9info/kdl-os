@@ -4,7 +4,7 @@
 
 model WorkCategory {
   id             String   @id @default(cuid())
-  project_id     String?
+  project_id     String
   eyebrow        String?
   name           String
   slug           String

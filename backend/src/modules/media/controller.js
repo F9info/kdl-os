@@ -142,7 +142,7 @@ export const uploadMedia = async (req, res, next) => {
     }
 
     const results = await Promise.all(
-      files.map((f) => mediaService.uploadMedia(f, req.user.id, folderId, { visibility }).then((m) => mediaService.resolveUrls(m))),
+      files.map((f) => mediaService.uploadMedia(f, req.user.id, folderId, { visibility, projectId: req.projectId }).then((m) => mediaService.resolveUrls(m))),
     );
     return successResponse(res, { media: results }, 201);
   } catch (err) {
@@ -244,7 +244,7 @@ export const importUrl = async (req, res, next) => {
 export const listMedia = async (req, res, next) => {
   try {
     const userId = req.user.userId ?? req.user.id;
-    const result = await mediaService.listMedia(userId, req.validated.query || {}, { bypass: req.userPermissions?.bypass });
+    const result = await mediaService.listMedia(userId, req.validated.query || {}, { bypass: req.userPermissions?.bypass, projectId: req.projectId });
     return successResponse(res, result);
   } catch (err) {
     next(err);

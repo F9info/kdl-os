@@ -17,7 +17,7 @@ export const getFaqSchema = z.object({
 
 export const createFaqSchema = z.object({
   body: z.object({
-    project_id: z.string().min(1).nullish(),
+    project_id: z.string().min(1).optional(),
     question: z.string().min(1).max(500),
     answer: z.string().min(1).max(4000),
     order: z.number().int().default(0),
@@ -30,7 +30,7 @@ export const updateFaqSchema = z.object({
     id: z.string().min(1),
   }),
   body: z.object({
-    project_id: z.string().min(1).nullish(),
+    project_id: z.string().min(1).optional(),
     question: z.string().min(1).max(500).optional(),
     answer: z.string().min(1).max(4000).optional(),
     order: z.number().int().optional(),

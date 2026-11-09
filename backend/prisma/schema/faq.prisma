@@ -6,7 +6,7 @@
 
 model FaqEntry {
   id         String   @id @default(cuid())
-  project_id String?
+  project_id String
   question   String
   answer     String
   order      Int      @default(0)

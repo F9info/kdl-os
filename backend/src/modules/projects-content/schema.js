@@ -17,7 +17,7 @@ export const getCaseStudySchema = z.object({
 });
 
 const caseStudyBody = {
-  project_id: z.string().min(1).nullish(),
+  project_id: z.string().min(1).optional(),
   title: z.string().min(1).max(200),
   eyebrow: z.string().max(200).nullish(),
   tags: z.string().max(500).nullish(),

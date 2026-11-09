@@ -1,7 +1,7 @@
 // Testimonials module (part of the CMS bundle): customer quotes shown on the public site.
 model Testimonial {
   id         String   @id @default(cuid())
-  project_id String?
+  project_id String
   name       String
   role       String?
   quote      String

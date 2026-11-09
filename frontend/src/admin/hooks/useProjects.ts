@@ -50,6 +50,54 @@ export function useUpdateProject() {
   })
 }
 
+/** T12: tick or untick a step of the guided workflow (merge-only on the server). */
+export function useSetWorkflowStep() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, step, done }: { id: string; step: string; done: boolean }) =>
+      api.put(`/projects/${id}/workflow`, { step, done }).then((r) => r.data.data.workflow),
+    onSuccess: () => qc.invalidateQueries({ queryKey: projectsKey }),
+  })
+}
+
+export interface LaunchPage {
+  id: string
+  slug: string
+  title: string
+  status: string
+  errors: number
+  warnings: number
+  can_publish: boolean
+  issues: { code: string; severity?: string; message: string }[]
+}
+export interface LaunchReport {
+  ready: boolean
+  pages: LaunchPage[]
+  launch: { at: string; published: number } | null
+}
+
+/** T13: what Launch would publish, with each page's problems. */
+export function useLaunchCheck(projectId: string | undefined) {
+  return useQuery({
+    queryKey: ['launch-check', projectId],
+    enabled: !!projectId,
+    queryFn: () =>
+      api.get(`/projects/${projectId}/launch`).then((r) => r.data.data as LaunchReport),
+  })
+}
+
+export function useLaunch() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, force }: { id: string; force: boolean }) =>
+      api.post(`/projects/${id}/launch`, { force }).then((r) => r.data.data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['launch-check'] })
+      void qc.invalidateQueries({ queryKey: projectsKey })
+    },
+  })
+}
+
 export function useDeleteProject() {
   const qc = useQueryClient()
   return useMutation({

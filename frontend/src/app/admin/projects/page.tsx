@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import { Archive, ArchiveRestore, CheckCircle2, FolderKanban, Pencil, Plus, Trash2 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
@@ -61,12 +62,19 @@ function ProjectsPageInner() {
       <PageHeader
         title="Projects"
         action={
-          canCreate && (
-            <Button onClick={() => setDialog({ open: true, project: null })} data-testid="new-project">
-              <Plus className="h-4 w-4" />
-              New project
+          <div className="flex gap-2">
+            <Button variant="outline" asChild>
+              <Link href="/admin/projects/workflow" data-testid="guided-setup">
+                Guided setup
+              </Link>
             </Button>
-          )
+            {canCreate && (
+              <Button onClick={() => setDialog({ open: true, project: null })} data-testid="new-project">
+                <Plus className="h-4 w-4" />
+                New project
+              </Button>
+            )}
+          </div>
         }
       />
       <p className="mb-6 max-w-2xl text-sm text-muted-foreground">

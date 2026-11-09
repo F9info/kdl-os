@@ -6,7 +6,7 @@
 
 model ProjectCaseStudy {
   id          String   @id @default(cuid())
-  project_id  String?
+  project_id  String
   title       String
   eyebrow     String?
   tags        String?

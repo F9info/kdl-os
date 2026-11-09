@@ -10,7 +10,7 @@ export const listTestimonialSchema = z.object({
 export const idParamSchema = z.object({ params: z.object({ id: z.string().min(1) }) });
 
 const fields = {
-  project_id: z.string().min(1).nullish(),
+  project_id: z.string().min(1).optional(),
   name: z.string().min(1).max(200),
   role: z.string().max(200).nullish(),
   quote: z.string().min(1).max(2000),

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { IDENTITY_FIELDS } from '../identity/schema.js';
+import { WORKFLOW_STEPS } from './workflow.js';
 
 export const PROJECT_KINDS = ['ADMIN', 'WEBSITE', 'LANDING', 'STATIC'];
 export const PROJECT_STATUSES = ['DRAFT', 'ACTIVE', 'ARCHIVED'];
@@ -92,4 +93,14 @@ export const siteIdentityParamsSchema = z.object({
 export const saveSiteIdentitySchema = z.object({
   params: siteIdentityParamsSchema.shape.params,
   body: z.object(siteIdentityFields).partial().strict(),
+});
+
+export const workflowStepSchema = z.object({
+  params: z.object({ id: z.string().min(1) }),
+  body: z.object({ step: z.enum(WORKFLOW_STEPS), done: z.boolean() }),
+});
+
+export const launchSchema = z.object({
+  params: z.object({ id: z.string().min(1) }),
+  body: z.object({ force: z.boolean().default(false) }).default({}),
 });

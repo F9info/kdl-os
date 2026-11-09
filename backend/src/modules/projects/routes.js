@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { authenticate } from '../../middleware/auth.js';
 import { requirePermission } from '../../middleware/permission.js';
+import { requireProject } from '../../middleware/project.js';
 import { validate } from '../../middleware/validate.js';
-import { createProjectSchema, updateProjectSchema, answerOnboardingSchema, saveLayoutSchema, siteIdentityParamsSchema, saveSiteIdentitySchema } from './schema.js';
-import { handleGetLayout, handleSaveLayout, handleListSites, handleGetSiteIdentity, handleSaveSiteIdentity, handleGetOnboarding, handleAnswerOnboarding, handleList, handleGet, handleCreate, handleUpdate, handleDelete } from './controller.js';
+import { createProjectSchema, updateProjectSchema, answerOnboardingSchema, saveLayoutSchema, siteIdentityParamsSchema, saveSiteIdentitySchema, workflowStepSchema, launchSchema } from './schema.js';
+import { handleGetLayout, handleSaveLayout, handleListSites, handleGetSiteIdentity, handleSaveSiteIdentity, handleGetOnboarding, handleAnswerOnboarding, handleList, handleGet, handleCreate, handleUpdate, handleDelete, handleWorkflowStep, handleLaunchCheck, handleLaunch } from './controller.js';
 
 const router = Router();
 
@@ -20,6 +21,10 @@ router.get('/:id/layout', authenticate, requirePermission('projects', 'view'), h
 router.put('/:id/layout', authenticate, requirePermission('projects', 'update'), validate(saveLayoutSchema), handleSaveLayout);
 router.post('/', authenticate, requirePermission('projects', 'create'), validate(createProjectSchema), handleCreate);
 router.patch('/:id', authenticate, requirePermission('projects', 'update'), validate(updateProjectSchema), handleUpdate);
+router.put('/:id/workflow', authenticate, requirePermission('projects', 'update'), requireProject((req) => req.params.id), validate(workflowStepSchema), handleWorkflowStep);
+router.get('/:id/launch', authenticate, requirePermission('projects', 'view'), requireProject((req) => req.params.id), handleLaunchCheck);
+// Launch publishes pages, so it needs the page-builder publish right as well as project update.
+router.post('/:id/launch', authenticate, requirePermission('projects', 'update'), requirePermission('page-builder', 'publish'), requireProject((req) => req.params.id), validate(launchSchema), handleLaunch);
 router.delete('/:id', authenticate, requirePermission('projects', 'delete'), handleDelete);
 
 export default router;

@@ -268,6 +268,9 @@ model Media {
   transcript_lang String?             // Phase D4 — detected/requested language code
   barcodes        Json?               // Phase D7 — zxing-decoded QR/barcode hits: [{ value, format }], indexed in Meili
   owner_module    String?             // KDL-512 — same ownership contract as settings tables (KDL-192/197)
+  // T05b: the project a file was uploaded in. Null = untagged (uploaded before projects, or by a system job) and
+  // visible in every project. A plain tag, not a relation: deleting a project never deletes its files.
+  project_id      String?
   // Phase B — workflow / delivery
   workflow_status MediaWorkflowStatus @default(DRAFT)
   published_at    DateTime?
@@ -300,6 +303,7 @@ model Media {
   @@index([workflow_status])
   @@index([expires_at])
   @@index([owner_module])
+  @@index([project_id])
   @@map("media")
 }
 

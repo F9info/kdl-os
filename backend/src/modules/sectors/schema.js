@@ -26,7 +26,7 @@ export const getPublicSectorSchema = z.object({
 });
 
 const sectorBody = {
-  project_id: z.string().min(1).nullish(),
+  project_id: z.string().min(1).optional(),
   eyebrow: z.string().max(200).nullish(),
   name: z.string().min(1).max(200),
   slug: z

@@ -3,6 +3,7 @@ import { authenticate } from '../../middleware/auth.js';
 import { upload } from '../../middleware/upload.js';
 import { validate } from '../../middleware/validate.js';
 import { requirePermission, loadPermissions } from '../../middleware/permission.js';
+import { requestProject } from '../../middleware/request-project.js';
 import {
   listMediaSchema, getMediaSchema, deleteMediaSchema, updateMediaSchema,
   createFolderSchema, updateFolderSchema, deleteFolderSchema,
@@ -92,10 +93,10 @@ router.delete('/trash/purge', requirePermission('media', 'purge'), purgeTrash);
 router.delete('/trash/:id', requirePermission('media', 'purge'), validate(mediaIdParamSchema), purgeSingle);
 
 // Upload (multi-file)
-router.post('/upload', requirePermission('media', 'upload'), upload.array('files', 20), uploadMedia);
+router.post('/upload', requirePermission('media', 'upload'), requestProject, upload.array('files', 20), uploadMedia);
 
 // Backward-compat single-file upload alias
-router.post('/upload/single', requirePermission('media', 'upload'), upload.single('file'), uploadMedia);
+router.post('/upload/single', requirePermission('media', 'upload'), requestProject, upload.single('file'), uploadMedia);
 
 // Chunked + resumable upload (50MB+ files)
 router.post('/upload/chunked/init', requirePermission('media', 'upload'), validate(chunkInitSchema), chunkInit);
@@ -196,7 +197,7 @@ router.delete('/:id/comments/:commentId', requirePermission('media', 'metadata-e
 router.patch('/:id/workflow', loadPermissions(), validate(workflowTransitionSchema), transitionWorkflow);
 
 // List + CRUD
-router.get('/', requirePermission('media', 'view'), validate(listMediaSchema), listMedia);
+router.get('/', requirePermission('media', 'view'), requestProject, validate(listMediaSchema), listMedia);
 router.post('/:id/favorite', requirePermission('media', 'favorites'), validate(mediaIdParamSchema), favoriteMedia);
 router.delete('/:id/favorite', requirePermission('media', 'favorites'), validate(mediaIdParamSchema), unfavoriteMedia);
 router.post('/:id/touch', requirePermission('media', 'view'), validate(mediaIdParamSchema), touchMedia);

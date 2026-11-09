@@ -52,7 +52,7 @@ Then open http://localhost/login, sign in as `admin@kdl.com`, and the Setup Wiza
 Forgot the admin password (or locked out after too many failed sign-ins): reset it with
 
 ```bash
-docker compose exec backend node scripts/reset-admin-password.js --email admin@kdl.com --password 'Admin@123'
+docker compose exec backend node scripts/reset-admin-password.js appra
 ```
 
 Then sign in as `admin@kdl.com` with `Admin@123`. Outside production the password must be at least 8 characters; with `NODE_ENV=production` it must be at least 12 and `--force` is required. This is a development password: change it before any shared or production use.

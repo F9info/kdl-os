@@ -2,6 +2,8 @@ import { successResponse, errorResponse } from '../../shared/utils/response.js';
 import { getOnboarding, answerOnboarding } from './onboarding.js';
 import { getSiteLayout, saveSiteLayout } from './layout.js';
 import { getSiteIdentityWithPreviews, saveSiteIdentity } from './site-identity.js';
+import { setWorkflowStep } from './workflow.js';
+import { checkLaunch, launchProject } from './launch.js';
 import { listSites, listProjects, getProject, createProject, updateProject, deleteProject } from './service.js';
 
 export const handleList = async (req, res, next) => {
@@ -114,6 +116,35 @@ export const handleSaveSiteIdentity = async (req, res, next) => {
     successResponse(res, { identity: await saveSiteIdentity(id, siteId, req.validated.body) });
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+export const handleWorkflowStep = async (req, res, next) => {
+  try {
+    const { step, done } = req.validated?.body ?? req.body;
+    successResponse(res, { workflow: await setWorkflowStep(req.params.id, step, done) });
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+export const handleLaunchCheck = async (req, res, next) => {
+  try {
+    successResponse(res, await checkLaunch(req.params.id));
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status);
+    next(err);
+  }
+};
+
+export const handleLaunch = async (req, res, next) => {
+  try {
+    const { force = false } = req.validated?.body ?? req.body ?? {};
+    successResponse(res, await launchProject(req.params.id, req.user?.id, { force }));
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status, err.errors);
     next(err);
   }
 };

@@ -26,7 +26,7 @@ export const publicMenuSchema = z.object({
 
 export const ensureMenuSchema = z.object({
   body: z.object({
-    project_id: z.string().min(1).nullish(),
+    project_id: z.string().min(1).optional(),
     key: z.string().min(1).max(50),
     name: z.string().min(1).max(150),
   }),

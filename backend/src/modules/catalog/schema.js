@@ -25,7 +25,7 @@ export const getPublicCatalogSchema = z.object({
 });
 
 const catalogBody = {
-  project_id: z.string().min(1).nullish(),
+  project_id: z.string().min(1).optional(),
   name: z.string().min(1).max(200),
   slug: z
     .string()

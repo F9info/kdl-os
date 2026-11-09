@@ -1,7 +1,7 @@
 // Gallery module (part of the CMS bundle): images shown on the public Gallery page.
 model GalleryItem {
   id         String   @id @default(cuid())
-  project_id String?
+  project_id String
   title      String
   image_url  String
   caption    String?

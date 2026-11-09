@@ -122,6 +122,25 @@ describe('media service — regression + new', () => {
     expect(enqueueVariantJob).toHaveBeenCalledWith('media1', expect.stringMatching(/^u1\/.+\.jpg$/), 'image/jpeg');
   });
 
+  // ── T05b: project tag ──────────────────────────────────────────────────────
+  it('stamps the upload with the active project, and leaves it untagged without one', async () => {
+    const file = { originalname: 'doc.pdf', mimetype: 'application/pdf', size: 1024, buffer: Buffer.from('fake') };
+    prismaMock.media.create.mockResolvedValue({ id: 'm', path: 'u1/x.pdf', type: 'DOCUMENT', variants: null });
+    await uploadMedia(file, 'u1', null, { projectId: 'proj-A' });
+    expect(prismaMock.media.create.mock.calls.at(-1)[0].data.project_id).toBe('proj-A');
+    await uploadMedia(file, 'u1', null);
+    expect(prismaMock.media.create.mock.calls.at(-1)[0].data).not.toHaveProperty('project_id');
+  });
+
+  it('lists the active project\'s files plus untagged ones, never another project\'s', async () => {
+    prismaMock.media.findMany.mockResolvedValue([]);
+    await listMedia('u1', { page: 1, limit: 10 }, { projectId: 'proj-A' });
+    const where = prismaMock.media.findMany.mock.calls.at(-1)[0].where;
+    expect(where.AND).toContainEqual({ OR: [{ project_id: 'proj-A' }, { project_id: null }] });
+    await listMedia('u1', { page: 1, limit: 10 }, {});
+    expect(JSON.stringify(prismaMock.media.findMany.mock.calls.at(-1)[0].where)).not.toContain('project_id');
+  });
+
   it('does not enqueue variant job for non-image uploads', async () => {
     const file = {
       originalname: 'doc.pdf',
