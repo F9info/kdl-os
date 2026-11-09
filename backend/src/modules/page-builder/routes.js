@@ -7,6 +7,7 @@ import { requireProject } from '../../middleware/project.js';
 import { requestProject } from '../../middleware/request-project.js';
 import { prisma } from '../../config/database.js';
 import { z } from 'zod';
+import layoutsRouter from './layouts-routes.js';
 import { seoDefaultsSchema } from './seo.js';
 import {
   getAll,
@@ -61,6 +62,7 @@ const pageProject = requireProject(
 );
 
 // Admin CRUD — authenticated + RBAC-gated.
+router.use(layoutsRouter); // duplicate + layouts (T11), before the generic /:id routes
 router.get('/', authenticate, requirePermission('page-builder', 'view'), requestProject, getAll);
 router.get('/:id', authenticate, requirePermission('page-builder', 'view'), pageProject, getOne);
 router.post('/', authenticate, requirePermission('page-builder', 'add'), requestProject, postCreate);

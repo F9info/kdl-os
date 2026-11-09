@@ -49,6 +49,17 @@ export async function createPage(title: string): Promise<PageRecord> {
 }
 
 /** Autosave: data only. On a live page this only changes the draft, visitors see it after Publish. */
+/** T11: a copy of the page (draft, same project, free slug). */
+export async function duplicatePage(id: string): Promise<PageRecord> {
+  const res = await api.post(`/page-builder/${id}/duplicate`, {})
+  return toRecord(res.data.data.page)
+}
+
+/** T11: save the page's content as a reusable layout. */
+export async function saveAsLayout(id: string, name: string): Promise<void> {
+  await api.post('/page-builder/layouts', { page_id: id, name })
+}
+
 export async function autosavePage(id: string, data: Data): Promise<void> {
   await api.put(`/page-builder/${id}`, { data })
 }

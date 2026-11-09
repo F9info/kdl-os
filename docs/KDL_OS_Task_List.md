@@ -246,7 +246,7 @@ Effort is a rough planning guess: S (hours), M (about a day), L (several days).
 | T08 | Settings: names, logos, theme mode | [x] company_name + company logos next to app name/logo (fallback to app values), Appearance (Light/Dark/System) in core Identity settings, wizard asks both names. Wizard still takes one logo; landing per-site overrides not split |
 | T09 | Demo content follows the answer | [x] module install seeds add DemoLogo rows only after "yes" (answering yes later seeds installed modules), menus seed no longer creates dead /p/demo-* links (cleanup on answer). Kept in the default project per D4; not a separate Demo project |
 | T10 | Template and theme library in the database | [x] templates + theme_presets tables, built-ins seeded from the constants (insert if missing, never overwritten, deleted ones stay deleted), landing create reads the DB, API + UI to duplicate, rename, delete, save a landing page as a template, save/delete theme looks. Not done: page and section templates (landing only), editing a template body in place (done by duplicate, edit the page, save as template) |
-| T11 | Page duplicate and reusable layouts | [ ] |
+| T11 | Page duplicate and reusable layouts | [x] `POST /api/page-builder/:id/duplicate` (same project, free slug, keeps SEO minus canonical, refuses details-page instances), `GET/POST /api/page-builder/layouts`, `POST /api/page-builder/from-layout`. Layouts are `templates` rows with kind PAGE (no migration), install-wide. Backend only: no UI button yet; not run against the live container; not committed |
 | T12 | Guided 11-step workflow | [ ] |
 | T13 | Project preview and Launch | [ ] |
 | T14 | Complete and independent static export | [ ] |

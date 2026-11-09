@@ -1,10 +1,11 @@
 'use client'
 
-import { Pencil } from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
+import { Copy, LayoutTemplate, Pencil } from 'lucide-react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/axios'
 import { Button } from '@/components/ui/button'
-import { listPages } from '@/app/admin/page-builder/store'
+import { listPages, duplicatePage, saveAsLayout } from '@/app/admin/page-builder/store'
+import { toast } from '@/hooks/use-toast'
 import type { PageRecord } from '@/frontend/pages/page-record'
 import type { MenuItemNode } from '@/app/admin/menus/_tree'
 
@@ -42,6 +43,18 @@ export function resolveNavPages(
 }
 
 export function NavPagesGrid({ projectId, homeId }: { projectId: string; homeId?: string }) {
+  const queryClient = useQueryClient()
+  // Run a page action; errors from the server (e.g. a details page cannot be copied) show as a toast.
+  const act = async (done: string, fn: () => Promise<unknown>) => {
+    try {
+      await fn()
+      toast({ title: done })
+      await queryClient.invalidateQueries({ queryKey: ['pages-for-menu', projectId] })
+    } catch (e) {
+      const msg = (e as { response?: { data?: { message?: string } } }).response?.data?.message
+      toast({ title: msg ?? 'Something went wrong', variant: 'destructive' })
+    }
+  }
   const { data: menu } = useQuery({
     queryKey: ['menu', projectId, 'header'],
     queryFn: () =>
@@ -69,16 +82,38 @@ export function NavPagesGrid({ projectId, homeId }: { projectId: string; homeId?
             </span>
             <b className="text-sm">{c.label}</b>
             {c.page ? (
-              <Button size="sm" asChild className="mt-auto w-fit">
-                <a
-                  href={`/admin/template-engine/edit/${c.page.id}?projectId=${projectId}`}
-                  target="_blank"
-                  rel="noreferrer"
+              <div className="mt-auto flex flex-wrap gap-2">
+                <Button size="sm" asChild>
+                  <a
+                    href={`/admin/template-engine/edit/${c.page.id}?projectId=${projectId}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Pencil className="mr-2 h-3.5 w-3.5" />
+                    Edit
+                  </a>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => act('Page duplicated', () => duplicatePage(c.page!.id))}
                 >
-                  <Pencil className="mr-2 h-3.5 w-3.5" />
-                  Edit
-                </a>
-              </Button>
+                  <Copy className="mr-2 h-3.5 w-3.5" />
+                  Duplicate
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    // ponytail: window.prompt, swap for a dialog if layout naming needs more than a name
+                    const name = window.prompt('Layout name', c.label)?.trim()
+                    if (name) void act('Saved as layout', () => saveAsLayout(c.page!.id, name))
+                  }}
+                >
+                  <LayoutTemplate className="mr-2 h-3.5 w-3.5" />
+                  Save as layout
+                </Button>
+              </div>
             ) : (
               <p className="mt-auto text-xs text-muted-foreground">
                 Press Next on Navigation to build it.
