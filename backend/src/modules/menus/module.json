@@ -11,6 +11,21 @@
   ],
   "nav": [
     {
+      "label": "Brands",
+      "path": "/admin/brands",
+      "icon": "Globe",
+      "permission": "menus:view",
+      "activeWhen": {
+        "pathStartsWith": "/admin/template-engine/projects/",
+        "pathEndsWith": "/website",
+        "viewNotIn": [
+          "pages",
+          "layouts",
+          "navigation"
+        ]
+      }
+    },
+    {
       "label": "Website Details",
       "path": "/admin/website-details",
       "icon": "Building2",
@@ -24,21 +39,6 @@
       "activeWhen": {
         "pathStartsWith": "/admin/template-engine/projects/",
         "pathEndsWith": "/palette"
-      }
-    },
-    {
-      "label": "Brands",
-      "path": "/admin/brands",
-      "icon": "Globe",
-      "permission": "menus:view",
-      "activeWhen": {
-        "pathStartsWith": "/admin/template-engine/projects/",
-        "pathEndsWith": "/website",
-        "viewNotIn": [
-          "pages",
-          "layouts",
-          "navigation"
-        ]
       }
     },
     {

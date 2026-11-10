@@ -18,6 +18,9 @@ import {
   startStatic,
   staticStatus,
   staticDownload,
+  startLandingStatic,
+  landingStaticStatus,
+  landingStaticDownload,
   listRuns,
   getRun,
   resumeRun,
@@ -55,6 +58,10 @@ export const staticBuildLimiter = rateLimit({
 router.post('/site/static', requirePermission('template-engine', 'export'), staticBuildLimiter, requireProject(), startStatic);
 router.get('/site/static', requirePermission('template-engine', 'view'), requireProject(), staticStatus);
 router.get('/site/static/download', requirePermission('template-engine', 'export'), requireProject(), staticDownload);
+// The same, for one landing page: its own folder, rewritten by every Convert of that page.
+router.post('/site/landing/:siteId/static', requirePermission('template-engine', 'export'), staticBuildLimiter, requireProject(), startLandingStatic);
+router.get('/site/landing/:siteId/static', requirePermission('template-engine', 'view'), requireProject(), landingStaticStatus);
+router.get('/site/landing/:siteId/static/download', requirePermission('template-engine', 'export'), requireProject(), landingStaticDownload);
 
 // Crash-recovery: call at startup to flip RUNNING → FAILED(INTERRUPTED).
 router.post('/runs/:runId/resume', requirePermission('template-engine', 'run'), validate(runParamSchema), requireProject(), resumeRun);

@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
+import { isMemberOnly } from '@/frontend/membership/roles'
 import { AdminShell } from '@/admin/components/layout/AdminShell'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
@@ -16,6 +17,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (!isAuthenticated && !isLoading) {
       router.replace('/login')
+      return
+    }
+
+    // Members (role `member` only) have no admin access: send them to their account.
+    if (isMemberOnly(user)) {
+      router.replace('/membership/account')
       return
     }
 
@@ -52,7 +59,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return <LoadingSpinner fullPage />
   }
 
-  if (!isAuthenticated || user?.must_change_password) {
+  if (!isAuthenticated || user?.must_change_password || isMemberOnly(user)) {
     return null
   }
 

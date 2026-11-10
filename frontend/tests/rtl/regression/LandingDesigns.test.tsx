@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { render } from '@testing-library/react'
+import { vi } from 'vitest'
+import { render } from '../utils'
 import { landing } from '@/frontend/blocks/packs/landing'
+
+vi.mock('@/lib/axios', () => ({ default: { get: vi.fn().mockResolvedValue({ data: {} }) } }))
 
 // Each Landing section with a Design picker has four designs. They must show the SAME content,
 // look different from each other, and an old page without a `variant` must keep Design 1.

@@ -112,6 +112,25 @@ export const PALETTES = {
     footer: '#2a0a2e',
     footerAccent: '#ffd166',
   },
+  // Built from Application Identity: BrandScope (index.tsx) sets --lp-1 (primary) and --lp-2 (secondary) on every
+  // Landing block, so this set follows Settings > Identity. The fallbacks are the Identity defaults.
+  brand: {
+    label: 'Your brand colours (from Identity)',
+    hero: 'linear-gradient(135deg,var(--lp-1,#2c52a3) 0%,var(--lp-2,#132b60) 100%)',
+    dark: true,
+    ink: '#ffffff',
+    body: 'rgba(255,255,255,.9)',
+    accent: 'color-mix(in srgb,var(--lp-1,#2c52a3) 35%,#ffffff)',
+    strong: 'var(--lp-1,#2c52a3)',
+    pill: 'rgba(255,255,255,.22)',
+    button: '#ffffff',
+    buttonText: 'var(--lp-1,#2c52a3)',
+    soft: 'color-mix(in srgb,var(--lp-1,#2c52a3) 8%,#ffffff)',
+    ring: 'linear-gradient(135deg,var(--lp-1,#2c52a3),var(--lp-2,#132b60))',
+    band: 'linear-gradient(120deg,var(--lp-1,#2c52a3),var(--lp-2,#132b60))',
+    footer: 'color-mix(in srgb,var(--lp-2,#132b60) 88%,#000000)',
+    footerAccent: 'color-mix(in srgb,var(--lp-1,#2c52a3) 40%,#ffffff)',
+  },
 } satisfies Record<string, Palette>
 
 export type PaletteKey = keyof typeof PALETTES

@@ -19,14 +19,43 @@ const DURATIONS = [
 /** Where a preview token is opened. Built from the current origin, so it works on any host. */
 export const previewUrl = (origin: string, token: string) => `${origin}/preview/${token}`
 
-/** Preview button + dialog: create a signed link to the latest draft and copy or open it. */
-export function PreviewLinkButton({ pageId }: { pageId: string }) {
+/**
+ * Preview button. By default it opens a dialog to create a signed link to the latest draft and copy or open it.
+ * With `direct` (the landing page editor) there is no dialog: one click opens the whole page, header to
+ * footer, in a new tab (a link that works for 1 hour is made behind the scenes).
+ */
+export function PreviewLinkButton({
+  pageId,
+  direct = false,
+}: {
+  pageId: string
+  direct?: boolean
+}) {
   const [open, setOpen] = useState(false)
+
+  async function openNow() {
+    // The tab is opened on the click itself, so the browser does not block it as a pop-up; the address follows.
+    const tab = window.open('', '_blank')
+    try {
+      const link = await createPreviewLink(pageId, 1)
+      const url = previewUrl(window.location.origin, link.token)
+      if (tab) tab.location.href = url
+      else window.location.href = url
+    } catch {
+      tab?.close()
+      toast({
+        title: 'Preview failed',
+        description: 'Could not open the preview. Try again.',
+        variant: 'destructive',
+      })
+    }
+  }
+
   return (
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={direct ? openNow : () => setOpen(true)}
         className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-1.5 text-sm text-foreground hover:bg-muted"
       >
         <Eye size={15} /> Preview

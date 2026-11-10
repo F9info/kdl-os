@@ -10,17 +10,43 @@ const httpError = (status, message) => Object.assign(new Error(message), { statu
 const PUBLIC = { key: true, name: true, description: true, builtin: true, has_form: true };
 const KIND = 'LANDING';
 
-/** Inserts the built-in templates that are missing (any state: a deleted built-in is not resurrected). */
+// jsonb stores object keys in its own order, so compare bodies with sorted keys.
+const canon = (v) =>
+  JSON.stringify(v, (_k, x) =>
+    x && typeof x === 'object' && !Array.isArray(x)
+      ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => (a < b ? -1 : 1)))
+      : x
+  );
+
+/**
+ * Inserts the built-in templates that are missing (any state: a deleted built-in is not resurrected). A built-in
+ * that is still there gets its body brought up to date when the code's version changed: built-ins cannot be
+ * edited in the admin (only renamed, duplicated or deleted), so a different body can only mean a newer release.
+ * The user's name for it, copies made from it, and "Save as template" entries are never touched.
+ */
 export async function ensureBuiltinTemplates(client = prisma) {
-  const rows = await client.template.findMany({ where: { kind: KIND, builtin: true }, select: { key: true } });
-  const have = new Set(rows.map((r) => r.key));
+  const rows = await client.template.findMany({
+    where: { kind: KIND, builtin: true },
+    select: { key: true, data: true, deleted_at: true },
+  });
+  const have = new Map(rows.map((r) => [r.key, r]));
   for (const [key, t] of Object.entries(LANDING_TEMPLATES)) {
-    if (have.has(key)) continue;
+    const body = t.body(SLUG_TOKEN);
+    const row = have.get(key);
+    if (row) {
+      if (!row.deleted_at && canon(row.data) !== canon(body)) {
+        await client.template.update({
+          where: { key },
+          data: { data: body, description: t.description, has_form: !!t.hasForm },
+        });
+      }
+      continue;
+    }
     // upsert with an empty update: a concurrent request inserting the same key is not an error and changes nothing.
     await client.template.upsert({
       where: { key },
       update: {},
-      create: { key, kind: KIND, name: t.name, description: t.description, data: t.body(SLUG_TOKEN), has_form: !!t.hasForm, builtin: true },
+      create: { key, kind: KIND, name: t.name, description: t.description, data: body, has_form: !!t.hasForm, builtin: true },
     });
   }
 }

@@ -5,17 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import {
-  Copy,
-  Eye,
-  ExternalLink,
-  LayoutTemplate,
-  Palette,
-  Pencil,
-  Plus,
-  Save,
-  Trash2,
-} from 'lucide-react'
+import { Copy, Eye, ExternalLink, LayoutTemplate, Pencil, Plus, Save, Trash2 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { usePermissions } from '@/admin/hooks/usePermissions'
 import {
@@ -42,9 +32,11 @@ import { Input } from '@/components/ui/input'
 import { EmptyState } from '@/components/ui/empty-state'
 import { LoadingState } from '@/components/ui/loading-state'
 import { cn } from '@/lib/utils'
-import { BrandingDialog } from './BrandingDialog'
+import { FinishedLandingPages } from './FinishedLandingPages'
 import { newLandingSchema, type NewLandingForm } from './_schemas'
 
+// Company details (logo, name, phone, email, address, colours) are set in ONE place: Admin Settings > Identity.
+// There is no per-page Branding button here; every landing page header and footer reads Identity.
 // Preview pictures of the starter templates live in /public/landing-templates/<key>.jpg.
 // A template without a picture (Blank, or one added later) simply shows none.
 function TemplateThumb({ templateKey, className }: { templateKey: string; className?: string }) {
@@ -342,10 +334,12 @@ function LandingPagesContent() {
   const { data: sites, isLoading, error } = useLandingSites()
   const { data: templates = [] } = useLandingTemplates()
   // Coming back from "View template" > "Use this template": open the dialog on that template.
-  const useParam = useSearchParams().get('use')
+  const params = useSearchParams()
+  const useParam = params.get('use')
+  // After Save in the editor: only the finished pages, with Preview and Convert.
+  const finishedView = params.get('finished') === '1'
   const [open, setOpen] = useState(Boolean(useParam))
   const [startWith, setStartWith] = useState<string | null>(useParam)
-  const [branding, setBranding] = useState<LandingSite | null>(null)
   const [removing, setRemoving] = useState<LandingSite | null>(null)
   const remove = useDeleteLandingSite()
   const library = useTemplateLibrary()
@@ -378,7 +372,17 @@ function LandingPagesContent() {
         }
       />
 
-      {can('landing:add') && (
+      {finishedView ? (
+        isLoading ? (
+          <LoadingState />
+        ) : error ? (
+          <ErrorAlert error={error} />
+        ) : (
+          <FinishedLandingPages sites={sites ?? []} />
+        )
+      ) : null}
+
+      {!finishedView && can('landing:add') && (
         <TemplateGallery
           templates={templates}
           onUse={(key) => {
@@ -393,8 +397,8 @@ function LandingPagesContent() {
         />
       )}
 
-      <h2 className="mb-3 text-base font-semibold">Your landing pages</h2>
-      {isLoading ? (
+      {!finishedView && <h2 className="mb-3 text-base font-semibold">Your landing pages</h2>}
+      {finishedView ? null : isLoading ? (
         <LoadingState />
       ) : error ? (
         <ErrorAlert error={error} />
@@ -434,12 +438,6 @@ function LandingPagesContent() {
                         <Pencil className="h-4 w-4" />
                         Edit
                       </Link>
-                    </Button>
-                  )}
-                  {can('projects:update') && (
-                    <Button size="sm" variant="ghost" onClick={() => setBranding(site)}>
-                      <Palette className="h-4 w-4" />
-                      Branding
                     </Button>
                   )}
                   {can('landing:add') && page && (
@@ -488,7 +486,6 @@ function LandingPagesContent() {
           setStartWith(null)
         }}
       />
-      {branding && <BrandingDialog site={branding} onClose={() => setBranding(null)} />}
       {naming && (
         <TemplateNameDialog
           naming={naming}

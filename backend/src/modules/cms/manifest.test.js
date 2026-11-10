@@ -33,13 +33,9 @@ describe('CMS bundle manifest', () => {
     );
   });
 
-  it('orders the CMS sidebar group: Website Details, Color Palette, Brands, Navigation, Layouts, Pages, Sections', () => {
+  it('orders the Frontend sidebar group: Brands first, then Website Details, Color Palette, Navigation, Layouts, Pages, Sections', () => {
     const labels = load('menus').nav.map((n) => n.label);
-    expect(labels.indexOf('Color Palette')).toBe(labels.indexOf('Website Details') + 1);
-    expect(labels.indexOf('Brands')).toBe(labels.indexOf('Color Palette') + 1);
-    expect(labels.indexOf('Navigation')).toBe(labels.indexOf('Brands') + 1);
-    expect(labels.indexOf('Layouts')).toBe(labels.indexOf('Navigation') + 1);
-    expect(labels.indexOf('Pages')).toBe(labels.indexOf('Layouts') + 1);
-    expect(labels.indexOf('Sections')).toBe(labels.indexOf('Pages') + 1);
+    expect(labels[0]).toBe('Brands'); // the doorway to Landing Pages, Web app and Collateral
+    expect(labels.slice(1)).toEqual(['Website Details', 'Color Palette', 'Navigation', 'Layouts', 'Pages', 'Sections']);
   });
 });

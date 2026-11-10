@@ -51,7 +51,7 @@ describe('Convert to Static Website', () => {
   it('one click prepares the latest content, then builds, in that order', async () => {
     render(<StaticWebsitePage />)
     fireEvent.click(screen.getByTestId('convert-static'))
-    await waitFor(() => expect(h.start).toHaveBeenCalledWith(''))
+    await waitFor(() => expect(h.start).toHaveBeenCalledWith({ apiBase: '', siteUrl: '' }))
     expect(h.order).toEqual(['prepare', 'build'])
   })
 
@@ -61,7 +61,9 @@ describe('Convert to Static Website', () => {
       target: { value: 'https://app.example.com' },
     })
     fireEvent.click(screen.getByTestId('convert-static'))
-    await waitFor(() => expect(h.start).toHaveBeenCalledWith('https://app.example.com'))
+    await waitFor(() =>
+      expect(h.start).toHaveBeenCalledWith({ apiBase: 'https://app.example.com', siteUrl: '' })
+    )
   })
 
   it('a bad address is rejected on the spot: nothing is prepared or built', async () => {

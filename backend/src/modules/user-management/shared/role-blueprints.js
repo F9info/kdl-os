@@ -40,6 +40,7 @@ const ADMIN_CONTENT_MODULES = new Set([
   'notifications',
   'collateral',
   'brand-kit',
+  'membership',
 ]);
 // The base modules Admin always had (everything except roles:delete).
 const ADMIN_BASE_MODULES = new Set([

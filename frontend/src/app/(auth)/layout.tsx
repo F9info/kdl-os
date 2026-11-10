@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
+import { homeFor } from '@/frontend/membership/roles'
 import { useIdentity } from '@/hooks/useIdentity'
 import { AppImage } from '@/components/shared/AppImage'
 
@@ -19,7 +20,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       if (pathname !== '/change-password') router.push('/change-password')
       return
     }
-    router.push('/admin/dashboard')
+    router.push(homeFor(user))
   }, [isAuthenticated, isLoading, user, pathname, router])
 
   return (

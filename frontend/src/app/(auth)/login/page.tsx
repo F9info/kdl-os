@@ -9,6 +9,7 @@ import { useMutation } from '@tanstack/react-query'
 import { Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
 import api from '@/lib/axios'
+import { homeFor } from '@/frontend/membership/roles'
 import { useAuthStore } from '@/stores/auth.store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -52,7 +53,7 @@ export default function LoginPage() {
     onSuccess: (res) => {
       const { user, accessToken } = res.data
       setAuth(user, accessToken)
-      router.push(user.must_change_password ? '/change-password' : '/admin/dashboard')
+      router.push(user.must_change_password ? '/change-password' : homeFor(user))
     },
   })
 

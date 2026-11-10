@@ -24,6 +24,35 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
+describe('Preview button, direct (landing page editor)', () => {
+  it('one click opens the whole page in a new tab, no dialog; the link works for 1 hour', async () => {
+    const tab = { location: { href: '' }, close: vi.fn() }
+    const openSpy = vi.spyOn(window, 'open').mockReturnValue(tab as unknown as Window)
+    h.post.mockResolvedValue({
+      data: { data: { token: 'abc.def.ghi', expires_at: '2026-11-06T10:00:00.000Z' } },
+    })
+    render(<PreviewLinkButton pageId="pg1" direct />)
+    fireEvent.click(screen.getByRole('button', { name: /preview/i }))
+    await waitFor(() =>
+      expect(tab.location.href).toBe(`${window.location.origin}/preview/abc.def.ghi`)
+    )
+    expect(openSpy).toHaveBeenCalledWith('', '_blank')
+    expect(h.post).toHaveBeenCalledWith('/page-builder/pg1/preview-link', { ttl_hours: 1 })
+    expect(screen.queryByText('Preview link')).toBeNull()
+    openSpy.mockRestore()
+  })
+
+  it('closes the tab when the link cannot be made', async () => {
+    const tab = { location: { href: '' }, close: vi.fn() }
+    const openSpy = vi.spyOn(window, 'open').mockReturnValue(tab as unknown as Window)
+    h.post.mockRejectedValue(new Error('nope'))
+    render(<PreviewLinkButton pageId="pg1" direct />)
+    fireEvent.click(screen.getByRole('button', { name: /preview/i }))
+    await waitFor(() => expect(tab.close).toHaveBeenCalled())
+    openSpy.mockRestore()
+  })
+})
+
 describe('Preview button + dialog (T6.3)', () => {
   const open = () => {
     render(<PreviewLinkButton pageId="pg1" />)

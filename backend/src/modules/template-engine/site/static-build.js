@@ -6,7 +6,9 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import AdmZip from 'adm-zip';
+import * as storageService from '../../../shared/services/storage.service.js';
 import { sitesDir, withSiteLock } from './generator.js';
+import { writeExportContent } from './export-content.js';
 
 const jobs = new Map(); // slug -> { state, log, startedAt, finishedAt }
 const LOG_LINES = 40;
@@ -53,7 +55,7 @@ function run(cmd, args, cwd, env, job) {
  * Starts a build. Returns true, or the reason it did not start: 'running' (this project already has one) or
  * 'busy' (the global limit is reached). `exec` is injectable for tests.
  */
-export function startStaticBuild(slug, { apiBase = '', contact = {}, tokens = null, exec = run } = {}) {
+export function startStaticBuild(slug, { apiBase = '', siteUrl = null, exportModel = null, contact = {}, identity = {}, tokens = null, exec = run } = {}) {
   if (jobs.get(slug)?.state === 'running') return 'running';
   if (runningCount() >= MAX_CONCURRENT_BUILDS()) return 'busy';
   // `folder` is where the finished site appears on the host: SITES_DIR is the bind mount of
@@ -92,6 +94,8 @@ export function startStaticBuild(slug, { apiBase = '', contact = {}, tokens = nu
         await fs.promises.mkdir(path.join(root, 'static-assets'), { recursive: true });
         await fs.promises.writeFile(path.join(root, 'static-assets', 'th-tokens.css'), tokens.css);
       }
+      // The published-only pages, robots.txt and sitemap.xml for this export (the live content/ stays as it is).
+      if (exportModel) await writeExportContent(root, exportModel, siteUrl, { identity, readAsset });
       // --ignore-scripts: no dependency may run an install/postinstall script. Next ships its compiler as a prebuilt package.
       await exec('npm', ['install', '--include=dev', '--no-audit', '--no-fund', '--ignore-scripts'], root, {}, job);
       await exec('npm', ['run', 'build:static'], root, env, job);
@@ -106,6 +110,13 @@ export function startStaticBuild(slug, { apiBase = '', contact = {}, tokens = nu
     }
   });
   return true;
+}
+
+// A stored file (a logo) as bytes, for copying into the export folder.
+async function readAsset(objectName) {
+  const chunks = [];
+  for await (const c of await storageService.getFileStream(objectName)) chunks.push(c);
+  return Buffer.concat(chunks);
 }
 
 /** Zip of the last successful build, or null. */

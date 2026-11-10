@@ -34,6 +34,11 @@ mkdirSync(work)
 for (const name of readdirSync(root)) {
   if (!SKIP.has(name)) copy(path.join(root, name), path.join(work, name))
 }
+// A static export holds only published pages: the backend wrote them to content-export/ (see export-content.js).
+if (existsSync(path.join(work, 'content-export'))) {
+  rmSync(path.join(work, 'content'), { recursive: true, force: true })
+  renameSync(path.join(work, 'content-export'), path.join(work, 'content'))
+}
 symlinkSync(path.join(root, 'node_modules'), path.join(work, 'node_modules'), 'dir')
 
 for (const p of ['src/middleware.ts', 'src/app/p', 'src/app/(site)']) {
@@ -46,7 +51,11 @@ const patch = (file, from, to) => {
 const DYN = "export const dynamic = 'force-dynamic'"
 patch('src/app/layout.tsx', DYN, "export const dynamic = 'force-static'")
 patch('src/app/page.tsx', DYN, "export const dynamic = 'force-static'")
-patch('src/app/[prefix]/page.tsx', DYN, 'export const dynamicParams = false')
+// A site of one page (a single landing page exported on its own) has no /<route> pages: Next refuses a dynamic
+// route whose generateStaticParams() is empty when exporting, so that route is dropped from the copy.
+const subPages = readdirSync(path.join(work, 'content', 'pages')).filter((n) => n.endsWith('.json') && n !== 'index.json')
+if (subPages.length) patch('src/app/[prefix]/page.tsx', DYN, 'export const dynamicParams = false')
+else rmSync(path.join(work, 'src/app/[prefix]'), { recursive: true, force: true })
 
 // Images and libraries the live site gets from the admin app (/seed, /vendor) travel with the export.
 const assets = path.join(root, 'static-assets')

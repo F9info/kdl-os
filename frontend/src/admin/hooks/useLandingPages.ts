@@ -113,7 +113,9 @@ export function useCreateLandingPage() {
 }
 
 /** Where the page editor opens a page. */
-export const landingEditorHref = (pageId: string) => `/admin/template-engine/edit/${pageId}`
+// `from=landing` tells the editor to come back to the landing pages list after Save.
+export const landingEditorHref = (pageId: string) =>
+  `/admin/template-engine/edit/${pageId}?from=landing`
 
 // ── Per-site identity overrides (T5.5) ───────────────────────────────────────
 

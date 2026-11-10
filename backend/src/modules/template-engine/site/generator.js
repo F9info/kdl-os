@@ -48,6 +48,16 @@ export function assignRoutes(pages) {
   const used = new Set(['']);
   let homeTaken = false;
   return pages.map((p) => {
+    if (p.root) return { ...p, route: '' }; // a landing page exported on its own is the site's front page
+    if (p.landing) {
+      // A landing page is its own address: its slug, never Home, whatever its title says.
+      let base = p.slug;
+      if (RESERVED.has(base)) base = `${base}-page`;
+      let route = base;
+      for (let n = 2; used.has(route); n += 1) route = `${base}-${n}`;
+      used.add(route);
+      return { ...p, route };
+    }
     if (isHome(p) && !homeTaken) {
       homeTaken = true;
       return { ...p, route: '' };
@@ -85,7 +95,7 @@ const HEX = /^#[0-9a-fA-F]{3,8}$/;
 const FONT = /^[A-Za-z0-9 _-]{1,60}$/;
 const safe = (re, v, fallback) => (typeof v === 'string' && re.test(v.trim()) ? v.trim() : fallback);
 
-export function buildSiteModel({ project, kit, company, pages, menus }) {
+export function buildSiteModel({ project, kit, company, pages, menus }, { exportOnly = false } = {}) {
   const routed = assignRoutes(pages);
   const byId = new Map(routed.map((p) => [p.id, p.route]));
   const bySlug = new Map(routed.map((p) => [p.slug, p.route]));
@@ -110,9 +120,17 @@ export function buildSiteModel({ project, kit, company, pages, menus }) {
         : v && typeof v === 'object'
           ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, friendly(x)]))
           : v;
+  // A static export holds only the pages that are published on this site, so a menu link to any other
+  // page (a draft, a deleted page) would be dead: leave it out. Published landing pages are in the export.
+  const pointsAtMissingPage = (i) => {
+    if (i.no_page) return false;
+    if (i.page_id) return !byId.has(i.page_id);
+    const m = /^\/p\/([^/?#]+)/.exec(i.url ?? '');
+    return !!m && routeOf(m[1]) === undefined;
+  };
   const menuOf = (key) => {
     const m = menus.find((x) => x.key === key);
-    return m ? menuTree(m.items, hrefFor) : [];
+    return m ? menuTree(exportOnly ? m.items.filter((i) => !pointsAtMissingPage(i)) : m.items, hrefFor) : [];
   };
   return {
     site: {
@@ -139,7 +157,10 @@ export function buildSiteModel({ project, kit, company, pages, menus }) {
         projectId: project.id,
         title: p.title,
         status: p.status,
+        seo: p.seo ?? null,
         data: friendly(p.data),
+        // A landing page carries its own site's identity overrides; writeExportContent turns them into `identity`.
+        ...(p.landing && { landing: true, identityOverrides: p.identityOverrides ?? null }),
       },
     })),
   };
@@ -147,14 +168,21 @@ export function buildSiteModel({ project, kit, company, pages, menus }) {
 
 // ─── DB → input ──────────────────────────────────────────────────────────────
 
-export async function collectSiteInput(projectId) {
+// `publishedOnly` (static export): every page that is live, website pages and landing pages alike. A landing
+// page is flagged so it gets its own address (its slug) and its own site's identity overrides.
+export async function collectSiteInput(projectId, { publishedOnly = false } = {}) {
   const project = await prisma.project.findFirst({ where: { id: projectId, deleted_at: null } });
   if (!project) throw Object.assign(new Error('Project not found'), { status: 404 });
   const [kit, company, rows, menus] = await Promise.all([
     prisma.brandKit.findUnique({ where: { project_id: projectId } }),
     getCompanyInfo(projectId),
     prisma.builderPage.findMany({
-      where: { project_id: projectId, deleted_at: null },
+      where: {
+        project_id: projectId,
+        deleted_at: null,
+        ...(publishedOnly && { status: 'PUBLISHED' }),
+      },
+      include: { site: { select: { type: true, identity_overrides: true } } },
       orderBy: { created_at: 'asc' },
     }),
     prisma.menu.findMany({
@@ -173,7 +201,9 @@ export async function collectSiteInput(projectId) {
     slug: r.slug,
     title: r.title,
     status: r.status,
+    seo: r.seo,
     data: (r.template_id && tplData.get(r.template_id)) || r.data,
+    ...(publishedOnly && r.site?.type === 'LANDING' && { landing: true, siteId: r.site_id, identityOverrides: r.site.identity_overrides ?? null }),
   }));
   return { project, kit, company, pages, menus };
 }
@@ -206,6 +236,7 @@ const ROOT_FILES = [
   'src/frontend/blocks/puck.config.tsx',
   'src/frontend/lib/header-overlay.ts',
   'src/frontend/lib/static-site.ts',
+  'src/frontend/lib/apply-identity.ts',
   'src/app/(site)/work/[slug]/page.tsx',
   'src/app/(site)/catalog/[slug]/page.tsx',
   'src/app/(site)/sectors/[slug]/page.tsx',
@@ -300,7 +331,7 @@ async function writeSiteLocked(model) {
   const deps = await copyFrontendCode(root);
   await fs.mkdir(path.join(root, 'content', 'pages'), { recursive: true });
   // Static export (npm run build:static) has no admin app to serve /seed and /vendor from.
-  for (const dir of ['seed', 'vendor']) {
+  for (const dir of ['seed', 'vendor', 'landing-templates']) {
     const from = path.join(frontendDir(), 'public', dir);
     await fs.cp(from, path.join(root, 'static-assets', dir), { recursive: true }).catch(() => {});
   }
@@ -339,6 +370,20 @@ async function writeSiteLocked(model) {
     generatedAt: model.site.generatedAt,
   });
   return { slug: model.site.slug, dir: root, pages: model.pages.length };
+}
+
+/**
+ * One landing page as a site of its own (the "Convert" button on a landing page): that page is the front page (/),
+ * nothing else is in it, and its folder is named after the page, so every landing page has its own folder and a
+ * second Convert of the same page rewrites the same one. Null when the page is not saved (live) yet.
+ */
+export function buildLandingModel(input, siteId) {
+  const page = input.pages.find((p) => p.siteId === siteId);
+  if (!page) return null;
+  const model = buildSiteModel({ ...input, pages: [{ ...page, root: true }], menus: [] }, { exportOnly: true });
+  model.site.slug = `${input.project.slug}-${page.slug}`;
+  model.site.name = page.title;
+  return model;
 }
 
 export async function buildSite(projectId) {

@@ -52,15 +52,23 @@ const cta = (s, look, props) => block(s, 'LandingCta', 'cta', { ...look, image: 
 // The footer holds no company details of its own: name, logo, description, contact and social links
 // are read from Application Identity (Settings > Identity) when the page is shown.
 const footer = (s, look, links) =>
-  block(s, 'LandingFooter', 'footer', { ...look, links: links.join('\n'), note: '' });
+  block(s, 'LandingFooter', 'footer', { ...brandOf(look), links: links.join('\n'), note: '' });
+// Header and footer carry the company's own details (logo, name, phone, address, brand colours), all read from
+// Application Identity at render time, so they use the "brand" colour set whatever look the sections have.
+const brandOf = (look) => ({ palette: 'brand', font: look.font });
+const header = (s, look, props = {}) =>
+  block(s, 'LandingHeader', 'header', { ...brandOf(look), links: '', ctaHref: '#contact', ...props });
 const form = (s, look, props) =>
   block(s, 'LandingForm', 'form', { ...look, formSlug: formSlugFor(s), anchor: 'contact', ...props });
 
 export const LANDING_TEMPLATES = {
   blank: {
     name: 'Blank',
-    description: 'Start from an empty page.',
-    body: () => [],
+    description: 'Header and footer only. Add your own sections between them.',
+    body: (s) => {
+      const base = looks('brand', 'bricolage');
+      return [header(s, base, { ctaLabel: '' }), footer(s, base, [])];
+    },
   },
 
   // 1. Warm sunset gradient, round photo with rings, script headline (Lobster).
@@ -72,6 +80,7 @@ export const LANDING_TEMPLATES = {
     body: (s) => {
       const warm = looks('sunset', 'fraunces');
       return [
+        header(s, warm, { ctaLabel: 'Get a free quote' }),
         hero(s, looks('sunset', 'lobster'), {
           variant: '1',
           eyebrow: 'Free quote in 24 hours',
@@ -150,6 +159,7 @@ export const LANDING_TEMPLATES = {
     body: (s) => {
       const night = looks('violet', 'bricolage');
       return [
+        header(s, night, { ctaLabel: 'Join the early list' }),
         hero(s, night, {
           variant: '4',
           eyebrow: 'Launching this spring',
@@ -246,6 +256,7 @@ export const LANDING_TEMPLATES = {
     body: (s) => {
       const fresh = looks('aurora', 'playfair');
       return [
+        header(s, fresh, { ctaLabel: 'Reserve your seat' }),
         hero(s, fresh, {
           variant: '2',
           eyebrow: 'Saturday 14 March · Hyderabad and online',
@@ -323,6 +334,7 @@ export const LANDING_TEMPLATES = {
     body: (s) => {
       const hot = looks('blaze', 'bricolage');
       return [
+        header(s, hot, { ctaLabel: 'Claim your offer' }),
         hero(s, looks('blaze', 'lobster'), {
           variant: '3',
           eyebrow: 'Limited time · 14 days left',

@@ -1,0 +1,28 @@
+{
+  "slug": "membership",
+  "name": "Membership",
+  "version": "1.0.0",
+  "description": "Plans, members, subscriptions, payments and GST invoices with members-only access rules",
+  "core": false,
+  "apiPrefix": "/api/membership",
+  "permissions": [
+    {
+      "name": "membership",
+      "actions": ["view", "add", "edit", "delete", "approve", "export"]
+    }
+  ],
+  "nav": [
+    { "label": "Overview", "path": "/admin/membership", "icon": "LayoutDashboard", "permission": "membership:view", "group": "Membership", "groupIcon": "Users", "groupOrder": 45, "order": 10 },
+    { "label": "Plans", "path": "/admin/membership/plans", "icon": "Package", "permission": "membership:view", "group": "Membership", "groupIcon": "Users", "groupOrder": 45, "order": 20 },
+    { "label": "Members", "path": "/admin/membership/members", "icon": "Contact", "permission": "membership:view", "group": "Membership", "groupIcon": "Users", "groupOrder": 45, "order": 30 },
+    { "label": "Approvals", "path": "/admin/membership/approvals", "icon": "ListChecks", "permission": "membership:view", "group": "Membership", "groupIcon": "Users", "groupOrder": 45, "order": 40 },
+    { "label": "Payments", "path": "/admin/membership/payments", "icon": "ShoppingBag", "permission": "membership:view", "group": "Membership", "groupIcon": "Users", "groupOrder": 45, "order": 50 },
+    { "label": "Invoices", "path": "/admin/membership/invoices", "icon": "FileText", "permission": "membership:view", "group": "Membership", "groupIcon": "Users", "groupOrder": 45, "order": 60 },
+    { "label": "Payment methods", "path": "/admin/membership/payment-methods", "icon": "Plug", "permission": "membership:view", "group": "Membership", "groupIcon": "Users", "groupOrder": 45, "order": 70 },
+    { "label": "Access rules", "path": "/admin/membership/access-rules", "icon": "Lock", "permission": "membership:view", "group": "Membership", "groupIcon": "Users", "groupOrder": 45, "order": 80 },
+    { "label": "Settings", "path": "/admin/membership/settings", "icon": "Settings", "permission": "membership:view", "group": "Membership", "groupIcon": "Users", "groupOrder": 45, "order": 90 }
+  ],
+  "dependsOn": [],
+  "queues": [],
+  "env": ["APP_ENCRYPTION_KEY"]
+}

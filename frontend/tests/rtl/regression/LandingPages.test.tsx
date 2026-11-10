@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '../utils'
 import LandingPagesPage from '@/app/admin/landing-pages/page'
+import { BrandingDialog } from '@/app/admin/landing-pages/BrandingDialog'
 
 const h = vi.hoisted(() => ({
   get: vi.fn(),
@@ -58,6 +59,15 @@ beforeEach(() => {
   h.can.mockReturnValue(true)
 })
 
+const SITE = {
+  id: 's1',
+  project_id: 'p1',
+  slug: 'spring',
+  name: 'Spring sale',
+  domain: null,
+  pages: [{ id: 'pg1', slug: 'spring', title: 'Spring sale', status: 'DRAFT' }],
+}
+
 describe('Landing Pages admin page (T5.3)', () => {
   it('lists landing sites with status and an Edit link to the page editor', async () => {
     mockSites([
@@ -73,7 +83,7 @@ describe('Landing Pages admin page (T5.3)', () => {
     expect(await screen.findByText('Spring sale')).toBeTruthy()
     expect(screen.getByText('Draft')).toBeTruthy()
     expect(screen.getByRole('link', { name: /edit/i }).getAttribute('href')).toBe(
-      '/admin/template-engine/edit/pg1'
+      '/admin/template-engine/edit/pg1?from=landing'
     )
     expect(screen.queryByRole('link', { name: /^view$/i })).toBeNull() // not published yet
   })
@@ -108,7 +118,9 @@ describe('Landing Pages admin page (T5.3)', () => {
         template: 'lead-gen',
       })
     )
-    await waitFor(() => expect(h.push).toHaveBeenCalledWith('/admin/template-engine/edit/pg9'))
+    await waitFor(() =>
+      expect(h.push).toHaveBeenCalledWith('/admin/template-engine/edit/pg9?from=landing')
+    )
   })
 
   it('shows the starter templates as a gallery (Blank is not one) with a Use button each', async () => {
@@ -167,7 +179,9 @@ describe('Landing Pages admin page (T5.3)', () => {
         template: 'event',
       })
     )
-    await waitFor(() => expect(h.push).toHaveBeenCalledWith('/admin/template-engine/edit/pg5'))
+    await waitFor(() =>
+      expect(h.push).toHaveBeenCalledWith('/admin/template-engine/edit/pg5?from=landing')
+    )
   })
 
   it('Branding: loads the site overrides, saves every key, an emptied field clears its override', async () => {
@@ -182,8 +196,7 @@ describe('Landing Pages admin page (T5.3)', () => {
       },
     ])
     h.put.mockResolvedValue({ data: { data: { identity: {} } } })
-    render(<LandingPagesPage />)
-    fireEvent.click(await screen.findByRole('button', { name: /branding/i }))
+    render(<BrandingDialog site={SITE as any} onClose={vi.fn()} />)
     const name = (await screen.findByLabelText(/site name/i)) as HTMLInputElement
     await waitFor(() => expect(name.value).toBe('Spring Co'))
     expect(screen.getByText(/custom image set/i)).toBeTruthy() // the logo override
@@ -225,8 +238,7 @@ describe('Landing Pages admin page (T5.3)', () => {
       },
     ])
     h.put.mockResolvedValue({ data: { data: { identity: {} } } })
-    render(<LandingPagesPage />)
-    fireEvent.click(await screen.findByRole('button', { name: /branding/i }))
+    render(<BrandingDialog site={SITE as any} onClose={vi.fn()} />)
     const email = (await screen.findByLabelText(/^contact email/i)) as HTMLInputElement
     await waitFor(() => expect(email.placeholder).toBe('info@kdl.com'))
     expect(email.value).toBe('') // empty = use the Identity value
@@ -289,8 +301,7 @@ describe('Landing Pages admin page (T5.3)', () => {
                 },
       },
     }))
-    render(<LandingPagesPage />)
-    fireEvent.click(await screen.findByRole('button', { name: /branding/i }))
+    render(<BrandingDialog site={SITE as any} onClose={vi.fn()} />)
     // light logo: the page has its own, so its picture shows
     const own = (await screen.findByAltText('logo_light preview')) as HTMLImageElement
     await waitFor(() => expect(own.src).toBe('https://cdn.test/own.png'))
@@ -301,9 +312,8 @@ describe('Landing Pages admin page (T5.3)', () => {
     expect(screen.getAllByText('None').length).toBeGreaterThan(0)
   })
 
-  it('hides Branding without projects:update', async () => {
+  it('the Landing Pages screen has no Branding button: company details live in Identity only', async () => {
     mockSites([{ id: 's1', project_id: 'p1', slug: 'a', name: 'A', domain: null, pages: [] }])
-    h.can.mockImplementation((p: string) => p !== 'projects:update')
     render(<LandingPagesPage />)
     await screen.findByText('A')
     expect(screen.queryByRole('button', { name: /branding/i })).toBeNull()
@@ -420,5 +430,53 @@ describe('Template library (T10)', () => {
     expect(screen.queryByTestId('duplicate-template-lead-gen')).toBeNull()
     expect(screen.queryByTestId('rename-template-lead-gen')).toBeNull()
     expect(screen.queryByTestId('delete-template-lead-gen')).toBeNull()
+  })
+})
+
+describe('Finished landing pages (after Save in the editor)', () => {
+  const sites = [
+    {
+      id: 's1',
+      slug: 'spring',
+      name: 'Spring sale',
+      domain: null,
+      pages: [{ id: 'pg1', slug: 'spring', title: 'Spring sale', status: 'PUBLISHED' }],
+    },
+    {
+      id: 's2',
+      slug: 'draft-one',
+      name: 'Draft one',
+      domain: null,
+      pages: [{ id: 'pg2', slug: 'draft-one', title: 'Draft one', status: 'DRAFT' }],
+    },
+  ]
+
+  it('shows only saved pages, each with a thumbnail, Preview and Convert; no template gallery', async () => {
+    h.search = 'finished=1'
+    mockSites(sites)
+    render(<LandingPagesPage />)
+    expect(await screen.findByText('Spring sale')).toBeTruthy()
+    expect(screen.queryByText('Draft one')).toBeNull()
+    expect(screen.queryByText('Start from a template')).toBeNull()
+    expect(screen.getByTitle('Thumbnail of Spring sale').getAttribute('src')).toBe('/p/spring')
+    expect(screen.getByRole('link', { name: /preview/i }).getAttribute('href')).toBe('/p/spring')
+    expect(screen.getByTestId('convert-spring')).toBeTruthy()
+    expect(screen.getByRole('link', { name: /edit/i }).getAttribute('href')).toBe(
+      '/admin/template-engine/edit/pg1?from=landing'
+    )
+  })
+
+  it('says so when nothing is saved yet', async () => {
+    h.search = 'finished=1'
+    mockSites([sites[1]])
+    render(<LandingPagesPage />)
+    expect(await screen.findByTestId('no-finished')).toBeTruthy()
+  })
+
+  it('without ?finished the normal screen (gallery and every page) is unchanged', async () => {
+    mockSites(sites)
+    render(<LandingPagesPage />)
+    expect(await screen.findByText('Draft one')).toBeTruthy()
+    expect(screen.queryByTestId('finished-list')).toBeNull()
   })
 })

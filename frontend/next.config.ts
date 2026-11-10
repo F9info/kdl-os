@@ -50,7 +50,8 @@ const config: NextConfig = {
     // Next.js App Router injects inline scripts for hydration, requiring
     // 'unsafe-inline'. Nonce-based CSP would remove this but needs middleware
     // (out of scope for this task — tracked as a follow-up).
-    // frameAncestors is 'none' everywhere except /preview/*, which the admin's device-frame preview (T13) embeds.
+    // frameAncestors is 'none' everywhere except /preview/* (the admin's device-frame preview, T13) and /p/*
+    // (the thumbnails of saved landing pages on the Landing Pages screen). Both: our own origin only.
     const buildCsp = (frameAncestors: string) =>
       [
         "default-src 'self'",
@@ -82,6 +83,13 @@ const config: NextConfig = {
         // Declared after the rule above, so these two values replace its CSP and X-Frame-Options.
         // Same origin only: the signed preview page can be shown inside our own admin, nowhere else.
         source: '/preview/:path*',
+        headers: [
+          { key: 'Content-Security-Policy', value: buildCsp("'self'") },
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+        ],
+      },
+      {
+        source: '/p/:path*',
         headers: [
           { key: 'Content-Security-Policy', value: buildCsp("'self'") },
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },

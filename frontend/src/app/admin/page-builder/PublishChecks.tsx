@@ -9,8 +9,8 @@ import type { PageIssue } from './store'
 const blockName = (type: string | null) => (type ? type.replace(/([a-z])([A-Z])/g, '$1 $2') : null)
 
 /**
- * Shown before publishing when the page checks found something. Errors are things that are broken
- * for visitors: fixing them is the default, "Publish anyway" is the author's explicit choice.
+ * Shown before saving (going live) when the page checks found something. Errors are things that are broken
+ * for visitors: fixing them is the default, "Save anyway" is the author's explicit choice.
  * Warnings are suggestions: they never need an override.
  */
 export function PublishChecksDialog({
@@ -62,10 +62,10 @@ export function PublishChecksDialog({
       open
       onClose={onBack}
       size="lg"
-      title={hasErrors ? 'Fix these before publishing?' : 'Ready to publish?'}
+      title={hasErrors ? 'Fix these before saving?' : 'Ready to save?'}
       description={
         hasErrors
-          ? 'Visitors would hit these problems. Go back to fix them, or publish anyway.'
+          ? 'Visitors would hit these problems. Go back to fix them, or save anyway.'
           : 'Nothing is broken. These suggestions would improve the page.'
       }
     >
@@ -81,7 +81,7 @@ export function PublishChecksDialog({
             onClick={() => onPublish(hasErrors)}
             disabled={busy}
           >
-            {busy ? 'Publishing…' : hasErrors ? 'Publish anyway' : 'Publish'}
+            {busy ? 'Saving…' : hasErrors ? 'Save anyway' : 'Save'}
           </Button>
         </div>
       </div>

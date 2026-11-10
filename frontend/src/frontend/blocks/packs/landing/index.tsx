@@ -87,6 +87,7 @@ type LandingProps = {
     buttonHref: string
     image: string
   }
+  LandingHeader: Common & { links: string; ctaLabel: string; ctaHref: string }
   LandingFooter: Common & { links: string; note: string }
   LandingForm: Common & {
     eyebrow: string
@@ -897,6 +898,108 @@ function FormBlock(props: LandingProps['LandingForm'] & { readOnly: boolean; pre
   )
 }
 
+// ─── Header (logo, name and phone come only from Application Identity) ────────
+
+/**
+ * The top bar of a landing page: the company logo and name, optional menu links, the phone number and one
+ * call-to-action button. Logo, name and phone are read from Settings > Identity (or the page's own Branding),
+ * never typed into the block; only the menu links and the button are.
+ */
+function HeaderBlock(props: LandingProps['LandingHeader'] & { metaIdentity?: IdentityMap }) {
+  const live = useIdentity().identity as IdentityMap
+  const id = props.metaIdentity ?? live
+  const { p, f } = look(props)
+  const get = (k: string) => id[k]?.trim() ?? ''
+  const name = get('company_name') || get('app_name')
+  const logo = get('company_logo_light') || get('logo_light')
+  const phone = get('contact_phone')
+  const links = rows(props.links, 2)
+  return (
+    <header
+      style={{ fontFamily: f.body }}
+      className="relative z-10 border-b border-black/5 bg-white"
+    >
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3">
+        <a href="#" className="flex min-w-0 items-center gap-3">
+          {logo && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logo} alt={name} className="h-10 w-auto max-w-[160px] object-contain" />
+          )}
+          {name && (
+            <span className="truncate text-xl text-slate-900" style={display(f)}>
+              {name}
+            </span>
+          )}
+        </a>
+        {links.length > 0 && (
+          <nav
+            aria-label="Header"
+            className="hidden items-center gap-6 text-sm font-medium md:flex"
+          >
+            {links.map(([label, href], i) => (
+              <a
+                key={i}
+                href={safeHref(href)}
+                className="text-slate-700 transition hover:text-slate-950"
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
+        )}
+        <div className="flex shrink-0 items-center gap-4">
+          {phone && (
+            <a
+              href={safeHref(`tel:${phone.replace(/[^+\d]/g, '')}`)}
+              className="hidden text-sm font-semibold sm:inline"
+              style={{ color: p.strong }}
+            >
+              {phone}
+            </a>
+          )}
+          {props.ctaLabel && (
+            <a
+              href={safeHref(props.ctaHref || '#contact')}
+              className="rounded-full px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+              style={{ background: p.strong }}
+            >
+              {props.ctaLabel}
+            </a>
+          )}
+        </div>
+      </div>
+    </header>
+  )
+}
+
+// ─── Brand colours: Identity's primary and secondary colour for the "brand" colour set ─────────────────────
+
+const HEX = /^#[0-9a-fA-F]{3,8}$/
+
+/**
+ * Sets --lp-1 and --lp-2 for the block it wraps (display: contents, so layout is untouched). The "brand" colour
+ * set in palettes.ts reads them. A landing page's own Branding overrides arrive through `metadata.identity`.
+ */
+function BrandScope({
+  metaIdentity,
+  children,
+}: {
+  metaIdentity?: IdentityMap
+  children: ReactNode
+}) {
+  const live = useIdentity().identity as IdentityMap
+  const pick = (k: string) => {
+    const v = (metaIdentity?.[k] || live[k] || '').trim()
+    return HEX.test(v) ? v : undefined
+  }
+  const style = {
+    display: 'contents',
+    '--lp-1': pick('brand_primary'),
+    '--lp-2': pick('brand_secondary'),
+  } as CSSProperties
+  return <div style={style}>{children}</div>
+}
+
 // ─── Footer (content comes only from Application Identity) ────────────────────
 
 const SOCIALS: [key: string, label: string][] = [
@@ -1308,10 +1411,34 @@ const typedComponents: Config<LandingProps>['components'] = {
     },
     render: (props) => <CtaBlock {...props} />,
   },
+  LandingHeader: {
+    label: 'Landing header',
+    fields: {
+      ...styleFields,
+      links: { type: 'textarea' },
+      ctaLabel: { type: 'text' },
+      ctaHref: { type: 'text' },
+    },
+    defaultProps: {
+      palette: 'brand',
+      font: 'bricolage',
+      links: '',
+      ctaLabel: 'Get a free quote',
+      ctaHref: '#contact',
+    },
+    render: function LandingHeaderRender({ puck, ...props }) {
+      return (
+        <HeaderBlock
+          {...props}
+          metaIdentity={puck?.metadata?.identity as IdentityMap | undefined}
+        />
+      )
+    },
+  },
   LandingFooter: {
     label: 'Landing footer',
     fields: { ...styleFields, links: { type: 'textarea' }, note: { type: 'text' } },
-    defaultProps: { palette: 'sunset', font: 'bricolage', links: 'Back to top|#', note: '' },
+    defaultProps: { palette: 'brand', font: 'bricolage', links: 'Back to top|#', note: '' },
     render: function LandingFooterRender({ puck, ...props }) {
       return (
         <FooterBlock
@@ -1409,7 +1536,18 @@ function withLabels(components: NonNullable<Config['components']>) {
         },
       ])
     )
-    out[key] = { ...def, fields } as (typeof out)[string]
+    // Every block sits in BrandScope so the "brand" colour set can read Identity's colours.
+    const Inner = def.render as (props: Record<string, unknown>) => ReactNode
+    const render = (props: Record<string, unknown>) => (
+      <BrandScope
+        metaIdentity={
+          (props.puck as { metadata?: { identity?: IdentityMap } } | undefined)?.metadata?.identity
+        }
+      >
+        <Inner {...props} />
+      </BrandScope>
+    )
+    out[key] = { ...def, fields, render } as (typeof out)[string]
   }
   return out
 }
@@ -1422,6 +1560,7 @@ export const landing: ComponentPack = {
     landing: {
       title: 'Landing page',
       components: [
+        'LandingHeader',
         'LandingHero',
         'LandingStats',
         'LandingBenefits',

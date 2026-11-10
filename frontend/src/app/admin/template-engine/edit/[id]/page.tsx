@@ -2,16 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { useParams, useSearchParams } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Puck, blocksPlugin, type Data, type ComponentData } from '@puckeditor/core'
 import '@puckeditor/core/puck.css'
 import '../../../page-builder/puck-overrides.css'
-import { ArrowLeft, Loader2, Search } from 'lucide-react'
+import { ArrowLeft, Loader2 } from 'lucide-react'
 import { ModuleGuard } from '@/admin/components/shared/ModuleGuard'
 import { toast } from '@/hooks/use-toast'
 import { BlocksPanel } from '../../../page-builder/blocks-panel'
-import { InsertBlockButton } from '../../../page-builder/insert-block-modal'
 import { config } from '../../../../../frontend/blocks/puck.config'
 import {
   autosavePage,
@@ -22,9 +21,8 @@ import {
   type PageIssue,
 } from '../../../page-builder/store'
 import { PublishChecksDialog } from '../../../page-builder/PublishChecks'
-import { PublishStatus, VersionsButton } from '../../../page-builder/PublishControls'
+import { PublishStatus } from '../../../page-builder/PublishControls'
 import { PreviewLinkButton } from '../../../page-builder/PreviewLink'
-import { SeoDialog } from '../../../page-builder/SeoDialog'
 import { useLayoutChrome } from '@/admin/hooks/useLayoutChrome'
 import { useAutosave, type AutosaveStatus } from '@/admin/hooks/useAutosave'
 
@@ -85,12 +83,17 @@ export default function TemplateEngineEditPage() {
   const params = useParams<{ id: string }>()
   const searchParams = useSearchParams()
   const projectId = searchParams.get('projectId')
-  const backHref = projectId
-    ? `/admin/template-engine/projects/${projectId}/website`
-    : '/admin/template-engine'
+  const router = useRouter()
+  // Opened from the Landing Pages screen: after Save, go back there (finished pages, Preview and Convert).
+  const fromLanding = searchParams.get('from') === 'landing'
+  // From the Landing Pages screen, Back returns there.
+  const backHref = fromLanding
+    ? '/admin/landing-pages'
+    : projectId
+      ? `/admin/template-engine/projects/${projectId}/website`
+      : '/admin/template-engine'
   const qc = useQueryClient()
   const { topHeaderNode, headerNode, footerNode } = useLayoutChrome(projectId)
-  const [seoOpen, setSeoOpen] = useState(false)
   // True once an edit was autosaved as a draft since the page was loaded or last published.
   const [editedSincePublish, setEditedSincePublish] = useState(false)
 
@@ -113,7 +116,11 @@ export default function TemplateEngineEditPage() {
       setEditedSincePublish(false)
       setPending(null)
       void qc.invalidateQueries({ queryKey: ['page-builder-page', params.id] })
-      toast({ title: 'Published', description: 'Your changes are live.' })
+      toast({ title: 'Saved', description: 'Your changes are live.' })
+      if (fromLanding) {
+        void qc.invalidateQueries({ queryKey: ['landing-sites'] }) // the list must show this page as saved
+        router.push('/admin/landing-pages?finished=1')
+      }
     },
     onError: (err, vars) => {
       // The server's own check caught something the editor's check did not see (e.g. a page was
@@ -121,8 +128,8 @@ export default function TemplateEngineEditPage() {
       const issues = issuesFromPublishError(err)
       if (issues) return setPending({ data: vars.data, issues })
       toast({
-        title: 'Publish failed',
-        description: 'Could not publish the page.',
+        title: 'Save failed',
+        description: 'Could not save the page.',
         variant: 'destructive',
       })
     },
@@ -130,7 +137,9 @@ export default function TemplateEngineEditPage() {
   const checkMutation = useMutation({
     mutationFn: (data: Data) => checkPage(params.id, data).then((checks) => ({ data, checks })),
     onSuccess: ({ data, checks }) => {
-      if (checks.issues.length > 0) setPending({ data, issues: checks.issues })
+      // The SEO button is not in this editor, so SEO suggestions could not be acted on: leave them out.
+      const issues = checks.issues.filter((i) => !i.code.startsWith('SEO_'))
+      if (issues.length > 0) setPending({ data, issues })
       else saveMutation.mutate({ data, force: false })
     },
     // A failed check must never block publishing: the server still enforces the errors.
@@ -262,8 +271,8 @@ export default function TemplateEngineEditPage() {
           headerPath={`/p/${page.slug}`}
           onChange={handleChange}
           onPublish={handlePublish}
-          // Edits autosave as a draft; this button makes them live as a new version.
-          dictionary={{ 'header-publish': 'Publish' }}
+          // Edits autosave as a draft; this "Save" button makes them live as a new version.
+          dictionary={{ 'header-publish': 'Save' }}
           overrides={{
             outline: () => <></>,
             // The canvas area (root render + all DropZone content) — wraps
@@ -293,22 +302,13 @@ export default function TemplateEngineEditPage() {
                 >
                   <ArrowLeft size={15} /> Back
                 </Link>
-                <InsertBlockButton projectId={projectId ?? undefined} />
-                <button
-                  type="button"
-                  onClick={() => setSeoOpen(true)}
-                  className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-1.5 text-sm text-foreground hover:bg-muted"
-                >
-                  <Search size={15} /> SEO
-                </button>
                 <PublishStatus
                   page={{
                     ...page,
                     hasUnpublishedChanges: page.hasUnpublishedChanges || editedSincePublish,
                   }}
                 />
-                <PreviewLinkButton pageId={params.id} />
-                <VersionsButton page={page} />
+                <PreviewLinkButton pageId={params.id} direct={fromLanding} />
                 <AutosaveBadge status={autosave.status} />
                 {children}
               </>
@@ -326,14 +326,6 @@ export default function TemplateEngineEditPage() {
             busy={saveMutation.isPending}
             onBack={() => setPending(null)}
             onPublish={(anyway) => saveMutation.mutate({ data: pending.data, force: anyway })}
-          />
-        )}
-        {seoOpen && (
-          <SeoDialog
-            pageId={params.id}
-            pageTitle={page.title}
-            seo={page.seo}
-            onClose={() => setSeoOpen(false)}
           />
         )}
       </div>

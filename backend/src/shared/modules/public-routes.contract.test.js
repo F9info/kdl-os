@@ -20,6 +20,10 @@ const ALLOWED = {
   'auth POST /forgot-password': 'password reset request',
   'auth POST /reset-password': 'password reset with emailed token',
   'forms POST /public/:slug/submit': 'visitor submits a form (validated, honeypot, rate limited)',
+  'membership GET /plans': 'public plan list for the website pricing page (read only)',
+  'membership GET /join-form/:planSlug': 'public sign-up form definition (read only)',
+  'membership POST /signup': 'member sign-up (validated, rate limited, creates a no-permission member account)',
+  'membership POST /webhooks/:provider': 'payment gateway webhook (HMAC signature checked, idempotent, rate limited)',
   'integrations GET /webhooks/:driver': 'provider webhook verification (signature checked)',
   'integrations POST /webhooks/:driver': 'provider webhook (signature checked)',
   // optionalAuthenticate: a visitor gets only what is_public allows, an admin gets everything.

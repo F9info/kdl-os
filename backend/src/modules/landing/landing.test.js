@@ -10,7 +10,7 @@ const prismaMock = vi.hoisted(() => {
   return {
     project: { findFirst: vi.fn() },
     site: { findMany: vi.fn(), findFirst: vi.fn() },
-    template: { findMany: vi.fn(), upsert: vi.fn(), findFirst: vi.fn() },
+    template: { findMany: vi.fn(), upsert: vi.fn(), update: vi.fn(), findFirst: vi.fn() },
     $transaction: vi.fn(async (fn) => fn(tx)),
     tx,
   };
@@ -27,7 +27,9 @@ const { manifestSchema } = await import('../../shared/modules/manifest-schema.js
 beforeEach(() => {
   vi.clearAllMocks();
   // The library table, seeded from the constants (what ensureBuiltinTemplates does).
-  prismaMock.template.findMany.mockResolvedValue(Object.keys(LANDING_TEMPLATES).map((key) => ({ key })));
+  prismaMock.template.findMany.mockResolvedValue(
+    Object.entries(LANDING_TEMPLATES).map(([key, t]) => ({ key, data: t.body('__slug__'), deleted_at: null }))
+  );
   prismaMock.template.findFirst.mockImplementation(async ({ where }) => {
     const t = LANDING_TEMPLATES[where.key];
     return t && Object.hasOwn(LANDING_TEMPLATES, where.key)
@@ -60,10 +62,26 @@ describe('templates', () => {
     expect(listTemplates().every((t) => t.name && t.description)).toBe(true);
   });
 
-  it('blank has no blocks; the others have a Landing hero first', () => {
-    expect(buildLandingData('blank', 's', 'S').content).toEqual([]);
+  it('every template, Blank included, starts with the Landing header and ends with the Landing footer', () => {
+    for (const key of TEMPLATE_KEYS) {
+      const types = buildLandingData(key, 's', 'S').content.map((b) => b.type);
+      expect(types[0], key).toBe('LandingHeader');
+      expect(types.at(-1), key).toBe('LandingFooter');
+    }
+    // Blank is only the two; the others have a Landing hero right after the header.
+    expect(buildLandingData('blank', 's', 'S').content).toHaveLength(2);
     for (const key of TEMPLATE_KEYS.filter((k) => k !== 'blank')) {
-      expect(buildLandingData(key, 's', 'S').content[0].type).toBe('LandingHero');
+      expect(buildLandingData(key, 's', 'S').content[1].type).toBe('LandingHero');
+    }
+  });
+
+  it('header and footer use the brand colours and hold no company details of their own', () => {
+    for (const key of TEMPLATE_KEYS) {
+      const content = buildLandingData(key, 's', 'S').content;
+      for (const b of [content[0], content.at(-1)]) {
+        expect(b.props.palette).toBe('brand');
+        expect(JSON.stringify(b.props)).not.toMatch(/@|tel:|facebook|instagram|linkedin|logo/i);
+      }
     }
   });
 
@@ -177,7 +195,7 @@ describe('handlePreview (View template)', () => {
     const res = await call('lead-gen');
     expect(res.statusCode).toBe(200);
     expect(res.body.data.name).toBe('Lead generation');
-    expect(res.body.data.data.content[0].type).toBe('LandingHero');
+    expect(res.body.data.data.content[1].type).toBe('LandingHero'); // after the header
     expect(prismaMock.tx.builderPage.create).not.toHaveBeenCalled();
   });
 
@@ -276,5 +294,38 @@ describe('project from the request (T03b)', () => {
     expect(prismaMock.site.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: expect.objectContaining({ project_id: 'p1' }) })
     );
+  });
+});
+
+const { ensureBuiltinTemplates } = await import('./template-library.js');
+
+describe('built-in templates are refreshed when a release changes them', () => {
+  it('rewrites a stored built-in whose body is out of date, keeping the name the user chose', async () => {
+    const old = { key: 'lead-gen', data: [{ type: 'LandingHero', props: { id: 'x' } }], deleted_at: null };
+    prismaMock.template.findMany.mockResolvedValue([old]);
+    await ensureBuiltinTemplates(prismaMock);
+    const update = prismaMock.template.update.mock.calls.find((c) => c[0].where.key === 'lead-gen');
+    expect(update[0].data.data[0].type).toBe('LandingHeader');
+    expect(update[0].data).not.toHaveProperty('name');
+  });
+
+  it('leaves an up-to-date built-in alone, and does not bring back one the user deleted', async () => {
+    const fresh = Object.entries(LANDING_TEMPLATES).map(([key, t]) => ({ key, data: t.body('__slug__'), deleted_at: null }));
+    fresh[1].deleted_at = new Date();
+    fresh[1].data = [];
+    prismaMock.template.findMany.mockResolvedValue(fresh);
+    await ensureBuiltinTemplates(prismaMock);
+    expect(prismaMock.template.update).not.toHaveBeenCalled();
+    expect(prismaMock.template.upsert).not.toHaveBeenCalled();
+  });
+
+  it('compares bodies whatever order the database returns object keys in', async () => {
+    const reorder = (v) =>
+      Array.isArray(v) ? v.map(reorder) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).reverse().map(([k, x]) => [k, reorder(x)])) : v;
+    prismaMock.template.findMany.mockResolvedValue(
+      Object.entries(LANDING_TEMPLATES).map(([key, t]) => ({ key, data: reorder(t.body('__slug__')), deleted_at: null }))
+    );
+    await ensureBuiltinTemplates(prismaMock);
+    expect(prismaMock.template.update).not.toHaveBeenCalled();
   });
 });

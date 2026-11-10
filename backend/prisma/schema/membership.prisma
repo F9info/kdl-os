@@ -1,0 +1,472 @@
+// Membership module schema (plan v1.0 + sector fields + payment providers).
+// Source of truth for the design: static-kdl-os/membership/docs/5-build-notes/01-data-model-and-api.md
+// Money is always integer paise. Dates are UTC; the app renders Asia/Kolkata.
+
+enum MembershipMemberType {
+  INDIVIDUAL
+  ORGANISATION
+}
+
+enum MembershipApprovalMode {
+  AUTO
+  MANUAL
+}
+
+enum MembershipPlanVisibility {
+  PUBLIC
+  HIDDEN
+  ARCHIVED
+}
+
+enum MembershipInterval {
+  MONTHLY
+  QUARTERLY
+  HALF_YEARLY
+  YEARLY
+  LIFETIME
+}
+
+enum MembershipTaxMode {
+  INCLUSIVE
+  EXCLUSIVE
+}
+
+enum MembershipSubscriptionStatus {
+  PENDING_PAYMENT
+  PENDING_APPROVAL
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  EXPIRED
+  CANCELLED
+  SUSPENDED
+  REJECTED
+}
+
+enum MembershipPaymentStatus {
+  PENDING
+  AWAITING_PROOF
+  UNDER_VERIFICATION
+  PAID
+  FAILED
+  REFUNDED
+  REJECTED
+}
+
+enum MembershipProviderType {
+  GATEWAY
+  MANUAL
+}
+
+enum MembershipProviderStatus {
+  DRAFT
+  PUBLISHED
+  HIDDEN
+  ARCHIVED
+}
+
+enum MembershipFieldAppliesTo {
+  INDIVIDUAL
+  ORGANISATION
+  BOTH
+}
+
+enum MembershipContactAccess {
+  FULL
+  CONTENT
+  BILLING
+}
+
+enum MembershipAccessTarget {
+  PAGE
+  SECTION
+  MEDIA
+  URL_PATTERN
+}
+
+model MembershipPlan {
+  id             String                   @id @default(cuid())
+  slug           String                   @unique
+  name           String
+  description    String?
+  tier           Int                      @default(1)
+  color          String?
+  is_free        Boolean                  @default(false)
+  approval_mode  MembershipApprovalMode   @default(AUTO)
+  visibility     MembershipPlanVisibility @default(PUBLIC)
+  trial_days     Int                      @default(0)
+  member_types   MembershipMemberType[]
+  max_contacts   Int                      @default(5)
+  is_featured    Boolean                  @default(false)
+  sort           Int                      @default(0)
+  created_at     DateTime                 @default(now())
+  updated_at     DateTime                 @updatedAt
+
+  prices         MembershipPlanPrice[]
+  benefits       MembershipBenefit[]
+  subscriptions  MembershipSubscription[]
+  field_groups   MembershipPlanFieldGroup[]
+  access_rules   MembershipAccessRule[]
+
+  @@index([visibility, sort])
+  @@map("membership_plans")
+}
+
+model MembershipPlanPrice {
+  id            String             @id @default(cuid())
+  plan_id       String
+  interval      MembershipInterval
+  amount        Int // paise, before GST when tax_mode = EXCLUSIVE
+  currency      String             @default("INR")
+  gst_rate      Int                @default(18) // percent
+  tax_mode      MembershipTaxMode  @default(EXCLUSIVE)
+  is_active     Boolean            @default(true)
+  created_at    DateTime           @default(now())
+  updated_at    DateTime           @updatedAt
+
+  plan          MembershipPlan     @relation(fields: [plan_id], references: [id], onDelete: Cascade)
+  subscriptions MembershipSubscription[]
+
+  @@unique([plan_id, interval, currency])
+  @@map("membership_plan_prices")
+}
+
+model MembershipBenefit {
+  id          String         @id @default(cuid())
+  plan_id     String
+  text        String
+  highlighted Boolean        @default(false)
+  sort        Int            @default(0)
+
+  plan        MembershipPlan @relation(fields: [plan_id], references: [id], onDelete: Cascade)
+
+  @@index([plan_id, sort])
+  @@map("membership_benefits")
+}
+
+// 1:1 with users. Core profile fields are columns; sector fields live in MembershipFieldValue.
+model Member {
+  id            String               @id @default(cuid())
+  user_id       String               @unique
+  member_no     String?              @unique // KDL-M-{YYYY}-nnnnn, issued on first activation
+  member_type   MembershipMemberType @default(INDIVIDUAL)
+  full_name     String
+  email         String
+  mobile        String?
+  dob           DateTime?
+  gender        String?
+  city          String?
+  state         String?
+  pincode       String?
+  address       String?
+  photo_url     String?
+  legal_name    String? // organisations
+  gstin         String?
+  pan           String?
+  member_since  DateTime? // first activation date
+  tags          String[]             @default([])
+  notes         String?
+  whatsapp_opt_in    Boolean         @default(false)
+  whatsapp_opt_in_at DateTime?
+  created_at    DateTime             @default(now())
+  updated_at    DateTime             @updatedAt
+
+  subscriptions MembershipSubscription[]
+  payments      MembershipPayment[]
+  invoices      MembershipInvoice[]
+  contacts      MembershipContact[]
+  field_values  MembershipFieldValue[]
+  events        MembershipEvent[]
+
+  @@index([email])
+  @@index([mobile])
+  @@index([member_type])
+  @@map("members")
+}
+
+model MembershipSubscription {
+  id                 String                       @id @default(cuid())
+  member_id          String
+  plan_id            String
+  price_id           String?
+  status             MembershipSubscriptionStatus @default(PENDING_PAYMENT)
+  starts_at          DateTime?
+  ends_at            DateTime? // null = lifetime
+  trial_ends_at      DateTime?
+  grace_ends_at      DateTime?
+  cancel_at_period_end Boolean                    @default(false)
+  cancelled_at       DateTime?
+  cancel_reason      String?
+  rejected_reason    String?
+  suspended_reason   String?
+  approved_by        String?
+  approved_at        DateTime?
+  pending_plan_id    String? // downgrade scheduled for next renewal
+  auto_renew         Boolean                      @default(true)
+  created_at         DateTime                     @default(now())
+  updated_at         DateTime                     @updatedAt
+
+  member             Member                       @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  plan               MembershipPlan               @relation(fields: [plan_id], references: [id])
+  price              MembershipPlanPrice?         @relation(fields: [price_id], references: [id])
+  payments           MembershipPayment[]
+  invoices           MembershipInvoice[]
+
+  @@index([member_id])
+  @@index([plan_id])
+  @@index([status, ends_at])
+  @@map("membership_subscriptions")
+}
+
+model MembershipPaymentProvider {
+  id            String                   @id @default(cuid())
+  provider      String // RAZORPAY, STRIPE, PAYPAL, PHONEPE, CASHFREE, PAYU, CCAVENUE, BANK_TRANSFER, CHEQUE, CASH, CUSTOM
+  type          MembershipProviderType   @default(GATEWAY)
+  label         String
+  description   String?
+  logo_url      String?
+  status        MembershipProviderStatus @default(DRAFT)
+  sort          Int                      @default(0)
+  is_default    Boolean                  @default(false)
+  mode          String                   @default("TEST") // TEST | LIVE
+  currency      String                   @default("INR")
+  credentials_enc String? // AES-GCM encrypted JSON; never returned to the UI
+  webhook_secret_enc String?
+  options       Json                     @default("{}")
+  member_types  MembershipMemberType[]
+  regions       String                   @default("INDIA") // INDIA | OUTSIDE_INDIA | ALL
+  min_amount    Int?
+  max_amount    Int?
+  manual_config Json                     @default("{}") // bank details, proof rule, pay-within, verifier roles
+  last_test_at  DateTime?
+  last_test_ok  Boolean?
+  created_at    DateTime                 @default(now())
+  updated_at    DateTime                 @updatedAt
+
+  plans         MembershipPaymentProviderPlan[]
+  payments      MembershipPayment[]
+
+  @@index([status, sort])
+  @@map("membership_payment_providers")
+}
+
+model MembershipPaymentProviderPlan {
+  provider_id String
+  plan_id     String
+
+  provider    MembershipPaymentProvider @relation(fields: [provider_id], references: [id], onDelete: Cascade)
+
+  @@id([provider_id, plan_id])
+  @@map("membership_payment_provider_plans")
+}
+
+model MembershipPayment {
+  id              String                  @id @default(cuid())
+  reference       String                  @unique // KDL-PAY-nnnnn
+  member_id       String
+  subscription_id String?
+  provider_id     String?
+  provider_option String?
+  status          MembershipPaymentStatus @default(PENDING)
+  amount          Int // paise, GST included
+  tax_amount      Int                     @default(0)
+  currency        String                  @default("INR")
+  gateway_order_id   String?
+  gateway_payment_id String?
+  utr             String?
+  proof_url       String?
+  note            String?
+  failure_reason  String?
+  verified_by     String?
+  verified_at     DateTime?
+  paid_at         DateTime?
+  refunded_amount Int                     @default(0)
+  refunded_at     DateTime?
+  created_at      DateTime                @default(now())
+  updated_at      DateTime                @updatedAt
+
+  member          Member                  @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  subscription    MembershipSubscription? @relation(fields: [subscription_id], references: [id])
+  provider        MembershipPaymentProvider? @relation(fields: [provider_id], references: [id])
+  invoices        MembershipInvoice[]
+
+  @@index([member_id])
+  @@index([status])
+  @@index([gateway_order_id])
+  @@map("membership_payments")
+}
+
+// Gap-free GST invoice numbers per financial year: MEM/{FY}/nnnnn. Credit notes link to the original.
+model MembershipInvoice {
+  id              String   @id @default(cuid())
+  number          String   @unique
+  fy              String // e.g. 2026-27
+  seq             Int
+  is_credit_note  Boolean  @default(false)
+  credit_for_id   String?
+  member_id       String
+  subscription_id String?
+  payment_id      String?
+  bill_to_name    String
+  bill_to_gstin   String?
+  bill_to_address String?
+  description     String
+  subtotal        Int // paise, before GST
+  gst_rate        Int
+  tax_amount      Int
+  total           Int
+  currency        String   @default("INR")
+  voided_at       DateTime?
+  void_reason     String?
+  issued_at       DateTime @default(now())
+
+  member          Member   @relation(fields: [member_id], references: [id], onDelete: Restrict)
+  subscription    MembershipSubscription? @relation(fields: [subscription_id], references: [id])
+  payment         MembershipPayment? @relation(fields: [payment_id], references: [id])
+
+  @@unique([fy, seq, is_credit_note])
+  @@index([member_id])
+  @@map("membership_invoices")
+}
+
+model MembershipAccessRule {
+  id         String                 @id @default(cuid())
+  plan_id    String
+  target     MembershipAccessTarget
+  value      String // page slug / section id / media id / URL pattern
+  label      String?
+  created_at DateTime               @default(now())
+
+  plan       MembershipPlan         @relation(fields: [plan_id], references: [id], onDelete: Cascade)
+
+  @@index([plan_id])
+  @@index([target, value])
+  @@map("membership_access_rules")
+}
+
+// Audit + event log. Also the hook point for the communication system (phase 5).
+model MembershipEvent {
+  id         String   @id @default(cuid())
+  key        String // e.g. member.joined, payment.paid, subscription.renewed
+  member_id  String?
+  actor_id   String?
+  data       Json     @default("{}")
+  created_at DateTime @default(now())
+
+  member     Member?  @relation(fields: [member_id], references: [id], onDelete: SetNull)
+
+  @@index([member_id, created_at])
+  @@index([key])
+  @@map("membership_events")
+}
+
+model MembershipWebhookEvent {
+  id          String   @id @default(cuid())
+  provider    String
+  external_id String
+  payload     Json
+  processed   Boolean  @default(false)
+  created_at  DateTime @default(now())
+
+  @@unique([provider, external_id])
+  @@map("membership_webhook_events")
+}
+
+// Sector profile fields: packs (groups) of fields, chosen per plan.
+model MembershipFieldGroup {
+  id           String                   @id @default(cuid())
+  key          String                   @unique
+  name         String
+  icon         String?
+  applies_to   MembershipFieldAppliesTo @default(BOTH)
+  preset_key   String?
+  ask_at_signup Boolean                  @default(true)
+  member_editable Boolean                @default(true)
+  requires_review Boolean                @default(false)
+  sort         Int                      @default(0)
+  is_active    Boolean                  @default(true)
+
+  fields       MembershipField[]
+  plans        MembershipPlanFieldGroup[]
+
+  @@map("member_field_groups")
+}
+
+model MembershipField {
+  id          String               @id @default(cuid())
+  group_id    String
+  key         String
+  label       String
+  type        String // TEXT, TEXTAREA, NUMBER, DATE, SELECT, MULTISELECT, BOOLEAN, EMAIL, PHONE, URL, GSTIN, PAN, FILE, PINCODE
+  options     Json                 @default("[]")
+  validation  Json                 @default("{}")
+  show_when   Json?
+  visibility  String               @default("EDIT") // EDIT | VIEW | HIDDEN
+  required    Boolean              @default(false)
+  is_unique   Boolean              @default(false)
+  sort        Int                  @default(0)
+
+  group       MembershipFieldGroup @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  values      MembershipFieldValue[]
+
+  @@unique([group_id, key])
+  @@map("member_fields")
+}
+
+model MembershipFieldValue {
+  id         String          @id @default(cuid())
+  member_id  String
+  field_id   String
+  value_text String?
+  value_num  Float?
+  value_date DateTime?
+  value_bool Boolean?
+  value_json Json?
+  updated_at DateTime        @updatedAt
+
+  member     Member          @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  field      MembershipField @relation(fields: [field_id], references: [id], onDelete: Cascade)
+
+  @@unique([member_id, field_id])
+  @@index([field_id, value_text])
+  @@map("member_field_values")
+}
+
+model MembershipPlanFieldGroup {
+  plan_id    String
+  group_id   String
+  member_type MembershipMemberType @default(INDIVIDUAL)
+  required   Boolean              @default(false)
+
+  plan       MembershipPlan       @relation(fields: [plan_id], references: [id], onDelete: Cascade)
+  group      MembershipFieldGroup @relation(fields: [group_id], references: [id], onDelete: Cascade)
+
+  @@id([plan_id, group_id, member_type])
+  @@map("plan_field_groups")
+}
+
+model MembershipContact {
+  id         String                  @id @default(cuid())
+  member_id  String
+  name       String
+  email      String?
+  mobile     String?
+  designation String?
+  access     MembershipContactAccess @default(CONTENT)
+  is_primary Boolean                 @default(false)
+  created_at DateTime                @default(now())
+
+  member     Member                  @relation(fields: [member_id], references: [id], onDelete: Cascade)
+
+  @@index([member_id])
+  @@map("membership_contacts")
+}
+
+// Key/value module settings (numbering, GST, renewal rules, login method, policies).
+model MembershipSetting {
+  key        String   @id
+  value      Json
+  updated_at DateTime @updatedAt
+
+  @@map("membership_settings")
+}

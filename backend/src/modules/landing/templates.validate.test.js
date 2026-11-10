@@ -44,6 +44,15 @@ describe.each(withBody)('landing template "%s"', (key) => {
   });
 });
 
+describe.each(TEMPLATE_KEYS)('header of "%s"', (key) => {
+  const first = buildLandingData(key, 'spring', 'Spring').content[0];
+
+  it('is the Landing header, with only its menu links and button typed in', () => {
+    expect(first.type).toBe('LandingHeader');
+    expect(Object.keys(first.props).sort()).toEqual(['ctaHref', 'ctaLabel', 'font', 'id', 'links', 'palette']);
+  });
+});
+
 describe.each(withBody)('footer of "%s"', (key) => {
   const content = buildLandingData(key, 'spring', 'Spring').content;
   const last = content[content.length - 1];

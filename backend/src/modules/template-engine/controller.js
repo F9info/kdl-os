@@ -3,7 +3,8 @@ import { writeActivityAsync, getClientIp } from '../user-management/shared/activ
 import { resolvePermissions } from '../user-management/shared/permission-resolver.js';
 import * as service from './service.js';
 import { z } from 'zod';
-import { buildSite, siteExists } from './site/generator.js';
+import { buildSite, buildSiteModel, buildLandingModel, collectSiteInput, siteExists, writeSite } from './site/generator.js';
+import { normalizeSiteUrl } from './site/export-content.js';
 import { getStaticBuild, startStaticBuild, zipStaticBuild } from './site/static-build.js';
 import { getIdentity } from '../identity/service.js';
 import { compileTokens } from '../theme-engine/service.js';
@@ -219,31 +220,101 @@ async function siteSlug(projectId) {
   return project && (await siteExists(project.slug)) ? project.slug : null;
 }
 
+// Starts the build of `exportModel` in the site folder `slug`; answers the request itself on a refusal.
+async function launchBuild(req, res, slug, exportModel, what) {
+  const parsed = checkApiBase(req.body?.apiBase || undefined);
+  if (!parsed.ok) return errorResponse(res, parsed.reason, 422);
+  // Where the exported site will be hosted. Optional: it gives pages a canonical address and makes the sitemap possible.
+  const siteUrl = req.body?.siteUrl ? normalizeSiteUrl(req.body.siteUrl) : null;
+  if (req.body?.siteUrl && !siteUrl) return errorResponse(res, 'siteUrl must be a full http(s) address', 422);
+  // The company's contact details travel into the build: a form on the static site shows them.
+  const identity = await getIdentity();
+  const contact = { email: identity.contact_email, phone: identity.contact_phone };
+  // The site's theme is baked into the folder: a static site cannot ask a server for it later.
+  const tokens = await compileTokens('webapp', undefined, undefined, req.projectId);
+  const started = startStaticBuild(slug, { apiBase: parsed.value, siteUrl, exportModel, contact, identity, tokens: { css: tokens.css, activeTheme: tokens.activeTheme } });
+  if (started === 'running') return errorResponse(res, 'A build is already running', 409);
+  if (started === 'busy') return errorResponse(res, 'The server is busy with another export. Try again in a few minutes.', 429);
+  writeActivityAsync({
+    actor: req.user.id,
+    module: 'template-engine',
+    action: 'static_export_started',
+    subject_type: 'Project',
+    subject_id: req.projectId,
+    description: `Started static export of ${what} "${slug}"`,
+    properties: { projectId: req.projectId, apiBase: parsed.value ?? null, siteUrl },
+    ip_address: getClientIp(req),
+  });
+  return successResponse(res, getStaticBuild(slug), 202);
+}
+
 export const startStatic = async (req, res, next) => {
   try {
-    const parsed = checkApiBase(req.body?.apiBase || undefined);
-    if (!parsed.ok) return errorResponse(res, parsed.reason, 422);
+    const bad = checkApiBase(req.body?.apiBase || undefined);
+    if (!bad.ok) return errorResponse(res, bad.reason, 422);
     const slug = await siteSlug(req.projectId);
     if (!slug) return errorResponse(res, 'Prepare the project folder first', 409);
-    // The company's contact details travel into the build: a form on the static site shows them.
-    const identity = await getIdentity();
-    const contact = { email: identity.contact_email, phone: identity.contact_phone };
-    // The site's theme is baked into the folder: a static site cannot ask a server for it later.
-    const tokens = await compileTokens('webapp', undefined, undefined, req.projectId);
-    const started = startStaticBuild(slug, { apiBase: parsed.value, contact, tokens: { css: tokens.css, activeTheme: tokens.activeTheme } });
-    if (started === 'running') return errorResponse(res, 'A build is already running', 409);
-    if (started === 'busy') return errorResponse(res, 'The server is busy with another export. Try again in a few minutes.', 429);
+    // The export holds the published pages (website and landing); the live site folder keeps showing drafts.
+    const exportModel = buildSiteModel(await collectSiteInput(req.projectId, { publishedOnly: true }), { exportOnly: true });
+    return await launchBuild(req, res, slug, exportModel, 'site');
+  } catch (err) {
+    next(err);
+  }
+};
+
+// One landing page of the project, with its own folder name (see buildLandingModel).
+async function landingFolder(req) {
+  const [site, project] = await Promise.all([
+    prisma.site.findFirst({ where: { id: req.params.siteId, project_id: req.projectId, type: 'LANDING', deleted_at: null } }),
+    prisma.project.findFirst({ where: { id: req.projectId, deleted_at: null } }),
+  ]);
+  if (!site || !project) return null;
+  const page = await prisma.builderPage.findFirst({ where: { site_id: site.id, deleted_at: null }, select: { slug: true } });
+  return page ? `${project.slug}-${page.slug}` : null;
+}
+
+export const startLandingStatic = async (req, res, next) => {
+  try {
+    const folder = await landingFolder(req);
+    if (!folder) return errorResponse(res, 'Landing page not found', 404);
+    const bad = checkApiBase(req.body?.apiBase || undefined);
+    if (!bad.ok) return errorResponse(res, bad.reason, 422);
+    const model = buildLandingModel(await collectSiteInput(req.projectId, { publishedOnly: true }), req.params.siteId);
+    if (!model) return errorResponse(res, 'Save the landing page first. Only a saved page can be converted.', 409);
+    await writeSite(model); // the page's own site folder (rewritten on every Convert, so edits always come along)
+    return await launchBuild(req, res, model.site.slug, model, 'landing page');
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const landingStaticStatus = async (req, res, next) => {
+  try {
+    const folder = await landingFolder(req);
+    return successResponse(res, folder ? getStaticBuild(folder) : { state: 'idle', log: '' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const landingStaticDownload = async (req, res, next) => {
+  try {
+    const folder = await landingFolder(req);
+    const buf = folder ? zipStaticBuild(folder) : null;
+    if (!buf) return errorResponse(res, 'No finished static build', 404);
     writeActivityAsync({
       actor: req.user.id,
       module: 'template-engine',
-      action: 'static_export_started',
+      action: 'static_export_downloaded',
       subject_type: 'Project',
       subject_id: req.projectId,
-      description: `Started static export of "${slug}"`,
-      properties: { projectId: req.projectId, apiBase: parsed.value ?? null },
+      description: `Downloaded static export of landing page "${folder}"`,
+      properties: { projectId: req.projectId, bytes: buf.length },
       ip_address: getClientIp(req),
     });
-    return successResponse(res, getStaticBuild(slug), 202);
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${folder}-static.zip"`);
+    return res.end(buf);
   } catch (err) {
     next(err);
   }

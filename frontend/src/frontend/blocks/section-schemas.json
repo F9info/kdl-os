@@ -7634,7 +7634,8 @@
           "ocean",
           "violet",
           "aurora",
-          "blaze"
+          "blaze",
+          "brand"
         ]
       },
       "subtitle": {
@@ -7722,7 +7723,8 @@
           "ocean",
           "violet",
           "aurora",
-          "blaze"
+          "blaze",
+          "brand"
         ]
       },
       "text": {
@@ -7798,7 +7800,8 @@
           "ocean",
           "violet",
           "aurora",
-          "blaze"
+          "blaze",
+          "brand"
         ]
       },
       "title": {
@@ -7870,7 +7873,8 @@
           "ocean",
           "violet",
           "aurora",
-          "blaze"
+          "blaze",
+          "brand"
         ]
       }
     }
@@ -7932,7 +7936,8 @@
           "ocean",
           "violet",
           "aurora",
-          "blaze"
+          "blaze",
+          "brand"
         ]
       },
       "subtitle": {
@@ -7942,6 +7947,69 @@
       "title": {
         "kind": "text",
         "tab": "content"
+      }
+    }
+  },
+  "LandingHeader": {
+    "label": "Landing header",
+    "fields": {
+      "ctaHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "ctaLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "font": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "lobster",
+          "fraunces",
+          "playfair",
+          "bricolage"
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "links": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "palette": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sunset",
+          "ocean",
+          "violet",
+          "aurora",
+          "blaze",
+          "brand"
+        ]
       }
     }
   },
@@ -8038,7 +8106,8 @@
           "ocean",
           "violet",
           "aurora",
-          "blaze"
+          "blaze",
+          "brand"
         ]
       },
       "proofText": {
@@ -8131,7 +8200,8 @@
           "ocean",
           "violet",
           "aurora",
-          "blaze"
+          "blaze",
+          "brand"
         ]
       },
       "subtitle": {
@@ -8209,7 +8279,8 @@
           "ocean",
           "violet",
           "aurora",
-          "blaze"
+          "blaze",
+          "brand"
         ]
       },
       "reverse": {
@@ -8285,7 +8356,8 @@
           "ocean",
           "violet",
           "aurora",
-          "blaze"
+          "blaze",
+          "brand"
         ]
       },
       "stats": {
@@ -8365,7 +8437,8 @@
           "ocean",
           "violet",
           "aurora",
-          "blaze"
+          "blaze",
+          "brand"
         ]
       },
       "subtitle": {
@@ -8431,7 +8504,8 @@
           "ocean",
           "violet",
           "aurora",
-          "blaze"
+          "blaze",
+          "brand"
         ]
       },
       "title": {

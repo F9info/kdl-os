@@ -163,6 +163,7 @@ describe('navigation built from the real manifests', () => {
       'Media',
       'Access Control',
       'Settings',
+      'Membership',
     ])
     const by = Object.fromEntries(model.groups.map((g) => [g.label, g.items.map((i) => i.label)]))
     expect(by['Media']).toEqual(['Library', 'AI Providers', 'Cloud Imports'])

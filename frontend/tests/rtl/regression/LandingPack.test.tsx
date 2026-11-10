@@ -17,8 +17,8 @@ function renderBlock(key: string, props: Record<string, unknown> = {}) {
 }
 
 describe('Landing block pack', () => {
-  it('registers eleven blocks and lists every one in its category', () => {
-    expect(keys).toHaveLength(11)
+  it('registers twelve blocks and lists every one in its category', () => {
+    expect(keys).toHaveLength(12)
     expect(landing.categories?.landing?.components?.slice().sort()).toEqual(keys.slice().sort())
   })
 
@@ -280,5 +280,91 @@ describe('LandingFooter (company details come from Identity only)', () => {
     footer({}, { links: '' })
     expect(screen.queryByRole('link')).toBeNull()
     expect(document.body.textContent).not.toMatch(/@|©/)
+  })
+})
+
+describe('LandingHeader and the brand colour set (company details come from Identity)', () => {
+  const identity = {
+    company_name: 'Sri Lakshmi Developers',
+    company_logo_light: '/uploads/sld-logo.png',
+    contact_phone: '+91 98765 43210',
+    brand_primary: '#0a8f3c',
+    brand_secondary: '#064d20',
+  }
+  const withIdentity = (key: string, props: Record<string, unknown> = {}) => {
+    const def = landing.components[key]!
+    const Render = def.render as (p: Record<string, unknown>) => JSX.Element
+    return render(
+      <Render
+        {...(def.defaultProps ?? {})}
+        {...props}
+        puck={{ isEditing: false, metadata: { identity } }}
+      />
+    )
+  }
+
+  it('shows the logo, name and phone from Identity, and a button to #contact', () => {
+    withIdentity('LandingHeader')
+    expect(screen.getByRole('img', { name: 'Sri Lakshmi Developers' })).toHaveAttribute(
+      'src',
+      '/uploads/sld-logo.png'
+    )
+    expect(screen.getByText('Sri Lakshmi Developers')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '+91 98765 43210' })).toHaveAttribute(
+      'href',
+      'tel:+919876543210'
+    )
+    expect(screen.getByRole('link', { name: 'Get a free quote' })).toHaveAttribute(
+      'href',
+      '#contact'
+    )
+  })
+
+  it('shows menu links only when some are typed, and drops an unsafe one', () => {
+    withIdentity('LandingHeader', { links: 'About|#about\nBad|javascript:alert(1)' })
+    expect(screen.getByRole('link', { name: 'About' })).toHaveAttribute('href', '#about')
+    expect(screen.queryByRole('link', { name: 'Bad' })?.getAttribute('href') ?? '').not.toContain(
+      'javascript'
+    )
+  })
+
+  it('has no company text of its own: an empty Identity shows no name, logo or phone', () => {
+    const def = landing.components.LandingHeader!
+    const Render = def.render as (p: Record<string, unknown>) => JSX.Element
+    const { container } = render(
+      <Render
+        {...(def.defaultProps ?? {})}
+        puck={{ isEditing: false, metadata: { identity: {} } }}
+      />
+    )
+    expect(container.querySelector('img')).toBeNull()
+    expect(container.querySelector('a[href^="tel:"]')).toBeNull()
+  })
+
+  it('the brand colour set reads Identity colours through --lp-1 and --lp-2 on every block', () => {
+    const { container } = withIdentity('LandingHero', { palette: 'brand' })
+    const scope = container.querySelector('div[style*="display: contents"]') as HTMLElement
+    expect(scope.style.getPropertyValue('--lp-1')).toBe('#0a8f3c')
+    expect(scope.style.getPropertyValue('--lp-2')).toBe('#064d20')
+    expect(PALETTES.brand.strong).toContain('var(--lp-1')
+  })
+
+  it('ignores a colour that is not a hex value', () => {
+    const def = landing.components.LandingHero!
+    const Render = def.render as (p: Record<string, unknown>) => JSX.Element
+    const { container } = render(
+      <Render
+        {...(def.defaultProps ?? {})}
+        puck={{
+          isEditing: false,
+          metadata: { identity: { brand_primary: 'red;} body{display:none' } },
+        }}
+      />
+    )
+    expect(
+      (
+        container.querySelector('div[style*="display: contents"]') as HTMLElement
+      ).style.getPropertyValue('--lp-1')
+    ).toBe('')
   })
 })

@@ -51,6 +51,8 @@ function ConvertToStatic() {
   const sb = useStaticBuild(projectId)
   const [apiBase, setApiBase] = useState('')
   const [apiBaseError, setApiBaseError] = useState('')
+  const [siteUrl, setSiteUrl] = useState('')
+  const [siteUrlError, setSiteUrlError] = useState('')
   const build = sb.status.data
   const preparing = createSite.isPending
   const running = build?.state === 'running' || sb.start.isPending
@@ -67,12 +69,18 @@ function ConvertToStatic() {
       return
     }
     setApiBaseError('')
+    const host = siteUrl.trim()
+    if (host && !isUrl(host)) {
+      setSiteUrlError('Enter the full address, like https://www.example.com')
+      return
+    }
+    setSiteUrlError('')
     try {
       await createSite.mutateAsync() // 1. write the latest pages, menus, brand and images
     } catch {
       return // the hook already shows why
     }
-    sb.start.mutate(base) // 2. build the static files (polled until finished)
+    sb.start.mutate({ apiBase: base, siteUrl: host }) // 2. build the static files (polled until finished)
   }
 
   const step1 = preparing ? 'doing' : running || done ? 'done' : 'todo'
@@ -154,6 +162,31 @@ function ConvertToStatic() {
         )}
 
         <details className="text-sm">
+          <summary className="cursor-pointer font-medium">Search engines (sitemap)</summary>
+          <div className="mt-2 space-y-2 text-muted-foreground">
+            <p>
+              The export always includes a robots.txt and each page&apos;s title, description and
+              share tags from its SEO settings. Enter the address you will host the site at (for
+              example https://www.example.com) to also get a sitemap.xml and canonical addresses.
+            </p>
+            <label className="block font-medium text-foreground" htmlFor="site-url">
+              Website address (optional)
+            </label>
+            <Input
+              id="site-url"
+              placeholder="https://www.example.com"
+              value={siteUrl}
+              onChange={(e) => setSiteUrl(e.target.value)}
+            />
+            {siteUrlError && (
+              <p className="text-destructive" role="alert" data-testid="site-url-error">
+                {siteUrlError}
+              </p>
+            )}
+          </div>
+        </details>
+
+        <details className="text-sm">
           <summary className="cursor-pointer font-medium">Forms on the static website</summary>
           <div className="mt-2 space-y-2 text-muted-foreground">
             <p>
@@ -203,7 +236,10 @@ function ConvertToStatic() {
             up each item), and neither are the /p/&lt;slug&gt; links (the friendly page addresses
             are).
           </li>
-          <li>Landing pages are separate and are not part of this folder.</li>
+          <li>
+            Your published landing pages are in the folder too, each at its own address (like
+            /your-page-slug/). A draft landing page is left out.
+          </li>
         </ul>
       </section>
     </div>

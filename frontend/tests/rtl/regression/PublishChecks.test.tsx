@@ -37,12 +37,12 @@ const open = (issues: PageIssue[], busy = false) => {
 beforeEach(() => vi.clearAllMocks())
 
 describe('PublishChecksDialog (T6.4)', () => {
-  it('errors: lists problems first, defaults to going back, "Publish anyway" is the explicit override', () => {
+  it('errors: lists problems first, defaults to going back, "Save anyway" is the explicit override', () => {
     const { onBack, onPublish } = open([
       warn('Add a meta description.'),
       err('A link points nowhere.', 'Hero'),
     ])
-    expect(screen.getByRole('heading', { name: 'Fix these before publishing?' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Fix these before saving?' })).toBeTruthy()
     expect(screen.getByText('1 problem to fix')).toBeTruthy()
     expect(screen.getByText('1 suggestion')).toBeTruthy()
     expect(screen.getByText('A link points nowhere.')).toBeTruthy()
@@ -53,26 +53,26 @@ describe('PublishChecksDialog (T6.4)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Back to editing' }))
     expect(onBack).toHaveBeenCalled()
     expect(onPublish).not.toHaveBeenCalled()
-    fireEvent.click(screen.getByRole('button', { name: 'Publish anyway' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save anyway' }))
     expect(onPublish).toHaveBeenCalledWith(true)
   })
 
-  it('warnings only: nothing is broken, plain Publish with no override', () => {
+  it('warnings only: nothing is broken, plain Save with no override', () => {
     const { onPublish } = open([warn('Add a meta description.'), warn('No SEO title set.')])
-    expect(screen.getByRole('heading', { name: 'Ready to publish?' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Ready to save?' })).toBeTruthy()
     expect(screen.getByText('2 suggestions')).toBeTruthy()
     expect(screen.queryByRole('region', { name: 'Problems' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Publish anyway' })).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Publish' }))
+    expect(screen.queryByRole('button', { name: 'Save anyway' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     expect(onPublish).toHaveBeenCalledWith(false)
   })
 
   it('names blocks in plain words and disables both buttons while publishing', () => {
     open([err('Broken.', 'ContactForm')], true)
     expect(screen.getByText('in Contact Form')).toBeTruthy()
-    expect(
-      (screen.getByRole('button', { name: 'Publishing…' }) as HTMLButtonElement).disabled
-    ).toBe(true)
+    expect((screen.getByRole('button', { name: 'Saving…' }) as HTMLButtonElement).disabled).toBe(
+      true
+    )
     expect(
       (screen.getByRole('button', { name: 'Back to editing' }) as HTMLButtonElement).disabled
     ).toBe(true)

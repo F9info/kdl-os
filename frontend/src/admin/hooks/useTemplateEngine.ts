@@ -148,8 +148,9 @@ export function useStaticBuild(projectId: string) {
     refetchInterval: (q) => (q.state.data?.state === 'running' ? 10_000 : false),
   })
   const start = useMutation({
-    mutationFn: (apiBase: string) =>
-      api.post(`${BASE}/site/static`, { apiBase }, projectScope(projectId)),
+    // siteUrl = where the exported folder will be hosted: it gives pages canonical addresses and a sitemap.
+    mutationFn: ({ apiBase, siteUrl = '' }: { apiBase: string; siteUrl?: string }) =>
+      api.post(`${BASE}/site/static`, { apiBase, siteUrl }, projectScope(projectId)),
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
     onError: (err) => toast({ title: extractErrorCode(err), variant: 'destructive' }),
   })
@@ -165,6 +166,39 @@ export function useStaticBuild(projectId: string) {
     a.click()
     a.remove()
     // Revoking right after click() can cancel the download before the browser starts it.
+    setTimeout(() => URL.revokeObjectURL(a.href), 10_000)
+  }
+  return { status, start, download }
+}
+
+// "Convert" on ONE landing page: its own folder, rewritten by every Convert of that page.
+export function useLandingStatic(projectId: string, siteId: string) {
+  const qc = useQueryClient()
+  const key = ['landing-static', projectId, siteId]
+  const base = `${BASE}/site/landing/${siteId}/static`
+  const status = useQuery({
+    queryKey: key,
+    enabled: !!projectId && !!siteId,
+    queryFn: () =>
+      api.get<{ data: StaticBuildStatus }>(base, projectScope(projectId)).then((r) => r.data.data),
+    refetchInterval: (q) => (q.state.data?.state === 'running' ? 10_000 : false),
+  })
+  const start = useMutation({
+    mutationFn: () => api.post(base, {}, projectScope(projectId)),
+    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+    onError: (err) => toast({ title: extractErrorCode(err), variant: 'destructive' }),
+  })
+  const download = async () => {
+    const r = await api.get<Blob>(`${base}/download`, {
+      ...projectScope(projectId),
+      responseType: 'blob',
+    })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(r.data)
+    a.download = 'landing-page.zip'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
     setTimeout(() => URL.revokeObjectURL(a.href), 10_000)
   }
   return { status, start, download }
