@@ -32,8 +32,8 @@ vi.mock('../../src/shared/utils/crypto.js', () => ({
 }));
 vi.mock('@aws-sdk/client-s3', () => ({
   S3Client: vi.fn(function () { return ({ send: s3SendMock }); }),
-  ListObjectsV2Command: vi.fn((i) => ({ _type: 'ListObjectsV2', ...i })),
-  GetObjectCommand: vi.fn((i) => ({ _type: 'GetObject', ...i })),
+  ListObjectsV2Command: vi.fn(function (i) { return Object.assign(this, ({ _type: 'ListObjectsV2', ...i })); }),
+  GetObjectCommand: vi.fn(function (i) { return Object.assign(this, ({ _type: 'GetObject', ...i })); }),
 }));
 vi.mock('basic-ftp', () => ({
   Client: vi.fn(function () { return ftpMocks; }),
