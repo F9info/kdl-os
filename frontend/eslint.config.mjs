@@ -38,7 +38,8 @@ export default [
           patterns: [
             {
               group: ['@/admin/*', '@/app/admin/*'],
-              message: 'Public website code must not import admin code. Move what both need to the shared layer.',
+              message:
+                'Public website code must not import admin code. Move what both need to the shared layer.',
             },
           ],
         },
@@ -61,7 +62,8 @@ export default [
           patterns: [
             {
               group: ['@/admin/*', '@/frontend/*', '@/app/*'],
-              message: 'The shared layer must not import from the admin area, the public website area, or routes.',
+              message:
+                'The shared layer must not import from the admin area, the public website area, or routes.',
             },
           ],
         },
