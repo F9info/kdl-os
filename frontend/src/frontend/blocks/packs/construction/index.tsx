@@ -11253,21 +11253,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {leaders.map((l, i) => (
                 <div key={i} className="text-center">
-                  {l.photo ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={l.photo}
-                      alt={l.name}
-                      className="w-32 h-32 mx-auto rounded-full object-cover mb-4"
-                    />
-                  ) : (
-                    <div
-                      aria-hidden="true"
-                      className="w-32 h-32 mx-auto rounded-full bg-primary/10 text-primary text-4xl font-bold flex items-center justify-center mb-4"
-                    >
-                      {(l.name ?? '').trim().charAt(0)}
-                    </div>
-                  )}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={l.photo}
+                    alt={l.name}
+                    className="w-32 h-32 mx-auto rounded-full object-cover mb-4"
+                  />
                   <p className="font-semibold text-title">{l.name}</p>
                   <p className="text-sm text-primary mb-2">{l.title}</p>
                   <p className="text-sm text-body">{l.bio}</p>
@@ -12356,14 +12347,12 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {posts.map((post, i) => (
                 <article key={i} className="rounded-xl overflow-hidden border border-divider group">
-                  {post.image && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={post.image}
-                      alt=""
-                      className="w-full aspect-[16/10] object-cover group-hover:scale-105 transition duration-300"
-                    />
-                  )}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={post.image}
+                    alt=""
+                    className="w-full aspect-[16/10] object-cover group-hover:scale-105 transition duration-300"
+                  />
                   <div className="p-5">
                     <span className="text-xs font-semibold text-primary uppercase tracking-wide">
                       {post.category}
