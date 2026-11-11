@@ -32,7 +32,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   const render = (data: NonNullable<typeof chrome>['top']) =>
     home && data ? (
       <div className="[&>main]:!min-h-0">
-        <PageRender page={{ ...home, data }} identity={identity} />
+        <PageRender page={{ ...home, data }} identity={identity} ownChrome />
       </div>
     ) : null
   const useSite = !!chrome?.top

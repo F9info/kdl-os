@@ -51,3 +51,23 @@ export function chromeOf(data: Data, member = false): { top: Data | null; bottom
   }
   return { top: pick(TOP), bottom: pick(BOTTOM) }
 }
+
+const isChrome = (b: Block) => TOP.has(b.type) || BOTTOM.has(b.type)
+
+/** True when the page carries its own top bar / header / footer blocks (landing pages do not). */
+export const hasChrome = (data: Data) => ((data.content ?? []) as Block[]).some(isChrome)
+
+/**
+ * One header and footer for the whole site: the home page's top bar, header and footer replace the
+ * ones a page stores, so editing the home header changes every page. Pages without chrome of their
+ * own (landing pages) and pages that set `root.props.ownChrome` are left alone, as is everything
+ * when the home page has no header.
+ */
+export function withSharedChrome(data: Data, home: Data | null | undefined, member = false): Data {
+  if (!home || !hasChrome(data) || (data.root?.props as { ownChrome?: boolean })?.ownChrome)
+    return data
+  const { top, bottom } = chromeOf(home, member)
+  if (!top) return data
+  const body = ((data.content ?? []) as Block[]).filter((b) => !isChrome(b))
+  return { ...data, content: [...top.content, ...body, ...(bottom?.content ?? [])] } as Data
+}
