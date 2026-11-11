@@ -153,6 +153,19 @@ Audits (backend, ai-services, mobile-readiness) → fixes with tests: `publicOnl
 
 **10 Dependabot:** audit only — 7 open PRs all red (frontend: pnpm overrides mismatch → `@dependabot rebase`; backend/ai-services: fail on master-wide test drift fixed above). Nothing merged.
 **11 Staging (repo side fixed, human side pending):** `docker-compose.preview.yml` image path now `ghcr.io/${IMAGE_REPO:-f9info/kdl-os}` (was a non-existent `kalamdreamlabs/...`); `cd-staging.yml` triggers via `workflow_run` after "CD" (no image race), passes IMAGE_REPO, ships the frontend source the site generator needs, drops the masked migration step (backend migrates at start), retries the health check; nginx now routes `/health` → backend (was falling through to site-preview); `staging-bootstrap.sh` rewritten for sudo/non-root deploy user + ufw; `staging-smoke.yml` trigger block fixed; dead "INTENTIONAL BREAK" CMD removed from `backend/Dockerfile`. Still needs a human: VPS, SSH key, DNS, GitHub secrets (`MANUAL_TASKS.md` KDL-403). Known gaps listed there (no TLS, MinIO 9002 not public, Meili keys, site-preview is `next dev`). Local-only: site-preview 500s on macOS Docker bind mounts (`Unknown system error -35`) — pre-existing.
+## 2026-10-19 — KDL-658: ai-services claude.brain.test.js suite loads again (79 → 94 tests)
+
+The suite failed at collection — `vi.mock('@anthropic-ai/sdk')` stubbed the default export with
+an arrow-function implementation, but `src/brains/claude.js` calls `new Anthropic(...)` at module
+load, and an arrow function is not constructible. All 15 tests in the suite silently never ran,
+so the Claude brain was untested while looking like "1 red". Fix: the mock implementation is now
+a plain `function` (constructible; its returned object overrides `this` under `new`), matching
+the real SDK's class-shaped default export. Mock covers both `messages.create` and
+`messages.stream`; the two-brain routing path is separately covered by the passing
+`brain-router.contract.test.js`. `cd ai-services && npm test`: before 1 failed suite | 12 passed,
+79 tests — after 13 passed (13), 94 tests. The loud `[ERROR]`/`[WARN]` lines (401 invalid api
+key, "redis down", schema-invalid after repair cap) are expected negative-path assertions in
+passing tests and were deliberately left alone.
 
 ## 2026-09-26 — Web app · Pages wizard grid now lists all 11 real Sector Detail pages
 
