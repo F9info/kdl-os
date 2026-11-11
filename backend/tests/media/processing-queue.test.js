@@ -1,17 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('bullmq', () => ({
-  Queue: vi.fn().mockImplementation(() => ({
+  Queue: vi.fn().mockImplementation(function () { return ({
     add: vi.fn().mockResolvedValue({ id: 'job-1', name: 'test-job', data: {} }),
     getJob: vi.fn().mockResolvedValue({ id: 'job-1', name: 'test-job', data: {} }),
-  })),
-  Worker: vi.fn().mockImplementation(() => ({
+  }); }),
+  Worker: vi.fn().mockImplementation(function () { return ({
     on: vi.fn().mockReturnThis(),
     close: vi.fn().mockResolvedValue(undefined),
-  })),
-  QueueEvents: vi.fn().mockImplementation(() => ({
+  }); }),
+  QueueEvents: vi.fn().mockImplementation(function () { return ({
     on: vi.fn().mockReturnThis(),
-  })),
+  }); }),
 }));
 
 vi.mock('../../src/config/redis.js', () => ({ redis: {} }));
