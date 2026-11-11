@@ -6,6 +6,7 @@ import type { EnabledModule, ModuleNavItem } from '@/types/models.types'
 
 export const SHELL_ITEMS: ModuleNavItem[] = [
   { label: 'Dashboard', path: '/admin/dashboard', icon: 'LayoutDashboard', order: 0 },
+  { label: 'Documents', path: '/admin/documents', icon: 'FileText', order: 1 },
 ]
 
 export interface NavSection {
