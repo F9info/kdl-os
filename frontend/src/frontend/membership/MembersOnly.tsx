@@ -26,13 +26,18 @@ export function MembersOnly({ path, children }: { path: string; children: React.
           : 'Log in as a member to see this content.'}
       </p>
       <Link
-        href={upgrade ? '/membership/account/plan' : '/login'}
+        href={upgrade ? '/membership/account/plan' : '/membership/login'}
         className="inline-block rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground"
       >
         {upgrade ? 'Upgrade plan' : 'Log in'}
       </Link>
-      <div>
-        <Link href="/membership" className="text-sm text-primary hover:underline">
+      <div className="flex justify-center gap-4 text-sm">
+        {!authed && (
+          <Link href="/membership" className="text-primary hover:underline">
+            Become a member
+          </Link>
+        )}
+        <Link href="/membership" className="text-primary hover:underline">
           See plans
         </Link>
       </div>

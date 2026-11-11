@@ -1,5 +1,5 @@
 import type { Config, Data } from '@puckeditor/core'
-import type { ReactNode } from 'react'
+import { createElement, type ReactNode } from 'react'
 import { composePacks } from './packs/compose'
 import { composer } from './packs/composer'
 import { construction } from './packs/construction'
@@ -93,8 +93,28 @@ function orderCategories(
   return ordered
 }
 
+// Any block may carry an `anchorId` prop (set in page JSON) so menu links like /p/demo-home#products can
+// scroll to it. A zero-height marker is rendered before the block; blocks without `anchorId` are untouched.
+const components = Object.fromEntries(
+  Object.entries(composed.components ?? {}).map(([key, def]) => {
+    const inner = def.render
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const render = (props: any) =>
+      createElement(
+        'div',
+        { className: 'contents' },
+        props.anchorId
+          ? createElement('span', { id: props.anchorId, className: 'block -mt-24 pt-24 h-0' })
+          : null,
+        createElement(inner, props)
+      )
+    return [key, { ...def, render }]
+  })
+)
+
 export const config: Config = {
   ...composed,
+  components,
   categories: orderCategories(categoriesUnordered),
 }
 

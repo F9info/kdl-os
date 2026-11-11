@@ -11,7 +11,6 @@ import {
   Navigation as NavigationLucide,
   Phone as PhoneLucide,
   Rocket,
-  Search as SearchLucide,
 } from 'lucide-react'
 import type { ComponentPack } from '../types'
 import { imageField } from '../image-field'
@@ -3240,13 +3239,15 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   )}
                 </div>
                 <div className="hidden shrink-0 items-center gap-5 md:flex">
-                  <button
-                    type="button"
-                    aria-label="Search"
-                    className="text-[color:var(--hdr-navy)] hover:text-[color:var(--hdr-accent)] transition"
-                  >
-                    <SearchLucide className="h-[18px] w-[18px]" aria-hidden />
-                  </button>
+                  {loginLabel && (
+                    <a
+                      href={loginHref}
+                      className="inline-flex items-center gap-1.5 rounded-md border px-4 py-2 text-xs font-semibold transition hover:opacity-80"
+                      style={{ color: accent, borderColor: accent }}
+                    >
+                      {loginLabel}
+                    </a>
+                  )}
                   {ctaLabel && (
                     <a
                       href={ctaHref}
@@ -11252,12 +11253,21 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {leaders.map((l, i) => (
                 <div key={i} className="text-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={l.photo}
-                    alt={l.name}
-                    className="w-32 h-32 mx-auto rounded-full object-cover mb-4"
-                  />
+                  {l.photo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={l.photo}
+                      alt={l.name}
+                      className="w-32 h-32 mx-auto rounded-full object-cover mb-4"
+                    />
+                  ) : (
+                    <div
+                      aria-hidden="true"
+                      className="w-32 h-32 mx-auto rounded-full bg-primary/10 text-primary text-4xl font-bold flex items-center justify-center mb-4"
+                    >
+                      {(l.name ?? '').trim().charAt(0)}
+                    </div>
+                  )}
                   <p className="font-semibold text-title">{l.name}</p>
                   <p className="text-sm text-primary mb-2">{l.title}</p>
                   <p className="text-sm text-body">{l.bio}</p>
@@ -12346,12 +12356,14 @@ const typedComponents: Config<ConstructionProps>['components'] = {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {posts.map((post, i) => (
                 <article key={i} className="rounded-xl overflow-hidden border border-divider group">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={post.image}
-                    alt=""
-                    className="w-full aspect-[16/10] object-cover group-hover:scale-105 transition duration-300"
-                  />
+                  {post.image && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={post.image}
+                      alt=""
+                      className="w-full aspect-[16/10] object-cover group-hover:scale-105 transition duration-300"
+                    />
+                  )}
                   <div className="p-5">
                     <span className="text-xs font-semibold text-primary uppercase tracking-wide">
                       {post.category}

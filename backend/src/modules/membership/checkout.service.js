@@ -75,7 +75,7 @@ export async function checkout(member, { plan_slug, interval, provider_id, provi
       sub = await createSubscription(tx, { member, plan, price, status: 'PENDING_PAYMENT' });
     }
     const payment = await createPayment(tx, { member, subscription: sub, provider, provider_option, amount: q.total, tax_amount: q.tax, currency: q.currency, status: manual ? 'AWAITING_PROOF' : 'PENDING' });
-    await recordEvent(tx, { key: 'checkout.started', member_id: member.id, actor, data: { payment_id: payment.id, plan: plan.slug, kind: q.kind, amount: q.total }, description: `Checkout started for ${plan.name}` });
+    await recordEvent(tx, { key: 'checkout.started', member_id: member.id, actor, data: { payment_id: payment.id, subscription_id: sub.id, plan: plan.slug, kind: q.kind, amount: q.total, manual, renewal: q.kind === 'renewal' }, description: `Checkout started for ${plan.name}` });
     return { payment, sub };
   });
 
@@ -91,6 +91,7 @@ export async function checkout(member, { plan_slug, interval, provider_id, provi
     return { payment: updated, order, quote: q, subscription_id: sub.id };
   } catch (err) {
     await prisma.membershipPayment.update({ where: { id: payment.id }, data: { status: 'FAILED', failure_reason: String(err.message).slice(0, 300) } });
+    await recordEvent(prisma, { key: 'payment.failed', member_id: member.id, actor, data: { payment_id: payment.id, subscription_id: sub.id, renewal: q.kind === 'renewal' }, description: `Payment ${payment.reference} failed` });
     throw err;
   }
 }
@@ -138,6 +139,7 @@ export async function renew(member, actor) {
 export async function changePlan(member, { plan_slug, interval }, actor) {
   const cur = await currentSubscription(member.id);
   if (!cur || !LIVE.includes(cur.status)) throw httpError(409, 'You need a running membership to change plans');
+  if (cur.plan.allow_plan_change === false) throw httpError(403, 'Plan changes are not allowed on this plan. Please contact us.');
   const { plan, price } = await loadPlanForMember(member, plan_slug, interval);
   if (plan.id === cur.plan_id) throw httpError(422, 'You are already on this plan');
   if (plan.tier > cur.plan.tier) {
@@ -152,6 +154,7 @@ export async function changePlan(member, { plan_slug, interval }, actor) {
 export async function cancel(member, { reason, immediately }, actor) {
   const cur = await currentSubscription(member.id);
   if (!cur || !['ACTIVE', 'PAST_DUE', 'TRIALING', 'PENDING_PAYMENT', 'PENDING_APPROVAL'].includes(cur.status)) throw httpError(409, 'There is nothing to cancel');
+  if (cur.plan.allow_self_cancel === false && actor === member.user_id) throw httpError(403, 'This plan cannot be cancelled online. Please contact us.');
   if (immediately || ['PENDING_PAYMENT', 'PENDING_APPROVAL'].includes(cur.status) || !cur.ends_at) {
     const now = new Date();
     return prisma.$transaction((tx) => setStatus(tx, cur, 'CANCELLED', { cancelled_at: now, cancel_reason: reason ?? null, ends_at: now }, { actor, key: 'subscription.cancelled' }));
@@ -161,3 +164,21 @@ export async function cancel(member, { reason, immediately }, actor) {
   return updated;
 }
 
+
+export async function setAutoRenew(member, enabled, actor) {
+  const cur = await currentSubscription(member.id);
+  if (!cur || !LIVE.includes(cur.status)) throw httpError(409, 'There is no running membership');
+  if (cur.auto_renew === enabled) return cur;
+  const updated = await prisma.membershipSubscription.update({ where: { id: cur.id }, data: { auto_renew: enabled }, include: { plan: true, price: true } });
+  await recordEvent(prisma, { key: enabled ? 'subscription.autorenew_on' : 'subscription.autorenew_off', member_id: member.id, actor, data: { subscription_id: cur.id }, description: `Auto-renewal ${enabled ? 'enabled' : 'disabled'}` });
+  return updated;
+}
+
+/** Undo a scheduled cancellation (cancel_at_period_end). */
+export async function resume(member, actor) {
+  const cur = await currentSubscription(member.id);
+  if (!cur || !cur.cancel_at_period_end || !LIVE.includes(cur.status)) throw httpError(409, 'There is no scheduled cancellation to undo');
+  const updated = await prisma.membershipSubscription.update({ where: { id: cur.id }, data: { cancel_at_period_end: false, auto_renew: true, cancel_reason: null }, include: { plan: true, price: true } });
+  await recordEvent(prisma, { key: 'subscription.resumed', member_id: member.id, actor, data: { subscription_id: cur.id }, description: 'Member resumed their membership' });
+  return updated;
+}

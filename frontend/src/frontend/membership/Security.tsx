@@ -42,8 +42,12 @@ export function Security() {
   })
   const e = f.formState.errors
   return (
-    <form className="max-w-md space-y-3" noValidate onSubmit={f.handleSubmit((d) => m.mutate(d))}>
-      <h1 className="text-2xl font-bold">Security</h1>
+    <form
+      className="max-w-md space-y-3 rounded-xl border bg-card p-6"
+      noValidate
+      onSubmit={f.handleSubmit((d) => m.mutate(d))}
+    >
+      <h2 className="text-lg font-semibold">Change password</h2>
       <FormField label="Current password" required error={e.currentPassword?.message}>
         <Input type="password" autoComplete="current-password" {...f.register('currentPassword')} />
       </FormField>
@@ -60,7 +64,7 @@ export function Security() {
         </p>
       )}
       <Button type="submit" disabled={m.isPending}>
-        Change password
+        Update password
       </Button>
     </form>
   )

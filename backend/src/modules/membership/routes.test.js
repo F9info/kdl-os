@@ -11,6 +11,7 @@ const db = vi.hoisted(() => ({
   },
 }));
 vi.mock('../../config/database.js', () => db);
+vi.mock('../../config/redis.js', () => ({ redis: { get: vi.fn(), set: vi.fn(), del: vi.fn(), publish: vi.fn() } }));
 vi.mock('../auth/service.js', () => ({ hashPassword: vi.fn(), signAccessToken: vi.fn(), signRefreshToken: vi.fn(), storeRefreshToken: vi.fn() }));
 vi.mock('../user-management/shared/activity-logger.js', () => ({ writeActivityAsync: vi.fn(), getClientIp: () => null }));
 vi.mock('../user-management/shared/permission-resolver.js', () => ({ resolvePermissions: vi.fn().mockResolvedValue({ bypass: false, permissions: [] }) }));
@@ -33,7 +34,7 @@ describe('public routes', () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data.items[0].prices[0].breakdown).toEqual({ subtotal: 100000, tax: 18000, total: 118000 });
-    expect(db.prisma.membershipPlan.findMany.mock.calls[0][0].where).toEqual({ visibility: 'PUBLIC' });
+    expect(db.prisma.membershipPlan.findMany.mock.calls[0][0].where).toEqual({ visibility: 'PUBLIC', status: 'ACTIVE' });
   });
 
   it('POST /signup validates the body before touching the database', async () => {

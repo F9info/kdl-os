@@ -5,6 +5,7 @@ import { applyHeaderOverlay } from '@/frontend/lib/header-overlay'
 import { applyIdentity, mergeIdentity } from '@/frontend/lib/apply-identity'
 import { applySiteLayout } from '@/lib/apply-site-layout'
 import { config } from '@/frontend/blocks/puck.config'
+import { memberLoginLinks } from '@/frontend/membership/siteChrome'
 import type { PageRecord } from '@/frontend/pages/page-record'
 
 /**
@@ -23,7 +24,9 @@ export function PageRender({
   return (
     <Render
       config={config}
-      data={applyHeaderOverlay(applyIdentity(applySiteLayout(page.data, page.layout), live))}
+      data={memberLoginLinks(
+        applyHeaderOverlay(applyIdentity(applySiteLayout(page.data, page.layout), live))
+      )}
       // `identity` (project identity plus this site's overrides) feeds blocks that show company
       // details themselves, such as the Landing footer.
       metadata={{

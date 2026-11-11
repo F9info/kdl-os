@@ -16,6 +16,7 @@ vi.mock('@/frontend/membership/useMemberSession', () => ({
 import { Pricing } from '@/frontend/membership/Pricing'
 import { JoinFlow } from '@/frontend/membership/JoinFlow'
 import { Checkout } from '@/frontend/membership/Checkout'
+import { setJoinAccount } from '@/frontend/membership/JoinState'
 
 const plans = [
   {
@@ -64,7 +65,7 @@ describe('membership public screens', () => {
     expect(await screen.findByText('Gold')).toBeInTheDocument()
     expect(screen.getByText('Priority support')).toBeInTheDocument()
     expect(screen.getByText('Most popular')).toBeInTheDocument()
-    expect(screen.getByText(/4,999\.00/)).toBeInTheDocument()
+    expect(screen.getByText(/4,999/)).toBeInTheDocument()
   })
 
   it('join form shows the plan packs after choosing a member type', async () => {
@@ -80,23 +81,18 @@ describe('membership public screens', () => {
         ],
       },
     })
+    setJoinAccount({ full_name: 'Suresh V', mobile: '+919848012345', email: 's@x.com' })
     render(<JoinFlow planSlug="gold" interval="YEARLY" />)
     ;(await screen.findByText('Individual')).click()
-    expect(await screen.findByLabelText(/Mobile number/)).toBeInTheDocument()
-    const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!
-    for (const [label, v] of [
-      [/Mobile number/, '9848012345'],
-      [/Full name/, 'Suresh V'],
-      [/^Email/, 's@x.com'],
-      [/^Password/, 'a-long-password-1'],
-    ] as const) {
-      const el = screen.getByLabelText(label) as HTMLInputElement
-      set.call(el, v)
-      el.dispatchEvent(new Event('input', { bubbles: true }))
-    }
-    ;(await screen.findByRole('button', { name: 'Continue' })).click()
-    expect(await screen.findByText('Professional details')).toBeInTheDocument()
-    expect(screen.getByLabelText(/Profession/)).toBeInTheDocument()
+    expect(await screen.findByLabelText(/Profession/)).toBeInTheDocument()
+    expect(screen.getByText('Your membership')).toBeInTheDocument()
+  })
+
+  it('join without a verified account sends the visitor to the account step', async () => {
+    setJoinAccount(null)
+    respond({ '/membership/plans': plans })
+    render(<JoinFlow planSlug="gold" interval="YEARLY" />)
+    expect(await screen.findByText('Create your account first')).toBeInTheDocument()
   })
 
   it('checkout lists only returned providers and never shows secrets', async () => {

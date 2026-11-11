@@ -64,3 +64,14 @@ describe('import row', () => {
   });
   it('flags a bad email', () => expect(s.importRowSchema.safeParse({ full_name: 'A', email: 'nope' }).success).toBe(false));
 });
+
+describe('URL fields reject script URLs (stored XSS)', () => {
+  const t = (u) => s.offlineProofSchema.safeParse({ params: { id: 'p1' }, body: { utr: 'X1', proof_url: u } }).success;
+  it('accepts http(s) and relative paths, rejects javascript:/data:', () => {
+    expect(t('https://a.co/p.png')).toBe(true);
+    expect(t('/uploads/p.png')).toBe(true);
+    expect(t('javascript:alert(1)')).toBe(false);
+    expect(t('data:text/html,<script>1</script>')).toBe(false);
+    expect(t('//evil.com/x')).toBe(false);
+  });
+});

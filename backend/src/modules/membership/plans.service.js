@@ -22,7 +22,27 @@ export async function listPlans(q) {
     ...(q.q ? { OR: [{ name: { contains: q.q, mode: 'insensitive' } }, { slug: { contains: q.q, mode: 'insensitive' } }] } : {}),
   };
   const r = await listResult(q, (p) => prisma.membershipPlan.findMany({ where, include: full, orderBy: orderBy(q.sort, ['sort', 'tier', 'name', 'created_at'], { sort: 'asc' }), ...p }), () => prisma.membershipPlan.count({ where }));
-  return { ...r, items: r.items.map(shape) };
+  const live = { status: { in: ['ACTIVE', 'TRIALING', 'PAST_DUE'] } };
+  const [all, paid, pay, payers] = await Promise.all([
+    prisma.membershipSubscription.groupBy({ by: ['plan_id'], where: live, _count: { _all: true } }),
+    prisma.membershipSubscription.groupBy({ by: ['plan_id'], where: { ...live, price_id: { not: null } }, _count: { _all: true } }),
+    prisma.membershipPayment.aggregate({ _sum: { amount: true, refunded_amount: true }, where: { status: { in: ['PAID', 'REFUNDED'] } } }),
+    prisma.membershipPayment.groupBy({ by: ['member_id'], where: { status: { in: ['PAID', 'REFUNDED'] }, amount: { gt: 0 } } }),
+  ]);
+  const n = (rows, id) => rows.find((x) => x.plan_id === id)?._count._all ?? 0;
+  const revenue = (pay._sum.amount ?? 0) - (pay._sum.refunded_amount ?? 0);
+  return {
+    ...r,
+    items: r.items.map((p) => ({ ...shape(p), member_count: n(all, p.id), paid_member_count: n(paid, p.id) })),
+    stats: { total_plans: r.total, paid_members: paid.reduce((a, x) => a + x._count._all, 0), avg_revenue_per_member: payers.length ? Math.round(revenue / payers.length) : 0 },
+  };
+}
+
+/** Drag-reorder of the pricing page: ids in the new order. */
+export async function orderPlans(ids, actor) {
+  await prisma.$transaction(ids.map((id, sort) => prisma.membershipPlan.updateMany({ where: { id }, data: { sort } })));
+  await recordEvent(prisma, { key: 'plan.reordered', actor, data: { ids }, description: 'Plans reordered' });
+  return { items: (await prisma.membershipPlan.findMany({ orderBy: { sort: 'asc' }, select: { id: true, slug: true, sort: true } })) };
 }
 
 export const getPlan = async (id) => shape(await must(id));
@@ -56,11 +76,16 @@ export async function updatePlan(id, body, actor) {
   return getPlan(id);
 }
 
-export async function archivePlan(id, actor) {
+export async function archivePlan(id, actor, { notify_members = false } = {}) {
   const p = await must(id);
   await prisma.membershipPlan.update({ where: { id }, data: { visibility: 'ARCHIVED' } });
-  await recordEvent(prisma, { key: 'plan.archived', actor, data: { plan_id: id }, description: `Plan ${p.name} archived` });
-  return getPlan(id);
+  const affected = await prisma.membershipSubscription.findMany({ where: { plan_id: id, status: { in: ['ACTIVE', 'TRIALING', 'PAST_DUE'] } }, select: { member_id: true } });
+  await recordEvent(prisma, { key: 'plan.archived', actor, data: { plan_id: id, notify_members }, description: `Plan ${p.name} archived` });
+  if (notify_members && process.env.NODE_ENV !== 'test') {
+    const { emitMembershipEvent } = await import('./comm/dispatch.js');
+    for (const m of affected) await emitMembershipEvent('membership.updated', m.member_id, { vars: { changed_fields: `the ${p.name} plan is no longer sold; your membership continues until its end date` } });
+  }
+  return { ...(await getPlan(id)), members_affected: affected.length, notified: !!notify_members };
 }
 
 export async function deletePlan(id, actor) {
@@ -74,6 +99,7 @@ export async function deletePlan(id, actor) {
 export async function addPrice(planId, body, actor) {
   await must(planId);
   try {
+    if (body.is_default) await prisma.membershipPlanPrice.updateMany({ where: { plan_id: planId }, data: { is_default: false } });
     const price = await prisma.membershipPlanPrice.create({ data: { ...body, plan_id: planId } });
     await recordEvent(prisma, { key: 'plan.price_added', actor, data: { plan_id: planId, price_id: price.id }, description: 'Plan price added' });
     return withBreakdown(price);
@@ -84,6 +110,10 @@ export async function addPrice(planId, body, actor) {
 
 export async function updatePrice(id, body, actor) {
   try {
+    if (body.is_default) {
+      const cur = await prisma.membershipPlanPrice.findUnique({ where: { id }, select: { plan_id: true } });
+      if (cur) await prisma.membershipPlanPrice.updateMany({ where: { plan_id: cur.plan_id, id: { not: id } }, data: { is_default: false } });
+    }
     const price = await prisma.membershipPlanPrice.update({ where: { id }, data: body });
     await recordEvent(prisma, { key: 'plan.price_updated', actor, data: { price_id: id }, description: 'Plan price updated' });
     return withBreakdown(price);

@@ -41,8 +41,8 @@ export function periodEnd(start, interval) {
 // ---------- status machine ----------
 
 export const TRANSITIONS = {
-  PENDING_PAYMENT: ['PENDING_APPROVAL', 'ACTIVE', 'CANCELLED'],
-  PENDING_APPROVAL: ['ACTIVE', 'REJECTED', 'CANCELLED'],
+  PENDING_PAYMENT: ['PENDING_APPROVAL', 'ACTIVE', 'TRIALING', 'CANCELLED'],
+  PENDING_APPROVAL: ['ACTIVE', 'TRIALING', 'REJECTED', 'CANCELLED'],
   TRIALING: ['ACTIVE', 'PAST_DUE', 'EXPIRED', 'CANCELLED'],
   ACTIVE: ['PAST_DUE', 'EXPIRED', 'CANCELLED', 'SUSPENDED'],
   PAST_DUE: ['ACTIVE', 'EXPIRED', 'CANCELLED', 'SUSPENDED'],
@@ -70,6 +70,8 @@ export const statusAfterPayment = (plan) => (plan.approval_mode === 'MANUAL' ? '
 
 /** Signup outcome: free plans skip payment. */
 export function signupOutcome(plan) {
+  // A trial starts without payment (after approval, for manual plans); the member pays before it ends.
+  if (!plan.is_free && plan.trial_days > 0) return plan.approval_mode === 'MANUAL' ? { status: 'PENDING_APPROVAL', next: 'approval' } : { status: 'TRIALING', next: 'active' };
   if (!plan.is_free) return { status: 'PENDING_PAYMENT', next: 'checkout' };
   return plan.approval_mode === 'MANUAL'
     ? { status: 'PENDING_APPROVAL', next: 'approval' }
@@ -184,6 +186,9 @@ export function sweepDecisions(subs, now = new Date(), graceDays = 7) {
           to: 'PAST_DUE',
           data: { grace_ends_at: new Date(new Date(s.ends_at).getTime() + graceDays * DAY) },
         });
+    } else if (s.status === 'TRIALING' && s.ends_at && new Date(s.ends_at) <= now) {
+      // a trial that was not paid for ends without a grace period
+      out.push({ id: s.id, from: s.status, to: s.cancel_at_period_end ? 'CANCELLED' : 'EXPIRED', data: s.cancel_at_period_end ? { cancelled_at: now } : {} });
     } else if (s.status === 'PAST_DUE' && s.grace_ends_at && new Date(s.grace_ends_at) <= now) {
       out.push({ id: s.id, from: s.status, to: 'EXPIRED', data: {} });
     }

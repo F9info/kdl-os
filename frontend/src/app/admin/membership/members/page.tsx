@@ -2,81 +2,69 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Download, Plus, Upload } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Download, Layers, MoreHorizontal, Plus, Search, Upload } from 'lucide-react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { PageHeader } from '@/admin/components/layout/PageHeader'
 import { ModuleGuard } from '@/admin/components/shared/ModuleGuard'
 import { PermissionGuard } from '@/admin/components/shared/PermissionGuard'
 import { DataTable } from '@/admin/components/shared/DataTable'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { usePagination } from '@/admin/hooks/usePagination'
-import api from '@/lib/axios'
-import { formatDate } from '@/lib/utils'
-import { rupees, useMembers, usePlans, type Member } from '@/admin/hooks/useMembership'
-import { AddMemberModal } from '../_components/AddMemberModal'
-import { ImportWizard } from '../_components/ImportWizard'
 import {
-  ActionModal,
-  FilterBar,
-  NativeSelect,
-  StatusPill,
-  enumOptions,
-  totalPages,
-} from '../_components/ui'
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { usePagination } from '@/admin/hooks/usePagination'
+import { dmy } from '../_components/MemberFormat'
+import { rupees, useMembers, useOverview, usePlans, type Member } from '@/admin/hooks/useMembership'
+import { ActionModal, NativeSelect, StatusPill, enumOptions, totalPages } from '../_components/ui'
+import { MemberAvatar, MemberPageHeader } from '../_components/MemberUi'
+import { MemberExportModal } from '../_components/MemberExportModal'
+import {
+  EMPTY_FILTERS,
+  MemberFilterDrawer,
+  SINCE_PRESETS,
+  STATUSES,
+  filtersParams,
+  type Filters,
+} from '../_components/MemberFilters'
 
-const STATUSES = [
-  'ACTIVE',
-  'PENDING_APPROVAL',
-  'PENDING_PAYMENT',
-  'PAST_DUE',
-  'EXPIRED',
-  'CANCELLED',
-  'SUSPENDED',
-  'REJECTED',
-]
+type Bulk = 'tag' | 'change-plan' | 'suspend' | 'send-email' | 'send-renewal-link' | null
 
-const EMPTY_FILTERS = {
-  q: '',
-  status: '',
-  plan_id: '',
-  member_type: '',
-  member_since_from: '',
-  member_since_to: '',
-  valid_till_from: '',
-  valid_till_to: '',
-}
-
-async function downloadCsv(params: Record<string, string>) {
-  const res = await api.get('/membership/admin/members/export', {
-    params: { ...params, format: 'csv' },
-    responseType: 'blob',
-  })
-  const url = URL.createObjectURL(res.data as Blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = 'members.csv'
-  a.click()
-  URL.revokeObjectURL(url)
-}
+const sinceKey = (f: Filters) =>
+  !f.member_since_from && !f.member_since_to
+    ? ''
+    : (SINCE_PRESETS.find((p) => {
+        const [a, b] = p.range()
+        return a === f.member_since_from && b === f.member_since_to
+      })?.value ?? 'custom')
 
 function MembersContent() {
+  const router = useRouter()
   const { page, limit, setPage, reset } = usePagination({ initialLimit: 20 })
-  const [filters, setFilters] = useState(EMPTY_FILTERS)
+  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS)
   const [selected, setSelected] = useState<string[]>([])
-  const [adding, setAdding] = useState(false)
-  const [importing, setImporting] = useState(false)
-  const [bulk, setBulk] = useState<'tag' | 'change-plan' | null>(null)
-  const { data, isLoading, error } = useMembers({ ...filters, page, limit })
+  const [drawer, setDrawer] = useState(false)
+  const [exporting, setExporting] = useState<string[] | null>(null)
+  const [bulk, setBulk] = useState<Bulk>(null)
+  const { data, isLoading, error } = useMembers({ ...filtersParams(filters), page, limit })
   const { data: plans } = usePlans()
+  const { data: overview } = useOverview()
+  const { data: pastDue } = useMembers({ status: 'PAST_DUE', limit: 1 })
 
-  const set = (k: keyof typeof EMPTY_FILTERS) => (v: string) => {
-    setFilters((f) => ({ ...f, [k]: v }))
+  const apply = (next: Filters) => {
+    setFilters(next)
     setSelected([])
     reset()
   }
+  const set = (k: keyof Filters) => (v: string) => apply({ ...filters, [k]: v })
   const toggle = (id: string) =>
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))
+  const planOptions = (plans?.items ?? []).map((p) => ({ value: p.id, label: p.name }))
+  const since = sinceKey(filters)
+  const k = overview?.kpis
 
   const columns: ColumnDef<Member>[] = [
     {
@@ -103,25 +91,35 @@ function MembersContent() {
     {
       header: 'Member',
       cell: ({ row: { original: m } }) => (
-        <div>
-          <Link href={`/admin/membership/members/${m.id}`} className="font-medium hover:underline">
-            {m.legal_name || m.full_name}
-          </Link>
-          <p className="text-xs text-muted-foreground">
-            {m.member_type === 'ORGANISATION'
-              ? `Organisation · ${m.full_name}${m.contacts?.length ? ` + ${m.contacts.length} contacts` : ''}`
-              : m.email}
-          </p>
-        </div>
+        <Link
+          href={`/admin/membership/members/${m.id}`}
+          className="flex items-center gap-3 hover:underline"
+        >
+          <MemberAvatar name={m.legal_name || m.full_name} size={32} />
+          <span>
+            <span className="block font-medium">{m.legal_name || m.full_name}</span>
+            <span className="block text-xs font-normal text-muted-foreground">
+              {m.member_type === 'ORGANISATION'
+                ? `Organisation · ${m.full_name}${m.contacts?.length ? ` + ${m.contacts.length} contacts` : ''}`
+                : m.email}
+            </span>
+          </span>
+        </Link>
       ),
     },
-    { header: 'Member no.', cell: ({ row }) => row.original.member_no ?? '—' },
+    {
+      header: 'Member no.',
+      cell: ({ row }) => <span className="whitespace-nowrap">{row.original.member_no ?? '—'}</span>,
+    },
     {
       header: 'Plan',
-      cell: ({ row: { original: m } }) =>
-        m.subscription
-          ? `${m.subscription.plan?.name ?? ''}${m.subscription.price ? ` · ${m.subscription.price.interval.toLowerCase()}` : ''}`
-          : '—',
+      cell: ({ row: { original: m } }) => (
+        <span className="whitespace-nowrap">
+          {m.subscription
+            ? `${m.subscription.plan?.name ?? ''}${m.subscription.price ? ` · ${m.subscription.price.interval.toLowerCase().replace(/^\w/, (c) => c.toUpperCase())}` : ''}`
+            : '—'}
+        </span>
+      ),
     },
     {
       header: 'Status',
@@ -129,55 +127,105 @@ function MembersContent() {
         row.original.subscription ? <StatusPill status={row.original.subscription.status} /> : '—',
     },
     {
-      header: 'Member since',
-      cell: ({ row }) => (row.original.member_since ? formatDate(row.original.member_since) : '—'),
+      header: 'Member since ↓',
+      cell: ({ row }) => (
+        <span className="whitespace-nowrap">{dmy(row.original.member_since)}</span>
+      ),
     },
     {
       header: 'Valid till',
-      cell: ({ row }) =>
-        row.original.subscription?.ends_at ? formatDate(row.original.subscription.ends_at) : '—',
+      cell: ({ row }) => (
+        <span className="whitespace-nowrap">{dmy(row.original.subscription?.ends_at)}</span>
+      ),
     },
-    { header: 'Lifetime paid', cell: ({ row }) => rupees(row.original.lifetime_paid) },
+    {
+      header: 'Lifetime paid',
+      cell: ({ row }) => (
+        <span className="whitespace-nowrap">{rupees(row.original.lifetime_paid)}</span>
+      ),
+    },
+    {
+      id: 'actions',
+      header: '',
+      cell: ({ row: { original: m } }) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" aria-label={`Actions for ${m.full_name}`}>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {[
+              ['', 'View member'],
+              ['extend', 'Extend'],
+              ['change-plan', 'Change plan'],
+              ['record-payment', 'Record payment'],
+              ['suspend', 'Suspend'],
+            ].map(([a, label]) => (
+              <DropdownMenuItem
+                key={label}
+                onSelect={() =>
+                  router.push(`/admin/membership/members/${m.id}${a ? `?action=${a}` : ''}`)
+                }
+              >
+                {label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
   ]
 
+  const bulkBtn = 'rounded-md bg-slate-800 px-3 py-1.5 text-sm hover:bg-slate-700'
   return (
     <div>
-      <PageHeader
+      <MemberPageHeader
         title="Members"
-        breadcrumbs={[{ label: 'Membership', href: '/admin/membership' }, { label: 'Members' }]}
+        subtitle={
+          k
+            ? `${k.active_members ?? 0} active · ${k.pending_approvals ?? 0} pending · ${pastDue?.total ?? 0} past due`
+            : undefined
+        }
         action={
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setImporting(true)}>
+            <Button
+              variant="outline"
+              onClick={() => router.push('/admin/membership/members/import')}
+            >
               <Upload className="h-4 w-4" /> Import CSV
             </Button>
-            <Button variant="outline" onClick={() => downloadCsv(filtersParams(filters))}>
+            <Button variant="outline" onClick={() => setExporting([])}>
               <Download className="h-4 w-4" /> Export
             </Button>
-            <Button onClick={() => setAdding(true)}>
+            <Button onClick={() => router.push('/admin/membership/members/new')}>
               <Plus className="h-4 w-4" /> Add member
             </Button>
           </div>
         }
       />
-      <FilterBar>
-        <Input
-          aria-label="Search members"
-          className="w-64"
-          placeholder="Search name, email, phone or member no…"
-          value={filters.q}
-          onChange={(e) => set('q')(e.target.value)}
-        />
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="relative min-w-64 flex-1">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            aria-label="Search members"
+            style={{ paddingLeft: 36 }}
+            placeholder="Search name, email, phone or member no…"
+            value={filters.q}
+            onChange={(e) => set('q')(e.target.value)}
+          />
+        </div>
         <NativeSelect
           aria-label="Plan"
-          className="w-40"
+          className="w-36"
           placeholder="All plans"
           value={filters.plan_id}
           onChange={(e) => set('plan_id')(e.target.value)}
-          options={(plans?.items ?? []).map((p) => ({ value: p.id, label: p.name }))}
+          options={planOptions}
         />
         <NativeSelect
           aria-label="Status"
-          className="w-44"
+          className="w-40"
           placeholder="All statuses"
           value={filters.status}
           onChange={(e) => set('status')(e.target.value)}
@@ -185,53 +233,31 @@ function MembersContent() {
         />
         <NativeSelect
           aria-label="Member type"
-          className="w-40"
+          className="w-36"
           placeholder="All types"
           value={filters.member_type}
           onChange={(e) => set('member_type')(e.target.value)}
           options={enumOptions(['INDIVIDUAL', 'ORGANISATION'])}
         />
-        {(['member_since', 'valid_till'] as const).map((k) => (
-          <fieldset key={k} className="flex items-center gap-1 text-xs text-muted-foreground">
-            <legend className="sr-only">
-              {k === 'member_since' ? 'Member since' : 'Valid till'}
-            </legend>
-            {k === 'member_since' ? 'Member since' : 'Valid till'}
-            <Input
-              type="date"
-              aria-label={`${k} from`}
-              className="w-36"
-              value={filters[`${k}_from`]}
-              onChange={(e) => set(`${k}_from`)(e.target.value)}
-            />
-            <Input
-              type="date"
-              aria-label={`${k} to`}
-              className="w-36"
-              value={filters[`${k}_to`]}
-              onChange={(e) => set(`${k}_to`)(e.target.value)}
-            />
-          </fieldset>
-        ))}
-      </FilterBar>
-      {selected.length > 0 && (
-        <div className="mb-4 flex items-center gap-2 rounded-md border bg-muted/40 p-2 text-sm">
-          <span>{selected.length} selected</span>
-          <Button size="sm" variant="outline" onClick={() => setBulk('tag')}>
-            Add tag
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => setBulk('change-plan')}>
-            Change plan
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => downloadCsv({ ids: selected.join(',') })}
-          >
-            Export selected
-          </Button>
-        </div>
-      )}
+        <NativeSelect
+          aria-label="Member since"
+          className="w-44"
+          placeholder="Member since: any"
+          value={since}
+          onChange={(e) => {
+            const p = SINCE_PRESETS.find((x) => x.value === e.target.value)
+            const [from, to] = p ? p.range() : ['', '']
+            apply({ ...filters, member_since_from: from, member_since_to: to })
+          }}
+          options={[
+            ...SINCE_PRESETS.map((p) => ({ value: p.value, label: p.label })),
+            ...(since === 'custom' ? [{ value: 'custom', label: 'Custom range' }] : []),
+          ]}
+        />
+        <Button variant="outline" onClick={() => setDrawer(true)}>
+          <Layers className="h-4 w-4" /> Filters
+        </Button>
+      </div>
       <DataTable
         columns={columns}
         data={data?.items ?? []}
@@ -240,14 +266,63 @@ function MembersContent() {
         emptyMessage="No members match these filters."
         pagination={{ page, totalPages: totalPages(data?.total, limit), onPageChange: setPage }}
       />
-      <AddMemberModal open={adding} onClose={() => setAdding(false)} />
-      <ImportWizard open={importing} onClose={() => setImporting(false)} />
+      {data && data.total > 0 && (
+        <p className="mt-3 text-sm text-muted-foreground">
+          Showing {(page - 1) * limit + 1}–{Math.min(page * limit, data.total)} of {data.total}
+        </p>
+      )}
+      {selected.length > 0 && (
+        <div
+          role="toolbar"
+          aria-label="Bulk actions"
+          className="fixed bottom-8 left-1/2 z-40 flex -translate-x-1/3 items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-white shadow-2xl"
+        >
+          <b className="text-sm">{selected.length} selected</b>
+          <span className="h-5 w-px bg-slate-700" />
+          <button className={bulkBtn} onClick={() => setBulk('send-email')}>
+            Send email
+          </button>
+          <button className={bulkBtn} onClick={() => setBulk('send-renewal-link')}>
+            Send renewal link
+          </button>
+          <button className={bulkBtn} onClick={() => setBulk('tag')}>
+            Add tag
+          </button>
+          <button className={bulkBtn} onClick={() => setBulk('change-plan')}>
+            Change plan
+          </button>
+          <button className={bulkBtn} onClick={() => setExporting(selected)}>
+            Export
+          </button>
+          <button
+            className="rounded-md bg-red-900 px-3 py-1.5 text-sm hover:bg-red-800"
+            onClick={() => setBulk('suspend')}
+          >
+            Suspend
+          </button>
+        </div>
+      )}
+      <MemberFilterDrawer
+        open={drawer}
+        onClose={() => setDrawer(false)}
+        filters={filters}
+        onApply={apply}
+      />
+      <MemberExportModal
+        open={exporting !== null}
+        onClose={() => setExporting(null)}
+        total={exporting?.length ? exporting.length : data?.total}
+        params={exporting?.length ? { ids: exporting.join(',') } : filtersParams(filters)}
+      />
       <ActionModal
         open={bulk === 'tag'}
         onClose={() => setBulk(null)}
         title={`Tag ${selected.length} members`}
         fields={[{ name: 'tag', label: 'Tag', required: true }]}
-        request={(v) => ({ path: 'members/bulk', data: { ids: selected, action: 'tag', ...v } })}
+        request={(v) => ({
+          path: 'members/bulk',
+          data: { ids: selected, action: 'tag', tags: [String(v.tag)] },
+        })}
         success="Tag added"
       />
       <ActionModal
@@ -260,10 +335,7 @@ function MembersContent() {
             label: 'New plan',
             type: 'select',
             required: true,
-            options: [
-              { value: '', label: 'Choose…' },
-              ...(plans?.items ?? []).map((p) => ({ value: p.id, label: p.name })),
-            ],
+            options: [{ value: '', label: 'Choose…' }, ...planOptions],
           },
         ]}
         request={(v) => ({
@@ -272,12 +344,50 @@ function MembersContent() {
         })}
         success="Plan changed"
       />
+      <ActionModal
+        open={bulk === 'send-email'}
+        onClose={() => setBulk(null)}
+        title={`Email ${selected.length} members`}
+        fields={[
+          { name: 'subject', label: 'Subject', required: true },
+          { name: 'message', label: 'Message', type: 'textarea', required: true },
+        ]}
+        request={(v) => ({
+          path: 'members/bulk',
+          data: { ids: selected, action: 'send-email', ...v },
+        })}
+        success="Email queued"
+      />
+      <ActionModal
+        open={bulk === 'send-renewal-link'}
+        onClose={() => setBulk(null)}
+        title={`Send renewal link to ${selected.length} members`}
+        description="Each member gets a pay link for their current plan."
+        fields={[]}
+        submitLabel="Send links"
+        request={() => ({
+          path: 'members/bulk',
+          data: { ids: selected, action: 'send-renewal-link' },
+        })}
+        success="Renewal links sent"
+      />
+      <ActionModal
+        open={bulk === 'suspend'}
+        onClose={() => setBulk(null)}
+        title={`Suspend ${selected.length} members`}
+        description="Access to members-only content stops immediately."
+        fields={[{ name: 'reason', label: 'Reason', type: 'textarea', required: true }]}
+        destructive
+        submitLabel="Suspend"
+        request={(v) => ({
+          path: 'members/bulk',
+          data: { ids: selected, action: 'suspend', ...v },
+        })}
+        success="Members suspended"
+      />
     </div>
   )
 }
-
-const filtersParams = (f: typeof EMPTY_FILTERS) =>
-  Object.fromEntries(Object.entries(f).filter(([, v]) => v !== ''))
 
 export default function MembersPage() {
   return (

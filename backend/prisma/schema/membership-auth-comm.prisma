@@ -1,0 +1,171 @@
+// Membership: login (mobile OTP, social/OIDC providers) and communication (events, templates, logs, preferences).
+// Source of truth: static-kdl-os/membership/docs/5-build-notes/01-data-model-and-api.md §2 and §5.
+// In-app messages are rows of the core `notifications` table (category_slug = "membership"); the
+// models below add what core does not have: per-event switches, per-language templates, a unified log
+// with PENDING..READ statuses, and member preferences.
+
+enum MembershipCommStatus {
+  PENDING
+  PROCESSING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+  CANCELLED
+}
+
+// 6-digit login codes. Only a hash is stored. 5-minute expiry, 5 attempts.
+model MembershipOtpCode {
+  id          String    @id @default(cuid())
+  mobile      String // E.164
+  purpose     String // login | signup
+  code_hash   String
+  attempts    Int       @default(0)
+  expires_at  DateTime
+  consumed_at DateTime?
+  ip          String?
+  created_at  DateTime  @default(now())
+
+  @@index([mobile, created_at])
+  @@map("otp_codes")
+}
+
+// Social login providers as configuration. client_secret_enc is AES-256-GCM (shared/utils/crypto.js).
+model MembershipAuthProvider {
+  id                String    @id @default(cuid())
+  key               String    @unique // google | facebook | apple | linkedin | custom slug
+  type              String // BUILT_IN | PRESET | OIDC_CUSTOM | OAUTH2_CUSTOM
+  label             String
+  button_text       String?
+  icon              String?
+  color             String?
+  sort              Int       @default(0)
+  enabled           Boolean   @default(false)
+  client_id         String?
+  client_secret_enc String?
+  discovery_url     String?
+  authorize_url     String?
+  token_url         String?
+  userinfo_url      String?
+  scopes            String    @default("openid email profile")
+  claim_map         Json      @default("{}") // { email, name, photo, sub }
+  trust_email       Boolean   @default(false) // provider email counts as verified
+  auto_link         Boolean   @default(false) // link to an existing account with the same email without a password
+  options           Json      @default("{}")
+  last_test_at      DateTime?
+  last_test_ok      Boolean?
+  last_test_error   String?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  @@map("auth_providers")
+}
+
+model MembershipUserIdentity {
+  id               String    @id @default(cuid())
+  user_id          String
+  provider         String
+  provider_user_id String
+  email            String?
+  name             String?
+  last_login_at    DateTime?
+  created_at       DateTime  @default(now())
+
+  @@unique([provider, provider_user_id])
+  @@index([user_id])
+  @@map("user_identities")
+}
+
+// The event catalogue (44 seeded). `channels` holds the per-channel switch, e.g. {"IN_APP":true,"WHATSAPP":true,"EMAIL":true,"SMS":false}.
+model MembershipCommEvent {
+  key          String   @id // payment.succeeded
+  group_key    String // A..F
+  name         String
+  description  String?
+  category     String // transactional | payment | security
+  is_mandatory Boolean  @default(false) // members cannot switch it off
+  channels     Json     @default("{}")
+  sort         Int      @default(0)
+  is_custom    Boolean  @default(false)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@map("membership_comm_events")
+}
+
+model MembershipCommTemplate {
+  id               String              @id @default(cuid())
+  event_key        String
+  channel          NotificationChannel
+  lang             String              @default("en")
+  title            String? // in-app title / email subject
+  preheader        String?
+  body             String // {{variables}}; HTML for email
+  wa_template_name String? // approved WhatsApp template
+  wa_params        Json? // ["member_name","amount",...] in {{1}}.. order
+  wa_button        Json? // {text, url}
+  link_url         String? // in-app click-through
+  icon             String?
+  toast            Boolean             @default(false)
+  attachments      Json                @default("[]") // e.g. ["invoice_pdf"]
+  is_active        Boolean             @default(true)
+  updated_by       String?
+  created_at       DateTime            @default(now())
+  updated_at       DateTime            @updatedAt
+
+  @@unique([event_key, channel, lang])
+  @@map("membership_comm_templates")
+}
+
+// One row per event x channel: the audit trail and the retry handle.
+model MembershipCommLog {
+  id               String               @id @default(cuid())
+  event_id         String // idempotency key part; job id = event_id:channel
+  event_key        String
+  channel          NotificationChannel
+  lang             String               @default("en")
+  member_id        String?
+  recipient        String? // masked
+  status           MembershipCommStatus @default(PENDING)
+  subject          String?
+  body             String?
+  data             Json                 @default("{}") // variables used to render (for retry)
+  provider_ref     String?
+  provider_response String?
+  error            String?
+  attempts         Int                  @default(0)
+  notification_id  String? // core notifications row for IN_APP
+  created_at       DateTime             @default(now())
+  sent_at          DateTime?
+  delivered_at     DateTime?
+  read_at          DateTime?
+  updated_at       DateTime             @updatedAt
+
+  @@unique([event_id, channel])
+  @@index([member_id, created_at])
+  @@index([event_key, created_at])
+  @@index([status, created_at])
+  @@map("membership_comm_logs")
+}
+
+// Member x category x channel. Mandatory categories ignore "off".
+model MembershipCommPreference {
+  member_id String
+  category  String // security | payments | membership | events
+  channel   NotificationChannel
+  enabled   Boolean             @default(true)
+
+  @@id([member_id, category, channel])
+  @@map("membership_comm_preferences")
+}
+
+// Saved member filters ("Vizag manufacturers").
+model MembershipSegment {
+  id         String   @id @default(cuid())
+  name       String
+  filters    Json     @default("{}")
+  created_by String?
+  created_at DateTime @default(now())
+
+  @@map("membership_segments")
+}

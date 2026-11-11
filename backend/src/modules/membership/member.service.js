@@ -16,14 +16,16 @@ export async function getMe(member) {
     fieldValuesOf(member.id),
   ]);
   const pending_plan = subscription?.pending_plan_id ? await prisma.membershipPlan.findUnique({ where: { id: subscription.pending_plan_id }, select: { id: true, slug: true, name: true } }) : null;
-  return { member, subscription, plan: subscription?.plan ?? null, pending_plan, contacts, fields };
+  const plan = subscription?.plan ? { ...subscription.plan, benefits: await prisma.membershipBenefit.findMany({ where: { plan_id: subscription.plan.id }, orderBy: { sort: 'asc' } }) } : null;
+  return { member, subscription, plan, status: subscription?.status ?? null, pending_plan, contacts, fields };
 }
 
 export async function updateProfile(member, body, actor) {
   const updated = await prisma.member.update({
     where: { id: member.id },
-    data: { ...body, ...(body.whatsapp_opt_in !== undefined ? { whatsapp_opt_in_at: body.whatsapp_opt_in ? new Date() : null } : {}) },
+    data: { ...body, ...(body.whatsapp_opt_in !== undefined ? { whatsapp_opt_in_at: body.whatsapp_opt_in ? new Date() : null, whatsapp_opt_in_source: body.whatsapp_opt_in ? 'profile' : null } : {}) },
   });
+  if (body.mobile && body.mobile !== member.mobile) await recordEvent(prisma, { key: 'member.mobile_changed', member_id: member.id, actor, data: {}, description: 'Mobile number changed' });
   await recordEvent(prisma, { key: 'member.profile_updated', member_id: member.id, actor, data: { fields: Object.keys(body) }, description: 'Member updated their profile' });
   return updated;
 }
@@ -91,9 +93,11 @@ export const myInvoices = (member, q) => {
 };
 
 export async function myInvoice(member, id) {
-  const inv = await prisma.membershipInvoice.findFirst({ where: { id, member_id: member.id } });
+  const inv = await prisma.membershipInvoice.findFirst({ where: { id, member_id: member.id }, include: { payment: { select: { reference: true, gateway_payment_id: true, utr: true } } } });
   if (!inv) throw notFound('Invoice');
-  return inv;
+  // intra-state supply splits GST evenly into CGST + SGST (inter-state IGST needs the place of supply: not tracked yet)
+  const half = Math.floor(inv.tax_amount / 2);
+  return { ...inv, lines: [{ description: inv.description, sac: '999599', quantity: 1, amount: inv.subtotal }], cgst: half, sgst: inv.tax_amount - half, igst: 0, payment_ref: inv.payment?.gateway_payment_id ?? inv.payment?.utr ?? inv.payment?.reference ?? null };
 }
 
 // ---------- access ----------
@@ -111,9 +115,10 @@ export async function library(member) {
   const sub = await currentSubscription(member.id);
   const plan = sub && LIVE.includes(sub.status) ? sub.plan : null;
   const out = { pages: [], sections: [], media: [], urls: [] };
-  if (!plan) return out;
   const key = { PAGE: 'pages', SECTION: 'sections', MEDIA: 'media', URL_PATTERN: 'urls' };
-  for (const r of (await allRules()).filter((x) => x.plan.tier <= plan.tier))
-    out[key[r.target]].push({ id: r.id, value: r.value, label: r.label ?? r.value, plan: r.plan.name });
+  for (const r of await allRules()) {
+    const locked = !plan || r.plan.tier > plan.tier;
+    out[key[r.target]].push({ id: r.id, value: r.value, label: r.label ?? r.value, plan: r.plan.name, locked, plan_required: locked ? { slug: r.plan.slug, name: r.plan.name, tier: r.plan.tier } : null });
+  }
   return out;
 }

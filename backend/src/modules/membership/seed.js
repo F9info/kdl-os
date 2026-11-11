@@ -1,4 +1,7 @@
 import { DEFAULT_SETTINGS } from './settings.js';
+import { ensureCommSeed } from './comm/seed.js';
+import { ensureBuiltIns } from './auth/providers.service.js';
+import { applyMembershipToSite, applyMembershipToMenus } from './site-integration.js';
 
 // Idempotent: safe to run on every install / re-install. Never overwrites what an admin changed.
 // The seven sector field packs are not created here; they are offered by GET /admin/field-groups/presets
@@ -48,4 +51,10 @@ export default async function seed(tx) {
   ];
   for (const p of providers)
     if ((await tx.membershipPaymentProvider.count({ where: { provider: p.provider } })) === 0) await tx.membershipPaymentProvider.create({ data: p });
+
+  await ensureCommSeed(tx, { force: true }); // 44 events + English templates
+  await ensureBuiltIns(tx); // Google / Facebook / Apple, switched off until keys are added
+
+  await applyMembershipToSite(tx);
+  await applyMembershipToMenus(tx);
 }

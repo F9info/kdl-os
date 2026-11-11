@@ -98,6 +98,14 @@ model MembershipPlan {
   member_types   MembershipMemberType[]
   max_contacts   Int                      @default(5)
   is_featured    Boolean                  @default(false)
+  badge          String? // ribbon text on the pricing page
+  seat_limit     Int? // null = unlimited
+  allow_self_cancel Boolean               @default(true)
+  allow_plan_change Boolean               @default(true)
+  role_on_activation String? // site role granted while active
+  show_badge_on_profile Boolean           @default(false)
+  grace_access   Boolean                  @default(true)
+  status         String                   @default("ACTIVE") // DRAFT | ACTIVE
   sort           Int                      @default(0)
   created_at     DateTime                 @default(now())
   updated_at     DateTime                 @updatedAt
@@ -121,6 +129,8 @@ model MembershipPlanPrice {
   gst_rate      Int                @default(18) // percent
   tax_mode      MembershipTaxMode  @default(EXCLUSIVE)
   is_active     Boolean            @default(true)
+  is_default    Boolean            @default(false)
+  sac_code      String?
   created_at    DateTime           @default(now())
   updated_at    DateTime           @updatedAt
 
@@ -135,6 +145,7 @@ model MembershipBenefit {
   id          String         @id @default(cuid())
   plan_id     String
   text        String
+  description String?
   highlighted Boolean        @default(false)
   sort        Int            @default(0)
 
@@ -168,6 +179,8 @@ model Member {
   notes         String?
   whatsapp_opt_in    Boolean         @default(false)
   whatsapp_opt_in_at DateTime?
+  whatsapp_opt_in_source String? // signup | profile | admin
+  source        String? // how they joined: website | admin | import | google ...
   created_at    DateTime             @default(now())
   updated_at    DateTime             @updatedAt
 
@@ -335,6 +348,8 @@ model MembershipAccessRule {
   target     MembershipAccessTarget
   value      String // page slug / section id / media id / URL pattern
   label      String?
+  non_member_view String            @default("EXCERPT_CTA") // EXCERPT_CTA | BLUR | HIDDEN
+  enabled    Boolean                @default(true)
   created_at DateTime               @default(now())
 
   plan       MembershipPlan         @relation(fields: [plan_id], references: [id], onDelete: Cascade)

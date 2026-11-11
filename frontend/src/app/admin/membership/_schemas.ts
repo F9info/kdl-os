@@ -16,6 +16,10 @@ export const planSchema = z.object({
   max_contacts: z.number().int().min(0).max(5),
   is_featured: z.boolean(),
   member_types: z.array(z.enum(['INDIVIDUAL', 'ORGANISATION'])).min(1, 'Pick at least one'),
+  badge: z.string().max(40).optional().nullable(),
+  seat_limit: z.number().int().min(1).optional().nullable(),
+  allow_self_cancel: z.boolean().optional(),
+  allow_plan_change: z.boolean().optional(),
 })
 export type PlanFormData = z.infer<typeof planSchema>
 

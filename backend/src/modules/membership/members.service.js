@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import { prisma } from '../../config/database.js';
-import { allowsMemberType, calcPrice, pickCurrentSubscription, taxPortionOfTotal } from './domain.js';
+import { allowsMemberType, calcPrice, pickCurrentSubscription, proRataCredit, taxPortionOfTotal } from './domain.js';
 import { LIVE, activate, createAccount, createPayment, createSubscription, currentSubscription, fieldValuesOf, getPlanBySlug, markPaid, pickPrice, saveFieldValues, setStatus } from './core.js';
 import { cancel as cancelOwn } from './checkout.service.js';
 import { addContact, listContacts, removeContact, updateContact } from './member.service.js';
@@ -20,6 +20,8 @@ function buildWhere(q) {
   }
   if (q.member_type) and.push({ member_type: q.member_type });
   if (q.tag) and.push({ tags: { has: q.tag } });
+  if (q.city) and.push({ city: { contains: q.city, mode: 'insensitive' } });
+  for (const [key, val] of Object.entries(q.fields ?? {})) and.push({ field_values: { some: { field: { key }, value_text: { equals: val, mode: 'insensitive' } } } });
   if (q.member_since_from || q.member_since_to) and.push({ member_since: { ...(q.member_since_from && { gte: q.member_since_from }), ...(q.member_since_to && { lte: q.member_since_to }) } });
   const sub = {};
   if (q.status) sub.status = q.status;
@@ -32,13 +34,33 @@ function buildWhere(q) {
 const listInclude = { subscriptions: { include: { plan: true, price: true }, orderBy: { created_at: 'desc' }, take: 6 } };
 const withCurrent = ({ subscriptions, ...m }) => {
   const subscription = pickCurrentSubscription(subscriptions ?? []);
-  return { ...m, subscription, plan: subscription?.plan ?? null };
+  return { ...m, subscription, plan: subscription?.plan ?? null, status: subscription?.status ?? null, valid_till: subscription?.ends_at ?? null };
 };
 
 export async function listMembers(q) {
   const where = buildWhere(q);
   const r = await listResult(q, (p) => prisma.member.findMany({ where, include: listInclude, orderBy: orderBy(q.sort, ['created_at', 'full_name', 'member_since', 'member_no', 'email']), ...p }), () => prisma.member.count({ where }));
-  return { ...r, items: r.items.map(withCurrent) };
+  const ids = r.items.map((m) => m.id);
+  const [paid, counts, contacts] = await Promise.all([
+    prisma.membershipPayment.groupBy({ by: ['member_id'], where: { member_id: { in: ids }, status: { in: ['PAID', 'REFUNDED'] } }, _sum: { amount: true, refunded_amount: true } }),
+    listSummary(),
+    prisma.membershipContact.groupBy({ by: ['member_id'], where: { member_id: { in: ids } }, _count: { _all: true } }),
+  ]);
+  return {
+    ...r,
+    items: r.items.map(withCurrent).map((m) => {
+      const t = paid.find((x) => x.member_id === m.id);
+      return { ...m, lifetime_paid: (t?._sum.amount ?? 0) - (t?._sum.refunded_amount ?? 0), contacts_count: contacts.find((c) => c.member_id === m.id)?._count._all ?? 0 };
+    }),
+    summary: counts,
+  };
+}
+
+/** Header line of the members screen: "1,249 active · 10 pending · 64 past due". */
+async function listSummary() {
+  const g = await prisma.membershipSubscription.groupBy({ by: ['status'], _count: { _all: true } });
+  const n = (...s) => g.filter((x) => s.includes(x.status)).reduce((a, x) => a + x._count._all, 0);
+  return { active: n('ACTIVE', 'TRIALING'), pending: n('PENDING_APPROVAL', 'PENDING_PAYMENT'), past_due: n('PAST_DUE'), total: await prisma.member.count() };
 }
 
 async function must(id, db = prisma) {
@@ -60,7 +82,115 @@ export async function getMember(id) {
   if (!m) throw notFound('Member');
   const { subscriptions, ...rest } = m;
   const subscription = pickCurrentSubscription(subscriptions);
-  return { ...rest, subscription, plan: subscription?.plan ?? null, subscriptions, fields: await fieldValuesOf(id) };
+  const fields = await fieldValuesOf(id);
+  return { ...rest, subscription, plan: subscription?.plan ?? null, status: subscription?.status ?? null, subscriptions, fields, ...(await memberExtras(m, subscription, fields)) };
+}
+
+const GST_STATES = { '01': 'Jammu & Kashmir', '02': 'Himachal Pradesh', '03': 'Punjab', '04': 'Chandigarh', '05': 'Uttarakhand', '06': 'Haryana', '07': 'Delhi', '08': 'Rajasthan', '09': 'Uttar Pradesh', 10: 'Bihar', 11: 'Sikkim', 12: 'Arunachal Pradesh', 13: 'Nagaland', 14: 'Manipur', 15: 'Mizoram', 16: 'Tripura', 17: 'Meghalaya', 18: 'Assam', 19: 'West Bengal', 20: 'Jharkhand', 21: 'Odisha', 22: 'Chhattisgarh', 23: 'Madhya Pradesh', 24: 'Gujarat', 27: 'Maharashtra', 29: 'Karnataka', 30: 'Goa', 32: 'Kerala', 33: 'Tamil Nadu', 34: 'Puducherry', 36: 'Telangana', 37: 'Andhra Pradesh' };
+
+/** GSTIN format check + state from its first two digits. No live GST-portal lookup is wired: legal_name stays empty. */
+export function lookupGstin(gstin) {
+  const g = String(gstin ?? '').trim().toUpperCase();
+  const ok = /^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(g);
+  return { gstin: g, valid_format: ok, status: ok ? 'UNVERIFIED' : 'INVALID', state: ok ? GST_STATES[g.slice(0, 2)] ?? null : null, legal_name: null, pan: ok ? g.slice(2, 12) : null };
+}
+
+/** Detail-screen extras: how they joined, account, pack answers, notes log, what is still missing. */
+async function memberExtras(m, subscription, fields) {
+  const [user, identities, links, noteEvents] = await Promise.all([
+    prisma.user.findUnique({ where: { id: m.user_id }, select: { email: true, last_login_at: true, roles: { select: { role: { select: { slug: true, name: true } } } } } }),
+    prisma.membershipUserIdentity.findMany({ where: { user_id: m.user_id }, select: { id: true, provider: true, email: true } }),
+    subscription ? prisma.membershipPlanFieldGroup.findMany({ where: { plan_id: subscription.plan_id, member_type: m.member_type }, include: { group: { include: { fields: { orderBy: { sort: 'asc' } } } } } }) : [],
+    prisma.membershipEvent.findMany({ where: { member_id: m.id, key: 'member.note_saved' }, orderBy: { created_at: 'desc' }, take: 20 }),
+  ]);
+  const authors = await prisma.user.findMany({ where: { id: { in: [...new Set(noteEvents.map((e) => e.actor_id).filter(Boolean))] } }, select: { id: true, name: true } });
+  const groups = links.map((l) => l.group);
+  const missing = links.flatMap((l) => l.group.fields.filter((f) => f.required && l.required && (fields[f.key] == null || fields[f.key] === '')).map((f) => f.key));
+  return {
+    source: m.source ?? (identities[0]?.provider ?? 'website'),
+    account: { email_verified: null, signup_method: identities[0]?.provider ?? 'password_or_otp', identities, last_login_at: user?.last_login_at ?? null, site_role: user?.roles.map((r) => r.role.name) ?? [] },
+    packs: groups.map((g) => g.key),
+    field_groups: groups.map((g) => ({ key: g.key, name: g.name, source: 'member', fields: g.fields.map((f) => ({ key: f.key, label: f.label, value: fields[f.key] ?? null, locked: f.visibility === 'VIEW' })) })),
+    documents: [], // no document store yet: the Documents pack uses FILE fields (see field_groups)
+    verification: [{ label: 'Email', value: m.email }, { label: 'Mobile', value: m.mobile ?? '—' }, { label: 'GSTIN', value: m.gstin ?? '—' }, { label: 'PAN', value: m.pan ?? '—' }],
+    notes_log: noteEvents.filter((e) => e.data?.body).map((e) => ({ id: e.id, author: authors.find((a) => a.id === e.actor_id)?.name ?? 'Admin', body: e.data.body, created_at: e.created_at })),
+    missing_required: missing,
+  };
+}
+
+// ---------- segments (saved filters) ----------
+
+const asQuery = (f = {}) => ({ ...f, ...Object.fromEntries(['member_since_from', 'member_since_to', 'valid_till_from', 'valid_till_to'].filter((k) => f[k]).map((k) => [k, new Date(f[k])])) });
+
+export async function listSegments() {
+  const rows = await prisma.membershipSegment.findMany({ orderBy: { created_at: 'desc' } });
+  const items = await Promise.all(rows.map(async (s) => ({ ...s, count: await prisma.member.count({ where: buildWhere(asQuery(s.filters)) }) })));
+  return { items };
+}
+
+export async function createSegment({ name, filters }, actor) {
+  const s = await prisma.membershipSegment.create({ data: { name, filters, created_by: actor } });
+  await recordEvent(prisma, { key: 'segment.created', actor, data: { name }, description: `Segment "${name}" saved` });
+  return { ...s, count: await prisma.member.count({ where: buildWhere(asQuery(filters)) }) };
+}
+
+export async function deleteSegment(id, actor) {
+  const s = await prisma.membershipSegment.findUnique({ where: { id } });
+  if (!s) throw notFound('Segment');
+  await prisma.membershipSegment.delete({ where: { id } });
+  await recordEvent(prisma, { key: 'segment.deleted', actor, data: { name: s.name }, description: `Segment "${s.name}" deleted` });
+  return { deleted: true };
+}
+
+// ---------- extra admin actions ----------
+
+export async function changePlanQuote(id, { plan_id, interval }) {
+  const m = await must(id);
+  const plan = await resolvePlan({ plan_id });
+  const price = pickPrice(plan, interval);
+  if (!price) return { kind: 'change', credit: 0, price: 0, tax: 0, total: 0, free: true };
+  const { quote } = await import('./checkout.service.js');
+  const q = await quote(m, plan, price);
+  return { kind: q.kind, credit: q.credit, price: q.subtotal, tax: q.tax, total: q.total, list_total: q.list_total, currency: q.currency };
+}
+
+export async function sendPasswordReset(id, actor) {
+  const m = await must(id);
+  const { createPasswordResetToken } = await import('../auth/service.js');
+  await createPasswordResetToken(m.email);
+  await recordEvent(prisma, { key: 'member.password_reset_sent', member_id: id, actor, data: {}, description: 'Password reset link sent by an admin' });
+  return { sent: true };
+}
+
+export async function resendWelcome(id, actor) {
+  const m = await must(id);
+  if (process.env.NODE_ENV !== 'test') {
+    const { emitMembershipEvent } = await import('./comm/dispatch.js');
+    await emitMembershipEvent('account.created', m.id, {});
+  }
+  await recordEvent(prisma, { key: 'member.welcome_resent', member_id: id, actor, data: { welcome: false }, description: 'Welcome message sent again' });
+  return { sent: true };
+}
+
+const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+/** Bulk e-mail from the members list. One message per member through the Integrations e-mail provider. */
+export async function bulkEmail(ids, { subject, message }, actor) {
+  if (!subject || !message) throw httpError(422, 'subject and message are required');
+  const { dispatchMessage } = await import('../integrations/service.js');
+  const members = await prisma.member.findMany({ where: { id: { in: ids } }, select: { id: true, email: true, full_name: true } });
+  let sent = 0;
+  const failed = [];
+  for (const m of members) {
+    try {
+      await dispatchMessage({ channel: 'EMAIL', to: m.email, subject, body: `<p>Hi ${esc(m.full_name)},</p>${message.split(/\n{2,}/).map((p) => `<p>${esc(p)}</p>`).join('')}`, source: 'membership.bulk', meta: { member_id: m.id } });
+      sent += 1;
+    } catch (e) {
+      failed.push({ id: m.id, reason: e.message });
+    }
+  }
+  await recordEvent(prisma, { key: 'member.bulk_email', actor, data: { count: sent, subject }, description: `Bulk e-mail "${subject}" to ${sent} members` });
+  return { count: sent, failed };
 }
 
 const anyFields = (keys, memberType) =>
@@ -76,7 +206,13 @@ async function resolvePlan({ plan_id, plan_slug }) {
 }
 
 export async function createMember(body, actor) {
-  const { plan_id, plan_slug, interval, complimentary, starts_at, fields: values = {}, contacts = [], ...core } = body;
+  const { plan_id, plan_slug, interval, complimentary: comp, starts_at, fields: values = {}, contacts = [], payment, send_welcome, issue_invoice: _inv, ...core } = body;
+  const complimentary = comp || payment?.mode === 'COMPLIMENTARY';
+  if (!core.email) {
+    if (!core.mobile) throw httpError(422, 'An email or a mobile number is required');
+    core.email = `${String(core.mobile).replace(/\D/g, '')}@noemail.invalid`; // account email is required; this one never receives mail
+  }
+  core.source ??= 'admin';
   const plan = plan_id || plan_slug ? await resolvePlan({ plan_id, plan_slug }) : null;
   const price = plan ? pickPrice(plan, interval ?? [...plan.prices].sort((a, b) => a.amount - b.amount)[0]?.interval) : null;
   if (plan && !allowsMemberType(plan, core.member_type)) throw httpError(422, `Plan ${plan.name} is not open to ${core.member_type.toLowerCase()} members`);
@@ -87,7 +223,7 @@ export async function createMember(body, actor) {
       const { member } = await createAccount(tx, { ...core, password: randomPassword() });
       await saveFieldValues(tx, member.id, values, fieldDefs);
       for (const [i, c] of contacts.entries()) await tx.membershipContact.create({ data: { ...c, member_id: member.id, is_primary: i === 0 } });
-      await recordEvent(tx, { key: 'member.added', member_id: member.id, actor, data: { offline: true, plan: plan?.slug ?? null, complimentary: !!complimentary }, description: `${member.full_name} added by an admin` });
+      await recordEvent(tx, { key: 'member.added', member_id: member.id, actor, data: { offline: true, plan: plan?.slug ?? null, complimentary: !!complimentary, welcome: send_welcome !== false && !core.email.endsWith('@noemail.invalid') }, description: `${member.full_name} added by an admin` });
       if (plan) {
         const sub = await createSubscription(tx, { member, plan, price, status: 'PENDING_PAYMENT' });
         if (complimentary || plan.is_free) await activate(tx, sub.id, { actor, approvedBy: actor, startsAt: starts_at });
@@ -96,6 +232,7 @@ export async function createMember(body, actor) {
     },
     { timeout: 30_000 }
   );
+  if (payment?.mode === 'OFFLINE' && plan && !plan.is_free) await recordPayment(id, { amount: payment.amount, method: payment.method ?? 'OTHER', utr: payment.reference }, actor);
   return getMember(id);
 }
 
@@ -108,6 +245,8 @@ export async function updateMember(id, { fields: values, ...body }, actor) {
     }
     if (Object.keys(body).length) await tx.member.update({ where: { id }, data: body });
     if (values) await saveFieldValues(tx, id, values, await anyFields(Object.keys(values), body.member_type ?? m.member_type));
+    if (body.mobile && body.mobile !== m.mobile) await recordEvent(tx, { key: 'member.mobile_changed', member_id: id, actor, data: {}, description: 'Mobile number changed by an admin' });
+    if (body.email && body.email !== m.email) await recordEvent(tx, { key: 'member.email_changed', member_id: id, actor, data: {}, description: 'Email changed by an admin' });
     await recordEvent(tx, { key: 'member.updated', member_id: id, actor, data: { fields: [...Object.keys(body), ...(values ? ['fields'] : [])] }, description: 'Member updated by an admin' });
   });
   return getMember(id);
@@ -139,15 +278,20 @@ export async function extend(id, { days, until }, actor) {
 }
 
 /** Admin switch: immediate, no payment, no pro-rata. Use record-payment to take money. */
-export async function changePlan(id, { plan_id, plan_slug, interval }, actor) {
+export async function changePlan(id, { plan_id, plan_slug, interval, apply }, actor) {
   const m = await must(id);
   const plan = await resolvePlan({ plan_id, plan_slug });
   const price = pickPrice(plan, interval);
   const cur = await currentSubscription(id);
+  if (apply === 'renewal' && cur && LIVE.includes(cur.status)) {
+    await prisma.membershipSubscription.update({ where: { id: cur.id }, data: { pending_plan_id: plan.id } });
+    await recordEvent(prisma, { key: 'subscription.downgrade_scheduled', member_id: id, actor, data: { subscription_id: cur.id, to_plan: plan.slug }, description: `Plan change to ${plan.name} scheduled for renewal` });
+    return getMember(id);
+  }
   await prisma.$transaction(async (tx) => {
     if (cur && LIVE.includes(cur.status)) {
       await tx.membershipSubscription.update({ where: { id: cur.id }, data: { plan_id: plan.id, price_id: price?.id ?? null, pending_plan_id: null } });
-      await recordEvent(tx, { key: 'subscription.plan_changed', member_id: id, actor, data: { subscription_id: cur.id, from: cur.plan.slug, to: plan.slug }, description: `Plan changed to ${plan.name}` });
+      await recordEvent(tx, { key: 'subscription.plan_changed', member_id: id, actor, data: { subscription_id: cur.id, from: cur.plan.slug, to: plan.slug, plan_change: true }, description: `Plan changed to ${plan.name}` });
     } else {
       const sub = await createSubscription(tx, { member: m, plan, price, status: 'PENDING_PAYMENT' });
       await activate(tx, sub.id, { actor, approvedBy: actor });
@@ -168,8 +312,18 @@ export async function reactivate(id, actor) {
   return getMember(id);
 }
 
-export async function cancelMember(id, body, actor) {
+export async function cancelMember(id, { refund, notify: _n, ...body }, actor) {
+  const sub = await currentSubscription(id);
   await cancelOwn(await must(id), body, actor);
+  if (refund && refund !== 'none' && sub) {
+    const { refundPayment } = await import('./billing.service.js');
+    const last = await prisma.membershipPayment.findFirst({ where: { subscription_id: sub.id, status: 'PAID' }, orderBy: { paid_at: 'desc' } });
+    if (last) {
+      const left = last.amount - last.refunded_amount;
+      const amt = refund === 'full' ? left : Math.min(left, proRataCredit({ paid_total: last.amount, starts_at: sub.starts_at, ends_at: sub.ends_at }));
+      if (amt > 0) await refundPayment(last.id, amt, actor);
+    }
+  }
   return getMember(id);
 }
 
@@ -198,7 +352,7 @@ export async function recordPayment(id, { amount, method, utr, note, plan_id, in
 export async function setNotes(id, notes, actor) {
   await must(id);
   await prisma.member.update({ where: { id }, data: { notes } });
-  await recordEvent(prisma, { key: 'member.note_saved', member_id: id, actor, data: {}, description: 'Member notes saved' });
+  await recordEvent(prisma, { key: 'member.note_saved', member_id: id, actor, data: { body: String(notes).slice(0, 2000) }, description: 'Member notes saved' });
   return getMember(id);
 }
 
@@ -210,25 +364,57 @@ export const adminRemoveContact = async (id, cid, actor) => removeContact(await 
 
 export async function activity(id, q) {
   await must(id);
-  return listResult(q, (p) => prisma.membershipEvent.findMany({ where: { member_id: id }, orderBy: { created_at: 'desc' }, ...p }), () => prisma.membershipEvent.count({ where: { member_id: id } }));
+  const r = await listResult(q, (p) => prisma.membershipEvent.findMany({ where: { member_id: id }, orderBy: { created_at: 'desc' }, ...p }), () => prisma.membershipEvent.count({ where: { member_id: id } }));
+  const users = await prisma.user.findMany({ where: { id: { in: [...new Set(r.items.map((e) => e.actor_id).filter(Boolean))] } }, select: { id: true, name: true } });
+  return { ...r, items: r.items.map((e) => ({ ...e, actor_name: users.find((u) => u.id === e.actor_id)?.name ?? (e.actor_id ? 'Member' : 'System'), ip: null })) };
 }
 
 // ---------- bulk / export ----------
 
+const COLUMN_GROUPS = { name_email: ['full_name', 'email'], phone: ['mobile'], member_no: ['member_no'], plan_status: ['plan', 'status'], member_since: ['member_since'], valid_till: ['valid_till'], lifetime_paid: ['lifetime_paid'], address: ['address', 'city', 'state', 'pincode'], custom_fields: [] };
 const CSV_COLS = ['member_no', 'full_name', 'email', 'mobile', 'member_type', 'legal_name', 'gstin', 'city', 'state', 'plan', 'status', 'member_since', 'valid_till', 'tags'];
-function toCsv(rows) {
-  const lines = [CSV_COLS.join(',')];
-  for (const r of rows.map(withCurrent))
-    lines.push([r.member_no, r.full_name, r.email, r.mobile, r.member_type, r.legal_name, r.gstin, r.city, r.state, r.plan?.name, r.subscription?.status, r.member_since, r.subscription?.ends_at, r.tags.join(';')].map(csvCell).join(','));
+function toCsv(rows, columns) {
+  const cols = columns?.length ? columns.flatMap((c) => COLUMN_GROUPS[c] ?? []) : CSV_COLS;
+  const lines = [cols.join(',')];
+  const val = (r, c) => ({ plan: r.plan?.name, status: r.subscription?.status, valid_till: r.subscription?.ends_at, tags: r.tags.join(';'), lifetime_paid: r.lifetime_paid != null ? (r.lifetime_paid / 100).toFixed(2) : '' })[c] ?? r[c];
+  for (const r of rows.map(withCurrent)) lines.push(cols.map((c) => csvCell(val(r, c))).join(','));
   return lines.join('\n') + '\n';
 }
 
-export async function exportMembers(q) {
+export async function exportMembers(q, actor = null) {
   const rows = await prisma.member.findMany({ where: buildWhere(q), include: listInclude, orderBy: { created_at: 'desc' }, take: 10_000 });
-  return toCsv(rows);
+  const paid = await prisma.membershipPayment.groupBy({ by: ['member_id'], where: { member_id: { in: rows.map((r) => r.id) }, status: { in: ['PAID', 'REFUNDED'] } }, _sum: { amount: true, refunded_amount: true } });
+  for (const r of rows) {
+    const t = paid.find((x) => x.member_id === r.id);
+    r.lifetime_paid = (t?._sum.amount ?? 0) - (t?._sum.refunded_amount ?? 0);
+  }
+  await recordEvent(prisma, { key: 'member.exported', actor, data: { count: rows.length, columns: q.columns ?? null }, description: `Exported ${rows.length} members` });
+  // ponytail: xlsx is served as CSV (Excel opens it); add a real xlsx writer when a dependency is approved
+  return toCsv(rows, q.columns ? String(q.columns).split(',') : null);
 }
 
-export async function bulk({ ids, action, tags = [], remove, plan_id, interval }, actor) {
+export async function bulk({ ids, action, tags = [], remove, plan_id, interval, subject, message, reason }, actor) {
+  if (action === 'send-email') return bulkEmail(ids, { subject, message }, actor);
+  if (action === 'send-renewal-link' || action === 'suspend') {
+    const failed = [];
+    let done = 0;
+    for (const id of ids) {
+      try {
+        if (action === 'suspend') await suspend(id, reason, actor);
+        else {
+          const sub = await currentSubscription(id);
+          if (!sub?.ends_at) throw httpError(409, 'No running membership to renew');
+          const { emitMembershipEvent } = await import('./comm/dispatch.js');
+          const { daysLeftText, istDayDiff } = await import('./comm/render.js');
+          await emitMembershipEvent('renewal.reminder', id, { subscription_id: sub.id, vars: { days_left: daysLeftText(istDayDiff(sub.ends_at)) } });
+        }
+        done++;
+      } catch (e) {
+        failed.push({ id, error: e.message });
+      }
+    }
+    return { count: done, failed };
+  }
   if (action === 'export') {
     const rows = await prisma.member.findMany({ where: { id: { in: ids } }, include: listInclude });
     return { count: rows.length, csv: toCsv(rows) };

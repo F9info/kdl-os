@@ -17,12 +17,15 @@ const audit = (req, action, description, { actor = null, subject = null, propert
     ip_address: getClientIp(req),
   });
 
+// Members also hear about security changes by In-App / WhatsApp / Email (membership communication). Best effort.
+const tellMember = (userId, key) => import('../membership/comm/hooks.js').then((m) => m.notifyUser(userId, key)).catch(() => {});
+
 const IS_PROD = process.env.NODE_ENV === 'production';
 
 const AUTH_COOKIE = 'kdl-auth-token';
 const REFRESH_COOKIE = 'kdl-refresh-token';
 
-function buildAccessTokenPayload(user, roleSlugs = []) {
+export function buildAccessTokenPayload(user, roleSlugs = []) {
   return {
     userId: user.id,
     email: user.email,
@@ -30,7 +33,7 @@ function buildAccessTokenPayload(user, roleSlugs = []) {
   };
 }
 
-function setAuthCookies(res, accessToken, refreshToken) {
+export function setAuthCookies(res, accessToken, refreshToken) {
   res.cookie(AUTH_COOKIE, accessToken, {
     httpOnly: true,
     sameSite: 'lax',
@@ -252,6 +255,7 @@ export const resetPassword = async (req, res, next) => {
     const user = await authService.resetPassword(token, password);
     if (!user) return errorResponse(res, 'Invalid or expired reset token', 400);
     audit(req, 'password_reset', 'Password reset with an emailed link', { actor: user.id, subject: user.id });
+    tellMember(user.id, 'password.reset_completed');
     return successResponse(res, { message: 'Password reset successfully' });
   } catch (err) {
     next(err);
@@ -271,6 +275,7 @@ export const changePassword = async (req, res, next) => {
     }
 
     audit(req, 'password_changed', 'Password changed', { actor: req.user.id, subject: req.user.id });
+    tellMember(req.user.id, 'password.changed');
     // changePassword revoked every refresh token for the user — issue a fresh
     // pair so this session survives the rotation.
     const roleSlugs = await authService.getUserRoleSlugs(req.user.id);

@@ -12,12 +12,24 @@ import { httpError, notFound, recordEvent } from './util.js';
 export const LIVE = ['ACTIVE', 'PAST_DUE', 'TRIALING'];
 const subInclude = { plan: true, price: true };
 
+/** Settings > "Require approval for every new member" turns an AUTO plan into a MANUAL one. */
+export async function withApprovalDefault(plan, db = prisma) {
+  return (await getSettings(db)).signup.require_approval_default ? { ...plan, approval_mode: 'MANUAL' } : plan;
+}
+
 export const withBreakdown = (price) => (price ? { ...price, breakdown: calcPrice(price) } : price);
 
 export async function getPlanBySlug(slug, db = prisma) {
   const plan = await db.membershipPlan.findUnique({ where: { slug }, include: { prices: { where: { is_active: true } }, benefits: { orderBy: { sort: 'asc' } } } });
   if (!plan || plan.visibility === 'ARCHIVED') throw notFound('Plan');
   return plan;
+}
+
+/** A plan with a seat limit stops taking new members when full. */
+export async function assertSeat(plan, db = prisma) {
+  if (!plan.seat_limit) return;
+  const taken = await db.membershipSubscription.count({ where: { plan_id: plan.id, status: { in: ['ACTIVE', 'TRIALING', 'PAST_DUE', 'PENDING_APPROVAL'] } } });
+  if (taken >= plan.seat_limit) throw httpError(409, `${plan.name} is full`);
 }
 
 export function pickPrice(plan, interval) {
@@ -35,25 +47,26 @@ export async function currentSubscription(memberId, db = prisma) {
 export const subscriptionFor = (id, db = prisma) =>
   db.membershipSubscription.findUnique({ where: { id }, include: { ...subInclude, member: true } });
 
-export async function setStatus(tx, sub, to, data = {}, { actor = null, key, description } = {}) {
+export async function setStatus(tx, sub, to, data = {}, { actor = null, key, description, extra = {} } = {}) {
   assertTransition(sub.status, to);
   const updated = await tx.membershipSubscription.update({ where: { id: sub.id }, data: { status: to, ...data }, include: subInclude });
   await recordEvent(tx, {
     key: key ?? `subscription.${to.toLowerCase()}`,
     member_id: sub.member_id,
     actor,
-    data: { subscription_id: sub.id, from: sub.status, to },
+    data: { subscription_id: sub.id, from: sub.status, to, ...extra },
     description: description ?? `Subscription ${sub.status} -> ${to}`,
   });
   return updated;
 }
 
 /** First activation or rejoin: dates, member number, and retire any other running subscription. */
-export async function activate(tx, subId, { actor = null, approvedBy = null, endsAt, startsAt } = {}) {
+export async function activate(tx, subId, { actor = null, approvedBy = null, approved = false, endsAt, startsAt, trial = false } = {}) {
   const sub = await tx.membershipSubscription.findUnique({ where: { id: subId }, include: { ...subInclude, member: true } });
   if (!sub) throw notFound('Subscription');
   const now = startsAt ?? new Date();
-  const ends = endsAt !== undefined ? endsAt : sub.price ? periodEnd(now, sub.price.interval) : null;
+  const trialDays = trial && !sub.plan.is_free && sub.plan.trial_days > 0 ? sub.plan.trial_days : 0;
+  const ends = trialDays ? new Date(now.getTime() + trialDays * 86_400_000) : endsAt !== undefined ? endsAt : sub.price ? periodEnd(now, sub.price.interval) : null;
   const rejoin = !!sub.member.member_since;
 
   for (const other of await tx.membershipSubscription.findMany({ where: { member_id: sub.member_id, id: { not: sub.id }, status: { in: LIVE } } })) {
@@ -61,9 +74,9 @@ export async function activate(tx, subId, { actor = null, approvedBy = null, end
   }
 
   const updated = await setStatus(
-    tx, sub, 'ACTIVE',
-    { starts_at: now, ends_at: ends, grace_ends_at: null, cancel_at_period_end: false, ...(approvedBy ? { approved_by: approvedBy, approved_at: now } : {}) },
-    { actor, key: rejoin ? 'member.rejoined' : 'member.activated', description: rejoin ? 'Member rejoined' : 'Membership activated' }
+    tx, sub, trialDays ? 'TRIALING' : 'ACTIVE',
+    { starts_at: now, ends_at: ends, grace_ends_at: null, cancel_at_period_end: false, ...(trialDays ? { trial_ends_at: ends } : {}), ...(approvedBy ? { approved_by: approvedBy, approved_at: now } : {}) },
+    { actor, key: rejoin ? 'member.rejoined' : 'member.activated', description: rejoin ? 'Member rejoined' : 'Membership activated', extra: approved ? { approved: true } : {} }
   );
 
   const patch = {};
@@ -136,11 +149,12 @@ export async function markPaid(paymentId, { actor = null, gatewayPaymentId, veri
           ...(verified ? { verified_by: actor, verified_at: now } : {}),
         },
       });
-      await recordEvent(tx, { key: 'payment.paid', member_id: pay.member_id, actor, data: { payment_id: pay.id, amount: pay.amount }, description: `Payment ${pay.reference} paid` });
-      if (pay.amount > 0) await issueInvoice(tx, { payment: paid, member: pay.member, subscription: pay.subscription });
       const sub = pay.subscription;
+      const renewal = !!sub && sub.status !== 'PENDING_PAYMENT';
+      await recordEvent(tx, { key: 'payment.paid', member_id: pay.member_id, actor, data: { payment_id: pay.id, subscription_id: sub?.id ?? null, amount: pay.amount, renewal, verified, invoiced: pay.amount > 0 }, description: `Payment ${pay.reference} paid` });
+      if (pay.amount > 0) await issueInvoice(tx, { payment: paid, member: pay.member, subscription: pay.subscription });
       if (sub?.status === 'PENDING_PAYMENT') {
-        if (statusAfterPayment(sub.plan) === 'ACTIVE') await activate(tx, sub.id, { actor });
+        if (statusAfterPayment(await withApprovalDefault(sub.plan, tx)) === 'ACTIVE') await activate(tx, sub.id, { actor });
         else await setStatus(tx, sub, 'PENDING_APPROVAL', {}, { actor, key: 'subscription.pending_approval' });
       } else if (sub && ['ACTIVE', 'PAST_DUE', 'EXPIRED', 'TRIALING'].includes(sub.status)) {
         await renew(tx, sub, actor);
@@ -269,13 +283,26 @@ export async function fieldValuesOf(memberId, db = prisma) {
 export async function runExpirySweep({ now = new Date(), db = prisma } = {}) {
   const { general } = await getSettings(db);
   const candidates = await db.membershipSubscription.findMany({
-    where: { OR: [{ status: 'ACTIVE', ends_at: { lte: now } }, { status: 'PAST_DUE', grace_ends_at: { lte: now } }] },
+    where: { OR: [{ status: { in: ['ACTIVE', 'TRIALING'] }, ends_at: { lte: now } }, { status: 'PAST_DUE', grace_ends_at: { lte: now } }] },
+    include: { plan: { select: { id: true, slug: true, is_free: true } } },
   });
   const decisions = sweepDecisions(candidates, now, general.grace_days);
+  let downgraded = 0;
   for (const d of decisions) {
-    await db.membershipSubscription.update({ where: { id: d.id }, data: { status: d.to, ...d.data } });
     const sub = candidates.find((c) => c.id === d.id);
+    // A downgrade to a free plan scheduled for renewal takes effect now: nothing to pay, so no grace period.
+    if (d.to === 'PAST_DUE' && sub.pending_plan_id) {
+      const target = await db.membershipPlan.findUnique({ where: { id: sub.pending_plan_id } });
+      if (target?.is_free) {
+        await db.membershipSubscription.update({ where: { id: sub.id }, data: { status: 'EXPIRED', pending_plan_id: null, cancel_reason: 'downgraded_to_free' } });
+        await db.membershipSubscription.create({ data: { member_id: sub.member_id, plan_id: target.id, status: 'ACTIVE', starts_at: now, ends_at: null, auto_renew: true } });
+        await recordEvent(db, { key: 'subscription.downgraded', member_id: sub.member_id, data: { subscription_id: sub.id, from: sub.plan.slug, to: target.slug, plan_change: true, sweep: true }, description: `Downgraded to ${target.name} at renewal` });
+        downgraded += 1;
+        continue;
+      }
+    }
+    await db.membershipSubscription.update({ where: { id: d.id }, data: { status: d.to, ...d.data } });
     await recordEvent(db, { key: `subscription.${d.to.toLowerCase()}`, member_id: sub.member_id, data: { subscription_id: d.id, from: d.from, to: d.to, sweep: true } });
   }
-  return { changed: decisions.length, past_due: decisions.filter((d) => d.to === 'PAST_DUE').length, expired: decisions.filter((d) => d.to === 'EXPIRED').length, cancelled: decisions.filter((d) => d.to === 'CANCELLED').length };
+  return { changed: decisions.length, past_due: decisions.filter((d) => d.to === 'PAST_DUE').length, expired: decisions.filter((d) => d.to === 'EXPIRED').length, cancelled: decisions.filter((d) => d.to === 'CANCELLED').length, downgraded };
 }

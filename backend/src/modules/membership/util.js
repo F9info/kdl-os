@@ -31,7 +31,7 @@ export function orderBy(sort, allowed, fallback = { created_at: 'desc' }) {
 
 /** Audit trail for one state change: the member timeline (MembershipEvent) + the admin activity log. */
 export async function recordEvent(db, { key, member_id = null, actor = null, data = {}, description }) {
-  await (db ?? prisma).membershipEvent.create({ data: { key, member_id, actor_id: actor, data } });
+  const row = await (db ?? prisma).membershipEvent.create({ data: { key, member_id, actor_id: actor, data: description ? { ...data, description } : data } });
   writeActivityAsync({
     actor,
     module: 'membership',
@@ -41,6 +41,9 @@ export async function recordEvent(db, { key, member_id = null, actor = null, dat
     description: description ?? key,
     properties: data,
   });
+  // Communication: one queued job per audit event; the worker maps it to the 44 comm events (comm/eventmap.js).
+  if (member_id && row?.id && process.env.NODE_ENV !== 'test')
+    import('./comm/dispatch.js').then((m) => m.emitInternal(row.id, key, member_id, actor, data)).catch(() => {});
 }
 
 export const bool = (v) => v === true || v === 'true' || v === '1';

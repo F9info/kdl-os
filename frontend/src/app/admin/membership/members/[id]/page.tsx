@@ -1,14 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import { useParams } from 'next/navigation'
-import { PageHeader } from '@/admin/components/layout/PageHeader'
+import { useParams, useSearchParams } from 'next/navigation'
+import { ChevronDown } from 'lucide-react'
 import { ModuleGuard } from '@/admin/components/shared/ModuleGuard'
 import { PermissionGuard } from '@/admin/components/shared/PermissionGuard'
 import { ErrorAlert } from '@/components/shared/ErrorAlert'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useMember, usePlans, type Member } from '@/admin/hooks/useMembership'
+import { useMember } from '@/admin/hooks/useMembership'
 import {
   ActivityTab,
   NotesTab,
@@ -17,7 +23,16 @@ import {
   ProfileTab,
   SectorTab,
 } from '../../_components/MemberTabs'
-import { ActionModal, StatusPill, Tabs, enumOptions } from '../../_components/ui'
+import {
+  CancelModal,
+  ChangePlanModal,
+  ExtendModal,
+  RecordPaymentModal,
+  SuspendModal,
+} from '../../_components/MemberActionModals'
+import { MemberAvatar } from '../../_components/MemberUi'
+import { dmy } from '../../_components/MemberFormat'
+import { StatusPill, Tabs } from '../../_components/ui'
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -28,131 +43,59 @@ const TABS = [
   { key: 'activity', label: 'Activity' },
 ]
 type Modal = 'extend' | 'change-plan' | 'record-payment' | 'suspend' | 'cancel' | null
-
-function MemberActions({
-  member,
-  modal,
-  setModal,
-}: {
-  member: Member
-  modal: Modal
-  setModal: (m: Modal) => void
-}) {
-  const { data: plans } = usePlans()
-  const base = `members/${member.id}`
-  const close = () => setModal(null)
-  const suspended = member.subscription?.status === 'SUSPENDED'
-  return (
-    <>
-      <ActionModal
-        open={modal === 'extend'}
-        onClose={close}
-        title="Extend membership"
-        description="Add days or set a new end date."
-        fields={[
-          { name: 'days', label: 'Add days', type: 'number' },
-          { name: 'ends_at', label: 'Or new end date', type: 'date' },
-        ]}
-        request={(v) => ({ path: `${base}/extend`, data: v })}
-        success="Membership extended"
-      />
-      <ActionModal
-        open={modal === 'change-plan'}
-        onClose={close}
-        title="Change plan"
-        description="Upgrades apply now with pro-rata; downgrades apply at renewal."
-        fields={[
-          {
-            name: 'plan_id',
-            label: 'New plan',
-            type: 'select',
-            required: true,
-            options: [
-              { value: '', label: 'Choose…' },
-              ...(plans?.items ?? []).map((p) => ({ value: p.id, label: p.name })),
-            ],
-          },
-        ]}
-        request={(v) => ({ path: `${base}/change-plan`, data: v })}
-        success="Plan changed"
-      />
-      <ActionModal
-        open={modal === 'record-payment'}
-        onClose={close}
-        title="Record payment"
-        description="Bank transfer, cash or cheque."
-        fields={[
-          {
-            name: 'method',
-            label: 'Method',
-            type: 'select',
-            options: enumOptions(['BANK_TRANSFER', 'CASH', 'CHEQUE']),
-          },
-          { name: 'amount', label: 'Amount received (INR)', type: 'number', required: true },
-          { name: 'utr', label: 'UTR / reference' },
-          { name: 'note', label: 'Note', type: 'textarea' },
-        ]}
-        request={(v) => ({
-          path: `${base}/record-payment`,
-          data: { ...v, amount: Math.round(Number(v.amount) * 100) },
-        })}
-        success="Payment recorded"
-      />
-      <ActionModal
-        open={modal === 'suspend'}
-        onClose={close}
-        title={suspended ? 'Reactivate member' : 'Suspend member'}
-        description={
-          suspended ? 'Access is restored immediately.' : 'Access stops until you reactivate.'
-        }
-        fields={
-          suspended ? [] : [{ name: 'reason', label: 'Reason', type: 'textarea', required: true }]
-        }
-        destructive={!suspended}
-        submitLabel={suspended ? 'Reactivate' : 'Suspend'}
-        request={(v) => ({ path: `${base}/${suspended ? 'reactivate' : 'suspend'}`, data: v })}
-        success={suspended ? 'Member reactivated' : 'Member suspended'}
-      />
-      <ActionModal
-        open={modal === 'cancel'}
-        onClose={close}
-        title="Cancel membership"
-        fields={[
-          { name: 'reason', label: 'Reason', type: 'textarea' },
-          {
-            name: 'immediately',
-            label: 'Cancel immediately (otherwise at period end)',
-            type: 'checkbox',
-          },
-        ]}
-        destructive
-        submitLabel="Cancel membership"
-        request={(v) => ({ path: `${base}/cancel`, data: v })}
-        success="Membership cancelled"
-      />
-    </>
-  )
-}
+const MODALS = ['extend', 'change-plan', 'record-payment', 'suspend', 'cancel']
 
 function MemberContent() {
   const { id } = useParams<{ id: string }>()
+  const params = useSearchParams()
   const { data: member, isLoading, error } = useMember(id)
   const [tab, setTab] = useState('overview')
-  const [modal, setModal] = useState<Modal>(null)
+  const first = params?.get('action')
+  const [modal, setModal] = useState<Modal>(
+    first && MODALS.includes(first) ? (first as Modal) : null
+  )
   const status = member?.subscription?.status
+  const close = () => setModal(null)
+  const plan = member?.subscription?.plan?.name
   return (
     <div>
-      <PageHeader
-        title={member?.legal_name || member?.full_name || 'Member'}
-        breadcrumbs={[
-          { label: 'Membership', href: '/admin/membership' },
-          { label: 'Members', href: '/admin/membership/members' },
-          { label: member?.member_no ?? '…' },
-        ]}
-        action={
-          member && (
-            <div className="flex items-center gap-2">
-              {status && <StatusPill status={status} />}
+      {error ? <ErrorAlert error={error} /> : null}
+      {isLoading || !member ? (
+        <Skeleton className="h-48 w-full" />
+      ) : (
+        <>
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <MemberAvatar name={member.legal_name || member.full_name} size={48} />
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1>{member.legal_name || member.full_name}</h1>
+                  {status && <StatusPill status={status} />}
+                  {plan && (
+                    <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                      {plan}
+                    </span>
+                  )}
+                  {member.member_type === 'ORGANISATION' && (
+                    <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                      Organisation
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {[
+                    member.member_no,
+                    member.member_type === 'ORGANISATION' ? member.full_name : null,
+                    member.email,
+                    member.mobile,
+                    `Member since ${dmy(member.member_since)}`,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
               <Button variant="outline" onClick={() => setModal('extend')}>
                 Extend
               </Button>
@@ -162,21 +105,31 @@ function MemberContent() {
               <Button variant="outline" onClick={() => setModal('record-payment')}>
                 Record payment
               </Button>
-              <Button variant="outline" onClick={() => setModal('suspend')}>
+              <Button
+                variant="outline"
+                className={
+                  status === 'SUSPENDED'
+                    ? ''
+                    : 'border-destructive text-destructive hover:bg-destructive/10'
+                }
+                onClick={() => setModal('suspend')}
+              >
                 {status === 'SUSPENDED' ? 'Reactivate' : 'Suspend'}
               </Button>
-              <Button variant="outline" onClick={() => setModal('cancel')}>
-                Cancel
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    More <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onSelect={() => setModal('cancel')}>
+                    Cancel membership
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-          )
-        }
-      />
-      {error ? <ErrorAlert error={error} /> : null}
-      {isLoading || !member ? (
-        <Skeleton className="h-48 w-full" />
-      ) : (
-        <>
+          </div>
           <Tabs tabs={TABS} value={tab} onChange={setTab} />
           {tab === 'overview' && <OverviewTab member={member} />}
           {tab === 'payments' && <PaymentsTab member={member} />}
@@ -184,7 +137,11 @@ function MemberContent() {
           {tab === 'sector' && <SectorTab member={member} />}
           {tab === 'notes' && <NotesTab member={member} />}
           {tab === 'activity' && <ActivityTab member={member} />}
-          <MemberActions member={member} modal={modal} setModal={setModal} />
+          {modal === 'extend' && <ExtendModal member={member} onClose={close} />}
+          {modal === 'change-plan' && <ChangePlanModal member={member} onClose={close} />}
+          {modal === 'record-payment' && <RecordPaymentModal member={member} onClose={close} />}
+          {modal === 'suspend' && <SuspendModal member={member} onClose={close} />}
+          {modal === 'cancel' && <CancelModal member={member} onClose={close} />}
         </>
       )}
     </div>

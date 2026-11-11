@@ -1,111 +1,134 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
+import { CheckCircle2, Download, Plus, RefreshCw, Users, IndianRupee } from 'lucide-react'
 import { PageHeader } from '@/admin/components/layout/PageHeader'
 import { ModuleGuard } from '@/admin/components/shared/ModuleGuard'
 import { PermissionGuard } from '@/admin/components/shared/PermissionGuard'
 import { ErrorAlert } from '@/components/shared/ErrorAlert'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { rupees, useOverview } from '@/admin/hooks/useMembership'
-import { formatDate } from '@/lib/utils'
-import { Card, Kpi, StatusPill } from './_components/ui'
+import api from '@/lib/axios'
+import { AddMemberModal } from './_components/AddMemberModal'
+import {
+  ChurnChart,
+  PlanMixBars,
+  RangeTabs,
+  RecentMembersTable,
+  StatCard,
+  delta,
+  type Range,
+} from './_components/OverviewParts'
 
-// KPI keys come from the API; labels + money flag live here once.
-const KPI_LABELS: Array<{ key: string; label: string; money?: boolean }> = [
-  { key: 'active', label: 'Active members' },
-  { key: 'new_30d', label: 'New (30 days)' },
-  { key: 'revenue_30d', label: 'Revenue (30 days)', money: true },
-  { key: 'pending_approvals', label: 'Pending approvals' },
-  { key: 'expiring_30d', label: 'Expiring in 30 days' },
-]
-
-function Bars({ rows }: { rows: Array<{ label: string; value: number }> }) {
-  const max = Math.max(1, ...rows.map((r) => r.value))
-  if (rows.length === 0) return <p className="text-sm text-muted-foreground">No data yet.</p>
-  return (
-    <ul className="space-y-2">
-      {rows.map((r) => (
-        <li key={r.label} className="flex items-center gap-3 text-sm">
-          <span className="w-28 shrink-0 truncate">{r.label}</span>
-          <div className="h-3 flex-1 rounded bg-muted">
-            <div
-              className="h-3 rounded bg-primary"
-              style={{ width: `${(r.value / max) * 100}%` }}
-            />
-          </div>
-          <span className="w-10 text-right tabular-nums">{r.value}</span>
-        </li>
-      ))}
-    </ul>
-  )
+async function exportMembers() {
+  const res = await api.get('/membership/admin/members/export', {
+    params: { format: 'csv' },
+    responseType: 'blob',
+  })
+  const url = URL.createObjectURL(res.data as Blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'members.csv'
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 function OverviewContent() {
-  const { data, isLoading, error } = useOverview()
+  const [range, setRange] = useState<Range>('30d')
+  const [adding, setAdding] = useState(false)
+  const { data, isLoading, error } = useOverview(range)
+  // the API keys are being renamed; read both spellings so neither breaks the page
+  const k = (data?.kpis ?? {}) as Record<string, number | undefined>
+  const active = k.active_members ?? k.active ?? 0
+  const revenue = k.revenue_30d ?? 0
+  const pending = k.pending_approvals ?? 0
+  const expiring = k.expiring_30d ?? 0
   return (
     <div>
-      <PageHeader title="Membership overview" breadcrumbs={[{ label: 'Membership' }]} />
+      <PageHeader
+        title="Membership"
+        breadcrumbs={[{ label: 'Members, revenue and renewals at a glance' }]}
+        action={
+          <div className="flex items-center gap-3">
+            <RangeTabs value={range} onChange={setRange} />
+            <Button variant="outline" onClick={() => void exportMembers()}>
+              <Download className="h-4 w-4" /> Export
+            </Button>
+            <Button onClick={() => setAdding(true)}>
+              <Plus className="h-4 w-4" /> Add member
+            </Button>
+          </div>
+        }
+      />
       {error ? <ErrorAlert error={error} /> : null}
       {isLoading || !data ? (
         <Skeleton className="h-32 w-full" />
       ) : (
         <>
-          <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            {KPI_LABELS.map((k) => (
-              <Kpi
-                key={k.key}
-                label={k.label}
-                value={k.money ? rupees(data.kpis?.[k.key]) : (data.kpis?.[k.key] ?? 0)}
-              />
-            ))}
+          <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              label="Active members"
+              value={active.toLocaleString('en-IN')}
+              icon={<Users className="h-4 w-4" />}
+              note={delta(k.active_members_delta_pct, range)}
+              tone="good"
+            />
+            <StatCard
+              label={`Revenue (${range === '1y' ? '1 year' : range.replace('d', ' days')})`}
+              value={rupees(revenue)}
+              icon={<IndianRupee className="h-4 w-4" />}
+              note={delta(k.revenue_30d_delta_pct, range)}
+              tone="good"
+            />
+            <StatCard
+              label="Renewals due (30 days)"
+              value={expiring.toLocaleString('en-IN')}
+              icon={<RefreshCw className="h-4 w-4" />}
+              note={k.expiring_value ? `${rupees(k.expiring_value)} at risk` : undefined}
+              tone="bad"
+            />
+            <StatCard
+              label="Pending approval"
+              value={pending.toLocaleString('en-IN')}
+              icon={<CheckCircle2 className="h-4 w-4" />}
+              note={
+                pending > 0 && k.oldest_pending_days !== undefined
+                  ? `Oldest ${k.oldest_pending_days} days`
+                  : undefined
+              }
+              tone="bad"
+            />
           </div>
-          <div className="grid gap-6 lg:grid-cols-2">
-            <Card title="Member growth">
-              <Bars rows={(data.growth ?? []).map((g) => ({ label: g.month, value: g.count }))} />
-            </Card>
-            <Card title="Plan mix">
-              <Bars
-                rows={(data.plan_mix ?? []).map((g) => ({
-                  label: g.plan?.name ?? '-',
-                  value: g.count,
-                }))}
-              />
-            </Card>
+          <div className="mb-6 grid gap-4 lg:grid-cols-[2fr_1fr]">
+            <section className="rounded-lg border bg-card p-5 shadow-sm">
+              <h2 className="mb-2 text-base font-semibold">New members vs churn</h2>
+              <ChurnChart growth={(data.growth ?? []).slice(-10)} />
+            </section>
+            <section className="rounded-lg border bg-card p-5 shadow-sm">
+              <h2 className="mb-4 text-base font-semibold">Members by plan</h2>
+              <PlanMixBars rows={data.plan_mix ?? []} />
+              {k.renewal_rate_90d !== undefined && (
+                <div className="mt-4 flex justify-between border-t pt-3 text-sm">
+                  <span className="text-muted-foreground">Renewal rate (90d)</span>
+                  <b>{k.renewal_rate_90d}%</b>
+                </div>
+              )}
+            </section>
           </div>
-          <Card
-            title="Recent members"
-            action={
-              <Link href="/admin/membership/members" className="text-sm text-primary">
-                View all
-              </Link>
-            }
-          >
-            {(data.recent_members ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">No members yet.</p>
-            ) : (
-              <ul className="divide-y">
-                {data.recent_members.map((m) => (
-                  <li key={m.id} className="flex items-center justify-between py-2 text-sm">
-                    <Link
-                      href={`/admin/membership/members/${m.id}`}
-                      className="font-medium hover:underline"
-                    >
-                      {m.full_name}
-                    </Link>
-                    <span className="text-muted-foreground">
-                      {m.plan?.name ?? m.subscription?.plan?.name ?? '—'}
-                      {m.member_since ? ` · ${formatDate(m.member_since)}` : ''}
-                    </span>
-                    {(m.status ?? m.subscription?.status) && (
-                      <StatusPill status={(m.status ?? m.subscription?.status) as string} />
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Recent members</h2>
+            <Link href="/admin/membership/members" className="text-sm text-primary">
+              View all →
+            </Link>
+          </div>
+          <div className="overflow-hidden rounded-lg border bg-card">
+            <RecentMembersTable rows={data.recent_members ?? []} />
+          </div>
         </>
       )}
+      <AddMemberModal open={adding} onClose={() => setAdding(false)} />
     </div>
   )
 }

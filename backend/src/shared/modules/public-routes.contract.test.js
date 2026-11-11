@@ -24,6 +24,13 @@ const ALLOWED = {
   'membership GET /join-form/:planSlug': 'public sign-up form definition (read only)',
   'membership POST /signup': 'member sign-up (validated, rate limited, creates a no-permission member account)',
   'membership POST /webhooks/:provider': 'payment gateway webhook (HMAC signature checked, idempotent, rate limited)',
+  'membership POST /auth/otp/send': 'mobile OTP login: code sent to the number (rate limited per IP and per number, 5-minute expiry)',
+  'membership POST /auth/otp/verify': 'mobile OTP login: verifies the code (5 attempts per code, rate limited), issues the normal login tokens',
+  'membership GET /auth/providers': 'enabled social-login buttons for the login page (public label, icon, colour only; read only)',
+  'membership GET /auth/oauth/:provider': 'starts the OAuth2/OIDC authorization-code flow (state + PKCE kept in Redis); redirect only',
+  'membership GET /auth/oauth/:provider/callback': 'OAuth2/OIDC redirect target: state is single-use and verified; ends in a login redirect',
+  'membership POST /auth/oauth/:provider/callback': 'Apple form_post redirect target: same state checks as the GET callback',
+  'membership POST /auth/link': 'proves an existing account with its password before linking a social identity (rate limited, signed link token)',
   'integrations GET /webhooks/:driver': 'provider webhook verification (signature checked)',
   'integrations POST /webhooks/:driver': 'provider webhook (signature checked)',
   // optionalAuthenticate: a visitor gets only what is_public allows, an admin gets everything.

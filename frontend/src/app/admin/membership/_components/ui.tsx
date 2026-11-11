@@ -31,15 +31,32 @@ const WAIT = [
 ]
 
 /** One mapping from any membership status string to the shared StatusBadge. */
+const PILL: Record<string, string> = {
+  ACTIVE: 'bg-green-100 text-green-800',
+  PAID: 'bg-green-100 text-green-800',
+  PUBLISHED: 'bg-green-100 text-green-800',
+  TRIALING: 'bg-sky-100 text-sky-800',
+  PENDING_APPROVAL: 'bg-purple-100 text-purple-800',
+  UNDER_VERIFICATION: 'bg-purple-100 text-purple-800',
+  PENDING_PAYMENT: 'bg-amber-100 text-amber-800',
+  AWAITING_PROOF: 'bg-amber-100 text-amber-800',
+  PENDING: 'bg-amber-100 text-amber-800',
+  PAST_DUE: 'bg-amber-100 text-amber-800',
+  EXPIRED: 'bg-red-100 text-red-800',
+  REJECTED: 'bg-red-100 text-red-800',
+  FAILED: 'bg-red-100 text-red-800',
+  SUSPENDED: 'bg-red-100 text-red-800',
+}
+
 export function StatusPill({ status }: { status: string }) {
-  const variant: Variant = GOOD.includes(status)
-    ? 'active'
-    : BAD.includes(status)
-      ? 'suspended'
-      : WAIT.includes(status)
-        ? 'pending'
-        : 'inactive'
-  return <StatusBadge variant={variant} label={humanize(status)} />
+  const tone = PILL[status] ?? 'bg-muted text-muted-foreground'
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${tone}`}
+    >
+      {humanize(status)}
+    </span>
+  )
 }
 
 export function Tabs({

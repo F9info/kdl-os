@@ -58,3 +58,39 @@ export const asList = <T>(d: unknown): T[] =>
     : Array.isArray((d as { items?: T[] })?.items)
       ? (d as { items: T[] }).items
       : []
+
+/** Whole rupees when there are no paise (pricing cards), else two decimals. */
+export const moneyShort = (paise: number, currency = 'INR') =>
+  new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: paise % 100 ? 2 : 0,
+    maximumFractionDigits: 2,
+  }).format(paise / 100)
+
+/** Biggest "pay yearly, save N%" across the paid plans, or 0. Data-driven from the plan prices. */
+export const yearlySavingPct = (plans: Plan[]) =>
+  Math.max(
+    0,
+    ...plans.map((p) => {
+      const m = priceFor(p, 'MONTHLY')
+      const y = priceFor(p, 'YEARLY')
+      return m && y && m.amount ? Math.round((1 - y.amount / (m.amount * 12)) * 100) : 0
+    })
+  )
+
+/** Where "Choose <plan>" goes: paid plans start at the account step, free plans join directly. */
+export const joinHref = (plan: Plan, interval: Interval) =>
+  plan.is_free
+    ? `/membership/join/${plan.slug}`
+    : `/membership/signup?plan=${plan.slug}&interval=${interval}`
+
+/** "07 Nov 2026 – 06 Nov 2027" for a plan taken today, or "Lifetime". */
+export function periodText(interval: Interval, from = new Date()) {
+  if (interval === 'LIFETIME') return 'Lifetime'
+  const months = { MONTHLY: 1, QUARTERLY: 3, HALF_YEARLY: 6, YEARLY: 12 }[interval]
+  const end = new Date(from)
+  end.setMonth(end.getMonth() + months)
+  end.setDate(end.getDate() - 1)
+  return `${dateText(from.toISOString())} – ${dateText(end.toISOString())}`
+}

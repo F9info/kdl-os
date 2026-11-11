@@ -1,9 +1,11 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { ErrorAlert } from '@/components/shared/ErrorAlert'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { useInvoice, useInvoices, useLibrary, usePayments } from './api'
 import { dateText, money } from './format'
 import { StatusBadge } from './StatusBadge'
@@ -13,22 +15,46 @@ export function Invoices() {
   if (isLoading) return <LoadingSpinner />
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Invoices</h1>
       {error ? <ErrorAlert error={error} /> : null}
       {data?.length === 0 && <p className="text-sm text-muted-foreground">No invoices yet.</p>}
-      {data?.map((i) => (
-        <Link
-          key={i.id}
-          href={`/membership/account/invoices/${i.id}`}
-          className="flex justify-between rounded-md border bg-card p-3 text-sm"
-        >
-          <span>
-            {i.number} · {dateText(i.issued_at)} · {i.description}
-            {i.voided_at ? ' (void)' : ''}
-          </span>
-          <span>{money(i.total)}</span>
-        </Link>
-      ))}
+      {!!data?.length && (
+        <div className="overflow-x-auto rounded-xl border bg-card">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-left text-muted-foreground">
+              <tr>
+                {['Invoice', 'Date', 'For', 'Amount', 'Status', ''].map((h) => (
+                  <th key={h} className="p-3 font-medium">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((i) => (
+                <tr key={i.id} className="border-t">
+                  <td className="p-3 font-medium">{i.number}</td>
+                  <td className="p-3">{dateText(i.issued_at)}</td>
+                  <td className="p-3">{i.description}</td>
+                  <td className="p-3">{money(i.total)}</td>
+                  <td className="p-3">
+                    <StatusBadge
+                      status={i.voided_at ? 'VOID' : i.is_credit_note ? 'CREDIT' : 'PAID'}
+                    />
+                  </td>
+                  <td className="p-3 text-right">
+                    <Link
+                      href={`/membership/account/invoices/${i.id}`}
+                      className="text-primary hover:underline"
+                    >
+                      View / PDF
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }
@@ -77,7 +103,6 @@ export function Payments() {
   if (isLoading) return <LoadingSpinner />
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Payments</h1>
       {error ? <ErrorAlert error={error} /> : null}
       {data?.length === 0 && <p className="text-sm text-muted-foreground">No payments yet.</p>}
       {data?.map((p) => (
@@ -101,20 +126,59 @@ export function Payments() {
 
 export function Library() {
   const { data, isLoading, error } = useLibrary()
+  const [q, setQ] = useState('')
+  const [type, setType] = useState('')
   if (isLoading) return <LoadingSpinner />
+  const types = [...new Set((data ?? []).map((x) => x.type).filter(Boolean))] as string[]
+  const rows = (data ?? []).filter(
+    (x) =>
+      (!type || x.type === type) &&
+      `${x.title} ${x.description ?? ''}`.toLowerCase().includes(q.trim().toLowerCase())
+  )
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Members-only content</h1>
+      <div className="flex flex-wrap gap-3">
+        <Input
+          aria-label="Search resources"
+          className="max-w-xs"
+          placeholder="Search resources…"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+        />
+        {types.length > 0 && (
+          <select
+            aria-label="Type"
+            className="rounded-md border bg-background px-3 text-sm"
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+          >
+            <option value="">All types</option>
+            {types.map((t) => (
+              <option key={t}>{t}</option>
+            ))}
+          </select>
+        )}
+      </div>
       {error ? <ErrorAlert error={error} /> : null}
-      {data?.length === 0 && (
-        <p className="text-sm text-muted-foreground">Nothing unlocked for your plan yet.</p>
+      {rows.length === 0 && (
+        <p className="text-sm text-muted-foreground">
+          {data?.length ? 'No resources match.' : 'Nothing unlocked for your plan yet.'}
+        </p>
       )}
-      <div className="grid gap-3 sm:grid-cols-2">
-        {data?.map((x) => (
-          <a key={x.id} href={x.url} className="rounded-xl border bg-card p-4 hover:border-primary">
-            <p className="font-medium">{x.title}</p>
-            {x.description && <p className="text-sm text-muted-foreground">{x.description}</p>}
-          </a>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {rows.map((x) => (
+          <div
+            key={x.id}
+            className="flex flex-col justify-between gap-3 rounded-xl border bg-card p-4"
+          >
+            <div>
+              <p className="font-semibold">{x.title}</p>
+              <p className="text-sm text-muted-foreground">{x.description ?? x.type}</p>
+            </div>
+            <Button size="sm" variant="outline" asChild className="self-start">
+              <a href={x.url}>Open</a>
+            </Button>
+          </div>
         ))}
       </div>
     </div>

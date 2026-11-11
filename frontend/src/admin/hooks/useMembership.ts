@@ -29,10 +29,12 @@ export interface Price {
   gst_rate: number
   tax_mode: 'INCLUSIVE' | 'EXCLUSIVE'
   is_active: boolean
+  is_default?: boolean
 }
 export interface Benefit {
   id?: string
   text: string
+  description?: string | null
   highlighted: boolean
   sort?: number
 }
@@ -41,6 +43,7 @@ export interface AccessRule {
   target: AccessTarget
   value: string
   label?: string | null
+  non_member_view?: 'EXCERPT_CTA' | 'BLUR' | 'HIDDEN'
 }
 export interface PlanFieldGroup {
   group_id: string
@@ -67,6 +70,14 @@ export interface Plan {
   access_rules?: AccessRule[]
   field_groups?: PlanFieldGroup[]
   member_count?: number
+  // fields the API is being extended with (see needs-A1); all optional so the UI degrades gracefully
+  badge?: string | null
+  seat_limit?: number | null
+  allow_self_cancel?: boolean
+  allow_plan_change?: boolean
+  role_on_activation?: string | null
+  show_badge_on_profile?: boolean
+  grace_access?: boolean
   _count?: { subscriptions?: number }
 }
 
@@ -216,9 +227,9 @@ export interface Settings {
 }
 export interface Overview {
   kpis: Record<string, number>
-  growth: Array<{ month: string; count: number }>
+  growth: Array<{ month: string; count: number; churned?: number }>
   plan_mix: Array<{ plan: { id: string; name?: string }; count: number }>
-  recent_members: Member[]
+  recent_members: Array<Member & { interval?: string | null; paid_total?: number | null }>
 }
 export interface Page<T> {
   items: T[]
@@ -297,7 +308,8 @@ export const usePayments = (params?: Params) => useAdminList<Payment>('payments'
 export const useInvoices = (params?: Params) => useAdminList<Invoice>('invoices', params)
 export const useProviders = () => useAdminList<Provider>('payment-providers')
 export const useFieldGroups = () => useAdminList<FieldGroup>('field-groups')
-export const useOverview = () => useAdminItem<Overview>('overview')
+export const useOverview = (range?: string) =>
+  useAdminItem<Overview>(range ? `overview?range=${range}` : 'overview')
 export const useSettings = () => useAdminItem<Settings>('settings')
 
 export const rupees = (paise: number | null | undefined) =>

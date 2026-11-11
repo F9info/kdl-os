@@ -190,7 +190,6 @@ export function Profile() {
   const group = groups.find((g) => `g:${g.key}` === tab)
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-bold">Profile</h1>
       <div role="tablist" className="flex flex-wrap gap-1 border-b">
         {tabs.map((t) => (
           <button
@@ -198,13 +197,13 @@ export function Profile() {
             role="tab"
             aria-selected={tab === t.key}
             onClick={() => setTab(t.key)}
-            className={`-mb-px border-b-2 px-3 py-2 text-sm ${tab === t.key ? 'border-primary font-medium' : 'border-transparent'}`}
+            className={`-mb-px border-b-2 px-4 py-2.5 text-sm ${tab === t.key ? 'border-primary font-medium text-primary' : 'border-transparent text-muted-foreground'}`}
           >
             {t.label}
           </button>
         ))}
       </div>
-      <div role="tabpanel" key={tab}>
+      <div role="tabpanel" key={tab} className="rounded-xl border bg-card p-6">
         {tab === 'personal' && <Personal me={me} />}
         {group && <Pack group={group} me={me} />}
         {tab === 'contacts' && <Contacts me={me} />}

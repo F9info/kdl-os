@@ -3,13 +3,14 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useMutation } from '@tanstack/react-query'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FormField } from '@/components/shared/FormField'
 import { ErrorAlert } from '@/components/shared/ErrorAlert'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { post, useMe, usePlans, useProviders } from './api'
-import { INTERVAL_TITLE, money, priceFor, priceTotals } from './format'
+import { money, priceFor, priceTotals } from './format'
+import { cardCls, Crumbs, OrderSummary, payLabel } from './JoinUi'
+import { outlineBtn, primaryBtn } from './AuthShell'
 import { useMemberSession } from './useMemberSession'
 import { loadRazorpay } from './razorpay'
 import type { Interval, Payment, Provider } from './types'
@@ -44,6 +45,8 @@ export function Checkout({ planSlug, interval }: { planSlug: string; interval: I
   const [manual, setManual] = useState<CheckoutResult | null>(null)
   const [utr, setUtr] = useState('')
   const [note, setNote] = useState('')
+  const [paidOn, setPaidOn] = useState(new Date().toISOString().slice(0, 10))
+  const [copied, setCopied] = useState('')
 
   const plan = plans?.find((p) => p.slug === planSlug)
   const price = plan ? priceFor(plan, interval) : undefined
@@ -66,7 +69,7 @@ export function Checkout({ planSlug, interval }: { planSlug: string; interval: I
     onSuccess: async (res) => {
       if (res.order) {
         const Razorpay = await loadRazorpay()
-        new Razorpay({
+        const rp = new Razorpay({
           key: res.order.key_id ?? res.order.key,
           order_id: res.order.id,
           amount: res.order.amount,
@@ -78,7 +81,13 @@ export function Checkout({ planSlug, interval }: { planSlug: string; interval: I
             contact: me.data?.member.mobile,
           },
           handler: (r: unknown) => confirm.mutate({ id: res.payment.id, data: r }),
-        }).open()
+        })
+        rp.on('payment.failed', () =>
+          router.push(
+            `/membership/success?state=failed&plan=${planSlug}&interval=${interval}&ref=${res.payment.reference}`
+          )
+        )
+        rp.open()
       } else {
         setManual(res)
       }
@@ -89,7 +98,7 @@ export function Checkout({ planSlug, interval }: { planSlug: string; interval: I
     mutationFn: () =>
       post(`/membership/payments/${manual!.payment.id}/offline-proof`, {
         utr,
-        note: note || undefined,
+        note: [`Paid on ${paidOn}`, note].filter(Boolean).join(' · '),
       }),
     onSuccess: () => done('verifying'),
   })
@@ -98,110 +107,144 @@ export function Checkout({ planSlug, interval }: { planSlug: string; interval: I
   if (providers.isLoading) return <LoadingSpinner />
   const list = providers.data ?? []
   const err = pay.error ?? confirm.error ?? providers.error
+  const total = price ? money(priceTotals(price).total, price.currency) : ''
+  const copy = (k: string, v: string) => {
+    navigator.clipboard?.writeText(v).then(() => setCopied(k))
+  }
 
   return (
-    <div className="mx-auto grid max-w-4xl gap-8 md:grid-cols-[1fr_280px]">
-      <section className="space-y-5">
-        <h1 className="text-2xl font-bold">Checkout</h1>
+    <div className="mx-auto max-w-5xl space-y-5 py-2">
+      <Crumbs plan={plan?.name} current="Payment" />
+      <h1 className="text-4xl font-extrabold tracking-tight">
+        {manual ? 'Pay by bank transfer' : 'Choose how to pay'}
+      </h1>
+      <div className="grid gap-6 md:grid-cols-[1fr_300px]">
+        <section className={`${cardCls} space-y-4`}>
+          {!manual && (
+            <>
+              {list.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No payment method is available for this plan right now. Please contact us.
+                </p>
+              )}
+              <div className="space-y-3" role="radiogroup" aria-label="Payment method">
+                {list.map((p) => (
+                  <label
+                    key={p.id}
+                    className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 ${chosen?.id === p.id ? 'border-2 border-primary bg-primary/5' : ''}`}
+                  >
+                    <input
+                      type="radio"
+                      name="provider"
+                      className="mt-1"
+                      checked={chosen?.id === p.id}
+                      onChange={() => setChosen(p)}
+                    />
+                    <span>
+                      <span className="block font-semibold">{p.label}</span>
+                      {p.description && (
+                        <span className="block text-sm text-muted-foreground">{p.description}</span>
+                      )}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              {err && <ErrorAlert error={err} />}
+              <button
+                type="button"
+                className={primaryBtn}
+                disabled={!chosen || pay.isPending || confirm.isPending}
+                onClick={() => chosen && pay.mutate(chosen)}
+              >
+                {chosen?.type === 'MANUAL' ? 'Continue' : payLabel(price)}
+              </button>
+            </>
+          )}
 
-        {!manual && (
-          <>
-            <h2 className="font-medium">Choose how to pay</h2>
-            {list.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                No payment method is available for this plan right now. Please contact us.
-              </p>
-            )}
-            <div className="space-y-3" role="radiogroup" aria-label="Payment method">
-              {list.map((p) => (
-                <label
-                  key={p.id}
-                  className={`flex cursor-pointer items-start gap-3 rounded-xl border bg-card p-4 ${chosen?.id === p.id ? 'border-primary' : ''}`}
-                >
-                  <input
-                    type="radio"
-                    name="provider"
-                    className="mt-1"
-                    checked={chosen?.id === p.id}
-                    onChange={() => setChosen(p)}
-                  />
-                  <span>
-                    <span className="block font-medium">{p.label}</span>
-                    {p.description && (
-                      <span className="block text-sm text-muted-foreground">{p.description}</span>
-                    )}
-                  </span>
-                </label>
-              ))}
-            </div>
-            {err && <ErrorAlert error={err} />}
-            <Button
-              disabled={!chosen || pay.isPending || confirm.isPending}
-              onClick={() => chosen && pay.mutate(chosen)}
-            >
-              {chosen?.type === 'MANUAL'
-                ? 'Continue'
-                : price
-                  ? `Pay ${money(priceTotals(price).total, price.currency)}`
-                  : 'Pay'}
-            </Button>
-          </>
-        )}
-
-        {manual && (
-          <div className="space-y-4">
-            <div className="rounded-xl border bg-card p-4 text-sm">
-              <h2 className="mb-2 font-medium">Transfer the amount to</h2>
-              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
+          {manual && (
+            <div className="space-y-4">
+              <h2 className="font-semibold">1 · Transfer {total} to</h2>
+              <dl className="space-y-2 text-sm">
                 {safeEntries(manual.instructions).map(([k, v]) => (
-                  <div key={k} className="contents">
-                    <dt className="text-muted-foreground capitalize">{k.replace(/_/g, ' ')}</dt>
-                    <dd>{String(v)}</dd>
+                  <div key={k} className="flex items-center justify-between gap-3">
+                    <dt className="capitalize text-muted-foreground">{k.replace(/_/g, ' ')}</dt>
+                    <dd className="flex items-center gap-3">
+                      <b>{String(v)}</b>
+                      <button
+                        type="button"
+                        className="text-xs text-primary hover:underline"
+                        onClick={() => copy(k, String(v))}
+                      >
+                        {copied === k ? 'Copied' : 'Copy'}
+                      </button>
+                    </dd>
                   </div>
                 ))}
               </dl>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Reference: {manual.payment.reference}
+              <p className="rounded-lg bg-muted/50 p-3 text-sm">
+                Write <b>{manual.payment.reference}</b> in the transfer remarks so we can match your
+                payment.
               </p>
+              <form
+                className="space-y-3"
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  if (utr.trim()) proof.mutate()
+                }}
+              >
+                <h2 className="font-semibold">2 · Tell us you&apos;ve paid</h2>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <FormField label="UTR / reference number" required>
+                    <Input value={utr} onChange={(e) => setUtr(e.target.value)} />
+                  </FormField>
+                  <FormField label="Paid on" required>
+                    <Input type="date" value={paidOn} onChange={(e) => setPaidOn(e.target.value)} />
+                  </FormField>
+                </div>
+                <FormField label="Note (optional)">
+                  <Input value={note} onChange={(e) => setNote(e.target.value)} />
+                </FormField>
+                {proof.error && <ErrorAlert error={proof.error} />}
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    className={`${outlineBtn} !w-auto`}
+                    onClick={() => setManual(null)}
+                  >
+                    Change method
+                  </button>
+                  <button
+                    type="submit"
+                    className={`${primaryBtn} !w-auto px-6`}
+                    disabled={!utr.trim() || proof.isPending}
+                  >
+                    Submit payment details
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Haven&apos;t paid yet? You can come back to this page from My account — your
+                  details are saved.
+                </p>
+              </form>
             </div>
-            <form
-              className="space-y-3"
-              onSubmit={(e) => {
-                e.preventDefault()
-                if (utr.trim()) proof.mutate()
-              }}
-            >
-              <FormField label="UTR / transaction reference" required>
-                <Input value={utr} onChange={(e) => setUtr(e.target.value)} />
-              </FormField>
-              <FormField label="Note (optional)">
-                <Input value={note} onChange={(e) => setNote(e.target.value)} />
-              </FormField>
-              {proof.error && <ErrorAlert error={proof.error} />}
-              <Button type="submit" disabled={!utr.trim() || proof.isPending}>
-                Submit payment details
-              </Button>
-            </form>
-          </div>
-        )}
-      </section>
+          )}
+        </section>
 
-      <aside
-        className="h-fit space-y-1 rounded-xl border bg-card p-4 text-sm"
-        aria-label="Order summary"
-      >
-        <h2 className="font-semibold">{plan?.name ?? 'Plan'}</h2>
-        <p className="text-muted-foreground">{INTERVAL_TITLE[interval]}</p>
-        {price && (
-          <>
-            <p>Price {money(priceTotals(price).subtotal, price.currency)}</p>
-            <p>
-              GST {price.gst_rate}% {money(priceTotals(price).tax, price.currency)}
-            </p>
-            <p className="font-bold">Total {money(priceTotals(price).total, price.currency)}</p>
-          </>
+        {plan && (
+          <OrderSummary
+            plan={plan}
+            price={price}
+            interval={interval}
+            note={
+              manual
+                ? 'GST invoice is issued after we confirm the payment.'
+                : plan.approval_mode === 'MANUAL'
+                  ? 'Needs admin approval. Full refund if not approved.'
+                  : undefined
+            }
+          />
         )}
-      </aside>
+      </div>
     </div>
   )
 }

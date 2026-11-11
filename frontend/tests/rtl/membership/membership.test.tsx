@@ -57,7 +57,7 @@ describe('Membership admin', () => {
     render(<PlansPage />)
     expect(await screen.findByText('Gold')).toBeInTheDocument()
     expect(screen.getByText(/4,999\.00 \/ Yearly/)).toBeInTheDocument()
-    expect(screen.getByText('512')).toBeInTheDocument()
+    expect(screen.getAllByText('512').length).toBeGreaterThan(0)
   })
 
   it('members list sends the chosen filters to the API', async () => {

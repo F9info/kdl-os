@@ -17,9 +17,9 @@ export function useMemberSession() {
   const refreshing = useRef(false)
 
   useEffect(() => {
-    if (isLoading) return
+    // Public layouts never clear isLoading for a restored session, so do not wait on it here.
     if (!isAuthenticated) {
-      router.replace('/login')
+      if (!isLoading) router.replace('/membership/login')
       return
     }
     if (user?.must_change_password) {
@@ -28,12 +28,16 @@ export function useMemberSession() {
     }
     if (!accessToken && !refreshing.current) {
       refreshing.current = true
-      fetch(`${API_URL}/auth/refresh`, { method: 'POST', credentials: 'include' })
+      fetch(`${API_URL}/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      })
         .then((r) => (r.ok ? r.json() : Promise.reject(r)))
         .then((b: { data: { accessToken: string } }) => setAuth(user!, b.data.accessToken))
         .catch(() => {
           clearAuth()
-          router.replace('/login')
+          router.replace('/membership/login')
         })
         .finally(() => {
           refreshing.current = false
@@ -41,5 +45,5 @@ export function useMemberSession() {
     }
   }, [isLoading, isAuthenticated, accessToken, user, setAuth, clearAuth, router])
 
-  return { ready: !isLoading && isAuthenticated && !!accessToken && !user?.must_change_password }
+  return { ready: isAuthenticated && !!accessToken && !user?.must_change_password }
 }

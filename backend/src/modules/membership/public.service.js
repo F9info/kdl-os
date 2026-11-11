@@ -4,14 +4,16 @@ import { signAccessToken, signRefreshToken, storeRefreshToken } from '../auth/se
 import { allowsMemberType, signupOutcome } from './domain.js';
 import { getDriver } from './drivers/index.js';
 import { webhookSecretOf } from './providers.service.js';
-import { activate, createAccount, createSubscription, fieldsForPlan, getPlanBySlug, markPaid, saveFieldValues, withBreakdown } from './core.js';
+import { activate, assertSeat, createAccount, createSubscription, fieldsForPlan, getPlanBySlug, markPaid, saveFieldValues, withApprovalDefault, withBreakdown } from './core.js';
+import { verifySignupToken } from './auth/otp.service.js';
 import { getSettings } from './settings.js';
+import { normalizeMobile } from './auth/otp.service.js';
 import { httpError, recordEvent } from './util.js';
 import { logger } from '../../shared/utils/logger.js';
 
 export async function listPublicPlans() {
   const plans = await prisma.membershipPlan.findMany({
-    where: { visibility: 'PUBLIC' },
+    where: { visibility: 'PUBLIC', status: 'ACTIVE' },
     include: { prices: { where: { is_active: true }, orderBy: { amount: 'asc' } }, benefits: { orderBy: { sort: 'asc' } } },
     orderBy: [{ sort: 'asc' }, { tier: 'asc' }],
   });
@@ -41,6 +43,7 @@ export async function signup(body) {
   const settings = await getSettings();
   if (!settings.signup.member_types.includes(body.member_type)) throw httpError(422, 'This kind of membership is not open for sign-up');
   const plan = await getPlanBySlug(body.plan_slug);
+  await assertSeat(plan);
   if (!allowsMemberType(plan, body.member_type)) throw httpError(422, `Plan ${plan.name} is not open to ${body.member_type.toLowerCase()} members`);
   let price = null;
   if (!plan.is_free) {
@@ -48,16 +51,23 @@ export async function signup(body) {
     if (!price) throw httpError(422, 'Choose a billing interval this plan offers');
   }
   const fields = await fieldsForPlan(plan.id, body.member_type);
-  const outcome = signupOutcome(plan);
+  const outcome = signupOutcome(await withApprovalDefault(plan));
 
-  const { fields: values, plan_slug: _s, interval: _i, ...core } = body;
+  // OTP sign-up: the mobile was proven by a code, so there is no password (a random unusable one is stored)
+  const { fields: values, plan_slug: _s, interval: _i, verification_token, ...core } = body;
+  if (verification_token) {
+    const proven = verifySignupToken(verification_token);
+    if (!proven || proven !== normalizeMobile(core.mobile)) throw httpError(422, 'Mobile verification expired: verify your number again');
+    core.password = crypto.randomBytes(24).toString('base64url');
+  } else if (!core.password) throw httpError(422, 'Password is required');
+  if (core.whatsapp_opt_in) Object.assign(core, { whatsapp_opt_in_at: new Date(), whatsapp_opt_in_source: 'signup' });
   const result = await prisma.$transaction(
     async (tx) => {
       const { user, member } = await createAccount(tx, core);
       await saveFieldValues(tx, member.id, values ?? {}, fields);
       let sub = await createSubscription(tx, { member, plan, price, status: outcome.status === 'PENDING_APPROVAL' ? 'PENDING_APPROVAL' : 'PENDING_PAYMENT' });
-      await recordEvent(tx, { key: 'member.joined', member_id: member.id, actor: user.id, data: { plan: plan.slug, member_type: member.member_type }, description: `${member.full_name} joined (${plan.name})` });
-      if (outcome.status === 'ACTIVE') sub = await activate(tx, sub.id, { actor: user.id });
+      await recordEvent(tx, { key: 'member.joined', member_id: member.id, actor: user.id, data: { plan: plan.slug, member_type: member.member_type, free: plan.is_free, subscription_id: sub.id }, description: `${member.full_name} joined (${plan.name})` });
+      if (outcome.status === 'ACTIVE' || outcome.status === 'TRIALING') sub = await activate(tx, sub.id, { actor: user.id, trial: outcome.status === 'TRIALING' });
       return { user, member: await tx.member.findUnique({ where: { id: member.id } }), subscription: sub };
     },
     { timeout: 30_000 }
@@ -109,6 +119,7 @@ export async function handleWebhook(providerKey, { rawBody, headers, body }) {
       else await markPaid(payment.id, { gatewayPaymentId: evt.payment_id });
     } else if (payment && evt.type === 'payment.failed' && payment.status === 'PENDING') {
       await prisma.membershipPayment.update({ where: { id: payment.id }, data: { status: 'FAILED', failure_reason: evt.reason ?? 'Payment failed' } });
+      await recordEvent(prisma, { key: 'payment.failed', member_id: payment.member_id, data: { payment_id: payment.id, subscription_id: payment.subscription_id }, description: `Payment ${payment.reference} failed` });
     }
   }
   await prisma.membershipWebhookEvent.update({ where: { id: row.id }, data: { processed: true } });

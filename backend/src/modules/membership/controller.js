@@ -76,14 +76,25 @@ export const getAccess = h((req) => me.accessFor(req.member, v(req).query.path))
 export const getLibrary = h((req) => me.library(req.member));
 
 // ----- admin -----
-export const adminOverview = h(() => billing.overview());
+export const adminOverview = h((req) => billing.overview(req.query));
+export const adminApprovalsCount = h(() => billing.approvalsCount());
+export const adminPlanOrder = h((req) => plans.orderPlans(v(req).body.ids, actor(req)));
+export const adminSegments = h(() => members.listSegments());
+export const adminSegmentCreate = h((req) => members.createSegment(v(req).body, actor(req)), 201);
+export const adminSegmentDelete = h((req) => members.deleteSegment(v(req).params.id, actor(req)));
+export const adminGstin = h((req) => members.lookupGstin(req.query.gstin));
+export const adminChangePlanQuote = h((req) => members.changePlanQuote(req.params.id, req.query));
+export const adminSendReset = h((req) => members.sendPasswordReset(v(req).params.id, actor(req)));
+export const adminResendWelcome = h((req) => members.resendWelcome(v(req).params.id, actor(req)));
+export const postResume = h((req) => co.resume(req.member, actor(req)));
+export const postAutoRenew = h((req) => co.setAutoRenew(req.member, v(req).body.enabled, actor(req)).then((subscription) => ({ subscription })));
 
 export const adminPlans = h((req) => plans.listPlans(v(req).query));
 export const adminPlanCreate = h((req) => plans.createPlan(v(req).body, actor(req)), 201);
 export const adminPlanGet = h((req) => plans.getPlan(v(req).params.id));
 export const adminPlanUpdate = h((req) => plans.updatePlan(v(req).params.id, v(req).body, actor(req)));
 export const adminPlanDelete = h((req) => plans.deletePlan(v(req).params.id, actor(req)));
-export const adminPlanArchive = h((req) => plans.archivePlan(v(req).params.id, actor(req)));
+export const adminPlanArchive = h((req) => plans.archivePlan(v(req).params.id, actor(req), v(req).body));
 export const adminPriceCreate = h((req) => plans.addPrice(v(req).params.id, v(req).body, actor(req)), 201);
 export const adminPriceUpdate = h((req) => plans.updatePrice(v(req).params.id, v(req).body, actor(req)));
 export const adminPriceDelete = h((req) => plans.removePrice(v(req).params.id, actor(req)));
@@ -112,9 +123,9 @@ export const adminImportPreview = h((req) => members.importPreview(v(req).body))
 export const adminImportCommit = h((req) => members.importCommit(v(req).body, actor(req)), 201);
 export const adminMemberExport = async (req, res, next) => {
   try {
-    const csv = await members.exportMembers(v(req).query);
+    const csv = await members.exportMembers(v(req).query, actor(req));
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename="members.csv"');
+    res.setHeader('Content-Disposition', `attachment; filename="members.${v(req).query.format === 'xlsx' ? 'xlsx.csv' : 'csv'}"`);
     return res.status(200).send(csv);
   } catch (err) {
     next(err);
