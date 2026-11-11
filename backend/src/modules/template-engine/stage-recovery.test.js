@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../../config/database.js', () => ({ prisma: {} }));
 vi.mock('./drivers/index.js', () => ({ getDriver: vi.fn() }));
+vi.mock('../identity/read.js', () => ({ readIdentity: vi.fn() }));
 vi.mock('./ai-client.js', () => ({
   aiServicesConfigured: vi.fn(),
   requestWebsiteCopy: vi.fn(),
@@ -23,6 +24,7 @@ vi.mock('../credits/service.js', () => ({
 
 import { prisma } from '../../config/database.js';
 import { retryStage, skipStage, generateWebsiteCopy } from './service.js';
+import { readIdentity } from '../identity/read.js';
 import { aiServicesConfigured, requestWebsiteCopy } from './ai-client.js';
 import { withCreditHold, CreditError } from '../credits/service.js';
 import { CONSTRUCTION_HERO_HOME, CONSTRUCTION_ABOUT_SPLIT } from './drivers/website-seed-content.js';
@@ -224,12 +226,12 @@ describe('generateWebsiteCopy', () => {
   const doneWebsiteStage = () =>
     stage('WEBSITE', 'DONE', 'stage-WEBSITE-1');
 
-  function makeSettingFields() {
-    return [
-      { slug: 'brand-profile-company-name', value: 'Acme Co' },
-      { slug: 'brand-profile-business-description', value: 'We build things.' },
-    ];
-  }
+  const makeIdentity = (over = {}) => ({
+    company_name: 'Acme Co',
+    app_name: '',
+    description: 'We build things.',
+    ...over,
+  });
 
   // Captured by the withCreditHold mock below so tests can assert on the
   // actual µc amount settled (actualMc), not just that a hold happened.
@@ -255,7 +257,7 @@ describe('generateWebsiteCopy', () => {
       findFirst: vi.fn().mockResolvedValue({ id: 'page-home', data: makeHomePageData() }),
       update: vi.fn().mockResolvedValue({}),
     };
-    prisma.settingField = { findMany: vi.fn().mockResolvedValue(makeSettingFields()) };
+    readIdentity.mockResolvedValue(makeIdentity());
     requestWebsiteCopy.mockResolvedValue({
       success: true,
       model: 'claude-sonnet-4-6',
@@ -300,7 +302,7 @@ describe('generateWebsiteCopy', () => {
       findFirst: vi.fn().mockResolvedValue({ id: 'page-home', data: makeHomePageData() }),
       update: vi.fn(),
     };
-    prisma.settingField = { findMany: vi.fn().mockResolvedValue(makeSettingFields()) };
+    readIdentity.mockResolvedValue(makeIdentity());
     withCreditHold.mockRejectedValue(new CreditError('INSUFFICIENT_CREDITS', 'nope'));
 
     const result = await generateWebsiteCopy('run-1', 'proj-A', 'user-1');
@@ -318,7 +320,7 @@ describe('generateWebsiteCopy', () => {
       findFirst: vi.fn().mockResolvedValue({ id: 'page-home', data: makeHomePageData() }),
       update: vi.fn(),
     };
-    prisma.settingField = { findMany: vi.fn().mockResolvedValue(makeSettingFields()) };
+    readIdentity.mockResolvedValue(makeIdentity());
     requestWebsiteCopy.mockRejectedValue(Object.assign(new Error('ai-services unreachable'), { code: 'AI_TRANSPORT' }));
 
     const result = await generateWebsiteCopy('run-1', 'proj-A', 'user-1');
@@ -359,7 +361,7 @@ describe('generateWebsiteCopy', () => {
       findFirst: vi.fn().mockResolvedValue({ id: 'page-home', data: makeHomePageData() }),
       update: vi.fn(),
     };
-    prisma.settingField = { findMany: vi.fn().mockResolvedValue(makeSettingFields()) };
+    readIdentity.mockResolvedValue(makeIdentity());
     aiServicesConfigured.mockReturnValue(false);
 
     const result = await generateWebsiteCopy('run-1', 'proj-A', 'user-1');
@@ -379,12 +381,7 @@ describe('generateWebsiteCopy', () => {
       findFirst: vi.fn().mockResolvedValue({ id: 'page-home', data: makeHomePageData() }),
       update: vi.fn(),
     };
-    prisma.settingField = {
-      findMany: vi.fn().mockResolvedValue([
-        { slug: 'brand-profile-company-name', value: 'Acme Co' },
-        { slug: 'brand-profile-business-description', value: null },
-      ]),
-    };
+    readIdentity.mockResolvedValue(makeIdentity({ description: '' }));
 
     const result = await generateWebsiteCopy('run-1', 'proj-A', 'user-1');
 
@@ -394,7 +391,7 @@ describe('generateWebsiteCopy', () => {
     expect(prisma.builderPage.update).not.toHaveBeenCalled();
   });
 
-  it('returns patchedBlocks: [] with no AI call when the business-description field row is absent entirely', async () => {
+  it('returns patchedBlocks: [] with no AI call when the business description is blank (whitespace only)', async () => {
     const websiteStage = { ...doneWebsiteStage(), outputRef: { pageKeyToId: { home: 'page-home' } } };
     prisma.templateEngineRun = {
       findUnique: vi.fn().mockResolvedValue(makeRun([websiteStage])),
@@ -403,10 +400,7 @@ describe('generateWebsiteCopy', () => {
       findFirst: vi.fn().mockResolvedValue({ id: 'page-home', data: makeHomePageData() }),
       update: vi.fn(),
     };
-    // Only company-name comes back — business-description row doesn't exist yet.
-    prisma.settingField = {
-      findMany: vi.fn().mockResolvedValue([{ slug: 'brand-profile-company-name', value: 'Acme Co' }]),
-    };
+    readIdentity.mockResolvedValue(makeIdentity({ description: '   ' }));
 
     const result = await generateWebsiteCopy('run-1', 'proj-A', 'user-1');
 
@@ -441,13 +435,13 @@ describe('generateWebsiteCopy', () => {
       findFirst: vi.fn().mockResolvedValue({ id: 'page-home', data: fullyEditedData }),
       update: vi.fn(),
     };
-    prisma.settingField = { findMany: vi.fn() };
+    
 
     const result = await generateWebsiteCopy('run-1', 'proj-A', 'user-1');
 
     expect(result).toEqual({ patchedBlocks: [] });
     // Bails out before even reading intake fields — no wasted DB round trip.
-    expect(prisma.settingField.findMany).not.toHaveBeenCalled();
+    expect(readIdentity).not.toHaveBeenCalled();
     expect(requestWebsiteCopy).not.toHaveBeenCalled();
     expect(withCreditHold).not.toHaveBeenCalled();
     expect(prisma.builderPage.update).not.toHaveBeenCalled();

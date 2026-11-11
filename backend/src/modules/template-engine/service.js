@@ -2,6 +2,7 @@
 import { prisma } from '../../config/database.js';
 import { getDriver } from './drivers/index.js';
 import { enqueueSiteBuild } from './site/queue.js';
+import { readIdentity } from '../identity/read.js';
 import { aiServicesConfigured, requestWebsiteCopy } from './ai-client.js';
 import { withCreditHold } from '../credits/service.js';
 import { WEBSITE_COPY_GENERATION_COST } from './costs.js';
@@ -231,12 +232,9 @@ export async function generateWebsiteCopy(runId, projectId, userId) {
   const targets = buildGenerationTargets(page.data);
   if (targets.length === 0) return { patchedBlocks: [] };
 
-  const bizFields = await prisma.settingField.findMany({
-    where: { slug: { in: ['brand-profile-company-name', 'brand-profile-business-description'] } },
-  });
-  const companyName = bizFields.find((f) => f.slug === 'brand-profile-company-name')?.value || 'Your Business';
-  const businessDescription =
-    bizFields.find((f) => f.slug === 'brand-profile-business-description')?.value || '';
+  const identity = await readIdentity();
+  const companyName = identity.company_name?.trim() || identity.app_name?.trim() || 'Your Business';
+  const businessDescription = identity.description?.trim() || '';
   if (!businessDescription) return { patchedBlocks: [] };
 
   if (!aiServicesConfigured()) return { patchedBlocks: [] };
