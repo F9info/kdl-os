@@ -1,8 +1,8 @@
 """Guide text for build.py. Markdown-ish: ![caption](img-name) is a screenshot from img/,
 ``` is a terminal block, > is a callout, [[flow: a | b]] is a step strip, [[mock:x]] a drawn mockup."""
 
-SIZE = {'identity-start': (1153, 809), 'modules-start': (1900, 580), 'brands-start': (1920, 550), 'landing-start': (1691, 829), 'new-landing-start': (767, 883)}
-CROP = {'brands-start': (32, 0), 'landing-start': (0, 69)}  # px cut from the top (browser address bar)  # screenshots that are not 1360x820
+SIZE = {'identity-start': (1153, 809), 'modules-start': (1900, 580), 'brands-start': (1920, 550), 'landing-start': (1691, 829), 'new-landing-start': (767, 883), 'editor-start': (1920, 879), 'create-btn': (458, 168)}
+CROP = {'brands-start': (32, 0), 'landing-start': (0, 69), 'editor-start': (0, 14)}  # px cut from the top (browser address bar)  # screenshots that are not 1360x820
 
 ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a leading < puts the label left of the dot
  'login': [(870, 404, 'Click here and type your email'), (835, 487, 'Click here and type your password'), (870, 541, 'Click Sign in'), (489, 594, '<Forgot password? Click here')],
@@ -31,6 +31,9 @@ ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a l
  'brands-start': [(216, 415, 'Click Brands in the left menu'), (1100, 202, 'Click here to open Landing Pages')],
  'landing-start': [(1468, 56, '<Need a fully custom page? Click New landing page'), (190, 570, 'Click here to use this ready-made design')],
  'new-landing-start': [(547, 179, '<Click here to type the page name'), (547, 262, '<Click here to edit the web address (slug)'), (547, 465, '<Template you picked. Click another to change it'), (495, 786, '<Click Create and edit to open the editor')],
+ 'create-btn': [(268, 68, 'Click Create and edit')],
+ 'editor-start': [(245, 112, 'Four tabs: Section (add), Reorder, Style, Content'), (245, 300, 'Click a section to add it to the page'),
+                  (1000, 400, 'Click any text or picture on the page to select it'), (1863, 62, '<Click Save to keep your changes')],
  'dashboard': [(1336, 301, '<Click Manage projects to switch project'), (347, 530, 'Click a shortcut to jump straight there'), (130, 85, 'Dashboard'), (130, 125, 'Click Documents to open these guides')],
  'documents': [(690, 290, 'Click a guide to open it as a PDF in a new tab'), (1150, 290, '<Installation and flow guides')],
  'activity-log': [(455, 173, '<Click here to filter by person'), (643, 173, 'Click here to filter by module'), (842, 173, 'Pick a start date'), (1022, 173, '<Pick an end date')],
@@ -167,6 +170,18 @@ A **New landing page** window opens with the template you picked already selecte
 To use a different design, click another option under **Template** (choose **Blank** for a page with only a header and footer). Then click **Create and edit** to open the page in the editor.
 ![New landing page window](new-landing-start)
 [[mock:dlg_new_landing]]"""
+
+EDITOR_START = """## Step 7. Click Create and edit, then change the page
+Click **Create and edit**. The page opens in the editor.
+![Click Create and edit](create-btn)
+
+Change the page like this:
+- **Content and images:** click a block on the page, then use the **Content** tab to change its text, replace its picture and edit its links (for example a button's address).
+- **Look (UI):** use the **Style** tab for colours, fonts and spacing.
+- **Sections:** use the **Section** tab to add sections from the list (Hero Slider, Welcome, Services and more) and the **Reorder** tab to move them. This is the section builder.
+- **SEO:** the editor has no SEO button. Set the page title and description defaults in **Admin Settings > SEO**.
+- Click **Preview** to see the page, then **Save**. The page stays a **Draft** until you publish it.
+![The landing page editor](editor-start)"""
 
 WIZARD = """## Part B. First-run setup wizard
 On a fresh install a **Setup wizard** opens over the admin. It asks three things, in this order.
@@ -471,7 +486,7 @@ Admin is always on, so "only landing page" still includes the admin you sign in 
      "branded landing pages at `/p/<slug>` with a working form, plus the admin that runs them.",
      "Landing Pages (leave Website off). There is no starter-website step.",
      IDENTITY + "\n\n" + THEMES + "\n\n" + LANDING + "\n\n" + ADMIN_AREA,
-     signin_extra=IDENTITY_START + "\n\n" + MODULES_START + "\n\n" + BRANDS_START + "\n\n" + LANDING_START + "\n\n" + NEW_LANDING_START + "\n\n", cover=False,
+     signin_extra=IDENTITY_START + "\n\n" + MODULES_START + "\n\n" + BRANDS_START + "\n\n" + LANDING_START + "\n\n" + NEW_LANDING_START + "\n\n" + EDITOR_START + "\n\n", cover=False,
      modules=modules_block(M_LAND, "Notifications, Membership", "Frontend bundle, Website, Templates, Sectors, Catalog, Work, FAQ, Team", "landing")).replace('## Sign in', '## Step 1. Sign in').replace('## Open Application Identity', '## Step 2. Open Application Identity')),
  '03-static-website-only': ("Flow 3: Static website only (with admin)",
    "Ship a website as plain files hosted anywhere, with no live web app in front of visitors.",

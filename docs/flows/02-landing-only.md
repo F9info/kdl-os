@@ -32,6 +32,18 @@ To use a different design, click another option under **Template** (choose **Bla
 ![New landing page window](new-landing-start)
 [[mock:dlg_new_landing]]
 
+## Step 7. Click Create and edit, then change the page
+Click **Create and edit**. The page opens in the editor.
+![Click Create and edit](create-btn)
+
+Change the page like this:
+- **Content and images:** click a block on the page, then use the **Content** tab to change its text, replace its picture and edit its links (for example a button's address).
+- **Look (UI):** use the **Style** tab for colours, fonts and spacing.
+- **Sections:** use the **Section** tab to add sections from the list (Hero Slider, Welcome, Services and more) and the **Reorder** tab to move them. This is the section builder.
+- **SEO:** the editor has no SEO button. Set the page title and description defaults in **Admin Settings > SEO**.
+- Click **Preview** to see the page, then **Save**. The page stays a **Draft** until you publish it.
+![The landing page editor](editor-start)
+
 ## Part B. First-run setup wizard
 On a fresh install a **Setup wizard** opens over the admin. It asks three things, in this order.
 

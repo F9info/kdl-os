@@ -136,6 +136,7 @@ def render(md):
                 left = lab.startswith('<'); lab = lab.lstrip('<')
                 pins += (f'<div class="pin{" l" if left else ""}" style="left:{x*100/W:.2f}%;top:{y*100/H:.2f}%"><i>{n}</i><b>{html.escape(lab)}</b></div>')
             wst = f' style="overflow:hidden;aspect-ratio:{W}/{H}"' if cr or cb else ''
+            if W < 600: wst = ' style="width:45%;margin:0 auto"'
             if W < H: wst = ' style="width:52%;margin:0 auto"'  # tall screenshots (dialogs) stay narrow so the step fits one page
             ist = f' style="margin-top:-{cr*100/W:.3f}%"' if cr else ''
             out.append(f'<figure><div class=w{wst}><img src="file://{src}"{ist}>{pins}</div><figcaption>{inline(m[1])}</figcaption></figure>'); continue
