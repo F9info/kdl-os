@@ -2,7 +2,7 @@ import re
 """Guide text for build.py. Markdown-ish: ![caption](img-name) is a screenshot from img/,
 ``` is a terminal block, > is a callout, [[flow: a | b]] is a step strip, [[mock:x]] a drawn mockup."""
 
-SIZE = {'identity-start': (1153, 809), 'modules-start': (1900, 580), 'brands-start': (1920, 550), 'landing-start': (1691, 829), 'new-landing-start': (767, 883), 'editor-start': (1920, 879), 'create-btn': (458, 168), 'save-btn': (125, 182), 'convert-start': (580, 642), 'brands-web': (1920, 550), 'typography': (1360, 900), 'font-settings': (1360, 900), 'button-styles': (1360, 900), 'layout-settings': (1621, 440), 'layouts-menu': (364, 128), 'layout-pick': (1632, 716), 'detail-editor': (1920, 962), 'detail-list': (1672, 371), 'page-editor': (1911, 863)}
+SIZE = {'identity-start': (1153, 809), 'modules-start': (1900, 580), 'brands-start': (1920, 550), 'landing-start': (1691, 829), 'new-landing-start': (767, 883), 'editor-start': (1920, 879), 'create-btn': (458, 168), 'save-btn': (125, 182), 'convert-start': (580, 642), 'brands-web': (1920, 550), 'typography': (1360, 900), 'font-settings': (1360, 900), 'button-styles': (1360, 900), 'layout-settings': (1621, 440), 'layouts-menu': (364, 128), 'layout-pick': (1632, 716), 'detail-editor': (1920, 962), 'detail-list': (1672, 371), 'page-editor': (1911, 863), 'documents': (1360, 900)}
 CROP = {'brands-start': (32, 0), 'landing-start': (0, 69), 'editor-start': (0, 14), 'brands-web': (32, 0), 'layout-pick': (0, 40), 'layout-settings': (0, 235), 'detail-editor': (0, 135), 'detail-list': (0, 70), 'page-editor': (10, 0)}  # px cut from the top (browser address bar)  # screenshots that are not 1360x820
 
 ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a leading < puts the label left of the dot
@@ -51,6 +51,7 @@ ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a l
  'detail-list': [(1510, 41, '<Click Add new to create another page'), (1010, 222, '<Click the pencil to edit text and images'), (1179, 222, 'Click the bin to delete a page')],
  'page-editor': [(230, 252, 'Click a section to add it to the page'), (900, 490, 'Click any text or picture to select it'), (1855, 70, '<Click Save')],
  'convert-btn': [(1200, 160, '<Click Convert to Static Website (top right of every Studio screen)')],
+ 'documents': [(705, 281, '<Not installed yet? Click Installation first'), (1160, 381, '<Click your flow to open its guide as a PDF')],
  'dashboard': [(1336, 301, '<Click Manage projects to switch project'), (347, 530, 'Click a shortcut to jump straight there'), (130, 85, 'Dashboard'), (130, 125, 'Click Documents to open these guides')],
  'documents': [(690, 290, 'Click a guide to open it as a PDF in a new tab'), (1150, 290, '<Installation and flow guides')],
  'activity-log': [(455, 173, '<Click here to filter by person'), (643, 173, 'Click here to filter by module'), (842, 173, 'Pick a start date'), (1022, 173, '<Pick an end date')],
@@ -638,58 +639,114 @@ N_LAND = ["**Change a landing page:** open http://localhost:3001/admin/landing-p
 N_LAND_STATIC = ["**Convert a landing page again:** click **Convert** on its card. The new files replace the same folder; copy them into your GitHub folder and push."]
 
 
-DOCS = {
- 'installation': ("Installation",
-   "Install KDL OS, run it and sign in for the first time.",
-   "# Installation\n\n**Goal:** get KDL OS running on your computer and sign in as admin.\n\n"
-   "[[flow: Clone | Configure .env | Run Docker | Create admin | Sign in]]\n\n" + PREREQ.replace("## Part A. Get the project running", "## Install KDL OS", 1)
-   + "\n\nNext: open the guide for the flow you chose (Admin > Documents).\n"),
- '00-choose-your-flow': ("Choose your flow",
-   "Pick the right guide for what you want to build.",
-   """# Choose your flow
+def number_steps_from1(*blocks):
+    """Like number_steps but numbering starts at Step 1 (guides that have no Sign in step)."""
+    out, n = [], 1
+    for b in blocks:
+        if b.startswith("## Step"):
+            b = re.sub(r"^## Step \d+\.", f"## Step {n}.", b, count=1); n += 1
+        out.append(b)
+    return "\n\n".join(out) + "\n"
 
-**Goal:** match what you want to build with the step-by-step guide that covers it from clone to publish.
-
-[[flow: Pick a flow | Open its guide | Clone and run | Enable modules | Build | Publish]]
-
-## Pick your combination
-| You want | Products to tick | Guide |
+INSTALL_STEPS = ("""## Step 0. Install three tools
+| Install | From | Check |
 |---|---|---|
-| Only the internal admin app | Admin (always on) | 01 Admin only |
-| Only campaign pages | Landing Pages | 02 Landing page only |
-| A website hosted anywhere as plain files | Website, then Convert | 03 Static website only |
-| A live, editable website | Website | 04 Web app and admin |
-| A live website and campaign pages | Website + Landing Pages | 05 Web app, landing and admin |
-| Plain-file website plus campaign pages | Website + Landing Pages, then Convert | 06 Static website and landing |
-| Live site that is also exported as plain files | Website, then Convert | 07 Web app and static website |
-| Everything, with optional Membership | Website + Landing Pages | 08 Full platform |
+| **Git** | https://git-scm.com | `git --version` |
+| **Docker Desktop** | https://www.docker.com/products/docker-desktop | `docker --version` |
+| **OpenSSL** | already on Mac and Linux | `openssl version` |
+
+Start Docker Desktop and wait until it says **running**. Then open Docker Desktop > Settings > Resources > Memory and set **8 GB**.
+
+> Windows: first install WSL (PowerShell as administrator: `wsl --install`, restart), install Docker Desktop, switch on WSL integration for Ubuntu, and type every command in this guide in the **Ubuntu** window.""",
+"""## Step 0. Clone the project
+```
+git clone https://github.com/F9info/kdl-os.git
+cd kdl-os
+```
+Stay inside the `kdl-os` folder for every command that follows.""",
+"""## Step 0. Create the settings file (.env)
+Paste the whole block into the terminal. It writes `.env` with fresh random secrets.
+""" + PREREQ.split("### A3. Create the settings file (.env)")[1].split("### A4.")[0].split("Paste the whole block into the terminal. It writes `.env` with fresh random secrets.")[1].strip("\n"),
+"""## Step 0. Build and start everything
+```
+docker compose up -d --build
+docker compose ps
+```
+The first build takes **10 to 20 minutes**; later starts take seconds. Wait until `backend` shows **healthy** (about a minute). The database migrations run by themselves when the backend starts.
+
+| Service | Address |
+|---|---|
+| App through nginx (use this) | http://localhost |
+| Frontend directly | http://localhost:3001 |
+| Backend API | http://localhost:4000 |
+| MinIO console (files) | http://localhost:9003 |
+| MeiliSearch (search) | http://localhost:7700 |""",
+"""## Step 0. Create the admin user
+```
+docker compose exec backend node prisma/seed.js
+```
+You should see `Seeded admin: admin@kdl.com`.""",
+"""## Step 0. Sign in
+Open **http://localhost/login**. Email `admin@kdl.com`, password `kdl-dev-seed-password`. KDL OS asks you to choose a new password on first sign-in. Then open **Admin > Documents** and follow the guide for the flow you chose.
+![The sign-in screen](login)
+> Forgot the password or locked out? `docker compose exec backend node scripts/reset-admin-password.js --email admin@kdl.com --password 'Admin@123'` (at least 8 characters), then sign in with it.""",
+"""## Notes: Everyday commands and problems
+This is not a step. Run the commands inside the `kdl-os` folder.
+
+| I want to | Type |
+|---|---|
+| Stop (keeps data) | `docker compose down` |
+| Start again | `docker compose up -d` |
+| See what runs | `docker compose ps` |
+| Update to the latest code | `git pull` then `docker compose up -d --build` |
+| Read backend logs | `docker compose logs backend --tail 100` |
+
+> `docker compose down -v` deletes **all your data**. Do not use it unless you want to start from zero.
+
+| Problem | Do this |
+|---|---|
+| A variable is missing | Wrong folder, or Step 3 was skipped. Go to `kdl-os` and repeat Step 3. |
+| Port already in use | Close the program using it (for example a local site on port 80). |
+| Build stops with Killed or out of memory | Give Docker 8 GB (Step 1), run Step 4 again. |
+| 502 Bad Gateway | Still starting. Wait 1 to 2 minutes and refresh. |
+| Wrong password | Did you run Step 5? The first password is `kdl-dev-seed-password`. |
+| Account locked / 429 | Wait a minute, or `docker compose restart backend`. |""")
+CHOOSE_STEPS = ("""## Step 0. Pick your combination
+| You want | Products | Guide |
+|---|---|---|
+| Only the internal admin app | Admin (always on) | Flow 1: Admin only |
+| Only campaign pages | Landing Pages | Flow 2: Landing page only |
+| A website hosted anywhere as plain files | Website, then Convert | Flow 3: Static website only |
+| A live, editable website | Website | Flow 4: Web app and admin |
+| A live website and campaign pages | Website + Landing Pages | Flow 5: Web app, landing pages and admin |
+| Plain-file website plus campaign pages | Website + Landing Pages, then Convert | Flow 6: Static website and landing pages |
+| Live site that is also exported as plain files | Website, then Convert | Flow 7: Web app and static website |
+| Everything, with optional Membership | Website + Landing Pages | Flow 8: Full platform |
 
 Admin is always on, so "only landing page" still includes the admin you sign in to.
 
-## How the guides work
-1. Not installed yet? Open the **Installation** guide first (Git, Docker, `.env`, `docker compose up`, create the admin).
-2. Every other guide starts at **Step 1. Sign in** and then follows one screen per page, with red "click here" labels on each screenshot.
-3. The last page of each guide is a **Notes** page: what to do when something changes later.
-
-## The products at a glance
-| Product | Turns on | Typical use |
-|---|---|---|
-| **Admin** (always on) | Users, Roles, Settings, Identity, Media | Internal business app |
-| **Website** | Frontend, Website, Page Editor UI, Themes, Media | Multi-page company site |
-| **Landing Pages** | Landing Pages, Page Editor UI, Themes, Media | Campaign and product pages |
-
-## How to decide quickly
+How to decide quickly:
 1. People, roles and settings only? **Admin only**.
 2. One or a few campaign pages? **Landing**.
 3. A multi-page site with live forms and menus? **Web app**.
 4. Cheap serverless hosting? **Static** (built in the Web app, then exported).
-5. Unsure? Start with **Web app and admin**. Landing or static can be added later without losing data.
+5. Unsure? Start with **Web app and admin**. Landing or static can be added later without losing data.""",
+"""## Step 0. Install KDL OS (if you have not yet)
+Not installed yet? Open the **Installation** guide first: Git, Docker, the `.env` file, `docker compose up`, create the admin and sign in. If KDL OS is already running, skip this step.""",
+"""## Step 0. Open the guide for your flow
+Sign in, then click **Documents** in the left menu. Click the card of your flow: the guide opens as a PDF in a new tab. Every guide starts at **Step 1. Sign in** and follows one screen per page, with red "click here" labels on each screenshot. The last page of each guide is a Notes page for later changes.
+![Documents: every guide opens from here](documents)""",
+"""## Notes: Changing your mind later
+This is not a step. Open **Admin Settings > Products** (/admin/settings/products), change the ticks and click **Apply products**. Turning a product off hides menu entries; it never deletes pages, users or files. Landing or static can be added later without losing data.
+![Products screen](products)""")
 
-## Changing your mind later
-**/admin/settings/products**: change the ticks and apply. Turning a product off hides menu entries; it never deletes pages, users or files.
-![Products screen](products)
-![Documents screen: all guides open from here](documents)
-"""),
+DOCS = {
+ 'installation': ("Installation",
+   "Install KDL OS, run it and sign in for the first time.",
+   number_steps_from1(*INSTALL_STEPS)),
+ '00-choose-your-flow': ("Choose your flow",
+   "Pick the right guide for what you want to build.",
+   number_steps_from1(*CHOOSE_STEPS)),
  '01-admin-only': ("Flow 1: Admin only",
    "Run the internal business application with no public website.",
    guide("Flow 1: Admin only", "Run the internal business application with no public website.", "", "", "", "",

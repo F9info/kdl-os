@@ -1,12 +1,4 @@
-# Installation
-
-**Goal:** get KDL OS running on your computer and sign in as admin.
-
-[[flow: Clone | Configure .env | Run Docker | Create admin | Sign in]]
-
-## Install KDL OS
-
-### A1. Install three tools
+## Step 1. Install three tools
 | Install | From | Check |
 |---|---|---|
 | **Git** | https://git-scm.com | `git --version` |
@@ -15,16 +7,16 @@
 
 Start Docker Desktop and wait until it says **running**. Then open Docker Desktop > Settings > Resources > Memory and set **8 GB**.
 
-> Windows: first install WSL (PowerShell as administrator: `wsl --install`, restart), install Docker Desktop, switch on WSL integration for Ubuntu, and type every command below in the **Ubuntu** window.
+> Windows: first install WSL (PowerShell as administrator: `wsl --install`, restart), install Docker Desktop, switch on WSL integration for Ubuntu, and type every command in this guide in the **Ubuntu** window.
 
-### A2. Clone the project
+## Step 2. Clone the project
 ```
 git clone https://github.com/F9info/kdl-os.git
 cd kdl-os
 ```
 Stay inside the `kdl-os` folder for every command that follows.
 
-### A3. Create the settings file (.env)
+## Step 3. Create the settings file (.env)
 Paste the whole block into the terminal. It writes `.env` with fresh random secrets.
 ```
 PG_PASS=$(openssl rand -hex 16)
@@ -68,7 +60,7 @@ chmod 600 .env
 ```
 Check with `ls -la .env` (about 2 KB). Never share or upload this file. No accounts or API keys are needed to run KDL OS. AI features need real keys later.
 
-### A4. Build and start everything
+## Step 4. Build and start everything
 ```
 docker compose up -d --build
 docker compose ps
@@ -83,15 +75,35 @@ The first build takes **10 to 20 minutes**; later starts take seconds. Wait unti
 | MinIO console (files) | http://localhost:9003 |
 | MeiliSearch (search) | http://localhost:7700 |
 
-### A5. Create the admin user
+## Step 5. Create the admin user
 ```
 docker compose exec backend node prisma/seed.js
 ```
 You should see `Seeded admin: admin@kdl.com`.
 
-### A6. Sign in
-Open **http://localhost/login**. Email `admin@kdl.com`, password `kdl-dev-seed-password`. KDL OS asks you to choose a new password on first sign-in.
+## Step 6. Sign in
+Open **http://localhost/login**. Email `admin@kdl.com`, password `kdl-dev-seed-password`. KDL OS asks you to choose a new password on first sign-in. Then open **Admin > Documents** and follow the guide for the flow you chose.
 ![The sign-in screen](login)
-> Forgot the password or locked out? `docker compose exec backend node scripts/reset-admin-password.js --email admin@kdl.com --password 'Admin@123'` (at least 8 characters), then sign in with it. 429 or "Account locked" while testing: wait a minute or `docker compose restart backend`.
+> Forgot the password or locked out? `docker compose exec backend node scripts/reset-admin-password.js --email admin@kdl.com --password 'Admin@123'` (at least 8 characters), then sign in with it.
 
-Next: open the guide for the flow you chose (Admin > Documents).
+## Notes: Everyday commands and problems
+This is not a step. Run the commands inside the `kdl-os` folder.
+
+| I want to | Type |
+|---|---|
+| Stop (keeps data) | `docker compose down` |
+| Start again | `docker compose up -d` |
+| See what runs | `docker compose ps` |
+| Update to the latest code | `git pull` then `docker compose up -d --build` |
+| Read backend logs | `docker compose logs backend --tail 100` |
+
+> `docker compose down -v` deletes **all your data**. Do not use it unless you want to start from zero.
+
+| Problem | Do this |
+|---|---|
+| A variable is missing | Wrong folder, or Step 3 was skipped. Go to `kdl-os` and repeat Step 3. |
+| Port already in use | Close the program using it (for example a local site on port 80). |
+| Build stops with Killed or out of memory | Give Docker 8 GB (Step 1), run Step 4 again. |
+| 502 Bad Gateway | Still starting. Wait 1 to 2 minutes and refresh. |
+| Wrong password | Did you run Step 5? The first password is `kdl-dev-seed-password`. |
+| Account locked / 429 | Wait a minute, or `docker compose restart backend`. |
