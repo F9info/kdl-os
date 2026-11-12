@@ -76,6 +76,7 @@ Before submitting for code review, verify every item:
 - [ ] `npx prisma migrate dev` applies cleanly; `npx prisma validate` exits 0
 - [ ] All routes are behind `moduleGate(slug)` + `authenticate` + `requirePermission`
 - [ ] Permissions are registered via the `permissions` array in manifest — never via manual seeder edits
+- [ ] `seed.js` follows [`docs/SEEDERS.md`](SEEDERS.md) (idempotent, never overwrites user edits) and `node scripts/verify-seeders.mjs` passes on a fresh database
 - [ ] Every mutation calls `writeActivityAsync` (PII-scrubbed — no passwords or tokens in `properties`)
 - [ ] Frontend pages are wrapped in `<ModuleGuard slug="<slug>">` and nav comes from the manifest only (never add links to `AdminSidebar.tsx`; `tests/regression/nav-config.test.ts` fails on an unknown icon, a duplicate link or title, a link to a page that does not exist, or an unregistered permission)
 - [ ] Module works correctly when other non-core modules are disabled (no cross-module coupling)

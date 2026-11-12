@@ -67,11 +67,7 @@ export async function seedBrandKit(prisma) {
       is_active: true,
       owner_module: OWNER_MODULE,
     },
-    update: {
-      name: 'Brand Kit (Webapp)',
-      is_active: true,
-      owner_module: OWNER_MODULE,
-    },
+    update: { owner_module: OWNER_MODULE }, // keep a renamed or deactivated type
   });
 
   // 2. Upsert the grouping Category
@@ -84,12 +80,7 @@ export async function seedBrandKit(prisma) {
       is_active: true,
       owner_module: OWNER_MODULE,
     },
-    update: {
-      name: 'Brand Kit Tokens',
-      type_id: type.id,
-      is_active: true,
-      owner_module: OWNER_MODULE,
-    },
+    update: { type_id: type.id, owner_module: OWNER_MODULE }, // keep a renamed or deactivated category
   });
 
   // 3. Upsert all SettingField rows derived from buildTokenPayload() slug list

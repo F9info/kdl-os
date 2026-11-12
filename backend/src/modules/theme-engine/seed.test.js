@@ -96,7 +96,7 @@ describe('theme-engine seed (A3 gate)', () => {
     expect(row.category_id).toBe(db.category.rows.get('webapp.buttons.primary_button.dark').id);
   });
 
-  it('re-run after a manual edit restores schema defaults', async () => {
+  it('re-run after a manual edit keeps the user value (a seed never resets customised settings)', async () => {
     const db = makeFakePrisma();
     await seedThemeEngine(db);
     const slug = 'webapp.buttons.dark.primary_button.background_color';
@@ -104,7 +104,21 @@ describe('theme-engine seed (A3 gate)', () => {
 
     const res = await seedThemeEngine(db);
     expect(res.created).toBe(0);
+    expect(res.updated).toBe(0);
+    expect(db.settingField.rows.get(slug).value).toBe('#000000');
+  });
+
+  it('re-run still syncs structure (label, input type, sort) without touching the value', async () => {
+    const db = makeFakePrisma();
+    await seedThemeEngine(db);
+    const slug = 'webapp.buttons.dark.primary_button.background_color';
+    const row = db.settingField.rows.get(slug);
+    row.value = '#000000';
+    row.input_type = 'text'; // stale structure from an older release
+
+    const res = await seedThemeEngine(db);
     expect(res.updated).toBe(1);
-    expect(db.settingField.rows.get(slug).value).toBe('#4f8ef7');
+    expect(db.settingField.rows.get(slug).input_type).toBe('color');
+    expect(db.settingField.rows.get(slug).value).toBe('#000000');
   });
 });

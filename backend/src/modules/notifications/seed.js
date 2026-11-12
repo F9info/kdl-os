@@ -59,7 +59,7 @@ export async function seedNotifications(prismaClient = prisma) {
   for (const cat of CATEGORIES) {
     const row = await prismaClient.notificationCategory.upsert({
       where: { slug: cat.slug },
-      update: { name: cat.name, description: cat.description, is_system: true },
+      update: {}, // created once; an edited category is never reset
       create: { ...cat, is_system: true },
     });
     categoryIds[cat.slug] = row.id;
@@ -69,7 +69,7 @@ export async function seedNotifications(prismaClient = prisma) {
     const category_id = categoryIds[category_slug];
     await prismaClient.notificationTemplate.upsert({
       where: { slug: tpl.slug },
-      update: { ...tpl, category_id },
+      update: {}, // created once; an edited subject/body is never reset
       create: { ...tpl, category_id },
     });
   }

@@ -25,6 +25,9 @@ export default async function seed(tx) {
     if (err.status !== 409) throw err;
   }
 
+  // A re-run that finds everything already there must not replace the record of what the first run created.
+  const created = summary.website.created.length + summary.landing.created.length;
+  if (!created) return;
   const value = JSON.stringify({ ...summary, at: new Date().toISOString() });
   await tx.appSetting.upsert({
     where: { key: DEMO_SUMMARY_KEY },

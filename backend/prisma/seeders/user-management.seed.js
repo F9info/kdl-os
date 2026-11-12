@@ -76,7 +76,7 @@ export async function seedUserManagement(prisma) {
   for (const r of ROLES) {
     roleBySlug[r.slug] = await prisma.rbacRole.upsert({
       where: { slug: r.slug },
-      update: { name: r.name, description: r.description, is_system: true },
+      update: { is_system: true }, // a renamed system role keeps its name
       create: { ...r, is_system: true },
     });
   }

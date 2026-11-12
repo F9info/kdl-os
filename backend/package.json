@@ -59,7 +59,8 @@
   },
   "prisma": {
     "schema": "prisma/schema",
-    "seed": "node prisma/seed.js"
+    "seed": "node prisma/seed.js",
+    "verify:seeders": "node scripts/verify-seeders.mjs"
   },
   "overrides": {
     "@hono/node-server": "^1.19.13",

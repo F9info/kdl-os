@@ -33,7 +33,7 @@ export async function seedWebsiteContentFields(prisma) {
   const type = await prisma.type.upsert({
     where: { slug: 'website-content' },
     create: { slug: 'website-content', name: 'Website Content', is_active: true },
-    update: { name: 'Website Content', is_active: true },
+    update: {}, // keep a renamed or deactivated type
   });
 
   const category = await prisma.category.upsert({
@@ -44,7 +44,7 @@ export async function seedWebsiteContentFields(prisma) {
       type_id: type.id,
       is_active: true,
     },
-    update: { name: 'General', type_id: type.id, is_active: true },
+    update: { type_id: type.id }, // keep a renamed or deactivated category
   });
 
   for (let i = 0; i < FIELD_DEFS.length; i++) {

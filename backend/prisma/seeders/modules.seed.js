@@ -40,8 +40,16 @@ export async function seedCoreModules(prisma) {
 
     if (!manifest.core) continue;
 
-    // Upsert Module row as ENABLED
-    await prisma.module.upsert({
+    // Register the core module ENABLED. An unchanged row is left alone (no write, no timestamp bump).
+    const have = await prisma.module.findUnique({ where: { slug: manifest.slug } });
+    const same =
+      have &&
+      have.name === manifest.name &&
+      (have.description ?? null) === (manifest.description ?? null) &&
+      have.version === manifest.version &&
+      have.is_core &&
+      have.status === 'ENABLED';
+    if (!same) await prisma.module.upsert({
       where: { slug: manifest.slug },
       create: {
         slug: manifest.slug,

@@ -101,7 +101,7 @@ async function seedInto(prismaClient) {
   for (const t of types.values()) {
     const row = await prismaClient.type.upsert({
       where: { slug: t.slug },
-      update: { name: t.name, is_active: t.is_active, owner_module: OWNER_MODULE },
+      update: { owner_module: OWNER_MODULE }, // keep a renamed or deactivated type
       create: { ...t, owner_module: OWNER_MODULE },
     });
     typeIds.set(t.slug, row.id);
@@ -118,7 +118,7 @@ async function seedInto(prismaClient) {
     };
     const row = await prismaClient.category.upsert({
       where: { slug: c.slug },
-      update: data,
+      update: { type_id: data.type_id, owner_module: OWNER_MODULE }, // keep a renamed or deactivated category
       create: { slug: c.slug, ...data },
     });
     catIds.set(c.slug, row.id);
@@ -156,12 +156,14 @@ async function seedInto(prismaClient) {
       creates.push(row);
     } else if (
       cur.field_name !== row.field_name || cur.input_type !== row.input_type ||
-      cur.value !== row.value || cur.options !== row.options ||
+      cur.options !== row.options ||
       cur.alt_text !== row.alt_text || cur.type_id !== row.type_id ||
       cur.category_id !== row.category_id || cur.sort !== row.sort ||
       cur.owner_module !== row.owner_module
     ) {
-      await prismaClient.settingField.update({ where: { slug: f.slug }, data: row });
+      // Structure only: `value` is what the user set (theme tokens), a re-run must never reset it.
+      const { value: _keepUserValue, ...structure } = row;
+      await prismaClient.settingField.update({ where: { slug: f.slug }, data: structure });
       updated += 1;
     }
   }

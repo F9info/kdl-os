@@ -54,6 +54,14 @@ describe('CMS install seed: Frontend ships a ready demo', () => {
     expect(stored.landing.created).toHaveLength(4);
   });
 
+  it('a re-run that creates nothing leaves the stored summary alone', async () => {
+    h.createStarterSite.mockResolvedValue({ created: [], skipped: ['home'] });
+    h.seedDemoLandingPages.mockResolvedValue({ created: [], skipped: ['business'] });
+    const tx = txWith(undefined);
+    await seed(tx);
+    expect(tx.appSetting.upsert).not.toHaveBeenCalled();
+  });
+
   it('with no default project yet it does not fail the install', async () => {
     h.createStarterSite.mockRejectedValue(
       Object.assign(new Error('Default project not found'), { status: 409 })
