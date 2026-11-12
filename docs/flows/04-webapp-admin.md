@@ -37,9 +37,15 @@ Click one card under **Button style** (Solid, Airy pill, Classic, Leaf, Outline,
 Open **Frontend > Navigation**. Click the page names you want in the menu (About, Services, Portfolio, Blog, Contact and so on), or type a custom page and click **Add**. Use the **Header menu** and **Footer menu** tabs. One page is created for every menu item, plus Home.
 ![Frontend > Navigation](navigation)
 
-## Step 10. Website stage: layout
-Set typography and fonts. Click **Create/Edit layout** to choose the Top header, Header and Footer. The header and footer of **Home** are shared by every public page.
-![Studio: Website stage](studio-website)
+## Step 10. Layouts: header and footer
+Click **Layouts** in the left menu (under **Frontend**). The page shows **Layout settings**: the header and footer used on every page of your website.
+![Frontend > Layouts](layouts-menu)
+
+KDL OS already has ready-made headers and footers. You can use them as they are. If you want a fully custom one, click **Create/Edit layout**.
+![Layout settings](layout-settings)
+
+The **Layout** page lists each section (Top header, Header, Footer and more) with several designs. Use the switch on the right to turn a section on or off, and pick a design: the one with the green tick is in use. For each design you can click **View** to preview it, **Edit** to change it, or **Create new** to build your own from scratch. Then create the layout to apply it to every page. The header and footer of **Home** are shared by every public page.
+![Layout: pick a design for each section](layout-pick)
 
 ## Step 11. Edit and publish the pages
 Open **Frontend > Pages**. Click **Edit** on a page to change its text, images and links in the section builder, then **Save** and **Publish**. Publish stops real problems (an empty page, a missing title, a broken link) and only suggests the rest. Click **Duplicate** to copy a page. **Frontend > Sections** holds reusable sections.

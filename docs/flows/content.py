@@ -2,8 +2,8 @@ import re
 """Guide text for build.py. Markdown-ish: ![caption](img-name) is a screenshot from img/,
 ``` is a terminal block, > is a callout, [[flow: a | b]] is a step strip, [[mock:x]] a drawn mockup."""
 
-SIZE = {'identity-start': (1153, 809), 'modules-start': (1900, 580), 'brands-start': (1920, 550), 'landing-start': (1691, 829), 'new-landing-start': (767, 883), 'editor-start': (1920, 879), 'create-btn': (458, 168), 'save-btn': (125, 182), 'convert-start': (580, 642), 'brands-web': (1920, 550), 'typography': (1360, 900), 'font-settings': (1360, 900), 'button-styles': (1360, 900)}
-CROP = {'brands-start': (32, 0), 'landing-start': (0, 69), 'editor-start': (0, 14), 'brands-web': (32, 0)}  # px cut from the top (browser address bar)  # screenshots that are not 1360x820
+SIZE = {'identity-start': (1153, 809), 'modules-start': (1900, 580), 'brands-start': (1920, 550), 'landing-start': (1691, 829), 'new-landing-start': (767, 883), 'editor-start': (1920, 879), 'create-btn': (458, 168), 'save-btn': (125, 182), 'convert-start': (580, 642), 'brands-web': (1920, 550), 'typography': (1360, 900), 'font-settings': (1360, 900), 'button-styles': (1360, 900), 'layout-settings': (1621, 440), 'layouts-menu': (364, 128), 'layout-pick': (1632, 716)}
+CROP = {'brands-start': (32, 0), 'landing-start': (0, 69), 'editor-start': (0, 14), 'brands-web': (32, 0), 'layout-pick': (0, 40), 'layout-settings': (0, 235)}  # px cut from the top (browser address bar)  # screenshots that are not 1360x820
 
 ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a leading < puts the label left of the dot
  'login': [(870, 404, 'Click here and type your email'), (835, 487, 'Click here and type your password'), (870, 541, 'Click Sign in'), (489, 594, '<Forgot password? Click here')],
@@ -42,6 +42,9 @@ ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a l
                  (892, 822, '<Click Save'), (1295, 822, '<Click Next: Typography')],
  'font-settings': [(472, 364, 'Click a box to change a size or spacing'), (1100, 289, 'Live preview of your fonts')],
  'button-styles': [(560, 327, 'Click a card to choose your button style')],
+ 'layouts-menu': [(190, 52, 'Click Layouts')],
+ 'layout-settings': [(880, 146, 'Click here to choose or build your header and footer')],
+ 'layout-pick': [(1506, 103, '<Switch this section on or off'), (700, 155, 'Ready-made designs: pick the one you like'), (1510, 540, '<Green tick = design in use'), (872, 571, 'Click Create new to design your own')],
  'dashboard': [(1336, 301, '<Click Manage projects to switch project'), (347, 530, 'Click a shortcut to jump straight there'), (130, 85, 'Dashboard'), (130, 125, 'Click Documents to open these guides')],
  'documents': [(690, 290, 'Click a guide to open it as a PDF in a new tab'), (1150, 290, '<Installation and flow guides')],
  'activity-log': [(455, 173, '<Click here to filter by person'), (643, 173, 'Click here to filter by module'), (842, 173, 'Pick a start date'), (1022, 173, '<Pick an end date')],
@@ -531,9 +534,15 @@ ST_PALETTE = """## Step 0. Color Palette
 Four brand colours are taken from your logo: Primary, Secondary, Tertiary and Quaternary. Keep them, or click a colour box and type a new code, click **Pick from logo** or **Randomize**. Then click **Submit palette**. The colours become the website's design tokens.
 ![Studio: Color Palette](studio-palette)"""
 
-ST_WEBSITE = """## Step 0. Website stage: layout
-Set typography and fonts. Click **Create/Edit layout** to choose the Top header, Header and Footer. The header and footer of **Home** are shared by every public page.
-![Studio: Website stage](studio-website)"""
+ST_WEBSITE = """## Step 0. Layouts: header and footer
+Click **Layouts** in the left menu (under **Frontend**). The page shows **Layout settings**: the header and footer used on every page of your website.
+![Frontend > Layouts](layouts-menu)
+
+KDL OS already has ready-made headers and footers. You can use them as they are. If you want a fully custom one, click **Create/Edit layout**.
+![Layout settings](layout-settings)
+
+The **Layout** page lists each section (Top header, Header, Footer and more) with several designs. Use the switch on the right to turn a section on or off, and pick a design: the one with the green tick is in use. For each design you can click **View** to preview it, **Edit** to change it, or **Create new** to build your own from scratch. Then create the layout to apply it to every page. The header and footer of **Home** are shared by every public page.
+![Layout: pick a design for each section](layout-pick)"""
 
 ST_TYPO = """## Step 0. Typography: choose the fonts
 The Website stage opens on **Typography**. Under **Heading** tick the font for titles, and under **Body** tick the font for normal text. To use another font, type its Google Font name (for example Roboto) and click **Add**, or click **Upload** to add your own font file. Click **Save**, then click **Next: Typography** to continue.
