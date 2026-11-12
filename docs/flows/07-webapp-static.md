@@ -10,7 +10,7 @@
 
 > Screenshots are from a running KDL OS install where these modules are already enabled, so cards show **Enabled** and **Disable**. On a fresh install the same cards show **Available** with an **Install** button (see the card mockup in Part C).
 
-## Sign in
+## Step 1. Sign in
 > KDL OS must already be installed and running. If not, follow the **Installation** guide first (Admin > Documents > Installation).
 
 Open **http://localhost/login**. Email `admin@kdl.com`, password `kdl-dev-seed-password`. KDL OS asks you to choose a new password on first sign-in.
