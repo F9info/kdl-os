@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '../utils'
 import LandingPagesPage from '@/app/admin/landing-pages/page'
-import { BrandingDialog } from '@/app/admin/landing-pages/BrandingDialog'
 
 const h = vi.hoisted(() => ({
   get: vi.fn(),
@@ -58,15 +57,6 @@ beforeEach(() => {
   h.search = ''
   h.can.mockReturnValue(true)
 })
-
-const SITE = {
-  id: 's1',
-  project_id: 'p1',
-  slug: 'spring',
-  name: 'Spring sale',
-  domain: null,
-  pages: [{ id: 'pg1', slug: 'spring', title: 'Spring sale', status: 'DRAFT' }],
-}
 
 describe('Landing Pages admin page (T5.3)', () => {
   it('lists landing sites with status and an Edit link to the page editor', async () => {
@@ -182,134 +172,6 @@ describe('Landing Pages admin page (T5.3)', () => {
     await waitFor(() =>
       expect(h.push).toHaveBeenCalledWith('/admin/template-engine/edit/pg5?from=landing')
     )
-  })
-
-  it('Branding: loads the site overrides, saves every key, an emptied field clears its override', async () => {
-    mockSites([
-      {
-        id: 's1',
-        project_id: 'p1',
-        slug: 'spring',
-        name: 'Spring sale',
-        domain: null,
-        pages: [{ id: 'pg1', slug: 'spring', title: 'Spring sale', status: 'DRAFT' }],
-      },
-    ])
-    h.put.mockResolvedValue({ data: { data: { identity: {} } } })
-    render(<BrandingDialog site={SITE as any} onClose={vi.fn()} />)
-    const name = (await screen.findByLabelText(/site name/i)) as HTMLInputElement
-    await waitFor(() => expect(name.value).toBe('Spring Co'))
-    expect(screen.getByText(/custom image set/i)).toBeTruthy() // the logo override
-    fireEvent.change(screen.getByLabelText(/description/i), { target: { value: 'Big sale' } })
-    fireEvent.change(name, { target: { value: '' } })
-    fireEvent.click(screen.getByRole('button', { name: /save branding/i }))
-    await waitFor(() =>
-      expect(h.put).toHaveBeenCalledWith('/projects/p1/sites/s1/identity', {
-        app_name: '',
-        app_title: '',
-        description: 'Big sale',
-        logo_light: 'media/l.png',
-        logo_dark: '',
-        favicon: '',
-        contact_email: '',
-        contact_email_secondary: '',
-        contact_phone: '',
-        contact_phone_secondary: '',
-        contact_address: '',
-        copyright: '',
-        social_facebook: '',
-        social_x: '',
-        social_instagram: '',
-        social_linkedin: '',
-        social_youtube: '',
-      })
-    )
-  })
-
-  it('Branding also covers the footer details, showing the project Identity values as placeholders', async () => {
-    mockSites([
-      {
-        id: 's1',
-        project_id: 'p1',
-        slug: 'spring',
-        name: 'Spring sale',
-        domain: null,
-        pages: [{ id: 'pg1', slug: 'spring', title: 'Spring sale', status: 'DRAFT' }],
-      },
-    ])
-    h.put.mockResolvedValue({ data: { data: { identity: {} } } })
-    render(<BrandingDialog site={SITE as any} onClose={vi.fn()} />)
-    const email = (await screen.findByLabelText(/^contact email/i)) as HTMLInputElement
-    await waitFor(() => expect(email.placeholder).toBe('info@kdl.com'))
-    expect(email.value).toBe('') // empty = use the Identity value
-    expect((screen.getByLabelText(/^contact phone/i) as HTMLInputElement).placeholder).toBe(
-      '7337337778'
-    )
-    expect((screen.getByLabelText(/facebook url/i) as HTMLInputElement).placeholder).toBe(
-      'https://facebook.com/kdl'
-    )
-    for (const label of [
-      /secondary email/i,
-      /secondary phone/i,
-      /^address/i,
-      /x \(twitter\) url/i,
-      /instagram url/i,
-      /linkedin url/i,
-      /youtube url/i,
-      /copyright notice/i,
-    ]) {
-      expect(screen.getByLabelText(label)).toBeTruthy()
-    }
-    fireEvent.change(email, { target: { value: 'spring@kdl.com' } })
-    fireEvent.change(screen.getByLabelText(/^address/i), { target: { value: 'Hyderabad' } })
-    fireEvent.click(screen.getByRole('button', { name: /save branding/i }))
-    await waitFor(() =>
-      expect(h.put).toHaveBeenCalledWith(
-        '/projects/p1/sites/s1/identity',
-        expect.objectContaining({
-          contact_email: 'spring@kdl.com',
-          contact_address: 'Hyderabad',
-          contact_phone: '', // untouched: still the Identity value
-          social_facebook: '',
-        })
-      )
-    )
-  })
-
-  it("Branding shows the project logo it inherits, and the page's own picture when it has one", async () => {
-    h.get.mockImplementation(async (url: string) => ({
-      data: {
-        data: url.endsWith('/identity')
-          ? {
-              identity: { logo_light: 'media/own.png' },
-              resolved: { logo_light: 'https://cdn.test/own.png' },
-            }
-          : url === '/landing/templates'
-            ? { templates }
-            : url === '/app-config'
-              ? {
-                  identity: {
-                    app_name: 'Project',
-                    logo_light: 'https://cdn.test/project-logo.png',
-                    logo_dark: 'https://cdn.test/project-dark.png',
-                  },
-                }
-              : {
-                  sites: [
-                    { id: 's1', project_id: 'p1', slug: 'a', name: 'A', domain: null, pages: [] },
-                  ],
-                },
-      },
-    }))
-    render(<BrandingDialog site={SITE as any} onClose={vi.fn()} />)
-    // light logo: the page has its own, so its picture shows
-    const own = (await screen.findByAltText('logo_light preview')) as HTMLImageElement
-    await waitFor(() => expect(own.src).toBe('https://cdn.test/own.png'))
-    // dark logo: no override, so the project's picture shows
-    const dark = screen.getByAltText('logo_dark preview') as HTMLImageElement
-    expect(dark.src).toBe('https://cdn.test/project-dark.png')
-    // favicon: the project has none and the page none, so the box says so
-    expect(screen.getAllByText('None').length).toBeGreaterThan(0)
   })
 
   it('the Landing Pages screen has no Branding button: company details live in Identity only', async () => {

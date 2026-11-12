@@ -5,7 +5,6 @@ import { AdminSidebar } from './AdminSidebar'
 import { IdentityBrandColors } from './IdentityBrandColors'
 import { TopBar } from './TopBar'
 import { CommandMenu } from '@/admin/components/command/CommandMenu'
-import { SetupWizardGate } from '@/admin/components/onboarding/SetupWizardGate'
 
 interface AdminShellProps {
   children: React.ReactNode
@@ -30,7 +29,6 @@ export function AdminShell({ children }: AdminShellProps) {
       </div>
       <IdentityBrandColors />
       <CommandMenu />
-      <SetupWizardGate />
     </div>
   )
 }

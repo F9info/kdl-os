@@ -10,7 +10,6 @@ import { PermissionGuard } from '@/admin/components/shared/PermissionGuard'
 import { ErrorAlert } from '@/components/shared/ErrorAlert'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { Button } from '@/components/ui/button'
-import { SetupWizard } from '@/admin/components/onboarding/SetupWizard'
 import {
   ProductPicker,
   sameSet,
@@ -23,7 +22,6 @@ export default function ProductsPage() {
   const queryClient = useQueryClient()
   const [selected, setSelected] = useState<string[]>([])
   const [confirming, setConfirming] = useState(false)
-  const [wizardOpen, setWizardOpen] = useState(false)
   const initialized = useRef(false)
 
   // Stored selection + product list.
@@ -84,14 +82,6 @@ export default function ProductsPage() {
     <PermissionGuard permission="modules:view">
       <div className="max-w-3xl">
         <PageHeader title="Products" />
-        {can('modules:add') && can('settings:edit') && can('projects:update') && (
-          <div className="mb-4">
-            <Button variant="outline" onClick={() => setWizardOpen(true)}>
-              Run setup wizard
-            </Button>
-            <SetupWizard open={wizardOpen} onClose={() => setWizardOpen(false)} />
-          </div>
-        )}
         <p className="mb-6 text-sm text-muted-foreground">
           The admin app (users, roles, settings, identity) is always on. Choose which public
           products you are building. Each product turns on the modules it needs. Turning a product

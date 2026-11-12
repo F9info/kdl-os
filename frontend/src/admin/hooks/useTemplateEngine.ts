@@ -309,30 +309,6 @@ export function useBrandKit(projectId: string | null) {
   })
 }
 
-export function useUploadLogo(projectId: string) {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (file: File) => {
-      const form = new FormData()
-      form.append('file', file)
-      return api
-        .post<{ success: boolean; data: BrandKit }>(`/brand-kit/${projectId}/logo`, form)
-        .then((r) => r.data.data)
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['brand-kit', projectId] })
-      // The admin sidebar/dashboard logo now follows this project's brand-kit
-      // logo (backend writes straight into the same SettingField on upload) —
-      // refetch it immediately instead of waiting for a page reload.
-      qc.invalidateQueries({ queryKey: ['app-logo'] })
-      toast({ title: 'Logo uploaded' })
-    },
-    onError: (err) => {
-      toast({ title: extractErrorCode(err), variant: 'destructive' })
-    },
-  })
-}
-
 // PATCH /brand-kit/:projectId only recomputes nothing server-side — the
 // caller (PaletteStage) sends a fully-formed BrandKitPalette (colors + ramps
 // regenerated client-side via lib/oklch-ramp). 409 APPROVED_IMMUTABLE if the

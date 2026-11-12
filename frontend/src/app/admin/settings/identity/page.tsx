@@ -331,12 +331,17 @@ export default function IdentityPage() {
                 Your business, as visitors see it on your website and print layouts.
               </p>
               {COMPANY_FIELDS.map(renderField)}
-              {renderAsset(COMPANY_LOGO_LIGHT)}
               <details className="rounded border p-3">
                 <summary className="cursor-pointer text-sm font-medium">
-                  Advanced: dark company logo
+                  Advanced: a different logo for the website
                 </summary>
-                <div className="mt-3">{renderAsset(COMPANY_LOGO_DARK)}</div>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Leave these empty and the website uses the application logo above.
+                </p>
+                <div className="mt-3 space-y-4">
+                  {renderAsset(COMPANY_LOGO_LIGHT)}
+                  {renderAsset(COMPANY_LOGO_DARK)}
+                </div>
               </details>
             </section>
 

@@ -237,7 +237,7 @@ export function PaletteStage({ run }: { run: TemplateEngineRun }) {
                     // auto-triggers its own extraction instead of relying on StageShell's Run
                     // button, to stay working after a logo replace.
                     'Extracting palette from your logo…'
-                  : 'Upload a logo on the Overview stage first — extraction needs one.'}
+                  : 'Add your company logo in Settings → Identity first — extraction needs one.'}
               </span>
             </div>
           </div>
