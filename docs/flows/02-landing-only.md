@@ -19,6 +19,10 @@ Open **http://localhost/login**. Email `admin@kdl.com`, password `kdl-dev-seed-p
 After you sign in, open **Admin Settings > Identity** in the left menu. This is where the application name, logo and favicon are set.
 ![Admin Settings > Identity](identity-start)
 
+## Step 3. Open Modules, install and enable Frontend
+Click **Modules** in the left menu. Find the **Frontend** card (use the search box if you need to). On a fresh install the card shows **Install**: click it and confirm, then click **Enable** and confirm. The badge changes to **Enabled**.
+![Modules: the Frontend card](modules-start)
+
 > Screenshots are from a running KDL OS install where these modules are already enabled, so cards show **Enabled** and **Disable**. On a fresh install the same cards show **Available** with an **Install** button (see the card mockup in Part C).
 
 ## Part B. First-run setup wizard
