@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { FormField } from '@/components/shared/FormField'
 import { ErrorAlert } from '@/components/shared/ErrorAlert'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
-import { post, useMe, usePlans, useProviders } from './api'
+import { post, useCheckoutQuote, useMe, usePlans, useProviders } from './api'
 import { money, priceFor, priceTotals } from './format'
 import { cardCls, Crumbs, OrderSummary, payLabel } from './JoinUi'
 import { outlineBtn, primaryBtn } from './AuthShell'
@@ -47,6 +47,12 @@ export function Checkout({ planSlug, interval }: { planSlug: string; interval: I
   const [note, setNote] = useState('')
   const [paidOn, setPaidOn] = useState(new Date().toISOString().slice(0, 10))
   const [copied, setCopied] = useState('')
+  const [code, setCode] = useState('')
+  const [applied, setApplied] = useState('')
+  const quote = useCheckoutQuote(session.ready ? planSlug : undefined, interval, applied)
+  // a code that failed is not sent with the payment
+  const coupon = applied && quote.data?.coupon_code ? applied : undefined
+  const free = Boolean(coupon && quote.data && quote.data.total === 0)
 
   const plan = plans?.find((p) => p.slug === planSlug)
   const price = plan ? priceFor(plan, interval) : undefined
@@ -60,14 +66,17 @@ export function Checkout({ planSlug, interval }: { planSlug: string; interval: I
   })
 
   const pay = useMutation({
-    mutationFn: (p: Provider) =>
+    mutationFn: (p: Provider | null) =>
       post<CheckoutResult>('/membership/checkout', {
         plan_slug: planSlug,
         interval,
-        provider_id: p.id,
+        provider_id: p?.id,
+        coupon_code: coupon,
       }),
     onSuccess: async (res) => {
-      if (res.order) {
+      if (res.payment.status === 'PAID') {
+        done(approval) // a 100% coupon: nothing to pay, the membership is already active
+      } else if (res.order) {
         const Razorpay = await loadRazorpay()
         const rp = new Razorpay({
           key: res.order.key_id ?? res.order.key,
@@ -122,6 +131,48 @@ export function Checkout({ planSlug, interval }: { planSlug: string; interval: I
         <section className={`${cardCls} space-y-4`}>
           {!manual && (
             <>
+              <div className="space-y-2">
+                <label htmlFor="coupon" className="text-sm font-medium">
+                  Have a coupon code?
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    id="coupon"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    placeholder="Enter code"
+                    autoComplete="off"
+                  />
+                  <button
+                    type="button"
+                    className={`${outlineBtn} !w-auto px-5`}
+                    disabled={!code.trim() || quote.isFetching}
+                    onClick={() => setApplied(code.trim())}
+                  >
+                    Apply
+                  </button>
+                  {applied && (
+                    <button
+                      type="button"
+                      className={`${outlineBtn} !w-auto px-4`}
+                      onClick={() => {
+                        setApplied('')
+                        setCode('')
+                      }}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                {applied && quote.error && <ErrorAlert error={quote.error} />}
+                {coupon && quote.data && (
+                  <p className="text-sm text-emerald-700" role="status">
+                    Code {quote.data.coupon_code} applied: you save{' '}
+                    {money(quote.data.discount, quote.data.currency)}. You pay{' '}
+                    {money(quote.data.total, quote.data.currency)}.
+                  </p>
+                )}
+              </div>
               {list.length === 0 && (
                 <p className="text-sm text-muted-foreground">
                   No payment method is available for this plan right now. Please contact us.
@@ -153,10 +204,14 @@ export function Checkout({ planSlug, interval }: { planSlug: string; interval: I
               <button
                 type="button"
                 className={primaryBtn}
-                disabled={!chosen || pay.isPending || confirm.isPending}
-                onClick={() => chosen && pay.mutate(chosen)}
+                disabled={(!chosen && !free) || pay.isPending || confirm.isPending}
+                onClick={() => (free ? pay.mutate(null) : chosen && pay.mutate(chosen))}
               >
-                {chosen?.type === 'MANUAL' ? 'Continue' : payLabel(price)}
+                {free
+                  ? 'Activate for free'
+                  : chosen?.type === 'MANUAL'
+                    ? 'Continue'
+                    : payLabel(price)}
               </button>
             </>
           )}

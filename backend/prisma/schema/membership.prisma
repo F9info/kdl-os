@@ -295,9 +295,12 @@ model MembershipPayment {
   paid_at         DateTime?
   refunded_amount Int                     @default(0)
   refunded_at     DateTime?
+  coupon_id       String?
+  discount_amount Int                     @default(0) // paise taken off the list price by the coupon
   created_at      DateTime                @default(now())
   updated_at      DateTime                @updatedAt
 
+  coupon          MembershipCoupon?       @relation(fields: [coupon_id], references: [id], onDelete: SetNull)
   member          Member                  @relation(fields: [member_id], references: [id], onDelete: Cascade)
   subscription    MembershipSubscription? @relation(fields: [subscription_id], references: [id])
   provider        MembershipPaymentProvider? @relation(fields: [provider_id], references: [id])
@@ -306,6 +309,7 @@ model MembershipPayment {
   @@index([member_id])
   @@index([status])
   @@index([gateway_order_id])
+  @@index([coupon_id])
   @@map("membership_payments")
 }
 
@@ -484,4 +488,31 @@ model MembershipSetting {
   updated_at DateTime @updatedAt
 
   @@map("membership_settings")
+}
+
+enum MembershipDiscountType {
+  PERCENT
+  FIXED
+}
+
+// Discount code applied at checkout. Redemptions are counted from payments that carry the coupon
+// (paid or still open), so a code can never be used more often than its limits allow.
+model MembershipCoupon {
+  id               String                 @id @default(cuid())
+  code             String                 @unique // stored upper-case
+  description      String?
+  discount_type    MembershipDiscountType
+  value            Int // PERCENT: 1-100, FIXED: paise
+  plan_slugs       String[] // empty = every plan
+  max_redemptions  Int? // null = unlimited
+  per_member_limit Int                    @default(1)
+  valid_from       DateTime?
+  valid_to         DateTime?
+  is_active        Boolean                @default(true)
+  created_at       DateTime               @default(now())
+  updated_at       DateTime               @updatedAt
+
+  payments         MembershipPayment[]
+
+  @@map("membership_coupons")
 }

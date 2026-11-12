@@ -16,6 +16,28 @@ export function calcPrice({ amount, gst_rate = 0, tax_mode = 'EXCLUSIVE' }) {
   return { subtotal: amount, tax, total: amount + tax };
 }
 
+// ---------- coupons ----------
+
+/** Paise taken off `amount` by a coupon (never more than the amount). */
+export function couponDiscount({ discount_type, value }, amount) {
+  const raw = discount_type === 'PERCENT' ? Math.round((amount * value) / 100) : value;
+  return Math.max(0, Math.min(raw, amount));
+}
+
+/**
+ * Why a coupon cannot be used now, or null when it can.
+ * `redeemed` = open or paid uses of the code by anyone, `redeemedByMember` = by this member.
+ */
+export function couponProblem(c, { planSlug, now = new Date(), redeemed = 0, redeemedByMember = 0 }) {
+  if (!c || !c.is_active) return 'This code is not valid';
+  if (c.valid_from && now < c.valid_from) return 'This code is not active yet';
+  if (c.valid_to && now > c.valid_to) return 'This code has expired';
+  if (c.plan_slugs?.length && !c.plan_slugs.includes(planSlug)) return 'This code does not apply to this plan';
+  if (c.max_redemptions != null && redeemed >= c.max_redemptions) return 'This code has been used up';
+  if (redeemedByMember >= c.per_member_limit) return 'You have already used this code';
+  return null;
+}
+
 /** GST part of a GST-inclusive total (used after a pro-rata credit is taken off the total). */
 export const taxPortionOfTotal = (total, gst_rate) => total - Math.round((total * 100) / (100 + gst_rate));
 

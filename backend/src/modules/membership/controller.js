@@ -6,6 +6,7 @@ import * as plans from './plans.service.js';
 import * as members from './members.service.js';
 import * as billing from './billing.service.js';
 import * as providers from './providers.service.js';
+import * as coupons from './coupons.service.js';
 import * as fields from './fields.service.js';
 import { getSettings, putSettings } from './settings.js';
 import { PRESET_KEYS } from './presets.js';
@@ -168,3 +169,9 @@ export const adminPresetApply = h((req) => fields.applyPreset(v(req).body.preset
 
 export const adminSettingsGet = h(() => getSettings());
 export const adminSettingsPut = h((req) => putSettings(v(req).body));
+
+// ----- admin: coupons -----
+export const adminCoupons = h((req) => coupons.listCoupons(v(req).query));
+export const adminCouponCreate = h((req) => coupons.createCoupon(v(req).body, actor(req)), 201);
+export const adminCouponUpdate = h((req) => coupons.updateCoupon(v(req).params.id, v(req).body, actor(req)));
+export const adminCouponDelete = h((req) => coupons.deleteCoupon(v(req).params.id, actor(req)));

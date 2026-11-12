@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   calcPrice, taxPortionOfTotal, periodEnd, canTransition, assertTransition, statusAfterPayment, signupOutcome,
   pickCurrentSubscription, proRataCredit, financialYear, invoiceNumber, memberNumber, paymentReference,
-  eligibleProviders, ruleMatches, checkAccess, sweepDecisions, validateFieldValues, toValueColumns,
+  eligibleProviders, ruleMatches, checkAccess, sweepDecisions, validateFieldValues, toValueColumns, couponDiscount, couponProblem,
 } from './domain.js';
 
 describe('calcPrice', () => {
@@ -196,5 +196,32 @@ describe('allowsMemberType', () => {
   it('empty list means everyone', () => {
     expect(allowsMemberType({ member_types: [] }, 'ORGANISATION')).toBe(true);
     expect(allowsMemberType({ member_types: ['INDIVIDUAL'] }, 'ORGANISATION')).toBe(false);
+  });
+});
+
+describe('coupons', () => {
+  const base = { is_active: true, plan_slugs: [], max_redemptions: null, per_member_limit: 1, valid_from: null, valid_to: null };
+  it('percent and fixed discounts never exceed the amount', () => {
+    expect(couponDiscount({ discount_type: 'PERCENT', value: 25 }, 200000)).toBe(50000);
+    expect(couponDiscount({ discount_type: 'FIXED', value: 30000 }, 200000)).toBe(30000);
+    expect(couponDiscount({ discount_type: 'FIXED', value: 999999 }, 200000)).toBe(200000);
+    expect(couponDiscount({ discount_type: 'PERCENT', value: 100 }, 200000)).toBe(200000);
+  });
+  it('accepts a valid coupon', () => {
+    expect(couponProblem(base, { planSlug: 'gold' })).toBeNull();
+  });
+  it.each([
+    ['unknown or inactive', null, {}, 'not valid'],
+    ['inactive', { ...base, is_active: false }, {}, 'not valid'],
+    ['not started', { ...base, valid_from: new Date('2999-01-01') }, {}, 'not active yet'],
+    ['expired', { ...base, valid_to: new Date('2000-01-01') }, {}, 'expired'],
+    ['other plan', { ...base, plan_slugs: ['silver'] }, {}, 'does not apply'],
+    ['used up', { ...base, max_redemptions: 5 }, { redeemed: 5 }, 'used up'],
+    ['already used by member', base, { redeemedByMember: 1 }, 'already used'],
+  ])('rejects %s', (_n, c, extra, text) => {
+    expect(couponProblem(c, { planSlug: 'gold', ...extra })).toContain(text);
+  });
+  it('lets a member use a code up to its per-member limit', () => {
+    expect(couponProblem({ ...base, per_member_limit: 3 }, { planSlug: 'gold', redeemedByMember: 2 })).toBeNull();
   });
 });

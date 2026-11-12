@@ -1,9 +1,10 @@
 import { prisma } from '../../config/database.js';
-import { allowsMemberType, calcPrice, taxPortionOfTotal, proRataCredit, eligibleProviders } from './domain.js';
+import { allowsMemberType, calcPrice, couponDiscount, taxPortionOfTotal, proRataCredit, eligibleProviders } from './domain.js';
 import { getDriver, isManualProvider } from './drivers/index.js';
 import { credentialsOf } from './providers.service.js';
 import { LIVE, createPayment, currentSubscription, createSubscription, getPlanBySlug, markPaid, pickPrice, setStatus } from './core.js';
 import { httpError, notFound, recordEvent } from './util.js';
+import { resolveCoupon } from './coupons.service.js';
 
 const REUSABLE = [...LIVE, 'EXPIRED', 'PENDING_PAYMENT'];
 
@@ -12,8 +13,10 @@ const REUSABLE = [...LIVE, 'EXPIRED', 'PENDING_PAYMENT'];
  * An upgrade is credited for the unused days of the running subscription (pro-rata); a downgrade or
  * switch to a cheaper tier is charged in full and applies when paid (the old one is retired).
  */
-export async function quote(member, plan, price, db = prisma) {
-  const base = calcPrice(price);
+export async function quote(member, plan, price, db = prisma, coupon = null) {
+  const list = calcPrice(price);
+  const off = coupon ? couponDiscount(coupon, price.amount) : 0;
+  const base = off ? calcPrice({ ...price, amount: price.amount - off }) : list;
   const cur = await currentSubscription(member.id, db);
   let kind = 'new';
   let credit = 0;
@@ -28,7 +31,7 @@ export async function quote(member, plan, price, db = prisma) {
   credit = Math.min(credit, base.total);
   const total = base.total - credit;
   const tax = credit ? taxPortionOfTotal(total, price.gst_rate) : base.tax;
-  return { kind, currency: price.currency, subtotal: total - tax, tax, total, credit, list_total: base.total, current_subscription_id: cur?.id ?? null };
+  return { kind, currency: price.currency, subtotal: total - tax, tax, total, credit, list_total: list.total, discount: list.total - base.total, coupon_code: coupon?.code ?? null, current_subscription_id: cur?.id ?? null };
 }
 
 async function loadPlanForMember(member, plan_slug, interval) {
@@ -37,10 +40,11 @@ async function loadPlanForMember(member, plan_slug, interval) {
   return { plan, price: pickPrice(plan, interval) };
 }
 
-export async function checkoutProviders(member, { plan_slug, interval }) {
+export async function checkoutProviders(member, { plan_slug, interval, coupon_code }) {
   const { plan, price } = await loadPlanForMember(member, plan_slug, interval);
   if (!price) return { quote: null, items: [] };
-  const q = await quote(member, plan, price);
+  const coupon = coupon_code ? await resolveCoupon(coupon_code, { member, plan }) : null;
+  const q = await quote(member, plan, price, prisma, coupon);
   const providers = await prisma.membershipPaymentProvider.findMany({ where: { status: 'PUBLISHED' }, include: { plans: true } });
   const items = eligibleProviders(providers, { planId: plan.id, memberType: member.member_type, region: price.currency === 'INR' ? 'INDIA' : 'OUTSIDE_INDIA', amount: q.total });
   return {
@@ -49,10 +53,11 @@ export async function checkoutProviders(member, { plan_slug, interval }) {
   };
 }
 
-export async function checkout(member, { plan_slug, interval, provider_id, provider_option }, actor) {
+export async function checkout(member, { plan_slug, interval, provider_id, provider_option, coupon_code }, actor) {
   const { plan, price } = await loadPlanForMember(member, plan_slug, interval);
   if (!price) throw httpError(422, 'Free plans need no payment');
-  const q = await quote(member, plan, price);
+  const coupon = coupon_code ? await resolveCoupon(coupon_code, { member, plan }) : null;
+  const q = await quote(member, plan, price, prisma, coupon);
 
   let provider = null;
   if (q.total > 0) {
@@ -74,7 +79,7 @@ export async function checkout(member, { plan_slug, interval, provider_id, provi
     } else {
       sub = await createSubscription(tx, { member, plan, price, status: 'PENDING_PAYMENT' });
     }
-    const payment = await createPayment(tx, { member, subscription: sub, provider, provider_option, amount: q.total, tax_amount: q.tax, currency: q.currency, status: manual ? 'AWAITING_PROOF' : 'PENDING' });
+    const payment = await createPayment(tx, { member, subscription: sub, provider, provider_option, amount: q.total, tax_amount: q.tax, currency: q.currency, status: manual ? 'AWAITING_PROOF' : 'PENDING', coupon_id: coupon?.id ?? null, discount_amount: q.discount });
     await recordEvent(tx, { key: 'checkout.started', member_id: member.id, actor, data: { payment_id: payment.id, subscription_id: sub.id, plan: plan.slug, kind: q.kind, amount: q.total, manual, renewal: q.kind === 'renewal' }, description: `Checkout started for ${plan.name}` });
     return { payment, sub };
   });

@@ -51,6 +51,29 @@ export const useProviders = (planSlug?: string, interval?: Interval) =>
       }).then((d) => asList<Provider>(d)),
   })
 
+export interface CheckoutQuote {
+  total: number
+  tax: number
+  list_total: number
+  discount: number
+  coupon_code: string | null
+  currency: string
+}
+
+/** What checkout will charge, with an optional coupon applied. A bad code makes the query fail with the reason. */
+export const useCheckoutQuote = (planSlug?: string, interval?: Interval, coupon?: string) =>
+  useQuery({
+    queryKey: ['membership', 'quote', planSlug, interval, coupon],
+    enabled: !!planSlug,
+    retry: false,
+    queryFn: () =>
+      get<{ quote: CheckoutQuote | null }>('/membership/checkout/providers', {
+        plan_slug: planSlug,
+        interval,
+        coupon_code: coupon || undefined,
+      }).then((d) => d.quote),
+  })
+
 const useList = <T>(key: string, url: string) =>
   useQuery({
     queryKey: ['membership', key],

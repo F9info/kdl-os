@@ -70,6 +70,16 @@
       "order": 50
     },
     {
+      "label": "Coupons",
+      "path": "/admin/membership/coupons",
+      "icon": "Ticket",
+      "permission": "membership:view",
+      "group": "Membership",
+      "groupIcon": "Users",
+      "groupOrder": 45,
+      "order": 55
+    },
+    {
       "label": "Payment methods",
       "path": "/admin/membership/payment-methods",
       "icon": "Plug",

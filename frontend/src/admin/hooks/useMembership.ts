@@ -306,6 +306,22 @@ export const useMembers = (params?: Params) => useAdminList<Member>('members', p
 export const useMember = (id: string | null) => useAdminItem<Member>(id ? `members/${id}` : null)
 export const usePayments = (params?: Params) => useAdminList<Payment>('payments', params)
 export const useInvoices = (params?: Params) => useAdminList<Invoice>('invoices', params)
+export interface Coupon {
+  id: string
+  code: string
+  description: string | null
+  discount_type: 'PERCENT' | 'FIXED'
+  value: number
+  plan_slugs: string[]
+  max_redemptions: number | null
+  per_member_limit: number
+  valid_from: string | null
+  valid_to: string | null
+  is_active: boolean
+  redeemed: number
+  discount_given: number
+}
+export const useCoupons = (params?: Params) => useAdminList<Coupon>('coupons', params)
 export const useProviders = () => useAdminList<Provider>('payment-providers')
 export const useFieldGroups = () => useAdminList<FieldGroup>('field-groups')
 export const useOverview = (range?: string) =>

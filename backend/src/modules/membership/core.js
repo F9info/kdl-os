@@ -165,7 +165,7 @@ export async function markPaid(paymentId, { actor = null, gatewayPaymentId, veri
   );
 }
 
-export async function createPayment(tx, { member, subscription, provider, provider_option, amount, tax_amount, currency = 'INR', status = 'PENDING' }) {
+export async function createPayment(tx, { member, subscription, provider, provider_option, amount, tax_amount, currency = 'INR', status = 'PENDING', coupon_id = null, discount_amount = 0 }) {
   return tx.membershipPayment.create({
     data: {
       reference: paymentReference(await nextSeq(tx, 'payment')),
@@ -173,7 +173,7 @@ export async function createPayment(tx, { member, subscription, provider, provid
       subscription_id: subscription?.id ?? null,
       provider_id: provider?.id ?? null,
       provider_option: provider_option ?? null,
-      status, amount, tax_amount, currency,
+      status, amount, tax_amount, currency, coupon_id, discount_amount,
     },
   });
 }

@@ -97,7 +97,7 @@ export const contactUpdateSchema = S({ params: z.object({ id: z.string() }), bod
 export const contactParamSchema = S({ params: z.object({ id: z.string() }) });
 
 export const checkoutProvidersSchema = S({
-  query: z.object({ plan_slug: str(), interval: interval.optional() }),
+  query: z.object({ plan_slug: str(), interval: interval.optional(), coupon_code: z.string().trim().max(40).optional() }),
 });
 export const checkoutSchema = S({
   body: z.object({
@@ -105,6 +105,7 @@ export const checkoutSchema = S({
     interval: interval,
     provider_id: z.string().optional(),
     provider_option: optStr(50),
+    coupon_code: z.string().trim().max(40).optional(),
   }),
 });
 export const offlineProofSchema = withId(
@@ -466,3 +467,20 @@ export const notificationListSchema = S({ query: z.object({ page: z.coerce.numbe
 export const notificationReadSchema = S({ body: z.object({ ids: z.array(z.string()).max(200).optional(), all: z.boolean().optional() }).refine((b) => b.all || b.ids?.length, 'ids or all is required') });
 export const commPrefsSchema = S({ body: z.object({ preferences: z.record(z.string(), z.record(z.string(), z.boolean())).optional(), categories: z.record(z.string(), z.record(z.string(), z.boolean())).optional(), language: z.string().max(5).optional() }) });
 export const autoRenewSchema = S({ body: z.object({ enabled: z.boolean() }) });
+
+const couponBody = z.object({
+  code: z.string().trim().min(3).max(40).regex(/^[A-Za-z0-9_-]+$/, 'Letters, numbers, - and _ only'),
+  description: optStr(200),
+  discount_type: z.enum(['PERCENT', 'FIXED']),
+  value: z.number().int().min(1).max(2_000_000_000),
+  plan_slugs: z.array(z.string().trim().min(1).max(80)).max(50).default([]),
+  max_redemptions: z.number().int().min(1).nullable().optional(),
+  per_member_limit: z.number().int().min(1).max(1000).default(1),
+  valid_from: z.coerce.date().nullable().optional(),
+  valid_to: z.coerce.date().nullable().optional(),
+  is_active: z.boolean().default(true),
+});
+const couponRules = (b) => b.discount_type !== 'PERCENT' || b.value <= 100;
+export const couponCreateSchema = S({ body: couponBody.refine(couponRules, { message: 'A percentage cannot be more than 100', path: ['value'] }) });
+export const couponUpdateSchema = S({ params: id, body: couponBody.partial() });
+export const couponListSchema = listQuery({ active: z.enum(['true', 'false']).optional() });

@@ -94,6 +94,12 @@ router.put('/admin/plans/:id/benefits', perm('edit'), validate(s.benefitsSchema)
 router.put('/admin/plans/:id/field-groups', perm('edit'), validate(s.planFieldGroupsSchema), c.adminPlanFieldGroups);
 router.put('/admin/plans/:id/access-rules', perm('edit'), validate(s.planAccessRulesSchema), c.adminPlanAccessRules);
 
+// ----- admin: coupons -----
+router.get('/admin/coupons', perm('view'), validate(s.couponListSchema), c.adminCoupons);
+router.post('/admin/coupons', perm('add'), validate(s.couponCreateSchema), c.adminCouponCreate);
+router.patch('/admin/coupons/:id', perm('edit'), validate(s.couponUpdateSchema), c.adminCouponUpdate);
+router.delete('/admin/coupons/:id', perm('delete'), validate(s.idParams), c.adminCouponDelete);
+
 // ----- admin: members (fixed paths before :id) -----
 router.get('/admin/members/segments', perm('view'), c.adminSegments);
 router.post('/admin/members/segments', perm('view'), validate(s.segmentSchema), c.adminSegmentCreate);
