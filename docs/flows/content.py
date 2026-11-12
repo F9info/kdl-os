@@ -1,6 +1,29 @@
 """Guide text for build.py. Markdown-ish: ![caption](img-name) is a screenshot from img/,
 ``` is a terminal block, > is a callout, [[flow: a | b]] is a step strip, [[mock:x]] a drawn mockup."""
 
+ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a leading < puts the label left of the dot
+ 'login': [(870, 404, 'Click here and type your email'), (835, 487, 'Click here and type your password'), (870, 541, 'Click Sign in'), (489, 594, '<Forgot password? Click here')],
+ 'wizard-1': [(670, 290, 'Click here and type your company name'), (517, 396, 'Click here to add your logo'), (852, 396, 'Click here to add a favicon'),
+              (670, 503, 'Click here to add your email'), (986, 503, '<Click here to add your phone'), (986, 586, '<Click here to add your address'), (951, 640, 'Click Next')],
+ 'identity': [(1006, 350, '<Click here to type the application name'), (1006, 458, '<Click here to set the browser tab title'), (1006, 560, '<Click here to describe your business'),
+              (553, 678, 'Click Replace to upload your logo'), (130, 441, 'Admin Settings > Identity')],
+ 'modules': [(583, 185, 'Click here to search modules'), (1284, 215, '<Click Show internal to see every module'), (388, 396, 'Click Disable to switch a module off'), (590, 272, '<Status badge')],
+ 'modules-frontend': [(583, 185, 'Type the module name here'), (388, 396, 'A fresh install shows Install here: click it'), (663, 272, '<Status badge')],
+ 'themes': [(453, 114, 'Simple = colours, Advanced = every token'), (483, 369, 'Click Light or Dark'), (420, 443, 'Click a ready-made look'), (485, 584, 'Click a swatch to change this colour')],
+ 'products': [(641, 300, '<Click to tick Website'), (1031, 300, '<Click to tick Landing Pages'), (420, 173, 'Click to reopen the setup wizard'), (961, 576, '<Click Apply products')],
+ 'studio-overview': [(436, 299, 'Click Edit in Identity to change details'), (499, 299, 'Click Next to go to the next step')],
+ 'studio-palette': [(490, 481, 'Click here to type a colour code'), (767, 482, 'Click Randomize for a new ramp'), (231, 480, 'Color Palette')],
+ 'studio-website': [(1312, 126, '<Click here to convert to a static website'), (874, 239, 'Click here to create or edit the layout')],
+ 'static-website': [(541, 304, 'Click here to start the conversion'), (300, 444, 'Click to set the sitemap address'), (300, 480, 'Click to set up forms')],
+ 'landing-pages': [(1336, 119, '<Click here to add a new landing page'), (420, 573, 'Click here to use this template'), (426, 617, 'Click View template to preview it')],
+ 'pages': [(385, 361, 'Click Edit to change this page'), (511, 361, 'Click Duplicate to copy it'), (1146, 230, '<Click here to generate content with AI')],
+ 'navigation': [(408, 297, 'Click a tab: header or footer menu'), (870, 691, 'Click Add after typing a custom page name')],
+ 'sections': [(550, 244, 'Click a section type to build it')],
+ 'membership': [(1336, 119, '<Click here to add a member'), (1174, 119, 'Export'), (160, 679, 'Click Members to see everyone')],
+ 'users': [(647, 174, 'Click here to search users'), (1336, 107, '<Click here to add a user'), (1140, 303, 'Click to edit')],
+ 'roles': [(1336, 107, '<Click here to create a role'), (1251, 239, 'Click to edit a role')],
+}
+
 SHOT_NOTE = "> Screenshots are from a running KDL OS install where these modules are already enabled, so cards show **Enabled** and **Disable**. On a fresh install the same cards show **Available** with an **Install** button (see the card mockup in Part C)."
 
 PREREQ = """## Part A. Get the project running

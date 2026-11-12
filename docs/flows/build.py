@@ -5,7 +5,7 @@ Screenshots come from img/ (refresh with: cd frontend && node ../docs/flows/scre
 Run: python3 docs/flows/build.py"""
 import html, json, os, re, subprocess, sys, tempfile
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from content import DOCS
+from content import DOCS, ANNOT
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, '..', '..')
@@ -28,6 +28,11 @@ pre{background:#0f172a;color:#e2e8f0;border-radius:6px;padding:9pt 11pt;font:8.6
 pre:before{content:"Terminal";display:block;color:#7dd3fc;font:700 7.5pt -apple-system,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;margin-bottom:5pt}
 figure{margin:9pt 0;break-inside:avoid;text-align:center}
 figure img{width:100%;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 2px 8px rgba(15,23,42,.12)}
+figure .w{position:relative}
+.pin{position:absolute;display:flex;align-items:center;gap:3pt;transform:translateY(-50%);white-space:nowrap}
+.pin.l{flex-direction:row-reverse;transform:translate(-100%,-50%)}
+.pin i{width:12pt;height:12pt;border-radius:50%;background:#dc2626;color:#fff;font:700 7.5pt/12pt Arial;text-align:center;font-style:normal;box-shadow:0 0 0 2pt rgba(220,38,38,.3)}
+.pin b{background:#dc2626;color:#fff;font:600 8pt Arial;padding:2pt 6pt;border-radius:4px}
 figcaption{font-size:8.8pt;color:#475569;margin-top:3pt}
 .note{background:#eff6ff;border-left:4px solid #3b82f6;border-radius:4px;padding:6pt 10pt;margin:8pt 0;font-size:9.8pt;break-inside:avoid}
 .flow{display:flex;flex-wrap:wrap;gap:5pt;align-items:center;margin:10pt 0;break-inside:avoid}
@@ -116,7 +121,11 @@ def render(md):
         if m:
             src = os.path.join(HERE, 'img', m[2] + '.jpg')
             if not os.path.exists(src): raise SystemExit(f'missing screenshot: {src}')
-            out.append(f'<figure><img src="file://{src}"><figcaption>{inline(m[1])}</figcaption></figure>'); continue
+            pins = ''
+            for n, (x, y, lab) in enumerate(ANNOT.get(m[2], []), 1):
+                left = lab.startswith('<'); lab = lab.lstrip('<')
+                pins += (f'<div class="pin{" l" if left else ""}" style="left:{x/13.6:.2f}%;top:{y/8.2:.2f}%"><i>{n}</i><b>{html.escape(lab)}</b></div>')
+            out.append(f'<figure><div class=w><img src="file://{src}">{pins}</div><figcaption>{inline(m[1])}</figcaption></figure>'); continue
         m = re.match(r'^\[\[mock:(\w+)\]\]$', ln.strip())
         if m: out.append(MOCKS[m[1]]); continue
         m = re.match(r'^\[\[flow: (.*)\]\]$', ln.strip())
