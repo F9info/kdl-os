@@ -1,7 +1,7 @@
 """Guide text for build.py. Markdown-ish: ![caption](img-name) is a screenshot from img/,
 ``` is a terminal block, > is a callout, [[flow: a | b]] is a step strip, [[mock:x]] a drawn mockup."""
 
-SIZE = {'identity-start': (1153, 809)}  # screenshots that are not 1360x820
+SIZE = {'identity-start': (1153, 809), 'modules-start': (1900, 580)}  # screenshots that are not 1360x820
 
 ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a leading < puts the label left of the dot
  'login': [(870, 404, 'Click here and type your email'), (835, 487, 'Click here and type your password'), (870, 541, 'Click Sign in'), (489, 594, '<Forgot password? Click here')],
@@ -26,6 +26,7 @@ ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a l
  'roles': [(1336, 107, '<Click here to create a role'), (1251, 239, 'Click to edit a role')],
  'identity-start': [(235, 412, 'Click Identity under Admin Settings'), (1006, 310, '<Click here to type the application name'), (1006, 416, '<Click here to set the browser tab title'),
                     (1006, 520, '<Click here to describe your business'), (553, 637, 'Click Replace to upload your logo'), (553, 746, 'Click Replace to upload a favicon')],
+ 'modules-start': [(231, 200, 'Click Modules in the left menu'), (583, 137, 'Click here to search for a module'), (796, 348, 'Fresh install: click Install, confirm, then Enable'), (1044, 224, '<Status badge')],
  'dashboard': [(1336, 301, '<Click Manage projects to switch project'), (347, 530, 'Click a shortcut to jump straight there'), (130, 85, 'Dashboard'), (130, 125, 'Click Documents to open these guides')],
  'documents': [(690, 290, 'Click a guide to open it as a PDF in a new tab'), (1150, 290, '<Installation and flow guides')],
  'activity-log': [(455, 173, '<Click here to filter by person'), (643, 173, 'Click here to filter by module'), (842, 173, 'Pick a start date'), (1022, 173, '<Pick an end date')],
@@ -139,6 +140,10 @@ Open **http://localhost/login**. Email `admin@kdl.com`, password `kdl-dev-seed-p
 IDENTITY_START = """## Open Application Identity
 After you sign in, open **Admin Settings > Identity** in the left menu. This is where the application name, logo and favicon are set.
 ![Admin Settings > Identity](identity-start)"""
+
+MODULES_START = """## Step 3. Open Modules, install and enable Frontend
+Click **Modules** in the left menu. Find the **Frontend** card (use the search box if you need to). On a fresh install the card shows **Install**: click it and confirm, then click **Enable** and confirm. The badge changes to **Enabled**.
+![Modules: the Frontend card](modules-start)"""
 
 WIZARD = """## Part B. First-run setup wizard
 On a fresh install a **Setup wizard** opens over the admin. It asks three things, in this order.
