@@ -9,23 +9,27 @@ Open **http://localhost/login**. Email `admin@kdl.com`, password `kdl-dev-seed-p
 After you sign in, open **Admin Settings > Identity** in the left menu. This is where the application name, logo and favicon are set.
 ![Admin Settings > Identity](identity-start)
 
-## Step 3. Pick the look of the admin
+## Step 3. Your left menu
+After you sign in, the left menu already shows the core items: **Dashboard, Users, Modules, Admin Settings, Media, Access Control** and **Settings** (plus **Documents** and **Projects**). They are always on, so there is nothing to install for this flow. Any extra module you enable later adds its own entry to this menu.
+![Left menu on a fresh install](menu-core)
+
+## Step 4. Pick the look of the admin
 Open **Admin Settings > Themes**. On the **Simple** tab click **Light** or **Dark**, click a ready-made look (Ocean, Forest, Sunset or Slate), or click a colour swatch to change a colour. Use **Advanced** for every design token, then click **Publish**.
 ![Admin Settings > Themes](themes)
 
-## Step 4. Check the Modules (optional)
+## Step 5. Check the Modules (optional)
 Open **Modules** in the left menu. The core modules (the ones with a padlock) are always on. If you need more, search for the module, click **Install**, confirm, then click **Enable** and confirm. Useful extras for an admin-only setup: **Themes**, **Notifications**, **Integrations**, **Membership**. Leave **Frontend**, **Landing Pages** and **Templates** off.
 ![Modules](modules)
 
-## Step 5. Add your users
+## Step 6. Add your users
 Open **Users** and click **Add user**. Type the person's details and save. Use the search box to find people, and the icons on each row to edit a user or reset a password.
 ![Users](users)
 
-## Step 6. Give each person a role
+## Step 7. Give each person a role
 Open **Access Control > Roles**. The built-in roles are Super Admin, Developer, Admin and User. Click **Create role** to make your own, and the pencil to edit one. Then give each user the role that fits.
 ![Access Control > Roles](roles)
 
-## Step 7. See who did what
+## Step 8. See who did what
 Open **Access Control > Activity Log**. Every sign-in and change is listed with the person, the module, the action and the date. Use the filters at the top to narrow it down.
 ![Activity Log](activity-log)
 

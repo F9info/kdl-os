@@ -2,10 +2,13 @@ import re
 """Guide text for build.py. Markdown-ish: ![caption](img-name) is a screenshot from img/,
 ``` is a terminal block, > is a callout, [[flow: a | b]] is a step strip, [[mock:x]] a drawn mockup."""
 
-SIZE = {'identity-start': (1153, 809), 'modules-start': (1900, 580), 'brands-start': (1920, 550), 'landing-start': (1691, 829), 'new-landing-start': (767, 883), 'editor-start': (1920, 879), 'create-btn': (458, 168), 'save-btn': (125, 182), 'convert-start': (580, 642), 'brands-web': (1920, 550), 'typography': (1360, 900), 'font-settings': (1360, 900), 'button-styles': (1360, 900), 'layout-settings': (1621, 440), 'layouts-menu': (364, 128), 'layout-pick': (1632, 716), 'detail-editor': (1920, 962), 'detail-list': (1672, 371), 'page-editor': (1911, 863), 'documents': (1360, 900)}
+SIZE = {'identity-start': (1153, 809), 'modules-start': (1900, 580), 'brands-start': (1920, 550), 'landing-start': (1691, 829), 'new-landing-start': (767, 883), 'editor-start': (1920, 879), 'create-btn': (458, 168), 'save-btn': (125, 182), 'convert-start': (580, 642), 'brands-web': (1920, 550), 'typography': (1360, 900), 'font-settings': (1360, 900), 'button-styles': (1360, 900), 'layout-settings': (1621, 440), 'layouts-menu': (364, 128), 'layout-pick': (1632, 716), 'detail-editor': (1920, 962), 'detail-list': (1672, 371), 'page-editor': (1911, 863), 'documents': (1360, 900), 'menu-core': (640, 700), 'menu-frontend': (640, 1000), 'menu-member': (640, 1010)}
 CROP = {'brands-start': (32, 0), 'landing-start': (0, 69), 'editor-start': (0, 14), 'brands-web': (32, 0), 'layout-pick': (0, 40), 'layout-settings': (0, 235), 'detail-editor': (0, 135), 'detail-list': (0, 70), 'page-editor': (10, 0)}  # px cut from the top (browser address bar)  # screenshots that are not 1360x820
 
 ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a leading < puts the label left of the dot
+ 'menu-core': [(225, 204, 'Users: add your people'), (225, 243, 'Modules: switch on more features'), (225, 283, 'Admin Settings: name, logo, look'), (225, 322, 'Media: your files and pictures'), (225, 362, 'Access Control: roles and permissions'), (225, 401, 'Settings: fields and storage')],
+ 'menu-frontend': [(225, 243, 'Modules: Frontend is Enabled'), (225, 283, 'Frontend group appears here'), (225, 638, 'Brands: landing pages and web app'), (225, 717, 'Color Palette'), (225, 757, 'Navigation'), (225, 796, 'Layouts'), (225, 836, 'Pages')],
+ 'menu-member': [(225, 283, 'Frontend: click to open'), (225, 480, 'Membership group: now on'), (225, 559, 'Plans'), (225, 599, 'Members'), (225, 638, 'Approvals')],
  'login': [(870, 404, 'Click here and type your email'), (835, 487, 'Click here and type your password'), (870, 541, 'Click Sign in'), (489, 594, '<Forgot password? Click here')],
  'wizard-1': [(670, 290, 'Click here and type your company name'), (517, 396, 'Click here to add your logo'), (852, 396, 'Click here to add a favicon'),
               (670, 503, 'Click here to add your email'), (986, 503, '<Click here to add your phone'), (986, 586, '<Click here to add your address'), (951, 640, 'Click Next')],
@@ -480,7 +483,27 @@ M_WEB = "Frontend (bundle), Page Editor UI, Themes, Templates (the Studio) and w
 M_LAND = "Landing Pages (brings Forms), Page Editor UI, Themes"
 OPT_CONTENT = "Membership, Notifications, Integrations"
 
-ADMIN_STEPS = IDENTITY_START + """
+MENU_CORE = """## Step 0. Your left menu
+After you sign in, the left menu already shows the core items: **Dashboard, Users, Modules, Admin Settings, Media, Access Control** and **Settings** (plus **Documents** and **Projects**). They are always on, so there is nothing to install for this flow. Any extra module you enable later adds its own entry to this menu.
+![Left menu on a fresh install](menu-core)"""
+
+MENU_FRONTEND = """## Step 0. Your left menu now shows Frontend
+Frontend is enabled, so a new **Frontend** group appears in the left menu. Click it to open it. Inside you will find **Brands** (landing pages and the web app), **Website Details**, **Color Palette**, **Navigation**, **Layouts**, **Pages**, **Sections** and the content lists (FAQ, Gallery, Testimonials, Team, Catalog, Work, Sectors, Case Studies). The next steps use these entries one by one. If **Frontend** is not in your menu, go back to the previous step and enable it.
+![Left menu with Frontend enabled](menu-frontend)"""
+
+MENU_MEMBER = """## Step 0. Your left menu now shows Membership
+Membership is enabled, so a **Membership** group appears in the left menu, next to **Frontend**: Overview, Plans, Members, Approvals, Payments, Payment methods, Communication, Invoices, Access rules, Settings and Social login. Disable the module and the whole group disappears. The core items are not affected.
+![Left menu with Frontend and Membership enabled](menu-member)"""
+
+def renum(text):
+    """Renumber every '## Step N.' heading from 2 in order (Step 1 is Sign in)."""
+    n = [1]
+    def f(m):
+        n[0] += 1
+        return "## Step %d." % n[0]
+    return re.sub(r"^## Step \d+\.", f, text, flags=re.M)
+
+ADMIN_STEPS = IDENTITY_START + "\n\n" + MENU_CORE + """
 
 ## Step 3. Pick the look of the admin
 Open **Admin Settings > Themes**. On the **Simple** tab click **Light** or **Dark**, click a ready-made look (Ocean, Forest, Sunset or Slate), or click a colour swatch to change a colour. Use **Advanced** for every design token, then click **Publish**.
@@ -750,37 +773,37 @@ DOCS = {
  '01-admin-only': ("Flow 1: Admin only",
    "Run the internal business application with no public website.",
    guide("Flow 1: Admin only", "Run the internal business application with no public website.", "", "", "", "",
-     signin_extra=ADMIN_STEPS, cover=False, only_signin=True)),
+     signin_extra=renum(ADMIN_STEPS), cover=False, only_signin=True)),
  '02-landing-only': ("Flow 2: Landing page only (with admin)",
    "Publish campaign pages without a full website.",
    guide("Flow 2: Landing page only (with admin)", "Publish campaign pages without a full website.",
      "branded landing pages at `/p/<slug>` with a working form, plus the admin that runs them.",
      "Landing Pages (leave Website off). There is no starter-website step.",
      IDENTITY + "\n\n" + THEMES + "\n\n" + LANDING + "\n\n" + ADMIN_AREA,
-     signin_extra=IDENTITY_START + "\n\n" + MODULES_START + "\n\n" + BRANDS_START + "\n\n" + LANDING_START + "\n\n" + NEW_LANDING_START + "\n\n" + EDITOR_START + "\n\n" + SAVE_START + "\n\n" + CONVERT_START + "\n\n" + GITHUB_START + "\n\n" + NOTES_START + "\n", cover=False, only_signin=True,
+     signin_extra=renum(IDENTITY_START + "\n\n" + MODULES_START + "\n\n" + MENU_FRONTEND + "\n\n" + BRANDS_START + "\n\n" + LANDING_START + "\n\n" + NEW_LANDING_START + "\n\n" + EDITOR_START + "\n\n" + SAVE_START + "\n\n" + CONVERT_START + "\n\n" + GITHUB_START + "\n\n" + NOTES_START + "\n"), cover=False, only_signin=True,
      modules=modules_block(M_LAND, "Notifications, Membership", "Frontend bundle, Website, Templates, Sectors, Catalog, Work, FAQ, Team", "landing")).replace('## Sign in', '## Step 1. Sign in').replace('## Open Application Identity', '## Step 2. Open Application Identity')),
  '03-static-website-only': ("Flow 3: Static website only (with admin)",
    "Ship a website as plain files hosted anywhere, with no live web app in front of visitors.",
    guide("Flow 3: Static website only (with admin)", "Ship a website as plain files hosted anywhere, with no live web app in front of visitors.", "", "", "", "",
-     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, ST_EDIT_PAGE, ST_CONVERT_BTN, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
+     signin_extra=number_steps(IDENTITY_START, MODULES_START, MENU_FRONTEND, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, ST_EDIT_PAGE, ST_CONVERT_BTN, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
  '04-webapp-admin': ("Flow 4: Web app and admin",
    "Run a live, editable website served from this installation.",
    guide("Flow 4: Web app and admin", "Run a live, editable website served from this installation.", "", "", "", "",
-     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, ST_EDIT_PAGE, ST_LIVE, notes(N_WEB)), cover=False, only_signin=True)),
+     signin_extra=number_steps(IDENTITY_START, MODULES_START, MENU_FRONTEND, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, ST_EDIT_PAGE, ST_LIVE, notes(N_WEB)), cover=False, only_signin=True)),
  '05-webapp-landing-admin': ("Flow 5: Web app, landing pages and admin",
    "A full website plus separate campaign pages under one admin.",
    guide("Flow 5: Web app, landing pages and admin", "A full website plus separate campaign pages under one admin.", "", "", "", "",
-     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, ST_EDIT_PAGE, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, ST_LIVE, notes(N_WEB+N_LAND)), cover=False, only_signin=True)),
+     signin_extra=number_steps(IDENTITY_START, MODULES_START, MENU_FRONTEND, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, ST_EDIT_PAGE, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, ST_LIVE, notes(N_WEB+N_LAND)), cover=False, only_signin=True)),
  '06-static-landing': ("Flow 6: Static website and landing pages",
    "Host everything as plain files and keep campaign pages separate.",
    guide("Flow 6: Static website and landing pages", "Host everything as plain files and keep campaign pages separate.", "", "", "", "",
-     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, ST_EDIT_PAGE, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, CONVERT_START, ST_CONVERT_BTN, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC+N_LAND+N_LAND_STATIC)), cover=False, only_signin=True)),
+     signin_extra=number_steps(IDENTITY_START, MODULES_START, MENU_FRONTEND, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, ST_EDIT_PAGE, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, CONVERT_START, ST_CONVERT_BTN, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC+N_LAND+N_LAND_STATIC)), cover=False, only_signin=True)),
  '07-webapp-static': ("Flow 7: Web app and static website together",
    "Keep the live site and also publish a plain-file copy.",
    guide("Flow 7: Web app and static website together", "Keep the live site and also publish a plain-file copy.", "", "", "", "",
-     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, ST_EDIT_PAGE, ST_LIVE, ST_CONVERT_BTN, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
+     signin_extra=number_steps(IDENTITY_START, MODULES_START, MENU_FRONTEND, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, ST_EDIT_PAGE, ST_LIVE, ST_CONVERT_BTN, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
  '08-full-platform': ("Flow 8: Full platform",
    "Website, landing pages, static export, membership and admin, all enabled.",
    guide("Flow 8: Full platform", "Website, landing pages, static export, membership and admin, all enabled.", "", "", "", "",
-     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, ST_EDIT_PAGE, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, MEM_ON, ST_LIVE, ST_CONVERT_BTN, ST_STATIC, ST_HOST, notes(N_WEB+N_LAND+N_STATIC)), cover=False, only_signin=True)),
+     signin_extra=number_steps(IDENTITY_START, MODULES_START, MENU_FRONTEND, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, ST_EDIT_PAGE, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, MEM_ON, MENU_MEMBER, ST_LIVE, ST_CONVERT_BTN, ST_STATIC, ST_HOST, notes(N_WEB+N_LAND+N_STATIC)), cover=False, only_signin=True)),
 }

@@ -13,17 +13,21 @@ After you sign in, open **Admin Settings > Identity** in the left menu. This is 
 Click **Modules** in the left menu. Find the **Frontend** card (use the search box if you need to). On a fresh install the card shows **Install**: click it and confirm, then click **Enable** and confirm. The badge changes to **Enabled**.
 ![Modules: the Frontend card](modules-start)
 
-## Step 4. Click Brands and select Landing Pages
+## Step 4. Your left menu now shows Frontend
+Frontend is enabled, so a new **Frontend** group appears in the left menu. Click it to open it. Inside you will find **Brands** (landing pages and the web app), **Website Details**, **Color Palette**, **Navigation**, **Layouts**, **Pages**, **Sections** and the content lists (FAQ, Gallery, Testimonials, Team, Catalog, Work, Sectors, Case Studies). The next steps use these entries one by one. If **Frontend** is not in your menu, go back to the previous step and enable it.
+![Left menu with Frontend enabled](menu-frontend)
+
+## Step 5. Click Brands and select Landing Pages
 Click **Frontend > Brands** in the left menu. Three cards appear: Web app, Landing Pages and Collateral. Click the **Landing Pages** card to open it.
 ![Brands: click the Landing Pages card](brands-start)
 
-## Step 5. Choose a landing page template
+## Step 6. Choose a landing page template
 Open **Landing Pages** (http://localhost:3001/admin/landing-pages). Ready-made designs are already listed under **Start from a template**: Lead generation, Product launch, Event or webinar and Special offer. Click **View template** to preview one, then click **Use this template** to start from it. Every word, picture and colour can be changed afterwards in the editor.
 
 If you need a fully custom page, click **New landing page** instead. This guide follows the template route.
 ![Landing Pages: start from a template](landing-start)
 
-## Step 6. Name the page and create it
+## Step 7. Name the page and create it
 A **New landing page** window opens with the template you picked already selected. Fill in two things, then continue:
 - **Name**: the title you see in the admin, for example "Summer offer".
 - **Slug**: the last part of the public web address. The page will be published at `/p/<slug>`; the full address is shown under the field.
@@ -31,7 +35,7 @@ A **New landing page** window opens with the template you picked already selecte
 To use a different design, click another option under **Template** (choose **Blank** for a page with only a header and footer). Then click **Create and edit** to open the page in the editor.
 ![New landing page window](new-landing-start)
 
-## Step 7. Click Create and edit, then change the page
+## Step 8. Click Create and edit, then change the page
 Click **Create and edit**. The page opens in the editor.
 ![Click Create and edit](create-btn)
 
@@ -43,15 +47,15 @@ Change the page like this:
 - Click **Preview** to see the page, then **Save**. The page stays a **Draft** until you publish it.
 ![The landing page editor](editor-start)
 
-## Step 8. After editing, click Save
+## Step 9. After editing, click Save
 When you have finished all your changes, click **Save** at the top right of the editor. Your changes are stored and the page stays a **Draft** until you publish it. Then go back to the **Landing Pages** list (http://localhost:3001/admin/landing-pages).
 ![Click Save](save-btn)
 
-## Step 9. Click Convert
+## Step 10. Click Convert
 In the **Landing Pages** list your page now has three buttons: **Edit**, **Preview** and **Convert**. Click **Convert**. KDL OS builds your page as plain static files. This takes a few minutes; you can stay on the page. When it finishes, the card says **Moved to its folder. Ready to host.** and shows the folder name.
 ![Landing Pages: click Convert](convert-start)
 
-## Step 10. Copy the static files and host them on GitHub
+## Step 11. Copy the static files and host them on GitHub
 The static files are in the folder shown on the card (inside your project, under `frontend/projects/`, in the `out` folder). You can also click **Download as .zip** on the card and unzip it. The files inside, with `index.html` at the top, are your finished landing page. Edit the page, Save and Convert again at any time: the same folder is updated.
 
 To host the files on GitHub:
