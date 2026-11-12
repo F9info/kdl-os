@@ -679,3 +679,20 @@ If you read `README.md`, `docs/SETUP.md` or ran `setup.sh`, you may have seen di
 | Writing a new module | `docs/MODULE_GUIDE.md` |
 | What is built and what is pending | `STATUS.md` |
 | Running the CI checks on your machine | `docs/CI_LOCAL_VERIFICATION.md` |
+
+---
+
+## First-run setup wizard
+
+On a fresh database the app opens a three-step wizard at `/install` before the login page. Login is
+closed (API answers `403 INSTALL_REQUIRED`) until it finishes.
+
+1. **Company**: logo and company name are required; phone and email are optional. Saved to Application Identity (Settings > Identity), the one place every module reads from.
+2. **Application type**: Landing Page, Static Website, Web Application, Admin + Frontend, Multiple Websites, or Admin Only. Each type maps to optional modules in `backend/src/shared/install/app-types.js`. Frontend types install the Frontend (`cms`) module through the normal module lifecycle, so its seeders create the demo website and four landing pages.
+3. **Launch**: installs the modules, then writes `install.status = completed` (last, so a failure leaves the wizard open and Launch can be pressed again). Sign in with the seeded Super Admin afterwards.
+
+Progress is stored on the server (`app_settings`, keys `install.*`), so a refresh resumes where you left off. The wizard needs a Super Admin, so run `npm run db:seed` first.
+
+**Existing databases** are never sent to the wizard: at startup a database where anyone has logged in, or identity is already filled in, is marked complete. Set `KDL_SKIP_INSTALL_WIZARD=1` to skip it for scripted installs and CI.
+
+**After install**, Super Admin and Developer change the type in Admin Settings > Application. That only adds missing modules; it never disables a module or deletes content. Company details stay in Identity.

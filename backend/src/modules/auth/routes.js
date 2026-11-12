@@ -21,6 +21,7 @@ import {
   changePassword,
   getMyPermissions,
 } from './controller.js';
+import { requireInstalled } from '../../shared/install/gate.js';
 import {
   authenticate,
   authenticateAllowPendingPasswordChange,
@@ -84,7 +85,7 @@ export const forgotEmailLimiter = strictLimiter({
 });
 
 router.post('/register', registerLimiter, authLimiter, validate(registerSchema), register);
-router.post('/login', authLimiter, validate(loginSchema), login);
+router.post('/login', authLimiter, requireInstalled, validate(loginSchema), login);
 // Refresh is called by every logged-in tab, so the limit is generous: it only stops token-guessing floods.
 export const refreshLimiter = strictLimiter({
   name: 'refresh',

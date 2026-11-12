@@ -10,6 +10,7 @@ import {
 import { cmsPages, cmsEnabled, applyCmsSite, seedCmsSamples } from '../cms/pages.js';
 import { addPageToMenus, removeDeadDemoLinks } from '../menus/site-menus.js';
 import { ONBOARDING_KEY } from '../../shared/demo-content.js';
+import { isInstalled } from '../../shared/install/status.js';
 
 export { ONBOARDING_KEY };
 import { seedFaq } from '../faq/seed.js';
@@ -25,7 +26,9 @@ export const buildPageData = (slug, title, pages = STARTER_PAGES, brand) =>
 
 export async function getOnboarding() {
   const row = await prisma.appSetting.findUnique({ where: { key: ONBOARDING_KEY } });
-  return { answered: !!row, choice: row ? row.value : null };
+  // The first-run wizard (/install) already asked for company details and what to build, so the
+  // post-login setup pop-up has nothing left to ask once it has finished.
+  return { answered: !!row || (await isInstalled()), choice: row ? row.value : null };
 }
 
 export const saveChoice = (value, client = prisma) =>

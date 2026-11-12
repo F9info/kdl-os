@@ -25,6 +25,8 @@ import { startExpiryJob } from './modules/media/media.expiry.worker.js';
 import { startBrandKitExpiryJob } from './modules/brand-kit/brand-kit.queue.js';
 
 import authRoutes from './modules/auth/routes.js';
+import installRoutes from './shared/install/routes.js';
+import { backfillInstalled } from './shared/install/status.js';
 import userRoutes from './modules/users/routes.js';
 import settingsRoutes from './modules/settings/routes.js';
 import identityRoutes, { publicRouter as appConfigRoutes } from './modules/identity/routes.js';
@@ -95,7 +97,7 @@ app.use('/api', limiter);
 // refreshes every generated project site — rebuilds are debounced per project
 // and skipped for projects without a generated folder.
 // Not content: login, the site-generate call itself, vitals, and the 30s notification-stream polling.
-const SITE_SYNC_SKIP = ['/auth', '/template-engine/site', '/vitals', '/notifications'];
+const SITE_SYNC_SKIP = ['/auth', '/install', '/template-engine/site', '/vitals', '/notifications'];
 app.use('/api', (req, res, next) => {
   if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return next();
   if (SITE_SYNC_SKIP.some((p) => req.path.startsWith(p))) return next();
@@ -110,6 +112,7 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/install', installRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/identity', identityRoutes);
@@ -167,6 +170,12 @@ app.use('/api/detail-page-types', detailPageTypesRoutes);
 
 // Mount plugin modules (those with module.json + routes.js) behind moduleGate
 await loadModules(app);
+// A database that is already in use must not be sent through the first-run wizard.
+try {
+  if (await backfillInstalled(prisma)) logger.info('install: existing installation marked complete');
+} catch (err) {
+  logger.error(`install: status backfill failed: ${err.message}`);
+}
 // Existing databases get the default Developer/Admin permissions once (marker setting); a failure
 // must never stop the server from starting.
 try {

@@ -2,6 +2,8 @@
 
 import { useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
+import { useQuery } from '@tanstack/react-query'
+import api from '@/lib/axios'
 import { useAuthStore } from '@/stores/auth.store'
 import { homeFor } from '@/frontend/membership/roles'
 import { useIdentity } from '@/hooks/useIdentity'
@@ -12,6 +14,18 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   const router = useRouter()
   const pathname = usePathname()
   const { identity, appName } = useIdentity()
+
+  // A fresh install has to go through the setup wizard before anyone can sign in. The server decides;
+  // if it cannot be reached the login page shows as usual.
+  const { data: install } = useQuery({
+    queryKey: ['install', 'status'],
+    queryFn: () => api.get('/install/status').then((r) => r.data.data as { installed: boolean }),
+    retry: false,
+    staleTime: 0,
+  })
+  useEffect(() => {
+    if (install && !install.installed) router.replace('/install')
+  }, [install, router])
 
   useEffect(() => {
     if (isLoading || !isAuthenticated) return

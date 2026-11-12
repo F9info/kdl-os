@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/axios'
@@ -278,6 +279,13 @@ export default function IdentityPage() {
     <PermissionGuard permission="settings:view">
       <div className="max-w-3xl">
         <PageHeader title="Application Identity" />
+        <p className="mb-4 text-sm text-muted-foreground">
+          What this project is for (Landing Page, Static Website, Admin Only ...) is set in{' '}
+          <Link href="/admin/settings/application" className="text-primary underline">
+            Application type
+          </Link>
+          .
+        </p>
         <p className="mb-6 text-sm text-muted-foreground">
           Your application&apos;s name, logos and contact details. These apply across the whole
           application.
