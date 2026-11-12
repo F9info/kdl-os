@@ -105,6 +105,14 @@ const roles = await prisma.rbacRole.findMany({ where: { slug: { in: ['super-admi
 console.log(`  ✓ roles: ${roles.map((r) => `${r.slug}(${r._count.permissions} grants)`).join(', ')}`);
 if (roles.length !== 2) note('FAIL', 'super-admin and developer roles must both exist after the core seed');
 
+// installation wizard: a seeded database must still look fresh (no fake company, not "installed")
+{
+  const rows = await prisma.appSetting.findMany({ where: { OR: [{ key: { startsWith: 'install.' } }, { key: 'identity.company_name' }, { key: 'identity.logo_light' }] }, select: { key: true, value: true } });
+  const filled = rows.filter((r) => r.value !== '');
+  if (filled.length) note('FAIL', `core seed wrote install/company values the wizard should own: ${filled.map((r) => r.key).join(', ')}`);
+  else console.log('  ✓ no install.* or company identity written by seeds (the wizard still opens)');
+}
+
 // ---- 2. install + enable every optional module
 console.log(`2. install + enable ${optional.length} optional modules`);
 const noSeed = [];
@@ -124,6 +132,10 @@ const states = await prisma.module.findMany({ where: { slug: { in: optional } },
 // conflicting modules may be switched off by design; report, do not fail
 const notEnabled = states.filter((s) => s.status !== 'ENABLED').map((s) => `${s.slug}:${s.status}`);
 if (notEnabled.length) console.log(`  • not ENABLED after install (mode conflicts): ${notEnabled.join(', ')}`);
+
+// what the wizard saved: company, application type, completed flag. Seeds and installs must never touch them.
+const WIZARD = { 'identity.company_name': 'Wizard Co', 'identity.logo_light': 'identity/wizard.png', 'install.app_type': 'landing', 'install.status': 'completed' };
+for (const [key, value] of Object.entries(WIZARD)) await prisma.appSetting.upsert({ where: { key }, update: { value }, create: { key, value, type: 'string' } });
 
 // ---- 5 (setup). user edits a seeded row
 const editable = [
@@ -176,6 +188,13 @@ if (aType) await keep('type name', (await prisma.type.findUnique({ where: { id: 
 if (page) {
   const g2 = await prisma.builderPage.findUnique({ where: { id: page.id } });
   if (g2.title !== 'My edited home') note('FAIL', 'edited page title was overwritten'); else console.log('  ✓ edited page kept');
+}
+
+{
+  const rows = await prisma.appSetting.findMany({ where: { key: { in: Object.keys(WIZARD) } } });
+  const changed = Object.entries(WIZARD).filter(([k, v]) => rows.find((r) => r.key === k)?.value !== v);
+  if (changed.length) note('FAIL', `re-seed changed wizard settings: ${changed.map(([k]) => k).join(', ')}`);
+  else console.log('  ✓ company, logo, application type and install status untouched by re-seeds');
 }
 
 // ---- 4. disable then re-enable everything optional

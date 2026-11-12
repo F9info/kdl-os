@@ -201,7 +201,7 @@ export default function TemplateEngineEditPage() {
   }
 
   return (
-    <ModuleGuard slug="template-engine">
+    <ModuleGuard slug="page-builder">
       <div className="te-fields-left fixed inset-0 z-[100] [&_[class*=PuckLayout-nav]]:hidden">
         {/* No Outline panel — it only duplicated the Section tab's own
             Reorder list. Puck hardwires Fields to grid-area "right" with no

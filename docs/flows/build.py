@@ -161,8 +161,14 @@ def main():
         subprocess.run([CHROME, '--headless=new', '--disable-gpu', '--no-pdf-header-footer', f'--print-to-pdf={pdf}', 'file://' + src],
                        check=True, capture_output=True, timeout=180)
         os.unlink(src)
-        manifest.append({'file': slug + '.pdf', 'title': title, 'goal': goal})
+        manifest.append({'file': slug + '.pdf', 'href': '/docs/flows/' + slug + '.pdf', 'title': title, 'goal': goal, 'category': 'Flow guides', 'version': '1.0'})
         print('ok', slug, round(os.path.getsize(pdf) / 1024), 'KB')
+    # Guides built by docs/guide/build.mjs (A4 manual with contents and page numbers). The PDF must already
+    # exist in public/docs/guides; the entry is kept here so one list drives the Documents page.
+    if os.path.exists(os.path.join(ROOT, 'frontend', 'public', 'docs', 'guides', 'kdl-os-installation-guide.pdf')):
+        manifest.insert(0, {'file': 'kdl-os-installation-guide.pdf', 'href': '/docs/guides/kdl-os-installation-guide.pdf',
+            'title': 'KDL OS – Complete Installation & Setup Guide', 'category': 'KDL OS – Installation & User Guides', 'version': '1.0',
+            'goal': 'Complete step-by-step guide explaining KDL OS installation, three-step setup wizard, application selection, module activation, dashboard and post-installation configuration.'})
     with open(LIST, 'w') as f: json.dump(manifest, f, indent=2); f.write('\n')
 
 if __name__ == '__main__':

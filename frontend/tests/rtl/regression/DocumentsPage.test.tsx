@@ -9,10 +9,19 @@ describe('Documents page', () => {
     render(<DocumentsPage />)
     const links = screen.getAllByRole('link')
     expect(links).toHaveLength(flows.length)
-    for (const [i, f] of flows.entries()) {
-      expect(links[i]).toHaveAttribute('href', `/docs/flows/${f.file}`)
-      expect(links[i]).toHaveAttribute('target', '_blank')
-      expect(links[i]).toHaveAttribute('rel', expect.stringContaining('noopener'))
+    for (const f of flows as { file: string; href?: string }[]) {
+      const link = links.find((l) => l.getAttribute('href') === (f.href ?? `/docs/flows/${f.file}`))
+      expect(link).toBeDefined()
+      expect(link).toHaveAttribute('target', '_blank')
+      expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'))
     }
+  })
+
+  it('groups guides under their category, with the installation manual under KDL OS – Installation & User Guides', () => {
+    render(<DocumentsPage />)
+    const heading = screen.getByRole('heading', { name: 'KDL OS – Installation & User Guides' })
+    const list = heading.closest('section')!
+    expect(list).toHaveTextContent('KDL OS – Complete Installation & Setup Guide')
+    expect(list).toHaveTextContent('Version 1.0')
   })
 })
