@@ -56,21 +56,28 @@ A detail page shows one item: one service, one blog post, one event, one sector.
 **B. Edit the layout.** Go back to **Layout settings** (Frontend > Brands > Web app). A pill called **Layout Service Detail** (or Layout Blog Detail, Layout Event Detail and so on) now appears for each type. Click the pill to open the section builder for that layout: change it once and every page of that type changes. The number on the pill is how many detail pages exist. Click a small number under the pill to edit one page's own content (title, text, images); the arrow opens that page live.
 ![Layout settings: the detail page layouts](detail-layout)
 
-## Step 12. Edit and publish the pages
+## Step 12. Edit the detail layout, then add the content
+**A. Edit the layout.** On Layout settings click the **Layout Service Detail** pill (or the pill of another detail type). The section builder opens. Use the **Section**, **Reorder**, **Style** and **Content** tabs to build the layout, then click **Save**. The layout is the same for every page of this type: you set it once.
+![Detail page layout in the section builder](detail-editor)
+
+**B. Add the content.** Go back to Layout settings and click the number on the pill. The list shows every page of this type (for example every service). Click the pencil to change a page's text and images, click **Rename** to rename it, click the arrow icon to open it live, and click the bin to delete it. Click **Add new** to create a related page. The layout never changes between pages: here you change only the text and images.
+![Service Detail: every page of the type](detail-list)
+
+## Step 13. Edit and publish the pages
 Open **Frontend > Pages**. Click **Edit** on a page to change its text, images and links in the section builder, then **Save** and **Publish**. Publish stops real problems (an empty page, a missing title, a broken link) and only suggests the rest. Click **Duplicate** to copy a page. **Frontend > Sections** holds reusable sections.
 ![Frontend > Pages](pages)
 
-## Step 13. Click Brands and select Landing Pages
+## Step 14. Click Brands and select Landing Pages
 Click **Frontend > Brands** in the left menu. Three cards appear: Web app, Landing Pages and Collateral. Click the **Landing Pages** card to open it.
 ![Brands: click the Landing Pages card](brands-start)
 
-## Step 14. Choose a landing page template
+## Step 15. Choose a landing page template
 Open **Landing Pages** (http://localhost:3001/admin/landing-pages). Ready-made designs are already listed under **Start from a template**: Lead generation, Product launch, Event or webinar and Special offer. Click **View template** to preview one, then click **Use this template** to start from it. Every word, picture and colour can be changed afterwards in the editor.
 
 If you need a fully custom page, click **New landing page** instead. This guide follows the template route.
 ![Landing Pages: start from a template](landing-start)
 
-## Step 15. Name the page and create it
+## Step 16. Name the page and create it
 A **New landing page** window opens with the template you picked already selected. Fill in two things, then continue:
 - **Name**: the title you see in the admin, for example "Summer offer".
 - **Slug**: the last part of the public web address. The page will be published at `/p/<slug>`; the full address is shown under the field.
@@ -78,7 +85,7 @@ A **New landing page** window opens with the template you picked already selecte
 To use a different design, click another option under **Template** (choose **Blank** for a page with only a header and footer). Then click **Create and edit** to open the page in the editor.
 ![New landing page window](new-landing-start)
 
-## Step 16. Click Create and edit, then change the page
+## Step 17. Click Create and edit, then change the page
 Click **Create and edit**. The page opens in the editor.
 ![Click Create and edit](create-btn)
 
@@ -90,11 +97,11 @@ Change the page like this:
 - Click **Preview** to see the page, then **Save**. The page stays a **Draft** until you publish it.
 ![The landing page editor](editor-start)
 
-## Step 17. After editing, click Save
+## Step 18. After editing, click Save
 When you have finished all your changes, click **Save** at the top right of the editor. Your changes are stored and the page stays a **Draft** until you publish it. Then go back to the **Landing Pages** list (http://localhost:3001/admin/landing-pages).
 ![Click Save](save-btn)
 
-## Step 18. Check the live website
+## Step 19. Check the live website
 Open http://localhost in a private window, signed out. Check that the header and footer match Home on every page and that every menu link opens a page. Pages are public at `/` and at `/p/<slug>`.
 
 ## Notes: Changing things later

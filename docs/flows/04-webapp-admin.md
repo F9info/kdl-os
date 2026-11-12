@@ -56,11 +56,18 @@ A detail page shows one item: one service, one blog post, one event, one sector.
 **B. Edit the layout.** Go back to **Layout settings** (Frontend > Brands > Web app). A pill called **Layout Service Detail** (or Layout Blog Detail, Layout Event Detail and so on) now appears for each type. Click the pill to open the section builder for that layout: change it once and every page of that type changes. The number on the pill is how many detail pages exist. Click a small number under the pill to edit one page's own content (title, text, images); the arrow opens that page live.
 ![Layout settings: the detail page layouts](detail-layout)
 
-## Step 12. Edit and publish the pages
+## Step 12. Edit the detail layout, then add the content
+**A. Edit the layout.** On Layout settings click the **Layout Service Detail** pill (or the pill of another detail type). The section builder opens. Use the **Section**, **Reorder**, **Style** and **Content** tabs to build the layout, then click **Save**. The layout is the same for every page of this type: you set it once.
+![Detail page layout in the section builder](detail-editor)
+
+**B. Add the content.** Go back to Layout settings and click the number on the pill. The list shows every page of this type (for example every service). Click the pencil to change a page's text and images, click **Rename** to rename it, click the arrow icon to open it live, and click the bin to delete it. Click **Add new** to create a related page. The layout never changes between pages: here you change only the text and images.
+![Service Detail: every page of the type](detail-list)
+
+## Step 13. Edit and publish the pages
 Open **Frontend > Pages**. Click **Edit** on a page to change its text, images and links in the section builder, then **Save** and **Publish**. Publish stops real problems (an empty page, a missing title, a broken link) and only suggests the rest. Click **Duplicate** to copy a page. **Frontend > Sections** holds reusable sections.
 ![Frontend > Pages](pages)
 
-## Step 13. Check the live website
+## Step 14. Check the live website
 Open http://localhost in a private window, signed out. Check that the header and footer match Home on every page and that every menu link opens a page. Pages are public at `/` and at `/p/<slug>`.
 
 ## Notes: Changing things later

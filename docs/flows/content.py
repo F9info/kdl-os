@@ -2,8 +2,8 @@ import re
 """Guide text for build.py. Markdown-ish: ![caption](img-name) is a screenshot from img/,
 ``` is a terminal block, > is a callout, [[flow: a | b]] is a step strip, [[mock:x]] a drawn mockup."""
 
-SIZE = {'identity-start': (1153, 809), 'modules-start': (1900, 580), 'brands-start': (1920, 550), 'landing-start': (1691, 829), 'new-landing-start': (767, 883), 'editor-start': (1920, 879), 'create-btn': (458, 168), 'save-btn': (125, 182), 'convert-start': (580, 642), 'brands-web': (1920, 550), 'typography': (1360, 900), 'font-settings': (1360, 900), 'button-styles': (1360, 900), 'layout-settings': (1621, 440), 'layouts-menu': (364, 128), 'layout-pick': (1632, 716)}
-CROP = {'brands-start': (32, 0), 'landing-start': (0, 69), 'editor-start': (0, 14), 'brands-web': (32, 0), 'layout-pick': (0, 40), 'layout-settings': (0, 235)}  # px cut from the top (browser address bar)  # screenshots that are not 1360x820
+SIZE = {'identity-start': (1153, 809), 'modules-start': (1900, 580), 'brands-start': (1920, 550), 'landing-start': (1691, 829), 'new-landing-start': (767, 883), 'editor-start': (1920, 879), 'create-btn': (458, 168), 'save-btn': (125, 182), 'convert-start': (580, 642), 'brands-web': (1920, 550), 'typography': (1360, 900), 'font-settings': (1360, 900), 'button-styles': (1360, 900), 'layout-settings': (1621, 440), 'layouts-menu': (364, 128), 'layout-pick': (1632, 716), 'detail-editor': (1920, 962), 'detail-list': (1672, 371)}
+CROP = {'brands-start': (32, 0), 'landing-start': (0, 69), 'editor-start': (0, 14), 'brands-web': (32, 0), 'layout-pick': (0, 40), 'layout-settings': (0, 235), 'detail-editor': (0, 135), 'detail-list': (0, 70)}  # px cut from the top (browser address bar)  # screenshots that are not 1360x820
 
 ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a leading < puts the label left of the dot
  'login': [(870, 404, 'Click here and type your email'), (835, 487, 'Click here and type your password'), (870, 541, 'Click Sign in'), (489, 594, '<Forgot password? Click here')],
@@ -47,6 +47,8 @@ ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a l
  'layout-pick': [(1506, 103, '<Switch this section on or off'), (700, 155, 'Ready-made designs: pick the one you like'), (1510, 540, '<Green tick = design in use'), (872, 571, 'Click Create new to design your own')],
  'navigation-detail': [(706, 424, 'Click to add a Service detail page'), (428, 508, 'Click to add a Blog detail page'), (790, 691, '<Type a custom one, e.g. Event detail')],
  'detail-layout': [(722, 281, '<Click a Layout pill to edit that layout in the section builder'), (886, 255, 'Number of detail pages'), (790, 312, 'Click a number to edit one page; the arrow opens it live')],
+ 'detail-editor': [(245, 300, 'Click a section to add it to the layout'), (1070, 380, 'Click any text or picture to select it'), (1863, 62, '<Click Save')],
+ 'detail-list': [(1510, 41, '<Click Add new to create another page'), (1010, 222, '<Click the pencil to edit text and images'), (1179, 222, 'Click the bin to delete a page')],
  'dashboard': [(1336, 301, '<Click Manage projects to switch project'), (347, 530, 'Click a shortcut to jump straight there'), (130, 85, 'Dashboard'), (130, 125, 'Click Documents to open these guides')],
  'documents': [(690, 290, 'Click a guide to open it as a PDF in a new tab'), (1150, 290, '<Installation and flow guides')],
  'activity-log': [(455, 173, '<Click here to filter by person'), (643, 173, 'Click here to filter by module'), (842, 173, 'Pick a start date'), (1022, 173, '<Pick an end date')],
@@ -567,6 +569,13 @@ A detail page shows one item: one service, one blog post, one event, one sector.
 **B. Edit the layout.** Go back to **Layout settings** (Frontend > Brands > Web app). A pill called **Layout Service Detail** (or Layout Blog Detail, Layout Event Detail and so on) now appears for each type. Click the pill to open the section builder for that layout: change it once and every page of that type changes. The number on the pill is how many detail pages exist. Click a small number under the pill to edit one page's own content (title, text, images); the arrow opens that page live.
 ![Layout settings: the detail page layouts](detail-layout)"""
 
+ST_DETAIL_EDIT = """## Step 0. Edit the detail layout, then add the content
+**A. Edit the layout.** On Layout settings click the **Layout Service Detail** pill (or the pill of another detail type). The section builder opens. Use the **Section**, **Reorder**, **Style** and **Content** tabs to build the layout, then click **Save**. The layout is the same for every page of this type: you set it once.
+![Detail page layout in the section builder](detail-editor)
+
+**B. Add the content.** Go back to Layout settings and click the number on the pill. The list shows every page of this type (for example every service). Click the pencil to change a page's text and images, click **Rename** to rename it, click the arrow icon to open it live, and click the bin to delete it. Click **Add new** to create a related page. The layout never changes between pages: here you change only the text and images.
+![Service Detail: every page of the type](detail-list)"""
+
 ST_NAV = """## Step 0. Choose the menu pages
 Open **Frontend > Navigation**. Click the page names you want in the menu (About, Services, Portfolio, Blog, Contact and so on), or type a custom page and click **Add**. Use the **Header menu** and **Footer menu** tabs. One page is created for every menu item, plus Home.
 ![Frontend > Navigation](navigation)"""
@@ -684,25 +693,25 @@ Admin is always on, so "only landing page" still includes the admin you sign in 
  '03-static-website-only': ("Flow 3: Static website only (with admin)",
    "Ship a website as plain files hosted anywhere, with no live web app in front of visitors.",
    guide("Flow 3: Static website only (with admin)", "Ship a website as plain files hosted anywhere, with no live web app in front of visitors.", "", "", "", "",
-     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_PAGES, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
+     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
  '04-webapp-admin': ("Flow 4: Web app and admin",
    "Run a live, editable website served from this installation.",
    guide("Flow 4: Web app and admin", "Run a live, editable website served from this installation.", "", "", "", "",
-     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_PAGES, ST_LIVE, notes(N_WEB)), cover=False, only_signin=True)),
+     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, ST_LIVE, notes(N_WEB)), cover=False, only_signin=True)),
  '05-webapp-landing-admin': ("Flow 5: Web app, landing pages and admin",
    "A full website plus separate campaign pages under one admin.",
    guide("Flow 5: Web app, landing pages and admin", "A full website plus separate campaign pages under one admin.", "", "", "", "",
-     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, ST_LIVE, notes(N_WEB+N_LAND)), cover=False, only_signin=True)),
+     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, ST_LIVE, notes(N_WEB+N_LAND)), cover=False, only_signin=True)),
  '06-static-landing': ("Flow 6: Static website and landing pages",
    "Host everything as plain files and keep campaign pages separate.",
    guide("Flow 6: Static website and landing pages", "Host everything as plain files and keep campaign pages separate.", "", "", "", "",
-     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, CONVERT_START, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC+N_LAND+N_LAND_STATIC)), cover=False, only_signin=True)),
+     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, CONVERT_START, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC+N_LAND+N_LAND_STATIC)), cover=False, only_signin=True)),
  '07-webapp-static': ("Flow 7: Web app and static website together",
    "Keep the live site and also publish a plain-file copy.",
    guide("Flow 7: Web app and static website together", "Keep the live site and also publish a plain-file copy.", "", "", "", "",
-     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_PAGES, ST_LIVE, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
+     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, ST_LIVE, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
  '08-full-platform': ("Flow 8: Full platform",
    "Website, landing pages, static export, membership and admin, all enabled.",
    guide("Flow 8: Full platform", "Website, landing pages, static export, membership and admin, all enabled.", "", "", "", "",
-     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, MEM_ON, ST_LIVE, ST_STATIC, ST_HOST, notes(N_WEB+N_LAND+N_STATIC)), cover=False, only_signin=True)),
+     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, MEM_ON, ST_LIVE, ST_STATIC, ST_HOST, notes(N_WEB+N_LAND+N_STATIC)), cover=False, only_signin=True)),
 }
