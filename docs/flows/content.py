@@ -93,6 +93,13 @@ Open **http://localhost/login**. Email `admin@kdl.com`, password `kdl-dev-seed-p
 ![The sign-in screen](login)
 > Forgot the password or locked out? `docker compose exec backend node scripts/reset-admin-password.js --email admin@kdl.com --password 'Admin@123'` (at least 8 characters), then sign in with it. 429 or "Account locked" while testing: wait a minute or `docker compose restart backend`."""
 
+SIGNIN = """## Sign in
+> KDL OS must already be installed and running. If not, follow the **Installation** guide first (Admin > Documents > Installation).
+
+Open **http://localhost/login**. Email `admin@kdl.com`, password `kdl-dev-seed-password`. KDL OS asks you to choose a new password on first sign-in.
+![The sign-in screen](login)
+> Forgot the password or locked out? `docker compose exec backend node scripts/reset-admin-password.js --email admin@kdl.com --password 'Admin@123'` (at least 8 characters), then sign in with it. 429 or "Account locked" while testing: wait a minute or `docker compose restart backend`."""
+
 WIZARD = """## Part B. First-run setup wizard
 On a fresh install a **Setup wizard** opens over the admin. It asks three things, in this order.
 
@@ -307,9 +314,9 @@ def guide(flow, goal, gets, products, steps, modules, extra=""):
 
 **Products to tick:** {products}
 
-[[flow: Setup wizard | Enable modules | Build | Publish]]
+[[flow: Sign in | Setup wizard | Enable modules | Build | Publish]]
 
-> **Before you start:** install and sign in first using the **Installation** guide (Admin > Documents > Installation).
+{SIGNIN}
 
 {SHOT_NOTE}
 
