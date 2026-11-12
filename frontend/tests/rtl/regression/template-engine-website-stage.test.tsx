@@ -7,7 +7,7 @@
  * flow before adding the rest.
  */
 import React from 'react'
-import { render, screen, fireEvent, within, waitFor, act } from '@testing-library/react'
+import { render, screen, fireEvent, within, waitFor, act, cleanup } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WebsiteStage } from '@/app/admin/template-engine/_components/stages/WebsiteStage'
@@ -154,9 +154,16 @@ describe('WebsiteStage — Brands cards grid (KDL-558)', () => {
     expect(screen.getByText('Web app')).toBeInTheDocument()
   })
 
-  it('inside the Web app: its Forms and "Convert to Static Website" buttons', () => {
+  it('Forms and "Convert to Static Website" show on the last (Pages) step only', () => {
     renderWithQC(<WebsiteStage run={makeRun()} />)
     fireEvent.click(screen.getByText('Web app'))
+    expect(screen.queryByTestId('webapp-tools')).not.toBeInTheDocument()
+    cleanup()
+    localStorage.setItem(
+      'te-website-ui:proj-1',
+      JSON.stringify({ openBrand: 'webapp', webAppStep: 'assemble' })
+    )
+    renderWithQC(<WebsiteStage run={makeRun()} />)
     const tools = screen.getByTestId('webapp-tools')
     expect(within(tools).getByRole('link', { name: /Forms/ })).toHaveAttribute(
       'href',
@@ -170,8 +177,11 @@ describe('WebsiteStage — Brands cards grid (KDL-558)', () => {
 
   it('the Forms button needs the Forms module, the conversion does not', () => {
     surfaceState.off = ['forms']
+    localStorage.setItem(
+      'te-website-ui:proj-1',
+      JSON.stringify({ openBrand: 'webapp', webAppStep: 'assemble' })
+    )
     renderWithQC(<WebsiteStage run={makeRun()} />)
-    fireEvent.click(screen.getByText('Web app'))
     const tools = screen.getByTestId('webapp-tools')
     expect(within(tools).queryByRole('link', { name: /Forms/ })).not.toBeInTheDocument()
     expect(

@@ -311,7 +311,8 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
         </div>
       ) : (
         <div className="space-y-3">
-          <WebAppTools projectId={run.projectId} />
+          {/* Forms and the static export only make sense once the pages exist: last step only. */}
+          {webAppStep === 'assemble' && <WebAppTools projectId={run.projectId} />}
           {webAppStep === 'typography' ? (
             <Button
               type="button"
