@@ -1,212 +1,94 @@
 #!/usr/bin/env python3
-"""Writes docs/flows/*.md from the blocks below, then renders each to PDF in
-frontend/public/docs/flows/ with headless Chrome. Run: python3 docs/flows/build.py"""
-import html, os, re, subprocess, sys, tempfile, json
+"""Builds the flow guides: content.py -> docs/flows/*.md -> PDFs in frontend/public/docs/flows/ (headless
+Chrome) and frontend/src/admin/lib/flow-docs.json (the list the Documents page shows).
+Screenshots come from img/ (refresh with: cd frontend && node ../docs/flows/screenshots.mjs).
+Run: python3 docs/flows/build.py"""
+import html, json, os, re, subprocess, sys, tempfile
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from content import DOCS
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(HERE, '..', '..', 'frontend', 'public', 'docs', 'flows')
+ROOT = os.path.join(HERE, '..', '..')
+OUT = os.path.join(ROOT, 'frontend', 'public', 'docs', 'flows')
+LIST = os.path.join(ROOT, 'frontend', 'src', 'admin', 'lib', 'flow-docs.json')
 CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 
-SIGNIN = """## 1. Sign in and run the first-time setup
-1. Open **http://localhost:3001/login** and sign in with your admin account.
-2. On a fresh install the **Setup wizard** opens by itself.
-   - **Step 1 of 2: company details.** Name, logo, emails, phones, address. Saved once in **Settings > Identity** and reused everywhere (admin, website, print layouts).
-   - **Step 2 of 2: what are you building?** Tick the products you need (see the table below). Admin is always on. The screen shows what each choice turns on before you press **Apply products**.
-3. Missed the wizard? Company details live in **Admin Settings > Identity**; products live at **/admin/settings/products**. Turning a product off never deletes data."""
+CSS = """@page{size:A4;margin:16mm 14mm}
+*{box-sizing:border-box}
+body{font:10.5pt/1.5 -apple-system,Helvetica,Arial,sans-serif;color:#1a2233}
+h1{font-size:24pt;color:#fff;background:linear-gradient(120deg,#1d4ed8,#312e81);margin:0 0 10pt;padding:16pt 16pt;border-radius:8px}
+h2{font-size:15pt;margin:20pt 0 6pt;color:#0f2a6b;border-bottom:2px solid #c7d2fe;padding-bottom:3pt;break-after:avoid}
+h3{font-size:12pt;margin:14pt 0 4pt;color:#1e3a8a;break-after:avoid}
+table{border-collapse:collapse;width:100%;margin:8pt 0;font-size:9.5pt;break-inside:avoid}
+th,td{border:1px solid #cbd5e1;padding:4pt 7pt;text-align:left;vertical-align:top}
+th{background:#eef2ff}
+code{background:#f1f5f9;padding:0 3pt;border-radius:3px;font-size:9pt}
+ol,ul{padding-left:18pt;margin:4pt 0}li{margin:2pt 0}p{margin:5pt 0}
+pre{background:#0f172a;color:#e2e8f0;border-radius:6px;padding:9pt 11pt;font:8.6pt/1.45 ui-monospace,Menlo,monospace;white-space:pre-wrap;word-break:break-all;margin:8pt 0;border-left:4px solid #38bdf8;break-inside:avoid}
+pre:before{content:"Terminal";display:block;color:#7dd3fc;font:700 7.5pt -apple-system,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;margin-bottom:5pt}
+figure{margin:9pt 0;break-inside:avoid;text-align:center}
+figure img{width:100%;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 2px 8px rgba(15,23,42,.12)}
+figcaption{font-size:8.8pt;color:#475569;margin-top:3pt}
+.note{background:#eff6ff;border-left:4px solid #3b82f6;border-radius:4px;padding:6pt 10pt;margin:8pt 0;font-size:9.8pt;break-inside:avoid}
+.flow{display:flex;flex-wrap:wrap;gap:5pt;align-items:center;margin:10pt 0;break-inside:avoid}
+.flow span{background:#eef2ff;border:1px solid #a5b4fc;color:#1e3a8a;border-radius:999px;padding:3pt 9pt;font-size:8.8pt;font-weight:600}
+.flow i{color:#6366f1;font-style:normal;font-weight:700}
+.mock{border:1px solid #cbd5e1;border-radius:10px;background:#fff;box-shadow:0 6px 18px rgba(15,23,42,.18);width:78%;margin:10pt auto;padding:13pt 15pt;break-inside:avoid}
+.mock h4{margin:0 0 2pt;font-size:12pt}.mock p{margin:0 0 8pt;color:#64748b;font-size:9pt}
+.mock .card{border:1px solid #cbd5e1;border-radius:7px;padding:7pt 9pt;margin:5pt 0;display:flex;gap:8pt;align-items:flex-start;font-size:9.5pt}
+.mock .card.on{border-color:#1d4ed8;background:#eff6ff}
+.mock .box{width:11pt;height:11pt;border:1.5px solid #94a3b8;border-radius:3px;flex:none;margin-top:1pt}
+.mock .on .box{background:#1d4ed8;border-color:#1d4ed8}
+.mock .card small{display:block;color:#64748b;font-size:8.4pt}
+.mock .btns{display:flex;justify-content:flex-end;gap:6pt;margin-top:9pt}
+.mock .b{border:1px solid #cbd5e1;border-radius:6px;padding:3pt 11pt;font-size:9pt}.mock .b.p{background:#1d4ed8;border-color:#1d4ed8;color:#fff}
+.mock .cap{text-align:center;font-size:8.6pt;color:#64748b;margin-top:7pt}
+.mcs{display:flex;gap:6pt;margin:8pt 0;break-inside:avoid}
+.mc{flex:1;border:1px solid #cbd5e1;border-radius:7px;padding:7pt;background:#fff;font-size:8.6pt}
+.mc .mh{display:flex;justify-content:space-between;gap:4pt;align-items:center}.mc .mh span{color:#fff;border-radius:999px;padding:1pt 6pt;font-size:7.4pt;font-weight:700}
+.mc small{color:#64748b}.mc .mf{display:flex;gap:4pt;margin-top:6pt;border-top:1px solid #e2e8f0;padding-top:5pt}
+.mc .b{border:1px solid #cbd5e1;border-radius:5px;padding:1pt 7pt;font-size:8pt}
+.foot{margin-top:18pt;font-size:8.5pt;color:#64748b;border-top:1px solid #cbd5e1;padding-top:5pt}"""
 
-ADMIN = """## Admin application (always included)
-Everything below is available from the first sign-in and does not depend on any website product.
+def _card(name, badge, btn, extra=''):
+    col = {'Available': '#64748b', 'Installed': '#475569', 'Enabled': '#1d4ed8', 'Disabled': '#dc2626'}[badge]
+    return (f'<div class=mc><div class=mh><b>{name}</b><span style="background:{col}">{badge}</span></div>'
+            f'<small>v1.0.0</small><div class=mf><span class=b>{btn}</span>{extra}</div></div>')
 
-| Need | Where |
-|---|---|
-| Add people | **Users** (add, suspend, reset) |
-| Decide who can do what | **Access Control > Roles / Permissions** (Super Admin, Developer, Admin, User defaults) |
-| Company name, logo, contacts | **Admin Settings > Identity** |
-| Admin look (colours, fonts) | **Admin Settings > Themes**, choose **Admin app**, Simple or Advanced, **Publish** |
-| Turn capabilities on or off | **Modules** (a module that is off has no menu entry) |
-| Alerts and integrations | **Notifications**, **Integrations** |
-| Who did what | **Access Control > Activity Log** |
-| Files | **Media > Library**; storage under **Settings > Storage** |"""
-
-WEBAPP = """## Build the website (Web app)
-The Web app is the live website served by this installation, from the same address as the admin.
-1. **Frontend > Brands**, choose **Web app** (the Studio / Template Engine). First time: press **Start Studio run**.
-2. **Overview**: upload the logo, confirm company and contact details, **Next**. The logo also becomes the admin logo.
-3. **Color Palette**: four brand colours are taken from the logo. Keep or edit them (hex, Randomize, eyedropper), **Submit palette**.
-4. **Approval**: the brand kit is approved by a person; the colours become design tokens in the Theme Engine.
-5. **Website stage** (Brands > Web app): **Typography**, **Font settings**, optional **Buttons and form fields** style, **Navigation** (one page per menu item, plus Home), then **Pages** to assemble them.
-6. **Layouts**: pick the Top header, Header and Footer designs. Home's header and footer are shared by every public page.
-7. **Fill the content**: Sectors, Catalog, Work, FAQ, Case Studies, Team, Testimonials, Gallery. Each Sector, Catalog and Work entry gets its own detail page.
-8. **Navigation** (menus): fine-tune header and footer menus. No re-run needed.
-9. **Pages / page editor / Sections**: edit blocks, **Publish**. Publish checks stop real problems (empty page, missing title, broken link, image without source) and only suggest the rest.
-10. **Go live**: pages are public at `/`, `/p/<slug>`, `/sectors/<slug>`, `/catalog/<slug>`, `/work/<slug>`.
-
-**After a change, re-run only what changed:** logo or contacts: save Overview. Navigation: Navigation then Pages. Header or footer design: Layouts. Colours or fonts: Color Palette or Typography, Approval, then re-run Website. Entry text or menus: edit in place."""
-
-LANDING = """## Build a landing page
-1. **Frontend > Brands**, choose **Landing Pages** (or open **/admin/landing-pages**).
-2. Pick a template and press **Use this template** (or **View template** first). Give the page a name and press **Create and edit**.
-3. In the editor change text, images, buttons and the contact form block. Use **Insert block** for more sections and **Sections** for saved ones.
-4. **Save**. The finished pages list shows each page with **Preview** and **Convert**.
-5. **Publish** when the checks pass. The page is public at `/p/<slug>`.
-6. Optional: set the page's own branding (logo, colours), duplicate, rename, or **Save as template**.
-7. Forms: create the form under **Frontend > Brands > Forms**, then pick it in the Contact Form block. Messages land in the admin."""
-
-STATIC = """## Convert the website to a static website
-A static website is plain files (HTML, CSS, images) you can host anywhere, with no server.
-1. Finish and publish the website pages first (see the Web app steps). The export holds the **published** pages.
-2. Open **Frontend > Convert to Static Website** (**/admin/static-website**).
-3. Optional **Website address** (for example https://www.example.com): adds `sitemap.xml` and canonical addresses. `robots.txt` and each page's title, description and share tags are always included.
-4. Optional **Web app address**: a static site has no server, so forms cannot save messages on their own. Leave it empty and each form is replaced by your contact email and phone from Identity. Enter your public Web app address and forms, menus and FAQ keep working through it. It must be an https address.
-5. Press **Convert to Static Website**. Progress: collect pages, menus, brand and images; build the files; ready to host. It takes a few minutes.
-6. Press **Download as .zip**, unzip, and upload to any host (Netlify, S3, shared hosting, your own nginx).
-7. Changed something later? Press **Convert again with the latest changes**.
-
-A landing page converts the same way from its own **Convert** button; each landing page gets its own folder."""
-
-CHECK = """## Check it worked
-- Open the public address in a private window, signed out.
-- Header, top bar and footer match Home on every page.
-- Every menu link opens a page; forms send (Web app) or show your contact details (static).
-- Admin sidebar shows only the modules your products need."""
-
-PRODUCTS = """| Product | Turns on | Typical use |
-|---|---|---|
-| **Admin** (always on) | Users, Roles, Settings, Identity, Media | Internal business app |
-| **Website** | Content, Menus, Page builder, Theme engine, Media | Multi-page company site |
-| **Landing Pages** | Landing, Page builder, Theme engine, Media | Campaign and product pages |"""
-
-def doc(title, goal, gets, body, extra=''):
-    return f"""# {title}
-
-**Goal:** {goal}
-
-**You get:** {gets}
-
-{PRODUCTS}
-
-{body}
-
-{CHECK}
-{extra}
-"""
-
-DOCS = {
- '00-choose-your-flow': ("Choose your flow", "pick the right guide for what you want to build.",
-   "a one-page map from your goal to the matching step-by-step guide.",
-   """## Pick your combination
-| You want | Products to tick | Guide |
-|---|---|---|
-| Only the internal admin app | Admin | 01 Admin only |
-| Only campaign pages | Admin + Landing Pages | 02 Landing page only |
-| A website you host anywhere as plain files | Admin + Website, then Convert | 03 Static website only |
-| A live website with the admin | Admin + Website | 04 Web app and admin |
-| A live website and campaign pages | Admin + Website + Landing Pages | 05 Web app, landing and admin |
-| Plain-file website plus campaign pages | Admin + Website + Landing, then Convert | 06 Static website and landing |
-| Live site that is also exported as plain files | Admin + Website, then Convert | 07 Web app and static website |
-| Everything | All three | 08 Full platform |
-
-Admin is always on, so "only landing page" still includes the admin you sign in to.
-
-## How to decide quickly
-1. Need people, roles and settings only? **Admin only**.
-2. Need one or a few campaign pages? **Landing**.
-3. Need a multi-page site that talks to forms and menus live? **Web app**.
-4. Need cheap, fast, serverless hosting? **Static** (built from the Web app, then exported).
-5. Unsure? Start with **Web app and admin**; you can add Landing or convert to static later without losing data.
-
-## Changing your mind later
-Open **/admin/settings/products**, change the ticks, **Apply products**. Turning a product off hides menu entries; it never deletes pages, users or files."""),
- '01-admin-only': ("Flow 1: Admin only", "run the internal business application with no public website.",
-   "a secured admin app: users, roles, company identity, themes, notifications and activity log.",
-   SIGNIN + "\n\n" + ADMIN + """
-
-## Tick only Admin
-In the Setup wizard, Step 2 of 2, leave **Website** and **Landing Pages** off and press **Apply products**. The wizard records "no website" and stops asking. Public-site menu entries stay hidden."""),
- '02-landing-only': ("Flow 2: Landing page only (with admin)", "publish one or more campaign pages without a full website.",
-   "branded landing pages at `/p/<slug>` with a working contact form, plus the admin that runs them.",
-   SIGNIN + "\n\nTick **Landing Pages** (leave Website off). There is no website setup step.\n\n" +
-   """## 2. Set the brand once
-**Admin Settings > Identity** for name, logo, contacts. **Admin Settings > Themes**, choose **Website**, pick colours and fonts, **Publish**. Landing pages use these tokens.
-
-""" + LANDING + "\n\n" + ADMIN),
- '03-static-website-only': ("Flow 3: Static website only (with admin)", "ship a website as plain files, hosted anywhere, with no live web app in front of visitors.",
-   "a downloadable .zip of your site. The admin is used only by you to build and re-export it.",
-   SIGNIN + "\n\nTick **Website**. Answer **yes** when the wizard asks to create the first site.\n\n" + WEBAPP + "\n\n" + STATIC +
-   """
-
-## Hosting notes
-- Visitors only ever reach your static host. Keep the admin private (internal address or VPN).
-- Forms need the **Web app address** (https) or fall back to your contact email and phone.
-- Re-export after every content change; the zip is a snapshot."""),
- '04-webapp-admin': ("Flow 4: Web app and admin", "run a live, editable website served from this installation.",
-   "a live site on the same address as the admin, with menus, forms, detail pages and the page editor.",
-   SIGNIN + "\n\nTick **Website**. Answer **yes** when the wizard asks to create the first site.\n\n" + WEBAPP + "\n\n" + ADMIN),
- '05-webapp-landing-admin': ("Flow 5: Web app, landing pages and admin", "a full website plus separate campaign pages, all under one admin.",
-   "the live website, landing pages at `/p/<slug>`, one shared brand, one admin.",
-   SIGNIN + "\n\nTick **Website** and **Landing Pages**.\n\n" + WEBAPP + "\n\n" + LANDING +
-   """
-
-## How the two fit together
-- Both use the same Identity, Themes and Media.
-- The website's header and footer come from Home. Landing pages keep their own footer and have no menu unless you add one.
-- Link between them with normal links, for example a menu item **Offer|/p/summer-offer**.
-
-""" + ADMIN),
- '06-static-landing': ("Flow 6: Static website and landing pages", "host everything as plain files and keep campaign pages separate.",
-   "one zip for the website and one folder per landing page, all deployable on any static host.",
-   SIGNIN + "\n\nTick **Website** and **Landing Pages**.\n\n" + WEBAPP + "\n\n" + LANDING + "\n\n" + STATIC +
-   """
-
-## Landing pages in static form
-- Each landing page has its own **Convert** button in the finished pages list and its own build, status and download.
-- The website export holds website pages; landing pages are exported one by one.
-- Upload the website zip to the site root and each landing folder beside it (for example `/summer-offer/`)."""),
- '07-webapp-static': ("Flow 7: Web app and static website together", "keep the live site and also publish a plain-file copy.",
-   "a live web app for editing and forms, plus a static copy for fast public hosting.",
-   SIGNIN + "\n\nTick **Website**.\n\n" + WEBAPP + "\n\n" + STATIC +
-   """
-
-## Running both
-- The Web app stays the **source of truth**: edit and publish there.
-- Public traffic goes to the static copy; set its **Web app address** so forms, menus and FAQ call back to the live app.
-- Re-convert after publishing changes. The static copy never edits itself."""),
- '08-full-platform': ("Flow 8: Full platform", "website, landing pages, static export and admin, all enabled.",
-   "the complete product set with shared brand, content and permissions.",
-   SIGNIN + "\n\nTick **Website** and **Landing Pages**.\n\n" + WEBAPP + "\n\n" + LANDING + "\n\n" + STATIC + "\n\n" + ADMIN +
-   """
-
-## Suggested order for a new client
-1. Identity and Themes (brand once).
-2. Website via the Studio (Overview, Palette, Approval, Website).
-3. Content modules and menus.
-4. Landing pages for campaigns.
-5. Roles for the client's team (Admin role runs content and people; User has no admin access).
-6. Publish, check, then Convert to Static if you want a plain-file copy."""),
+MOCKS = {
+ 'states': '<div class=mcs>' + _card('Landing Pages', 'Available', 'Install') + _card('Landing Pages', 'Installed', 'Enable')
+           + _card('Landing Pages', 'Enabled', 'Disable', '<span class=b>Settings</span>') + _card('Landing Pages', 'Disabled', 'Enable')
+           + '</div><div class=cap>Mockup: the four states of one module card and the button each one shows.</div>',
+ 'dlg_install': '<div class=mock><h4>Install module</h4><p>Install "landing"? This will register its permissions and seed data.</p><div class=btns><span class=b>Cancel</span><span class="b p">Install</span></div></div>',
+ 'dlg_enable': '<div class=mock><h4>Enable module</h4><p>Enable "landing"? Routes and nav items will become live immediately.</p><div class=btns><span class=b>Cancel</span><span class="b p">Enable</span></div></div>',
+ 'toast': '<div class=mock style="width:55%;border-left:4px solid #16a34a"><b>Module installed</b><p style="margin:2pt 0 0">"landing" was installed successfully.</p></div>',
+ 'wizard2': """<div class=mock><h4>What are you building?</h4><p>Step 2 of 2. Each product turns on the modules it needs.</p>
+<div class="card on"><div class=box></div><div><b>Website</b><small>Multi-page corporate site with CMS, menus and page builder.</small></div></div>
+<div class=card><div class=box></div><div><b>Landing Pages</b><small>Campaign and product pages built with the page builder.</small></div></div>
+<div class=btns><span class=b>Back</span><span class="b p">Next</span></div>
+<div class=cap>Mockup of the wizard's product step (Admin is always on, so it has no card).</div></div>""",
+ 'wizard3': """<div class=mock><h4>Create a starter website?</h4><p>KDL OS can create a ready 5-page website (Home, About, Services, Contact, FAQ) that you can edit. Choose Skip to start with no pages.</p>
+<div class=btns><span class=b>Skip</span><span class="b p">Yes, create my website</span></div>
+<div class=cap>Mockup of the wizard's website step (shown only when Website is ticked).</div></div>""",
 }
 
-CSS = """@page{size:A4;margin:18mm 16mm}
-body{font:11pt/1.5 -apple-system,Helvetica,Arial,sans-serif;color:#1a2233}
-h1{font-size:22pt;color:#1d4ed8;margin:0 0 8pt;border-bottom:3px solid #1d4ed8;padding-bottom:6pt}
-h2{font-size:14pt;margin:18pt 0 6pt;color:#0f2a6b;break-after:avoid}
-table{border-collapse:collapse;width:100%;margin:8pt 0;font-size:10pt;break-inside:avoid}
-th,td{border:1px solid #cbd5e1;padding:4pt 7pt;text-align:left;vertical-align:top}
-th{background:#eef2ff}code{background:#f1f5f9;padding:0 3pt;border-radius:3px;font-size:9.5pt}
-ol,ul{padding-left:18pt}li{margin:2pt 0}p{margin:6pt 0}
-.foot{margin-top:22pt;font-size:9pt;color:#64748b;border-top:1px solid #cbd5e1;padding-top:6pt}"""
-
 def inline(t):
-    t = html.escape(t)
+    t = html.escape(t, quote=False)
     t = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', t)
     return re.sub(r'`(.+?)`', r'<code>\1</code>', t)
 
 def render(md):
-    out, lst, tbl = [], None, False
+    out, lst, tbl, code = [], None, False, None
     def close():
         nonlocal lst, tbl
         if lst: out.append(f'</li></{lst}>'); lst = None
         if tbl: out.append('</tbody></table>'); tbl = False
     for ln in md.split('\n'):
+        if code is not None:
+            if ln.strip() == '```': out.append('<pre>' + html.escape('\n'.join(code)) + '</pre>'); code = None
+            else: code.append(ln)
+            continue
+        if ln.strip() == '```': close(); code = []; continue
         if ln.startswith('|'):
             cells = [c.strip() for c in ln.strip().strip('|').split('|')]
             if set(''.join(cells)) <= set('-: '): continue
@@ -220,20 +102,28 @@ def render(md):
         if m:
             if tbl: close()
             if lst == 'ol': out.append('</li>')
-            elif lst: close(); out.append('<ol>'); lst = 'ol'
-            else: out.append('<ol>'); lst = 'ol'
+            else: close(); out.append(f'<ol start="{m[1]}">'); lst = 'ol'
             out.append(f'<li>{inline(m[2])}'); continue
         m = re.match(r'^(\s*)- (.*)', ln)
         if m:
-            if m[1] and lst == 'ol':  # sub-bullet inside the current numbered step
-                out.append(f'<ul><li>{inline(m[2])}</li></ul>'); continue
+            if m[1] and lst == 'ol': out.append(f'<ul><li>{inline(m[2])}</li></ul>'); continue
             if tbl: close()
             if lst == 'ul': out.append('</li>')
-            elif lst: close(); out.append('<ul>'); lst = 'ul'
-            else: out.append('<ul>'); lst = 'ul'
+            else: close(); out.append('<ul>'); lst = 'ul'
             out.append(f'<li>{inline(m[2])}'); continue
         close()
-        m = re.match(r'^(#{1,2}) (.*)', ln)
+        m = re.match(r'^!\[(.*?)\]\((.*?)\)$', ln.strip())
+        if m:
+            src = os.path.join(HERE, 'img', m[2] + '.jpg')
+            if not os.path.exists(src): raise SystemExit(f'missing screenshot: {src}')
+            out.append(f'<figure><img src="file://{src}"><figcaption>{inline(m[1])}</figcaption></figure>'); continue
+        m = re.match(r'^\[\[mock:(\w+)\]\]$', ln.strip())
+        if m: out.append(MOCKS[m[1]]); continue
+        m = re.match(r'^\[\[flow: (.*)\]\]$', ln.strip())
+        if m:
+            out.append('<div class=flow>' + '<i>›</i>'.join(f'<span>{html.escape(x.strip())}</span>' for x in m[1].split('|')) + '</div>'); continue
+        if ln.startswith('> '): out.append(f'<div class=note>{inline(ln[2:])}</div>'); continue
+        m = re.match(r'^(#{1,3}) (.*)', ln)
         if m: out.append(f'<h{len(m[1])}>{inline(m[2])}</h{len(m[1])}>'); continue
         if ln.strip(): out.append(f'<p>{inline(ln)}</p>')
     close()
@@ -241,20 +131,21 @@ def render(md):
 
 def main():
     os.makedirs(OUT, exist_ok=True)
+    for f in os.listdir(OUT):
+        if f.endswith('.pdf'): os.unlink(os.path.join(OUT, f))
     manifest = []
-    for slug, (title, goal, gets, body) in DOCS.items():
-        md = doc(title, goal, gets, body)
+    for slug, (title, goal, md) in DOCS.items():
         open(os.path.join(HERE, slug + '.md'), 'w').write(md)
-        page = f'<!doctype html><meta charset=utf-8><title>{html.escape(title)}</title><style>{CSS}</style>{render(md)}<div class=foot>KDL OS · Flow guides · localhost:3001/admin/documents</div>'
+        page = (f'<!doctype html><meta charset=utf-8><title>{html.escape(title)}</title><style>{CSS}</style>{render(md)}'
+                '<div class=foot>KDL OS · Flow guides · Admin &gt; Documents</div>')
         with tempfile.NamedTemporaryFile('w', suffix='.html', delete=False) as f: f.write(page); src = f.name
         pdf = os.path.join(OUT, slug + '.pdf')
         subprocess.run([CHROME, '--headless=new', '--disable-gpu', '--no-pdf-header-footer', f'--print-to-pdf={pdf}', 'file://' + src],
-                       check=True, capture_output=True, timeout=120)
+                       check=True, capture_output=True, timeout=180)
         os.unlink(src)
-        manifest.append({'file': slug + '.pdf', 'title': title, 'goal': goal[0].upper() + goal[1:]})
-        print('ok', slug)
-    json.dump(manifest, open(os.path.join(HERE, '..', '..', 'frontend', 'src', 'admin', 'lib', 'flow-docs.json'), 'w'), indent=2)
-    open(os.path.join(HERE, '..', '..', 'frontend', 'src', 'admin', 'lib', 'flow-docs.json'), 'a').write('\n')
+        manifest.append({'file': slug + '.pdf', 'title': title, 'goal': goal})
+        print('ok', slug, round(os.path.getsize(pdf) / 1024), 'KB')
+    with open(LIST, 'w') as f: json.dump(manifest, f, indent=2); f.write('\n')
 
 if __name__ == '__main__':
-    sys.exit(main())
+    main()

@@ -1,5 +1,10 @@
 [
   {
+    "file": "installation.pdf",
+    "title": "Installation",
+    "goal": "Install KDL OS, run it and sign in for the first time."
+  },
+  {
     "file": "00-choose-your-flow.pdf",
     "title": "Choose your flow",
     "goal": "Pick the right guide for what you want to build."
@@ -12,12 +17,12 @@
   {
     "file": "02-landing-only.pdf",
     "title": "Flow 2: Landing page only (with admin)",
-    "goal": "Publish one or more campaign pages without a full website."
+    "goal": "Publish campaign pages without a full website."
   },
   {
     "file": "03-static-website-only.pdf",
     "title": "Flow 3: Static website only (with admin)",
-    "goal": "Ship a website as plain files, hosted anywhere, with no live web app in front of visitors."
+    "goal": "Ship a website as plain files hosted anywhere, with no live web app in front of visitors."
   },
   {
     "file": "04-webapp-admin.pdf",
@@ -27,7 +32,7 @@
   {
     "file": "05-webapp-landing-admin.pdf",
     "title": "Flow 5: Web app, landing pages and admin",
-    "goal": "A full website plus separate campaign pages, all under one admin."
+    "goal": "A full website plus separate campaign pages under one admin."
   },
   {
     "file": "06-static-landing.pdf",
@@ -42,6 +47,6 @@
   {
     "file": "08-full-platform.pdf",
     "title": "Flow 8: Full platform",
-    "goal": "Website, landing pages, static export and admin, all enabled."
+    "goal": "Website, landing pages, static export, membership and admin, all enabled."
   }
 ]
