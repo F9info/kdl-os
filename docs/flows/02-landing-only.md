@@ -23,6 +23,10 @@ After you sign in, open **Admin Settings > Identity** in the left menu. This is 
 Click **Modules** in the left menu. Find the **Frontend** card (use the search box if you need to). On a fresh install the card shows **Install**: click it and confirm, then click **Enable** and confirm. The badge changes to **Enabled**.
 ![Modules: the Frontend card](modules-start)
 
+## Step 4. Click Brands and select Landing Pages
+Click **Frontend > Brands** in the left menu. Three cards appear: Web app, Landing Pages and Collateral. Click the **Landing Pages** card to open it.
+![Brands: click the Landing Pages card](brands-start)
+
 > Screenshots are from a running KDL OS install where these modules are already enabled, so cards show **Enabled** and **Disable**. On a fresh install the same cards show **Available** with an **Install** button (see the card mockup in Part C).
 
 ## Part B. First-run setup wizard

@@ -5,7 +5,7 @@ Screenshots come from img/ (refresh with: cd frontend && node ../docs/flows/scre
 Run: python3 docs/flows/build.py"""
 import html, json, os, re, subprocess, sys, tempfile
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from content import DOCS, ANNOT, SIZE
+from content import DOCS, ANNOT, SIZE, CROP
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, '..', '..')
@@ -122,11 +122,13 @@ def render(md):
             src = os.path.join(HERE, 'img', m[2] + '.jpg')
             if not os.path.exists(src): raise SystemExit(f'missing screenshot: {src}')
             pins = ''
-            W, H = SIZE.get(m[2], (1360, 820))
+            W, H = SIZE.get(m[2], (1360, 820)); cr = CROP.get(m[2], 0); H -= cr
             for n, (x, y, lab) in enumerate(ANNOT.get(m[2], []), 1):
                 left = lab.startswith('<'); lab = lab.lstrip('<')
                 pins += (f'<div class="pin{" l" if left else ""}" style="left:{x*100/W:.2f}%;top:{y*100/H:.2f}%"><i>{n}</i><b>{html.escape(lab)}</b></div>')
-            out.append(f'<figure><div class=w><img src="file://{src}">{pins}</div><figcaption>{inline(m[1])}</figcaption></figure>'); continue
+            wst = f' style="overflow:hidden;aspect-ratio:{W}/{H}"' if cr else ''
+            ist = f' style="margin-top:-{cr*100/W:.3f}%"' if cr else ''
+            out.append(f'<figure><div class=w{wst}><img src="file://{src}"{ist}>{pins}</div><figcaption>{inline(m[1])}</figcaption></figure>'); continue
         m = re.match(r'^\[\[mock:(\w+)\]\]$', ln.strip())
         if m: out.append(MOCKS[m[1]]); continue
         m = re.match(r'^\[\[flow: (.*)\]\]$', ln.strip())

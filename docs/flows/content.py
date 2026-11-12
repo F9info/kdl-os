@@ -1,7 +1,8 @@
 """Guide text for build.py. Markdown-ish: ![caption](img-name) is a screenshot from img/,
 ``` is a terminal block, > is a callout, [[flow: a | b]] is a step strip, [[mock:x]] a drawn mockup."""
 
-SIZE = {'identity-start': (1153, 809), 'modules-start': (1900, 580)}  # screenshots that are not 1360x820
+SIZE = {'identity-start': (1153, 809), 'modules-start': (1900, 580), 'brands-start': (1920, 550)}
+CROP = {'brands-start': 32}  # px cut from the top (browser address bar)  # screenshots that are not 1360x820
 
 ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a leading < puts the label left of the dot
  'login': [(870, 404, 'Click here and type your email'), (835, 487, 'Click here and type your password'), (870, 541, 'Click Sign in'), (489, 594, '<Forgot password? Click here')],
@@ -27,6 +28,7 @@ ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a l
  'identity-start': [(235, 412, 'Click Identity under Admin Settings'), (1006, 310, '<Click here to type the application name'), (1006, 416, '<Click here to set the browser tab title'),
                     (1006, 520, '<Click here to describe your business'), (553, 637, 'Click Replace to upload your logo'), (553, 746, 'Click Replace to upload a favicon')],
  'modules-start': [(231, 200, 'Click Modules in the left menu'), (583, 137, 'Click here to search for a module'), (796, 348, 'Fresh install: click Install, confirm, then Enable'), (1044, 224, '<Status badge')],
+ 'brands-start': [(216, 415, 'Click Brands in the left menu'), (1100, 202, 'Click here to open Landing Pages')],
  'dashboard': [(1336, 301, '<Click Manage projects to switch project'), (347, 530, 'Click a shortcut to jump straight there'), (130, 85, 'Dashboard'), (130, 125, 'Click Documents to open these guides')],
  'documents': [(690, 290, 'Click a guide to open it as a PDF in a new tab'), (1150, 290, '<Installation and flow guides')],
  'activity-log': [(455, 173, '<Click here to filter by person'), (643, 173, 'Click here to filter by module'), (842, 173, 'Pick a start date'), (1022, 173, '<Pick an end date')],
@@ -144,6 +146,10 @@ After you sign in, open **Admin Settings > Identity** in the left menu. This is 
 MODULES_START = """## Step 3. Open Modules, install and enable Frontend
 Click **Modules** in the left menu. Find the **Frontend** card (use the search box if you need to). On a fresh install the card shows **Install**: click it and confirm, then click **Enable** and confirm. The badge changes to **Enabled**.
 ![Modules: the Frontend card](modules-start)"""
+
+BRANDS_START = """## Step 4. Click Brands and select Landing Pages
+Click **Frontend > Brands** in the left menu. Three cards appear: Web app, Landing Pages and Collateral. Click the **Landing Pages** card to open it.
+![Brands: click the Landing Pages card](brands-start)"""
 
 WIZARD = """## Part B. First-run setup wizard
 On a fresh install a **Setup wizard** opens over the admin. It asks three things, in this order.
@@ -447,7 +453,7 @@ Admin is always on, so "only landing page" still includes the admin you sign in 
      "branded landing pages at `/p/<slug>` with a working form, plus the admin that runs them.",
      "Landing Pages (leave Website off). There is no starter-website step.",
      IDENTITY + "\n\n" + THEMES + "\n\n" + LANDING + "\n\n" + ADMIN_AREA,
-     signin_extra=IDENTITY_START + "\n\n" + MODULES_START + "\n\n",
+     signin_extra=IDENTITY_START + "\n\n" + MODULES_START + "\n\n" + BRANDS_START + "\n\n",
      modules=modules_block(M_LAND, "Notifications, Membership", "Frontend bundle, Website, Templates, Sectors, Catalog, Work, FAQ, Team", "landing")).replace('## Sign in', '## Step 1. Sign in').replace('## Open Application Identity', '## Step 2. Open Application Identity')),
  '03-static-website-only': ("Flow 3: Static website only (with admin)",
    "Ship a website as plain files hosted anywhere, with no live web app in front of visitors.",
