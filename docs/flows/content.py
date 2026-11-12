@@ -479,11 +479,7 @@ M_WEB = "Frontend (bundle), Page Editor UI, Themes, Templates (the Studio) and w
 M_LAND = "Landing Pages (brings Forms), Page Editor UI, Themes"
 OPT_CONTENT = "Membership, Notifications, Integrations"
 
-ADMIN_STEPS = """## Step 2. Fill in the setup wizard
-On a fresh install a **Setup wizard** opens over the dashboard. Step 1 asks for your company: click each field and type the **Company name**, application name, email, phone and address, and click **Replace** to add a logo and favicon. Click **Next**.
-
-Step 2 asks what you are building. For an admin-only application leave every card **unticked** and click **Next**. KDL OS records "no website" and stops asking. You can change these details any time in **Admin Settings > Identity**.
-![Setup wizard, step 1](wizard-1)
+ADMIN_STEPS = IDENTITY_START + """
 
 ## Step 3. Pick the look of the admin
 Open **Admin Settings > Themes**. On the **Simple** tab click **Light** or **Dark**, click a ready-made look (Ocean, Forest, Sunset or Slate), or click a colour swatch to change a colour. Use **Advanced** for every design token, then click **Publish**.

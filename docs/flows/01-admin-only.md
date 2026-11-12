@@ -5,11 +5,9 @@ Open **http://localhost/login**. Email `admin@kdl.com`, password `kdl-dev-seed-p
 ![The sign-in screen](login)
 > Forgot the password or locked out? `docker compose exec backend node scripts/reset-admin-password.js --email admin@kdl.com --password 'Admin@123'` (at least 8 characters), then sign in with it. 429 or "Account locked" while testing: wait a minute or `docker compose restart backend`.
 
-## Step 2. Fill in the setup wizard
-On a fresh install a **Setup wizard** opens over the dashboard. Step 1 asks for your company: click each field and type the **Company name**, application name, email, phone and address, and click **Replace** to add a logo and favicon. Click **Next**.
-
-Step 2 asks what you are building. For an admin-only application leave every card **unticked** and click **Next**. KDL OS records "no website" and stops asking. You can change these details any time in **Admin Settings > Identity**.
-![Setup wizard, step 1](wizard-1)
+## Step 2. Open Application Identity
+After you sign in, open **Admin Settings > Identity** in the left menu. This is where the application name, logo and favicon are set.
+![Admin Settings > Identity](identity-start)
 
 ## Step 3. Pick the look of the admin
 Open **Admin Settings > Themes**. On the **Simple** tab click **Light** or **Dark**, click a ready-made look (Ocean, Forest, Sunset or Slate), or click a colour swatch to change a colour. Use **Advanced** for every design token, then click **Publish**.
