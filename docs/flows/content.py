@@ -443,7 +443,7 @@ Admin is always on, so "only landing page" still includes the admin you sign in 
      "Landing Pages (leave Website off). There is no starter-website step.",
      IDENTITY + "\n\n" + THEMES + "\n\n" + LANDING + "\n\n" + ADMIN_AREA,
      signin_extra=IDENTITY_START + "\n\n",
-     modules=modules_block(M_LAND, "Notifications, Membership", "Frontend bundle, Website, Templates, Sectors, Catalog, Work, FAQ, Team", "landing"))),
+     modules=modules_block(M_LAND, "Notifications, Membership", "Frontend bundle, Website, Templates, Sectors, Catalog, Work, FAQ, Team", "landing")).replace('## Sign in', '## Step 1. Sign in').replace('## Open Application Identity', '## Step 2. Open Application Identity')),
  '03-static-website-only': ("Flow 3: Static website only (with admin)",
    "Ship a website as plain files hosted anywhere, with no live web app in front of visitors.",
    guide("Flow 3: Static website only (with admin)", "Ship a website as plain files hosted anywhere, with no live web app in front of visitors.",
