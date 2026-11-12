@@ -67,13 +67,23 @@ A detail page shows one item: one service, one blog post, one event, one sector.
 Open **Frontend > Pages**. Click **Edit** on a page to change its text, images and links in the section builder, then **Save** and **Publish**. Publish stops real problems (an empty page, a missing title, a broken link) and only suggests the rest. Click **Duplicate** to copy a page. **Frontend > Sections** holds reusable sections.
 ![Frontend > Pages](pages)
 
-## Step 14. Convert to a static website
+## Step 14. Edit the page in the section builder, then Save
+In **Frontend > Pages** click **Edit** on a page (for example **Home**). The section builder opens with the page in the middle and the tools on the left:
+- **Section:** click a section in the list to add it to the page.
+- **Reorder:** move sections up or down.
+- **Style:** colours, fonts and spacing.
+- **Content:** click a text or a picture on the page to select it, then change its text, image or link here.
+
+When you have finished, click **Save** at the top right. The badge at the top shows the page status.
+![Editing the Home page in the section builder](page-editor)
+
+## Step 15. Convert to a static website
 Static files (HTML, CSS and images) can be hosted anywhere with no server. Publish your pages first, then click **Convert to Static Website** (the button at the top of the Studio, or http://localhost:3001/admin/static-website).
 
 Optional: type your **Website address** (for example https://www.example.com) to add a sitemap. Type your **Web app address** (https only) if forms must keep working; if you leave it empty, forms show your contact email and phone. Click **Convert to Static Website** and wait a few minutes until the card says it is ready.
 ![Frontend > Convert to Static Website](static-website)
 
-## Step 15. Download the files and host them on GitHub
+## Step 16. Download the files and host them on GitHub
 Click **Download as .zip** on the same page and unzip it. The files inside, with `index.html` at the top, are your finished website.
 
 1. On GitHub create a new empty repository, for example `my-website`.
