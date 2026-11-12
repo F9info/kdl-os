@@ -23,6 +23,14 @@ Open **Landing Pages** (http://localhost:3001/admin/landing-pages). Ready-made d
 If you need a fully custom page, click **New landing page** instead. This guide follows the template route.
 ![Landing Pages: start from a template](landing-start)
 
+## Step 6. Name the page and create it
+A **New landing page** window opens with the template you picked already selected. Fill in two things, then continue:
+- **Name**: the title you see in the admin, for example "Summer offer".
+- **Slug**: the last part of the public web address. The page will be published at `/p/<slug>`; the full address is shown under the field.
+
+To use a different design, click another option under **Template** (choose **Blank** for a page with only a header and footer). Then click **Create and edit** to open the page in the editor.
+![New landing page window](new-landing-start)
+
 ## Part B. First-run setup wizard
 On a fresh install a **Setup wizard** opens over the admin. It asks three things, in this order.
 
