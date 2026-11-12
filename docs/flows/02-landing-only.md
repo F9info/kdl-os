@@ -8,6 +8,8 @@
 
 [[flow: Sign in | Setup wizard | Enable modules | Build | Publish]]
 
+> Screenshots are from a running KDL OS install where these modules are already enabled, so cards show **Enabled** and **Disable**. On a fresh install the same cards show **Available** with an **Install** button (see the card mockup in Part C).
+
 ## Step 1. Sign in
 > KDL OS must already be installed and running. If not, follow the **Installation** guide first (Admin > Documents > Installation).
 
@@ -26,8 +28,6 @@ Click **Modules** in the left menu. Find the **Frontend** card (use the search b
 ## Step 4. Click Brands and select Landing Pages
 Click **Frontend > Brands** in the left menu. Three cards appear: Web app, Landing Pages and Collateral. Click the **Landing Pages** card to open it.
 ![Brands: click the Landing Pages card](brands-start)
-
-> Screenshots are from a running KDL OS install where these modules are already enabled, so cards show **Enabled** and **Disable**. On a fresh install the same cards show **Available** with an **Install** button (see the card mockup in Part C).
 
 ## Part B. First-run setup wizard
 On a fresh install a **Setup wizard** opens over the admin. It asks three things, in this order.

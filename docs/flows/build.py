@@ -18,6 +18,7 @@ CSS = """@page{size:A4;margin:16mm 14mm}
 body{font:10.5pt/1.5 -apple-system,Helvetica,Arial,sans-serif;color:#1a2233}
 h1{font-size:24pt;color:#fff;background:linear-gradient(120deg,#1d4ed8,#312e81);margin:0 0 10pt;padding:16pt 16pt;border-radius:8px}
 h2{font-size:15pt;margin:20pt 0 6pt;color:#0f2a6b;border-bottom:2px solid #c7d2fe;padding-bottom:3pt;break-after:avoid}
+h2.pg{break-before:page}
 h3{font-size:12pt;margin:14pt 0 4pt;color:#1e3a8a;break-after:avoid}
 table{border-collapse:collapse;width:100%;margin:8pt 0;font-size:9.5pt;break-inside:avoid}
 th,td{border:1px solid #cbd5e1;padding:4pt 7pt;text-align:left;vertical-align:top}
@@ -136,7 +137,9 @@ def render(md):
             out.append('<div class=flow>' + '<i>›</i>'.join(f'<span>{html.escape(x.strip())}</span>' for x in m[1].split('|')) + '</div>'); continue
         if ln.startswith('> '): out.append(f'<div class=note>{inline(ln[2:])}</div>'); continue
         m = re.match(r'^(#{1,3}) (.*)', ln)
-        if m: out.append(f'<h{len(m[1])}>{inline(m[2])}</h{len(m[1])}>'); continue
+        if m:
+            cls = ' class=pg' if len(m[1]) == 2 and re.match(r'(Step|Part) ', m[2]) else ''
+            out.append(f'<h{len(m[1])}{cls}>{inline(m[2])}</h{len(m[1])}>'); continue
         if ln.strip(): out.append(f'<p>{inline(ln)}</p>')
     close()
     return '\n'.join(out)

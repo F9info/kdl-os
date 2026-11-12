@@ -367,11 +367,11 @@ def guide(flow, goal, gets, products, steps, modules, extra="", signin_extra="")
 
 [[flow: Sign in | Setup wizard | Enable modules | Build | Publish]]
 
+{SHOT_NOTE}
+
 {SIGNIN}
 
-{signin_extra}{SHOT_NOTE}
-
-{WIZARD}
+{signin_extra}{WIZARD}
 
 {modules}
 
