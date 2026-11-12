@@ -123,11 +123,11 @@ def render(md):
             src = os.path.join(HERE, 'img', m[2] + '.jpg')
             if not os.path.exists(src): raise SystemExit(f'missing screenshot: {src}')
             pins = ''
-            W, H = SIZE.get(m[2], (1360, 820)); cr = CROP.get(m[2], 0); H -= cr
+            W, H = SIZE.get(m[2], (1360, 820)); cr, cb = CROP.get(m[2], (0, 0)); H -= cr + cb
             for n, (x, y, lab) in enumerate(ANNOT.get(m[2], []), 1):
                 left = lab.startswith('<'); lab = lab.lstrip('<')
                 pins += (f'<div class="pin{" l" if left else ""}" style="left:{x*100/W:.2f}%;top:{y*100/H:.2f}%"><i>{n}</i><b>{html.escape(lab)}</b></div>')
-            wst = f' style="overflow:hidden;aspect-ratio:{W}/{H}"' if cr else ''
+            wst = f' style="overflow:hidden;aspect-ratio:{W}/{H}"' if cr or cb else ''
             ist = f' style="margin-top:-{cr*100/W:.3f}%"' if cr else ''
             out.append(f'<figure><div class=w{wst}><img src="file://{src}"{ist}>{pins}</div><figcaption>{inline(m[1])}</figcaption></figure>'); continue
         m = re.match(r'^\[\[mock:(\w+)\]\]$', ln.strip())

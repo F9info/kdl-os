@@ -17,6 +17,12 @@ Click **Modules** in the left menu. Find the **Frontend** card (use the search b
 Click **Frontend > Brands** in the left menu. Three cards appear: Web app, Landing Pages and Collateral. Click the **Landing Pages** card to open it.
 ![Brands: click the Landing Pages card](brands-start)
 
+## Step 5. Choose a landing page template
+Open **Landing Pages** (http://localhost:3001/admin/landing-pages). Ready-made designs are already listed under **Start from a template**: Lead generation, Product launch, Event or webinar and Special offer. Click **View template** to preview one, then click **Use this template** to start from it. Every word, picture and colour can be changed afterwards in the editor.
+
+If you need a fully custom page, click **New landing page** instead. This guide follows the template route.
+![Landing Pages: start from a template](landing-start)
+
 ## Part B. First-run setup wizard
 On a fresh install a **Setup wizard** opens over the admin. It asks three things, in this order.
 
