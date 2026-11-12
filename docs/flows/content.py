@@ -1,6 +1,8 @@
 """Guide text for build.py. Markdown-ish: ![caption](img-name) is a screenshot from img/,
 ``` is a terminal block, > is a callout, [[flow: a | b]] is a step strip, [[mock:x]] a drawn mockup."""
 
+SIZE = {'identity-start': (1153, 809)}  # screenshots that are not 1360x820
+
 ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a leading < puts the label left of the dot
  'login': [(870, 404, 'Click here and type your email'), (835, 487, 'Click here and type your password'), (870, 541, 'Click Sign in'), (489, 594, '<Forgot password? Click here')],
  'wizard-1': [(670, 290, 'Click here and type your company name'), (517, 396, 'Click here to add your logo'), (852, 396, 'Click here to add a favicon'),
@@ -22,6 +24,8 @@ ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a l
  'membership': [(1336, 119, '<Click here to add a member'), (1174, 119, 'Export'), (160, 679, 'Click Members to see everyone')],
  'users': [(647, 174, 'Click here to search users'), (1336, 107, '<Click here to add a user'), (1140, 303, 'Click to edit')],
  'roles': [(1336, 107, '<Click here to create a role'), (1251, 239, 'Click to edit a role')],
+ 'identity-start': [(235, 412, 'Click Identity under Admin Settings'), (1006, 310, '<Click here to type the application name'), (1006, 416, '<Click here to set the browser tab title'),
+                    (1006, 520, '<Click here to describe your business'), (553, 637, 'Click Replace to upload your logo'), (553, 746, 'Click Replace to upload a favicon')],
  'dashboard': [(1336, 301, '<Click Manage projects to switch project'), (347, 530, 'Click a shortcut to jump straight there'), (130, 85, 'Dashboard'), (130, 125, 'Click Documents to open these guides')],
  'documents': [(690, 290, 'Click a guide to open it as a PDF in a new tab'), (1150, 290, '<Installation and flow guides')],
  'activity-log': [(455, 173, '<Click here to filter by person'), (643, 173, 'Click here to filter by module'), (842, 173, 'Pick a start date'), (1022, 173, '<Pick an end date')],
@@ -131,6 +135,10 @@ SIGNIN = """## Sign in
 Open **http://localhost/login**. Email `admin@kdl.com`, password `kdl-dev-seed-password`. KDL OS asks you to choose a new password on first sign-in.
 ![The sign-in screen](login)
 > Forgot the password or locked out? `docker compose exec backend node scripts/reset-admin-password.js --email admin@kdl.com --password 'Admin@123'` (at least 8 characters), then sign in with it. 429 or "Account locked" while testing: wait a minute or `docker compose restart backend`."""
+
+IDENTITY_START = """## Open Application Identity
+After you sign in, open **Admin Settings > Identity** in the left menu. This is where the application name, logo and favicon are set.
+![Admin Settings > Identity](identity-start)"""
 
 WIZARD = """## Part B. First-run setup wizard
 On a fresh install a **Setup wizard** opens over the admin. It asks three things, in this order.
@@ -337,7 +345,7 @@ Run inside the `kdl-os` folder.
 | Wrong password | Did you run A5? First password is `kdl-dev-seed-password`. |
 | Account locked / 429 | Wait a minute, or `docker compose restart backend`. |"""
 
-def guide(flow, goal, gets, products, steps, modules, extra=""):
+def guide(flow, goal, gets, products, steps, modules, extra="", signin_extra=""):
     return f"""# {flow}
 
 **Goal:** {goal}
@@ -350,7 +358,7 @@ def guide(flow, goal, gets, products, steps, modules, extra=""):
 
 {SIGNIN}
 
-{SHOT_NOTE}
+{signin_extra}{SHOT_NOTE}
 
 {WIZARD}
 
@@ -434,7 +442,8 @@ Admin is always on, so "only landing page" still includes the admin you sign in 
      "branded landing pages at `/p/<slug>` with a working form, plus the admin that runs them.",
      "Landing Pages (leave Website off). There is no starter-website step.",
      IDENTITY + "\n\n" + THEMES + "\n\n" + LANDING + "\n\n" + ADMIN_AREA,
-     modules_block(M_LAND, "Notifications, Membership", "Frontend bundle, Website, Templates, Sectors, Catalog, Work, FAQ, Team", "landing"))),
+     signin_extra=IDENTITY_START + "\n\n",
+     modules=modules_block(M_LAND, "Notifications, Membership", "Frontend bundle, Website, Templates, Sectors, Catalog, Work, FAQ, Team", "landing"))),
  '03-static-website-only': ("Flow 3: Static website only (with admin)",
    "Ship a website as plain files hosted anywhere, with no live web app in front of visitors.",
    guide("Flow 3: Static website only (with admin)", "Ship a website as plain files hosted anywhere, with no live web app in front of visitors.",

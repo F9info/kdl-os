@@ -15,6 +15,10 @@ Open **http://localhost/login**. Email `admin@kdl.com`, password `kdl-dev-seed-p
 ![The sign-in screen](login)
 > Forgot the password or locked out? `docker compose exec backend node scripts/reset-admin-password.js --email admin@kdl.com --password 'Admin@123'` (at least 8 characters), then sign in with it. 429 or "Account locked" while testing: wait a minute or `docker compose restart backend`.
 
+## Open Application Identity
+After you sign in, open **Admin Settings > Identity** in the left menu. This is where the application name, logo and favicon are set.
+![Admin Settings > Identity](identity-start)
+
 > Screenshots are from a running KDL OS install where these modules are already enabled, so cards show **Enabled** and **Disable**. On a fresh install the same cards show **Available** with an **Install** button (see the card mockup in Part C).
 
 ## Part B. First-run setup wizard
