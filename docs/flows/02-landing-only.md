@@ -30,6 +30,7 @@ A **New landing page** window opens with the template you picked already selecte
 
 To use a different design, click another option under **Template** (choose **Blank** for a page with only a header and footer). Then click **Create and edit** to open the page in the editor.
 ![New landing page window](new-landing-start)
+[[mock:dlg_new_landing]]
 
 ## Part B. First-run setup wizard
 On a fresh install a **Setup wizard** opens over the admin. It asks three things, in this order.
