@@ -27,13 +27,13 @@ Upload your logo (svg, png, jpeg or webp), check the company and contact details
 Four brand colours are taken from your logo: Primary, Secondary, Tertiary and Quaternary. Keep them, or click a colour box and type a new code, click **Pick from logo** or **Randomize**. Then click **Submit palette**. The colours become the website's design tokens.
 ![Studio: Color Palette](studio-palette)
 
-## Step 7. Website stage: layout
-Set typography and fonts, then use **Navigation** and **Pages** to build the pages. Click **Create/Edit layout** to choose the Top header, Header and Footer. The header and footer of **Home** are shared by every public page.
-![Studio: Website stage](studio-website)
-
-## Step 8. Choose the menu pages
+## Step 7. Choose the menu pages
 Open **Frontend > Navigation**. Click the page names you want in the menu (About, Services, Portfolio, Blog, Contact and so on), or type a custom page and click **Add**. Use the **Header menu** and **Footer menu** tabs. One page is created for every menu item, plus Home.
 ![Frontend > Navigation](navigation)
+
+## Step 8. Website stage: layout
+Set typography and fonts. Click **Create/Edit layout** to choose the Top header, Header and Footer. The header and footer of **Home** are shared by every public page.
+![Studio: Website stage](studio-website)
 
 ## Step 9. Edit and publish the pages
 Open **Frontend > Pages**. Click **Edit** on a page to change its text, images and links in the section builder, then **Save** and **Publish**. Publish stops real problems (an empty page, a missing title, a broken link) and only suggests the rest. Click **Duplicate** to copy a page. **Frontend > Sections** holds reusable sections.

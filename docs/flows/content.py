@@ -528,7 +528,7 @@ Four brand colours are taken from your logo: Primary, Secondary, Tertiary and Qu
 ![Studio: Color Palette](studio-palette)"""
 
 ST_WEBSITE = """## Step 0. Website stage: layout
-Set typography and fonts, then use **Navigation** and **Pages** to build the pages. Click **Create/Edit layout** to choose the Top header, Header and Footer. The header and footer of **Home** are shared by every public page.
+Set typography and fonts. Click **Create/Edit layout** to choose the Top header, Header and Footer. The header and footer of **Home** are shared by every public page.
 ![Studio: Website stage](studio-website)"""
 
 ST_NAV = """## Step 0. Choose the menu pages
@@ -648,25 +648,25 @@ Admin is always on, so "only landing page" still includes the admin you sign in 
  '03-static-website-only': ("Flow 3: Static website only (with admin)",
    "Ship a website as plain files hosted anywhere, with no live web app in front of visitors.",
    guide("Flow 3: Static website only (with admin)", "Ship a website as plain files hosted anywhere, with no live web app in front of visitors.", "", "", "", "",
-     signin_extra=number_steps(W_WEB.format(extra=" (leave Landing Pages unticked)"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_WEBSITE, ST_NAV, ST_PAGES, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
+     signin_extra=number_steps(W_WEB.format(extra=" (leave Landing Pages unticked)"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_NAV, ST_WEBSITE, ST_PAGES, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
  '04-webapp-admin': ("Flow 4: Web app and admin",
    "Run a live, editable website served from this installation.",
    guide("Flow 4: Web app and admin", "Run a live, editable website served from this installation.", "", "", "", "",
-     signin_extra=number_steps(W_WEB.format(extra=" (leave Landing Pages unticked)"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_WEBSITE, ST_NAV, ST_PAGES, ST_LIVE, notes(N_WEB)), cover=False, only_signin=True)),
+     signin_extra=number_steps(W_WEB.format(extra=" (leave Landing Pages unticked)"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_NAV, ST_WEBSITE, ST_PAGES, ST_LIVE, notes(N_WEB)), cover=False, only_signin=True)),
  '05-webapp-landing-admin': ("Flow 5: Web app, landing pages and admin",
    "A full website plus separate campaign pages under one admin.",
    guide("Flow 5: Web app, landing pages and admin", "A full website plus separate campaign pages under one admin.", "", "", "", "",
-     signin_extra=number_steps(W_WEB.format(extra=" and the **Landing Pages** card"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_WEBSITE, ST_NAV, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, ST_LIVE, notes(N_WEB+N_LAND)), cover=False, only_signin=True)),
+     signin_extra=number_steps(W_WEB.format(extra=" and the **Landing Pages** card"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_NAV, ST_WEBSITE, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, ST_LIVE, notes(N_WEB+N_LAND)), cover=False, only_signin=True)),
  '06-static-landing': ("Flow 6: Static website and landing pages",
    "Host everything as plain files and keep campaign pages separate.",
    guide("Flow 6: Static website and landing pages", "Host everything as plain files and keep campaign pages separate.", "", "", "", "",
-     signin_extra=number_steps(W_WEB.format(extra=" and the **Landing Pages** card"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_WEBSITE, ST_NAV, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, CONVERT_START, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC+N_LAND+N_LAND_STATIC)), cover=False, only_signin=True)),
+     signin_extra=number_steps(W_WEB.format(extra=" and the **Landing Pages** card"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_NAV, ST_WEBSITE, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, CONVERT_START, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC+N_LAND+N_LAND_STATIC)), cover=False, only_signin=True)),
  '07-webapp-static': ("Flow 7: Web app and static website together",
    "Keep the live site and also publish a plain-file copy.",
    guide("Flow 7: Web app and static website together", "Keep the live site and also publish a plain-file copy.", "", "", "", "",
-     signin_extra=number_steps(W_WEB.format(extra=" (leave Landing Pages unticked)"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_WEBSITE, ST_NAV, ST_PAGES, ST_LIVE, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
+     signin_extra=number_steps(W_WEB.format(extra=" (leave Landing Pages unticked)"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_NAV, ST_WEBSITE, ST_PAGES, ST_LIVE, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
  '08-full-platform': ("Flow 8: Full platform",
    "Website, landing pages, static export, membership and admin, all enabled.",
    guide("Flow 8: Full platform", "Website, landing pages, static export, membership and admin, all enabled.", "", "", "", "",
-     signin_extra=number_steps(W_WEB.format(extra=" and the **Landing Pages** card"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_WEBSITE, ST_NAV, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, MEM_ON, ST_LIVE, ST_STATIC, ST_HOST, notes(N_WEB+N_LAND+N_STATIC)), cover=False, only_signin=True)),
+     signin_extra=number_steps(W_WEB.format(extra=" and the **Landing Pages** card"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_NAV, ST_WEBSITE, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, MEM_ON, ST_LIVE, ST_STATIC, ST_HOST, notes(N_WEB+N_LAND+N_STATIC)), cover=False, only_signin=True)),
 }
