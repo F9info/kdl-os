@@ -17,8 +17,8 @@ function renderBlock(key: string, props: Record<string, unknown> = {}) {
 }
 
 describe('Landing block pack', () => {
-  it('registers twelve blocks and lists every one in its category', () => {
-    expect(keys).toHaveLength(12)
+  it('registers nineteen blocks and lists every one in its category', () => {
+    expect(keys).toHaveLength(19)
     expect(landing.categories?.landing?.components?.slice().sort()).toEqual(keys.slice().sort())
   })
 
@@ -366,5 +366,45 @@ describe('LandingHeader and the brand colour set (company details come from Iden
         container.querySelector('div[style*="display: contents"]') as HTMLElement
       ).style.getPropertyValue('--lp-1')
     ).toBe('')
+  })
+})
+
+// Every section a user can add offers four designs, and they must be four different layouts, not a recolour.
+describe('four designs per section', () => {
+  const SECTIONS = Object.entries(landing.variants ?? {})
+  it('lists the sections that have a Design picker (hero, about, services, team, pricing ... footer)', () => {
+    const names = SECTIONS.map(([k]) => k)
+    for (const k of [
+      'LandingHero',
+      'LandingShowcase',
+      'LandingBenefits',
+      'LandingStats',
+      'LandingSteps',
+      'LandingPeople',
+      'LandingTestimonials',
+      'LandingFaq',
+      'LandingCta',
+      'LandingPricing',
+      'LandingPortfolio',
+      'LandingGallery',
+      'LandingClients',
+      'LandingContact',
+      'LandingNewsletter',
+      'LandingBlog',
+    ])
+      expect(names, k).toContain(k)
+    for (const [, v] of SECTIONS) expect(v).toEqual(['1', '2', '3', '4'])
+  })
+
+  it.each(SECTIONS.map(([k]) => k))('%s renders four different layouts', (key) => {
+    const markup = ['1', '2', '3', '4'].map((variant) => {
+      const { container, unmount } = renderBlock(key, { variant })
+      const html = container.innerHTML
+      unmount()
+      expect(html.length, `${key} design ${variant}`).toBeGreaterThan(50)
+      // Compare the layout (class names and tags), not the text or colours.
+      return html.replace(/>[^<]*</g, '><').replace(/style="[^"]*"/g, '')
+    })
+    expect(new Set(markup).size, `${key} designs must differ in layout`).toBe(4)
   })
 })

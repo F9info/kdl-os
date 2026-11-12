@@ -7666,6 +7666,253 @@
       }
     }
   },
+  "LandingBlog": {
+    "label": "Landing blog",
+    "fields": {
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "font": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "lobster",
+          "fraunces",
+          "playfair",
+          "bricolage"
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "items": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "palette": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sunset",
+          "ocean",
+          "violet",
+          "aurora",
+          "blaze",
+          "brand"
+        ]
+      },
+      "subtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      }
+    }
+  },
+  "LandingClients": {
+    "label": "Landing clients",
+    "fields": {
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "font": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "lobster",
+          "fraunces",
+          "playfair",
+          "bricolage"
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "items": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "palette": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sunset",
+          "ocean",
+          "violet",
+          "aurora",
+          "blaze",
+          "brand"
+        ]
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      }
+    }
+  },
+  "LandingContact": {
+    "label": "Landing contact",
+    "fields": {
+      "address": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "anchor": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "email": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "font": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "lobster",
+          "fraunces",
+          "playfair",
+          "bricolage"
+        ]
+      },
+      "formSlug": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hours": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "palette": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sunset",
+          "ocean",
+          "violet",
+          "aurora",
+          "blaze",
+          "brand"
+        ]
+      },
+      "phone": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "subtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      }
+    }
+  },
   "LandingCta": {
     "label": "Landing call to action",
     "fields": {
@@ -7876,6 +8123,16 @@
           "blaze",
           "brand"
         ]
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
       }
     }
   },
@@ -7947,6 +8204,83 @@
       "title": {
         "kind": "text",
         "tab": "content"
+      }
+    }
+  },
+  "LandingGallery": {
+    "label": "Landing gallery",
+    "fields": {
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "font": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "lobster",
+          "fraunces",
+          "playfair",
+          "bricolage"
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "items": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "palette": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sunset",
+          "ocean",
+          "violet",
+          "aurora",
+          "blaze",
+          "brand"
+        ]
+      },
+      "subtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
       }
     }
   },
@@ -8138,6 +8472,83 @@
       }
     }
   },
+  "LandingNewsletter": {
+    "label": "Landing newsletter",
+    "fields": {
+      "anchor": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "font": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "lobster",
+          "fraunces",
+          "playfair",
+          "bricolage"
+        ]
+      },
+      "formSlug": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "palette": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sunset",
+          "ocean",
+          "violet",
+          "aurora",
+          "blaze",
+          "brand"
+        ]
+      },
+      "text": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      }
+    }
+  },
   "LandingPeople": {
     "label": "Landing people",
     "fields": {
@@ -8211,6 +8622,170 @@
       "title": {
         "kind": "text",
         "tab": "content"
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      }
+    }
+  },
+  "LandingPortfolio": {
+    "label": "Landing portfolio",
+    "fields": {
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "font": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "lobster",
+          "fraunces",
+          "playfair",
+          "bricolage"
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "items": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "palette": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sunset",
+          "ocean",
+          "violet",
+          "aurora",
+          "blaze",
+          "brand"
+        ]
+      },
+      "subtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      }
+    }
+  },
+  "LandingPricing": {
+    "label": "Landing pricing",
+    "fields": {
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "font": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "lobster",
+          "fraunces",
+          "playfair",
+          "bricolage"
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "items": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "palette": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "sunset",
+          "ocean",
+          "violet",
+          "aurora",
+          "blaze",
+          "brand"
+        ]
+      },
+      "subtitle": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
       }
     }
   },
@@ -8448,6 +9023,16 @@
       "title": {
         "kind": "text",
         "tab": "content"
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
       }
     }
   },

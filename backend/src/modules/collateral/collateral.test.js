@@ -15,6 +15,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ── Mocks — must be hoisted ───────────────────────────────────────────────────
 
+vi.mock('../user-management/shared/permission-resolver.js', () => ({
+  invalidatePermissionCache: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock('../../config/database.js', () => ({
   prisma: {
     collateralAsset: {

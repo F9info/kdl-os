@@ -48,6 +48,11 @@ const quotes = (s, look, props) =>
   block(s, 'LandingTestimonials', 'quotes', { ...look, ...props, items: props.items.join('\n') });
 const faq = (s, look, props) =>
   block(s, 'LandingFaq', 'faq', { ...look, ...props, items: props.items.join('\n') });
+const pricing = (s, look, props) => block(s, 'LandingPricing', 'pricing', { ...look, ...props });
+const portfolio = (s, look, props) => block(s, 'LandingPortfolio', 'portfolio', { ...look, ...props });
+const clients = (s, look, props) => block(s, 'LandingClients', 'clients', { ...look, eyebrow: '', ...props });
+const contact = (s, look, props) =>
+  block(s, 'LandingContact', 'contact', { ...look, formSlug: formSlugFor(s), anchor: 'contact', ...props });
 const cta = (s, look, props) => block(s, 'LandingCta', 'cta', { ...look, image: '', ...props });
 // The footer holds no company details of its own: name, logo, description, contact and social links
 // are read from Application Identity (Settings > Identity) when the page is shown.
@@ -442,6 +447,7 @@ export const LANDING_TEMPLATES = {
           subtitle: '', items: ['🏆 | Proven results | Measurable outcomes on every project.', '🔒 | Secure | Your data is protected end to end.', '⏱️ | On time | We keep the dates we promise.', '💬 | Open | Plain-language updates, no jargon.'],
         }),
         stats(s, l, ['500+|Clients served', '18|Years in business', '97%|Client retention', '40|Team members']),
+        clients(s, l, { variant: '4', title: 'Trusted by teams at', items: 'Acme\nGlobex\nInitech\nUmbrella\nHooli' }),
         quotes(s, l, {
           variant: '1', eyebrow: 'Testimonials', title: 'What our clients say',
           items: [`They understood our business quickly and delivered on every promise.|Rahul K.|Managing director|${photo('p2')}`, `Professional, responsive and genuinely helpful from day one.|Neha T.|Operations head|${photo('p3')}`, `Our best supplier relationship in ten years.|Vikram S.|CEO|${photo('p6')}`],
@@ -450,7 +456,7 @@ export const LANDING_TEMPLATES = {
           variant: '1', eyebrow: 'FAQ', title: 'Questions we hear often',
           items: ['How do we get started?|Send us a message and we will book a free discovery call.', 'How long does a project take?|Most projects run four to twelve weeks, depending on scope.', 'Do you offer support after launch?|Yes. Every project includes 90 days of free support.'],
         }),
-        form(s, l, { eyebrow: 'Contact', title: 'Let us talk about your project', subtitle: 'Leave your details and we will reply within a day.' }),
+        contact(s, l, { variant: '1', eyebrow: 'Contact', title: 'Let us talk about your project', subtitle: 'Leave your details and we will reply within a day.', address: '12 Park Avenue, Your City', phone: '+91 98765 43210', email: 'hello@yourcompany.com', hours: 'Mon to Fri, 9am to 6pm' }),
         footer(s, l, ['About|#', 'Services|#', 'Contact|#contact']),
       ];
     },
@@ -484,9 +490,13 @@ export const LANDING_TEMPLATES = {
           text: 'Every project, deadline and update on one clean screen.',
           bullets: ['Drag-and-drop boards', 'Automatic weekly summaries', 'Works on web and mobile'], image: photo('hero-laptop'), ctaLabel: '', ctaHref: '',
         }),
-        benefits(s, l, {
-          variant: '4', tone: 'dark', columns: '3', eyebrow: 'Pricing', title: 'Simple plans for every team',
-          subtitle: 'Cancel any time.', items: ['🌱 | Starter · Free | Up to 5 people, 3 projects, community support.', '⭐ | Team · ₹799 / user | Unlimited projects, reports and integrations.', '🏢 | Business · Custom | Single sign-on, audit logs and priority support.'],
+        pricing(s, l, {
+          variant: '3', eyebrow: 'Pricing', title: 'Simple plans for every team', subtitle: 'Cancel any time.',
+          items: [
+            'Starter|Free|forever|Up to 5 people; 3 projects; Community support|Get started|#contact',
+            'Team|₹799|per user / month|Unlimited projects; Live reports; Integrations|Start free trial|#contact|popular',
+            'Business|Custom|per year|Single sign-on; Audit logs; Priority support|Talk to sales|#contact',
+          ].join('\n'),
         }),
         quotes(s, l, {
           variant: '2', eyebrow: 'Loved by teams', title: 'Hear from our customers',
@@ -521,9 +531,14 @@ export const LANDING_TEMPLATES = {
           variant: '3', eyebrow: 'About', title: 'Small team, big ideas', text: 'We are a studio of designers, developers and strategists who love good work.',
           bullets: ['Senior people on every project', 'Fixed-price proposals', 'Launch-ready in weeks'], image: photo('community'), ctaLabel: '', ctaHref: '',
         }),
-        showcase(s, l, {
-          variant: '4', reverse: true, eyebrow: 'Portfolio', title: 'Selected work', text: 'A few projects we are proud of: brand identities, websites and apps.',
-          bullets: ['Bloom Café: brand and website', 'Nova Fintech: app design', 'Greenleaf: e-commerce store'], image: photo('launch-glow'), ctaLabel: 'View all projects', ctaHref: '#contact',
+        portfolio(s, l, {
+          variant: '2', eyebrow: 'Portfolio', title: 'Selected work', subtitle: 'A few projects we are proud of.',
+          items: [
+            `Bloom Café|Brand and website|${photo('team-desk')}|#`,
+            `Nova Fintech|App design|${photo('hero-laptop')}|#`,
+            `Greenleaf|E-commerce|${photo('launch-glow')}|#`,
+            `Harbor Hotels|Campaign|${photo('community')}|#`,
+          ].join('\n'),
         }),
         benefits(s, l, {
           variant: '2', tone: 'light', columns: '3', eyebrow: 'Services', title: 'What we do', subtitle: '',
@@ -574,9 +589,12 @@ export const LANDING_TEMPLATES = {
           eyebrow: 'How it works', title: 'Three taps to done', subtitle: '',
           items: ['🔌 | Connect | Link your accounts.', '🎛️ | Choose | Pick what to automate.', '🎉 | Relax | We handle the rest.'],
         }),
-        benefits(s, l, {
-          variant: '3', tone: 'dark', columns: '2', eyebrow: 'Plans', title: 'Early-bird pricing', subtitle: 'Lock it in for life.',
-          items: ['🎟️ | Early bird · ₹299 / month | Everything included, price locked forever.', '💼 | Pro · ₹599 / month | Team sharing and priority support.'],
+        pricing(s, l, {
+          variant: '2', eyebrow: 'Plans', title: 'Early-bird pricing', subtitle: 'Lock it in for life.',
+          items: [
+            'Early bird|₹299|per month|Everything included; Price locked forever|Join the waitlist|#contact|popular',
+            'Pro|₹599|per month|Team sharing; Priority support|Join the waitlist|#contact',
+          ].join('\n'),
         }),
         quotes(s, l, {
           variant: '4', eyebrow: 'Beta testers', title: 'What early users say',

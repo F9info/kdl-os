@@ -252,7 +252,7 @@ async function _installSingle(slug, actorId, { resolveConflicts = false } = {}) 
 
   await invalidateModuleCache(slug);
   // Install may have granted Developer/Admin the new module's permissions; drop cached sets so the menu shows now.
-  await invalidatePermissionCache();
+  await invalidatePermissionCache().catch(() => {}); // best effort: a Redis hiccup must not fail an install
   for (const conflict of blockingConflicts) {
     await invalidateModuleCache(conflict.slug);
   }

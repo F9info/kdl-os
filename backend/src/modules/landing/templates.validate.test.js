@@ -39,7 +39,7 @@ describe.each(withBody)('landing template "%s"', (key) => {
   });
 
   it('creates its enquiry form exactly when it contains a form block', () => {
-    const hasFormBlock = data.content.some((b) => b.type === 'LandingForm');
+    const hasFormBlock = data.content.some((b) => ['LandingForm', 'LandingContact'].includes(b.type));
     expect(Boolean(LANDING_TEMPLATES[key].hasForm)).toBe(hasFormBlock);
   });
 });

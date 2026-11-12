@@ -16,6 +16,25 @@ import {
   TestimonialsDesign,
   type Variant,
 } from './section-variants'
+import {
+  BlogDesign,
+  ClientsDesign,
+  ContactDesign,
+  FooterDesign,
+  GalleryDesign,
+  NewsletterDesign,
+  PeopleDesign,
+  PortfolioDesign,
+  PricingDesign,
+  StepsDesign,
+  type BlogProps,
+  type ClientsProps,
+  type ContactProps,
+  type GalleryProps,
+  type NewsletterProps,
+  type PortfolioProps,
+  type PricingProps,
+} from './section-designs-more'
 import { lines, rows, look, display, SectionHead, type Common } from './shared'
 
 // Landing blocks: big gradient heroes, circular photo frames, floating cards and rich headline fonts,
@@ -64,6 +83,7 @@ type LandingProps = {
     ctaHref: string
   }
   LandingSteps: Common & {
+    variant?: Variant
     layout: 'cards' | 'list'
     eyebrow: string
     title: string
@@ -71,6 +91,7 @@ type LandingProps = {
     items: string
   }
   LandingPeople: Common & {
+    variant?: Variant
     eyebrow: string
     title: string
     subtitle: string
@@ -87,8 +108,15 @@ type LandingProps = {
     buttonHref: string
     image: string
   }
+  LandingPricing: PricingProps & { variant?: Variant }
+  LandingPortfolio: PortfolioProps & { variant?: Variant }
+  LandingGallery: GalleryProps & { variant?: Variant }
+  LandingClients: ClientsProps & { variant?: Variant }
+  LandingContact: ContactProps & { variant?: Variant }
+  LandingNewsletter: NewsletterProps & { variant?: Variant }
+  LandingBlog: BlogProps & { variant?: Variant }
   LandingHeader: Common & { links: string; ctaLabel: string; ctaHref: string }
-  LandingFooter: Common & { links: string; note: string }
+  LandingFooter: Common & { variant?: Variant; links: string; note: string }
   LandingForm: Common & {
     eyebrow: string
     title: string
@@ -613,6 +641,8 @@ function ShowcaseBlock(props: LandingProps['LandingShowcase']) {
 }
 
 function StepsBlock(props: LandingProps['LandingSteps']) {
+  if (props.variant && props.variant !== '1')
+    return <StepsDesign {...props} variant={props.variant} />
   const { p, f } = look(props)
   const items = rows(props.items, 3)
   return (
@@ -678,6 +708,8 @@ function StepsBlock(props: LandingProps['LandingSteps']) {
 }
 
 function PeopleBlock(props: LandingProps['LandingPeople']) {
+  if (props.variant && props.variant !== '1')
+    return <PeopleDesign {...props} variant={props.variant} />
   const { p, f } = look(props)
   const cols =
     { '2': 'md:grid-cols-2', '3': 'md:grid-cols-3', '4': 'md:grid-cols-2 lg:grid-cols-4' }[
@@ -1034,6 +1066,27 @@ function FooterBlock(props: LandingProps['LandingFooter'] & { metaIdentity?: Ide
   const copyright =
     get('copyright') || (name ? `© ${new Date().getFullYear()} ${name}. All rights reserved.` : '')
   const hasContact = emails.length + phones.length > 0 || Boolean(address)
+  if (props.variant && props.variant !== '1')
+    return (
+      <FooterDesign
+        variant={props.variant}
+        palette={props.palette}
+        font={props.font}
+        data={{
+          name,
+          logo,
+          darkLogo: Boolean(darkLogo),
+          description: get('description'),
+          emails,
+          phones,
+          address,
+          socials,
+          links,
+          copyright,
+          note: props.note,
+        }}
+      />
+    )
   const heading = 'text-xs font-semibold uppercase tracking-[0.18em]'
 
   return (
@@ -1304,6 +1357,7 @@ const typedComponents: Config<LandingProps>['components'] = {
   LandingSteps: {
     label: 'Landing steps or agenda',
     fields: {
+      variant: designField(),
       ...styleFields,
       layout: {
         type: 'radio',
@@ -1318,6 +1372,7 @@ const typedComponents: Config<LandingProps>['components'] = {
       items: { type: 'textarea' },
     },
     defaultProps: {
+      variant: '1',
       palette: 'sunset',
       font: 'bricolage',
       layout: 'cards',
@@ -1332,6 +1387,7 @@ const typedComponents: Config<LandingProps>['components'] = {
   LandingPeople: {
     label: 'Landing people',
     fields: {
+      variant: designField(),
       ...styleFields,
       eyebrow: { type: 'text' },
       title: { type: 'text' },
@@ -1340,6 +1396,7 @@ const typedComponents: Config<LandingProps>['components'] = {
       items: { type: 'textarea' },
     },
     defaultProps: {
+      variant: '1',
       palette: 'sunset',
       font: 'bricolage',
       eyebrow: 'The team',
@@ -1411,6 +1468,184 @@ const typedComponents: Config<LandingProps>['components'] = {
     },
     render: (props) => <CtaBlock {...props} />,
   },
+  LandingPricing: {
+    label: 'Landing pricing',
+    fields: {
+      variant: designField(),
+      ...styleFields,
+      eyebrow: { type: 'text' },
+      title: { type: 'text' },
+      subtitle: { type: 'textarea' },
+      items: { type: 'textarea' },
+    },
+    defaultProps: {
+      variant: '1',
+      palette: 'violet',
+      font: 'bricolage',
+      eyebrow: 'Pricing',
+      title: 'Simple, honest pricing',
+      subtitle:
+        'One line per plan: Name | Price | Period | Feature; Feature | Button | Link | popular',
+      items:
+        'Starter|₹0|per month|3 projects; Email support|Get started|#contact\nPro|₹999|per month|Unlimited projects; Priority support; Reports|Start free trial|#contact|popular\nBusiness|Custom|per year|Single sign-on; Audit logs; Dedicated manager|Talk to us|#contact',
+    },
+    render: (props) => <PricingDesign {...props} variant={props.variant ?? '1'} />,
+  },
+  LandingPortfolio: {
+    label: 'Landing portfolio',
+    fields: {
+      variant: designField(),
+      ...styleFields,
+      eyebrow: { type: 'text' },
+      title: { type: 'text' },
+      subtitle: { type: 'textarea' },
+      items: { type: 'textarea' },
+    },
+    defaultProps: {
+      variant: '1',
+      palette: 'blaze',
+      font: 'playfair',
+      eyebrow: 'Portfolio',
+      title: 'Selected projects',
+      subtitle: '',
+      items:
+        'Project one|Branding|/landing-templates/photos/team-work.jpg|#\nProject two|Website|/landing-templates/photos/hero-laptop.jpg|#\nProject three|App design|/landing-templates/photos/launch-glow.jpg|#',
+    },
+    render: (props) => <PortfolioDesign {...props} variant={props.variant ?? '1'} />,
+  },
+  LandingGallery: {
+    label: 'Landing gallery',
+    fields: {
+      variant: designField(),
+      ...styleFields,
+      eyebrow: { type: 'text' },
+      title: { type: 'text' },
+      subtitle: { type: 'textarea' },
+      items: { type: 'textarea' },
+    },
+    defaultProps: {
+      variant: '1',
+      palette: 'ocean',
+      font: 'fraunces',
+      eyebrow: 'Gallery',
+      title: 'Moments from our work',
+      subtitle: '',
+      items:
+        '/landing-templates/photos/community.jpg|Community day\n/landing-templates/photos/high-five.jpg|Team win\n/landing-templates/photos/event-workshop.jpg|Workshop\n/landing-templates/photos/event-speaker.jpg|Keynote',
+    },
+    render: (props) => <GalleryDesign {...props} variant={props.variant ?? '1'} />,
+  },
+  LandingClients: {
+    label: 'Landing clients',
+    fields: {
+      variant: designField(),
+      ...styleFields,
+      eyebrow: { type: 'text' },
+      title: { type: 'text' },
+      items: { type: 'textarea' },
+    },
+    defaultProps: {
+      variant: '1',
+      palette: 'ocean',
+      font: 'bricolage',
+      eyebrow: '',
+      title: 'Trusted by teams at',
+      items: 'Acme\nGlobex\nInitech\nUmbrella\nHooli',
+    },
+    render: (props) => <ClientsDesign {...props} variant={props.variant ?? '1'} />,
+  },
+  LandingContact: {
+    label: 'Landing contact',
+    fields: {
+      variant: designField(),
+      ...styleFields,
+      eyebrow: { type: 'text' },
+      title: { type: 'text' },
+      subtitle: { type: 'textarea' },
+      address: { type: 'text' },
+      phone: { type: 'text' },
+      email: { type: 'text' },
+      hours: { type: 'text' },
+      formSlug: { type: 'text' },
+      anchor: { type: 'text' },
+    },
+    defaultProps: {
+      variant: '1',
+      palette: 'ocean',
+      font: 'bricolage',
+      eyebrow: 'Contact',
+      title: 'Let us talk',
+      subtitle: 'Leave your details and we will reply within a day.',
+      address: '123 Main Street, Your City',
+      phone: '+91 98765 43210',
+      email: 'hello@example.com',
+      hours: 'Mon to Fri, 9am to 6pm',
+      formSlug: 'contact',
+      anchor: 'contact',
+    },
+    render: function LandingContactRender({ puck, ...props }) {
+      return (
+        <ContactDesign
+          {...props}
+          variant={props.variant ?? '1'}
+          readOnly={Boolean(puck?.isEditing)}
+          preview={Boolean(puck?.metadata?.preview)}
+        />
+      )
+    },
+  },
+  LandingNewsletter: {
+    label: 'Landing newsletter',
+    fields: {
+      variant: designField(),
+      ...styleFields,
+      title: { type: 'text' },
+      text: { type: 'textarea' },
+      formSlug: { type: 'text' },
+      anchor: { type: 'text' },
+    },
+    defaultProps: {
+      variant: '1',
+      palette: 'violet',
+      font: 'bricolage',
+      title: 'Get our newsletter',
+      text: 'One short email a month. No spam.',
+      formSlug: 'newsletter',
+      anchor: 'newsletter',
+    },
+    render: function LandingNewsletterRender({ puck, ...props }) {
+      return (
+        <NewsletterDesign
+          {...props}
+          variant={props.variant ?? '1'}
+          readOnly={Boolean(puck?.isEditing)}
+          preview={Boolean(puck?.metadata?.preview)}
+        />
+      )
+    },
+  },
+  LandingBlog: {
+    label: 'Landing blog',
+    fields: {
+      variant: designField(),
+      ...styleFields,
+      eyebrow: { type: 'text' },
+      title: { type: 'text' },
+      subtitle: { type: 'textarea' },
+      items: { type: 'textarea' },
+    },
+    defaultProps: {
+      variant: '1',
+      palette: 'ocean',
+      font: 'fraunces',
+      eyebrow: 'Blog',
+      title: 'Latest articles',
+      subtitle: '',
+      items:
+        'First post title|12 Nov 2026|A short excerpt that tells readers what the post is about.|/landing-templates/photos/team-desk.jpg|#\nSecond post title|5 Nov 2026|Another short excerpt for the second article.|/landing-templates/photos/community.jpg|#\nThird post title|29 Oct 2026|A third excerpt to complete the row.|/landing-templates/photos/high-five.jpg|#',
+    },
+    render: (props) => <BlogDesign {...props} variant={props.variant ?? '1'} />,
+  },
   LandingHeader: {
     label: 'Landing header',
     fields: {
@@ -1437,8 +1672,19 @@ const typedComponents: Config<LandingProps>['components'] = {
   },
   LandingFooter: {
     label: 'Landing footer',
-    fields: { ...styleFields, links: { type: 'textarea' }, note: { type: 'text' } },
-    defaultProps: { palette: 'brand', font: 'bricolage', links: 'Back to top|#', note: '' },
+    fields: {
+      variant: designField(),
+      ...styleFields,
+      links: { type: 'textarea' },
+      note: { type: 'text' },
+    },
+    defaultProps: {
+      variant: '1',
+      palette: 'brand',
+      font: 'bricolage',
+      links: 'Back to top|#',
+      note: '',
+    },
     render: function LandingFooterRender({ puck, ...props }) {
       return (
         <FooterBlock
@@ -1514,6 +1760,10 @@ const FIELD_LABELS: Record<string, string> = {
   text: 'Text',
   links: 'Quick links (label | link, one per line)',
   note: 'Extra line at the bottom',
+  address: 'Address',
+  phone: 'Phone',
+  email: 'Email',
+  hours: 'Opening hours',
 }
 // `items` means something different in each block, so its label says how to write a line.
 const ITEMS_LABELS: Record<string, string> = {
@@ -1522,6 +1772,12 @@ const ITEMS_LABELS: Record<string, string> = {
   LandingPeople: 'People (name | role | about | photo address, one per line)',
   LandingTestimonials: 'Quotes (quote | name | role | photo address, one per line)',
   LandingFaq: 'Questions (question | answer, one per line)',
+  LandingPricing:
+    'Plans (name | price | period | feature; feature | button | link | popular, one per line)',
+  LandingPortfolio: 'Projects (title | category | photo address | link, one per line)',
+  LandingGallery: 'Pictures (photo address | caption, one per line)',
+  LandingClients: 'Clients (name | logo address (optional), one per line)',
+  LandingBlog: 'Posts (title | date | excerpt | photo address | link, one per line)',
 }
 
 function withLabels(components: NonNullable<Config['components']>) {
@@ -1570,6 +1826,13 @@ export const landing: ComponentPack = {
         'LandingTestimonials',
         'LandingFaq',
         'LandingCta',
+        'LandingPricing',
+        'LandingPortfolio',
+        'LandingGallery',
+        'LandingClients',
+        'LandingContact',
+        'LandingNewsletter',
+        'LandingBlog',
         'LandingForm',
         'LandingFooter',
       ],
@@ -1583,5 +1846,15 @@ export const landing: ComponentPack = {
     LandingTestimonials: ['1', '2', '3', '4'],
     LandingFaq: ['1', '2', '3', '4'],
     LandingCta: ['1', '2', '3', '4'],
+    LandingSteps: ['1', '2', '3', '4'],
+    LandingPeople: ['1', '2', '3', '4'],
+    LandingPricing: ['1', '2', '3', '4'],
+    LandingPortfolio: ['1', '2', '3', '4'],
+    LandingGallery: ['1', '2', '3', '4'],
+    LandingClients: ['1', '2', '3', '4'],
+    LandingContact: ['1', '2', '3', '4'],
+    LandingNewsletter: ['1', '2', '3', '4'],
+    LandingBlog: ['1', '2', '3', '4'],
+    LandingFooter: ['1', '2', '3', '4'],
   },
 }
