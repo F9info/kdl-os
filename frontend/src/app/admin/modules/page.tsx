@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState, type CSSProperties } from 'react'
+import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Package,
@@ -138,6 +139,13 @@ export default function ModulesPage() {
     staleTime: 30 * 1000,
   })
 
+  const router = useRouter()
+  type DemoSummary = {
+    website: { created: string[]; skipped: string[] }
+    landing: { created: string[]; skipped: string[] }
+  }
+  const [demo, setDemo] = useState<DemoSummary | null>(null)
+
   const mutation = useMutation({
     mutationFn: ({
       slug,
@@ -172,6 +180,16 @@ export default function ModulesPage() {
       }
       queryClient.invalidateQueries({ queryKey: ['modules'] })
       queryClient.invalidateQueries({ queryKey: ['modules-enabled'] })
+      // Installing Frontend creates a demo website and landing pages: show what was made.
+      if (slug === 'cms' && action === 'install') {
+        api
+          .get('/cms/demo-summary')
+          .then((r) => {
+            const s = r.data?.data?.summary as DemoSummary | null
+            if (s && (s.website.created.length || s.landing.created.length)) setDemo(s)
+          })
+          .catch(() => {})
+      }
     },
     onError: (
       err: ApiError,
@@ -559,6 +577,49 @@ export default function ModulesPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <Modal
+          open={demo !== null}
+          onClose={() => setDemo(null)}
+          title="Frontend installed"
+          description="Your demo website is ready. Everything below can be edited, duplicated or deleted."
+          size="md"
+          footer={
+            <>
+              <Button variant="outline" onClick={() => setDemo(null)}>
+                Stay here
+              </Button>
+              <Button
+                onClick={() => {
+                  setDemo(null)
+                  router.push('/admin/landing-pages')
+                }}
+              >
+                Open Landing Pages
+              </Button>
+            </>
+          }
+        >
+          <ul className="space-y-2 py-2 text-sm">
+            <li>
+              Frontend module: <strong>Installed and enabled</strong>
+            </li>
+            <li>
+              Demo website: <strong>{demo?.website.created.length ?? 0} pages created</strong>{' '}
+              (Home, About, Services, Contact and more)
+            </li>
+            <li>
+              Landing pages: <strong>{demo?.landing.created.length ?? 0} created</strong>
+              {demo?.landing.created.length ? ` (${demo.landing.created.join(', ')})` : ''}
+            </li>
+            <li>
+              Section designs and templates: <strong>Preloaded</strong>
+            </li>
+            <li>
+              Website status: <strong>Published</strong>. Public pages open at /p/&lt;slug&gt;.
+            </li>
+          </ul>
+        </Modal>
 
         <Modal
           open={settingsDialog.open}

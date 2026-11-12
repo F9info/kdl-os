@@ -408,6 +408,189 @@ export const LANDING_TEMPLATES = {
       ];
     },
   },
+
+  // ---- Demo pages seeded when the Frontend module is enabled (Business, SaaS, Agency, Startup). ----
+  // Each uses a different palette, font and a different design (variant) of every section.
+  business: {
+    name: 'Business / Corporate',
+    description: 'Corporate site: hero, about, services, why choose us, statistics, testimonials, FAQ and contact.',
+    hasForm: true,
+    body: (s) => {
+      const l = looks('ocean', 'fraunces');
+      return [
+        header(s, l, { ctaLabel: 'Contact us' }),
+        hero(s, l, {
+          variant: '1', eyebrow: 'Trusted by 500+ companies', headline: 'Solutions that move your business forward',
+          highlight: 'move your business forward',
+          subtitle: 'Strategy, delivery and support from one experienced team, so you can focus on running the business.',
+          ctaLabel: 'Talk to an expert', ctaHref: '#contact', secondaryLabel: 'Our services', secondaryHref: '#contact',
+          image: photo('team-work'), avatars: faces('p1', 'p2', 'p3'), proofText: '500+ clients served',
+          badgeValue: '18 yrs', badgeLabel: 'Of experience', noteTitle: '', noteText: '', chartTitle: '',
+        }),
+        showcase(s, l, {
+          variant: '1', eyebrow: 'About us', title: 'A partner you can rely on',
+          text: 'We have helped companies of every size plan, build and grow for almost two decades.',
+          bullets: ['Dedicated account manager', 'Transparent reporting every month', 'Local team, global standards'],
+          image: photo('team-desk'), ctaLabel: 'Meet the team', ctaHref: '#contact',
+        }),
+        benefits(s, l, {
+          variant: '1', eyebrow: 'Services', title: 'What we do for you', subtitle: 'Everything you need, under one roof.',
+          items: ['📊 | Consulting | Clear advice on strategy, operations and growth.', '🛠️ | Implementation | We build and roll out the solution with your team.', '🎧 | Support | Fast, friendly help whenever you need it.'],
+        }),
+        benefits(s, l, {
+          variant: '2', tone: 'dark', columns: '4', eyebrow: 'Why choose us', title: 'Four reasons clients stay',
+          subtitle: '', items: ['🏆 | Proven results | Measurable outcomes on every project.', '🔒 | Secure | Your data is protected end to end.', '⏱️ | On time | We keep the dates we promise.', '💬 | Open | Plain-language updates, no jargon.'],
+        }),
+        stats(s, l, ['500+|Clients served', '18|Years in business', '97%|Client retention', '40|Team members']),
+        quotes(s, l, {
+          variant: '1', eyebrow: 'Testimonials', title: 'What our clients say',
+          items: [`They understood our business quickly and delivered on every promise.|Rahul K.|Managing director|${photo('p2')}`, `Professional, responsive and genuinely helpful from day one.|Neha T.|Operations head|${photo('p3')}`, `Our best supplier relationship in ten years.|Vikram S.|CEO|${photo('p6')}`],
+        }),
+        faq(s, l, {
+          variant: '1', eyebrow: 'FAQ', title: 'Questions we hear often',
+          items: ['How do we get started?|Send us a message and we will book a free discovery call.', 'How long does a project take?|Most projects run four to twelve weeks, depending on scope.', 'Do you offer support after launch?|Yes. Every project includes 90 days of free support.'],
+        }),
+        form(s, l, { eyebrow: 'Contact', title: 'Let us talk about your project', subtitle: 'Leave your details and we will reply within a day.' }),
+        footer(s, l, ['About|#', 'Services|#', 'Contact|#contact']),
+      ];
+    },
+  },
+
+  saas: {
+    name: 'SaaS / Technology',
+    description: 'Software product: hero, features, how it works, screenshots, pricing, testimonials, FAQ and call to action.',
+    hasForm: true,
+    body: (s) => {
+      const l = looks('violet', 'bricolage');
+      return [
+        header(s, l, { ctaLabel: 'Start free trial' }),
+        hero(s, l, {
+          variant: '2', eyebrow: 'New: AI reports', headline: 'The easiest way to run your team’s work', highlight: 'run your team’s work',
+          subtitle: 'Plan, track and ship in one place. Set up in minutes, loved by teams of every size.',
+          ctaLabel: 'Start free trial', ctaHref: '#contact', secondaryLabel: 'See how it works', secondaryHref: '#contact',
+          image: photo('launch-glow'), avatars: faces('p1', 'p4', 'p5'), proofText: '12,000 teams', badgeValue: '4.9 / 5',
+          badgeLabel: 'On review sites', noteTitle: '', noteText: '', chartTitle: 'Weekly progress',
+        }),
+        benefits(s, l, {
+          variant: '3', tone: 'light', eyebrow: 'Features', title: 'Everything your team needs', subtitle: 'Powerful, yet simple.',
+          items: ['✅ | Tasks and boards | Organise work your way.', '📈 | Live reports | See progress at a glance.', '🔗 | Integrations | Connect the tools you already use.'],
+        }),
+        steps(s, l, {
+          eyebrow: 'How it works', title: 'Up and running in three steps', subtitle: '',
+          items: ['📝 | Sign up | Create your workspace in a minute.', '👥 | Invite your team | Add people with one link.', '🚀 | Start shipping | Track everything in one place.'],
+        }),
+        showcase(s, l, {
+          variant: '2', reverse: true, eyebrow: 'Product tour', title: 'A dashboard you will actually enjoy',
+          text: 'Every project, deadline and update on one clean screen.',
+          bullets: ['Drag-and-drop boards', 'Automatic weekly summaries', 'Works on web and mobile'], image: photo('hero-laptop'), ctaLabel: '', ctaHref: '',
+        }),
+        benefits(s, l, {
+          variant: '4', tone: 'dark', columns: '3', eyebrow: 'Pricing', title: 'Simple plans for every team',
+          subtitle: 'Cancel any time.', items: ['🌱 | Starter · Free | Up to 5 people, 3 projects, community support.', '⭐ | Team · ₹799 / user | Unlimited projects, reports and integrations.', '🏢 | Business · Custom | Single sign-on, audit logs and priority support.'],
+        }),
+        quotes(s, l, {
+          variant: '2', eyebrow: 'Loved by teams', title: 'Hear from our customers',
+          items: [`We cut our status meetings in half in the first month.|Anita D.|Product manager|${photo('p5')}`, `Set up in an afternoon. The whole team adopted it.|Imran Q.|CTO|${photo('p2')}`],
+        }),
+        faq(s, l, {
+          variant: '3', eyebrow: 'FAQ', title: 'Your questions, answered',
+          items: ['Is there a free plan?|Yes. Starter is free for up to five people.', 'Can I import my data?|Yes. Upload a CSV or connect your old tool.', 'Is my data safe?|Data is encrypted in transit and at rest.'],
+        }),
+        cta(s, l, { variant: '1', title: 'Ready to get organised?', text: 'Start your 14-day free trial. No card needed.', buttonLabel: 'Start free trial', buttonHref: '#contact' }),
+        form(s, l, { eyebrow: 'Free trial', title: 'Create your workspace', subtitle: 'Leave your email and we will send your trial link.' }),
+        footer(s, l, ['Features|#', 'Pricing|#', 'Start free trial|#contact']),
+      ];
+    },
+  },
+
+  agency: {
+    name: 'Agency / Portfolio',
+    description: 'Creative agency: hero, about, portfolio, services, process, team, testimonials and contact.',
+    hasForm: true,
+    body: (s) => {
+      const l = looks('blaze', 'playfair');
+      return [
+        header(s, l, { ctaLabel: 'Start a project' }),
+        hero(s, l, {
+          variant: '3', eyebrow: 'Design and development studio', headline: 'We craft brands people remember', highlight: 'brands people remember',
+          subtitle: 'Strategy, design and websites for ambitious companies.', ctaLabel: 'See our work', ctaHref: '#contact',
+          secondaryLabel: 'Start a project', secondaryHref: '#contact', image: photo('high-five'), avatars: faces('p3', 'p6'),
+          proofText: '120+ projects', badgeValue: '9 awards', badgeLabel: 'Design awards', noteTitle: '', noteText: '', chartTitle: '',
+        }),
+        showcase(s, l, {
+          variant: '3', eyebrow: 'About', title: 'Small team, big ideas', text: 'We are a studio of designers, developers and strategists who love good work.',
+          bullets: ['Senior people on every project', 'Fixed-price proposals', 'Launch-ready in weeks'], image: photo('community'), ctaLabel: '', ctaHref: '',
+        }),
+        showcase(s, l, {
+          variant: '4', reverse: true, eyebrow: 'Portfolio', title: 'Selected work', text: 'A few projects we are proud of: brand identities, websites and apps.',
+          bullets: ['Bloom Café: brand and website', 'Nova Fintech: app design', 'Greenleaf: e-commerce store'], image: photo('launch-glow'), ctaLabel: 'View all projects', ctaHref: '#contact',
+        }),
+        benefits(s, l, {
+          variant: '2', tone: 'light', columns: '3', eyebrow: 'Services', title: 'What we do', subtitle: '',
+          items: ['🎨 | Branding | Logos, identity and guidelines.', '💻 | Web design | Fast, beautiful, easy to edit.', '📣 | Marketing | Campaigns that bring customers.'],
+        }),
+        steps(s, l, {
+          layout: 'list', eyebrow: 'Our process', title: 'From hello to launch', subtitle: '',
+          items: ['1 | Discover | We learn about your goals and audience.', '2 | Design | You review concepts and pick a direction.', '3 | Build | We develop, test and polish.', '4 | Launch | We go live and stay on hand.'],
+        }),
+        people(s, l, {
+          eyebrow: 'Team', title: 'The people behind the work',
+          items: [`Aarav Nair|Creative director|Leads brand and design.|${photo('p2')}`, `Diya Menon|Lead developer|Builds fast, accessible sites.|${photo('p3')}`, `Kabir Shah|Strategist|Turns goals into a plan.|${photo('p6')}`],
+        }),
+        quotes(s, l, {
+          variant: '3', eyebrow: 'Kind words', title: 'Clients on working with us',
+          items: [`They made our brand feel like us, only sharper.|Meera P.|Founder, Bloom Café|${photo('p5')}`],
+        }),
+        form(s, l, { eyebrow: 'Contact', title: 'Have a project in mind?', subtitle: 'Tell us about it and we will reply within two working days.' }),
+        footer(s, l, ['Work|#', 'Services|#', 'Contact|#contact']),
+      ];
+    },
+  },
+
+  startup: {
+    name: 'Startup / Product launch',
+    description: 'Launch page: hero, product intro, features, benefits, how it works, plans, testimonials, FAQ and registration.',
+    hasForm: true,
+    body: (s) => {
+      const l = looks('aurora', 'bricolage');
+      return [
+        header(s, l, { ctaLabel: 'Join the waitlist' }),
+        hero(s, l, {
+          variant: '4', eyebrow: 'Launching soon', headline: 'Meet the app that does the busywork for you', highlight: 'does the busywork',
+          subtitle: 'Join the early list and be first to try it.', ctaLabel: 'Join the waitlist', ctaHref: '#contact',
+          secondaryLabel: '', secondaryHref: '', image: photo('hero-laptop'), avatars: faces('p1', 'p2', 'p4'), proofText: '8,000 on the list',
+          badgeValue: 'Q1', badgeLabel: 'Public launch', noteTitle: '', noteText: '', chartTitle: '',
+        }),
+        showcase(s, l, {
+          variant: '1', eyebrow: 'The product', title: 'One app, one tap, done', text: 'We took the most tedious part of your week and made it automatic.',
+          bullets: ['Connects in two minutes', 'No training needed', 'Works on any device'], image: photo('launch-glow'), ctaLabel: '', ctaHref: '',
+        }),
+        benefits(s, l, {
+          variant: '4', tone: 'light', columns: '3', eyebrow: 'Features', title: 'Built to save you time', subtitle: '',
+          items: ['⚡ | Instant | Results in seconds, not hours.', '🤖 | Smart | Learns how you work.', '🔔 | Reminders | Never miss a deadline.'],
+        }),
+        stats(s, l, ['8K+|On the waiting list', '4.9/5|Beta rating', '3 hrs|Saved each week', '0|Setup fees']),
+        steps(s, l, {
+          eyebrow: 'How it works', title: 'Three taps to done', subtitle: '',
+          items: ['🔌 | Connect | Link your accounts.', '🎛️ | Choose | Pick what to automate.', '🎉 | Relax | We handle the rest.'],
+        }),
+        benefits(s, l, {
+          variant: '3', tone: 'dark', columns: '2', eyebrow: 'Plans', title: 'Early-bird pricing', subtitle: 'Lock it in for life.',
+          items: ['🎟️ | Early bird · ₹299 / month | Everything included, price locked forever.', '💼 | Pro · ₹599 / month | Team sharing and priority support.'],
+        }),
+        quotes(s, l, {
+          variant: '4', eyebrow: 'Beta testers', title: 'What early users say',
+          items: [`I got my Sunday evenings back.|Sara L.|Beta tester|${photo('p5')}`, `Does in a minute what took me an hour.|Dev P.|Beta tester|${photo('p2')}`],
+        }),
+        faq(s, l, {
+          variant: '4', eyebrow: 'FAQ', title: 'Before you join',
+          items: ['When does it launch?|Public launch is planned for next quarter.', 'Is it free?|Joining the list is free. Early-bird pricing applies at launch.'],
+        }),
+        form(s, l, { eyebrow: 'Registration', title: 'Reserve your spot', subtitle: 'We will email your invite as soon as your turn comes.' }),
+        footer(s, l, ['Join the waitlist|#contact', 'Back to top|#']),
+      ];
+    },
+  },
 };
 
 export const TEMPLATE_KEYS = Object.keys(LANDING_TEMPLATES);

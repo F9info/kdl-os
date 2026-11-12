@@ -68,15 +68,21 @@ describe.each(withBody)('footer of "%s"', (key) => {
 });
 
 describe('the starter set', () => {
-  it('offers four different designs besides Blank', () => {
-    expect(withBody).toHaveLength(4);
+  const DEMO = ['business', 'saas', 'agency', 'startup'];
+  const ORIGINAL = withBody.filter((k) => !DEMO.includes(k));
+
+  it('offers the four original designs plus the four demo pages (Business, SaaS, Agency, Startup)', () => {
+    expect(ORIGINAL).toHaveLength(4);
+    expect(withBody.filter((k) => DEMO.includes(k))).toHaveLength(4);
   });
 
   it('gives each template its own hero design so they do not look alike', () => {
-    const heroVariants = withBody.map(
-      (k) => buildLandingData(k, 's', 'S').content.find((b) => b.type === 'LandingHero').props.variant
-    );
-    expect(new Set(heroVariants).size).toBe(4);
+    for (const set of [ORIGINAL, DEMO]) {
+      const heroVariants = set.map(
+        (k) => buildLandingData(k, 's', 'S').content.find((b) => b.type === 'LandingHero').props.variant
+      );
+      expect(new Set(heroVariants).size).toBe(4);
+    }
   });
 });
 
