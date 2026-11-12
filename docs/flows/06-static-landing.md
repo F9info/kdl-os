@@ -27,29 +27,41 @@ Upload your logo (svg, png, jpeg or webp), check the company and contact details
 Four brand colours are taken from your logo: Primary, Secondary, Tertiary and Quaternary. Keep them, or click a colour box and type a new code, click **Pick from logo** or **Randomize**. Then click **Submit palette**. The colours become the website's design tokens.
 ![Studio: Color Palette](studio-palette)
 
-## Step 7. Choose the menu pages
+## Step 7. Typography: choose the fonts
+The Website stage opens on **Typography**. Under **Heading** tick the font for titles, and under **Body** tick the font for normal text. To use another font, type its Google Font name (for example Roboto) and click **Add**, or click **Upload** to add your own font file. Click **Save**, then click **Next: Typography** to continue.
+![Website stage: Typography](typography)
+
+## Step 8. Font settings
+Fine-tune the type scale: for each element (H1 to H6, Lead paragraph, Body, Small, Nav link, Button) change the font size, family, weight, line height and letter spacing. The **Examples** panel on the right shows the result live. The defaults are a good start. Scroll down and click **Next: Buttons and form fields**.
+![Website stage: Font settings](font-settings)
+
+## Step 9. Buttons and form fields
+Click one card under **Button style** (Solid, Airy pill, Classic, Leaf, Outline, Soft tint and more), then scroll down and click one card under **Form field style**. Every button and every form on your website uses them, in your theme's colours. The admin screens are not changed. Click **Next** to continue to Navigation.
+![Website stage: Button style](button-styles)
+
+## Step 10. Choose the menu pages
 Open **Frontend > Navigation**. Click the page names you want in the menu (About, Services, Portfolio, Blog, Contact and so on), or type a custom page and click **Add**. Use the **Header menu** and **Footer menu** tabs. One page is created for every menu item, plus Home.
 ![Frontend > Navigation](navigation)
 
-## Step 8. Website stage: layout
+## Step 11. Website stage: layout
 Set typography and fonts. Click **Create/Edit layout** to choose the Top header, Header and Footer. The header and footer of **Home** are shared by every public page.
 ![Studio: Website stage](studio-website)
 
-## Step 9. Edit and publish the pages
+## Step 12. Edit and publish the pages
 Open **Frontend > Pages**. Click **Edit** on a page to change its text, images and links in the section builder, then **Save** and **Publish**. Publish stops real problems (an empty page, a missing title, a broken link) and only suggests the rest. Click **Duplicate** to copy a page. **Frontend > Sections** holds reusable sections.
 ![Frontend > Pages](pages)
 
-## Step 10. Click Brands and select Landing Pages
+## Step 13. Click Brands and select Landing Pages
 Click **Frontend > Brands** in the left menu. Three cards appear: Web app, Landing Pages and Collateral. Click the **Landing Pages** card to open it.
 ![Brands: click the Landing Pages card](brands-start)
 
-## Step 11. Choose a landing page template
+## Step 14. Choose a landing page template
 Open **Landing Pages** (http://localhost:3001/admin/landing-pages). Ready-made designs are already listed under **Start from a template**: Lead generation, Product launch, Event or webinar and Special offer. Click **View template** to preview one, then click **Use this template** to start from it. Every word, picture and colour can be changed afterwards in the editor.
 
 If you need a fully custom page, click **New landing page** instead. This guide follows the template route.
 ![Landing Pages: start from a template](landing-start)
 
-## Step 12. Name the page and create it
+## Step 15. Name the page and create it
 A **New landing page** window opens with the template you picked already selected. Fill in two things, then continue:
 - **Name**: the title you see in the admin, for example "Summer offer".
 - **Slug**: the last part of the public web address. The page will be published at `/p/<slug>`; the full address is shown under the field.
@@ -57,7 +69,7 @@ A **New landing page** window opens with the template you picked already selecte
 To use a different design, click another option under **Template** (choose **Blank** for a page with only a header and footer). Then click **Create and edit** to open the page in the editor.
 ![New landing page window](new-landing-start)
 
-## Step 13. Click Create and edit, then change the page
+## Step 16. Click Create and edit, then change the page
 Click **Create and edit**. The page opens in the editor.
 ![Click Create and edit](create-btn)
 
@@ -69,21 +81,21 @@ Change the page like this:
 - Click **Preview** to see the page, then **Save**. The page stays a **Draft** until you publish it.
 ![The landing page editor](editor-start)
 
-## Step 14. After editing, click Save
+## Step 17. After editing, click Save
 When you have finished all your changes, click **Save** at the top right of the editor. Your changes are stored and the page stays a **Draft** until you publish it. Then go back to the **Landing Pages** list (http://localhost:3001/admin/landing-pages).
 ![Click Save](save-btn)
 
-## Step 15. Click Convert
+## Step 18. Click Convert
 In the **Landing Pages** list your page now has three buttons: **Edit**, **Preview** and **Convert**. Click **Convert**. KDL OS builds your page as plain static files. This takes a few minutes; you can stay on the page. When it finishes, the card says **Moved to its folder. Ready to host.** and shows the folder name.
 ![Landing Pages: click Convert](convert-start)
 
-## Step 16. Convert to a static website
+## Step 19. Convert to a static website
 Static files (HTML, CSS and images) can be hosted anywhere with no server. Publish your pages first, then click **Convert to Static Website** (the button at the top of the Studio, or http://localhost:3001/admin/static-website).
 
 Optional: type your **Website address** (for example https://www.example.com) to add a sitemap. Type your **Web app address** (https only) if forms must keep working; if you leave it empty, forms show your contact email and phone. Click **Convert to Static Website** and wait a few minutes until the card says it is ready.
 ![Frontend > Convert to Static Website](static-website)
 
-## Step 17. Download the files and host them on GitHub
+## Step 20. Download the files and host them on GitHub
 Click **Download as .zip** on the same page and unzip it. The files inside, with `index.html` at the top, are your finished website.
 
 1. On GitHub create a new empty repository, for example `my-website`.

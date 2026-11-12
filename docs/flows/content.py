@@ -2,7 +2,7 @@ import re
 """Guide text for build.py. Markdown-ish: ![caption](img-name) is a screenshot from img/,
 ``` is a terminal block, > is a callout, [[flow: a | b]] is a step strip, [[mock:x]] a drawn mockup."""
 
-SIZE = {'identity-start': (1153, 809), 'modules-start': (1900, 580), 'brands-start': (1920, 550), 'landing-start': (1691, 829), 'new-landing-start': (767, 883), 'editor-start': (1920, 879), 'create-btn': (458, 168), 'save-btn': (125, 182), 'convert-start': (580, 642), 'brands-web': (1920, 550)}
+SIZE = {'identity-start': (1153, 809), 'modules-start': (1900, 580), 'brands-start': (1920, 550), 'landing-start': (1691, 829), 'new-landing-start': (767, 883), 'editor-start': (1920, 879), 'create-btn': (458, 168), 'save-btn': (125, 182), 'convert-start': (580, 642), 'brands-web': (1920, 550), 'typography': (1360, 900), 'font-settings': (1360, 900), 'button-styles': (1360, 900)}
 CROP = {'brands-start': (32, 0), 'landing-start': (0, 69), 'editor-start': (0, 14), 'brands-web': (32, 0)}  # px cut from the top (browser address bar)  # screenshots that are not 1360x820
 
 ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a leading < puts the label left of the dot
@@ -38,6 +38,10 @@ ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a l
  'save-btn': [(92, 66, '<Click Save')],
  'convert-start': [(338, 500, '<Click Convert to build the static files')],
  'brands-web': [(216, 415, 'Click Brands in the left menu'), (808, 202, '<Click Web app to open the Studio')],
+ 'typography': [(1295, 372, '<Tick the heading font you want'), (1295, 590, '<Tick the body font you want'), (1087, 440, '<Or type a Google Font name, then click Add'),
+                 (892, 822, '<Click Save'), (1295, 822, '<Click Next: Typography')],
+ 'font-settings': [(472, 364, 'Click a box to change a size or spacing'), (1100, 289, 'Live preview of your fonts')],
+ 'button-styles': [(560, 327, 'Click a card to choose your button style')],
  'dashboard': [(1336, 301, '<Click Manage projects to switch project'), (347, 530, 'Click a shortcut to jump straight there'), (130, 85, 'Dashboard'), (130, 125, 'Click Documents to open these guides')],
  'documents': [(690, 290, 'Click a guide to open it as a PDF in a new tab'), (1150, 290, '<Installation and flow guides')],
  'activity-log': [(455, 173, '<Click here to filter by person'), (643, 173, 'Click here to filter by module'), (842, 173, 'Pick a start date'), (1022, 173, '<Pick an end date')],
@@ -531,6 +535,18 @@ ST_WEBSITE = """## Step 0. Website stage: layout
 Set typography and fonts. Click **Create/Edit layout** to choose the Top header, Header and Footer. The header and footer of **Home** are shared by every public page.
 ![Studio: Website stage](studio-website)"""
 
+ST_TYPO = """## Step 0. Typography: choose the fonts
+The Website stage opens on **Typography**. Under **Heading** tick the font for titles, and under **Body** tick the font for normal text. To use another font, type its Google Font name (for example Roboto) and click **Add**, or click **Upload** to add your own font file. Click **Save**, then click **Next: Typography** to continue.
+![Website stage: Typography](typography)"""
+
+ST_FONTS = """## Step 0. Font settings
+Fine-tune the type scale: for each element (H1 to H6, Lead paragraph, Body, Small, Nav link, Button) change the font size, family, weight, line height and letter spacing. The **Examples** panel on the right shows the result live. The defaults are a good start. Scroll down and click **Next: Buttons and form fields**.
+![Website stage: Font settings](font-settings)"""
+
+ST_STYLES = """## Step 0. Buttons and form fields
+Click one card under **Button style** (Solid, Airy pill, Classic, Leaf, Outline, Soft tint and more), then scroll down and click one card under **Form field style**. Every button and every form on your website uses them, in your theme's colours. The admin screens are not changed. Click **Next** to continue to Navigation.
+![Website stage: Button style](button-styles)"""
+
 ST_NAV = """## Step 0. Choose the menu pages
 Open **Frontend > Navigation**. Click the page names you want in the menu (About, Services, Portfolio, Blog, Contact and so on), or type a custom page and click **Add**. Use the **Header menu** and **Footer menu** tabs. One page is created for every menu item, plus Home.
 ![Frontend > Navigation](navigation)"""
@@ -648,25 +664,25 @@ Admin is always on, so "only landing page" still includes the admin you sign in 
  '03-static-website-only': ("Flow 3: Static website only (with admin)",
    "Ship a website as plain files hosted anywhere, with no live web app in front of visitors.",
    guide("Flow 3: Static website only (with admin)", "Ship a website as plain files hosted anywhere, with no live web app in front of visitors.", "", "", "", "",
-     signin_extra=number_steps(W_WEB.format(extra=" (leave Landing Pages unticked)"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_NAV, ST_WEBSITE, ST_PAGES, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
+     signin_extra=number_steps(W_WEB.format(extra=" (leave Landing Pages unticked)"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_PAGES, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
  '04-webapp-admin': ("Flow 4: Web app and admin",
    "Run a live, editable website served from this installation.",
    guide("Flow 4: Web app and admin", "Run a live, editable website served from this installation.", "", "", "", "",
-     signin_extra=number_steps(W_WEB.format(extra=" (leave Landing Pages unticked)"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_NAV, ST_WEBSITE, ST_PAGES, ST_LIVE, notes(N_WEB)), cover=False, only_signin=True)),
+     signin_extra=number_steps(W_WEB.format(extra=" (leave Landing Pages unticked)"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_PAGES, ST_LIVE, notes(N_WEB)), cover=False, only_signin=True)),
  '05-webapp-landing-admin': ("Flow 5: Web app, landing pages and admin",
    "A full website plus separate campaign pages under one admin.",
    guide("Flow 5: Web app, landing pages and admin", "A full website plus separate campaign pages under one admin.", "", "", "", "",
-     signin_extra=number_steps(W_WEB.format(extra=" and the **Landing Pages** card"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_NAV, ST_WEBSITE, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, ST_LIVE, notes(N_WEB+N_LAND)), cover=False, only_signin=True)),
+     signin_extra=number_steps(W_WEB.format(extra=" and the **Landing Pages** card"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, ST_LIVE, notes(N_WEB+N_LAND)), cover=False, only_signin=True)),
  '06-static-landing': ("Flow 6: Static website and landing pages",
    "Host everything as plain files and keep campaign pages separate.",
    guide("Flow 6: Static website and landing pages", "Host everything as plain files and keep campaign pages separate.", "", "", "", "",
-     signin_extra=number_steps(W_WEB.format(extra=" and the **Landing Pages** card"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_NAV, ST_WEBSITE, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, CONVERT_START, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC+N_LAND+N_LAND_STATIC)), cover=False, only_signin=True)),
+     signin_extra=number_steps(W_WEB.format(extra=" and the **Landing Pages** card"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, CONVERT_START, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC+N_LAND+N_LAND_STATIC)), cover=False, only_signin=True)),
  '07-webapp-static': ("Flow 7: Web app and static website together",
    "Keep the live site and also publish a plain-file copy.",
    guide("Flow 7: Web app and static website together", "Keep the live site and also publish a plain-file copy.", "", "", "", "",
-     signin_extra=number_steps(W_WEB.format(extra=" (leave Landing Pages unticked)"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_NAV, ST_WEBSITE, ST_PAGES, ST_LIVE, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
+     signin_extra=number_steps(W_WEB.format(extra=" (leave Landing Pages unticked)"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_PAGES, ST_LIVE, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
  '08-full-platform': ("Flow 8: Full platform",
    "Website, landing pages, static export, membership and admin, all enabled.",
    guide("Flow 8: Full platform", "Website, landing pages, static export, membership and admin, all enabled.", "", "", "", "",
-     signin_extra=number_steps(W_WEB.format(extra=" and the **Landing Pages** card"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_NAV, ST_WEBSITE, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, MEM_ON, ST_LIVE, ST_STATIC, ST_HOST, notes(N_WEB+N_LAND+N_STATIC)), cover=False, only_signin=True)),
+     signin_extra=number_steps(W_WEB.format(extra=" and the **Landing Pages** card"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, MEM_ON, ST_LIVE, ST_STATIC, ST_HOST, notes(N_WEB+N_LAND+N_STATIC)), cover=False, only_signin=True)),
 }
