@@ -1,7 +1,7 @@
 """Guide text for build.py. Markdown-ish: ![caption](img-name) is a screenshot from img/,
 ``` is a terminal block, > is a callout, [[flow: a | b]] is a step strip, [[mock:x]] a drawn mockup."""
 
-SIZE = {'identity-start': (1153, 809), 'modules-start': (1900, 580), 'brands-start': (1920, 550), 'landing-start': (1691, 829), 'new-landing-start': (767, 883), 'editor-start': (1920, 879), 'create-btn': (458, 168)}
+SIZE = {'identity-start': (1153, 809), 'modules-start': (1900, 580), 'brands-start': (1920, 550), 'landing-start': (1691, 829), 'new-landing-start': (767, 883), 'editor-start': (1920, 879), 'create-btn': (458, 168), 'save-btn': (125, 182), 'convert-start': (580, 642)}
 CROP = {'brands-start': (32, 0), 'landing-start': (0, 69), 'editor-start': (0, 14)}  # px cut from the top (browser address bar)  # screenshots that are not 1360x820
 
 ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a leading < puts the label left of the dot
@@ -34,6 +34,8 @@ ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a l
  'create-btn': [(268, 68, 'Click Create and edit')],
  'editor-start': [(245, 112, 'Four tabs: Section (add), Reorder, Style, Content'), (245, 300, 'Click a section to add it to the page'),
                   (1000, 400, 'Click any text or picture on the page to select it'), (1863, 62, '<Click Save to keep your changes')],
+ 'save-btn': [(92, 66, '<Click Save')],
+ 'convert-start': [(338, 500, '<Click Convert to build the static files')],
  'dashboard': [(1336, 301, '<Click Manage projects to switch project'), (347, 530, 'Click a shortcut to jump straight there'), (130, 85, 'Dashboard'), (130, 125, 'Click Documents to open these guides')],
  'documents': [(690, 290, 'Click a guide to open it as a PDF in a new tab'), (1150, 290, '<Installation and flow guides')],
  'activity-log': [(455, 173, '<Click here to filter by person'), (643, 173, 'Click here to filter by module'), (842, 173, 'Pick a start date'), (1022, 173, '<Pick an end date')],
@@ -181,6 +183,33 @@ Change the page like this:
 - **SEO:** the editor has no SEO button. Set the page title and description defaults in **Admin Settings > SEO**.
 - Click **Preview** to see the page, then **Save**. The page stays a **Draft** until you publish it.
 ![The landing page editor](editor-start)"""
+
+SAVE_START = """## Step 8. After editing, click Save
+When you have finished all your changes, click **Save** at the top right of the editor. Your changes are stored and the page stays a **Draft** until you publish it. Then go back to the **Landing Pages** list (http://localhost:3001/admin/landing-pages).
+![Click Save](save-btn)"""
+
+CONVERT_START = """## Step 9. Click Convert
+In the **Landing Pages** list your page now has three buttons: **Edit**, **Preview** and **Convert**. Click **Convert**. KDL OS builds your page as plain static files. This takes a few minutes; you can stay on the page. When it finishes, the card says **Moved to its folder. Ready to host.** and shows the folder name.
+![Landing Pages: click Convert](convert-start)"""
+
+GITHUB_START = """## Step 10. Copy the static files and host them on GitHub
+The static files are in the folder shown on the card (inside your project, under `frontend/projects/`, in the `out` folder). You can also click **Download as .zip** on the card and unzip it. The files inside, with `index.html` at the top, are your finished landing page. Edit the page, Save and Convert again at any time: the same folder is updated.
+
+To host the files on GitHub:
+1. On GitHub create a new empty repository, for example `my-landing`.
+2. Copy the files from the folder into a new folder, open a terminal in it, and run (use your own username and repository name):
+```
+git init
+git add .
+git commit -m "Landing page"
+git branch -M main
+git remote add origin https://github.com/YOUR-USERNAME/my-landing.git
+git push -u origin main
+```
+3. On GitHub open the repository, then **Settings > Pages**. Under **Build and deployment** choose **Deploy from a branch**, pick the **main** branch and the **/ (root)** folder, then **Save**.
+4. After a minute your page is live at `https://YOUR-USERNAME.github.io/my-landing/`.
+
+> This is the last step of this guide."""
 
 WIZARD = """## Part B. First-run setup wizard
 On a fresh install a **Setup wizard** opens over the admin. It asks three things, in this order.
@@ -387,7 +416,7 @@ Run inside the `kdl-os` folder.
 | Wrong password | Did you run A5? First password is `kdl-dev-seed-password`. |
 | Account locked / 429 | Wait a minute, or `docker compose restart backend`. |"""
 
-def guide(flow, goal, gets, products, steps, modules, extra="", signin_extra="", cover=True):
+def guide(flow, goal, gets, products, steps, modules, extra="", signin_extra="", cover=True, only_signin=False):
     head = f"""# {flow}
 
 **Goal:** {goal}
@@ -401,6 +430,7 @@ def guide(flow, goal, gets, products, steps, modules, extra="", signin_extra="",
 {SHOT_NOTE}
 
 """ if cover else ""
+    if only_signin: return f"{SIGNIN}\n\n{signin_extra}"
     return head + f"""{SIGNIN}
 
 {signin_extra}{WIZARD}
@@ -485,7 +515,7 @@ Admin is always on, so "only landing page" still includes the admin you sign in 
      "branded landing pages at `/p/<slug>` with a working form, plus the admin that runs them.",
      "Landing Pages (leave Website off). There is no starter-website step.",
      IDENTITY + "\n\n" + THEMES + "\n\n" + LANDING + "\n\n" + ADMIN_AREA,
-     signin_extra=IDENTITY_START + "\n\n" + MODULES_START + "\n\n" + BRANDS_START + "\n\n" + LANDING_START + "\n\n" + NEW_LANDING_START + "\n\n" + EDITOR_START + "\n\n", cover=False,
+     signin_extra=IDENTITY_START + "\n\n" + MODULES_START + "\n\n" + BRANDS_START + "\n\n" + LANDING_START + "\n\n" + NEW_LANDING_START + "\n\n" + EDITOR_START + "\n\n" + SAVE_START + "\n\n" + CONVERT_START + "\n\n" + GITHUB_START + "\n", cover=False, only_signin=True,
      modules=modules_block(M_LAND, "Notifications, Membership", "Frontend bundle, Website, Templates, Sectors, Catalog, Work, FAQ, Team", "landing")).replace('## Sign in', '## Step 1. Sign in').replace('## Open Application Identity', '## Step 2. Open Application Identity')),
  '03-static-website-only': ("Flow 3: Static website only (with admin)",
    "Ship a website as plain files hosted anywhere, with no live web app in front of visitors.",
