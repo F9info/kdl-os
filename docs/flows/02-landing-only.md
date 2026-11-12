@@ -1,15 +1,3 @@
-# Flow 2: Landing page only (with admin)
-
-**Goal:** Publish campaign pages without a full website.
-
-**You get:** branded landing pages at `/p/<slug>` with a working form, plus the admin that runs them.
-
-**Products to tick:** Landing Pages (leave Website off). There is no starter-website step.
-
-[[flow: Sign in | Setup wizard | Enable modules | Build | Publish]]
-
-> Screenshots are from a running KDL OS install where these modules are already enabled, so cards show **Enabled** and **Disable**. On a fresh install the same cards show **Available** with an **Install** button (see the card mockup in Part C).
-
 ## Step 1. Sign in
 > KDL OS must already be installed and running. If not, follow the **Installation** guide first (Admin > Documents > Installation).
 

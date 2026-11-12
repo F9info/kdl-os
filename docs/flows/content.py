@@ -356,8 +356,8 @@ Run inside the `kdl-os` folder.
 | Wrong password | Did you run A5? First password is `kdl-dev-seed-password`. |
 | Account locked / 429 | Wait a minute, or `docker compose restart backend`. |"""
 
-def guide(flow, goal, gets, products, steps, modules, extra="", signin_extra=""):
-    return f"""# {flow}
+def guide(flow, goal, gets, products, steps, modules, extra="", signin_extra="", cover=True):
+    head = f"""# {flow}
 
 **Goal:** {goal}
 
@@ -369,7 +369,8 @@ def guide(flow, goal, gets, products, steps, modules, extra="", signin_extra="")
 
 {SHOT_NOTE}
 
-{SIGNIN}
+""" if cover else ""
+    return head + f"""{SIGNIN}
 
 {signin_extra}{WIZARD}
 
@@ -453,7 +454,7 @@ Admin is always on, so "only landing page" still includes the admin you sign in 
      "branded landing pages at `/p/<slug>` with a working form, plus the admin that runs them.",
      "Landing Pages (leave Website off). There is no starter-website step.",
      IDENTITY + "\n\n" + THEMES + "\n\n" + LANDING + "\n\n" + ADMIN_AREA,
-     signin_extra=IDENTITY_START + "\n\n" + MODULES_START + "\n\n" + BRANDS_START + "\n\n",
+     signin_extra=IDENTITY_START + "\n\n" + MODULES_START + "\n\n" + BRANDS_START + "\n\n", cover=False,
      modules=modules_block(M_LAND, "Notifications, Membership", "Frontend bundle, Website, Templates, Sectors, Catalog, Work, FAQ, Team", "landing")).replace('## Sign in', '## Step 1. Sign in').replace('## Open Application Identity', '## Step 2. Open Application Identity')),
  '03-static-website-only': ("Flow 3: Static website only (with admin)",
    "Ship a website as plain files hosted anywhere, with no live web app in front of visitors.",
