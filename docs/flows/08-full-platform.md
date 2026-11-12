@@ -119,13 +119,17 @@ Open **Modules**, search **membership**, click **Install** and confirm, then **E
 ## Step 21. Check the live website
 Open http://localhost in a private window, signed out. Check that the header and footer match Home on every page and that every menu link opens a page. Pages are public at `/` and at `/p/<slug>`.
 
-## Step 22. Convert to a static website
-Static files (HTML, CSS and images) can be hosted anywhere with no server. Publish your pages first, then click **Convert to Static Website** (the button at the top of the Studio, or http://localhost:3001/admin/static-website).
+## Step 22. Click Convert to Static Website
+When your pages are finished and published, click the **Convert to Static Website** button at the top right of any Studio screen (next to **Forms**). It takes you to the **Convert to Static Website** page.
+![Click Convert to Static Website](convert-btn)
 
-Optional: type your **Website address** (for example https://www.example.com) to add a sitemap. Type your **Web app address** (https only) if forms must keep working; if you leave it empty, forms show your contact email and phone. Click **Convert to Static Website** and wait a few minutes until the card says it is ready.
+## Step 23. Convert to a static website
+You are now on the **Convert to Static Website** page (http://localhost:3001/admin/static-website). Static files (HTML, CSS and images) can be hosted anywhere with no server.
+
+Optional: click **Search engines (sitemap)** and type your **Website address** (for example https://www.example.com) to add a sitemap. Click **Forms on the static website** and type your **Web app address** (https only) if forms must keep working; if you leave it empty, forms show your contact email and phone. Then click **Convert to Static Website** and wait a few minutes until the three steps are ticked and it says it is ready to host.
 ![Frontend > Convert to Static Website](static-website)
 
-## Step 23. Download the files and host them on GitHub
+## Step 24. Download the files and host them on GitHub
 Click **Download as .zip** on the same page and unzip it. The files inside, with `index.html` at the top, are your finished website.
 
 1. On GitHub create a new empty repository, for example `my-website`.

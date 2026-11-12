@@ -50,6 +50,7 @@ ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a l
  'detail-editor': [(245, 300, 'Click a section to add it to the layout'), (1070, 380, 'Click any text or picture to select it'), (1863, 62, '<Click Save')],
  'detail-list': [(1510, 41, '<Click Add new to create another page'), (1010, 222, '<Click the pencil to edit text and images'), (1179, 222, 'Click the bin to delete a page')],
  'page-editor': [(230, 252, 'Click a section to add it to the page'), (900, 490, 'Click any text or picture to select it'), (1855, 70, '<Click Save')],
+ 'convert-btn': [(1200, 160, '<Click Convert to Static Website (top right of every Studio screen)')],
  'dashboard': [(1336, 301, '<Click Manage projects to switch project'), (347, 530, 'Click a shortcut to jump straight there'), (130, 85, 'Dashboard'), (130, 125, 'Click Documents to open these guides')],
  'documents': [(690, 290, 'Click a guide to open it as a PDF in a new tab'), (1150, 290, '<Installation and flow guides')],
  'activity-log': [(455, 173, '<Click here to filter by person'), (643, 173, 'Click here to filter by module'), (842, 173, 'Pick a start date'), (1022, 173, '<Pick an end date')],
@@ -598,10 +599,14 @@ Open **Frontend > Pages**. Click **Edit** on a page to change its text, images a
 ST_LIVE = """## Step 0. Check the live website
 Open http://localhost in a private window, signed out. Check that the header and footer match Home on every page and that every menu link opens a page. Pages are public at `/` and at `/p/<slug>`."""
 
-ST_STATIC = """## Step 0. Convert to a static website
-Static files (HTML, CSS and images) can be hosted anywhere with no server. Publish your pages first, then click **Convert to Static Website** (the button at the top of the Studio, or http://localhost:3001/admin/static-website).
+ST_CONVERT_BTN = """## Step 0. Click Convert to Static Website
+When your pages are finished and published, click the **Convert to Static Website** button at the top right of any Studio screen (next to **Forms**). It takes you to the **Convert to Static Website** page.
+![Click Convert to Static Website](convert-btn)"""
 
-Optional: type your **Website address** (for example https://www.example.com) to add a sitemap. Type your **Web app address** (https only) if forms must keep working; if you leave it empty, forms show your contact email and phone. Click **Convert to Static Website** and wait a few minutes until the card says it is ready.
+ST_STATIC = """## Step 0. Convert to a static website
+You are now on the **Convert to Static Website** page (http://localhost:3001/admin/static-website). Static files (HTML, CSS and images) can be hosted anywhere with no server.
+
+Optional: click **Search engines (sitemap)** and type your **Website address** (for example https://www.example.com) to add a sitemap. Click **Forms on the static website** and type your **Web app address** (https only) if forms must keep working; if you leave it empty, forms show your contact email and phone. Then click **Convert to Static Website** and wait a few minutes until the three steps are ticked and it says it is ready to host.
 ![Frontend > Convert to Static Website](static-website)"""
 
 ST_HOST = """## Step 0. Download the files and host them on GitHub
@@ -704,7 +709,7 @@ Admin is always on, so "only landing page" still includes the admin you sign in 
  '03-static-website-only': ("Flow 3: Static website only (with admin)",
    "Ship a website as plain files hosted anywhere, with no live web app in front of visitors.",
    guide("Flow 3: Static website only (with admin)", "Ship a website as plain files hosted anywhere, with no live web app in front of visitors.", "", "", "", "",
-     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, ST_EDIT_PAGE, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
+     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, ST_EDIT_PAGE, ST_CONVERT_BTN, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
  '04-webapp-admin': ("Flow 4: Web app and admin",
    "Run a live, editable website served from this installation.",
    guide("Flow 4: Web app and admin", "Run a live, editable website served from this installation.", "", "", "", "",
@@ -716,13 +721,13 @@ Admin is always on, so "only landing page" still includes the admin you sign in 
  '06-static-landing': ("Flow 6: Static website and landing pages",
    "Host everything as plain files and keep campaign pages separate.",
    guide("Flow 6: Static website and landing pages", "Host everything as plain files and keep campaign pages separate.", "", "", "", "",
-     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, ST_EDIT_PAGE, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, CONVERT_START, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC+N_LAND+N_LAND_STATIC)), cover=False, only_signin=True)),
+     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, ST_EDIT_PAGE, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, CONVERT_START, ST_CONVERT_BTN, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC+N_LAND+N_LAND_STATIC)), cover=False, only_signin=True)),
  '07-webapp-static': ("Flow 7: Web app and static website together",
    "Keep the live site and also publish a plain-file copy.",
    guide("Flow 7: Web app and static website together", "Keep the live site and also publish a plain-file copy.", "", "", "", "",
-     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, ST_EDIT_PAGE, ST_LIVE, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
+     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, ST_EDIT_PAGE, ST_LIVE, ST_CONVERT_BTN, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
  '08-full-platform': ("Flow 8: Full platform",
    "Website, landing pages, static export, membership and admin, all enabled.",
    guide("Flow 8: Full platform", "Website, landing pages, static export, membership and admin, all enabled.", "", "", "", "",
-     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, ST_EDIT_PAGE, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, MEM_ON, ST_LIVE, ST_STATIC, ST_HOST, notes(N_WEB+N_LAND+N_STATIC)), cover=False, only_signin=True)),
+     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_DETAIL_EDIT, ST_PAGES, ST_EDIT_PAGE, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, MEM_ON, ST_LIVE, ST_CONVERT_BTN, ST_STATIC, ST_HOST, notes(N_WEB+N_LAND+N_STATIC)), cover=False, only_signin=True)),
 }
