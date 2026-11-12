@@ -45,6 +45,8 @@ ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a l
  'layouts-menu': [(190, 52, 'Click Layouts')],
  'layout-settings': [(880, 146, 'Click here to choose or build your header and footer')],
  'layout-pick': [(1506, 103, '<Switch this section on or off'), (700, 155, 'Ready-made designs: pick the one you like'), (1510, 540, '<Green tick = design in use'), (872, 571, 'Click Create new to design your own')],
+ 'navigation-detail': [(706, 424, 'Click to add a Service detail page'), (428, 508, 'Click to add a Blog detail page'), (790, 691, '<Type a custom one, e.g. Event detail')],
+ 'detail-layout': [(722, 281, '<Click a Layout pill to edit that layout in the section builder'), (886, 255, 'Number of detail pages'), (790, 312, 'Click a number to edit one page; the arrow opens it live')],
  'dashboard': [(1336, 301, '<Click Manage projects to switch project'), (347, 530, 'Click a shortcut to jump straight there'), (130, 85, 'Dashboard'), (130, 125, 'Click Documents to open these guides')],
  'documents': [(690, 290, 'Click a guide to open it as a PDF in a new tab'), (1150, 290, '<Installation and flow guides')],
  'activity-log': [(455, 173, '<Click here to filter by person'), (643, 173, 'Click here to filter by module'), (842, 173, 'Pick a start date'), (1022, 173, '<Pick an end date')],
@@ -556,6 +558,15 @@ ST_STYLES = """## Step 0. Buttons and form fields
 Click one card under **Button style** (Solid, Airy pill, Classic, Leaf, Outline, Soft tint and more), then scroll down and click one card under **Form field style**. Every button and every form on your website uses them, in your theme's colours. The admin screens are not changed. Click **Next** to continue to Navigation.
 ![Website stage: Button style](button-styles)"""
 
+ST_DETAIL = """## Step 0. Detail pages: one layout for every detail page
+A detail page shows one item: one service, one blog post, one event, one sector. You do not build each by hand. Every item of a type shares one layout, and a page is created for each item.
+
+**A. Add the detail page types.** Open **Frontend > Navigation**. Click **Service detail**, **Blog detail**, **Portfolio detail**, **Team member** or **Job detail** to add them. For another type, type a name such as **Event detail** and click **Add**. Sector, Catalog and Work detail pages appear once you add entries in those content modules.
+![Navigation: add the detail pages](navigation-detail)
+
+**B. Edit the layout.** Go back to **Layout settings** (Frontend > Brands > Web app). A pill called **Layout Service Detail** (or Layout Blog Detail, Layout Event Detail and so on) now appears for each type. Click the pill to open the section builder for that layout: change it once and every page of that type changes. The number on the pill is how many detail pages exist. Click a small number under the pill to edit one page's own content (title, text, images); the arrow opens that page live.
+![Layout settings: the detail page layouts](detail-layout)"""
+
 ST_NAV = """## Step 0. Choose the menu pages
 Open **Frontend > Navigation**. Click the page names you want in the menu (About, Services, Portfolio, Blog, Contact and so on), or type a custom page and click **Add**. Use the **Header menu** and **Footer menu** tabs. One page is created for every menu item, plus Home.
 ![Frontend > Navigation](navigation)"""
@@ -673,25 +684,25 @@ Admin is always on, so "only landing page" still includes the admin you sign in 
  '03-static-website-only': ("Flow 3: Static website only (with admin)",
    "Ship a website as plain files hosted anywhere, with no live web app in front of visitors.",
    guide("Flow 3: Static website only (with admin)", "Ship a website as plain files hosted anywhere, with no live web app in front of visitors.", "", "", "", "",
-     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_PAGES, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
+     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_PAGES, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
  '04-webapp-admin': ("Flow 4: Web app and admin",
    "Run a live, editable website served from this installation.",
    guide("Flow 4: Web app and admin", "Run a live, editable website served from this installation.", "", "", "", "",
-     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_PAGES, ST_LIVE, notes(N_WEB)), cover=False, only_signin=True)),
+     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_PAGES, ST_LIVE, notes(N_WEB)), cover=False, only_signin=True)),
  '05-webapp-landing-admin': ("Flow 5: Web app, landing pages and admin",
    "A full website plus separate campaign pages under one admin.",
    guide("Flow 5: Web app, landing pages and admin", "A full website plus separate campaign pages under one admin.", "", "", "", "",
-     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, ST_LIVE, notes(N_WEB+N_LAND)), cover=False, only_signin=True)),
+     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, ST_LIVE, notes(N_WEB+N_LAND)), cover=False, only_signin=True)),
  '06-static-landing': ("Flow 6: Static website and landing pages",
    "Host everything as plain files and keep campaign pages separate.",
    guide("Flow 6: Static website and landing pages", "Host everything as plain files and keep campaign pages separate.", "", "", "", "",
-     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, CONVERT_START, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC+N_LAND+N_LAND_STATIC)), cover=False, only_signin=True)),
+     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, CONVERT_START, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC+N_LAND+N_LAND_STATIC)), cover=False, only_signin=True)),
  '07-webapp-static': ("Flow 7: Web app and static website together",
    "Keep the live site and also publish a plain-file copy.",
    guide("Flow 7: Web app and static website together", "Keep the live site and also publish a plain-file copy.", "", "", "", "",
-     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_PAGES, ST_LIVE, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
+     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_PAGES, ST_LIVE, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
  '08-full-platform': ("Flow 8: Full platform",
    "Website, landing pages, static export, membership and admin, all enabled.",
    guide("Flow 8: Full platform", "Website, landing pages, static export, membership and admin, all enabled.", "", "", "", "",
-     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, MEM_ON, ST_LIVE, ST_STATIC, ST_HOST, notes(N_WEB+N_LAND+N_STATIC)), cover=False, only_signin=True)),
+     signin_extra=number_steps(IDENTITY_START, MODULES_START, ST_OPEN, ST_PALETTE, ST_TYPO, ST_FONTS, ST_STYLES, ST_NAV, ST_WEBSITE, ST_DETAIL, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, MEM_ON, ST_LIVE, ST_STATIC, ST_HOST, notes(N_WEB+N_LAND+N_STATIC)), cover=False, only_signin=True)),
 }
