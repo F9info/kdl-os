@@ -18,12 +18,10 @@
 
 Admin is always on, so "only landing page" still includes the admin you sign in to.
 
-## What every guide contains
-1. **Installation guide** (Git, Docker, `.env`, `docker compose up`, create the admin, sign in) is its own guide: do it first.
-2. **Part B.** The first-run Setup wizard, screen by screen.
-3. **Part C.** Which modules to enable, and how, with the real Modules and Products screens.
-4. **Part D.** The build steps for that flow, with screenshots of each screen.
-5. A checklist, everyday commands and a troubleshooting table.
+## How the guides work
+1. Not installed yet? Open the **Installation** guide first (Git, Docker, `.env`, `docker compose up`, create the admin).
+2. Every other guide starts at **Step 1. Sign in** and then follows one screen per page, with red "click here" labels on each screenshot.
+3. The last page of each guide is a **Notes** page: what to do when something changes later.
 
 ## The products at a glance
 | Product | Turns on | Typical use |

@@ -1,8 +1,9 @@
+import re
 """Guide text for build.py. Markdown-ish: ![caption](img-name) is a screenshot from img/,
 ``` is a terminal block, > is a callout, [[flow: a | b]] is a step strip, [[mock:x]] a drawn mockup."""
 
-SIZE = {'identity-start': (1153, 809), 'modules-start': (1900, 580), 'brands-start': (1920, 550), 'landing-start': (1691, 829), 'new-landing-start': (767, 883), 'editor-start': (1920, 879), 'create-btn': (458, 168), 'save-btn': (125, 182), 'convert-start': (580, 642)}
-CROP = {'brands-start': (32, 0), 'landing-start': (0, 69), 'editor-start': (0, 14)}  # px cut from the top (browser address bar)  # screenshots that are not 1360x820
+SIZE = {'identity-start': (1153, 809), 'modules-start': (1900, 580), 'brands-start': (1920, 550), 'landing-start': (1691, 829), 'new-landing-start': (767, 883), 'editor-start': (1920, 879), 'create-btn': (458, 168), 'save-btn': (125, 182), 'convert-start': (580, 642), 'brands-web': (1920, 550)}
+CROP = {'brands-start': (32, 0), 'landing-start': (0, 69), 'editor-start': (0, 14), 'brands-web': (32, 0)}  # px cut from the top (browser address bar)  # screenshots that are not 1360x820
 
 ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a leading < puts the label left of the dot
  'login': [(870, 404, 'Click here and type your email'), (835, 487, 'Click here and type your password'), (870, 541, 'Click Sign in'), (489, 594, '<Forgot password? Click here')],
@@ -14,8 +15,8 @@ ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a l
  'modules-frontend': [(583, 185, 'Type the module name here'), (388, 396, 'A fresh install shows Install here: click it'), (663, 272, '<Status badge')],
  'themes': [(453, 114, 'Simple = colours, Advanced = every token'), (483, 369, 'Click Light or Dark'), (420, 443, 'Click a ready-made look'), (485, 584, 'Click a swatch to change this colour')],
  'products': [(641, 300, '<Click to tick Website'), (1031, 300, '<Click to tick Landing Pages'), (420, 173, 'Click to reopen the setup wizard'), (961, 576, '<Click Apply products')],
- 'studio-overview': [(436, 299, 'Click Edit in Identity to change details'), (499, 299, 'Click Next to go to the next step')],
- 'studio-palette': [(490, 481, 'Click here to type a colour code'), (767, 482, 'Click Randomize for a new ramp'), (231, 480, 'Color Palette')],
+ 'studio-overview': [(471, 338, 'Click Next to go to the next step')],
+ 'studio-palette': [(412, 510, 'Click here to type a colour code'), (231, 480, 'Color Palette')],
  'studio-website': [(1312, 126, '<Click here to convert to a static website'), (874, 239, 'Click here to create or edit the layout')],
  'static-website': [(541, 304, 'Click here to start the conversion'), (300, 444, 'Click to set the sitemap address'), (300, 480, 'Click to set up forms')],
  'landing-pages': [(1336, 119, '<Click here to add a new landing page'), (420, 573, 'Click here to use this template'), (426, 617, 'Click View template to preview it')],
@@ -36,6 +37,7 @@ ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a l
                   (1000, 400, 'Click any text or picture on the page to select it'), (1863, 62, '<Click Save to keep your changes')],
  'save-btn': [(92, 66, '<Click Save')],
  'convert-start': [(338, 500, '<Click Convert to build the static files')],
+ 'brands-web': [(216, 415, 'Click Brands in the left menu'), (808, 202, '<Click Web app to open the Studio')],
  'dashboard': [(1336, 301, '<Click Manage projects to switch project'), (347, 530, 'Click a shortcut to jump straight there'), (130, 85, 'Dashboard'), (130, 125, 'Click Documents to open these guides')],
  'documents': [(690, 290, 'Click a guide to open it as a PDF in a new tab'), (1150, 290, '<Installation and flow guides')],
  'activity-log': [(455, 173, '<Click here to filter by person'), (643, 173, 'Click here to filter by module'), (842, 173, 'Pick a start date'), (1022, 173, '<Pick an end date')],
@@ -497,6 +499,88 @@ This is not a step. Use it when something changes.
 - **Turn on another module:** Modules, search, Install, Enable. Data is never deleted when a module is turned off.
 - **Add a public website or landing pages later:** Admin Settings > Products, tick the product and click **Apply products**. Nothing you already built is lost."""
 
+
+def number_steps(*blocks):
+    """Join step blocks, numbering '## Step N.' headings from 2 (Step 1 is Sign in); 'Notes' blocks stay unnumbered."""
+    out, n = [], 2
+    for b in blocks:
+        if b.startswith("## Step"):
+            b = re.sub(r"^## Step \d+\.", f"## Step {n}.", b, count=1); n += 1
+        out.append(b)
+    return "\n\n".join(out) + "\n"
+
+W_WEB = """## Step 0. Fill in the setup wizard
+On a fresh install a **Setup wizard** opens over the dashboard. Step 1 asks for your company: click each field and type the **Company name**, application name, email, phone and address, and click **Replace** to add a logo and favicon. Click **Next**.
+
+Step 2 asks what you are building. Click the **Website** card to tick it{extra}, then click **Next**. If the next window offers a starter website, click **Yes, create my website**: KDL OS builds a ready 5-page site (Home, About, Services, Contact, FAQ) that you can edit.
+![Setup wizard, step 1](wizard-1)"""
+
+ST_OPEN = """## Step 0. Open the Studio
+Click **Frontend > Brands** in the left menu, then click the **Web app** card. This opens the Studio for your website. The first time, click **Start Studio run**. Tabs along the top: Overview, Color Palette and Website.
+![Brands: open the Web app](brands-web)"""
+
+ST_OVERVIEW = """## Step 0. Studio Overview: logo and company details
+Upload your logo (svg, png, jpeg or webp), check the company and contact details, then click **Next**. Use **Edit in Identity** to change the details. The logo also becomes the admin logo.
+![Studio: Overview](studio-overview)"""
+
+ST_PALETTE = """## Step 0. Color Palette
+Four brand colours are taken from your logo: Primary, Secondary, Tertiary and Quaternary. Keep them, or click a colour box and type a new code, click **Pick from logo** or **Randomize**. Then click **Submit palette**. The colours become the website's design tokens.
+![Studio: Color Palette](studio-palette)"""
+
+ST_WEBSITE = """## Step 0. Website stage: layout
+Set typography and fonts, then use **Navigation** and **Pages** to build the pages. Click **Create/Edit layout** to choose the Top header, Header and Footer. The header and footer of **Home** are shared by every public page.
+![Studio: Website stage](studio-website)"""
+
+ST_NAV = """## Step 0. Choose the menu pages
+Open **Frontend > Navigation**. Click the page names you want in the menu (About, Services, Portfolio, Blog, Contact and so on), or type a custom page and click **Add**. Use the **Header menu** and **Footer menu** tabs. One page is created for every menu item, plus Home.
+![Frontend > Navigation](navigation)"""
+
+ST_PAGES = """## Step 0. Edit and publish the pages
+Open **Frontend > Pages**. Click **Edit** on a page to change its text, images and links in the section builder, then **Save** and **Publish**. Publish stops real problems (an empty page, a missing title, a broken link) and only suggests the rest. Click **Duplicate** to copy a page. **Frontend > Sections** holds reusable sections.
+![Frontend > Pages](pages)"""
+
+ST_LIVE = """## Step 0. Check the live website
+Open http://localhost in a private window, signed out. Check that the header and footer match Home on every page and that every menu link opens a page. Pages are public at `/` and at `/p/<slug>`."""
+
+ST_STATIC = """## Step 0. Convert to a static website
+Static files (HTML, CSS and images) can be hosted anywhere with no server. Publish your pages first, then click **Convert to Static Website** (the button at the top of the Studio, or http://localhost:3001/admin/static-website).
+
+Optional: type your **Website address** (for example https://www.example.com) to add a sitemap. Type your **Web app address** (https only) if forms must keep working; if you leave it empty, forms show your contact email and phone. Click **Convert to Static Website** and wait a few minutes until the card says it is ready.
+![Frontend > Convert to Static Website](static-website)"""
+
+ST_HOST = """## Step 0. Download the files and host them on GitHub
+Click **Download as .zip** on the same page and unzip it. The files inside, with `index.html` at the top, are your finished website.
+
+1. On GitHub create a new empty repository, for example `my-website`.
+2. Put the files in a new folder, open a terminal in it, and run (use your own username and repository name):
+```
+git init
+git add .
+git commit -m "Website"
+git branch -M main
+git remote add origin https://github.com/YOUR-USERNAME/my-website.git
+git push -u origin main
+```
+3. On GitHub open **Settings > Pages**, choose **Deploy from a branch**, pick **main** and the **/ (root)** folder, then **Save**.
+4. After a minute your website is live at `https://YOUR-USERNAME.github.io/my-website/`."""
+
+MEM_ON = """## Step 0. Turn on Membership (optional)
+Open **Modules**, search **membership**, click **Install** and confirm, then **Enable** and confirm. A **Membership** group appears in the left menu with Overview, Plans, Members, Payments and Social login. Disable the module and the whole group disappears.
+![Search membership](modules-membership)
+![Membership overview](membership)"""
+
+def notes(items):
+    return "## Notes: Changing things later\nThis is not a step. Use it when something changes.\n" + "\n".join("- " + i for i in items)
+
+N_WEB = ["**Text, images, links:** Frontend > Pages, Edit, Save, Publish. No re-run is needed.",
+         "**Menus:** Frontend > Navigation.",
+         "**Header, top bar or footer:** Studio > Layouts > Create/Edit layout.",
+         "**Colours or fonts:** Studio > Color Palette, Submit palette."]
+N_STATIC = ["After any change: publish, then click **Convert to Static Website** again, replace the files in your GitHub folder, then `git add .`, `git commit -m \"Update\"` and `git push`. The static copy never updates itself."]
+N_LAND = ["**Change a landing page:** open http://localhost:3001/admin/landing-pages?finished=1, click **Edit**, change it in the section builder, **Save**."]
+N_LAND_STATIC = ["**Convert a landing page again:** click **Convert** on its card. The new files replace the same folder; copy them into your GitHub folder and push."]
+
+
 DOCS = {
  'installation': ("Installation",
    "Install KDL OS, run it and sign in for the first time.",
@@ -525,12 +609,10 @@ DOCS = {
 
 Admin is always on, so "only landing page" still includes the admin you sign in to.
 
-## What every guide contains
-1. **Installation guide** (Git, Docker, `.env`, `docker compose up`, create the admin, sign in) is its own guide: do it first.
-2. **Part B.** The first-run Setup wizard, screen by screen.
-3. **Part C.** Which modules to enable, and how, with the real Modules and Products screens.
-4. **Part D.** The build steps for that flow, with screenshots of each screen.
-5. A checklist, everyday commands and a troubleshooting table.
+## How the guides work
+1. Not installed yet? Open the **Installation** guide first (Git, Docker, `.env`, `docker compose up`, create the admin).
+2. Every other guide starts at **Step 1. Sign in** and then follows one screen per page, with red "click here" labels on each screenshot.
+3. The last page of each guide is a **Notes** page: what to do when something changes later.
 
 ## The products at a glance
 | Product | Turns on | Typical use |
@@ -565,74 +647,26 @@ Admin is always on, so "only landing page" still includes the admin you sign in 
      modules=modules_block(M_LAND, "Notifications, Membership", "Frontend bundle, Website, Templates, Sectors, Catalog, Work, FAQ, Team", "landing")).replace('## Sign in', '## Step 1. Sign in').replace('## Open Application Identity', '## Step 2. Open Application Identity')),
  '03-static-website-only': ("Flow 3: Static website only (with admin)",
    "Ship a website as plain files hosted anywhere, with no live web app in front of visitors.",
-   guide("Flow 3: Static website only (with admin)", "Ship a website as plain files hosted anywhere, with no live web app in front of visitors.",
-     "a downloadable .zip of the site. The admin is only for you, to build and re-export.",
-     "Website (leave Landing Pages off). Answer **Yes, create my website** in step B3.",
-     IDENTITY + "\n\n" + THEMES + "\n\n" + STUDIO + "\n\n" + STATIC + """
-
-### Hosting notes
-- Visitors reach only your static host. Keep the admin on a private address.
-- Forms need the **Web app address** (https) or fall back to your contact email and phone.
-- Re-export after every content change; the zip is a snapshot.""",
-     modules_block(M_WEB, OPT_CONTENT, "nothing else is needed (Landing Pages comes with Frontend; its menu stays hidden until you tick that product)", "web"))),
+   guide("Flow 3: Static website only (with admin)", "Ship a website as plain files hosted anywhere, with no live web app in front of visitors.", "", "", "", "",
+     signin_extra=number_steps(W_WEB.format(extra=" (leave Landing Pages unticked)"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_WEBSITE, ST_NAV, ST_PAGES, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
  '04-webapp-admin': ("Flow 4: Web app and admin",
    "Run a live, editable website served from this installation.",
-   guide("Flow 4: Web app and admin", "Run a live, editable website served from this installation.",
-     "a live site on the same address as the admin, with menus, forms, detail pages and the page editor.",
-     "Website. Answer **Yes, create my website** in step B3.",
-     IDENTITY + "\n\n" + THEMES + "\n\n" + STUDIO + "\n\n" + ADMIN_AREA,
-     modules_block(M_WEB, OPT_CONTENT, "nothing else is needed (Landing Pages comes with Frontend; its menu stays hidden until you tick that product)", "web"))),
+   guide("Flow 4: Web app and admin", "Run a live, editable website served from this installation.", "", "", "", "",
+     signin_extra=number_steps(W_WEB.format(extra=" (leave Landing Pages unticked)"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_WEBSITE, ST_NAV, ST_PAGES, ST_LIVE, notes(N_WEB)), cover=False, only_signin=True)),
  '05-webapp-landing-admin': ("Flow 5: Web app, landing pages and admin",
    "A full website plus separate campaign pages under one admin.",
-   guide("Flow 5: Web app, landing pages and admin", "A full website plus separate campaign pages under one admin.",
-     "the live website, landing pages at `/p/<slug>`, one shared brand, one admin.",
-     "Website and Landing Pages.",
-     IDENTITY + "\n\n" + THEMES + "\n\n" + STUDIO + "\n\n" + LANDING + """
-
-### How the two fit together
-- Both use the same Identity, Themes and Media.
-- The website's header and footer come from Home. Landing pages keep their own footer and have no menu unless you add one.
-- Link between them with normal links, for example a menu item `Offer|/p/summer-offer`.
-
-""" + ADMIN_AREA,
-     modules_block(M_WEB, OPT_CONTENT, "nothing else is needed", "web"))),
+   guide("Flow 5: Web app, landing pages and admin", "A full website plus separate campaign pages under one admin.", "", "", "", "",
+     signin_extra=number_steps(W_WEB.format(extra=" and the **Landing Pages** card"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_WEBSITE, ST_NAV, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, ST_LIVE, notes(N_WEB+N_LAND)), cover=False, only_signin=True)),
  '06-static-landing': ("Flow 6: Static website and landing pages",
    "Host everything as plain files and keep campaign pages separate.",
-   guide("Flow 6: Static website and landing pages", "Host everything as plain files and keep campaign pages separate.",
-     "one zip for the website and one folder per landing page, all deployable on any static host.",
-     "Website and Landing Pages.",
-     IDENTITY + "\n\n" + THEMES + "\n\n" + STUDIO + "\n\n" + LANDING + "\n\n" + STATIC + """
-
-### Putting it on the host
-- Each landing page has its own **Convert** button, status and download.
-- The website export holds website pages; landing pages are exported one by one.
-- Upload the website zip to the site root and each landing folder beside it (for example `/summer-offer/`).""",
-     modules_block(M_WEB, OPT_CONTENT, "nothing else is needed", "web"))),
+   guide("Flow 6: Static website and landing pages", "Host everything as plain files and keep campaign pages separate.", "", "", "", "",
+     signin_extra=number_steps(W_WEB.format(extra=" and the **Landing Pages** card"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_WEBSITE, ST_NAV, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, CONVERT_START, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC+N_LAND+N_LAND_STATIC)), cover=False, only_signin=True)),
  '07-webapp-static': ("Flow 7: Web app and static website together",
    "Keep the live site and also publish a plain-file copy.",
-   guide("Flow 7: Web app and static website together", "Keep the live site and also publish a plain-file copy.",
-     "a live web app for editing and forms, plus a static copy for fast public hosting.",
-     "Website. Answer **Yes, create my website** in step B3.",
-     IDENTITY + "\n\n" + THEMES + "\n\n" + STUDIO + "\n\n" + STATIC + """
-
-### Running both
-- The Web app stays the **source of truth**: edit and publish there.
-- Public traffic goes to the static copy; set its **Web app address** so forms, menus and FAQ call back to the live app.
-- Re-convert after publishing changes. The static copy never edits itself.""",
-     modules_block(M_WEB, OPT_CONTENT, "nothing else is needed (Landing Pages comes with Frontend; its menu stays hidden until you tick that product)", "web"))),
+   guide("Flow 7: Web app and static website together", "Keep the live site and also publish a plain-file copy.", "", "", "", "",
+     signin_extra=number_steps(W_WEB.format(extra=" (leave Landing Pages unticked)"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_WEBSITE, ST_NAV, ST_PAGES, ST_LIVE, ST_STATIC, ST_HOST, notes(N_WEB+N_STATIC)), cover=False, only_signin=True)),
  '08-full-platform': ("Flow 8: Full platform",
    "Website, landing pages, static export, membership and admin, all enabled.",
-   guide("Flow 8: Full platform", "Website, landing pages, static export, membership and admin, all enabled.",
-     "the complete product set with shared brand, content and permissions.",
-     "Website and Landing Pages (add Membership in Modules).",
-     IDENTITY + "\n\n" + THEMES + "\n\n" + STUDIO + "\n\n" + LANDING + "\n\n" + STATIC + "\n\n" + MEMBERSHIP + "\n\n" + ADMIN_AREA + """
-
-### Suggested order for a new client
-1. Identity and Themes (brand once).
-2. Website via the Studio (Overview, Palette, Approval, Website).
-3. Content modules and menus.
-4. Landing pages for campaigns.
-5. Roles for the client's team (Admin runs content and people; User has no admin access).
-6. Publish, check, then Convert to Static for a plain-file copy.""",
-     modules_block(M_WEB + ", Membership", "Notifications, Integrations", "nothing else is needed", "full"))),
+   guide("Flow 8: Full platform", "Website, landing pages, static export, membership and admin, all enabled.", "", "", "", "",
+     signin_extra=number_steps(W_WEB.format(extra=" and the **Landing Pages** card"), MODULES_START, ST_OPEN, ST_OVERVIEW, ST_PALETTE, ST_WEBSITE, ST_NAV, ST_PAGES, BRANDS_START, LANDING_START, NEW_LANDING_START, EDITOR_START, SAVE_START, MEM_ON, ST_LIVE, ST_STATIC, ST_HOST, notes(N_WEB+N_LAND+N_STATIC)), cover=False, only_signin=True)),
 }
