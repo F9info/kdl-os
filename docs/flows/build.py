@@ -141,7 +141,7 @@ def render(md):
         if ln.startswith('> '): out.append(f'<div class=note>{inline(ln[2:])}</div>'); continue
         m = re.match(r'^(#{1,3}) (.*)', ln)
         if m:
-            cls = ' class=pg' if len(m[1]) == 2 and re.match(r'(Step|Part) ', m[2]) else ''
+            cls = ' class=pg' if len(m[1]) == 2 and re.match(r'(Step|Part|Notes) ', m[2]) else ''
             out.append(f'<h{len(m[1])}{cls}>{inline(m[2])}</h{len(m[1])}>'); continue
         if ln.strip(): out.append(f'<p>{inline(ln)}</p>')
     close()

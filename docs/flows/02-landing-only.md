@@ -68,4 +68,20 @@ git push -u origin main
 3. On GitHub open the repository, then **Settings > Pages**. Under **Build and deployment** choose **Deploy from a branch**, pick the **main** branch and the **/ (root)** folder, then **Save**.
 4. After a minute your page is live at `https://YOUR-USERNAME.github.io/my-landing/`.
 
-> This is the last step of this guide.
+## Notes: Changes after the page is live
+This is not a step. Use it later, when a client asks for a change some days after you hosted the files.
+
+1. Open the **Landing Pages** list directly: http://localhost:3001/admin/landing-pages?finished=1
+2. Find the page and click **Edit**. The editor opens.
+3. Make the changes with the section builder (text, images, links, sections, style).
+4. Click **Save**.
+5. Go back to the **Landing Pages** list and click **Convert** again. The new files are written into the **same folder** as before, replacing the old files.
+6. Copy the updated files into your GitHub repository folder (replace the old files), then push them to the server:
+```
+git add .
+git commit -m "Update landing page"
+git push
+```
+7. Wait a minute. GitHub Pages shows the updated page at the same address.
+
+> You never create the page again. Edit, Save, Convert and push is the whole routine for every change.

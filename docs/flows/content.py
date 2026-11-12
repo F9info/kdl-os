@@ -207,9 +207,25 @@ git remote add origin https://github.com/YOUR-USERNAME/my-landing.git
 git push -u origin main
 ```
 3. On GitHub open the repository, then **Settings > Pages**. Under **Build and deployment** choose **Deploy from a branch**, pick the **main** branch and the **/ (root)** folder, then **Save**.
-4. After a minute your page is live at `https://YOUR-USERNAME.github.io/my-landing/`.
+4. After a minute your page is live at `https://YOUR-USERNAME.github.io/my-landing/`."""
 
-> This is the last step of this guide."""
+NOTES_START = """## Notes: Changes after the page is live
+This is not a step. Use it later, when a client asks for a change some days after you hosted the files.
+
+1. Open the **Landing Pages** list directly: http://localhost:3001/admin/landing-pages?finished=1
+2. Find the page and click **Edit**. The editor opens.
+3. Make the changes with the section builder (text, images, links, sections, style).
+4. Click **Save**.
+5. Go back to the **Landing Pages** list and click **Convert** again. The new files are written into the **same folder** as before, replacing the old files.
+6. Copy the updated files into your GitHub repository folder (replace the old files), then push them to the server:
+```
+git add .
+git commit -m "Update landing page"
+git push
+```
+7. Wait a minute. GitHub Pages shows the updated page at the same address.
+
+> You never create the page again. Edit, Save, Convert and push is the whole routine for every change."""
 
 WIZARD = """## Part B. First-run setup wizard
 On a fresh install a **Setup wizard** opens over the admin. It asks three things, in this order.
@@ -515,7 +531,7 @@ Admin is always on, so "only landing page" still includes the admin you sign in 
      "branded landing pages at `/p/<slug>` with a working form, plus the admin that runs them.",
      "Landing Pages (leave Website off). There is no starter-website step.",
      IDENTITY + "\n\n" + THEMES + "\n\n" + LANDING + "\n\n" + ADMIN_AREA,
-     signin_extra=IDENTITY_START + "\n\n" + MODULES_START + "\n\n" + BRANDS_START + "\n\n" + LANDING_START + "\n\n" + NEW_LANDING_START + "\n\n" + EDITOR_START + "\n\n" + SAVE_START + "\n\n" + CONVERT_START + "\n\n" + GITHUB_START + "\n", cover=False, only_signin=True,
+     signin_extra=IDENTITY_START + "\n\n" + MODULES_START + "\n\n" + BRANDS_START + "\n\n" + LANDING_START + "\n\n" + NEW_LANDING_START + "\n\n" + EDITOR_START + "\n\n" + SAVE_START + "\n\n" + CONVERT_START + "\n\n" + GITHUB_START + "\n\n" + NOTES_START + "\n", cover=False, only_signin=True,
      modules=modules_block(M_LAND, "Notifications, Membership", "Frontend bundle, Website, Templates, Sectors, Catalog, Work, FAQ, Team", "landing")).replace('## Sign in', '## Step 1. Sign in').replace('## Open Application Identity', '## Step 2. Open Application Identity')),
  '03-static-website-only': ("Flow 3: Static website only (with admin)",
    "Ship a website as plain files hosted anywhere, with no live web app in front of visitors.",
