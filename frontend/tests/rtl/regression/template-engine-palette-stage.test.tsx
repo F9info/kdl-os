@@ -160,7 +160,7 @@ describe('PaletteStage — re-extraction after a logo replace (stage stuck at st
     renderWithQC(<PaletteStage run={makeRun()} />)
 
     expect(mockAdvanceMutate).not.toHaveBeenCalled()
-    expect(screen.getByText(/upload a logo/i)).toBeInTheDocument()
+    expect(screen.getByText(/add your company logo/i)).toBeInTheDocument()
   })
 
   it('falls back to random starter colours (with logo picker + randomize still available) instead of dead-ending when extraction failed', () => {
