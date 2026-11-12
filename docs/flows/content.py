@@ -22,6 +22,15 @@ ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a l
  'membership': [(1336, 119, '<Click here to add a member'), (1174, 119, 'Export'), (160, 679, 'Click Members to see everyone')],
  'users': [(647, 174, 'Click here to search users'), (1336, 107, '<Click here to add a user'), (1140, 303, 'Click to edit')],
  'roles': [(1336, 107, '<Click here to create a role'), (1251, 239, 'Click to edit a role')],
+ 'dashboard': [(1336, 301, '<Click Manage projects to switch project'), (347, 530, 'Click a shortcut to jump straight there'), (130, 85, 'Dashboard'), (130, 125, 'Click Documents to open these guides')],
+ 'documents': [(690, 290, 'Click a guide to open it as a PDF in a new tab'), (1150, 290, '<Installation and flow guides')],
+ 'activity-log': [(455, 173, '<Click here to filter by person'), (643, 173, 'Click here to filter by module'), (842, 173, 'Pick a start date'), (1022, 173, '<Pick an end date')],
+ 'modules-themes': [(583, 185, 'Type the module name here'), (388, 376, 'A fresh install shows Install here: click it'), (663, 272, '<Status badge')],
+ 'modules-page-editor': [(583, 185, 'Type the module name here'), (388, 396, 'A fresh install shows Install here: click it'), (663, 272, '<Status badge')],
+ 'modules-membership': [(583, 185, 'Type the module name here'), (388, 396, 'A fresh install shows Install here: click it'), (663, 272, '<Status badge')],
+ 'modules-int-landing': [(583, 185, 'Type the module name here'), (1336, 184, '<Show internal is switched on'), (824, 396, 'A fresh install shows Install here: click it')],
+ 'modules-int-templates': [(583, 185, 'Type the module name here'), (1336, 184, '<Show internal is switched on'), (824, 396, 'A fresh install shows Install here: click it')],
+ 'modules-internal': [(583, 185, 'Click here to search all 37 modules'), (1336, 184, '<Show internal is switched on')],
 }
 
 SHOT_NOTE = "> Screenshots are from a running KDL OS install where these modules are already enabled, so cards show **Enabled** and **Disable**. On a fresh install the same cards show **Available** with an **Install** button (see the card mockup in Part C)."
