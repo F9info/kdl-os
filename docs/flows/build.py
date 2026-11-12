@@ -48,7 +48,6 @@ figcaption{font-size:8.8pt;color:#475569;margin-top:3pt}
 .mock .card small{display:block;color:#64748b;font-size:8.4pt}
 .mock .btns{display:flex;justify-content:flex-end;gap:6pt;margin-top:9pt}
 .mock .b{border:1px solid #cbd5e1;border-radius:6px;padding:3pt 11pt;font-size:9pt}.mock .b.p{background:#1d4ed8;border-color:#1d4ed8;color:#fff}
-.mock .fl{font-size:8.6pt;font-weight:600;margin:6pt 0 2pt}.mock .fi{border:1px solid #cbd5e1;border-radius:6px;padding:4pt 8pt;font-size:9.5pt;background:#fff}.mock .fh{font-size:8pt;color:#64748b;margin-top:2pt}
 .mock .cap{text-align:center;font-size:8.6pt;color:#64748b;margin-top:7pt}
 .mcs{display:flex;gap:6pt;margin:8pt 0;break-inside:avoid}
 .mc{flex:1;border:1px solid #cbd5e1;border-radius:7px;padding:7pt;background:#fff;font-size:8.6pt}
@@ -69,13 +68,6 @@ MOCKS = {
  'dlg_install': '<div class=mock><h4>Install module</h4><p>Install "landing"? This will register its permissions and seed data.</p><div class=btns><span class=b>Cancel</span><span class="b p">Install</span></div></div>',
  'dlg_enable': '<div class=mock><h4>Enable module</h4><p>Enable "landing"? Routes and nav items will become live immediately.</p><div class=btns><span class=b>Cancel</span><span class="b p">Enable</span></div></div>',
  'toast': '<div class=mock style="width:55%;border-left:4px solid #16a34a"><b>Module installed</b><p style="margin:2pt 0 0">"landing" was installed successfully.</p></div>',
- 'dlg_new_landing': '<div class=mock><h4>New landing page</h4><p>Pick a starting point. You can change everything in the editor.</p>'
-   '<div class=fl>Name *</div><div class=fi>Summer offer</div>'
-   '<div class=fl>Slug *</div><div class=fi>summer-offer</div><div class=fh>Public address: /p/summer-offer</div>'
-   '<div class=fl>Template</div><div class=card><div class=box></div><div><b>Blank</b><small>Header and footer only.</small></div></div>'
-   '<div class="card on"><div class=box></div><div><b>Lead generation</b><small>Sunset gradient, round photo with floating cards and an enquiry form.</small></div></div>'
-   '<div class=btns><span class=b>Cancel</span><span class="b p">Create and edit</span></div>'
-   '<div class=cap>Mockup: example values. Type your own name; the slug fills in for you.</div></div>',
  'wizard2': """<div class=mock><h4>What are you building?</h4><p>Step 2 of 2. Each product turns on the modules it needs.</p>
 <div class="card on"><div class=box></div><div><b>Website</b><small>Multi-page corporate site with CMS, menus and page builder.</small></div></div>
 <div class=card><div class=box></div><div><b>Landing Pages</b><small>Campaign and product pages built with the page builder.</small></div></div>

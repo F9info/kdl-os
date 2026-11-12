@@ -30,7 +30,6 @@ A **New landing page** window opens with the template you picked already selecte
 
 To use a different design, click another option under **Template** (choose **Blank** for a page with only a header and footer). Then click **Create and edit** to open the page in the editor.
 ![New landing page window](new-landing-start)
-[[mock:dlg_new_landing]]
 
 ## Step 7. Click Create and edit, then change the page
 Click **Create and edit**. The page opens in the editor.
