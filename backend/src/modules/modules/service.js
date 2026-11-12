@@ -5,6 +5,7 @@ import { existsSync } from 'node:fs';
 import { prisma } from '../../config/database.js';
 import { loadedManifests } from '../../shared/modules/module-loader.js';
 import { invalidateModuleCache } from '../../middleware/module-gate.js';
+import { invalidatePermissionCache } from '../user-management/shared/permission-resolver.js';
 import { writeActivityAsync } from '../user-management/shared/activity-logger.js';
 import {
   buildGraph,
@@ -250,6 +251,8 @@ async function _installSingle(slug, actorId, { resolveConflicts = false } = {}) 
   }
 
   await invalidateModuleCache(slug);
+  // Install may have granted Developer/Admin the new module's permissions; drop cached sets so the menu shows now.
+  await invalidatePermissionCache();
   for (const conflict of blockingConflicts) {
     await invalidateModuleCache(conflict.slug);
   }
