@@ -1,4 +1,5 @@
 import { successResponse, errorResponse } from '../../shared/utils/response.js';
+import { platformOverview } from './overview.js';
 import {
   listModules,
   listEnabledModules,
@@ -45,6 +46,14 @@ export const postInstall = async (req, res, next) => {
     successResponse(res, { module, installedDependencies }, 201);
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status, err.details ?? null);
+    next(err);
+  }
+};
+
+export const getOverview = async (req, res, next) => {
+  try {
+    successResponse(res, await platformOverview());
+  } catch (err) {
     next(err);
   }
 };

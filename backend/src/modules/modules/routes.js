@@ -8,6 +8,7 @@ import {
   getEnabledModules,
   getGraph,
   getPlan,
+  getOverview,
   putProducts,
   postInstall,
   postEnable,
@@ -20,6 +21,7 @@ const router = Router();
 
 router.get('/', authenticate, requirePermission('modules', 'view'), getModules);
 router.get('/enabled', authenticate, getEnabledModules);
+router.get('/overview', authenticate, requirePermission('modules', 'view'), getOverview);
 router.get('/graph', authenticate, requirePermission('modules', 'view'), validate(graphQuerySchema), getGraph);
 router.get('/:slug/plan', authenticate, requirePermission('modules', 'view'), validate(planQuerySchema), getPlan);
 router.put('/products', authenticate, requirePermission('modules', 'edit'), requirePermission('modules', 'add'), validate(productsBodySchema), putProducts);

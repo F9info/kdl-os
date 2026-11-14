@@ -14,6 +14,7 @@ import { DataTable } from '@/admin/components/shared/DataTable'
 import { StatusBadge } from '@/admin/components/shared/StatusBadge'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { PlatformStatus } from './PlatformStatus'
 import { formatDate } from '@/lib/utils'
 import type { User } from '@/types/models.types'
 import type { ColumnDef } from '@tanstack/react-table'
@@ -128,6 +129,7 @@ export default function DashboardPage() {
   const canSettings = can('settings:view')
   const canMedia = can('media:view')
   const canProjects = can('projects:view')
+  const canModules = can('modules:view')
   const { isEnabled } = useModules()
   const { data: projects } = useProjects({ enabled: canProjects })
   const activeProjectId = useProjectStore((st) => st.activeProjectId)
@@ -219,6 +221,8 @@ export default function DashboardPage() {
         )}
       </div>
 
+      {canModules && <PlatformStatus />}
+
       {canProjects && projects && projects.length > 0 && (
         <section className="mt-8" aria-labelledby="dash-projects" data-testid="dashboard-projects">
           <div className="mb-3 flex items-center justify-between">
@@ -267,7 +271,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {!canUsers && !canSettings && !canMedia && !canProjects && (
+      {!canUsers && !canSettings && !canMedia && !canProjects && !canModules && (
         <p className="text-sm text-muted-foreground" data-testid="dashboard-empty">
           Welcome. Use the menu to open the areas you have access to.
         </p>
