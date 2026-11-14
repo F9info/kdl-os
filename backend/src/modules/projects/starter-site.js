@@ -1,5 +1,6 @@
 import { normalizeData } from '../../shared/numbered-families.js';
 import { ensureDefaultSite } from './sites.js';
+import { deriveRouteKey } from '../../shared/page-routes.js';
 
 // Building blocks for the starter website pages (General pack only).
 export const BRAND = 'Your Brand';
@@ -172,6 +173,7 @@ export async function insertPublishedPage(
     data: {
       slug,
       title,
+      route_key: deriveRouteKey({ slug, title }),
       status: 'PUBLISHED',
       data: normalizeData(data),
       project_id: projectId,

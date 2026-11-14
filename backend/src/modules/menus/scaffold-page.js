@@ -53,6 +53,18 @@ async function registerInWebsiteStage(projectId, baseKey, page) {
   });
 }
 
+// Two pages can share a title ("Service Detail"): the second gets `-2`, the third `-3` ... The key is the page's address.
+async function uniqueRouteKey(projectId, base) {
+  const rows = await prisma.builderPage.findMany({
+    where: { project_id: projectId, deleted_at: null, route_key: { startsWith: base } },
+    select: { route_key: true },
+  });
+  const taken = new Set(rows.map((r) => r.route_key));
+  let key = base;
+  for (let n = 2; taken.has(key) && n < 1000; n += 1) key = `${base}-${n}`;
+  return key;
+}
+
 /**
  * A label-only menu item is "a page called X": create it (site chrome + a title banner),
  * publish it, and list it in the Pages view. Returns the page, or null if nothing was made.
@@ -70,8 +82,9 @@ export async function scaffoldPageForLabel(projectId, label, actorId) {
     }
     content.push({ ...b, props: { ...b.props, id: `${slug}-${type}` } });
   }
-  const created = await createPage({ title: label, slug, data: { root: { props: { title: label } }, content, zones: {} }, project_id: projectId }, actorId);
+  const routeKey = await uniqueRouteKey(projectId, slugify(label) || 'page');
+  const created = await createPage({ title: label, slug, route_key: routeKey, data: { root: { props: { title: label } }, content, zones: {} }, project_id: projectId }, actorId);
   const page = await updatePage(created.id, { status: 'PUBLISHED' }, actorId);
-  await registerInWebsiteStage(projectId, slugify(label) || 'page', page);
+  await registerInWebsiteStage(projectId, routeKey, page);
   return page;
 }

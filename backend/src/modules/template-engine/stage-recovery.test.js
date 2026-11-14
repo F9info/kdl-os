@@ -213,6 +213,9 @@ describe('skipStage', () => {
 
 // ── generateWebsiteCopy ─────────────────────────────────────────────────────
 
+// The front page is whichever published page has the route key "home" (shared/page-routes.js).
+const HOME_ROWS = [{ id: 'page-home', slug: 'te-run-home', title: 'Home', route_key: 'home', status: 'PUBLISHED' }];
+
 describe('generateWebsiteCopy', () => {
   function makeHomePageData() {
     return {
@@ -254,6 +257,7 @@ describe('generateWebsiteCopy', () => {
       findUnique: vi.fn().mockResolvedValue(makeRun([websiteStage])),
     };
     prisma.builderPage = {
+      findMany: vi.fn().mockResolvedValue(HOME_ROWS),
       findFirst: vi.fn().mockResolvedValue({ id: 'page-home', data: makeHomePageData() }),
       update: vi.fn().mockResolvedValue({}),
     };
@@ -299,6 +303,7 @@ describe('generateWebsiteCopy', () => {
       findUnique: vi.fn().mockResolvedValue(makeRun([websiteStage])),
     };
     prisma.builderPage = {
+      findMany: vi.fn().mockResolvedValue(HOME_ROWS),
       findFirst: vi.fn().mockResolvedValue({ id: 'page-home', data: makeHomePageData() }),
       update: vi.fn(),
     };
@@ -317,6 +322,7 @@ describe('generateWebsiteCopy', () => {
       findUnique: vi.fn().mockResolvedValue(makeRun([websiteStage])),
     };
     prisma.builderPage = {
+      findMany: vi.fn().mockResolvedValue(HOME_ROWS),
       findFirst: vi.fn().mockResolvedValue({ id: 'page-home', data: makeHomePageData() }),
       update: vi.fn(),
     };
@@ -340,10 +346,13 @@ describe('generateWebsiteCopy', () => {
     });
   });
 
-  it('throws NO_HOME_PAGE when the WEBSITE stage is DONE but outputRef has no home page key', async () => {
+  it('throws NO_HOME_PAGE when the WEBSITE stage is DONE but no page has the key home', async () => {
     const websiteStage = { ...doneWebsiteStage(), outputRef: { pageKeyToId: { about: 'page-about' } } };
     prisma.templateEngineRun = {
       findUnique: vi.fn().mockResolvedValue(makeRun([websiteStage])),
+    };
+    prisma.builderPage = {
+      findMany: vi.fn().mockResolvedValue([{ id: 'page-about', slug: 'te-run-about', title: 'About', route_key: 'about', status: 'PUBLISHED' }]),
     };
 
     await expect(generateWebsiteCopy('run-1', 'proj-A', 'user-1')).rejects.toMatchObject({
@@ -358,6 +367,7 @@ describe('generateWebsiteCopy', () => {
       findUnique: vi.fn().mockResolvedValue(makeRun([websiteStage])),
     };
     prisma.builderPage = {
+      findMany: vi.fn().mockResolvedValue(HOME_ROWS),
       findFirst: vi.fn().mockResolvedValue({ id: 'page-home', data: makeHomePageData() }),
       update: vi.fn(),
     };
@@ -378,6 +388,7 @@ describe('generateWebsiteCopy', () => {
       findUnique: vi.fn().mockResolvedValue(makeRun([websiteStage])),
     };
     prisma.builderPage = {
+      findMany: vi.fn().mockResolvedValue(HOME_ROWS),
       findFirst: vi.fn().mockResolvedValue({ id: 'page-home', data: makeHomePageData() }),
       update: vi.fn(),
     };
@@ -397,6 +408,7 @@ describe('generateWebsiteCopy', () => {
       findUnique: vi.fn().mockResolvedValue(makeRun([websiteStage])),
     };
     prisma.builderPage = {
+      findMany: vi.fn().mockResolvedValue(HOME_ROWS),
       findFirst: vi.fn().mockResolvedValue({ id: 'page-home', data: makeHomePageData() }),
       update: vi.fn(),
     };
@@ -432,6 +444,7 @@ describe('generateWebsiteCopy', () => {
       ],
     };
     prisma.builderPage = {
+      findMany: vi.fn().mockResolvedValue(HOME_ROWS),
       findFirst: vi.fn().mockResolvedValue({ id: 'page-home', data: fullyEditedData }),
       update: vi.fn(),
     };

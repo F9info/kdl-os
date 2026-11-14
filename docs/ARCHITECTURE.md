@@ -121,3 +121,22 @@ activity_logs          id, actor_id, module, action, subject_type, subject_id, d
 - `User` → many `ActivityLog` (as actor)
 
 Seed: 1 SUPER_ADMIN → `SEED_ADMIN_EMAIL` (default `admin@kdl.com`) with `SEED_ADMIN_PASSWORD` if set, else a random password printed once (production refuses to seed without it). The local docker stack pins `kdl-dev-seed-password`. System roles: `super-admin`, `admin`, `user`. System modules: `users`, `roles`, `permissions`, `settings`, `media`, `activity-log`.
+
+## Page addresses (route keys)
+
+Every page has one stored address name, `builder_pages.route_key` (`"home"`, `"about-us"`), set when the page is made
+and not changed when its title is edited. `backend/src/shared/page-routes.js` is the only code that turns keys into
+addresses; the site generator, the public page lookup (`/api/page-builder/public/...`), the sitemap, the menus
+(`getPublicMenu`) and website-copy generation all call it.
+
+- `deriveRouteKey` gives a new page its key: the stage key in a generated slug (`te-<run>-<key>`), `home` for a slug
+  ending in `-home`, else the slugified title, else the slug. Pages made by the website stage, the starter site,
+  the landing templates and the Page Builder all set it on creation.
+- `pickHome` chooses the front page: the published page with key `home` (oldest first); a draft only when none is
+  published. `assignRoutes` makes routes unique (`about`, `about-2`), keeps them off platform paths (`admin-page`) and
+  gives the front page `""`.
+- The key is **not unique** by itself (old drafts can share `home`); uniqueness is decided per site by `assignRoutes`.
+- Migration `20261114000000_builder_page_route_key` adds the column and keys generated pages from their slug; the rest are
+  keyed at backend start by `backfillRouteKeys` (idempotent, keeps `updated_at`). Until then a page with no key gets the
+  address it always had (`routeKeyOf` falls back to `deriveRouteKey`).
+- The website stage's `pageKeyToId` map is still written (the Pages view reads it) but is no longer used to decide an address.

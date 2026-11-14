@@ -1,4 +1,5 @@
 // TEMPLATE_ENGINE_ARCH.md §3 (DAG), §4 (data model), §4.1 (crash recovery), §5 (gating).
+import { pickHome } from '../../shared/page-routes.js';
 import { prisma } from '../../config/database.js';
 import { getDriver } from './drivers/index.js';
 import { enqueueSiteBuild } from './site/queue.js';
@@ -218,7 +219,13 @@ export async function generateWebsiteCopy(runId, projectId, userId) {
     throw err;
   }
 
-  const homePageId = stage.outputRef?.pageKeyToId?.home;
+  // The front page is the one the site serves at "/" (shared/page-routes.js), not a pointer stored on the stage.
+  const candidates = await prisma.builderPage.findMany({
+    where: { project_id: projectId, deleted_at: null, template_id: null },
+    select: { id: true, slug: true, title: true, route_key: true, status: true },
+    orderBy: { created_at: 'asc' },
+  });
+  const homePageId = pickHome(candidates)?.id;
   if (!homePageId) {
     const err = new Error('NO_HOME_PAGE');
     err.status = 409;

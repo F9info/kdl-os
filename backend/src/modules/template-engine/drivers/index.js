@@ -501,12 +501,13 @@ const websiteDriver = {
         if (layoutPatched) patchedData = layoutPatched;
         if (patchedData) patch.data = patchedData;
         if (!existing.project_id) patch.project_id = run.projectId;
+        if (!existing.route_key) patch.route_key = key;
         page = Object.keys(patch).length > 0 ? await updatePage(existing.id, patch, userId) : existing;
       } else {
         const seeded = seed(key, title, brand, seedPages);
         const layoutApplied = patchLayout(seeded, layout, key, brand, seedPages);
         page = await createPage(
-          { title, slug, data: layoutApplied ?? seeded, project_id: run.projectId },
+          { title, slug, route_key: key, data: layoutApplied ?? seeded, project_id: run.projectId },
           userId,
         );
         // Every other assembled page's nav/footer links straight to this

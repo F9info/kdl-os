@@ -11,6 +11,7 @@ import { removePageFromMenus } from '../menus/site-menus.js';
 import { unregisterFromWebsiteStage } from '../template-engine/site/unregister-page.js';
 import { ensureDefaultSite } from '../projects/sites.js';
 import { getDefaultProjectId } from '../../shared/default-project.js';
+import { assignRoutes, deriveRouteKey, hrefOfRoute } from '../../shared/page-routes.js';
 
 // The pages of one project. Slugs are unique per project, so every page query names its project.
 export const listPages = async (projectId) => {
@@ -75,40 +76,17 @@ const siteScope = (site) =>
 // `site` = { siteId, isDefault } from resolvePublicSite; it keeps one site's pages off another's host.
 export const getPublishedBySiteKey = async (projectId, key, site) => {
   const select = { slug: true, title: true, data: true, seo: true, project_id: true, site_id: true };
-  const stages = await prisma.templateEngineStage.findMany({
-    where: { stage: 'WEBSITE', run: { projectId } },
-    orderBy: { run: { createdAt: 'desc' } },
-  });
-  for (const stage of stages) {
-    const id = stage.outputRef?.pageKeyToId?.[key];
-    const page =
-      id &&
-      (await prisma.builderPage.findFirst({
-        where: { id, status: 'PUBLISHED', deleted_at: null, ...siteScope(site) },
-        select,
-      }));
-    if (page) return page;
-  }
-  const bySlug = await prisma.builderPage.findFirst({
-    where: { slug: key, project_id: projectId, status: 'PUBLISHED', deleted_at: null, ...siteScope(site) },
+  const live = { project_id: projectId, status: 'PUBLISHED', deleted_at: null, ...siteScope(site) };
+  // The page's stored route key is its address (shared/page-routes.js). Oldest first, so the answer is stable
+  // when old drafts share a key; only a published page is ever served.
+  const byKey = await prisma.builderPage.findFirst({
+    where: { ...live, route_key: key, template_id: null },
+    orderBy: { created_at: 'asc' },
     select,
   });
+  if (byKey) return byKey;
+  const bySlug = await prisma.builderPage.findFirst({ where: { ...live, slug: key }, select });
   if (bySlug) return bySlug;
-  // The stage's "home" can point at a page that is no longer published (an old draft). The front page is
-  // then the published page titled Home, so the site never loses its "/" and its shared header/footer.
-  if (key === 'home' && (!site?.siteId || site.isDefault)) {
-    return prisma.builderPage.findFirst({
-      where: {
-        project_id: projectId,
-        title: { equals: 'Home', mode: 'insensitive' },
-        status: 'PUBLISHED',
-        deleted_at: null,
-        ...siteScope(site),
-      },
-      orderBy: { created_at: 'asc' },
-      select,
-    });
-  }
   if (key !== 'home' || !site?.siteId || site.isDefault) return bySlug;
   // A landing site's "/" is its first published page (its slug is not literally "home").
   return prisma.builderPage.findFirst({
@@ -127,30 +105,20 @@ export const listSitemapEntries = async (projectId, site) => {
   const pages = await prisma.builderPage.findMany({
     where: { project_id: projectId, status: 'PUBLISHED', deleted_at: null, template_id: null, ...siteScope(site) },
     orderBy: { created_at: 'asc' },
-    select: { id: true, slug: true, seo: true, updated_at: true },
+    select: { id: true, slug: true, title: true, route_key: true, status: true, seo: true, updated_at: true },
   });
-  const idToKey = new Map();
-  if (site?.isDefault) {
-    const stages = await prisma.templateEngineStage.findMany({
-      where: { stage: 'WEBSITE', run: { projectId } },
-      orderBy: { run: { createdAt: 'desc' } },
-    });
-    for (const stage of stages) {
-      for (const [key, id] of Object.entries(stage.outputRef?.pageKeyToId ?? {})) {
-        if (!idToKey.has(id)) idToKey.set(id, key);
-      }
-    }
-  }
+  // The default site's pages are served at the routes the site generator gives them, so the sitemap asks the same
+  // function. A landing site's pages stay at /p/<slug>.
+  const routeById = new Map(site?.isDefault ? assignRoutes(pages).map((p) => [p.id, p.route]) : []);
   return pages
     .filter((p) => !cleanSeo(p.seo)?.noindex)
-    .map((p) => {
-      const key = idToKey.get(p.id);
-      const path = key === 'home' ? '/' : key ? `/${key}` : `/p/${p.slug}`;
-      return { path, lastmod: p.updated_at };
-    });
+    .map((p) => ({
+      path: routeById.has(p.id) ? hrefOfRoute(routeById.get(p.id)) : `/p/${p.slug}`,
+      lastmod: p.updated_at,
+    }));
 };
 
-export const createPage = async ({ title, slug, data, project_id }, actorId) => {
+export const createPage = async ({ title, slug, data, project_id, route_key }, actorId) => {
   // Every page belongs to a project. Callers that still pass none (legacy content rows with no project)
   // get the default project, which is what a page with no project meant before.
   const projectId = project_id ?? (await getDefaultProjectId(prisma));
@@ -159,6 +127,7 @@ export const createPage = async ({ title, slug, data, project_id }, actorId) => 
     data: {
       title,
       slug,
+      route_key: route_key || deriveRouteKey({ slug, title }),
       status: 'DRAFT',
       data: normalizeData(data ?? { root: { props: { title } }, content: [], zones: {} }),
       created_by: actorId,

@@ -39,6 +39,7 @@ export async function seedDemoLandingPages(client, actorId = null) {
       data: {
         title,
         slug: key,
+        route_key: key,
         status: 'PUBLISHED',
         data: buildLandingData(tpl, key, title),
         created_by: actorId,

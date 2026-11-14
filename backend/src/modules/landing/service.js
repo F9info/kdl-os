@@ -54,6 +54,7 @@ export const createLandingPage = async ({ name, slug, template }, actorId, clien
         data: {
           title: name,
           slug,
+          route_key: slug, // a landing page is addressed by its slug
           status: 'DRAFT',
           data: buildLandingData(tpl, slug, name),
           created_by: actorId,

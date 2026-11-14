@@ -1,8 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const prismaMock = vi.hoisted(() => ({
-  templateEngineStage: { findMany: vi.fn() },
-  builderPage: { findFirst: vi.fn() },
+  builderPage: { findFirst: vi.fn(), findMany: vi.fn() },
 }));
 vi.mock('../../config/database.js', () => ({ prisma: prismaMock }));
 vi.mock('../user-management/shared/activity-logger.js', () => ({ writeActivityAsync: vi.fn() }));
@@ -14,14 +13,20 @@ const where = (call) => prismaMock.builderPage.findFirst.mock.calls[call][0].whe
 
 beforeEach(() => {
   vi.clearAllMocks();
-  prismaMock.templateEngineStage.findMany.mockResolvedValue([{ outputRef: { pageKeyToId: { about: 'pg1' } } }]);
   prismaMock.builderPage.findFirst.mockResolvedValue({ slug: 'about' });
 });
 
 describe('getPublishedBySiteKey site scoping (T5.2)', () => {
-  it('default site: its own pages plus pages with no site yet', async () => {
+  it('looks the page up by its route key, only published, in the default site plus pages with no site yet', async () => {
     await getPublishedBySiteKey('p1', 'about', { siteId: 's1', isDefault: true });
-    expect(where(0)).toMatchObject({ id: 'pg1', OR: [{ site_id: 's1' }, { site_id: null }] });
+    expect(where(0)).toMatchObject({
+      project_id: 'p1',
+      route_key: 'about',
+      status: 'PUBLISHED',
+      deleted_at: null,
+      template_id: null,
+      OR: [{ site_id: 's1' }, { site_id: null }],
+    });
   });
 
   it('a non-default site: only pages assigned to it (never siteless ones)', async () => {
@@ -30,9 +35,9 @@ describe('getPublishedBySiteKey site scoping (T5.2)', () => {
   });
 
   it('the slug fallback is scoped the same way', async () => {
-    prismaMock.templateEngineStage.findMany.mockResolvedValue([]);
+    prismaMock.builderPage.findFirst.mockResolvedValueOnce(null);
     await getPublishedBySiteKey('p1', 'faq', { siteId: 's2', isDefault: false });
-    expect(where(0)).toMatchObject({ slug: 'faq', project_id: 'p1', OR: [{ site_id: 's2' }] });
+    expect(where(1)).toMatchObject({ slug: 'faq', project_id: 'p1', status: 'PUBLISHED', OR: [{ site_id: 's2' }] });
   });
 
   it('no site (project has none yet) = no site filter, exactly as before sites', async () => {
@@ -46,60 +51,63 @@ describe('getPublishedBySiteKey site scoping (T5.2)', () => {
     prismaMock.builderPage.findFirst.mockResolvedValue(null);
     expect(await getPublishedBySiteKey('p1', 'about', { siteId: 's2', isDefault: false })).toBeNull();
   });
+
+  it('"home" is just the key "home": no title guessing, an unpublished Home is never served', async () => {
+    prismaMock.builderPage.findFirst.mockResolvedValue(null);
+    await getPublishedBySiteKey('p1', 'home', { siteId: 's1', isDefault: true });
+    expect(where(0)).toMatchObject({ route_key: 'home', status: 'PUBLISHED' });
+    expect(prismaMock.builderPage.findFirst).toHaveBeenCalledTimes(2); // key, then slug
+    expect(JSON.stringify(prismaMock.builderPage.findFirst.mock.calls)).not.toMatch(/insensitive/);
+  });
+
+  it('the oldest published page with the key wins, so old drafts sharing "home" cannot change the answer', async () => {
+    await getPublishedBySiteKey('p1', 'home', { siteId: 's1', isDefault: true });
+    expect(prismaMock.builderPage.findFirst.mock.calls[0][0].orderBy).toEqual({ created_at: 'asc' });
+  });
 });
 
 describe('landing site root (T5.3)', () => {
   it('"/" on a non-default site falls back to that site\'s first published page', async () => {
-    prismaMock.templateEngineStage.findMany.mockResolvedValue([]);
-    prismaMock.builderPage.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce({ slug: 'spring' });
+    prismaMock.builderPage.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ slug: 'spring' });
     const page = await getPublishedBySiteKey('p1', 'home', { siteId: 's2', isDefault: false });
     expect(page).toEqual({ slug: 'spring' });
-    expect(where(1)).toEqual({ site_id: 's2', status: 'PUBLISHED', deleted_at: null });
+    expect(where(2)).toEqual({ site_id: 's2', status: 'PUBLISHED', deleted_at: null });
   });
 
   it('does not apply to the default site or to other keys', async () => {
-    prismaMock.templateEngineStage.findMany.mockResolvedValue([]);
     prismaMock.builderPage.findFirst.mockResolvedValue(null);
     await getPublishedBySiteKey('p1', 'home', { siteId: 's1', isDefault: true });
     await getPublishedBySiteKey('p1', 'about', { siteId: 's2', isDefault: false });
-    // default-site home: slug lookup + published "Home" title fallback; other key: slug lookup only
-    expect(prismaMock.builderPage.findFirst).toHaveBeenCalledTimes(3);
-  });
-
-  it('default site home falls back to the published page titled Home when the stage points at a draft', async () => {
-    prismaMock.templateEngineStage.findMany.mockResolvedValue([]);
-    prismaMock.builderPage.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce({ slug: 'demo-home' });
-    const page = await getPublishedBySiteKey('p1', 'home', { siteId: 's1', isDefault: true });
-    expect(page).toEqual({ slug: 'demo-home' });
-    expect(prismaMock.builderPage.findFirst.mock.calls[1][0].where).toMatchObject({
-      project_id: 'p1',
-      title: { equals: 'Home', mode: 'insensitive' },
-      status: 'PUBLISHED',
-    });
+    expect(prismaMock.builderPage.findFirst).toHaveBeenCalledTimes(4); // key + slug for each, no third lookup
   });
 });
 
 describe('listSitemapEntries (T6.1)', () => {
-  const page = (id, slug, seo = null) => ({ id, slug, seo, updated_at: new Date('2026-01-01') });
+  const page = (id, slug, title, route_key = null, seo = null) => ({ id, slug, title, route_key, status: 'PUBLISHED', seo, updated_at: new Date('2026-01-01') });
 
-  it('default site: clean URLs from the website stage ("/" for home), /p/<slug> for the rest, noindex dropped', async () => {
-    prismaMock.builderPage.findMany = vi.fn().mockResolvedValue([
-      page('a', 'demo-home'),
-      page('b', 'demo-about'),
-      page('c', 'demo-secret', { noindex: true }),
-      page('d', 'orphan'),
+  it('default site: the same routes the site generator serves ("/" for home), noindex dropped', async () => {
+    prismaMock.builderPage.findMany.mockResolvedValue([
+      page('a', 'demo-home', 'Home', 'home'),
+      page('b', 'demo-about', 'About', 'about'),
+      page('c', 'demo-secret', 'Secret', 'secret', { noindex: true }),
+      page('d', 'orphan', 'Orphan'),
     ]);
-    prismaMock.templateEngineStage.findMany.mockResolvedValue([{ outputRef: { pageKeyToId: { home: 'a', about: 'b', secret: 'c' } } }]);
     const entries = await listSitemapEntries('p1', { siteId: 's1', isDefault: true });
-    expect(entries.map((e) => e.path)).toEqual(['/', '/about', '/p/orphan']);
+    expect(entries.map((e) => e.path)).toEqual(['/', '/about', '/orphan']);
     expect(prismaMock.builderPage.findMany.mock.calls[0][0].where).toMatchObject({ status: 'PUBLISHED', template_id: null, OR: [{ site_id: 's1' }, { site_id: null }] });
   });
 
-  it('landing (non-default) site: /p/<slug>, no stage lookup', async () => {
-    prismaMock.templateEngineStage.findMany.mockClear();
-    prismaMock.builderPage.findMany = vi.fn().mockResolvedValue([page('x', 'spring')]);
+  it('a page whose key is a platform path is listed at the address it is actually served at', async () => {
+    prismaMock.builderPage.findMany.mockResolvedValue([page('a', 'x-admin', 'Admin', 'admin')]);
+    expect((await listSitemapEntries('p1', { siteId: 's1', isDefault: true })).map((e) => e.path)).toEqual(['/admin-page']);
+  });
+
+  it('landing (non-default) site: /p/<slug>', async () => {
+    prismaMock.builderPage.findMany.mockResolvedValue([page('x', 'spring', 'Spring')]);
     const entries = await listSitemapEntries('p1', { siteId: 's2', isDefault: false });
     expect(entries).toEqual([{ path: '/p/spring', lastmod: new Date('2026-01-01') }]);
-    expect(prismaMock.templateEngineStage.findMany).not.toHaveBeenCalled();
   });
 });

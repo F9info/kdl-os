@@ -1,4 +1,5 @@
 import { prisma } from '../../config/database.js';
+import { assignRoutes, hrefOfRoute } from '../../shared/page-routes.js';
 import { enqueueSiteBuild } from '../template-engine/site/queue.js';
 import { scaffoldPageForLabel } from './scaffold-page.js';
 import { renameInWebsiteStage } from '../template-engine/site/unregister-page.js';
@@ -55,23 +56,19 @@ export const getMenuById = async (id) => {
 async function withCleanUrls(projectId, items) {
   const isPageUrl = (i) => i.url?.startsWith('/p/');
   if (!projectId || !items.some(isPageUrl)) return items;
-  const stages = await prisma.templateEngineStage.findMany({
-    where: { stage: 'WEBSITE', run: { projectId } },
-    orderBy: { run: { createdAt: 'asc' } }, // latest run last, so it wins
+  // The address of each page is the one the site generator gives it (shared/page-routes.js).
+  const pages = await prisma.builderPage.findMany({
+    where: { project_id: projectId, deleted_at: null, template_id: null },
+    select: { id: true, slug: true, title: true, route_key: true, status: true },
+    orderBy: { created_at: 'asc' },
   });
-  const keyByPage = new Map();
-  for (const st of stages) for (const [k, id] of Object.entries(st.outputRef?.pageKeyToId ?? {})) keyByPage.set(id, k);
-  // Items may carry only the url (no page_id) — resolve those through the page's slug.
-  const slugs = items.filter((i) => isPageUrl(i) && !i.page_id).map((i) => i.url.slice(3));
-  const idBySlug = new Map(
-    (await prisma.builderPage.findMany({ where: { slug: { in: slugs }, project_id: projectId, deleted_at: null }, select: { id: true, slug: true } })).map(
-      (p) => [p.slug, p.id]
-    )
-  );
+  const routes = assignRoutes(pages);
+  const routeById = new Map(routes.map((p) => [p.id, p.route]));
+  const idBySlug = new Map(pages.map((p) => [p.slug, p.id])); // items may carry only the url, not a page id
   return items.map((i) => {
     if (!isPageUrl(i)) return i;
-    const k = keyByPage.get(i.page_id ?? idBySlug.get(i.url.slice(3)));
-    return k ? { ...i, url: k === 'home' ? '/' : `/${k}` } : i;
+    const id = i.page_id ?? idBySlug.get(i.url.slice(3));
+    return routeById.has(id) ? { ...i, url: hrefOfRoute(routeById.get(id)) } : i;
   });
 }
 

@@ -34,6 +34,10 @@ model BuilderPage {
   // specific record (e.g. Sector.id) this instance renders.
   template_id String?
   entity_id   String?
+  // The page's address name ("about-us", "home"), set once when the page is made and not changed by renaming it.
+  // Not unique on its own (old drafts can share "home"); shared/page-routes.js turns the keys of a site into
+  // unique routes. Null only until the startup backfill has run.
+  route_key   String?
 
   versions PageVersion[]
 
@@ -42,6 +46,7 @@ model BuilderPage {
   @@index([project_id])
   @@index([site_id])
   @@index([template_id])
+  @@index([project_id, route_key])
   @@map("builder_pages")
 }
 

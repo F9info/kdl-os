@@ -8,58 +8,21 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { prisma } from '../../../config/database.js';
-import { slugify } from '../../../shared/utils/slug.js';
+import { assignRoutes, generatedKey } from '../../../shared/page-routes.js';
 import { getSiteLayout } from '../../projects/layout.js';
-import { PAGE_KEY_RESERVED } from '../../../shared/reserved-segments.js';
 import { getCompanyInfo } from '../../identity/company-info.js';
 
 const TEMPLATES_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'templates');
 const MARKER = '.kdl-site.json';
-// Paths owned by the admin app / nginx or the site shell: one shared list (shared/reserved-segments.js).
-const RESERVED = PAGE_KEY_RESERVED;
 
 export const sitesDir = () =>
   path.resolve(process.env.SITES_DIR || path.join(process.cwd(), '..', 'frontend', 'projects'));
 
 // ─── pure: DB rows → site model ──────────────────────────────────────────────
 
-const isHome = (p) => /^home$/i.test(p.title.trim()) || /(^|-)home$/.test(p.slug);
-
-// Generated slugs are `<prefix>-<cuid>-<key>` (e.g. te-cmt18…-about-us); <key> is the
-// slugified menu/page name. Hand-made pages without that shape fall back to the title.
-const keyOf = (slug) => /^.+?-c[a-z0-9]{24}-(.+)$/.exec(slug ?? '')?.[1];
-
-/** Friendly, unique route per page = its menu-name slug. Home → '' (root). */
-export function assignRoutes(pages) {
-  const used = new Set(['']);
-  let homeTaken = false;
-  // Several pages can be titled "Home" (old drafts included). The front page is the published one;
-  // a draft only wins when no Home is published.
-  const homes = pages.filter((p) => !p.root && !p.landing && isHome(p));
-  const homeId = (homes.find((p) => p.status === 'PUBLISHED') ?? homes[0])?.id;
-  return pages.map((p) => {
-    if (p.root) return { ...p, route: '' }; // a landing page exported on its own is the site's front page
-    if (p.landing) {
-      // A landing page is its own address: its slug, never Home, whatever its title says.
-      let base = p.slug;
-      if (RESERVED.has(base)) base = `${base}-page`;
-      let route = base;
-      for (let n = 2; used.has(route); n += 1) route = `${base}-${n}`;
-      used.add(route);
-      return { ...p, route };
-    }
-    if (p.id === homeId && !homeTaken) {
-      homeTaken = true;
-      return { ...p, route: '' };
-    }
-    let base = keyOf(p.slug) || slugify(p.title) || 'page';
-    if (RESERVED.has(base)) base = `${base}-page`;
-    let route = base;
-    for (let n = 2; used.has(route); n += 1) route = `${base}-${n}`;
-    used.add(route);
-    return { ...p, route };
-  });
-}
+// Page addresses come from shared/page-routes.js (one rule for the generator, sitemap, menus and public lookup).
+export { assignRoutes };
+const keyOf = generatedKey;
 
 function menuTree(items, hrefFor) {
   const nodes = new Map(items.filter((i) => i.is_active).map((i) => [i.id, { i, children: [] }]));
@@ -192,6 +155,8 @@ export async function collectSiteInput(projectId, { publishedOnly = false } = {}
     id: r.id,
     slug: r.slug,
     title: r.title,
+    route_key: r.route_key,
+    template_id: r.template_id,
     status: r.status,
     seo: r.seo,
     data: (r.template_id && tplData.get(r.template_id)) || r.data,
