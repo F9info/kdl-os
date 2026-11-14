@@ -3,6 +3,7 @@
 // shared registry make Layout Settings, nav-sync and the public route work with
 // no per-type code. Every entry's page is bound to the type's ONE shared
 // DetailPageTemplate, so editing any entry's sections edits them for all.
+import { friendlyLinksFor } from '../../shared/page-routes-db.js';
 import { prisma } from '../../config/database.js';
 import { deletePage } from '../page-builder/service.js';
 import { withServiceSections } from '../../shared/detail-pages/service-sections.js';
@@ -341,7 +342,8 @@ export async function getPublicEntry(projectId, prefix, slug) {
     const template = await prisma.detailPageTemplate.findUnique({ where: { id: row.template_id } });
     if (template) data = resolveEntryBindings(template.data, toEntity(entry));
   }
-  return { entry, page: { data: await withLiveChrome(projectId, data), title: row.title } };
+  // Links inside the page are saved as /p/<slug>; give them the routes the site actually serves (shared/page-routes.js).
+  return { entry, page: { data: await friendlyLinksFor(projectId, await withLiveChrome(projectId, data)), title: row.title } };
 }
 
 // A detail page holds a copy of the site's top bar / header / footer made when it was created, so

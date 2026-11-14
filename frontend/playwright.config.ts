@@ -11,6 +11,8 @@ export default defineConfig({
   timeout: 60_000,
   use: {
     baseURL,
+    // E2E_CHROME=1 runs the installed Google Chrome instead of the bundled Chromium (use with --headed to watch).
+    channel: process.env.E2E_CHROME ? 'chrome' : undefined,
     // KDL-148: real-browser screen-capture coverage needs getDisplayMedia to
     // resolve without an actual OS picker (there is no desktop in CI/headless).
     // These fake-device flags plus the granted permissions make it resolve to

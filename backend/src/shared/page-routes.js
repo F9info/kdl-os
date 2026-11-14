@@ -58,3 +58,37 @@ export function assignRoutes(pages) {
 }
 
 export const hrefOfRoute = (route) => (route ? `/${route}` : '/');
+
+/**
+ * Slug -> route for a set of routed pages (assignRoutes output). Seeded links name pages as te-<run>-<key>; when that
+ * exact page is absent, a page with the same key still matches. Returns undefined when nothing matches.
+ */
+export function routeResolver(routed) {
+  const bySlug = new Map(routed.map((p) => [p.slug, p.route]));
+  // Only generated slugs carry a key; a plain slug must never match through a missing one.
+  const byKey = new Map(routed.filter((p) => generatedKey(p.slug)).map((p) => [generatedKey(p.slug), p.route]).reverse());
+  return (slug) => {
+    if (bySlug.has(slug)) return bySlug.get(slug);
+    const key = generatedKey(slug);
+    return key ? byKey.get(key) : undefined;
+  };
+}
+
+/**
+ * Links saved in the admin (button hrefs, multi-line nav text) are `/p/<slug>`. Point every one that names a known
+ * page at that page's real route, anywhere inside a string, array or object. Unknown slugs are left as written.
+ */
+export function rewritePageLinks(value, resolve) {
+  const walk = (v) =>
+    typeof v === 'string'
+      ? v.replace(/\/p\/([a-z0-9-]+)/g, (m, slug) => {
+          const route = resolve(slug);
+          return route === undefined ? m : hrefOfRoute(route);
+        })
+      : Array.isArray(v)
+        ? v.map(walk)
+        : v && typeof v === 'object'
+          ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)]))
+          : v;
+  return walk(value);
+}

@@ -1,4 +1,5 @@
 import { successResponse, errorResponse } from '../../shared/utils/response.js';
+import { friendlyLinksFor } from '../../shared/page-routes-db.js';
 import { createPageSchema, updatePageSchema, publishPageSchema } from './schema.js';
 import * as service from './service.js';
 import { getDefaultProjectId } from '../../shared/default-project.js';
@@ -34,7 +35,9 @@ export const getOne = async (req, res, next) => {
 // (T6.1: `seo` = the page's own, `seoDefaults` = site-wide), each null when there is none.
 const withLayout = async ({ site_id: siteId, ...page }) => ({
   ...page,
-  layout: page.project_id ? await getSiteLayout(page.project_id) : null,
+  // Links saved as /p/<slug> in the page and its layout are given the routes the site serves (shared/page-routes.js).
+  data: await friendlyLinksFor(page.project_id, page.data),
+  layout: page.project_id ? await friendlyLinksFor(page.project_id, await getSiteLayout(page.project_id)) : null,
   identity: await getPublicSiteIdentity(siteId),
   ...(await getPublicSeo(page.seo)),
 });

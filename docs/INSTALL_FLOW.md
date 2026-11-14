@@ -97,6 +97,15 @@ Two Playwright specs cover this flow (`frontend/e2e/`):
 - `platform-sweep.spec.ts` runs on any **installed** stack and changes nothing: the dashboard's platform status, the main
   admin screens, and (when the sample landing pages exist) four different headers with working menu links.
 
+- `link-integrity.spec.ts` crawls the **website** of a running stack (starting from `/`, following every internal link) and
+  checks that every page opens, no link is a bare `#` or a legacy `/p/<slug>` address, every `#section` link lands on an
+  element that exists, mail/tel links are well formed, no link points at localhost or a placeholder domain, every sitemap
+  address opens, and every public menu link is a real route. Findings go to `test-results/link-integrity.json`.
+- `admin-routes.spec.ts` opens **every admin screen the enabled modules declare** (read from `GET /api/modules/enabled`, i.e.
+  the `module.json` files, so nothing is listed by hand), checks each opens without an error and is linked from the
+  sidebar, and opens the dashboard's quick links.
+- Add `E2E_CHROME=1` to use the installed Google Chrome, and `--headed` to watch.
+
 ```bash
 # fresh stack (the token is in the backend log: docker compose logs backend | grep "SETUP TOKEN")
 cd frontend

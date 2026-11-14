@@ -26,6 +26,8 @@ const previewMock = vi.hoisted(() => ({
 vi.mock('./preview.js', () => previewMock);
 vi.mock('../../config/database.js', () => ({ prisma: {} }));
 vi.mock('../../shared/default-project.js', () => ({ getDefaultProjectId: vi.fn(async () => 'p1') }));
+// Link rewriting has its own tests (shared/page-routes.test.js, public-links.test.js); here pages pass through unchanged.
+vi.mock('../../shared/page-routes-db.js', () => ({ friendlyLinksFor: vi.fn(async (_project, value) => value) }));
 vi.mock('./service.js', () => m);
 vi.mock('./schema.js', async () => {
   const { z } = await import('zod');

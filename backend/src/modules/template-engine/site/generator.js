@@ -8,7 +8,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { prisma } from '../../../config/database.js';
-import { assignRoutes, generatedKey } from '../../../shared/page-routes.js';
+import { assignRoutes, routeResolver, rewritePageLinks } from '../../../shared/page-routes.js';
 import { getSiteLayout } from '../../projects/layout.js';
 import { getCompanyInfo } from '../../identity/company-info.js';
 
@@ -22,7 +22,6 @@ export const sitesDir = () =>
 
 // Page addresses come from shared/page-routes.js (one rule for the generator, sitemap, menus and public lookup).
 export { assignRoutes };
-const keyOf = generatedKey;
 
 function menuTree(items, hrefFor) {
   const nodes = new Map(items.filter((i) => i.is_active).map((i) => [i.id, { i, children: [] }]));
@@ -52,9 +51,7 @@ export function buildSiteModel({ project, kit, company, pages, menus, layout = n
   const routed = assignRoutes(pages);
   const byId = new Map(routed.map((p) => [p.id, p.route]));
   const bySlug = new Map(routed.map((p) => [p.slug, p.route]));
-  // Seeded links name pages as te-<run>-<key>; when that exact page is absent, a page with the same key still matches.
-  const byKey = new Map(routed.map((p) => [keyOf(p.slug), p.route]).reverse());
-  const routeOf = (slug) => bySlug.get(slug) ?? byKey.get(keyOf(slug));
+  const routeOf = routeResolver(routed);
   const toHref = (route) => (route ? `/${route}` : '/');
   const hrefFor = (i) => {
     if (i.page_id && byId.has(i.page_id)) return toHref(byId.get(i.page_id));
@@ -63,16 +60,7 @@ export function buildSiteModel({ project, kit, company, pages, menus, layout = n
     return i.url || '#';
   };
   // Links saved in the admin (button hrefs, multi-line nav text) are `/p/<slug>`; point them at the friendly route.
-  const friendly = (v) =>
-    typeof v === 'string'
-      ? v.replace(/\/p\/([a-z0-9-]+)/g, (m, slug) =>
-          routeOf(slug) === undefined ? m : toHref(routeOf(slug))
-        )
-      : Array.isArray(v)
-        ? v.map(friendly)
-        : v && typeof v === 'object'
-          ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, friendly(x)]))
-          : v;
+  const friendly = (v) => rewritePageLinks(v, routeOf);
   // A static export holds only the pages that are published on this site, so a menu link to any other
   // page (a draft, a deleted page) would be dead: leave it out. Published landing pages are in the export.
   const pointsAtMissingPage = (i) => {

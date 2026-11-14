@@ -7,6 +7,8 @@ import {
   pickHome,
   assignRoutes,
   hrefOfRoute,
+  routeResolver,
+  rewritePageLinks,
 } from './page-routes.js';
 import { backfillRouteKeys } from './page-routes-backfill.js';
 
@@ -110,5 +112,32 @@ describe('backfillRouteKeys', () => {
     db.builderPage.update.mockClear();
     expect(await backfillRouteKeys(db)).toBe(0);
     expect(db.builderPage.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('rewritePageLinks', () => {
+  const routed = assignRoutes([
+    page('1', 'Home', { slug: 'demo-home', route_key: 'home' }),
+    page('2', 'Contact', { slug: 'demo-contact', route_key: 'contact' }),
+    page('3', 'About', { slug: `te-${CUID}-about`, route_key: 'about' }),
+  ]);
+  const resolve = routeResolver(routed);
+
+  it('finds a page by its slug, and by its key when only the generated prefix differs', () => {
+    expect(resolve('demo-contact')).toBe('contact');
+    expect(resolve('demo-home')).toBe('');
+    expect(resolve(`te-cother0000000000000000000-about`)).toBe('about');
+    expect(resolve('nope')).toBeUndefined();
+  });
+
+  it('rewrites links anywhere in strings, arrays and objects; the front page becomes "/"; unknown slugs stay', () => {
+    const out = rewritePageLinks({ a: '/p/demo-contact', b: ['x /p/demo-home y', { c: '/p/missing-page' }], n: 3, z: null }, resolve);
+    expect(out).toEqual({ a: '/contact', b: ['x / y', { c: '/p/missing-page' }], n: 3, z: null });
+  });
+
+  it('does not change its input', () => {
+    const input = { href: '/p/demo-contact' };
+    rewritePageLinks(input, resolve);
+    expect(input.href).toBe('/p/demo-contact');
   });
 });
