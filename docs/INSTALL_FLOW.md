@@ -86,3 +86,28 @@ node prisma/seed.js --only=roles,credits # those, plus what they depend on
 
 - **Website menus (Header, Footer)** are filled from the pages that exist: each new page is added as a `page` link (by page id, so a renamed slug cannot break it), and a deleted page is removed from the menus. With "sample website" off the menus start empty.
 - **Landing page header and footer links** in the built-in templates name a section, not an address (`Pricing|@LandingPricing`). When the page is built (`resolveSectionLinks`, `backend/src/modules/landing/templates.js`) the first section of that type gets an anchor and the link becomes `#anchor`; a link whose section is not on the page is dropped. Every landing section has an optional **Anchor** field in the editor for the same purpose.
+
+## Browser tests
+
+Two Playwright specs cover this flow (`frontend/e2e/`):
+
+- `installer-fresh.spec.ts` runs the whole wizard on an **empty** database: a wrong token is refused, every step, a refresh
+  mid-wizard, launch, the completion screen, sign-in as the new admin, and the installer being closed afterwards. It is
+  skipped unless `E2E_FRESH_INSTALL=1` and `E2E_SETUP_TOKEN` are set, so a normal e2e run is unaffected.
+- `platform-sweep.spec.ts` runs on any **installed** stack and changes nothing: the dashboard's platform status, the main
+  admin screens, and (when the sample landing pages exist) four different headers with working menu links.
+
+```bash
+# fresh stack (the token is in the backend log: docker compose logs backend | grep "SETUP TOKEN")
+cd frontend
+E2E_FRESH_INSTALL=1 E2E_SETUP_TOKEN=<token> E2E_BASE_URL=http://localhost:3001 pnpm e2e e2e/installer-fresh.spec.ts
+E2E_BASE_URL=http://localhost:3001 E2E_ADMIN_EMAIL=asha@acme.test E2E_ADMIN_PASSWORD='correct horse battery 9' \
+  pnpm e2e e2e/platform-sweep.spec.ts
+```
+
+## Developer and Admin sign-ins
+
+The seed creates `developer@kdl.com` (Developer) and `siteadmin@kdl.com` (Admin) outside production, each with a **random
+one-time password** printed once in the backend log; both must change it at first login. There is deliberately no fixed
+default password. To choose them: `SEED_TEAM_PASSWORD` (one password for both, 12+ characters, not printed),
+`SEED_DEVELOPER_EMAIL`, `SEED_SITE_ADMIN_EMAIL`; `SEED_TEAM_USERS=false` skips both accounts.
