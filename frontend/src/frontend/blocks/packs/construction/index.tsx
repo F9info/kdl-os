@@ -1508,7 +1508,7 @@ type ConstructionProps = {
     sectionEyebrow: string
     sectionTitle: string
     items: { icon: IconKey | ''; biIcon?: string; title: string; description: string }[]
-    variant?: '1' | '2'
+    variant?: '1' | '2' | '3' | '4'
     background: 'white' | 'dark'
     padding: 'sm' | 'md' | 'lg'
   }
@@ -1554,7 +1554,7 @@ type ConstructionProps = {
     stat2Label: string
     stat3Value: string
     stat3Label: string
-    variant?: '1' | '2'
+    variant?: '1' | '2' | '3' | '4'
     padding: 'sm' | 'md' | 'lg'
     background: 'white' | 'muted'
     highlights?: Record<string, string>[]
@@ -1565,7 +1565,7 @@ type ConstructionProps = {
     sectionTitle: string
     sectionSubtitle?: string
     items: { stepLabel: string; title: string; description: string }[]
-    variant?: '1' | '2'
+    variant?: '1' | '2' | '3' | '4'
     padding: 'sm' | 'md' | 'lg'
   }
   ConstructionProjectPhotoSlider: {
@@ -15255,6 +15255,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         options: [
           { label: 'Design 1 — Round icons', value: '1' },
           { label: 'Design 2 — Square orange tiles', value: '2' },
+          { label: 'Design 3 — Icon beside text, accent edge', value: '3' },
+          { label: 'Design 4 — Numbered lift tiles', value: '4' },
         ],
       },
       background: {
@@ -15335,6 +15337,96 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                       <h4 className="text-[1.05rem] font-extrabold text-[#14161a]">{item.title}</h4>
                       {item.description && (
                         <p className="text-sm leading-relaxed text-[#4b5058]">{item.description}</p>
+                      )}
+                    </article>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+        )
+      }
+      const head = (cls = 'mb-10 text-center') =>
+        (sectionEyebrow || sectionTitle) && (
+          <div className={cls}>
+            {sectionEyebrow && (
+              <p
+                className={`mb-2 text-sm font-semibold uppercase tracking-wide ${dark ? 'text-highlight' : 'text-primary'}`}
+              >
+                {sectionEyebrow}
+              </p>
+            )}
+            {sectionTitle && <h2 className="text-2xl font-bold md:text-4xl">{sectionTitle}</h2>}
+          </div>
+        )
+      const shell = `${padY[padding]} ${dark ? 'bg-inverse text-inverse-foreground' : 'bg-surface'}`
+      const muted = dark ? 'text-inverse-foreground/70' : 'text-body'
+      if (variant === '3') {
+        // Icon beside the text, an accent edge on each row, two columns.
+        return (
+          <section className={shell}>
+            <div className={wrap}>
+              {head()}
+              <div className="grid gap-5 md:grid-cols-2">
+                {list.map((item, i) => {
+                  const Icon = ICON_BY_KEY[(item.icon as IconKey) || 'star']
+                  return (
+                    <article
+                      key={i}
+                      className={`flex items-start gap-4 rounded-xl border-l-4 border-primary p-5 ${dark ? 'bg-inverse-foreground/5' : 'bg-background'}`}
+                    >
+                      <span
+                        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg ${dark ? 'bg-inverse-foreground/10 text-highlight' : 'bg-primary/10 text-primary'}`}
+                      >
+                        {item.biIcon ? <BiIcon name={item.biIcon} /> : <Icon />}
+                      </span>
+                      <div>
+                        <h4 className="mb-1 font-semibold">{item.title}</h4>
+                        {item.description && (
+                          <p className={`text-sm leading-relaxed ${muted}`}>{item.description}</p>
+                        )}
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+        )
+      }
+      if (variant === '4') {
+        // Numbered tiles: a large faint index behind the icon, lifting on hover.
+        return (
+          <section className={shell}>
+            <div className={wrap}>
+              {head()}
+              <div
+                className="grid gap-6"
+                style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))' }}
+              >
+                {list.map((item, i) => {
+                  const Icon = ICON_BY_KEY[(item.icon as IconKey) || 'star']
+                  return (
+                    <article
+                      key={i}
+                      className={`relative overflow-hidden rounded-2xl border p-6 transition duration-300 hover:-translate-y-1 hover:shadow-xl ${dark ? 'border-inverse-foreground/15 bg-inverse-foreground/5' : 'border-divider bg-surface'}`}
+                    >
+                      <span
+                        aria-hidden
+                        className={`absolute right-4 top-2 text-6xl font-black leading-none ${dark ? 'text-inverse-foreground/10' : 'text-primary/10'}`}
+                      >
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                      <span
+                        className={`relative mb-4 flex h-12 w-12 items-center justify-center rounded-xl ${dark ? 'bg-inverse-foreground/10 text-highlight' : 'bg-primary text-primary-foreground'}`}
+                      >
+                        {item.biIcon ? <BiIcon name={item.biIcon} /> : <Icon />}
+                      </span>
+                      <h4 className="relative mb-1.5 font-semibold">{item.title}</h4>
+                      {item.description && (
+                        <p className={`relative text-sm leading-relaxed ${muted}`}>
+                          {item.description}
+                        </p>
                       )}
                     </article>
                   )
@@ -15713,6 +15805,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         options: [
           { label: 'Design 1 — Split with stats', value: '1' },
           { label: 'Design 2 — Tall photo, highlight cards, stat cards', value: '2' },
+          { label: 'Design 3 — Photo right, accent highlights, stat strip', value: '3' },
+          { label: 'Design 4 — Centred intro, wide photo, stat tiles', value: '4' },
         ],
       },
       padding: {
@@ -15880,6 +15974,134 @@ const typedComponents: Config<ConstructionProps>['components'] = {
           </section>
         )
       }
+      const shellA = `${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`
+      if (variant === '3') {
+        // Photo on the right; highlights as stacked cards with an accent edge; stats as one divided strip.
+        return (
+          <section className={shellA}>
+            <div className="w-full items-center gap-14 px-6 md:flex md:flex-row-reverse md:px-10 lg:px-16">
+              <div className="mb-10 md:mb-0 md:w-2/5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={photo}
+                  alt={heading}
+                  loading="lazy"
+                  className="h-96 w-full rounded-2xl object-cover shadow-xl"
+                />
+              </div>
+              <div className="md:w-3/5">
+                {eyebrow && (
+                  <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-primary">
+                    {eyebrow}
+                  </p>
+                )}
+                <h2 className="mb-4 text-2xl font-bold text-title md:text-4xl">{heading}</h2>
+                {paragraph1 && <p className="mb-4 leading-relaxed text-body">{paragraph1}</p>}
+                {paragraph2 && <p className="mb-6 leading-relaxed text-body">{paragraph2}</p>}
+                {highlights.length > 0 && (
+                  <div className="mb-6 space-y-3">
+                    {highlights.map((h, i) => {
+                      const Icon = ICON_BY_KEY[(h.icon as IconKey) || 'star']
+                      return (
+                        <div
+                          key={i}
+                          className="flex items-start gap-3 rounded-lg border-l-4 border-primary bg-background p-4"
+                        >
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                            {h.biIcon ? <BiIcon name={h.biIcon} /> : <Icon />}
+                          </span>
+                          <div>
+                            <h4 className="font-semibold text-title">{h.title}</h4>
+                            {h.description && (
+                              <p className="mt-1 text-sm leading-relaxed text-body">
+                                {h.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+                {stats.length > 0 && (
+                  <div className="flex divide-x divide-divider overflow-hidden rounded-xl border border-divider">
+                    {stats.map((st, i) => (
+                      <div key={i} className="flex-1 px-4 py-4 text-center">
+                        <b className="block text-2xl font-extrabold text-title">
+                          <StatValue value={st.value} />
+                        </b>
+                        <span className="text-xs text-muted-foreground">{st.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )
+      }
+      if (variant === '4') {
+        // Centred introduction, a wide photo, then highlights and stat tiles side by side below it.
+        return (
+          <section className={shellA}>
+            <div className={wrap}>
+              <div className="mx-auto mb-10 max-w-3xl text-center">
+                {eyebrow && (
+                  <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-primary">
+                    {eyebrow}
+                  </p>
+                )}
+                <h2 className="mb-4 text-2xl font-bold text-title md:text-4xl">{heading}</h2>
+                {paragraph1 && <p className="leading-relaxed text-body">{paragraph1}</p>}
+              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={photo}
+                alt={heading}
+                loading="lazy"
+                className="mb-10 h-72 w-full rounded-2xl object-cover md:h-96"
+              />
+              <div className="grid gap-8 md:grid-cols-2">
+                <div>
+                  {paragraph2 && <p className="mb-6 leading-relaxed text-body">{paragraph2}</p>}
+                  <div className="space-y-4">
+                    {highlights.map((h, i) => {
+                      const Icon = ICON_BY_KEY[(h.icon as IconKey) || 'star']
+                      return (
+                        <div key={i} className="flex gap-3">
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                            {h.biIcon ? <BiIcon name={h.biIcon} /> : <Icon />}
+                          </span>
+                          <div>
+                            <h4 className="font-semibold text-title">{h.title}</h4>
+                            {h.description && (
+                              <p className="mt-1 text-sm leading-relaxed text-body">
+                                {h.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+                {stats.length > 0 && (
+                  <div className="grid grid-cols-2 gap-4 self-start">
+                    {stats.map((st, i) => (
+                      <div key={i} className="rounded-xl bg-primary/10 p-5 text-center">
+                        <b className="block text-3xl font-extrabold text-primary">
+                          <StatValue value={st.value} />
+                        </b>
+                        <span className="text-xs text-body">{st.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )
+      }
       return (
         <section
           className={`${padY[padding]} ${background === 'muted' ? 'bg-background' : 'bg-surface'}`}
@@ -15961,6 +16183,8 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         options: [
           { label: 'Design 1 — Plain columns', value: '1' },
           { label: 'Design 2 — Shadow cards with badge', value: '2' },
+          { label: 'Design 3 — Connected numbered circles', value: '3' },
+          { label: 'Design 4 — Dark band, outlined cards', value: '4' },
         ],
       },
       padding: {
@@ -16046,6 +16270,100 @@ const typedComponents: Config<ConstructionProps>['components'] = {
                   </div>
                 ))}
               </div>
+            </div>
+          </section>
+        )
+      }
+      const intro = (dark: boolean) =>
+        (sectionEyebrow || sectionTitle) && (
+          <div className="mb-12 text-center">
+            {sectionEyebrow && (
+              <p
+                className={`mb-2 text-sm font-semibold uppercase tracking-wide ${dark ? 'text-highlight' : 'text-primary'}`}
+              >
+                {sectionEyebrow}
+              </p>
+            )}
+            {sectionTitle && (
+              <h2 className={`text-2xl font-bold md:text-4xl ${dark ? '' : 'text-title'}`}>
+                {sectionTitle}
+              </h2>
+            )}
+            {sectionSubtitle && (
+              <p
+                className={`mx-auto mt-4 max-w-2xl ${dark ? 'text-inverse-foreground/70' : 'text-body'}`}
+              >
+                {sectionSubtitle}
+              </p>
+            )}
+          </div>
+        )
+      if (variant === '3') {
+        // Numbered circles joined by a line; the label sits under each circle.
+        return (
+          <section className={`${padY[padding]} bg-surface`}>
+            <div className={wrap}>
+              {intro(false)}
+              <ol
+                className="grid gap-10 md:gap-6"
+                style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))' }}
+              >
+                {list.map((step, i) => (
+                  <li key={i} className="relative text-center">
+                    {i < list.length - 1 && (
+                      <span
+                        aria-hidden
+                        className="absolute left-1/2 top-6 hidden h-0.5 w-full bg-divider md:block"
+                      />
+                    )}
+                    <span className="relative mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground ring-4 ring-surface">
+                      {i + 1}
+                    </span>
+                    {step.stepLabel && (
+                      <span className="text-xs font-bold uppercase tracking-wide text-primary">
+                        {step.stepLabel}
+                      </span>
+                    )}
+                    <h4 className="mb-1.5 mt-1 text-lg font-semibold text-title">{step.title}</h4>
+                    {step.description && (
+                      <p className="text-sm leading-relaxed text-body">{step.description}</p>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </section>
+        )
+      }
+      if (variant === '4') {
+        // A dark band with outlined step cards.
+        return (
+          <section className={`${padY[padding]} bg-inverse text-inverse-foreground`}>
+            <div className={wrap}>
+              {intro(true)}
+              <ol
+                className="grid gap-5"
+                style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))' }}
+              >
+                {list.map((step, i) => (
+                  <li key={i} className="rounded-2xl border border-inverse-foreground/20 p-6">
+                    <span className="text-3xl font-black text-highlight">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    {step.stepLabel && (
+                      <p className="mt-2 text-xs font-bold uppercase tracking-wide text-inverse-foreground/60">
+                        {step.stepLabel}
+                      </p>
+                    )}
+                    <h4 className="mb-1.5 mt-1 text-lg font-semibold">{step.title}</h4>
+                    {step.description && (
+                      <p className="text-sm leading-relaxed text-inverse-foreground/70">
+                        {step.description}
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ol>
             </div>
           </section>
         )
@@ -16649,8 +16967,8 @@ export const construction: ComponentPack = {
     ConstructionFooter: ['1', '2', '3', '4', '5'],
     ConstructionSectorDetailList: ['1', '2', '3', '4'],
     ConstructionMissionVision: ['1', '2', '3', '4'],
-    ConstructionIconFeatureGrid: ['1', '2'],
-    ConstructionApproachSplit: ['1', '2'],
-    ConstructionProcessSteps: ['1', '2'],
+    ConstructionIconFeatureGrid: ['1', '2', '3', '4'],
+    ConstructionApproachSplit: ['1', '2', '3', '4'],
+    ConstructionProcessSteps: ['1', '2', '3', '4'],
   },
 }
