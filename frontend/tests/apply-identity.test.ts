@@ -137,3 +137,32 @@ describe('applyIdentity footer links', () => {
     expect(p.policyLinks).toBe('Privacy Policy|/privacy\nBlogs|/blog')
   })
 })
+
+describe('applyIdentity sample company word', () => {
+  const out = (props: Record<string, unknown>, id: Record<string, string> = identity) =>
+    (
+      applyIdentity(page([{ type: 'ConstructionHero', props }]), id) as {
+        content: { props: Record<string, unknown> }[]
+      }
+    ).content[0]!.props
+
+  it('replaces the placeholder company word in text, alt text and nested items with the company name', () => {
+    const p = out({
+      headline: 'Clients Who Trust DemoLogo',
+      imageAlt: 'DemoLogo showroom',
+      items: [{ text: 'DemoLogo was founded in 1996' }],
+    })
+    expect(p).toEqual({
+      headline: 'Clients Who Trust Acme',
+      imageAlt: 'Acme showroom',
+      items: [{ text: 'Acme was founded in 1996' }],
+    })
+  })
+
+  it('leaves text alone when Identity has no company name, and never touches other words', () => {
+    expect(out({ headline: 'Trust DemoLogo' }, { contact_email: 'a@b.test' }).headline).toBe(
+      'Trust DemoLogo'
+    )
+    expect(out({ headline: 'Demo of our logo' }).headline).toBe('Demo of our logo')
+  })
+})

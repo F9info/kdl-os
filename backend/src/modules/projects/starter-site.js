@@ -1,15 +1,12 @@
 import { normalizeData } from '../../shared/numbered-families.js';
 import { ensureDefaultSite } from './sites.js';
 import { deriveRouteKey } from '../../shared/page-routes.js';
+import { brandName, BRAND_PLACEHOLDER } from '../../shared/brand-name.js';
 
 // Building blocks for the starter website pages (General pack only).
-export const BRAND = 'Your Brand';
+export const BRAND = BRAND_PLACEHOLDER;
 
-/** The company name for generated pages: Application Identity, else the placeholder. */
-export async function brandName(client) {
-  const row = await client.appSetting.findUnique({ where: { key: 'identity.app_name' } });
-  return row?.value?.trim() || BRAND;
-}
+export { brandName };
 
 /** The company's contact details from Application Identity; a detail nobody entered is simply absent. */
 export async function contactDetails(client) {

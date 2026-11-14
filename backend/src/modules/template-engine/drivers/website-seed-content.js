@@ -135,6 +135,7 @@ export function patchNavLinks(data, pages) {
 const BRAND_LOGO_BLOCK_TYPES = new Set([
   'NavBar',
   'Footer',
+  'TaglineStrip',
   'MedicalTopNav',
   'ConstructionHeader',
   'ConstructionFooter',

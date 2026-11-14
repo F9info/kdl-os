@@ -1,6 +1,7 @@
 import { prisma } from '../../config/database.js';
 import { demoAccepted } from '../../shared/demo-content.js';
 import { getDefaultProjectId } from '../../shared/default-project.js';
+import { brandName, withBrand } from '../../shared/brand-name.js';
 
 // Generic DemoLogo placeholder team for the default project.
 const MEMBERS = [
@@ -13,7 +14,9 @@ export async function seedTeam(prismaClient = prisma) {
   if (!(await demoAccepted(prismaClient))) return;
   const projectId = await getDefaultProjectId(prismaClient);
   if (!projectId) return;
-  for (const member of MEMBERS) {
+  const brand = await brandName(prismaClient);
+  for (const raw of MEMBERS) {
+    const member = { ...raw, role: withBrand(raw.role, brand), bio: withBrand(raw.bio, brand) };
     const existing = await prismaClient.teamMember.findFirst({
       where: { project_id: projectId, name: member.name },
       select: { id: true },

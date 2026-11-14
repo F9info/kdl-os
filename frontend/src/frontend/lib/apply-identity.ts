@@ -5,9 +5,10 @@
 
 // Keep in sync with BRAND_LOGO_BLOCK_TYPES in
 // backend/src/modules/template-engine/drivers/website-seed-content.js (the blocks that carry them).
-const BRAND_LOGO_BLOCK_TYPES = new Set([
+export const BRAND_LOGO_BLOCK_TYPES = new Set([
   'NavBar',
   'Footer',
+  'TaglineStrip',
   'MedicalTopNav',
   'ConstructionHeader',
   'ConstructionFooter',
@@ -130,18 +131,52 @@ function applyFooterLinks(props: Record<string, unknown>, identity: Identity) {
   }
 }
 
+/**
+ * The company name and logo to show, from Application Identity. The website shows the company, not the admin
+ * application: company values first, app values as fallback. Empty means "not set", never an override.
+ */
+export function brandOf(identity: Identity | null | undefined): { name: string; logo: string } {
+  return {
+    name: (identity?.company_name?.trim() || identity?.app_name?.trim()) ?? '',
+    logo: (identity?.company_logo_light?.trim() || identity?.logo_light?.trim()) ?? '',
+  }
+}
+
+/** The `brand` / `logoUrl` props a brand-logo block gets from Identity; only the ones that are set. */
+export function brandProps(identity: Identity | null | undefined): {
+  brand?: string
+  logoUrl?: string
+} {
+  const { name, logo } = brandOf(identity)
+  return { ...(name && { brand: name }), ...(logo && { logoUrl: logo }) }
+}
+
+/** The word the built-in sample copy uses for the company ("DemoLogo was founded in 1996 ..."). */
+export const SAMPLE_BRAND_TOKEN = 'DemoLogo'
+
+/** Replaces the sample company word with the real name, anywhere inside a block's props. */
+function withCompanyName(value: unknown, name: string): unknown {
+  if (typeof value === 'string')
+    return value.includes(SAMPLE_BRAND_TOKEN) ? value.replaceAll(SAMPLE_BRAND_TOKEN, name) : value
+  if (Array.isArray(value)) return value.map((v) => withCompanyName(v, name))
+  if (value && typeof value === 'object')
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, withCompanyName(v, name)]))
+  return value
+}
+
 export function applyIdentity<T>(data: T, identity: Identity | null | undefined): T {
-  // The website shows the company, not the admin application: company values first, app values as fallback.
-  const name = (identity?.company_name?.trim() || identity?.app_name?.trim()) ?? ''
-  const logo = (identity?.company_logo_light?.trim() || identity?.logo_light?.trim()) ?? ''
+  const { name, logo } = brandOf(identity)
   const content = (data as { content?: Block[] } | null)?.content
   if (!Array.isArray(content) || !identity || Object.keys(identity).length === 0) return data
   const patched = content.map((b0) => {
-    const b = applyContact(b0, identity)
+    const b = applyContact(
+      name ? { ...b0, props: withCompanyName(b0.props, name) as Block['props'] } : b0,
+      identity
+    )
     if (BRAND_LOGO_BLOCK_TYPES.has(b.type)) {
       return {
         ...b,
-        props: { ...b.props, ...(name && { brand: name }), ...(logo && { logoUrl: logo }) },
+        props: { ...b.props, ...brandProps(identity) },
       }
     }
     const atoms = (b.props?.config as { atoms?: Atom[] } | undefined)?.atoms

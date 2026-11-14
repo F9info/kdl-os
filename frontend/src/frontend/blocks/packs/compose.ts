@@ -1,6 +1,7 @@
 import type { Config } from '@puckeditor/core'
 import type { ComponentPack } from './types'
 import { withDeviceVisibility } from './device-visibility'
+import { withLiveBrand } from './live-brand'
 
 export function composePacks(root: Config['root'], packs: ComponentPack[]): Config {
   const components: NonNullable<Config['components']> = {}
@@ -15,7 +16,8 @@ export function composePacks(root: Config['root'], packs: ComponentPack[]): Conf
         )
       }
       // Every section gets the hide-on-mobile/tablet/desktop fields (see device-visibility.tsx).
-      components[key] = withDeviceVisibility(pack.components[key]!)
+      // Brand-logo blocks (header, footer, tagline) also read the company name and logo from Identity.
+      components[key] = withDeviceVisibility(withLiveBrand(key, pack.components[key]!))
     }
 
     if (pack.categories) {

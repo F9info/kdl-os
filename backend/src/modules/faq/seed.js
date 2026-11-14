@@ -1,6 +1,7 @@
 import { prisma } from '../../config/database.js';
 import { demoAccepted } from '../../shared/demo-content.js';
 import { getDefaultProjectId } from '../../shared/default-project.js';
+import { brandName, withBrand } from '../../shared/brand-name.js';
 
 // Generic DemoLogo placeholder FAQs for the default project.
 const FAQS = [
@@ -23,12 +24,15 @@ export async function seedFaq(prismaClient = prisma) {
   if (!(await demoAccepted(prismaClient))) return;
   const projectId = await getDefaultProjectId(prismaClient);
   if (!projectId) return;
+  const brand = await brandName(prismaClient);
   for (let i = 0; i < FAQS.length; i++) {
+    const sample = { question: withBrand(FAQS[i].question, brand), answer: withBrand(FAQS[i].answer, brand) };
+    // An install seeded before the company name was used already has the placeholder wording: that is the same entry.
     const existing = await prismaClient.faqEntry.findFirst({
-      where: { project_id: projectId, question: FAQS[i].question },
+      where: { project_id: projectId, question: { in: [FAQS[i].question, sample.question] } },
       select: { id: true },
     });
     if (existing) continue;
-    await prismaClient.faqEntry.create({ data: { ...FAQS[i], project_id: projectId, order: i } });
+    await prismaClient.faqEntry.create({ data: { ...sample, project_id: projectId, order: i } });
   }
 }

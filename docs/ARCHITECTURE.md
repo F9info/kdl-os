@@ -140,3 +140,18 @@ addresses; the site generator, the public page lookup (`/api/page-builder/public
   keyed at backend start by `backfillRouteKeys` (idempotent, keeps `updated_at`). Until then a page with no key gets the
   address it always had (`routeKeyOf` falls back to `deriveRouteKey`).
 - The website stage's `pageKeyToId` map is still written (the Pages view reads it) but is no longer used to decide an address.
+
+## Company logo and name
+
+The logo and company name are set once, in Application Identity (the installer's Company step, then Settings > Identity). Nothing
+else owns them.
+
+- **Brand-logo blocks** (`NavBar`, `Footer`, `TaglineStrip`, `ConstructionHeader`, `ConstructionFooter`, `ConstructionTaglineStrip`,
+  `MedicalTopNav`) read Identity themselves, wherever they are drawn: the live site, the editor canvas, previews
+  (`frontend/src/frontend/blocks/packs/live-brand.tsx`, applied for every block in `composePacks`). The company logo wins over the app
+  logo, a landing page's own Branding wins over both, and the logo saved inside the page is only the fallback when Identity has none.
+  `applyIdentity` (whole-page overlay) uses the same `brandProps`. The list of these blocks lives in `apply-identity.ts`; the backend
+  seeder keeps a copy (`website-seed-content.js`) and a test fails if the two differ.
+- **Sample copy** that names the company ("DemoLogo was founded...", sample FAQ and team rows) uses the Identity company name:
+  seeds call `shared/brand-name.js`, and `applyIdentity` swaps the placeholder word in default block text at render.
+- Image links saved inside page data are presigned and expire, so they are never trusted over Identity.
