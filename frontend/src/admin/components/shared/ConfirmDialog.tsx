@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -16,6 +17,10 @@ interface ConfirmDialogProps {
   title: string
   description: string
   confirmLabel?: string
+  /** Extra content under the description (e.g. a dependency preview). */
+  children?: ReactNode
+  /** Keeps the confirm button off, e.g. while a preview loads or when the action is blocked. */
+  confirmDisabled?: boolean
   isLoading?: boolean
   variant?: 'destructive' | 'warning'
 }
@@ -27,6 +32,8 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel = 'Delete',
+  children,
+  confirmDisabled = false,
   isLoading = false,
   variant = 'destructive',
 }: ConfirmDialogProps) {
@@ -37,6 +44,7 @@ export function ConfirmDialog({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
+        {children}
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Cancel
@@ -44,7 +52,7 @@ export function ConfirmDialog({
           <Button
             variant={variant === 'destructive' ? 'destructive' : 'outline'}
             onClick={onConfirm}
-            disabled={isLoading}
+            disabled={isLoading || confirmDisabled}
           >
             {isLoading && <LoadingSpinner size="sm" />}
             {confirmLabel}

@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "\"Our Work\" showcase categories shown in the homepage's See Our Work section",
   "core": false,
+  "group": "cms",
   "visibleInCatalog": false,
   "apiPrefix": "/api/work",
   "permissions": [

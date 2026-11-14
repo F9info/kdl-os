@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "FAQ module",
   "core": false,
+  "group": "cms",
   "visibleInCatalog": false,
   "apiPrefix": "/api/faq",
   "permissions": [

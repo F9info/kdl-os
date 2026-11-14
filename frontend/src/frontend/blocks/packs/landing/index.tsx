@@ -3,6 +3,7 @@ import type { Config } from '@puckeditor/core'
 import type { ComponentPack } from '../types'
 import { imageField } from '../image-field'
 import { ContactFormBlock } from '../general/contact-form'
+import { FormDesign, HeaderDesign } from './header-form-designs'
 import { safeHref } from '@/frontend/lib/safe-href'
 import { useIdentity } from '@/hooks/useIdentity'
 import { FONT_OPTIONS, type FontPair } from './fonts'
@@ -115,9 +116,10 @@ type LandingProps = {
   LandingContact: ContactProps & { variant?: Variant }
   LandingNewsletter: NewsletterProps & { variant?: Variant }
   LandingBlog: BlogProps & { variant?: Variant }
-  LandingHeader: Common & { links: string; ctaLabel: string; ctaHref: string }
+  LandingHeader: Common & { variant?: Variant; links: string; ctaLabel: string; ctaHref: string }
   LandingFooter: Common & { variant?: Variant; links: string; note: string }
   LandingForm: Common & {
+    variant?: Variant
     eyebrow: string
     title: string
     subtitle: string
@@ -878,6 +880,43 @@ function CtaBlock(props: LandingProps['LandingCta']) {
 
 function FormBlock(props: LandingProps['LandingForm'] & { readOnly: boolean; preview: boolean }) {
   const { p, f } = look(props)
+  const body = props.preview ? (
+    // "View template": the form does not exist yet, so show what it will look like.
+    <div id={props.anchor || undefined} className="mx-auto max-w-xl px-6 py-12">
+      <div className="space-y-4 rounded-xl border border-divider bg-card p-6">
+        {['Name *', 'Email *', 'Message'].map((label) => (
+          <div key={label}>
+            <div className="mb-1 text-sm font-medium text-title">{label}</div>
+            <div
+              className={`w-full rounded-md border border-border bg-background px-3 ${label === 'Message' ? 'h-24' : 'h-10'}`}
+            />
+          </div>
+        ))}
+        <div className="inline-flex rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+          Send
+        </div>
+      </div>
+    </div>
+  ) : (
+    <ContactFormBlock
+      formSlug={props.formSlug}
+      anchor={props.anchor}
+      title=""
+      readOnly={props.readOnly}
+    />
+  )
+  if (props.variant && props.variant !== '1')
+    return (
+      <FormDesign
+        variant={props.variant}
+        palette={props.palette}
+        font={props.font}
+        eyebrow={props.eyebrow}
+        title={props.title}
+        subtitle={props.subtitle}
+        form={body}
+      />
+    )
   return (
     <section
       className={section}
@@ -900,31 +939,7 @@ function FormBlock(props: LandingProps['LandingForm'] & { readOnly: boolean; pre
           f={f}
           light={p.dark}
         />
-        {props.preview ? (
-          // "View template": the form does not exist yet, so show what it will look like.
-          <div id={props.anchor || undefined} className="mx-auto max-w-xl px-6 py-12">
-            <div className="space-y-4 rounded-xl border border-divider bg-card p-6">
-              {['Name *', 'Email *', 'Message'].map((label) => (
-                <div key={label}>
-                  <div className="mb-1 text-sm font-medium text-title">{label}</div>
-                  <div
-                    className={`w-full rounded-md border border-border bg-background px-3 ${label === 'Message' ? 'h-24' : 'h-10'}`}
-                  />
-                </div>
-              ))}
-              <div className="inline-flex rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
-                Send
-              </div>
-            </div>
-          </div>
-        ) : (
-          <ContactFormBlock
-            formSlug={props.formSlug}
-            anchor={props.anchor}
-            title=""
-            readOnly={props.readOnly}
-          />
-        )}
+        {body}
       </div>
     </section>
   )
@@ -946,6 +961,15 @@ function HeaderBlock(props: LandingProps['LandingHeader'] & { metaIdentity?: Ide
   const logo = get('company_logo_light') || get('logo_light')
   const phone = get('contact_phone')
   const links = rows(props.links, 2)
+  if (props.variant && props.variant !== '1')
+    return (
+      <HeaderDesign
+        variant={props.variant}
+        palette={props.palette}
+        font={props.font}
+        data={{ name, logo, phone, links, ctaLabel: props.ctaLabel, ctaHref: props.ctaHref }}
+      />
+    )
   return (
     <header
       style={{ fontFamily: f.body }}
@@ -1649,12 +1673,14 @@ const typedComponents: Config<LandingProps>['components'] = {
   LandingHeader: {
     label: 'Landing header',
     fields: {
+      variant: designField(),
       ...styleFields,
       links: { type: 'textarea' },
       ctaLabel: { type: 'text' },
       ctaHref: { type: 'text' },
     },
     defaultProps: {
+      variant: '1',
       palette: 'brand',
       font: 'bricolage',
       links: '',
@@ -1697,6 +1723,7 @@ const typedComponents: Config<LandingProps>['components'] = {
   LandingForm: {
     label: 'Landing form',
     fields: {
+      variant: designField(),
       ...styleFields,
       eyebrow: { type: 'text' },
       title: { type: 'text' },
@@ -1705,6 +1732,7 @@ const typedComponents: Config<LandingProps>['components'] = {
       anchor: { type: 'text' },
     },
     defaultProps: {
+      variant: '1',
       palette: 'sunset',
       font: 'bricolage',
       eyebrow: 'Get in touch',
@@ -1780,11 +1808,18 @@ const ITEMS_LABELS: Record<string, string> = {
   LandingBlog: 'Posts (title | date | excerpt | photo address | link, one per line)',
 }
 
+// Sections a header or footer link can jump to. Contact, Newsletter and Form have their own anchor field;
+// the header and footer are the navigation itself.
+const NO_GENERIC_ANCHOR = new Set(['LandingHeader', 'LandingFooter'])
+
 function withLabels(components: NonNullable<Config['components']>) {
   const out: NonNullable<Config['components']> = {}
   for (const [key, def] of Object.entries(components)) {
+    const ownAnchor = 'anchor' in (def.fields ?? {})
+    const generic = !ownAnchor && !NO_GENERIC_ANCHOR.has(key)
+    const allFields = generic ? { ...def.fields, anchor: { type: 'text' } } : def.fields
     const fields = Object.fromEntries(
-      Object.entries(def.fields ?? {}).map(([name, field]) => [
+      Object.entries(allFields ?? {}).map(([name, field]) => [
         name,
         {
           ...field,
@@ -1794,15 +1829,21 @@ function withLabels(components: NonNullable<Config['components']>) {
     )
     // Every block sits in BrandScope so the "brand" colour set can read Identity's colours.
     const Inner = def.render as (props: Record<string, unknown>) => ReactNode
-    const render = (props: Record<string, unknown>) => (
-      <BrandScope
-        metaIdentity={
-          (props.puck as { metadata?: { identity?: IdentityMap } } | undefined)?.metadata?.identity
-        }
-      >
-        <Inner {...props} />
-      </BrandScope>
-    )
+    const render = (props: Record<string, unknown>) => {
+      const anchor = generic && typeof props.anchor === 'string' ? props.anchor.trim() : ''
+      const body = <Inner {...props} />
+      return (
+        <BrandScope
+          metaIdentity={
+            (props.puck as { metadata?: { identity?: IdentityMap } } | undefined)?.metadata
+              ?.identity
+          }
+        >
+          {/* A link like #pricing lands here. No wrapper at all when the block has no anchor. */}
+          {anchor ? <div id={anchor}>{body}</div> : body}
+        </BrandScope>
+      )
+    }
     out[key] = { ...def, fields, render } as (typeof out)[string]
   }
   return out
@@ -1855,6 +1896,8 @@ export const landing: ComponentPack = {
     LandingContact: ['1', '2', '3', '4'],
     LandingNewsletter: ['1', '2', '3', '4'],
     LandingBlog: ['1', '2', '3', '4'],
+    LandingHeader: ['1', '2', '3', '4'],
+    LandingForm: ['1', '2', '3', '4'],
     LandingFooter: ['1', '2', '3', '4'],
   },
 }

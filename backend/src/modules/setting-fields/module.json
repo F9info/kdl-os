@@ -4,9 +4,12 @@
   "version": "1.0.0",
   "description": "Dynamic admin-defined setting field definitions",
   "core": true,
+  "group": "core",
   "visibleInCatalog": false,
   "apiPrefix": "/api/setting-fields",
-  "permissions": ["setting-fields"],
+  "permissions": [
+    "setting-fields"
+  ],
   "nav": [
     {
       "label": "Custom Fields",
@@ -19,7 +22,10 @@
       "groupOrder": 30
     }
   ],
-  "dependsOn": ["types", "settings"],
+  "dependsOn": [
+    "types",
+    "settings"
+  ],
   "queues": [],
   "env": []
 }

@@ -11,6 +11,7 @@ vi.mock('../../../config/database.js', () => ({
     builderPage: { findMany: (a) => findMany(a) },
     menu: { findMany: async () => [] },
     detailPageTemplate: { findMany: async () => [] },
+    siteLayout: { findUnique: async () => ({ top_header: {}, header: { enabled: true, variant: '3' }, footer: {} }) },
   },
 }));
 vi.mock('../../identity/company-info.js', () => ({ getCompanyInfo: async () => null }));
@@ -33,6 +34,12 @@ describe('static export content (T14)', () => {
     expect(findMany.mock.calls.at(-1)[0].where).not.toHaveProperty('OR');
     await collectSiteInput('p1');
     expect(findMany.mock.calls.at(-1)[0].where).not.toHaveProperty('status');
+  });
+
+  it('carries the saved header/footer layout into site.json so every page can apply it', async () => {
+    const input = await collectSiteInput('p1');
+    expect(input.layout).toEqual({ header: { enabled: true, variant: '3' } });
+    expect(buildSiteModel(input).site.layout).toEqual({ header: { enabled: true, variant: '3' } });
   });
 
   it('an export drops menu links to pages that are not in it; the live model keeps them', () => {

@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Aggregates registered Details Page types (Sectors, Work, ...) for the Web App wizard",
   "core": true,
+  "group": "core",
   "visibleInCatalog": false,
   "apiPrefix": "/api/detail-page-types",
   "permissions": [],

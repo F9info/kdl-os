@@ -12,6 +12,11 @@ export const slugParamSchema = z.object({
   }),
 });
 
+export const planQuerySchema = z.object({
+  params: slugParamSchema.shape.params,
+  query: z.object({ action: z.enum(['install', 'enable', 'disable']) }),
+});
+
 export const resolveConflictsSchema = z.object({
   params: z.object({
     slug: z.string().regex(/^[a-z0-9-]+$/, 'slug must contain only lowercase letters, digits, and hyphens'),

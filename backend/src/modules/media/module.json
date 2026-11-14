@@ -4,17 +4,36 @@
   "version": "1.0.0",
   "description": "File upload and media library",
   "core": true,
+  "group": "core",
   "apiPrefix": "/api/media",
   "permissions": [
     {
       "name": "media",
       "actions": [
-        "view", "edit", "publish", "approve", "share",
-        "upload", "download", "preview", "edit-image", "share-link",
-        "folders", "collections", "tags", "favorites",
-        "metadata-edit", "custom-fields", "visibility-toggle",
-        "soft-delete", "trash-view", "restore", "purge",
-        "cloud-import", "ai-providers", "capture"
+        "view",
+        "edit",
+        "publish",
+        "approve",
+        "share",
+        "upload",
+        "download",
+        "preview",
+        "edit-image",
+        "share-link",
+        "folders",
+        "collections",
+        "tags",
+        "favorites",
+        "metadata-edit",
+        "custom-fields",
+        "visibility-toggle",
+        "soft-delete",
+        "trash-view",
+        "restore",
+        "purge",
+        "cloud-import",
+        "ai-providers",
+        "capture"
       ]
     }
   ],
@@ -48,5 +67,10 @@
   ],
   "dependsOn": [],
   "queues": [],
-  "env": ["MINIO_ENDPOINT", "MINIO_ACCESS_KEY", "MINIO_SECRET_KEY", "MINIO_BUCKET"]
+  "env": [
+    "MINIO_ENDPOINT",
+    "MINIO_ACCESS_KEY",
+    "MINIO_SECRET_KEY",
+    "MINIO_BUCKET"
+  ]
 }

@@ -9,28 +9,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { prisma } from '../../../config/database.js';
 import { slugify } from '../../../shared/utils/slug.js';
+import { getSiteLayout } from '../../projects/layout.js';
+import { PAGE_KEY_RESERVED } from '../../../shared/reserved-segments.js';
 import { getCompanyInfo } from '../../identity/company-info.js';
 
 const TEMPLATES_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'templates');
 const MARKER = '.kdl-site.json';
-// Paths owned by the admin app / nginx (infra/nginx/nginx.conf) or the site shell.
-const RESERVED = new Set([
-  'api',
-  'ai',
-  '_next',
-  'static',
-  'site-assets',
-  'seed',
-  'vendor',
-  'p',
-  'login',
-  'register',
-  'forgot-password',
-  'reset-password',
-  'change-password',
-  'admin',
-  'share',
-]);
+// Paths owned by the admin app / nginx or the site shell: one shared list (shared/reserved-segments.js).
+const RESERVED = PAGE_KEY_RESERVED;
 
 export const sitesDir = () =>
   path.resolve(process.env.SITES_DIR || path.join(process.cwd(), '..', 'frontend', 'projects'));
@@ -47,6 +33,10 @@ const keyOf = (slug) => /^.+?-c[a-z0-9]{24}-(.+)$/.exec(slug ?? '')?.[1];
 export function assignRoutes(pages) {
   const used = new Set(['']);
   let homeTaken = false;
+  // Several pages can be titled "Home" (old drafts included). The front page is the published one;
+  // a draft only wins when no Home is published.
+  const homes = pages.filter((p) => !p.root && !p.landing && isHome(p));
+  const homeId = (homes.find((p) => p.status === 'PUBLISHED') ?? homes[0])?.id;
   return pages.map((p) => {
     if (p.root) return { ...p, route: '' }; // a landing page exported on its own is the site's front page
     if (p.landing) {
@@ -58,7 +48,7 @@ export function assignRoutes(pages) {
       used.add(route);
       return { ...p, route };
     }
-    if (isHome(p) && !homeTaken) {
+    if (p.id === homeId && !homeTaken) {
       homeTaken = true;
       return { ...p, route: '' };
     }
@@ -95,7 +85,7 @@ const HEX = /^#[0-9a-fA-F]{3,8}$/;
 const FONT = /^[A-Za-z0-9 _-]{1,60}$/;
 const safe = (re, v, fallback) => (typeof v === 'string' && re.test(v.trim()) ? v.trim() : fallback);
 
-export function buildSiteModel({ project, kit, company, pages, menus }, { exportOnly = false } = {}) {
+export function buildSiteModel({ project, kit, company, pages, menus, layout = null }, { exportOnly = false } = {}) {
   const routed = assignRoutes(pages);
   const byId = new Map(routed.map((p) => [p.id, p.route]));
   const bySlug = new Map(routed.map((p) => [p.slug, p.route]));
@@ -138,6 +128,7 @@ export function buildSiteModel({ project, kit, company, pages, menus }, { export
       slug: project.slug,
       name: company?.company_name || project.name,
       company: company ?? {},
+      layout, // saved header/footer layout: SitePage overlays it on every page
       colors: {
         primary: safe(HEX, kit?.palette?.colors?.primary?.hex, '#1d4ed8'),
         secondary: safe(HEX, kit?.palette?.colors?.secondary?.hex, '#0f172a'),
@@ -173,7 +164,7 @@ export function buildSiteModel({ project, kit, company, pages, menus }, { export
 export async function collectSiteInput(projectId, { publishedOnly = false } = {}) {
   const project = await prisma.project.findFirst({ where: { id: projectId, deleted_at: null } });
   if (!project) throw Object.assign(new Error('Project not found'), { status: 404 });
-  const [kit, company, rows, menus] = await Promise.all([
+  const [kit, company, rows, menus, layout] = await Promise.all([
     prisma.brandKit.findUnique({ where: { project_id: projectId } }),
     getCompanyInfo(projectId),
     prisma.builderPage.findMany({
@@ -189,6 +180,7 @@ export async function collectSiteInput(projectId, { publishedOnly = false } = {}
       where: { project_id: projectId, key: { in: ['header', 'footer'] } },
       include: { items: true },
     }),
+    getSiteLayout(projectId),
   ]);
   // Detail pages read their layout from the shared template (see page-builder getPage).
   const tplIds = [...new Set(rows.map((r) => r.template_id).filter(Boolean))];
@@ -205,7 +197,7 @@ export async function collectSiteInput(projectId, { publishedOnly = false } = {}
     data: (r.template_id && tplData.get(r.template_id)) || r.data,
     ...(publishedOnly && r.site?.type === 'LANDING' && { landing: true, siteId: r.site_id, identityOverrides: r.site.identity_overrides ?? null }),
   }));
-  return { project, kit, company, pages, menus };
+  return { project, kit, company, pages, menus, layout };
 }
 
 // ─── fs ──────────────────────────────────────────────────────────────────────
@@ -237,6 +229,8 @@ const ROOT_FILES = [
   'src/frontend/lib/header-overlay.ts',
   'src/frontend/lib/static-site.ts',
   'src/frontend/lib/apply-identity.ts',
+  'src/frontend/membership/siteChrome.ts',
+  'src/lib/apply-site-layout.ts',
   'src/app/(site)/work/[slug]/page.tsx',
   'src/app/(site)/catalog/[slug]/page.tsx',
   'src/app/(site)/sectors/[slug]/page.tsx',

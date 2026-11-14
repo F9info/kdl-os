@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import SitePage from '@/components/SitePage'
-import { getPage, listRoutes, seoMetadata } from '@/lib/content'
+import { getPage, getShared, listRoutes, seoMetadata } from '@/lib/content'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,5 +20,5 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 export default async function Page({ params }: Params) {
   const page = getPage((await params).prefix)
   if (!page) notFound()
-  return <SitePage data={page.data} title={page.title} projectId={page.projectId} identity={page.identity} />
+  return <SitePage data={page.data} title={page.title} projectId={page.projectId} identity={page.identity} shared={getShared()} />
 }

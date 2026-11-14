@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Starter templates and the guided setup that builds a site from your brand, colours and pages.",
   "core": false,
+  "group": "studio",
   "apiPrefix": "/api/template-engine",
   "permissions": [
     {

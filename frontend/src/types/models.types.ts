@@ -45,6 +45,32 @@ export interface Module {
   settings: Record<string, unknown> | null
   conflictsWith?: string[]
   conflicts?: ModuleConflict[]
+  /** Product area from the manifest (core, cms, membership, studio, platform, ...). */
+  group?: string
+  /** Slugs this module needs; installing or enabling it pulls them in first. */
+  dependsOn?: string[]
+}
+
+export type ModulePlanAction = 'install' | 'enable' | 'disable'
+
+/** What installing, enabling or disabling a module would do (GET /modules/:slug/plan). Read-only preview. */
+export interface ModulePlan {
+  slug: string
+  name: string
+  group: string
+  core: boolean
+  description: string | null
+  action: ModulePlanAction
+  status: ModuleStatus
+  /** Direct dependencies with their current status. */
+  dependsOn: Array<{ slug: string; name: string; group: string; status: ModuleStatus }>
+  /** Enabled modules that depend on this one. */
+  requiredBy: Array<{ slug: string; name: string; group: string }>
+  /** In run order: dependencies first, the module itself last. */
+  steps: Array<{ slug: string; name: string; group: string; do: string; dependency: boolean }>
+  conflicts: Array<{ slug: string; name: string }>
+  blockers: Array<{ type: string; message: string; modules?: string[] }>
+  canProceed: boolean
 }
 
 export interface EnabledModule {

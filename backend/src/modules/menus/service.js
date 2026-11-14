@@ -114,6 +114,33 @@ async function expandDetailItems(projectId, items) {
   return out;
 }
 
+// A link to a page that is no longer live (unpublished or deleted) must not reach visitors: it would 404.
+// Applies to page links (page_id, or a stored /p/<slug>); headings, external links and the detail entries
+// expanded above (their id holds ':') are left alone. Children of a dropped item go with it.
+async function dropUnpublishedLinks(projectId, items) {
+  const bySlug = (i) => (!i.page_id && i.url?.startsWith('/p/') ? i.url.slice(3) : null);
+  const ids = [...new Set(items.filter((i) => i.page_id && !String(i.id).includes(':')).map((i) => i.page_id))];
+  const slugs = [...new Set(items.map(bySlug).filter(Boolean))];
+  if (!projectId || (!ids.length && !slugs.length)) return items;
+  const pages = await prisma.builderPage.findMany({
+    where: { project_id: projectId, OR: [...(ids.length ? [{ id: { in: ids } }] : []), ...(slugs.length ? [{ slug: { in: slugs } }] : [])] },
+    select: { id: true, slug: true, status: true, deleted_at: true, template_id: true },
+  });
+  const dead = (p) => p.template_id == null && (p.deleted_at != null || p.status !== 'PUBLISHED');
+  const deadIds = new Set(pages.filter(dead).map((p) => p.id));
+  const deadSlugs = new Set(pages.filter(dead).map((p) => p.slug));
+  const gone = new Set(
+    items.filter((i) => !String(i.id).includes(':') && (deadIds.has(i.page_id) || deadSlugs.has(bySlug(i)))).map((i) => i.id)
+  );
+  if (!gone.size) return items;
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const i of items) if (!gone.has(i.id) && i.parent_id && gone.has(i.parent_id)) (gone.add(i.id), (grew = true));
+  }
+  return items.filter((i) => !gone.has(i.id));
+}
+
 export const getPublicMenu = async (projectId, key) => {
   // Footer set to "same as header": serve the header menu under the footer key.
   if (key === 'footer' && (await getFooterSameAsHeader(prisma))) key = 'header';
@@ -124,7 +151,8 @@ export const getPublicMenu = async (projectId, key) => {
     include: { items: { where: { is_active: true } } },
   });
   if (!menu) return null;
-  return { ...menu, items: buildTree(await withCleanUrls(menu.project_id, await expandDetailItems(menu.project_id, menu.items))) };
+  const live = await dropUnpublishedLinks(menu.project_id, await expandDetailItems(menu.project_id, menu.items));
+  return { ...menu, items: buildTree(await withCleanUrls(menu.project_id, live)) };
 };
 
 export const ensureMenu = async ({ project_id, key, name }) => {

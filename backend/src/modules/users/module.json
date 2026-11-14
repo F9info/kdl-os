@@ -4,8 +4,11 @@
   "version": "1.0.0",
   "description": "User accounts, profile management, and soft-delete",
   "core": true,
+  "group": "core",
   "apiPrefix": "/api/users",
-  "permissions": ["users"],
+  "permissions": [
+    "users"
+  ],
   "nav": [
     {
       "label": "Users",

@@ -4,8 +4,13 @@
   "version": "1.0.0",
   "description": "RBAC roles, permissions matrix, and activity log",
   "core": true,
+  "group": "core",
   "apiPrefix": "/api/user-management",
-  "permissions": ["roles", "permissions", "activity-log"],
+  "permissions": [
+    "roles",
+    "permissions",
+    "activity-log"
+  ],
   "nav": [
     {
       "label": "Roles",

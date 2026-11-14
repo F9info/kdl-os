@@ -6,7 +6,7 @@ vi.mock('../../config/database.js', () => ({ prisma: {} }));
 
 const { validateContent } = await import('../page-builder/validate.js');
 const { getSectionSchemas } = await import('../../shared/section-schemas.js');
-const { TEMPLATE_KEYS, LANDING_TEMPLATES, buildLandingData, formSlugFor } = await import('./templates.js');
+const { TEMPLATE_KEYS, LANDING_TEMPLATES, buildLandingData, formSlugFor, resolveSectionLinks } = await import('./templates.js');
 
 // A template is the first thing a new landing page shows, so it must pass the same publish checks
 // as any page the user builds: only real sections, valid choices, links that go somewhere.
@@ -49,7 +49,7 @@ describe.each(TEMPLATE_KEYS)('header of "%s"', (key) => {
 
   it('is the Landing header, with only its menu links and button typed in', () => {
     expect(first.type).toBe('LandingHeader');
-    expect(Object.keys(first.props).sort()).toEqual(['ctaHref', 'ctaLabel', 'font', 'id', 'links', 'palette']);
+    expect(Object.keys(first.props).sort()).toEqual(['ctaHref', 'ctaLabel', 'font', 'id', 'links', 'palette', 'variant']);
   });
 });
 
@@ -62,8 +62,29 @@ describe.each(withBody)('footer of "%s"', (key) => {
   });
 
   it('holds no company details: name, logo, contact and social links come from Identity', () => {
-    expect(Object.keys(last.props).sort()).toEqual(['font', 'id', 'links', 'note', 'palette']);
+    expect(Object.keys(last.props).sort()).toEqual(['font', 'id', 'links', 'note', 'palette', 'variant']);
     expect(JSON.stringify(last.props)).not.toMatch(/@|tel:|facebook|instagram|linkedin|logo/i);
+  });
+});
+
+describe('the four demo landing pages look different', () => {
+  const DEMO = ['business', 'saas', 'agency', 'startup'];
+  const blocks = (type) =>
+    DEMO.map((k) => buildLandingData(k, 'x', 'X').content.find((b) => b.type === type).props.variant);
+
+  it('each has its own header design and its own footer design', () => {
+    expect(new Set(blocks('LandingHeader')).size).toBe(4);
+    expect(new Set(blocks('LandingFooter')).size).toBe(4);
+  });
+
+  it('only uses designs the blocks offer (1 to 4)', () => {
+    for (const v of [...blocks('LandingHeader'), ...blocks('LandingFooter')]) expect(['1', '2', '3', '4']).toContain(v);
+  });
+
+  it('the three pages with a form block use different form designs', () => {
+    const forms = DEMO.flatMap((k) => buildLandingData(k, 'x', 'X').content.filter((b) => b.type === 'LandingForm'));
+    expect(forms).toHaveLength(3);
+    expect(new Set(forms.map((f) => f.props.variant)).size).toBe(3);
   });
 });
 
@@ -101,5 +122,43 @@ describe('template pictures', () => {
     const files = [...new Set(referenced(key))];
     expect(files.length).toBeGreaterThan(0);
     for (const f of files) expect(fs.existsSync(path.join(publicDir, f)), f).toBe(true);
+  });
+});
+
+describe('header and footer links are resolved against the sections the page has', () => {
+  const DEMO = ['business', 'saas', 'agency', 'startup'];
+  const chrome = (content) => content.filter((b) => ['LandingHeader', 'LandingFooter'].includes(b.type));
+  const links = (b) => b.props.links.split('\n').filter(Boolean).map((l) => l.split('|'));
+
+  it.each(DEMO)('"%s": every link lands on an anchor that exists on the page, and none is a dead "#"', (key) => {
+    const content = buildLandingData(key, 'x', 'X').content;
+    const anchors = new Set(content.map((b) => b.props.anchor).filter(Boolean));
+    for (const b of chrome(content)) {
+      for (const [label, href] of links(b)) {
+        if (label === 'Back to top') continue;
+        expect(href, `${key} ${b.type} "${label}"`).toMatch(/^#.+/);
+        expect(anchors.has(href.slice(1)), `${key} ${b.type} "${label}" -> ${href}`).toBe(true);
+      }
+    }
+  });
+
+  it('the header and footer of one page share the anchor of the same section', () => {
+    const content = buildLandingData('business', 'x', 'X').content;
+    const [header, footer] = chrome(content);
+    const h = Object.fromEntries(links(header));
+    const f = Object.fromEntries(links(footer));
+    expect(h.About).toBe(f.About);
+    expect(h.Services).toBe(f.Services);
+  });
+
+  it('drops a link whose section is not on the page, keeps plain links as written, and keeps an existing anchor', () => {
+    const blocks = [
+      { type: 'LandingHeader', props: { links: 'Pricing|@LandingPricing\nHome|/\nTalk|@LandingContact,LandingForm' } },
+      { type: 'LandingForm', props: { anchor: 'contact' } },
+      { type: 'LandingFooter', props: { links: 'Top|#' } },
+    ];
+    const out = resolveSectionLinks(blocks);
+    expect(out[0].props.links).toBe('Home|/\nTalk|#contact');
+    expect(out[2].props.links).toBe('Top|#');
   });
 });

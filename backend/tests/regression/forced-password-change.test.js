@@ -15,6 +15,9 @@ vi.mock('../../src/config/database.js', () => ({
   },
 }));
 
+// These tests are about sign-in, not installation: the install gate fails closed when the status
+// cannot be read, so state plainly that the install is complete.
+vi.mock('../../src/shared/install/status.js', () => ({ isInstalled: async () => true }));
 vi.mock('../../src/config/redis.js', () => ({
   redis: { get: vi.fn().mockResolvedValue(null), set: vi.fn(), del: vi.fn() },
 }));

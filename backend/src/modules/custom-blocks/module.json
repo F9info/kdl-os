@@ -4,11 +4,14 @@
   "version": "1.0.0",
   "description": "Project-scoped reusable custom block templates for the page builder",
   "core": true,
+  "group": "core",
   "visibleInCatalog": false,
   "apiPrefix": "/api/custom-blocks",
   "permissions": [],
   "nav": [],
-  "dependsOn": ["page-builder"],
+  "dependsOn": [
+    "page-builder"
+  ],
   "conflictsWith": [],
   "queues": [],
   "env": []

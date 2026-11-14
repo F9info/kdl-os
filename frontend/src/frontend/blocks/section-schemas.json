@@ -7575,6 +7575,10 @@
   "LandingBenefits": {
     "label": "Landing benefits",
     "fields": {
+      "anchor": {
+        "kind": "text",
+        "tab": "content"
+      },
       "columns": {
         "kind": "select",
         "tab": "content",
@@ -7669,6 +7673,10 @@
   "LandingBlog": {
     "label": "Landing blog",
     "fields": {
+      "anchor": {
+        "kind": "text",
+        "tab": "content"
+      },
       "eyebrow": {
         "kind": "text",
         "tab": "content"
@@ -7746,6 +7754,10 @@
   "LandingClients": {
     "label": "Landing clients",
     "fields": {
+      "anchor": {
+        "kind": "text",
+        "tab": "content"
+      },
       "eyebrow": {
         "kind": "text",
         "tab": "content"
@@ -7916,6 +7928,10 @@
   "LandingCta": {
     "label": "Landing call to action",
     "fields": {
+      "anchor": {
+        "kind": "text",
+        "tab": "content"
+      },
       "buttonHref": {
         "kind": "link",
         "tab": "content"
@@ -7997,6 +8013,10 @@
   "LandingFaq": {
     "label": "Landing questions",
     "fields": {
+      "anchor": {
+        "kind": "text",
+        "tab": "content"
+      },
       "eyebrow": {
         "kind": "text",
         "tab": "content"
@@ -8204,12 +8224,26 @@
       "title": {
         "kind": "text",
         "tab": "content"
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
       }
     }
   },
   "LandingGallery": {
     "label": "Landing gallery",
     "fields": {
+      "anchor": {
+        "kind": "text",
+        "tab": "content"
+      },
       "eyebrow": {
         "kind": "text",
         "tab": "content"
@@ -8344,12 +8378,26 @@
           "blaze",
           "brand"
         ]
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
       }
     }
   },
   "LandingHero": {
     "label": "Landing hero",
     "fields": {
+      "anchor": {
+        "kind": "text",
+        "tab": "content"
+      },
       "avatars": {
         "kind": "textarea",
         "tab": "content"
@@ -8552,6 +8600,10 @@
   "LandingPeople": {
     "label": "Landing people",
     "fields": {
+      "anchor": {
+        "kind": "text",
+        "tab": "content"
+      },
       "columns": {
         "kind": "select",
         "tab": "content",
@@ -8638,6 +8690,10 @@
   "LandingPortfolio": {
     "label": "Landing portfolio",
     "fields": {
+      "anchor": {
+        "kind": "text",
+        "tab": "content"
+      },
       "eyebrow": {
         "kind": "text",
         "tab": "content"
@@ -8715,6 +8771,10 @@
   "LandingPricing": {
     "label": "Landing pricing",
     "fields": {
+      "anchor": {
+        "kind": "text",
+        "tab": "content"
+      },
       "eyebrow": {
         "kind": "text",
         "tab": "content"
@@ -8792,6 +8852,10 @@
   "LandingShowcase": {
     "label": "Landing picture and points",
     "fields": {
+      "anchor": {
+        "kind": "text",
+        "tab": "content"
+      },
       "bullets": {
         "kind": "textarea",
         "tab": "content"
@@ -8889,6 +8953,10 @@
   "LandingStats": {
     "label": "Landing numbers",
     "fields": {
+      "anchor": {
+        "kind": "text",
+        "tab": "content"
+      },
       "font": {
         "kind": "select",
         "tab": "style",
@@ -8954,6 +9022,10 @@
   "LandingSteps": {
     "label": "Landing steps or agenda",
     "fields": {
+      "anchor": {
+        "kind": "text",
+        "tab": "content"
+      },
       "eyebrow": {
         "kind": "text",
         "tab": "content"
@@ -9039,6 +9111,10 @@
   "LandingTestimonials": {
     "label": "Landing quotes",
     "fields": {
+      "anchor": {
+        "kind": "text",
+        "tab": "content"
+      },
       "eyebrow": {
         "kind": "text",
         "tab": "content"

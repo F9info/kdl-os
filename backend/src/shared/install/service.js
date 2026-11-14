@@ -7,6 +7,10 @@ import { installModule, enableModule } from '../../modules/modules/service.js';
 import { updateIdentity, getIdentity, getAppConfig } from '../../modules/identity/service.js';
 import { APP_TYPES, APP_TYPE_KEYS, hasFrontend, modulesFor } from './app-types.js';
 import { K, STALE_RUN_MS, getSetting, setSetting, isInstalled } from './status.js';
+import { markStep, logInstall, readSteps } from './progress.js';
+import { HASH_KEY } from './setup-token.js';
+import { adminDraft, coreStatus } from './core.js';
+import { EXTRA_KEY, DEMO_CHOICE, readSelection, hasWebsite } from './modules.js';
 
 const fail = (message, status = 400, details) => Object.assign(new Error(message), { status, details });
 
@@ -60,10 +64,11 @@ export async function typeCatalog() {
 }
 
 /** Install (if missing) and enable every module the type needs, through the normal module lifecycle. */
-export async function applyType(type, actorId = null) {
+export async function applyType(type, actorId = null, extra = []) {
   const { modules } = await previewType(type);
   const done = [];
-  for (const { slug } of modules) {
+  // The type's modules first, then the extras the admin added on the Modules step (their dependencies cascade).
+  for (const slug of [...new Set([...modules.map((m) => m.slug), ...extra])]) {
     let row = await prisma.module.findUnique({ where: { slug } });
     if (!row) await installModule(slug, actorId);
     row = await prisma.module.findUnique({ where: { slug } });
@@ -78,11 +83,14 @@ export async function applyType(type, actorId = null) {
 export async function getState() {
   const installed = await isInstalled();
   if (installed) return { installed: true };
-  const [status, step, appType, identity] = await Promise.all([
+  const [status, step, appType, identity, steps, admin, core] = await Promise.all([
     getSetting(K.status),
     getSetting(K.step),
     getSetting(K.appType),
     getIdentity(),
+    readSteps(),
+    adminDraft(),
+    coreStatus(),
   ]);
   const cfg = identity.company_name ? await getAppConfig() : {};
   return {
@@ -90,6 +98,9 @@ export async function getState() {
     status: status === 'running' ? 'running' : 'pending',
     step: Number(step ?? 0),
     app_type: appType,
+    steps,
+    admin,
+    core,
     company: {
       name: identity.company_name ?? '',
       phone: identity.contact_phone ?? '',
@@ -126,21 +137,25 @@ export async function saveCompany({ name, phone, email, logo_path }) {
   await updateIdentity(patch);
   await ensureRow();
   if (Number(await getSetting(K.step)) < 1) await setSetting(K.step, 1);
+  await markStep('company', { status: 'done' });
+  await logInstall('company', 'info', `company details saved (${name})`);
   return getState();
 }
+
+export const selectedType = () => getSetting(K.appType);
 
 export async function saveType(type) {
   await assertOpen();
   const preview = await previewType(type);
+  // Extras were picked for the previous type; a different type starts from its own list.
+  if ((await getSetting(K.appType)) !== type) {
+    await prisma.appSetting.deleteMany({ where: { key: { in: [EXTRA_KEY, DEMO_CHOICE] } } });
+  }
   await setSetting(K.appType, type);
   if (Number(await getSetting(K.step)) < 2) await setSetting(K.step, 2);
+  await markStep('type', { status: 'done', app_type: type });
+  await logInstall('type', 'info', `application type: ${type}`);
   return preview;
-}
-
-async function superAdminExists() {
-  return (
-    (await prisma.userRole.count({ where: { role: { slug: 'super-admin' }, user: { deleted_at: null } } })) > 0
-  );
 }
 
 // Launch. One run at a time (compare-and-set on the status row); a crashed run is retried after
@@ -151,8 +166,8 @@ export async function complete() {
   const [identity, type] = await Promise.all([getIdentity(), getSetting(K.appType)]);
   if (!identity.company_name || !identity.logo_light) throw fail('Finish step 1 first: logo and company name are required', 422);
   if (!APP_TYPES[type]) throw fail('Finish step 2 first: choose an application type', 422);
-  if (!(await superAdminExists())) {
-    throw fail('No Super Admin account exists yet. Run the database seed (npm run db:seed), then try again.', 409);
+  if ((await coreStatus()) !== 'done') {
+    throw fail('Finish the Core installation step first: it creates the roles, permissions and your admin account.', 409);
   }
 
   await ensureRow(); // never resets a running install
@@ -163,16 +178,60 @@ export async function complete() {
   });
   if (lock.count === 0) throw fail('Installation is already running', 409);
 
+  await markStep('launch', { status: 'running', error: null });
+  await logInstall('launch', 'info', `launching: ${type}`);
   try {
-    const modules = await applyType(type, null);
+    const { extra, demo } = await readSelection();
+    const modules = await applyType(type, null, extra);
     await setSetting(K.completedAt, new Date().toISOString());
+    await markStep('launch', { status: 'done', modules });
+    await logInstall('launch', 'info', `installation completed (${modules.length} modules)`);
     await setSetting(K.status, 'completed'); // last: everything above succeeded
+    // The setup token has done its job; nothing needs its hash any more.
+    await prisma.appSetting.deleteMany({ where: { key: HASH_KEY } }).catch(() => {});
     await redis.del('identity:raw', 'identity:app-config').catch(() => {});
-    return { installed: true, app_type: type, modules, frontend: hasFrontend(type) };
+    return { installed: true, app_type: type, modules, frontend: hasFrontend(type), summary: await buildSummary(type, modules, extra, demo) };
   } catch (err) {
     await setSetting(K.status, 'pending').catch(() => {});
+    await markStep('launch', { status: 'failed', error: String(err.message).slice(0, 300) }).catch(() => {});
+    await logInstall('launch', 'error', `launch failed: ${err.message}`).catch(() => {});
     throw fail(`Installation stopped: ${err.message}. Nothing was marked complete; try Launch again.`, err.status >= 400 && err.status < 500 ? err.status : 500);
   }
+}
+
+// What the completion screen shows. Paths are relative, so the screen works on any host; they live here
+// so the wizard never hardcodes where the admin or the site is.
+export const ADMIN_PATH = '/admin/dashboard';
+export const LOGIN_PATH = '/login';
+
+async function buildSummary(type, modules, extra, demo) {
+  // Loaded on demand: the CMS seed pulls in the whole starter-site code, which the wizard's other routes do not need.
+  const { DEMO_SUMMARY_KEY } = await import('../../modules/cms/seed.js');
+  const [steps, demoRaw, rows] = await Promise.all([
+    readSteps(),
+    getSetting(DEMO_SUMMARY_KEY),
+    prisma.module.findMany({ where: { slug: { in: modules } }, select: { slug: true, status: true } }),
+  ]);
+  const status = new Map(rows.map((r) => [r.slug, r.status]));
+  let created = null;
+  try {
+    created = demoRaw ? JSON.parse(demoRaw) : null;
+  } catch {
+    created = null;
+  }
+  const website = hasWebsite(type, extra);
+  return {
+    app_type: type,
+    modules: modules.map((slug) => ({ slug, name: loadedManifests.get(slug)?.name ?? slug, status: status.get(slug) ?? 'ENABLED' })),
+    database: steps.database?.status ?? 'unknown',
+    core: steps.core?.status ?? 'unknown',
+    seeded: steps.core?.seeded ?? [],
+    demo: {
+      requested: website ? demo !== false : false,
+      pages: created ? [...(created.website?.created ?? []), ...(created.landing?.created ?? [])].length : 0,
+    },
+    urls: { admin: ADMIN_PATH, login: LOGIN_PATH, site: website ? '/' : null },
+  };
 }
 
 // After login: change the type. A configuration change, never a reinstall: only missing modules

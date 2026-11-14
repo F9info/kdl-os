@@ -56,13 +56,13 @@ const contact = (s, look, props) =>
 const cta = (s, look, props) => block(s, 'LandingCta', 'cta', { ...look, image: '', ...props });
 // The footer holds no company details of its own: name, logo, description, contact and social links
 // are read from Application Identity (Settings > Identity) when the page is shown.
-const footer = (s, look, links) =>
-  block(s, 'LandingFooter', 'footer', { ...brandOf(look), links: links.join('\n'), note: '' });
+const footer = (s, look, links, variant = '1') =>
+  block(s, 'LandingFooter', 'footer', { ...brandOf(look), variant, links: links.join('\n'), note: '' });
 // Header and footer carry the company's own details (logo, name, phone, address, brand colours), all read from
 // Application Identity at render time, so they use the "brand" colour set whatever look the sections have.
 const brandOf = (look) => ({ palette: 'brand', font: look.font });
 const header = (s, look, props = {}) =>
-  block(s, 'LandingHeader', 'header', { ...brandOf(look), links: '', ctaHref: '#contact', ...props });
+  block(s, 'LandingHeader', 'header', { ...brandOf(look), variant: '1', links: '', ctaHref: '#contact', ...props });
 const form = (s, look, props) =>
   block(s, 'LandingForm', 'form', { ...look, formSlug: formSlugFor(s), anchor: 'contact', ...props });
 
@@ -423,7 +423,7 @@ export const LANDING_TEMPLATES = {
     body: (s) => {
       const l = looks('ocean', 'fraunces');
       return [
-        header(s, l, { ctaLabel: 'Contact us' }),
+        header(s, l, { variant: '1', ctaLabel: 'Contact us', links: 'About|@LandingShowcase\nServices|@LandingBenefits\nFAQ|@LandingFaq' }),
         hero(s, l, {
           variant: '1', eyebrow: 'Trusted by 500+ companies', headline: 'Solutions that move your business forward',
           highlight: 'move your business forward',
@@ -457,7 +457,7 @@ export const LANDING_TEMPLATES = {
           items: ['How do we get started?|Send us a message and we will book a free discovery call.', 'How long does a project take?|Most projects run four to twelve weeks, depending on scope.', 'Do you offer support after launch?|Yes. Every project includes 90 days of free support.'],
         }),
         contact(s, l, { variant: '1', eyebrow: 'Contact', title: 'Let us talk about your project', subtitle: 'Leave your details and we will reply within a day.', address: '12 Park Avenue, Your City', phone: '+91 98765 43210', email: 'hello@yourcompany.com', hours: 'Mon to Fri, 9am to 6pm' }),
-        footer(s, l, ['About|#', 'Services|#', 'Contact|#contact']),
+        footer(s, l, ['About|@LandingShowcase', 'Services|@LandingBenefits', 'FAQ|@LandingFaq', 'Contact|@LandingContact'], '1'),
       ];
     },
   },
@@ -469,7 +469,7 @@ export const LANDING_TEMPLATES = {
     body: (s) => {
       const l = looks('violet', 'bricolage');
       return [
-        header(s, l, { ctaLabel: 'Start free trial' }),
+        header(s, l, { variant: '3', ctaLabel: 'Start free trial', links: 'Features|@LandingBenefits\nPricing|@LandingPricing\nFAQ|@LandingFaq' }),
         hero(s, l, {
           variant: '2', eyebrow: 'New: AI reports', headline: 'The easiest way to run your team’s work', highlight: 'run your team’s work',
           subtitle: 'Plan, track and ship in one place. Set up in minutes, loved by teams of every size.',
@@ -507,8 +507,8 @@ export const LANDING_TEMPLATES = {
           items: ['Is there a free plan?|Yes. Starter is free for up to five people.', 'Can I import my data?|Yes. Upload a CSV or connect your old tool.', 'Is my data safe?|Data is encrypted in transit and at rest.'],
         }),
         cta(s, l, { variant: '1', title: 'Ready to get organised?', text: 'Start your 14-day free trial. No card needed.', buttonLabel: 'Start free trial', buttonHref: '#contact' }),
-        form(s, l, { eyebrow: 'Free trial', title: 'Create your workspace', subtitle: 'Leave your email and we will send your trial link.' }),
-        footer(s, l, ['Features|#', 'Pricing|#', 'Start free trial|#contact']),
+        form(s, l, { variant: '3', eyebrow: 'Free trial', title: 'Create your workspace', subtitle: 'Leave your email and we will send your trial link.' }),
+        footer(s, l, ['Features|@LandingBenefits', 'Pricing|@LandingPricing', 'Start free trial|@LandingForm'], '2'),
       ];
     },
   },
@@ -520,7 +520,7 @@ export const LANDING_TEMPLATES = {
     body: (s) => {
       const l = looks('blaze', 'playfair');
       return [
-        header(s, l, { ctaLabel: 'Start a project' }),
+        header(s, l, { variant: '2', ctaLabel: 'Start a project', links: 'Work|@LandingPortfolio\nServices|@LandingBenefits\nTeam|@LandingPeople' }),
         hero(s, l, {
           variant: '3', eyebrow: 'Design and development studio', headline: 'We craft brands people remember', highlight: 'brands people remember',
           subtitle: 'Strategy, design and websites for ambitious companies.', ctaLabel: 'See our work', ctaHref: '#contact',
@@ -556,8 +556,8 @@ export const LANDING_TEMPLATES = {
           variant: '3', eyebrow: 'Kind words', title: 'Clients on working with us',
           items: [`They made our brand feel like us, only sharper.|Meera P.|Founder, Bloom Café|${photo('p5')}`],
         }),
-        form(s, l, { eyebrow: 'Contact', title: 'Have a project in mind?', subtitle: 'Tell us about it and we will reply within two working days.' }),
-        footer(s, l, ['Work|#', 'Services|#', 'Contact|#contact']),
+        form(s, l, { variant: '4', eyebrow: 'Contact', title: 'Have a project in mind?', subtitle: 'Tell us about it and we will reply within two working days.' }),
+        footer(s, l, ['Work|@LandingPortfolio', 'Services|@LandingBenefits', 'Contact|@LandingForm'], '3'),
       ];
     },
   },
@@ -569,7 +569,7 @@ export const LANDING_TEMPLATES = {
     body: (s) => {
       const l = looks('aurora', 'bricolage');
       return [
-        header(s, l, { ctaLabel: 'Join the waitlist' }),
+        header(s, l, { variant: '4', ctaLabel: 'Join the waitlist', links: 'Features|@LandingBenefits\nPlans|@LandingPricing\nFAQ|@LandingFaq' }),
         hero(s, l, {
           variant: '4', eyebrow: 'Launching soon', headline: 'Meet the app that does the busywork for you', highlight: 'does the busywork',
           subtitle: 'Join the early list and be first to try it.', ctaLabel: 'Join the waitlist', ctaHref: '#contact',
@@ -604,12 +604,43 @@ export const LANDING_TEMPLATES = {
           variant: '4', eyebrow: 'FAQ', title: 'Before you join',
           items: ['When does it launch?|Public launch is planned for next quarter.', 'Is it free?|Joining the list is free. Early-bird pricing applies at launch.'],
         }),
-        form(s, l, { eyebrow: 'Registration', title: 'Reserve your spot', subtitle: 'We will email your invite as soon as your turn comes.' }),
-        footer(s, l, ['Join the waitlist|#contact', 'Back to top|#']),
+        form(s, l, { variant: '2', eyebrow: 'Registration', title: 'Reserve your spot', subtitle: 'We will email your invite as soon as your turn comes.' }),
+        footer(s, l, ['Join the waitlist|@LandingForm', 'Back to top|#'], '4'),
       ];
     },
   },
 };
+
+// Header and footer links name the SECTION they go to ("Pricing|@LandingPricing", several types allowed:
+// "@LandingContact,LandingForm"), never an address. When the page is built the link is resolved against the
+// sections the page really has: the first section of that type gets an anchor (the link's own name, unless it
+// already has one) and the link becomes "#anchor". A link whose section is not on the page is dropped, so no
+// template can ship a dead "#" link. A plain "Label|#" or "Label|/path" is left as written.
+const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+export function resolveSectionLinks(blocks) {
+  const chrome = new Set(['LandingHeader', 'LandingFooter']);
+  for (const b of blocks) {
+    if (!chrome.has(b.type) || typeof b.props.links !== 'string') continue;
+    b.props.links = b.props.links
+      .split('\n')
+      .map((line) => {
+        const [label, target = ''] = line.split('|').map((x) => x.trim());
+        if (!target.startsWith('@')) return line;
+        const types = target.slice(1).split(',').map((x) => x.trim());
+        const section = blocks.find((x) => !chrome.has(x.type) && types.includes(x.type));
+        if (!section) return null;
+        section.props.anchor ||= slug(label);
+        return `${label}|#${section.props.anchor}`;
+      })
+      .filter(Boolean)
+      .join('\n');
+  }
+  return blocks;
+}
+for (const t of Object.values(LANDING_TEMPLATES)) {
+  const raw = t.body;
+  t.body = (s) => resolveSectionLinks(raw(s));
+}
 
 export const TEMPLATE_KEYS = Object.keys(LANDING_TEMPLATES);
 

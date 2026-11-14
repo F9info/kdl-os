@@ -6,6 +6,7 @@
 import { prisma } from '../../config/database.js';
 import { deletePage } from '../page-builder/service.js';
 import { withServiceSections } from '../../shared/detail-pages/service-sections.js';
+import { DETAIL_PREFIX_RESERVED } from '../../shared/reserved-segments.js';
 import { siteChrome } from '../sectors/service.js';
 import { createDetailPageInstance } from '../../shared/detail-pages/templates.js';
 import { getDetailPageType, registerDetailPageTypeProvider } from '../../shared/detail-pages/registry.js';
@@ -17,7 +18,7 @@ export const slugify = (s) =>
     .replace(/^-+|-+$/g, '');
 
 // Top-level site routes a public /<prefix>/<slug> must never shadow.
-export const RESERVED_PREFIXES = new Set(['admin', 'api', 'p', 'share', 'work', 'sectors', 'catalog']);
+export const RESERVED_PREFIXES = DETAIL_PREFIX_RESERVED; // shared/reserved-segments.js
 
 // BuilderPage.slug is unique per project and soft-deleted pages keep theirs, so a re-created
 // type/entry (same name after a delete) needs the next free suffix.

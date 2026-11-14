@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Admin nav and screens for Themes — toggleable",
   "core": false,
+  "group": "studio",
   "apiPrefix": "/api/theme-engine-ui",
   "permissions": [],
   "nav": [
@@ -18,7 +19,9 @@
       "groupOrder": 5
     }
   ],
-  "dependsOn": ["theme-engine"],
+  "dependsOn": [
+    "theme-engine"
+  ],
   "conflictsWith": [],
   "queues": [],
   "env": []

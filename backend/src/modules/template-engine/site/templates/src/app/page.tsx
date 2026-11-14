@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import SitePage from '@/components/SitePage'
-import { getPage, seoMetadata } from '@/lib/content'
+import { getPage, getShared, seoMetadata } from '@/lib/content'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,5 +11,5 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function Home() {
   const page = getPage('')
   if (!page) return <p style={{ padding: 32 }}>No home page yet.</p>
-  return <SitePage data={page.data} title={page.title} projectId={page.projectId} identity={page.identity} />
+  return <SitePage data={page.data} title={page.title} projectId={page.projectId} identity={page.identity} shared={getShared()} />
 }

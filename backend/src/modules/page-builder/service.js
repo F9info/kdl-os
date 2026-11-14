@@ -93,7 +93,23 @@ export const getPublishedBySiteKey = async (projectId, key, site) => {
     where: { slug: key, project_id: projectId, status: 'PUBLISHED', deleted_at: null, ...siteScope(site) },
     select,
   });
-  if (bySlug || key !== 'home' || !site?.siteId || site.isDefault) return bySlug;
+  if (bySlug) return bySlug;
+  // The stage's "home" can point at a page that is no longer published (an old draft). The front page is
+  // then the published page titled Home, so the site never loses its "/" and its shared header/footer.
+  if (key === 'home' && (!site?.siteId || site.isDefault)) {
+    return prisma.builderPage.findFirst({
+      where: {
+        project_id: projectId,
+        title: { equals: 'Home', mode: 'insensitive' },
+        status: 'PUBLISHED',
+        deleted_at: null,
+        ...siteScope(site),
+      },
+      orderBy: { created_at: 'asc' },
+      select,
+    });
+  }
+  if (key !== 'home' || !site?.siteId || site.isDefault) return bySlug;
   // A landing site's "/" is its first published page (its slug is not literally "home").
   return prisma.builderPage.findFirst({
     where: { site_id: site.siteId, status: 'PUBLISHED', deleted_at: null },

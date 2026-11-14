@@ -7,7 +7,13 @@ import { upload } from '../../middleware/upload.js';
 import { successResponse, errorResponse } from '../utils/response.js';
 import { writeActivity, getClientIp } from '../../modules/user-management/shared/activity-logger.js';
 import { isInstalled } from './status.js';
-import { companySchema, typeSchema } from './schema.js';
+import { companySchema, typeSchema, adminSchema, modulesSchema } from './schema.js';
+import { moduleChoices, saveModules } from './modules.js';
+
+import { requireSetupToken, verifySetupToken, SETUP_TOKEN_HEADER } from './setup-token.js';
+import { databaseStatus } from './database.js';
+import { saveAdmin, runCore } from './core.js';
+import { readSteps, readLog, markStep, logInstall } from './progress.js';
 import * as svc from './service.js';
 
 const router = Router();
@@ -16,7 +22,7 @@ const run = (fn) => async (req, res, next) => {
     return await fn(req, res);
   } catch (err) {
     // 4xx are the caller's to fix; a stopped install is reported with its reason.
-    if (err.status && (err.status < 500 || err.message.startsWith('Installation stopped'))) {
+    if (err.status && (err.status < 500 || /^(Installation|Core installation) stopped/.test(err.message))) {
       return errorResponse(res, err.message, err.status);
     }
     next(err);
@@ -40,15 +46,47 @@ const openOnly = async (req, res, next) => {
   }
 };
 
+// Every wizard route needs the setup token (printed in the server log, or KDL_SETUP_TOKEN). Only /status is open,
+// and it says nothing about the company until the token is given.
+const guarded = [limiter, openOnly, requireSetupToken];
+
 router.get('/status', run(async (req, res) => {
   res.set('Cache-Control', 'no-store');
-  return successResponse(res, await svc.getState());
+  const state = await svc.getState();
+  if (state.installed) return successResponse(res, state);
+  if (!(await verifySetupToken(req.get(SETUP_TOKEN_HEADER)))) {
+    return successResponse(res, { installed: false, status: state.status, token_required: true });
+  }
+  return successResponse(res, { ...state, token_required: true, token_ok: true });
 }));
-router.get('/app-types', limiter, openOnly, run(async (req, res) => successResponse(res, await svc.typeCatalog())));
-router.post('/logo', limiter, openOnly, upload.single('file'), run(async (req, res) => successResponse(res, await svc.saveLogo(req.file), 201)));
-router.put('/company', limiter, openOnly, validate(companySchema), run(async (req, res) => successResponse(res, await svc.saveCompany(req.validated.body))));
-router.put('/app-type', limiter, openOnly, validate(typeSchema), run(async (req, res) => successResponse(res, await svc.saveType(req.validated.body.app_type))));
-router.post('/complete', limiter, run(async (req, res) => successResponse(res, await svc.complete())));
+router.post('/token', limiter, openOnly, run(async (req, res) => {
+  if (!(await verifySetupToken(req.get(SETUP_TOKEN_HEADER)))) {
+    return errorResponse(res, 'That setup token is not right. Copy it from the server log.', 401);
+  }
+  return successResponse(res, { ok: true });
+}));
+router.get('/database', ...guarded, run(async (req, res) => {
+  const db = await databaseStatus();
+  await markStep('database', { status: db.ready ? 'done' : 'failed' });
+  await logInstall('database', db.ready ? 'info' : 'error', db.ready ? `connected to ${db.database} on ${db.host}, migrations applied` : `database not ready: ${db.error ?? `${db.migrations?.pending} pending / ${db.migrations?.failed} failed migrations`}`);
+  return successResponse(res, db);
+}));
+router.get('/progress', ...guarded, run(async (req, res) => successResponse(res, { steps: await readSteps(), log: await readLog(60) })));
+router.get('/app-types', ...guarded, run(async (req, res) => successResponse(res, await svc.typeCatalog())));
+router.post('/logo', ...guarded, upload.single('file'), run(async (req, res) => successResponse(res, await svc.saveLogo(req.file), 201)));
+router.put('/company', ...guarded, validate(companySchema), run(async (req, res) => successResponse(res, await svc.saveCompany(req.validated.body))));
+router.put('/admin', ...guarded, validate(adminSchema), run(async (req, res) => {
+  const { name, email, password } = req.validated.body;
+  return successResponse(res, await saveAdmin({ name, email, password }));
+}));
+router.post('/core', ...guarded, run(async (req, res) => successResponse(res, await runCore())));
+router.put('/app-type', ...guarded, validate(typeSchema), run(async (req, res) => successResponse(res, await svc.saveType(req.validated.body.app_type))));
+router.get('/modules', ...guarded, run(async (req, res) => {
+  const type = req.query.type || (await svc.selectedType());
+  return successResponse(res, await moduleChoices(String(type ?? '')));
+}));
+router.put('/modules', ...guarded, validate(modulesSchema), run(async (req, res) => successResponse(res, await saveModules(await svc.selectedType(), req.validated.body))));
+router.post('/complete', limiter, requireSetupToken, run(async (req, res) => successResponse(res, await svc.complete())));
 
 // After login (Super Admin / Developer through the settings + modules permissions).
 router.get('/config', authenticate, requirePermission('settings', 'view'), run(async (req, res) => successResponse(res, await svc.currentType())));

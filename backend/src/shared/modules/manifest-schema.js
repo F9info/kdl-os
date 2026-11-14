@@ -40,9 +40,14 @@ export const manifestSchema = z.object({
   // Icon of the module's own sidebar entry when it is a bundle (umbrella), e.g. Content.
   icon: z.string().optional(),
   core: z.boolean().default(false),
+  // Which product area the module belongs to (core, cms, membership, studio, platform, ...). Descriptive: the
+  // install screen and dashboards group by it; it never gates routes (that is `core` + the enabled status).
+  group: z.string().regex(/^[a-z0-9-]+$/, 'group must be lowercase alphanumeric with hyphens').optional(),
   // Umbrella = a bundle whose dependsOn modules install/enable/disable together with it.
   umbrella: z.boolean().default(false),
   apiPrefix: z.string().startsWith('/api/'),
+  // Public/site pages the module owns that are not admin nav entries (admin pages come from `nav`).
+  frontendRoutes: z.array(z.string().startsWith('/')).default([]),
   permissions: z.array(permissionEntrySchema).default([]),
   nav: z.array(navItemSchema).default([]),
   dependsOn: z.array(z.string()).default([]),

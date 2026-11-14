@@ -4,8 +4,11 @@
   "version": "1.0.0",
   "description": "Module plugin lifecycle management",
   "core": true,
+  "group": "core",
   "apiPrefix": "/api/modules",
-  "permissions": ["modules"],
+  "permissions": [
+    "modules"
+  ],
   "nav": [
     {
       "label": "Modules",

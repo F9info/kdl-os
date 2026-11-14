@@ -62,7 +62,20 @@ describe('landing site root (T5.3)', () => {
     prismaMock.builderPage.findFirst.mockResolvedValue(null);
     await getPublishedBySiteKey('p1', 'home', { siteId: 's1', isDefault: true });
     await getPublishedBySiteKey('p1', 'about', { siteId: 's2', isDefault: false });
-    expect(prismaMock.builderPage.findFirst).toHaveBeenCalledTimes(2);
+    // default-site home: slug lookup + published "Home" title fallback; other key: slug lookup only
+    expect(prismaMock.builderPage.findFirst).toHaveBeenCalledTimes(3);
+  });
+
+  it('default site home falls back to the published page titled Home when the stage points at a draft', async () => {
+    prismaMock.templateEngineStage.findMany.mockResolvedValue([]);
+    prismaMock.builderPage.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce({ slug: 'demo-home' });
+    const page = await getPublishedBySiteKey('p1', 'home', { siteId: 's1', isDefault: true });
+    expect(page).toEqual({ slug: 'demo-home' });
+    expect(prismaMock.builderPage.findFirst.mock.calls[1][0].where).toMatchObject({
+      project_id: 'p1',
+      title: { equals: 'Home', mode: 'insensitive' },
+      status: 'PUBLISHED',
+    });
   });
 });
 

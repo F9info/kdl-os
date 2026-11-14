@@ -43,7 +43,9 @@ frontend/src/app/admin/<slug>/page.tsx  wrapped in <ModuleGuard slug="<slug>">
   "version": "1.0.0",             // semver
   "description": "Blog posts",    // optional
   "core": false,                   // true = always ENABLED, never uninstallable
+  "group": "cms",                  // product area (core, cms, membership, studio, platform, ...): descriptive, groups the install screen; never gates routes
   "apiPrefix": "/api/blog",        // must start with /api/
+  "frontendRoutes": ["/blog"],     // optional: public/site pages the module owns that are not admin nav entries
   "permissions": ["blog"],         // permission module names to auto-register on install
   "nav": [                         // sidebar nav entries shown when module is ENABLED
     {
@@ -57,11 +59,15 @@ frontend/src/app/admin/<slug>/page.tsx  wrapped in <ModuleGuard slug="<slug>">
     }
   ],
   "icon": "LayoutGrid",            // bundles (umbrella modules) only: icon of the bundle's own entry
-  "dependsOn": [],                 // slugs that must be INSTALLED before this can install
+  "dependsOn": [],                 // slugs this module needs. Install and enable pull them in first (dependencies before dependents); disabling a module is refused while an enabled module depends on it
   "queues": [],                    // BullMQ queue names (informational — not enforced yet)
   "env": []                        // required env var names — install fails if any are missing
 }
 ```
+
+**One description per module.** `describeManifest()` in `backend/src/shared/modules/module-graph.js` turns a manifest into the single shape the install screen and dashboards use: backend routes (`apiPrefix`), frontend routes (nav paths + `frontendRoutes`), permissions, and requirements (`dependsOn`, `conflictsWith`, `env`, `queues`). Nothing is stored twice.
+
+**The dependency graph is validated.** `validateModuleGraph()` rejects unknown names in `dependsOn` / `conflictsWith` / `navSuppressedByPeer`, self-dependencies, dependency cycles, and a core module depending on an optional one. The loader logs any problem at boot, and `module-graph.test.js` fails the build, so a bad manifest never ships. The same test requires a manifest (with a `group` and a unique `apiPrefix`) for every module folder that has `routes.js`.
 
 **Navigation is configured in one place.** The sidebar and the command palette are both built from the enabled modules' manifests (`frontend/src/admin/lib/nav-model.ts`); the only entry that is not a module is the Dashboard (the app shell). To add a menu entry, add it to your `module.json`; to add an icon, add it to `nav-icons.ts`. Parts of an umbrella bundle (CMS > Frontend) are listed under the bundle automatically.
 

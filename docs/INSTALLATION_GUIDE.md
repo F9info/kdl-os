@@ -695,4 +695,6 @@ Progress is stored on the server (`app_settings`, keys `install.*`), so a refres
 
 **Existing databases** are never sent to the wizard: at startup a database where anyone has logged in, or identity is already filled in, is marked complete. Set `KDL_SKIP_INSTALL_WIZARD=1` to skip it for scripted installs and CI.
 
+**Setup token.** A new installation asks for a setup token on its first screen, so nobody who can merely reach the server can run the installer. The backend prints it once when it starts (`docker compose logs backend | grep SETUP`); `npm run install:token` prints a new one, and `KDL_SETUP_TOKEN` (16+ characters) sets it for scripted installs. The wizard also has Database, Admin account and Core installation steps; see [INSTALL_FLOW.md](INSTALL_FLOW.md).
+
 **After install**, Super Admin and Developer change the type in Admin Settings > Application. That only adds missing modules; it never disables a module or deletes content. Company details stay in Identity.

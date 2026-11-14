@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Image gallery shown on the public Gallery page (part of CMS)",
   "core": false,
+  "group": "cms",
   "visibleInCatalog": false,
   "apiPrefix": "/api/gallery",
   "permissions": [

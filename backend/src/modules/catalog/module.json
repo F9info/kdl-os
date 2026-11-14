@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Individual product/service catalog entries shown on the Products & Services page",
   "core": false,
+  "group": "cms",
   "visibleInCatalog": false,
   "apiPrefix": "/api/catalog",
   "permissions": [

@@ -65,6 +65,17 @@ kdl-starter-kit/
 
 ---
 
+## Module system
+
+Every feature is a folder `backend/src/modules/<slug>/` with a `module.json` manifest (full format in [`MODULE_GUIDE.md`](MODULE_GUIDE.md)). The manifest is the single source of truth:
+
+- **Discovery:** `shared/modules/module-loader.js` reads every manifest at boot and validates it (`manifest-schema.js`) and the whole graph (`module-graph.js`).
+- **Routes:** optional modules are mounted behind `moduleGate(slug)`, which answers 404 unless the module is ENABLED in the `modules` table; core modules are always on.
+- **Lifecycle:** install and enable pull in dependencies first, disable is refused while an enabled module depends on it, uninstall needs the module disabled (`modules/modules/service.js`).
+- **Navigation and permissions:** the admin sidebar is built from enabled modules' `nav`; each module registers its own permissions from `permissions`.
+- **Seeders:** a module's optional `seed.js` runs inside its install transaction.
+- **Groups:** `group` (core, cms, membership, studio, platform) organises the install screen; it never gates anything.
+
 ## Database Schema
 
 ### Base tables

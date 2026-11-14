@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Lead and enquiry forms. Build a form, drop it on a page with the Contact form block, and read or get emailed the submissions.",
   "core": false,
+  "group": "cms",
   "visibleInCatalog": false,
   "apiPrefix": "/api/forms",
   "permissions": [

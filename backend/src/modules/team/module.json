@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Team module",
   "core": false,
+  "group": "cms",
   "visibleInCatalog": false,
   "apiPrefix": "/api/team",
   "permissions": [

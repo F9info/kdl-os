@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Multi-level drag-and-drop navigation menus (header, footer, mobile)",
   "core": false,
+  "group": "cms",
   "visibleInCatalog": false,
   "apiPrefix": "/api/menus",
   "permissions": [

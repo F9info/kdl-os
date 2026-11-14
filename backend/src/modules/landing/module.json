@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Campaign and product landing pages. Each landing page is its own site with its own slug, built with the shared page builder.",
   "core": false,
+  "group": "cms",
   "visibleInCatalog": false,
   "apiPrefix": "/api/landing",
   "permissions": [

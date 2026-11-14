@@ -4,10 +4,13 @@
   "version": "1.0.0",
   "description": "Visual page editor screens: edit pages and build reusable sections with drag-and-drop blocks.",
   "core": false,
+  "group": "studio",
   "apiPrefix": "/api/page-builder-ui",
   "permissions": [],
   "nav": [],
-  "dependsOn": ["page-builder"],
+  "dependsOn": [
+    "page-builder"
+  ],
   "conflictsWith": [],
   "queues": [],
   "env": []

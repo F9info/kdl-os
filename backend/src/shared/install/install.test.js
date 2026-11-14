@@ -20,6 +20,7 @@ const prisma = {
       return { count: 0 };
     }),
     count: vi.fn(async () => 0),
+    deleteMany: vi.fn(async ({ where }) => ({ count: (where.key.in ?? [where.key]).filter((k) => settings.delete(k)).length })),
   },
   user: { count: vi.fn(async () => 0) },
   userRole: { count: vi.fn(async () => 1) },
@@ -70,6 +71,7 @@ beforeEach(() => {
   lifecycle.fail = null;
   status.resetInstallCache();
   prisma.userRole.count.mockResolvedValue(1);
+  settings.set('install.core', 'done'); // the Core installation step has run (see core.test.js for that step)
 });
 
 const png = Buffer.concat([Buffer.from([0x89]), Buffer.from('PNG\r\n\x1a\n'), Buffer.alloc(20)]);
@@ -137,6 +139,35 @@ describe('wizard', () => {
     expect(installed).toEqual([]);
     expect(await status.isInstalled()).toBe(true);
   });
+  it('installs the extras chosen on the Modules step, and reports a summary', async () => {
+    const { saveModules } = await import('./modules.js');
+    await svc.saveCompany(company);
+    await svc.saveType('admin-only');
+    await saveModules('admin-only', { modules: ['forms'], demo: false });
+    const r = await svc.complete();
+    expect(modules.get('forms')).toBe('ENABLED');
+    expect(r.modules).toEqual(['forms']);
+    expect(r.summary).toMatchObject({
+      app_type: 'admin-only',
+      modules: [{ slug: 'forms', name: 'Forms', status: 'ENABLED' }],
+      demo: { requested: false },
+      urls: { admin: '/admin/dashboard', login: '/login', site: null },
+    });
+  });
+  it('the summary points at the site and says sample content was asked for when a website is created', async () => {
+    await svc.saveCompany(company);
+    await svc.saveType('landing');
+    const r = await svc.complete();
+    expect(r.summary.urls.site).toBe('/');
+    expect(r.summary.demo.requested).toBe(true);
+  });
+  it('choosing a different type drops extras picked for the old one', async () => {
+    const { saveModules, readSelection } = await import('./modules.js');
+    await svc.saveType('admin-only');
+    await saveModules('admin-only', { modules: ['forms'] });
+    await svc.saveType('landing');
+    expect(await readSelection()).toEqual({ extra: [], demo: null });
+  });
   it('a failed module install leaves the install open and retryable', async () => {
     await svc.saveCompany(company);
     await svc.saveType('landing');
@@ -154,11 +185,43 @@ describe('wizard', () => {
     settings.set('install.status', 'running');
     await expect(svc.complete()).rejects.toThrow(/already running/);
   });
-  it('needs a Super Admin to exist', async () => {
+  it('needs the Core installation step (roles, permissions, admin account) to be done', async () => {
     await svc.saveCompany(company);
     await svc.saveType('landing');
-    prisma.userRole.count.mockResolvedValue(0);
-    await expect(svc.complete()).rejects.toThrow(/Super Admin/);
+    settings.delete('install.core');
+    await expect(svc.complete()).rejects.toThrow(/Core installation/);
+    settings.set('install.core', 'failed');
+    await expect(svc.complete()).rejects.toThrow(/Core installation/);
+    expect(settings.get('install.status')).not.toBe('completed');
+  });
+  it('drops the setup token hash once the install is complete', async () => {
+    await svc.saveCompany(company);
+    await svc.saveType('landing');
+    settings.set('install.setup_token_hash', 'abc');
+    await svc.complete();
+    expect(settings.get('install.status')).toBe('completed');
+    expect(settings.has('install.setup_token_hash')).toBe(false);
+  });
+  it('keeps the setup token while the install is not complete', async () => {
+    await svc.saveCompany(company);
+    await svc.saveType('landing');
+    settings.set('install.setup_token_hash', 'abc');
+    lifecycle.fail = 'faq';
+    await expect(svc.complete()).rejects.toThrow(/Installation stopped/);
+    expect(settings.has('install.setup_token_hash')).toBe(true);
+  });
+  it('records each step and a log line, including a failed launch', async () => {
+    await svc.saveCompany(company);
+    await svc.saveType('landing');
+    lifecycle.fail = 'faq';
+    await expect(svc.complete()).rejects.toThrow(/Installation stopped/);
+    const steps = JSON.parse(settings.get('install.steps'));
+    expect(steps.company.status).toBe('done');
+    expect(steps.type).toMatchObject({ status: 'done', app_type: 'landing' });
+    expect(steps.launch).toMatchObject({ status: 'failed' });
+    const log = JSON.parse(settings.get('install.log'));
+    expect(log.map((l) => l.step)).toEqual(expect.arrayContaining(['company', 'type', 'launch']));
+    expect(log.at(-1).level).toBe('error');
   });
 });
 
@@ -201,5 +264,14 @@ describe('existing databases', () => {
     settings.set('install.status', 'completed');
     await requireInstalled({}, res, next);
     expect(next).toHaveBeenCalledOnce();
+  });
+  it('login gate fails CLOSED (503) when the status cannot be read', async () => {
+    const res = { status: vi.fn(() => res), json: vi.fn() };
+    const next = vi.fn();
+    prisma.appSetting.findUnique.mockRejectedValueOnce(new Error('db down'));
+    await requireInstalled({}, res, next);
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(503);
+    expect(res.json.mock.calls[0][0].code).toBe('INSTALL_STATUS_UNAVAILABLE');
   });
 });

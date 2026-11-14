@@ -4,9 +4,12 @@
   "version": "1.0.0",
   "description": "Design tokens behind Themes: colours, typography, spacing and radius applied across your site.",
   "core": true,
+  "group": "core",
   "visibleInCatalog": false,
   "apiPrefix": "/api/theme-engine",
-  "permissions": ["theme-engine"],
+  "permissions": [
+    "theme-engine"
+  ],
   "nav": [],
   "dependsOn": [],
   "conflictsWith": [],

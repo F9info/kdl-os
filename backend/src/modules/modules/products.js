@@ -135,6 +135,7 @@ export function buildGraph({ manifests, enabled = [], selected = [], inferred = 
     slug,
     name: m.name,
     core: m.core ?? false,
+    group: m.group ?? (m.core ? 'core' : 'other'),
     enabled: enabledSet.has(slug),
     dependsOn: m.dependsOn ?? [],
     conflictsWith: m.conflictsWith ?? [],

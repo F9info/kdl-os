@@ -13,6 +13,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
+    "install:token": "node scripts/install-token.js",
     "db:seed": "node prisma/seed.js",
     "db:reset-admin": "node scripts/reset-admin-password.js",
     "db:studio": "prisma studio",

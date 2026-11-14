@@ -741,7 +741,8 @@ export function ContactDesign({ variant, ...props }: ContactProps & { variant: V
     </ul>
   )
   const form = (
-    <div id={props.anchor || undefined}>
+    // The live form carries the anchor itself; only the "view template" preview needs it here.
+    <div id={props.preview ? props.anchor || undefined : undefined}>
       <ContactForm {...props} />
     </div>
   )
@@ -845,7 +846,7 @@ export function NewsletterDesign({ variant, ...props }: NewsletterProps & { vari
       </div>
     </div>
   ) : (
-    <div id={props.anchor || undefined}>
+    <div>
       <ContactFormBlock
         formSlug={props.formSlug}
         anchor={props.anchor}

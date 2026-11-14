@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils'
 import { PageHeader } from '@/admin/components/layout/PageHeader'
 import { PermissionGuard } from '@/admin/components/shared/PermissionGuard'
 import { ConfirmDialog } from '@/admin/components/shared/ConfirmDialog'
+import { ModulePlanSummary } from './ModulePlanSummary'
 import { Modal } from '@/components/shared/Modal'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -40,7 +41,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import type { Module, ModuleStatus, ModuleConflict } from '@/types/models.types'
+import type { Module, ModuleStatus, ModuleConflict, ModulePlan } from '@/types/models.types'
 
 const MODULE_ICON_MAP: Record<string, React.ElementType> = {
   Image,
@@ -137,6 +138,22 @@ export default function ModulesPage() {
     queryKey: ['modules'],
     queryFn: () => api.get('/modules').then((r) => r.data.data.modules as Module[]),
     staleTime: 30 * 1000,
+  })
+
+  // What the open confirmation would do (dependencies, blockers): read-only, fetched when the dialog opens.
+  const {
+    data: plan,
+    isLoading: planLoading,
+    isError: planError,
+  } = useQuery({
+    queryKey: ['module-plan', confirm.slug, confirm.action],
+    queryFn: () =>
+      api
+        .get(`/modules/${confirm.slug}/plan`, { params: { action: confirm.action } })
+        .then((r) => r.data.data.plan as ModulePlan),
+    enabled: confirm.open && !!confirm.slug,
+    staleTime: 0,
+    gcTime: 0,
   })
 
   const router = useRouter()
@@ -291,6 +308,7 @@ export default function ModulesPage() {
   }
 
   const modules = useMemo(() => data ?? [], [data])
+  const nameBySlug = useMemo(() => new Map(modules.map((m) => [m.slug, m.name])), [modules])
 
   /** Catalog-visible modules: hides internal-only deps unless showInternal is on. */
   const catalogModules = useMemo(
@@ -334,17 +352,17 @@ export default function ModulesPage() {
   const confirmLabels: Record<Action, { title: string; description: string; btn: string }> = {
     install: {
       title: 'Install module',
-      description: `Install "${confirm.slug}"? This will register its permissions and seed data.`,
+      description: `Install "${plan?.name ?? confirm.slug}"? This will register its permissions and seed data.`,
       btn: 'Install',
     },
     enable: {
       title: 'Enable module',
-      description: `Enable "${confirm.slug}"? Routes and nav items will become live immediately.`,
+      description: `Enable "${plan?.name ?? confirm.slug}"? Routes and nav items will become live immediately.`,
       btn: 'Enable',
     },
     disable: {
       title: 'Disable module',
-      description: `Disable "${confirm.slug}"? All routes will return 404. Data is retained.`,
+      description: `Disable "${plan?.name ?? confirm.slug}"? All routes will return 404. Data is retained.`,
       btn: 'Disable',
     },
   }
@@ -467,7 +485,10 @@ export default function ModulesPage() {
                             />
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground">v{mod.version}</p>
+                        <p className="text-xs text-muted-foreground">
+                          v{mod.version}
+                          {mod.group ? ` · ${mod.group}` : ''}
+                        </p>
                       </div>
                     </div>
                     <StatusBadgeModule status={mod.status} />
@@ -476,6 +497,13 @@ export default function ModulesPage() {
                   <p className="line-clamp-2 flex-1 text-sm text-muted-foreground">
                     {mod.description ?? '—'}
                   </p>
+
+                  {mod.dependsOn && mod.dependsOn.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {'Needs: '}
+                      {mod.dependsOn.map((slug) => nameBySlug.get(slug) ?? slug).join(', ')}
+                    </p>
+                  )}
 
                   {hasActiveConflicts && isNotActive && (
                     <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
@@ -539,9 +567,12 @@ export default function ModulesPage() {
           title={cd?.title ?? ''}
           description={cd?.description ?? ''}
           confirmLabel={cd?.btn ?? 'Confirm'}
+          confirmDisabled={planLoading || (!!plan && !plan.canProceed)}
           isLoading={mutation.isPending}
           variant={confirm.action === 'disable' ? 'destructive' : 'warning'}
-        />
+        >
+          <ModulePlanSummary plan={plan} isLoading={planLoading} isError={planError} />
+        </ConfirmDialog>
 
         <Dialog open={switchDialog.open} onOpenChange={(o) => !o && closeSwitchDialog()}>
           <DialogContent className="sm:max-w-md">

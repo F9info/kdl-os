@@ -1,0 +1,15 @@
+{
+  "slug": "storage-settings",
+  "name": "Storage Settings",
+  "version": "1.0.0",
+  "description": "Choose and test where uploaded files are stored (local disk or S3-compatible storage)",
+  "core": true,
+  "group": "core",
+  "visibleInCatalog": false,
+  "apiPrefix": "/api/storage-settings",
+  "permissions": [],
+  "nav": [],
+  "dependsOn": ["settings"],
+  "queues": [],
+  "env": []
+}

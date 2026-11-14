@@ -4,13 +4,28 @@
   "version": "1.0.0",
   "description": "Project management — Studio hard-depends on this module to scope template-engine runs.",
   "core": true,
+  "group": "core",
   "visibleInCatalog": false,
   "apiPrefix": "/api/projects",
   "permissions": [
-    { "name": "projects", "actions": ["view", "create", "update", "delete"] }
+    {
+      "name": "projects",
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete"
+      ]
+    }
   ],
   "nav": [
-    { "label": "Projects", "path": "/admin/projects", "icon": "FolderKanban", "permission": "projects:view", "order": 5 }
+    {
+      "label": "Projects",
+      "path": "/admin/projects",
+      "icon": "FolderKanban",
+      "permission": "projects:view",
+      "order": 5
+    }
   ],
   "dependsOn": [],
   "queues": [],

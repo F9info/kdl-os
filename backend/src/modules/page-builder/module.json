@@ -4,9 +4,12 @@
   "version": "1.0.0",
   "description": "Visual block-based page editor — always-on",
   "core": true,
+  "group": "core",
   "visibleInCatalog": false,
   "apiPrefix": "/api/page-builder",
-  "permissions": ["page-builder"],
+  "permissions": [
+    "page-builder"
+  ],
   "nav": [],
   "dependsOn": [],
   "conflictsWith": [],

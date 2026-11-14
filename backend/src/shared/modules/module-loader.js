@@ -3,6 +3,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
 import { manifestSchema } from './manifest-schema.js';
+import { validateModuleGraph, describeIssue } from './module-graph.js';
 import { moduleGate } from '../../middleware/module-gate.js';
 import { logger } from '../utils/logger.js';
 
@@ -86,5 +87,11 @@ export async function loadModules(app) {
     } catch (err) {
       logger.error(`module-loader: failed to load routes for "${manifest.slug}": ${err.message}`);
     }
+  }
+
+  // Whole-graph soundness (unknown names, cycles, core needing optional): log loudly at boot. Enable/install
+  // would only trip over these later, and the CI test (module-graph.test.js) fails the build before release.
+  for (const issue of validateModuleGraph(loadedManifests)) {
+    logger.error(`module-loader: manifest graph problem: ${describeIssue(issue)}`);
   }
 }

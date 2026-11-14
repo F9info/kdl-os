@@ -4,7 +4,22 @@
   "version": "1.0.0",
   "description": "Plans, members, subscriptions, payments and GST invoices with members-only access rules",
   "core": false,
+  "group": "membership",
   "apiPrefix": "/api/membership",
+  "frontendRoutes": [
+    "/membership",
+    "/membership/login",
+    "/membership/signup",
+    "/membership/forgot",
+    "/membership/reset",
+    "/membership/verify",
+    "/membership/account",
+    "/membership/checkout",
+    "/membership/compare",
+    "/membership/success",
+    "/membership/complete-profile",
+    "/membership/link-account"
+  ],
   "permissions": [
     {
       "name": "membership",

@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Real client-segment/space-type entries shown in the Sector Detail List block",
   "core": false,
+  "group": "cms",
   "visibleInCatalog": false,
   "apiPrefix": "/api/sectors",
   "permissions": [

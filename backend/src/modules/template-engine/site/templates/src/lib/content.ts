@@ -30,6 +30,15 @@ export function getPage(route: string): PageContent | null {
   return JSON.parse(fs.readFileSync(file, 'utf8'))
 }
 
+/**
+ * What every page shares: the Home page's top bar, header and footer, and the project's saved
+ * header/footer layout (same as the live site's PageRender). Null parts when there is none.
+ */
+export function getShared(): { home: never | null; layout: never | null } {
+  const layout = read<{ layout?: never | null }>('site.json').layout ?? null
+  return { home: (getPage('')?.data ?? null) as never | null, layout }
+}
+
 /** Friendly route for an admin page slug (`te-…-about`), or null. */
 export function routeForSlug(slug: string): string | null {
   const r = read<{ bySlug: Record<string, string> }>('routes.json').bySlug[slug]

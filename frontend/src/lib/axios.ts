@@ -65,8 +65,16 @@ api.interceptors.response.use(
     // caller (e.g. the login form) can surface the error, instead of firing a
     // refresh-and-redirect that full-page-reloads and wipes the error state.
     const isAuthEndpoint = /\/auth\/(login|refresh)$/.test(original?.url ?? '')
+    // The installer has no session at all: its 401 means "wrong or missing setup token", which the wizard
+    // shows itself. A refresh-and-redirect to /login would throw the installer away.
+    const isInstallerCall = /^\/install(\/|\?|$)/.test(original?.url ?? '')
 
-    if (axiosError.response?.status === 401 && !original._retry && !isAuthEndpoint) {
+    if (
+      axiosError.response?.status === 401 &&
+      !original._retry &&
+      !isAuthEndpoint &&
+      !isInstallerCall
+    ) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failQueue.push({ resolve, reject })

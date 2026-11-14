@@ -4,10 +4,13 @@
   "version": "1.0.0",
   "description": "Authentication, registration, and session management",
   "core": true,
+  "group": "core",
   "apiPrefix": "/api/auth",
   "permissions": [],
   "nav": [],
   "dependsOn": [],
   "queues": [],
-  "env": ["JWT_SECRET"]
+  "env": [
+    "JWT_SECRET"
+  ]
 }

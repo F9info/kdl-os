@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Global application identity: name, logos, favicon, brand colors, contact, social, copyright",
   "core": true,
+  "group": "core",
   "apiPrefix": "/api/identity",
   "permissions": [],
   "nav": [
@@ -18,7 +19,9 @@
       "groupOrder": 5
     }
   ],
-  "dependsOn": ["settings"],
+  "dependsOn": [
+    "settings"
+  ],
   "queues": [],
   "env": []
 }

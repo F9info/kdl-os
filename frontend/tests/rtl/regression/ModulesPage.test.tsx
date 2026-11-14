@@ -450,6 +450,8 @@ describe('ModulesPage — 409 MODULE_CONFLICT handling', () => {
     // Confirm the regular dialog — get the last button (the confirm action)
     const confirmBtns = screen.getAllByRole('button', { name: /^Install$/i })
     const confirmBtn = confirmBtns[confirmBtns.length - 1]!
+    // The confirm button stays off until the dependency preview has loaded.
+    await waitFor(() => expect(confirmBtn).not.toBeDisabled())
     fireEvent.click(confirmBtn)
 
     // The 409 should open the switch dialog
@@ -482,6 +484,8 @@ describe('ModulesPage — 409 MODULE_CONFLICT handling', () => {
 
     const confirmBtns = screen.getAllByRole('button', { name: /^Install$/i })
     const confirmBtn = confirmBtns[confirmBtns.length - 1]!
+    // The confirm button stays off until the dependency preview has loaded.
+    await waitFor(() => expect(confirmBtn).not.toBeDisabled())
     fireEvent.click(confirmBtn)
 
     await waitFor(() => {

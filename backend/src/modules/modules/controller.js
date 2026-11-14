@@ -9,6 +9,7 @@ import {
   disableModule,
   uninstallModule,
   patchModuleSettings,
+  planModuleAction,
 } from './service.js';
 
 function hasEditPermission(req) {
@@ -42,6 +43,16 @@ export const postInstall = async (req, res, next) => {
     }
     const { installedDependencies, ...module } = await installModule(req.params.slug, req.user?.id, { resolveConflicts });
     successResponse(res, { module, installedDependencies }, 201);
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status, err.details ?? null);
+    next(err);
+  }
+};
+
+export const getPlan = async (req, res, next) => {
+  try {
+    const plan = await planModuleAction(req.params.slug, req.query.action);
+    successResponse(res, { plan });
   } catch (err) {
     if (err.status) return errorResponse(res, err.message, err.status, err.details ?? null);
     next(err);

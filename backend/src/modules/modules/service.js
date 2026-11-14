@@ -1,4 +1,5 @@
 import { join, dirname } from 'node:path';
+import { recordRun } from '../../shared/seeders/manager.js';
 import { grantForPermissionModule } from '../user-management/shared/role-blueprints.js';
 import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
@@ -225,7 +226,12 @@ async function _installSingle(slug, actorId, { resolveConflicts = false } = {}) 
 
         // Seed runs on the transaction client so a failed install leaves no
         // orphaned catalogue rows (idempotent; errors abort the transaction).
-        if (seedFn) await seedFn(tx);
+        if (seedFn) {
+          const started = Date.now();
+          await seedFn(tx);
+          // Same run record the central seeder manager keeps for the core seeders (rolled back with a failed install).
+          await recordRun(tx, `module:${slug}`, { version: manifest.version, status: 'done', ms: Date.now() - started });
+        }
 
         return tx.module.create({
           data: {
@@ -598,6 +604,83 @@ export async function patchModuleSettings(slug, settings, actorId) {
   return updated;
 }
 
+/**
+ * Read-only preview of what installing, enabling or disabling a module would do, so the admin sees the
+ * dependency chain and any blocker BEFORE confirming. It mirrors the rules of installModule / enableModule /
+ * disableModule and writes nothing. `steps` are in the order they would run (dependencies first, target last).
+ */
+export async function planModuleAction(slug, action) {
+  const manifest = loadedManifests.get(slug);
+  if (!manifest) {
+    const err = new Error(`Module "${slug}" not found`);
+    err.status = 404;
+    throw err;
+  }
+  const rows = await prisma.module.findMany({ select: { slug: true, status: true } });
+  const statusBySlug = new Map(rows.map((r) => [r.slug, r.status]));
+  const statusOf = (s) => statusBySlug.get(s) ?? 'AVAILABLE';
+  const info = (s) => {
+    const m = loadedManifests.get(s);
+    return { slug: s, name: m?.name ?? s, group: m?.group ?? (m?.core ? 'core' : 'other'), core: !!m?.core };
+  };
+  const self = statusOf(slug);
+  const blockers = [];
+  const steps = [];
+
+  if (action === 'install') {
+    if (self !== 'AVAILABLE') blockers.push({ type: 'already-installed', message: `"${manifest.name}" is already installed` });
+    for (const s of buildInstallOrder(slug)) {
+      if (statusOf(s) === 'AVAILABLE') steps.push({ ...info(s), do: 'install', dependency: s !== slug });
+    }
+  } else if (action === 'enable') {
+    if (self === 'ENABLED') blockers.push({ type: 'already-enabled', message: `"${manifest.name}" is already enabled` });
+    for (const s of buildInstallOrder(slug)) {
+      const st = statusOf(s);
+      if (st === 'ENABLED') continue;
+      steps.push({ ...info(s), do: st === 'AVAILABLE' ? 'install and enable' : 'enable', dependency: s !== slug });
+    }
+  } else {
+    if (manifest.core) blockers.push({ type: 'core', message: `"${manifest.name}" is a core module and cannot be disabled` });
+    else if (self !== 'ENABLED') blockers.push({ type: 'not-enabled', message: `"${manifest.name}" is not currently enabled` });
+    steps.push({ ...info(slug), do: 'disable', dependency: false });
+  }
+
+  const enabledSlugs = rows.filter((r) => r.status === 'ENABLED').map((r) => r.slug);
+  const requiredBy = enabledSlugs.filter((s) => loadedManifests.get(s)?.dependsOn?.includes(slug)).map(info);
+  if (action === 'disable' && requiredBy.length > 0 && !manifest.core) {
+    blockers.push({
+      type: 'dependents',
+      message: `Cannot disable "${manifest.name}": ${requiredBy.map((m) => m.name).join(', ')} depend on it`,
+      modules: requiredBy.map((m) => m.slug),
+    });
+  }
+  if (action !== 'disable') {
+    for (const step of steps.filter((st) => st.do.startsWith('install'))) {
+      const missing = (loadedManifests.get(step.slug)?.env ?? []).filter((key) => !process.env[key]);
+      if (missing.length) {
+        blockers.push({ type: 'env', message: `"${step.name}" needs env vars: ${missing.join(', ')}`, modules: [step.slug] });
+      }
+    }
+  }
+  const conflicts =
+    action === 'disable'
+      ? []
+      : computeBlockingConflicts(slug, manifest, enabledSlugs.map((s) => ({ slug: s })));
+
+  return {
+    ...info(slug),
+    description: manifest.description ?? null,
+    action,
+    status: self,
+    dependsOn: (manifest.dependsOn ?? []).map((s) => ({ ...info(s), status: statusOf(s) })),
+    requiredBy,
+    steps,
+    conflicts,
+    blockers,
+    canProceed: blockers.length === 0,
+  };
+}
+
 export async function listModules() {
   const dbModules = await prisma.module.findMany({ orderBy: { name: 'asc' } });
   const dbBySlug = new Map(dbModules.map((m) => [m.slug, m]));
@@ -617,6 +700,8 @@ export async function listModules() {
       description: manifest.description ?? null,
       version: manifest.version,
       core: manifest.core ?? false,
+      group: manifest.group ?? (manifest.core ? 'core' : 'other'),
+      dependsOn: manifest.dependsOn ?? [],
       visibleInCatalog: manifest.visibleInCatalog !== false,
       apiPrefix: manifest.apiPrefix,
       icon: manifest.nav?.[0]?.icon ?? null,

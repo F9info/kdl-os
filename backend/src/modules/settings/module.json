@@ -4,8 +4,11 @@
   "version": "1.0.0",
   "description": "Application settings management",
   "core": true,
+  "group": "core",
   "apiPrefix": "/api/settings",
-  "permissions": ["settings"],
+  "permissions": [
+    "settings"
+  ],
   "nav": [
     {
       "label": "SEO",
