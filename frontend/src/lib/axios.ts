@@ -1,9 +1,10 @@
 import axios, { type InternalAxiosRequestConfig, type AxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/stores/auth.store'
 import { useProjectStore } from '@/stores/project.store'
+import { API_URL } from '@/lib/api-url'
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api',
+  baseURL: API_URL,
   timeout: 10_000,
   headers: { 'Content-Type': 'application/json' },
   withCredentials: true,
@@ -91,7 +92,7 @@ api.interceptors.response.use(
       try {
         // Refresh token is in an httpOnly cookie — browser sends it automatically with withCredentials
         const { data } = await axios.post<{ data: { accessToken: string } }>(
-          `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api'}/auth/refresh`,
+          `${API_URL}/auth/refresh`,
           {},
           { withCredentials: true }
         )

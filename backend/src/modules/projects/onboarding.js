@@ -4,6 +4,7 @@ import {
   STARTER_PAGES,
   HEADER_SLUGS,
   brandName,
+  contactDetails,
   buildStarterPage,
   insertPublishedPage,
 } from './starter-site.js';
@@ -18,8 +19,8 @@ import { seedTeam } from '../team/seed.js';
 import { seedProjectsContent } from '../projects-content/seed.js';
 
 export { STARTER_PAGES };
-export const buildPageData = (slug, title, pages = STARTER_PAGES, brand) =>
-  buildStarterPage(slug, title, pages, brand);
+export const buildPageData = (slug, title, pages = STARTER_PAGES, brand, contact) =>
+  buildStarterPage(slug, title, pages, brand, contact);
 
 // First-run question: "Do you need a front-end website?"
 // Answer lives in app_settings (absent = not answered yet, so the pop-up keeps showing).
@@ -59,6 +60,7 @@ export async function createStarterSite(client, actorId = null, { withCms } = {}
   const created = [];
   const skipped = [];
   const brand = await brandName(client);
+  const contact = await contactDetails(client);
   // With CMS installed the nav already lists the CMS pages (Gallery, ...).
   const includeCms = withCms ?? (await cmsEnabled(client));
   const navPages = [...STARTER_PAGES, ...(includeCms ? cmsPages() : [])];
@@ -70,7 +72,7 @@ export async function createStarterSite(client, actorId = null, { withCms } = {}
     const page = await insertPublishedPage(client, {
       slug,
       title,
-      data: buildPageData(slug, title, navPages, brand),
+      data: buildPageData(slug, title, navPages, brand, contact),
       projectId,
       actorId,
     });

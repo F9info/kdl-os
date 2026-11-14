@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/auth.store'
 import api from '@/lib/axios'
 import type { Notification } from '@/admin/types/notifications.types'
+import { API_URL } from '@/lib/api-url'
 
 interface StreamOptions {
   onNew?: (notification: Notification) => void
@@ -36,7 +37,7 @@ export function useNotificationStream({ onNew }: StreamOptions = {}) {
     }
     if (cancelledRef.current || esRef.current) return
 
-    const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api'
+    const base = API_URL
     const url = `${base}/notifications/stream?ticket=${encodeURIComponent(ticket)}`
 
     const es = new EventSource(url)

@@ -102,7 +102,32 @@ function applyContact(b: Block, identity: Identity | null | undefined): Block {
     /your brand|demologo/i.test(String(props.copyright ?? ''))
   )
     props.copyright = `© ${new Date().getFullYear()} ${company}. All rights reserved.`
+  if (b.type === 'ConstructionFooter') applyFooterLinks(props, identity)
   return { ...b, props }
+}
+
+const isPlaceholderHref = (h: unknown) => !String(h ?? '').trim() || String(h).trim() === '#'
+
+/**
+ * Footer links that would go nowhere are not shown. "Get Directions" opens a map search for the company address
+ * from Identity (no address, no link); the legal row (Terms, Privacy ...) keeps only links that have a real
+ * address, so a "#" never ships. A link the page's author set to a real address is left alone.
+ */
+function applyFooterLinks(props: Record<string, unknown>, identity: Identity) {
+  if (isPlaceholderHref(props.directionsHref)) {
+    const address = identity.contact_address?.trim().replace(/\s*\n\s*/g, ', ')
+    if (address) {
+      props.directionsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
+    } else {
+      props.directionsLabel = ''
+    }
+  }
+  if (typeof props.policyLinks === 'string') {
+    props.policyLinks = props.policyLinks
+      .split('\n')
+      .filter((line) => !isPlaceholderHref(line.split('|')[1]))
+      .join('\n')
+  }
 }
 
 export function applyIdentity<T>(data: T, identity: Identity | null | undefined): T {

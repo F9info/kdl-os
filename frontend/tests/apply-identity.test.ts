@@ -90,3 +90,50 @@ describe('applyIdentity contact + socials', () => {
     expect(out.content[0]!.props.email).toBe('keep@x')
   })
 })
+
+describe('applyIdentity footer links', () => {
+  const footer = (props: Record<string, unknown>, id: Record<string, string> = identity) =>
+    (
+      applyIdentity(
+        page([{ type: 'ConstructionFooter', props: { variant: '1', ...props } }]),
+        id
+      ) as {
+        content: { props: Record<string, string> }[]
+      }
+    ).content[0]!.props
+
+  it('"Get Directions" becomes a map search for the Identity address', () => {
+    const p = footer(
+      { directionsLabel: 'Get Directions', directionsHref: '#' },
+      {
+        ...identity,
+        contact_address: '12 Park Avenue\nPune 411001',
+      }
+    )
+    expect(p.directionsLabel).toBe('Get Directions')
+    expect(p.directionsHref).toBe(
+      'https://www.google.com/maps/search/?api=1&query=12%20Park%20Avenue%2C%20Pune%20411001'
+    )
+  })
+
+  it('with no address in Identity the directions link is hidden, not a dead "#"', () => {
+    const { contact_address: _unused, ...noAddress } = identity
+    void _unused
+    expect(
+      footer({ directionsLabel: 'Get Directions', directionsHref: '#' }, noAddress).directionsLabel
+    ).toBe('')
+  })
+
+  it('a directions link the author set to a real address is left alone', () => {
+    const p = footer({ directionsLabel: 'Find us', directionsHref: 'https://maps.example/x' })
+    expect(p.directionsHref).toBe('https://maps.example/x')
+    expect(p.directionsLabel).toBe('Find us')
+  })
+
+  it('the legal row keeps only links that have an address', () => {
+    const p = footer({
+      policyLinks: 'Terms & Conditions|#\nPrivacy Policy|/privacy\nSitemap|#\nBlogs|/blog',
+    })
+    expect(p.policyLinks).toBe('Privacy Policy|/privacy\nBlogs|/blog')
+  })
+})

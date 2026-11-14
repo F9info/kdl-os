@@ -1,13 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import axios, { isAxiosError } from 'axios'
 import type { User } from '@/types/models.types'
+import { API_URL } from '@/lib/api-url'
 
 /**
  * Public calls without the app's axios interceptors: a 401 here must show a message, not trigger the
  * refresh-and-redirect-to-/login handling meant for expired admin sessions.
  */
 export const pub = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api',
+  baseURL: API_URL,
   timeout: 10_000,
   withCredentials: true,
 })

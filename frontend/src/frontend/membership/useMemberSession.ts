@@ -3,8 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api'
+import { API_URL } from '@/lib/api-url'
 
 /**
  * Member pages need a logged-in user with an access token. After a reload the store only has the

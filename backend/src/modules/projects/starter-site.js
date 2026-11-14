@@ -10,6 +10,13 @@ export async function brandName(client) {
   return row?.value?.trim() || BRAND;
 }
 
+/** The company's contact details from Application Identity; a detail nobody entered is simply absent. */
+export async function contactDetails(client) {
+  const get = async (key) => (await client.appSetting.findUnique({ where: { key } }))?.value?.trim() ?? '';
+  const [email, phone, address] = await Promise.all(['identity.contact_email', 'identity.contact_phone', 'identity.contact_address'].map(get));
+  return { email, phone, address };
+}
+
 // The 5 pages created when an admin answers "Yes, front-end website".
 export const STARTER_PAGES = [
   { slug: 'home', title: 'Home' },
@@ -129,11 +136,20 @@ const BODIES = {
       '📌 | Service three | Describe your third service here.',
     ]),
   ],
-  contact: (s) => [
-    hero(s, 'Contact us', 'We would love to hear from you.'),
-    text(s, 'Email: hello@example.com\nPhone: +00 000 000 0000\nAddress: Your street, Your city'),
-    block(s, 'Button', { label: 'Email us', href: 'mailto:hello@example.com', variant: 'primary' }),
-  ],
+  // Company details come from Identity. With none entered the page says how to reach us through the form
+  // instead of showing invented contact details.
+  contact: (s, _brand, contact = {}) => {
+    const lines = [
+      contact.email && `Email: ${contact.email}`,
+      contact.phone && `Phone: ${contact.phone}`,
+      contact.address && `Address: ${contact.address}`,
+    ].filter(Boolean);
+    return [
+      hero(s, 'Contact us', 'We would love to hear from you.'),
+      text(s, lines.length ? lines.join('\n') : 'Send us a message and we will get back to you.'),
+      ...(contact.email ? [block(s, 'Button', { label: 'Email us', href: `mailto:${contact.email}`, variant: 'primary' })] : []),
+    ];
+  },
   // Reads the FAQ module when it is installed; the lines below are the fallback.
   faq: (s) => [
     hero(s, 'Frequently asked questions', 'Quick answers to common questions.'),
@@ -144,8 +160,8 @@ const BODIES = {
   ],
 };
 
-export const buildStarterPage = (slug, title, pages, brand = BRAND) =>
-  wrapPage(slug, title, pages, BODIES[slug](slug, brand), brand);
+export const buildStarterPage = (slug, title, pages, brand = BRAND, contact = {}) =>
+  wrapPage(slug, title, pages, BODIES[slug](slug, brand, contact), brand);
 
 // Insert a PUBLISHED page row through any Prisma client (or transaction).
 export async function insertPublishedPage(

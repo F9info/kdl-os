@@ -6,8 +6,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { isMemberOnly } from '@/frontend/membership/roles'
 import { AdminShell } from '@/admin/components/layout/AdminShell'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api'
+import { API_URL } from '@/lib/api-url'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, accessToken, user, setAuth, clearAuth } = useAuthStore()
