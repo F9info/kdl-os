@@ -1,0 +1,25 @@
+{
+  "slug": "gdg",
+  "name": "GDG Chapter",
+  "version": "1.0.0",
+  "description": "Google Developer Groups chapter website kit: GDG page sections (coast hero, journey, organizers, events, community, DevFest overview/program/visit/play, chapter header and footer) for the page builder, plus chapter events entered by hand or synced from gdg.community.dev",
+  "core": false,
+  "group": "cms",
+  "apiPrefix": "/api/gdg",
+  "permissions": [
+    "gdg"
+  ],
+  "nav": [
+    {
+      "label": "GDG Chapter",
+      "path": "/admin/gdg",
+      "icon": "Ticket",
+      "permission": "gdg:view"
+    }
+  ],
+  "dependsOn": [],
+  "queues": [
+    "gdg-chapter-sync"
+  ],
+  "env": []
+}

@@ -97,6 +97,12 @@ describe('siteStyleCss', () => {
     expect(css).toContain(':focus');
   });
 
+  it('leaves fields inside a GDG block (own design) alone', () => {
+    const css = siteStyleCss('solid', 'outlined');
+    expect(css).toContain('.kdl-site select:not(.gdg *)');
+    expect(css).toMatch(/\.kdl-site input[^,{]*:not\(\.gdg \*\)/);
+  });
+
   it('leaves checkboxes, radios, submit/other buttons and hidden inputs alone', () => {
     const css = siteStyleCss('solid', 'outlined');
     for (const t of ['checkbox', 'radio', 'hidden', 'submit', 'button', 'file'])

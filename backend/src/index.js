@@ -22,6 +22,7 @@ import { startProcessingWorker, closeProcessingWorker } from './modules/media/pr
 import { integrationsWorker } from './modules/integrations/integrations.worker.js';
 import { notificationsWorker, notificationsRetentionWorker, startRetentionJob } from './modules/notifications/notifications.worker.js';
 import { startExpiryJob } from './modules/media/media.expiry.worker.js';
+import { startChapterSyncJob, closeChapterSyncWorker } from './modules/gdg/sync.queue.js';
 import { startBrandKitExpiryJob } from './modules/brand-kit/brand-kit.queue.js';
 
 import authRoutes from './modules/auth/routes.js';
@@ -220,6 +221,7 @@ startSiteBuildWorker().catch((err) => logger.error(`Site-build worker init faile
 startRetentionJob().catch((err) => logger.error(`Retention job init failed: ${err.message}`));
 startExpiryJob().catch((err) => logger.error(`Expiry job init failed: ${err.message}`));
 startBrandKitExpiryJob().catch((err) => logger.error(`Brand-kit expiry job init failed: ${err.message}`));
+startChapterSyncJob().catch((err) => logger.error(`Chapter sync job init failed: ${err.message}`));
 
 // ─── Public share routes (no auth) ───────────────────────────────────────────
 // These live outside /api so they are not subject to the API rate limiter.
@@ -283,6 +285,7 @@ const shutdown = async () => {
   await mediaWorker.close();
   await closeProcessingWorker();
   await integrationsWorker.close();
+  await closeChapterSyncWorker();
   if (notificationsWorker) await notificationsWorker.close();
   if (notificationsRetentionWorker) await notificationsRetentionWorker.close();
   server.close(async () => {

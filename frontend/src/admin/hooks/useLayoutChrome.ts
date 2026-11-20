@@ -20,6 +20,16 @@ const TOP_HEADER_CONFIG = construction.components.ConstructionTopBar!
 const HEADER_CONFIG = construction.components.ConstructionHeader!
 const FOOTER_CONFIG = construction.components.ConstructionFooter!
 
+// Each design is mounted as its own component (createElement), never called as a plain function:
+// the block renders use hooks, and calling them inline would tie their hooks to the caller's, so
+// switching a slot on/off between renders (e.g. once the saved layout loads) breaks the hook order.
+const TopHeaderChrome = (props: Record<string, unknown>) =>
+  (TOP_HEADER_CONFIG.render as BlockRender)(props)
+const HeaderChrome = (props: Record<string, unknown>) =>
+  (HEADER_CONFIG.render as BlockRender)(props)
+const FooterChrome = (props: Record<string, unknown>) =>
+  (FOOTER_CONFIG.render as BlockRender)(props)
+
 /** The saved Section Builder block picked for a layout slot (variant
  *  `custom:<id>`), rendered live from the DB — null for a fixed design. */
 export function useCustomSlotNode(
@@ -68,14 +78,10 @@ export function useLayoutChrome(projectId: string | null): {
 
   if (!projectId) return { topHeaderNode: null, headerNode: null, footerNode: null }
 
-  const topHeaderRender = TOP_HEADER_CONFIG.render as BlockRender
-  const headerRender = HEADER_CONFIG.render as BlockRender
-  const footerRender = FOOTER_CONFIG.render as BlockRender
-
   return {
     topHeaderNode: selection.topHeader.enabled
       ? (customTop ??
-        topHeaderRender({
+        createElement(TopHeaderChrome, {
           ...TOP_HEADER_CONFIG.defaultProps,
           ...topHeaderOverrides(brand),
           variant: selection.topHeader.variant,
@@ -83,7 +89,7 @@ export function useLayoutChrome(projectId: string | null): {
       : null,
     headerNode: selection.header.enabled
       ? (customHeader ??
-        headerRender({
+        createElement(HeaderChrome, {
           ...HEADER_CONFIG.defaultProps,
           ...headerFooterOverrides(brand),
           variant: selection.header.variant,
@@ -92,7 +98,7 @@ export function useLayoutChrome(projectId: string | null): {
       : null,
     footerNode: selection.footer.enabled
       ? (customFooter ??
-        footerRender({
+        createElement(FooterChrome, {
           ...FOOTER_CONFIG.defaultProps,
           ...footerOverrides(brand),
           variant: selection.footer.variant,

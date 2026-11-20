@@ -154,6 +154,7 @@ describe('navigation built from the real manifests', () => {
       'Modules',
       'Notifications',
       'Integrations',
+      'GDG Chapter',
     ])
   })
 

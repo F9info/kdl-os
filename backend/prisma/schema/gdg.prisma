@@ -1,0 +1,57 @@
+// Events module: a project's events, entered by hand or synced from a Google Developer Groups chapter
+// page (gdg.community.dev). Synced rows are matched on (project_id, source, source_id), so a re-sync
+// updates them in place; admin-only fields (category override, featured, hidden) are never overwritten.
+
+model ChapterEvent {
+  id          String    @id @default(cuid())
+  project_id  String
+  // 'manual' (entered in the admin) or 'gdg' (synced from gdg.community.dev).
+  source      String    @default("manual")
+  // The event id on the source (gdg.community.dev); null for manual events.
+  source_id   String?
+  title       String
+  start_date  DateTime
+  end_date    DateTime?
+  venue       String?
+  event_type  String?
+  image_url   String?
+  banner_url  String?
+  // Where visitors register (a co-host registration link wins over the event page).
+  register_url String?
+  // The event's own page on the source.
+  page_url    String?
+  description String?
+  tags        String[]  @default([])
+  // Admin-only: overrides the category worked out from the title. Never touched by a sync.
+  category    String?
+  is_featured Boolean   @default(false)
+  is_hidden   Boolean   @default(false)
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  @@unique([project_id, source, source_id])
+  @@index([project_id, start_date])
+  @@map("chapter_events")
+}
+
+// One row per project: which chapter to sync, and what the last sync brought back.
+model ChapterSyncSetting {
+  id             String    @id @default(cuid())
+  project_id     String    @unique
+  // Numeric chapter id and URL slug on gdg.community.dev (e.g. 318 / "gdg-vizag").
+  chapter_id     Int?
+  chapter_slug   String?
+  auto_sync      Boolean   @default(true)
+  last_synced_at DateTime?
+  // { ok, created, updated, error? } of the last run.
+  last_result    Json?
+  // Chapter facts from the last good sync.
+  members_count  Int?
+  logo_url       String?
+  // Organizers from the chapter page: [{ name, title, avatar }].
+  team           Json?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  @@map("chapter_sync_settings")
+}

@@ -9,6 +9,7 @@ import '@puckeditor/core/puck.css'
 import '../../../page-builder/puck-overrides.css'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { ModuleGuard } from '@/admin/components/shared/ModuleGuard'
+import { useModules } from '@/admin/hooks/useModules'
 import { toast } from '@/hooks/use-toast'
 import { BlocksPanel } from '../../../page-builder/blocks-panel'
 import { config } from '../../../../../frontend/blocks/puck.config'
@@ -58,13 +59,21 @@ function splitLayoutBlocks(content: ComponentData[]) {
 // Puck's own usePuck(), so a locally-derived config (not the shared
 // module-level one other surfaces still import unfiltered) is enough to
 // keep this scoped to the template-engine edit page.
-const editorConfig = {
-  ...config,
-  categories: Object.fromEntries(
-    Object.entries(config.categories ?? {}).filter(
-      ([key]) => !LAYOUT_MANAGED_CATEGORY_KEYS.includes(key)
-    )
-  ),
+// Sections that belong to an optional module show only while that module is enabled
+// (Admin > Modules). Pages that already use them still render; they just can't be added.
+const MODULE_CATEGORY_KEYS: Record<string, string> = { gdg: 'gdg' }
+
+function buildEditorConfig(isEnabled: (slug: string) => boolean) {
+  return {
+    ...config,
+    categories: Object.fromEntries(
+      Object.entries(config.categories ?? {}).filter(
+        ([key]) =>
+          !LAYOUT_MANAGED_CATEGORY_KEYS.includes(key) &&
+          (!MODULE_CATEGORY_KEYS[key] || isEnabled(MODULE_CATEGORY_KEYS[key]))
+      )
+    ),
+  }
 }
 
 /**
@@ -94,6 +103,11 @@ export default function TemplateEngineEditPage() {
       : '/admin/template-engine'
   const qc = useQueryClient()
   const { topHeaderNode, headerNode, footerNode } = useLayoutChrome(projectId)
+  const { enabledModules } = useModules()
+  const editorConfig = useMemo(
+    () => buildEditorConfig((slug) => enabledModules.some((m) => m.slug === slug)),
+    [enabledModules]
+  )
   // True once an edit was autosaved as a draft since the page was loaded or last published.
   const [editedSincePublish, setEditedSincePublish] = useState(false)
 

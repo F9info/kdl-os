@@ -169,7 +169,11 @@ const BUTTON_SELECTORS = ['.kdl-site a.bg-primary', '.kdl-site button.bg-primary
 const FIELD_NOT = ['checkbox', 'radio', 'hidden', 'submit', 'button', 'range', 'file', 'color', 'image']
   .map((t) => `:not([type=${t}])`)
   .join('');
-const FIELD_SELECTORS = [`.kdl-site input${FIELD_NOT}`, '.kdl-site textarea', '.kdl-site select'];
+// Blocks with their own designed fields opt out by sitting inside `.gdg` (the GDG chapter pack).
+const OWN_FIELDS = ':not(.gdg *)';
+const FIELD_SELECTORS = [`.kdl-site input${FIELD_NOT}`, '.kdl-site textarea', '.kdl-site select'].map(
+  (s) => s + OWN_FIELDS
+);
 
 const rule = (selectors, suffix, declarations) =>
   declarations ? `${selectors.map((s) => s + suffix).join(', ')} { ${declarations} }` : '';

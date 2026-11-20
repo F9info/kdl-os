@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { composePacks } from './packs/compose'
 import { composer } from './packs/composer'
 import { construction } from './packs/construction'
+import { gdg } from './packs/gdg'
 import { general } from './packs/general'
 import { landing } from './packs/landing'
 import { medical } from './packs/medical'
@@ -28,7 +29,7 @@ const root: Config['root'] = {
   ),
 }
 
-const composed = composePacks(root, [general, construction, medical, composer, landing])
+const composed = composePacks(root, [general, construction, medical, composer, landing, gdg])
 
 // Top Header/Header/Hero Slider each ship multiple selectable designs
 // (Insert-a-block picker: one card per design) — pulled into their own
@@ -55,6 +56,7 @@ const categoriesUnordered: NonNullable<Config['categories']> = {
 // the ones below, instead of silently disappearing.
 const CATEGORY_ORDER = [
   'landing',
+  'gdg',
   'top-bar',
   'header',
   'hero',

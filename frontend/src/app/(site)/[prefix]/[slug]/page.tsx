@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { useIdentity } from '@/hooks/useIdentity'
 import { PageRender } from '@/frontend/rendering/PageRender'
-import type { PageRecord } from '@/frontend/pages/page-record'
+import { getPageBySiteKey, type PageRecord } from '@/frontend/pages/page-record'
 import api from '@/lib/axios'
 import { siteProjectId } from '@/lib/site-project'
 
@@ -17,11 +17,29 @@ interface PublicEntry {
 }
 
 /**
+ * "/<section>/<page>": a site page whose key has two parts (e.g. "devfest/program", a page that
+ * belongs under a section of the site) wins; anything else is a Details Page entry (below).
+ */
+export default function NestedSitePageOrEntry() {
+  const params = useParams<{ prefix: string; slug: string }>()
+  const key = `${params.prefix}/${params.slug}`
+  const { identity, isLoading: identityLoading } = useIdentity()
+  const { data: page, isLoading } = useQuery({
+    queryKey: ['public-site-page', key],
+    queryFn: () => getPageBySiteKey(key),
+    retry: false,
+  })
+  if (isLoading || identityLoading) return <div className="min-h-screen" />
+  if (page) return <PageRender page={page} identity={identity} />
+  return <DetailEntryPage />
+}
+
+/**
  * One generic route for every admin-created Details Page type (Blog, Service, ...):
  * `/{slug_prefix}/{slug}`. Static routes (/work, /sectors, /catalog, /admin, ...) win
  * over this dynamic one, so it only serves prefixes defined in `detail_page_types`.
  */
-export default function DetailEntryPage() {
+function DetailEntryPage() {
   const params = useParams<{ prefix: string; slug: string }>()
   const projectId = siteProjectId(useSearchParams().get('projectId'))
 

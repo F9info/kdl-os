@@ -1,8 +1,8 @@
 import type { Data } from '@puckeditor/core'
 
 /** The blocks that make up the website's top bar + header and its footer. */
-const TOP = new Set(['ConstructionTopBar', 'ConstructionHeader'])
-const BOTTOM = new Set(['ConstructionFooter'])
+const TOP = new Set(['ConstructionTopBar', 'ConstructionHeader', 'GdgHeader'])
+const BOTTOM = new Set(['ConstructionFooter', 'GdgFooter'])
 
 /** Where the site's "Log in" goes for visitors: the member login (the admin login stays at /login). */
 export const MEMBER_LOGIN = '/membership/login'

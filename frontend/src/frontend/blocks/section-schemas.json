@@ -7410,6 +7410,1524 @@
       }
     }
   },
+  "GdgBadgeMaker": {
+    "label": "GDG Badge Maker",
+    "fields": {
+      "caption": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "eventLine": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "footerLine": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "nameLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "roles": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sub": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgDevfestAbout": {
+    "label": "GDG DevFest About",
+    "fields": {
+      "about2": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "chips": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "fallback": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "faq": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "reveal": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "stats": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "termTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "terminal": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "topics": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "whenAnswer": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "whenFallback": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "years": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "yearsLabel": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgDevfestAgenda": {
+    "label": "GDG DevFest Agenda",
+    "fields": {
+      "calendarDetails": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "calendarTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "eventDate": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "googleLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "icsLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "needDate": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "needStar": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sessions": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sub": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "tracks": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "venue": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgDevfestAudience": {
+    "label": "GDG DevFest Audience",
+    "fields": {
+      "expect": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "panels": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgDevfestEditions": {
+    "label": "GDG DevFest Editions",
+    "fields": {
+      "emptyText": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "linkLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "loadingText": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sub": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgDevfestIndia": {
+    "label": "GDG DevFests in India",
+    "fields": {
+      "cities": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "sub": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgDevfestSpeakers": {
+    "label": "GDG DevFest Speakers",
+    "fields": {
+      "badge": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "noLinks": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "noTalk": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "railLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "speakers": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sub": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgDevfestStatus": {
+    "label": "GDG DevFest Status",
+    "fields": {
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "loadingText": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "quietButton": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "quietText": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "quietTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "ticketUrl": {
+        "kind": "link",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgDevfestTracks": {
+    "label": "GDG DevFest Tracks",
+    "fields": {
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "sub": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "tiles": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgEventsFeatured": {
+    "label": "GDG Featured Event",
+    "fields": {
+      "category": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "latestLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "pageHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "pageLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sourceLabel": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgEventsList": {
+    "label": "GDG Events List",
+    "fields": {
+      "emptyText": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "errorText": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "heading": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "moreLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "searchLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "searchPlaceholder": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgFaq": {
+    "label": "GDG FAQ",
+    "fields": {
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "items": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgFooter": {
+    "label": "GDG Footer",
+    "fields": {
+      "blurb": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "builtMark": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "builtText": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "builtWord": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "col1": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "col1Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "col2": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "col2Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "col3": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "col3Title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "legal": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "logo": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "logoAlt": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgHackathonCard": {
+    "label": "GDG Hackathon / Event Card",
+    "fields": {
+      "body": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "buttonLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "closedLead": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "closedText": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "eventName": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "feedMatch": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hideLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "loginHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "loginLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "materials": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "materialsTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "meta": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "posterAlt": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "posterLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "posterUrl": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "registerHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "sectionId": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "themesNote": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "themesTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgHeader": {
+    "label": "GDG Header",
+    "fields": {
+      "brandName": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "ctaHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "ctaLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "logo": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "menu": {
+        "kind": "textarea",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgHero": {
+    "label": "GDG Hero (Vizag coast)",
+    "fields": {
+      "buoyText": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "lead": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "primaryHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "primaryLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "quietLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "quietText": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "quietTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "secondaryHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "secondaryLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgInvolved": {
+    "label": "GDG Get Involved",
+    "fields": {
+      "cfpGo": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "cfpHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "cfpOpenGo": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "cfpOpenText": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "cfpText": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "cfpTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "cfpUrl": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "contactHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "contactLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "deckLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "deckNote": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "deckUrl": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "dialogText": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "dialogTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "noDeckNote": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sponsorGo": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sponsorText": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sponsorTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "volunteerGo": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "volunteerHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "volunteerText": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "volunteerTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "wtmGo": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "wtmHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "wtmText": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "wtmTitle": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgJoinBanner": {
+    "label": "GDG Join Banner",
+    "fields": {
+      "body": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "primaryHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "primaryLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "secondaryHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "secondaryLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "tag": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgJourney": {
+    "label": "GDG Our Journey",
+    "fields": {
+      "eventsHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "membersFallback": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sub": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgOrganizers": {
+    "label": "GDG Organizers",
+    "fields": {
+      "extra": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "fallback": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "order": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "role": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sub": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgPageHead": {
+    "label": "GDG Page Heading",
+    "fields": {
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "lead": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "subnav": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "subnavLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgPartners": {
+    "label": "GDG Partners",
+    "fields": {
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "partners": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgShapeGame": {
+    "label": "GDG Shape Match Game",
+    "fields": {
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "sub": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgSoundToggle": {
+    "label": "GDG Sound Toggle",
+    "fields": {
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      }
+    }
+  },
+  "GdgVisitTravel": {
+    "label": "GDG Visit / Travel",
+    "fields": {
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "places": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "routes": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sub": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "tipText": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "tipTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "venueButton": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "venueLink": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "venueText": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "venueTitle": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgWtm": {
+    "label": "GDG Women Techmakers",
+    "fields": {
+      "body": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "primaryHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "primaryLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "secondaryHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "secondaryLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
   "Heading": {
     "label": "Heading",
     "fields": {
