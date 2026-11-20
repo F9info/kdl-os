@@ -1,0 +1,49 @@
+# Template for a LOCAL docker-compose.override.yml (git-ignored; ./setup.sh copies it for you).
+# Docker Compose reads docker-compose.override.yml automatically on this machine only.
+# Servers never use it: they deploy with explicit -f files (prod / preview / staging overlays).
+#
+# Purpose: a lighter footprint so several KDL projects can run on one machine at once.
+# See docs/MULTI_PROJECT_LOCAL.md.
+#
+#   - site-preview (the "Frontend view" live preview of a generated site, ~190 MB) starts only
+#     when asked:   docker compose --profile preview up -d site-preview
+#     stop it with: docker compose stop site-preview
+#     While it is stopped, the preview pages answer 502; everything else works.
+#   - Memory caps, so one runaway service cannot starve the other projects. They are well above
+#     normal idle use (in brackets). Raise one if a service is killed (exit code 137).
+services:
+  site-preview:
+    profiles: ["preview"]
+    mem_limit: 1g
+
+  frontend:
+    mem_limit: 1g          # (~150 MB)
+
+  backend:
+    mem_limit: 1g          # (~140 MB)
+
+  ai-services:
+    mem_limit: 512m        # (~35 MB)
+
+  postgres:
+    mem_limit: 512m        # (~80 MB)
+
+  redis:
+    mem_limit: 256m        # (~20 MB) no eviction policy: it holds the job queues
+
+  minio:
+    mem_limit: 512m        # (~140 MB)
+
+  meilisearch:
+    mem_limit: 512m        # (~140 MB)
+    environment:
+      MEILI_MAX_INDEXING_MEMORY: 256Mb
+
+  chromadb:
+    mem_limit: 512m        # (~20 MB)
+
+  mailhog:
+    mem_limit: 128m        # (~25 MB)
+
+  nginx:
+    mem_limit: 128m        # (~5 MB)

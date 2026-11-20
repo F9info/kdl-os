@@ -4,6 +4,13 @@
 #   ./setup.sh              create .env (if missing), build and start everything, seed, print the sign-ins
 #   ./setup.sh --env-only   only create .env, then stop
 #
+# Options (only used when .env is created; both have safe defaults):
+#   --name <project>   Docker project name. Default: this folder's name (e.g. acme-crm).
+#   --block <N>        port block. Default: the first block whose ports are all free.
+#                      0 = the classic ports (http://localhost, 3001, 4000, 5433, ...).
+#                      N >= 1 = ports 10000+N*100 .. +12 (block 1: http://localhost:10100).
+# Several projects on one machine: docs/MULTI_PROJECT_LOCAL.md.
+#
 # Needs Git, Docker Desktop (running) and OpenSSL. No accounts or API keys.
 # Safe to run again: an existing .env is never overwritten and existing users are never touched.
 # This replaces the old bootstrap script, which wrote files the compose stack does not use and overwrote
@@ -17,12 +24,158 @@ die() { printf 'Error: %s\n' "$*" >&2; exit 1; }
 
 need() { command -v "$1" >/dev/null 2>&1 || die "$1 is not installed. $2"; }
 
+OPT_NAME=""
+OPT_BLOCK=""
+ENV_ONLY=0
+
+parse_args() {
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --env-only) ENV_ONLY=1 ;;
+      --name) [ $# -ge 2 ] || die "--name needs a value"; OPT_NAME="$2"; shift ;;
+      --name=*) OPT_NAME="${1#--name=}" ;;
+      --block) [ $# -ge 2 ] || die "--block needs a value"; OPT_BLOCK="$2"; shift ;;
+      --block=*) OPT_BLOCK="${1#--block=}" ;;
+      *) die "Unknown option: $1 (see the top of setup.sh)" ;;
+    esac
+    shift
+  done
+}
+
+# --- Project name ------------------------------------------------------------------------------
+# Docker project names: lowercase letters, digits, '-' and '_', starting with a letter or digit.
+slugify() {
+  printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -e 's/[^a-z0-9_-]/-/g' -e 's/^[^a-z0-9]*//' -e 's/-\{2,\}/-/g' -e 's/-$//'
+}
+
+# Refuse a name another folder on this machine already uses: same name = shared containers and data.
+check_name_free() {
+  local name="$1" here other
+  command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1 || return 0
+  here=$(pwd -P)
+  other=$(docker ps -a --filter "label=com.docker.compose.project=$name" \
+    --format '{{.Label "com.docker.compose.project.working_dir"}}' 2>/dev/null | sort -u | grep -vxF "$here" | head -1 || true)
+  [ -z "$other" ] || die "The Docker project name '$name' is already used by $other. Two projects with one name share containers and data. Run again with --name <another-name>."
+  if docker volume inspect "${name}_pgdata" >/dev/null 2>&1; then
+    say "Note: a database volume '${name}_pgdata' already exists on this machine and will be reused."
+    say "      If it belongs to another project, stop now (Ctrl+C) and run again with --name <another-name>."
+  fi
+}
+
+# --- Ports -------------------------------------------------------------------------------------
+# Block 0 = the classic ports. Block N >= 1 = 10000+N*100 + offset, in this order:
+PORT_KEYS="HTTP FRONTEND BACKEND AI POSTGRES REDIS MINIO MINIO_CONSOLE MEILI CHROMA SMTP MAIL_UI CLAMAV"
+classic_port() {
+  case "$1" in
+    HTTP) echo 80 ;; FRONTEND) echo 3001 ;; BACKEND) echo 4000 ;; AI) echo 5001 ;;
+    POSTGRES) echo 5433 ;; REDIS) echo 6380 ;; MINIO) echo 9002 ;; MINIO_CONSOLE) echo 9003 ;;
+    MEILI) echo 7700 ;; CHROMA) echo 8000 ;; SMTP) echo 1025 ;; MAIL_UI) echo 8025 ;; CLAMAV) echo 3310 ;;
+  esac
+}
+port_for() { # <block> <key>
+  if [ "$1" = 0 ]; then classic_port "$2"; return; fi
+  local i=0 k
+  for k in $PORT_KEYS; do
+    [ "$k" = "$2" ] && { echo $((10000 + $1 * 100 + i)); return; }
+    i=$((i + 1))
+  done
+}
+
+# Ports taken now (listening) or claimed by any container, running or stopped, of any project.
+TAKEN_PORTS=""
+collect_taken_ports() {
+  local listening="" claimed=""
+  if command -v lsof >/dev/null 2>&1; then
+    listening=$(lsof -nP -iTCP -sTCP:LISTEN 2>/dev/null | awk 'NR>1{n=split($9,a,":"); print a[n]}' || true)
+  fi
+  if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+    local ids
+    ids=$(docker ps -aq 2>/dev/null || true)
+    [ -z "$ids" ] || claimed=$(docker inspect -f '{{range $p, $b := .HostConfig.PortBindings}}{{range $b}}{{.HostPort}} {{end}}{{end}}' $ids 2>/dev/null | tr ' ' '\n' || true)
+  fi
+  TAKEN_PORTS=$(printf '%s\n%s\n' "$listening" "$claimed" | grep -E '^[0-9]+$' | sort -un | tr '\n' ' ')
+}
+block_free() {
+  local k p
+  for k in $PORT_KEYS; do
+    p=$(port_for "$1" "$k")
+    case " $TAKEN_PORTS " in *" $p "*) return 1 ;; esac
+  done
+  return 0
+}
+# Machine-wide list of claimed blocks, so two projects set up before either has started (no
+# containers yet, ports look free) still get different blocks. One line per project:
+#   <block><TAB><project name><TAB><folder>
+# A line whose folder no longer exists is ignored. Delete a line to release its block.
+REGISTRY="${KDL_REGISTRY:-$HOME/.kdl/port-blocks}"
+registry_lines_of_others() { # lines of other folders that still exist
+  local here b n p
+  here=$(pwd -P)
+  [ -f "$REGISTRY" ] || return 0
+  while IFS="$(printf '\t')" read -r b n p; do
+    [ -n "$p" ] && [ "$p" != "$here" ] && [ -d "$p" ] && printf '%s\t%s\t%s\n' "$b" "$n" "$p"
+  done < "$REGISTRY"
+  return 0
+}
+# awk reads every line (no early exit): under pipefail an early exit would kill the script with SIGPIPE.
+block_claimed() { registry_lines_of_others | awk -F'\t' -v b="$1" '$1==b{f=1} END{exit !f}'; }
+name_claimed_by() { registry_lines_of_others | awk -F'\t' -v n="$1" '$2==n && !f{print $3; f=1}' || true; }
+registry_record() { # <block> <name>
+  local here tmp
+  here=$(pwd -P)
+  mkdir -p "$(dirname "$REGISTRY")"
+  tmp="$REGISTRY.tmp.$$"
+  { [ -f "$REGISTRY" ] && awk -F'\t' -v p="$here" '$3!=p' "$REGISTRY"; printf '%s\t%s\t%s\n' "$1" "$2" "$here"; } > "$tmp"
+  mv "$tmp" "$REGISTRY"
+}
+
+pick_block() {
+  collect_taken_ports
+  if [ -n "$OPT_BLOCK" ]; then
+    case "$OPT_BLOCK" in ''|*[!0-9]*) die "--block must be a number (0 to 50)" ;; esac
+    [ "$OPT_BLOCK" -le 50 ] || die "--block must be 0 to 50"
+    block_free "$OPT_BLOCK" || say "Warning: some ports of block $OPT_BLOCK are already in use on this machine."
+    block_claimed "$OPT_BLOCK" && say "Warning: block $OPT_BLOCK is already claimed in $REGISTRY by another project."
+    BLOCK="$OPT_BLOCK"; return
+  fi
+  local n
+  for n in $(seq 0 50); do
+    block_free "$n" && ! block_claimed "$n" && { BLOCK="$n"; return; }
+  done
+  die "No free port block found (0 to 50). Pass --block <N>."
+}
+
 make_env() {
   if [ -f .env ]; then
     say ".env already exists, leaving it as it is."
+    grep -qE '^COMPOSE_PROJECT_NAME=' .env 2>/dev/null || \
+      say "Note: this .env has no COMPOSE_PROJECT_NAME, so Docker uses the name in docker-compose.yml. See docs/MULTI_PROJECT_LOCAL.md if another project on this machine uses it too."
     return
   fi
   need openssl "It is already on Mac and Linux."
+
+  local name
+  name=$(slugify "${OPT_NAME:-$(basename "$(pwd -P)")}")
+  [ -n "$name" ] || die "Could not make a Docker project name from '${OPT_NAME:-$(basename "$(pwd -P)")}'. Pass --name <project>."
+  check_name_free "$name"
+  local owner
+  owner=$(name_claimed_by "$name")
+  [ -z "$owner" ] || die "The Docker project name '$name' is already claimed by $owner (in $REGISTRY). Run again with --name <another-name>."
+  pick_block
+
+  local P_HTTP P_FRONTEND P_BACKEND P_AI P_POSTGRES P_REDIS P_MEILI P_CHROMA site
+  P_HTTP=$(port_for "$BLOCK" HTTP); P_FRONTEND=$(port_for "$BLOCK" FRONTEND)
+  P_BACKEND=$(port_for "$BLOCK" BACKEND); P_AI=$(port_for "$BLOCK" AI)
+  P_POSTGRES=$(port_for "$BLOCK" POSTGRES); P_REDIS=$(port_for "$BLOCK" REDIS)
+  P_MEILI=$(port_for "$BLOCK" MEILI); P_CHROMA=$(port_for "$BLOCK" CHROMA)
+  if [ "$P_HTTP" = 80 ]; then site="http://localhost"; else site="http://localhost:$P_HTTP"; fi
+
+  local port_lines="" k
+  for k in $PORT_KEYS; do
+    port_lines="${port_lines}KDL_PORT_${k}=$(port_for "$BLOCK" "$k")
+"
+  done
+
   local pg redis minio
   pg=$(openssl rand -hex 16)
   redis=$(openssl rand -hex 16)
@@ -31,12 +184,15 @@ make_env() {
   (
     umask 077
     cat > .env <<EOF
-NODE_ENV=development
+# Docker project name and port block (docs/MULTI_PROJECT_LOCAL.md). Unique per project on this machine.
+COMPOSE_PROJECT_NAME=$name
+# Port block $BLOCK
+${port_lines}NODE_ENV=development
 APP_PORT=4000
-FRONTEND_URL=http://localhost
-BACKEND_URL=http://localhost:4000
+FRONTEND_URL=$site
+BACKEND_URL=http://localhost:$P_BACKEND
 AI_SERVICES_URL=http://localhost:5000
-CORS_ORIGIN=http://localhost,http://localhost:3000,http://localhost:3001
+CORS_ORIGIN=$site,http://localhost:3000,http://localhost:$P_FRONTEND
 JWT_SECRET=$(openssl rand -hex 32)
 JWT_REFRESH_SECRET=$(openssl rand -hex 32)
 JWT_EXPIRES_IN=15m
@@ -47,9 +203,9 @@ SEED_ADMIN_PASSWORD=$(openssl rand -hex 16)
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=$pg
 POSTGRES_DB=kdl_db
-DATABASE_URL=postgresql://postgres:$pg@localhost:5433/kdl_db
+DATABASE_URL=postgresql://postgres:$pg@localhost:$P_POSTGRES/kdl_db
 REDIS_PASSWORD=$redis
-REDIS_URL=redis://:$redis@localhost:6380
+REDIS_URL=redis://:$redis@localhost:$P_REDIS
 MINIO_ROOT_USER=kdl_minio
 MINIO_ROOT_PASSWORD=$minio
 MINIO_ACCESS_KEY=kdl_minio
@@ -58,16 +214,18 @@ MINIO_ENDPOINT=localhost
 MINIO_PORT=9000
 MINIO_USE_SSL=false
 MINIO_BUCKET=kdl-media
-MEILISEARCH_HOST=http://localhost:7700
+MEILISEARCH_HOST=http://localhost:$P_MEILI
 MEILI_MASTER_KEY=$(openssl rand -hex 24)
 MEILISEARCH_API_KEY=replace-after-first-boot
 MEILI_SEARCH_API_KEY=replace-after-first-boot
-CHROMADB_URL=http://localhost:8000
+CHROMADB_URL=http://localhost:$P_CHROMA
 ANTHROPIC_API_KEY=local
 OPENROUTER_API_KEY=local
 EOF
   )
   say "Created .env with new random passwords. Never share or commit it."
+  registry_record "$BLOCK" "$name"
+  say "Docker project '$name', port block $BLOCK: the app will be at $site (claimed in $REGISTRY)."
 }
 
 wait_for_backend() {
@@ -81,9 +239,28 @@ wait_for_backend() {
   die "The backend did not become healthy in 15 minutes. Run: docker compose logs backend"
 }
 
+# Lighter local footprint (memory caps, live preview on demand) so several projects fit on one
+# machine. docker-compose.override.yml is git-ignored and never used by a server.
+make_override() {
+  if [ -f docker-compose.override.yml ]; then
+    say "docker-compose.override.yml already exists, leaving it as it is."
+  elif [ -f docker-compose.override.example.yml ]; then
+    cp docker-compose.override.example.yml docker-compose.override.yml
+    say "Created docker-compose.override.yml (local memory caps; live preview starts only when asked)."
+  fi
+}
+
+site_url() {
+  local http
+  http=$(grep -E '^KDL_PORT_HTTP=' .env 2>/dev/null | cut -d= -f2- || true)
+  if [ -z "$http" ] || [ "$http" = 80 ]; then echo "http://localhost"; else echo "http://localhost:$http"; fi
+}
+
 main() {
+  parse_args "$@"
   make_env
-  [ "${1:-}" = "--env-only" ] && exit 0
+  make_override
+  [ "$ENV_ONLY" = 1 ] && exit 0
 
   need git "Install it from https://git-scm.com."
   need docker "Install Docker Desktop from https://www.docker.com/products/docker-desktop and start it."
@@ -107,7 +284,7 @@ main() {
   [ -n "$admin_password" ] || admin_password="kdl-dev-seed-password (the Docker development default; use only on your own computer)"
 
   say ""
-  say "KDL OS is running: http://localhost/login"
+  say "KDL OS is running: $(site_url)/login   (Docker project: $(docker compose config 2>/dev/null | sed -n 's/^name: //p'))"
   say ""
   say "Sign-ins (each one asks you to choose a new password the first time):"
   say "  Super Admin  ${admin_email}  /  ${admin_password}"

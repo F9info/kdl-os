@@ -11,7 +11,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required in .env}
       POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required in .env}
     ports:
-      - "127.0.0.1:5433:5432"
+      - "127.0.0.1:${KDL_PORT_POSTGRES:-5433}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -21,7 +21,7 @@ services:
     env_file: .env
     command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD is required in .env}"]
     ports:
-      - "127.0.0.1:6380:6379"
+      - "127.0.0.1:${KDL_PORT_REDIS:-6380}:6379"
 
   minio:
     image: minio/minio
@@ -44,7 +44,7 @@ services:
     environment:
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:?MEILI_MASTER_KEY is required in .env}
     ports:
-      - "127.0.0.1:7700:7700"
+      - "127.0.0.1:${KDL_PORT_MEILI:-7700}:7700"
     volumes:
       - meilidata:/meili_data
 
@@ -52,7 +52,7 @@ services:
     image: chromadb/chroma
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:${KDL_PORT_CHROMA:-8000}:8000"
     volumes:
       - chromadata:/chroma/chroma
 

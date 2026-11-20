@@ -120,7 +120,7 @@ You must start Docker Desktop each time before you use KDL OS (unless you set it
 | Memory given to Docker | **at least 6 GB, 8 GB recommended** — the frontend build asks for a 4 GB memory heap. Docker Desktop → Settings → Resources → Memory |
 | Disk space | About 5 GB for images; keep **15 GB free** to be safe (build cache grows) |
 | Internet | Needed on first run to download images and packages (a few GB) |
-| Free ports | See the [ports table](#35-ports-at-a-glance). Port **80** must be free for Path A |
+| Free ports | See the [ports table](#35-ports-at-a-glance). Port **80** must be free for Path A. Another KDL project already on this machine? `./setup.sh` picks a free port block for you — see [MULTI_PROJECT_LOCAL.md](MULTI_PROJECT_LOCAL.md) |
 
 ### 3.3 Accounts and keys — none needed to start
 
