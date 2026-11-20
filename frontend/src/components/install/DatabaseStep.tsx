@@ -10,7 +10,7 @@ import { installApi, type DatabaseInfo } from './install-api'
  * Installer step 1: test the database connection and the migrations. The connection comes from the server's
  * environment (DATABASE_URL), so this is a check, not a form: credentials are never typed into a web page.
  */
-export function DatabaseStep({ onNext }: { onNext: () => void }) {
+export function DatabaseStep({ onNext, onBack }: { onNext: () => void; onBack?: () => void }) {
   const { data, isFetching, error, refetch } = useQuery({
     queryKey: ['install', 'database'],
     queryFn: () => installApi.get('/database').then((r) => r.data.data as DatabaseInfo),
@@ -84,10 +84,17 @@ export function DatabaseStep({ onNext }: { onNext: () => void }) {
       )}
 
       <div className="mt-8 flex justify-between">
-        <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
-          <RefreshCw className={isFetching ? 'mr-2 h-4 w-4 animate-spin' : 'mr-2 h-4 w-4'} />
-          Test again
-        </Button>
+        <div className="flex gap-2">
+          {onBack && (
+            <Button variant="ghost" onClick={onBack}>
+              Back
+            </Button>
+          )}
+          <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
+            <RefreshCw className={isFetching ? 'mr-2 h-4 w-4 animate-spin' : 'mr-2 h-4 w-4'} />
+            Test again
+          </Button>
+        </div>
         <Button onClick={onNext} disabled={!data?.ready}>
           Next
         </Button>

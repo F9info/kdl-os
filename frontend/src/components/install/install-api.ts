@@ -1,45 +1,19 @@
 import api from '@/lib/axios'
 import type { AxiosRequestConfig } from 'axios'
 
-// The installer has no login. Every call carries the setup token (printed in the server log, or
-// KDL_SETUP_TOKEN). It is kept in sessionStorage only, so closing the tab forgets it.
-const KEY = 'kdl-setup-token'
-
-export const getSetupToken = (): string => {
-  try {
-    return sessionStorage.getItem(KEY) ?? ''
-  } catch {
-    return ''
-  }
-}
-export const setSetupToken = (token: string) => {
-  try {
-    if (token) sessionStorage.setItem(KEY, token)
-    else sessionStorage.removeItem(KEY)
-  } catch {
-    // storage blocked: the token then has to be typed again on reload
-  }
-}
-
-const withToken = (config: AxiosRequestConfig = {}): AxiosRequestConfig => ({
-  ...config,
-  headers: { ...config.headers, 'x-setup-token': getSetupToken() },
-})
-
+// The installer has no login and no token: it is open until the install completes.
 export const installApi = {
-  get: (url: string, config?: AxiosRequestConfig) => api.get(`/install${url}`, withToken(config)),
+  get: (url: string, config?: AxiosRequestConfig) => api.get(`/install${url}`, config),
   post: (url: string, body?: unknown, config?: AxiosRequestConfig) =>
-    api.post(`/install${url}`, body, withToken(config)),
+    api.post(`/install${url}`, body, config),
   put: (url: string, body?: unknown, config?: AxiosRequestConfig) =>
-    api.put(`/install${url}`, body, withToken(config)),
+    api.put(`/install${url}`, body, config),
 }
 
-/** Server-side record of the installer, as returned by GET /install/status with a valid token. */
+/** Server-side record of the installer, as returned by GET /install/status. */
 export interface InstallState {
   installed: boolean
   status?: 'pending' | 'running'
-  token_required?: boolean
-  token_ok?: boolean
   step?: number
   app_type?: string | null
   steps?: Record<string, { status?: string; error?: string | null; at?: string }>
@@ -100,14 +74,17 @@ export interface LaunchResult {
   }
 }
 
-/** The step the wizard should open on, from what the server already recorded (1-based, 7 = launch). */
+/**
+ * The step the wizard should open on, from what the server already recorded (1-based, 7 = launch).
+ * Order: 1 Company, 2 Application type, 3 Database, 4 Admin, 5 Core install, 6 Modules, 7 Launch.
+ */
 export function resumeStep(state: InstallState): number {
   const done = (key: string) => state.steps?.[key]?.status === 'done'
-  if (!done('database')) return 1
-  if (!(done('company') || (state.step ?? 0) >= 1)) return 2
-  if (!state.admin && state.core !== 'done') return 3
-  if (state.core !== 'done') return 4
-  if (!(done('type') || (state.step ?? 0) >= 2)) return 5
+  if (!(done('company') || (state.step ?? 0) >= 1)) return 1
+  if (!(done('type') || (state.step ?? 0) >= 2)) return 2
+  if (!done('database')) return 3
+  if (!state.admin && state.core !== 'done') return 4
+  if (state.core !== 'done') return 5
   if (!done('modules')) return 6
   return 7
 }

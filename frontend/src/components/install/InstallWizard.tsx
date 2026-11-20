@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { Check, ImagePlus, Loader2, Rocket } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -20,7 +20,6 @@ import {
 } from './install-api'
 import { ModulesStep } from './ModulesStep'
 import { CompleteScreen } from './CompleteScreen'
-import { SetupTokenGate } from './SetupTokenGate'
 import { DatabaseStep } from './DatabaseStep'
 import { AdminStep } from './AdminStep'
 import { CoreStep } from './CoreStep'
@@ -28,11 +27,11 @@ import { CoreStep } from './CoreStep'
 const MAX_LOGO = 2 * 1024 * 1024
 const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp']
 const STEPS = [
-  'Database',
   'Company',
+  'Application type',
+  'Database',
   'Admin',
   'Core install',
-  'Application type',
   'Modules',
   'Launch',
 ]
@@ -77,7 +76,6 @@ function Stepper({ step }: { step: number }) {
 
 export function InstallWizard() {
   const router = useRouter()
-  const qc = useQueryClient()
   const [step, setStep] = useState(1)
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -99,13 +97,13 @@ export function InstallWizard() {
   })
   const { data: types } = useQuery({
     queryKey: ['install', 'types'],
-    enabled: !!state && !state.installed && !!state.token_ok,
+    enabled: !!state && !state.installed,
     queryFn: () => installApi.get('/app-types').then((r) => r.data.data as AppTypeInfo[]),
   })
 
   const { data: picks } = useQuery({
     queryKey: ['install', 'modules'],
-    enabled: !!state && !state.installed && !!state.token_ok && step === 7,
+    enabled: !!state && !state.installed && step === 7,
     queryFn: () => installApi.get('/modules').then((r) => r.data.data as ModuleChoices),
   })
 
@@ -116,7 +114,6 @@ export function InstallWizard() {
       if (!launched) router.replace('/login') // just launched: the completion screen sends them on
       return
     }
-    if (state.token_required && !state.token_ok) return // the token screen is showing
     if (seeded.current) return
     seeded.current = true
     const c = state.company
@@ -167,11 +164,11 @@ export function InstallWizard() {
         email: email.trim(),
         logo_path: logoPath,
       }),
-    onSuccess: () => setStep(3),
+    onSuccess: () => setStep(2),
   })
   const saveType = useMutation({
     mutationFn: () => installApi.put('/app-type', { app_type: appType }),
-    onSuccess: () => setStep(6),
+    onSuccess: () => setStep(3),
   })
   // Installing modules runs their migrations and seeders, which can take a while.
   const launch = useMutation({
@@ -191,7 +188,6 @@ export function InstallWizard() {
     )
   }
 
-  const needsToken = !!state.token_required && !state.token_ok
   const type = types?.find((t) => t.key === appType)
   const next1 = () => {
     setTouched(true)
@@ -205,39 +201,32 @@ export function InstallWizard() {
           <p className="text-2xl font-bold tracking-tight">KDL OS</p>
           <p className="text-sm text-muted-foreground">Let&apos;s set up your workspace</p>
         </div>
-        {!needsToken && <Stepper step={step} />}
+        <Stepper step={step} />
 
         <div className="rounded-xl border bg-card p-5 shadow-md sm:p-8">
-          {needsToken && (
-            <SetupTokenGate
-              onAccepted={() => {
-                seeded.current = false
-                qc.invalidateQueries({ queryKey: ['install'] })
-              }}
-            />
-          )}
-
           {launched && (
             <CompleteScreen result={launched} onContinue={() => router.replace('/login')} />
           )}
 
-          {!launched && !needsToken && (
+          {!launched && (
             <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Step {step} of {STEPS.length}
             </p>
           )}
 
-          {!launched && !needsToken && step === 1 && <DatabaseStep onNext={() => setStep(2)} />}
-
-          {!launched && !needsToken && step === 3 && (
-            <AdminStep initial={state.admin} onBack={() => setStep(2)} onNext={() => setStep(4)} />
+          {!launched && step === 3 && (
+            <DatabaseStep onNext={() => setStep(4)} onBack={() => setStep(2)} />
           )}
 
-          {!launched && !needsToken && step === 4 && (
-            <CoreStep core={state.core} onBack={() => setStep(3)} onNext={() => setStep(5)} />
+          {!launched && step === 4 && (
+            <AdminStep initial={state.admin} onBack={() => setStep(3)} onNext={() => setStep(5)} />
           )}
 
-          {!launched && !needsToken && step === 2 && (
+          {!launched && step === 5 && (
+            <CoreStep core={state.core} onBack={() => setStep(4)} onNext={() => setStep(6)} />
+          )}
+
+          {!launched && step === 1 && (
             <section>
               <h1 className="text-xl font-semibold">Tell us about your company</h1>
               <p className="mb-6 mt-1 text-sm text-muted-foreground">
@@ -325,9 +314,7 @@ export function InstallWizard() {
                 {saveCompany.error && <ErrorAlert error={saveCompany.error} />}
               </div>
               <div className="mt-8 flex justify-between">
-                <Button variant="ghost" onClick={() => setStep(1)} disabled={saveCompany.isPending}>
-                  Back
-                </Button>
+                <span />
                 <Button onClick={next1} disabled={saveCompany.isPending || upload.isPending}>
                   {saveCompany.isPending ? 'Saving…' : 'Next'}
                 </Button>
@@ -335,7 +322,7 @@ export function InstallWizard() {
             </section>
           )}
 
-          {!launched && !needsToken && step === 5 && (
+          {!launched && step === 2 && (
             <section>
               <h1 className="text-xl font-semibold">What do you want to create?</h1>
               <p className="mb-6 mt-1 text-sm text-muted-foreground">
@@ -351,7 +338,7 @@ export function InstallWizard() {
               )}
               {saveType.error && <ErrorAlert error={saveType.error} className="mt-4" />}
               <div className="mt-8 flex justify-between">
-                <Button variant="ghost" onClick={() => setStep(4)}>
+                <Button variant="ghost" onClick={() => setStep(1)}>
                   Back
                 </Button>
                 <Button onClick={() => saveType.mutate()} disabled={!appType || saveType.isPending}>
@@ -361,11 +348,11 @@ export function InstallWizard() {
             </section>
           )}
 
-          {!launched && !needsToken && step === 6 && (
+          {!launched && step === 6 && (
             <ModulesStep onBack={() => setStep(5)} onNext={() => setStep(7)} />
           )}
 
-          {!launched && !needsToken && step === 7 && (
+          {!launched && step === 7 && (
             <section>
               <h1 className="text-xl font-semibold">Ready to launch</h1>
               <p className="mb-6 mt-1 text-sm text-muted-foreground">

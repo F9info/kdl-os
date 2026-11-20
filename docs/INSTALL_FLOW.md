@@ -5,14 +5,13 @@ step, so a refresh resumes where it stopped and a failed step can be retried.
 
 | # | Step | What it does |
 |---|------|--------------|
-| 0 | **Setup token** | Opening the installer needs a token that only the server shows (see below). |
-| 1 | Database | Tests the connection and checks that every migration is applied. Read-only: the connection comes from the server's `DATABASE_URL`, never from a web form. |
-| 2 | Company | Name, logo, phone, email. Saved as the company identity. |
-| 3 | Admin account | Name, email, password (12+ characters). Only a bcrypt hash is kept, and only until step 4 uses it. |
-| 4 | Core installation | Runs the core seeders (modules, projects, roles and permissions, default users, brand kit, theme, credits) and creates the Super Admin. Same ordered list as `npm run db:seed` (`backend/prisma/core-seed.js`). |
-| 5 | Application type | Admin only, Admin + frontend, Landing, Static... decides which modules are installed. |
+| 1 | Company (identity) | Logo, name, phone, email. Saved as the company identity. |
+| 2 | Application type | Admin only, Admin + frontend (web app + website), Landing, Static... decides which modules are installed. |
+| 3 | Database | Tests the connection and checks that every migration is applied. Read-only: the connection comes from the server's `DATABASE_URL`, never from a web form. |
+| 4 | Admin account | Name, email, password (12+ characters). Only a bcrypt hash is kept, and only until step 5 uses it. |
+| 5 | Core installation | Runs the core seeders (modules, projects, roles and permissions, default users, brand kit, theme, credits) and creates the Super Admin. Same ordered list as `npm run db:seed` (`backend/prisma/core-seed.js`). |
 | 6 | Modules | Core modules first (always on), then what the chosen type installs, then optional extras to tick, each with its description, dependencies and status. For a website it also asks "Start with a sample website?" (default yes). |
-| 7 | Launch | Installs and enables the type's modules plus the chosen extras, marks the install complete, then shows a completion screen: database and core status, seeders run, modules enabled, whether sample content was created, links to the site and to sign in. |
+| 7 | Launch | Installs and enables the type's modules plus the chosen extras, marks the install complete, then shows a completion screen and sends you to the login page. |
 
 ## The Modules step
 
@@ -28,18 +27,11 @@ The sample-content answer is the existing `onboarding.frontend` setting (`yes`/`
 and every module's sample rows already read. `no` creates the website with no demo site, landing pages or sample
 rows. It is only asked when the type or an extra creates a website.
 
-## The setup token
+## No setup token
 
-The installer has no login, so before the install is complete every wizard route needs the token
-(`x-setup-token` header). Without it, anyone who can reach a new instance could finish the install.
-
-- While the install is open, the backend generates one at start and prints it **once** in its log:
-  `docker compose logs backend | grep SETUP`. Only its SHA-256 is stored.
-- Lost it? `npm run install:token` (or `docker compose exec backend node scripts/install-token.js`) prints a new one.
-- Scripted installs set `KDL_SETUP_TOKEN` (16+ characters) in the environment instead.
-- With no token configured, every request is refused. Once the install is complete the routes answer 409 and
-  no token is created.
-- `GET /api/install/status` stays public but says only `installed` / `token_required` until a valid token is sent.
+The installer has no login and no token. It is open until the install completes; after that every wizard route
+answers 409. `GET /api/install/status` returns the saved company details so a refresh can resume. Run the installer
+on a private network (or behind your own access control) until it is finished.
 
 ## The admin account
 
@@ -91,9 +83,9 @@ node prisma/seed.js --only=roles,credits # those, plus what they depend on
 
 Two Playwright specs cover this flow (`frontend/e2e/`):
 
-- `installer-fresh.spec.ts` runs the whole wizard on an **empty** database: a wrong token is refused, every step, a refresh
+- `installer-fresh.spec.ts` runs the whole wizard on an **empty** database: every step, a refresh
   mid-wizard, launch, the completion screen, sign-in as the new admin, and the installer being closed afterwards. It is
-  skipped unless `E2E_FRESH_INSTALL=1` and `E2E_SETUP_TOKEN` are set, so a normal e2e run is unaffected.
+  skipped unless `E2E_FRESH_INSTALL=1` is set, so a normal e2e run is unaffected.
 - `platform-sweep.spec.ts` runs on any **installed** stack and changes nothing: the dashboard's platform status, the main
   admin screens, and (when the sample landing pages exist) four different headers with working menu links.
 
@@ -107,9 +99,9 @@ Two Playwright specs cover this flow (`frontend/e2e/`):
 - Add `E2E_CHROME=1` to use the installed Google Chrome, and `--headed` to watch.
 
 ```bash
-# fresh stack (the token is in the backend log: docker compose logs backend | grep "SETUP TOKEN")
+# fresh stack
 cd frontend
-E2E_FRESH_INSTALL=1 E2E_SETUP_TOKEN=<token> E2E_BASE_URL=http://localhost:3001 pnpm e2e e2e/installer-fresh.spec.ts
+E2E_FRESH_INSTALL=1 E2E_BASE_URL=http://localhost:3001 pnpm e2e e2e/installer-fresh.spec.ts
 E2E_BASE_URL=http://localhost:3001 E2E_ADMIN_EMAIL=asha@acme.test E2E_ADMIN_PASSWORD='correct horse battery 9' \
   pnpm e2e e2e/platform-sweep.spec.ts
 ```

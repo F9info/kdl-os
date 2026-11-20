@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from './utils'
 
-const h = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), put: vi.fn(), token: '' }))
+const h = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), put: vi.fn() }))
 vi.mock('@/components/install/install-api', async () => {
   const actual = await vi.importActual<typeof import('@/components/install/install-api')>(
     '@/components/install/install-api'
@@ -9,15 +9,10 @@ vi.mock('@/components/install/install-api', async () => {
   return {
     ...actual,
     installApi: { get: h.get, post: h.post, put: h.put },
-    setSetupToken: (t: string) => {
-      h.token = t
-    },
-    getSetupToken: () => h.token,
   }
 })
 
 import { resumeStep, type InstallState } from '@/components/install/install-api'
-import { SetupTokenGate } from '@/components/install/SetupTokenGate'
 import { DatabaseStep } from '@/components/install/DatabaseStep'
 import { AdminStep, adminErrors } from '@/components/install/AdminStep'
 import { ModulesStep } from '@/components/install/ModulesStep'
@@ -26,38 +21,32 @@ import { CoreStep } from '@/components/install/CoreStep'
 
 beforeEach(() => {
   vi.clearAllMocks()
-  h.token = ''
 })
 
 describe('resumeStep', () => {
   const done = (...keys: string[]) =>
     Object.fromEntries(keys.map((k) => [k, { status: 'done' }])) as InstallState['steps']
   it('opens on the first step that is not done', () => {
+    const admin = { name: 'A', email: 'a@b.co' }
     expect(resumeStep({ installed: false })).toBe(1)
-    expect(resumeStep({ installed: false, steps: done('database') })).toBe(2)
-    expect(resumeStep({ installed: false, steps: done('database', 'company') })).toBe(3)
+    expect(resumeStep({ installed: false, steps: done('company') })).toBe(2)
+    expect(resumeStep({ installed: false, steps: done('company', 'type') })).toBe(3)
+    expect(resumeStep({ installed: false, steps: done('company', 'type', 'database') })).toBe(4)
     expect(
-      resumeStep({
-        installed: false,
-        steps: done('database', 'company'),
-        admin: { name: 'A', email: 'a@b.co' },
-      })
-    ).toBe(4)
-    expect(
-      resumeStep({
-        installed: false,
-        steps: done('database', 'company'),
-        admin: { name: 'A', email: 'a@b.co' },
-        core: 'done',
-      })
+      resumeStep({ installed: false, steps: done('company', 'type', 'database'), admin })
     ).toBe(5)
     expect(
-      resumeStep({ installed: false, steps: done('database', 'company', 'type'), core: 'done' })
+      resumeStep({
+        installed: false,
+        steps: done('company', 'type', 'database'),
+        admin,
+        core: 'done',
+      })
     ).toBe(6)
     expect(
       resumeStep({
         installed: false,
-        steps: done('database', 'company', 'type', 'modules'),
+        steps: done('company', 'type', 'database', 'modules'),
         core: 'done',
       })
     ).toBe(7)
@@ -86,35 +75,6 @@ describe('adminErrors', () => {
       adminErrors({ ...ok, password: 'é'.repeat(40), confirm: 'é'.repeat(40) }).password
     ).toMatch(/72 bytes/)
     expect(adminErrors({ ...ok, confirm: 'different password!' }).confirm).toMatch(/match/)
-  })
-})
-
-describe('SetupTokenGate', () => {
-  it('keeps the token only when the server accepts it', async () => {
-    const onAccepted = vi.fn()
-    h.post.mockResolvedValueOnce({ data: { data: { ok: true } } })
-    render(<SetupTokenGate onAccepted={onAccepted} />)
-    const button = screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement
-    expect(button.disabled).toBe(true)
-    fireEvent.change(screen.getByLabelText('Setup token'), { target: { value: 'abc-123-def-456' } })
-    fireEvent.click(button)
-    await waitFor(() => expect(onAccepted).toHaveBeenCalled())
-    expect(h.post).toHaveBeenCalledWith('/token')
-    expect(h.token).toBe('abc-123-def-456')
-  })
-
-  it('forgets a wrong token and shows the error', async () => {
-    h.post.mockRejectedValueOnce({
-      response: { data: { message: 'That setup token is not right.' } },
-      message: 'x',
-    })
-    render(<SetupTokenGate onAccepted={vi.fn()} />)
-    fireEvent.change(screen.getByLabelText('Setup token'), {
-      target: { value: 'wrong-wrong-wrong' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
-    await waitFor(() => expect(h.token).toBe(''))
-    expect(await screen.findByText(/not right/)).toBeTruthy()
   })
 })
 

@@ -8,7 +8,6 @@ import { updateIdentity, getIdentity, getAppConfig } from '../../modules/identit
 import { APP_TYPES, APP_TYPE_KEYS, hasFrontend, modulesFor } from './app-types.js';
 import { K, STALE_RUN_MS, getSetting, setSetting, isInstalled } from './status.js';
 import { markStep, logInstall, readSteps } from './progress.js';
-import { HASH_KEY } from './setup-token.js';
 import { adminDraft, coreStatus } from './core.js';
 import { EXTRA_KEY, DEMO_CHOICE, readSelection, hasWebsite } from './modules.js';
 
@@ -187,8 +186,6 @@ export async function complete() {
     await markStep('launch', { status: 'done', modules });
     await logInstall('launch', 'info', `installation completed (${modules.length} modules)`);
     await setSetting(K.status, 'completed'); // last: everything above succeeded
-    // The setup token has done its job; nothing needs its hash any more.
-    await prisma.appSetting.deleteMany({ where: { key: HASH_KEY } }).catch(() => {});
     await redis.del('identity:raw', 'identity:app-config').catch(() => {});
     return { installed: true, app_type: type, modules, frontend: hasFrontend(type), summary: await buildSummary(type, modules, extra, demo) };
   } catch (err) {

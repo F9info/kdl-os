@@ -27,7 +27,6 @@ import { startBrandKitExpiryJob } from './modules/brand-kit/brand-kit.queue.js';
 import authRoutes from './modules/auth/routes.js';
 import installRoutes from './shared/install/routes.js';
 import { backfillInstalled } from './shared/install/status.js';
-import { ensureSetupToken } from './shared/install/setup-token.js';
 import { backfillRouteKeys } from './shared/page-routes-backfill.js';
 import userRoutes from './modules/users/routes.js';
 import settingsRoutes from './modules/settings/routes.js';
@@ -177,12 +176,6 @@ try {
   if (await backfillInstalled(prisma)) logger.info('install: existing installation marked complete');
 } catch (err) {
   logger.error(`install: status backfill failed: ${err.message}`);
-}
-// While the install is open the wizard needs a setup token; make sure one exists (printed once in this log).
-try {
-  await ensureSetupToken(prisma);
-} catch (err) {
-  logger.error(`install: setup token failed: ${err.message}`);
 }
 // Pages made before route keys existed get one (see shared/page-routes-backfill.js). Idempotent; a failure
 // must never stop the server from starting (a page without a key still gets the address it always had).

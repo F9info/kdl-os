@@ -194,22 +194,6 @@ describe('wizard', () => {
     await expect(svc.complete()).rejects.toThrow(/Core installation/);
     expect(settings.get('install.status')).not.toBe('completed');
   });
-  it('drops the setup token hash once the install is complete', async () => {
-    await svc.saveCompany(company);
-    await svc.saveType('landing');
-    settings.set('install.setup_token_hash', 'abc');
-    await svc.complete();
-    expect(settings.get('install.status')).toBe('completed');
-    expect(settings.has('install.setup_token_hash')).toBe(false);
-  });
-  it('keeps the setup token while the install is not complete', async () => {
-    await svc.saveCompany(company);
-    await svc.saveType('landing');
-    settings.set('install.setup_token_hash', 'abc');
-    lifecycle.fail = 'faq';
-    await expect(svc.complete()).rejects.toThrow(/Installation stopped/);
-    expect(settings.has('install.setup_token_hash')).toBe(true);
-  });
   it('records each step and a log line, including a failed launch', async () => {
     await svc.saveCompany(company);
     await svc.saveType('landing');

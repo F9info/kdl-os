@@ -10,7 +10,6 @@ import { isInstalled } from './status.js';
 import { companySchema, typeSchema, adminSchema, modulesSchema } from './schema.js';
 import { moduleChoices, saveModules } from './modules.js';
 
-import { requireSetupToken, verifySetupToken, SETUP_TOKEN_HEADER } from './setup-token.js';
 import { databaseStatus } from './database.js';
 import { saveAdmin, runCore } from './core.js';
 import { readSteps, readLog, markStep, logInstall } from './progress.js';
@@ -46,24 +45,12 @@ const openOnly = async (req, res, next) => {
   }
 };
 
-// Every wizard route needs the setup token (printed in the server log, or KDL_SETUP_TOKEN). Only /status is open,
-// and it says nothing about the company until the token is given.
-const guarded = [limiter, openOnly, requireSetupToken];
+// No login and no token: the wizard is open until the install completes, then every write is refused (409).
+const guarded = [limiter, openOnly];
 
 router.get('/status', run(async (req, res) => {
   res.set('Cache-Control', 'no-store');
-  const state = await svc.getState();
-  if (state.installed) return successResponse(res, state);
-  if (!(await verifySetupToken(req.get(SETUP_TOKEN_HEADER)))) {
-    return successResponse(res, { installed: false, status: state.status, token_required: true });
-  }
-  return successResponse(res, { ...state, token_required: true, token_ok: true });
-}));
-router.post('/token', limiter, openOnly, run(async (req, res) => {
-  if (!(await verifySetupToken(req.get(SETUP_TOKEN_HEADER)))) {
-    return errorResponse(res, 'That setup token is not right. Copy it from the server log.', 401);
-  }
-  return successResponse(res, { ok: true });
+  return successResponse(res, await svc.getState());
 }));
 router.get('/database', ...guarded, run(async (req, res) => {
   const db = await databaseStatus();
@@ -86,7 +73,7 @@ router.get('/modules', ...guarded, run(async (req, res) => {
   return successResponse(res, await moduleChoices(String(type ?? '')));
 }));
 router.put('/modules', ...guarded, validate(modulesSchema), run(async (req, res) => successResponse(res, await saveModules(await svc.selectedType(), req.validated.body))));
-router.post('/complete', limiter, requireSetupToken, run(async (req, res) => successResponse(res, await svc.complete())));
+router.post('/complete', ...guarded, run(async (req, res) => successResponse(res, await svc.complete())));
 
 // After login (Super Admin / Developer through the settings + modules permissions).
 router.get('/config', authenticate, requirePermission('settings', 'view'), run(async (req, res) => successResponse(res, await svc.currentType())));
