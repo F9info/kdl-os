@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { ShieldCheck } from 'lucide-react'
+import { Eye, EyeOff, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FormField } from '@/components/shared/FormField'
@@ -11,6 +11,46 @@ import { installApi } from './install-api'
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const bytes = (v: string) => new TextEncoder().encode(v).length
+
+/**
+ * Password box with an eye button to show or hide what was typed (same look as the login page).
+ * FormField injects id / aria-* / required into its direct child; they are passed on to the input
+ * so the label, hint and error styling still belong to it.
+ */
+function PasswordBox({
+  value,
+  onChange,
+  ...fieldProps
+}: {
+  value: string
+  onChange: (v: string) => void
+  id?: string
+  required?: boolean
+  'aria-invalid'?: React.AriaAttributes['aria-invalid']
+  'aria-describedby'?: string
+}) {
+  const [shown, setShown] = useState(false)
+  return (
+    <div className="relative">
+      <Input
+        {...fieldProps}
+        type={shown ? 'text' : 'password'}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        autoComplete="new-password"
+        className="pr-10"
+      />
+      <button
+        type="button"
+        className="absolute right-3 top-1/2 -translate-y-1/2 flex size-6 items-center justify-center text-muted-foreground hover:text-foreground"
+        onClick={() => setShown((v) => !v)}
+        aria-label={shown ? 'Hide password' : 'Show password'}
+      >
+        {shown ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
+    </div>
+  )
+}
 
 /** Same rules as the server (12+ characters, 72 bytes at most), so mistakes show before the request. */
 export function adminErrors(v: { name: string; email: string; password: string; confirm: string }) {
@@ -99,20 +139,10 @@ export function AdminStep({
             hint="At least 12 characters."
             error={touched ? errors.password : undefined}
           >
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="new-password"
-            />
+            <PasswordBox value={password} onChange={setPassword} />
           </FormField>
           <FormField label="Confirm password" required error={touched ? errors.confirm : undefined}>
-            <Input
-              type="password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              autoComplete="new-password"
-            />
+            <PasswordBox value={confirm} onChange={setConfirm} />
           </FormField>
         </div>
         {save.error && <ErrorAlert error={save.error} />}
