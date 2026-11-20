@@ -5,15 +5,12 @@
 # Purpose: a lighter footprint so several KDL projects can run on one machine at once.
 # See docs/MULTI_PROJECT_LOCAL.md.
 #
-#   - site-preview (the "Frontend view" live preview of a generated site, ~190 MB) starts only
-#     when asked:   docker compose --profile preview up -d site-preview
-#     stop it with: docker compose stop site-preview
-#     While it is stopped, the preview pages answer 502; everything else works.
 #   - Memory caps, so one runaway service cannot starve the other projects. They are well above
 #     normal idle use (in brackets). Raise one if a service is killed (exit code 137).
+#   - site-preview always runs: in KDL OS it IS the public website that nginx serves on `/`
+#     (an earlier version of this template made it opt-in, which left the main address blank).
 services:
   site-preview:
-    profiles: ["preview"]
     mem_limit: 1g
 
   frontend:
