@@ -31,23 +31,45 @@ The finished product is **KDL OS**: a modular, no-code project builder. One inst
 
 ## Quick Start
 
-New to this? Follow the step-by-step guide: [docs/INSTALLATION_GUIDE_SIMPLE.md](docs/INSTALLATION_GUIDE_SIMPLE.md) (full version: [docs/INSTALLATION_GUIDE.md](docs/INSTALLATION_GUIDE.md)). In short:
+New to this? Follow the step-by-step guide: [docs/INSTALLATION_GUIDE_SIMPLE.md](docs/INSTALLATION_GUIDE_SIMPLE.md) (full version: [docs/INSTALLATION_GUIDE.md](docs/INSTALLATION_GUIDE.md)).
+
+### Start a new client project
 
 ```bash
-# 1. Configure environment (the guide shows how to generate the secrets)
-cp .env.example .env
-# Set at least JWT_SECRET and the database/redis passwords.
-# Optional: OPENROUTER_API_KEY / ANTHROPIC_API_KEY (AI features only)
+# 1. Clone the kit into a folder named after the client project
+git clone https://github.com/F9info/kdl-os.git acme-crm
+cd acme-crm
 
-# 2. Start all services. The backend applies database migrations on start.
+# 2. Create a NEW .env for this project (do not copy one from another project)
+./setup.sh --env-only
+#   - Docker project name = the folder name (acme-crm); refused if another folder uses it
+#   - its own free port block, e.g. block 1 = http://localhost:10100
+#   - new random passwords and secrets
+#   - docker-compose.override.yml: local memory caps, live preview on demand
+#   It prints the address the app will open at. Options: --name <name>, --block <N>.
+
+# 3. Optional: add extra keys you need (e.g. OPENROUTER_API_KEY / ANTHROPIC_API_KEY for AI)
+#    by copying ONLY those lines into .env.
+
+# 4. Build and start. The backend creates the database tables by itself on start.
 docker compose up -d --build
-docker compose ps            # wait until `backend` is healthy
-
-# 3. Create the admin user (first run only)
-docker compose exec backend node prisma/seed.js
+docker compose ps            # wait until `backend` is healthy (first build: 10–20 minutes)
 ```
 
-Then open http://localhost/login, sign in as `admin@kdl.com`, and the Setup Wizard walks you through company identity and which products (Website, Landing Pages) to turn on.
+Then open the address `setup.sh` printed (e.g. `http://localhost:10100`). On a new, empty database the
+**installation wizard** opens in the browser (`/install`): company details, the first admin account, and
+which products to turn on. Sign-in stays closed until the wizard is finished.
+
+> **Never copy a `.env` from another project.** It carries that project's Docker name
+> (`COMPOSE_PROJECT_NAME`) and ports (`KDL_PORT_*`): the new folder would take over the other project's
+> containers and database, or fail with "port is already allocated". A `.env` without a project name
+> (e.g. kdl-os's own) makes the new folder share kdl-os's database. Copy only individual keys you need,
+> never `COMPOSE_PROJECT_NAME`, `KDL_PORT_*` or passwords/secrets.
+>
+> Several projects on one machine (names, port blocks, memory, Docker Desktop 12 GB):
+> [docs/MULTI_PROJECT_LOCAL.md](docs/MULTI_PROJECT_LOCAL.md).
+
+`./setup.sh` without `--env-only` does steps 2 and 4 in one go and also loads the starter data.
 
 Forgot the admin password (or locked out after too many failed sign-ins): reset it with
 
@@ -60,6 +82,9 @@ Then sign in as `admin@kdl.com` with `Admin@123`. Outside production the passwor
 ---
 
 ## Service URLs
+
+Classic ports (port block 0). A project on block N uses `10000 + N×100` upwards instead — its own
+ports are the `KDL_PORT_*` lines in its `.env` (table in [docs/MULTI_PROJECT_LOCAL.md](docs/MULTI_PROJECT_LOCAL.md)).
 
 | Service | URL | Notes |
 |---------|-----|-------|
