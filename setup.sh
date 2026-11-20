@@ -60,9 +60,20 @@ check_name_free() {
   other=$(docker ps -a --filter "label=com.docker.compose.project=$name" \
     --format '{{.Label "com.docker.compose.project.working_dir"}}' 2>/dev/null | sort -u | grep -vxF "$here" | head -1 || true)
   [ -z "$other" ] || die "The Docker project name '$name' is already used by $other. Two projects with one name share containers and data. Run again with --name <another-name>."
-  if docker volume inspect "${name}_pgdata" >/dev/null 2>&1; then
-    say "Note: a database volume '${name}_pgdata' already exists on this machine and will be reused."
-    say "      If it belongs to another project, stop now (Ctrl+C) and run again with --name <another-name>."
+  # Old data under this name (e.g. the folder was deleted and cloned again) cannot work: the new .env has
+  # new passwords, but Postgres keeps the password it was first created with -> backend "unhealthy" (P1000).
+  local vols
+  vols=$( { docker volume ls -q --filter "label=com.docker.compose.project=$name" 2>/dev/null
+            docker volume inspect -f '{{.Name}}' "${name}_pgdata" 2>/dev/null; } | sort -u | tr '\n' ' ' || true)
+  if [ -n "${vols// /}" ]; then
+    say "Docker already has data for the project name '$name' from an earlier setup:"
+    say "  $vols"
+    say "This new .env gets new passwords, so the old database would refuse them (backend unhealthy)."
+    say "Choose one:"
+    say "  - Start fresh, DELETING that old data:  docker compose -p $name down -v   then run ./setup.sh again"
+    say "  - Keep it and use another name:          ./setup.sh --name <another-name>"
+    say "  - It belongs to a project you still use: do NOT delete it; use --name <another-name>."
+    die "Stopped. Nothing was created."
   fi
 }
 
