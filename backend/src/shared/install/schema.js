@@ -19,10 +19,11 @@ export const companySchema = z.object({
 });
 export const typeSchema = z.object({ body: z.object({ app_type: z.enum(APP_TYPE_KEYS) }).strict() });
 
-// Installer admin account: same password rule as the app (12+ characters, 72 bytes at most: bcrypt truncates).
+// Installer admin account: 8+ characters (owner's choice, 2026-11-20; other password screens keep 12),
+// 72 bytes at most: bcrypt truncates.
 const adminPassword = z
   .string()
-  .min(12, 'Password must be at least 12 characters')
+  .min(8, 'Password must be at least 8 characters')
   .refine((v) => Buffer.byteLength(v, 'utf8') <= 72, 'Password must be at most 72 bytes');
 export const adminSchema = z.object({
   body: z

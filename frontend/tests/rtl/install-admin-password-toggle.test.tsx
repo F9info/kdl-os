@@ -56,6 +56,6 @@ describe('AdminStep password labels still belong to the inputs', () => {
     expect(passwordField().tagName).toBe('INPUT')
     expect(confirmField().tagName).toBe('INPUT')
     expect(passwordField().required).toBe(true)
-    expect(passwordField().getAttribute('aria-describedby')).toBeTruthy() // "At least 12 characters."
+    expect(passwordField().getAttribute('aria-describedby')).toBeTruthy() // "At least 8 characters."
   })
 })

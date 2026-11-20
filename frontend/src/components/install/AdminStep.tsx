@@ -52,14 +52,14 @@ function PasswordBox({
   )
 }
 
-/** Same rules as the server (12+ characters, 72 bytes at most), so mistakes show before the request. */
+/** Same rules as the server (8+ characters, 72 bytes at most), so mistakes show before the request. */
 export function adminErrors(v: { name: string; email: string; password: string; confirm: string }) {
   return {
     name: v.name.trim().length < 2 ? 'Enter the admin name.' : '',
     email: !EMAIL.test(v.email.trim()) ? 'Enter a valid email address.' : '',
     password:
-      v.password.length < 12
-        ? 'Use at least 12 characters.'
+      v.password.length < 8
+        ? 'Use at least 8 characters.'
         : bytes(v.password) > 72
           ? 'Use at most 72 bytes.'
           : '',
@@ -136,7 +136,7 @@ export function AdminStep({
           <FormField
             label="Password"
             required
-            hint="At least 12 characters."
+            hint="At least 8 characters."
             error={touched ? errors.password : undefined}
           >
             <PasswordBox value={password} onChange={setPassword} />

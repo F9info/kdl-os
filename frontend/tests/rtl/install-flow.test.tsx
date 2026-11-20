@@ -70,7 +70,8 @@ describe('adminErrors', () => {
   it('flags each problem', () => {
     expect(adminErrors({ ...ok, name: 'A' }).name).not.toBe('')
     expect(adminErrors({ ...ok, email: 'nope' }).email).not.toBe('')
-    expect(adminErrors({ ...ok, password: 'short', confirm: 'short' }).password).toMatch(/12/)
+    expect(adminErrors({ ...ok, password: 'abcd123', confirm: 'abcd123' }).password).toMatch(/8/)
+    expect(adminErrors({ ...ok, password: 'abcd1234', confirm: 'abcd1234' }).password).toBe('')
     expect(
       adminErrors({ ...ok, password: 'é'.repeat(40), confirm: 'é'.repeat(40) }).password
     ).toMatch(/72 bytes/)
