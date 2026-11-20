@@ -24,7 +24,10 @@ services:
       retries: 10
 
   minio:
-    image: minio/minio
+    # MinIO stopped publishing free images (minio/minio, quay.io) in 2026; Chainguard builds MinIO from source.
+    # user 0: this image defaults to a non-root user, which cannot write data made by the old (root) image.
+    image: cgr.dev/chainguard/minio:latest
+    user: "0"
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}

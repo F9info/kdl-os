@@ -25,7 +25,8 @@ services:
     ports: !reset []
 
   minio:
-    image: minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e # minio/minio
+    image: cgr.dev/chainguard/minio@sha256:e9cf6b99c226e9539ed0f14b6f00e37b07da153c7ba1f4f8709c807574b471ec # chainguard/minio RELEASE.2026-11-12 (minio/minio images withdrawn)
+    user: "0"
     restart: always
     ports: !reset []
 
