@@ -43,10 +43,11 @@ cd acme-crm
 # 2. Create a NEW .env for this project (do not copy one from another project)
 ./setup.sh --env-only
 #   - Docker project name = the folder name (acme-crm); refused if another folder uses it
-#   - its own free port block, e.g. block 1 = http://localhost:10100
+#   - database name = the folder name with _ (acme_crm); choose another with --db <name>
+#   - its own free port block, e.g. block 1 = ports 10100–10112
 #   - new random passwords and secrets
-#   - docker-compose.override.yml: local memory caps, live preview on demand
-#   It prints the address the app will open at. Options: --name <name>, --block <N>.
+#   - docker-compose.override.yml: local memory caps
+#   It prints this project's addresses. Options: --name <name>, --db <name>, --block <N>.
 
 # 3. Optional: add extra keys you need (e.g. OPENROUTER_API_KEY / ANTHROPIC_API_KEY for AI)
 #    by copying ONLY those lines into .env.
@@ -56,9 +57,16 @@ docker compose up -d --build
 docker compose ps            # wait until `backend` is healthy (first build: 10–20 minutes)
 ```
 
-Then open the address `setup.sh` printed (e.g. `http://localhost:10100`). On a new, empty database the
-**installation wizard** opens in the browser (`/install`): company details, the first admin account, and
-which products to turn on. Sign-in stays closed until the wizard is finished.
+Then open the **installation wizard** in the browser:
+
+```
+http://localhost:<KDL_PORT_FRONTEND>/install      block 1: http://localhost:10101/install
+```
+
+(`setup.sh` prints the exact address; `KDL_PORT_FRONTEND` is in the project's `.env`.) On a new, empty
+database it walks you through company details, the database check, the first admin account, and which
+products to turn on. Sign-in stays closed until the wizard is finished. Afterwards the admin app is at
+`http://localhost:<KDL_PORT_FRONTEND>` and the public website at `http://localhost:<KDL_PORT_HTTP>`.
 
 > **Never copy a `.env` from another project.** It carries that project's Docker name
 > (`COMPOSE_PROJECT_NAME`) and ports (`KDL_PORT_*`): the new folder would take over the other project's

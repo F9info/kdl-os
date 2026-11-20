@@ -4,8 +4,9 @@
 #   ./setup.sh              create .env (if missing), build and start everything, seed, print the sign-ins
 #   ./setup.sh --env-only   only create .env, then stop
 #
-# Options (only used when .env is created; both have safe defaults):
+# Options (only used when .env is created; all have safe defaults):
 #   --name <project>   Docker project name. Default: this folder's name (e.g. acme-crm).
+#   --db <name>        database name. Default: the project name with - turned into _ (acme-crm -> acme_crm).
 #   --block <N>        port block. Default: the first block whose ports are all free.
 #                      0 = the classic ports (http://localhost, 3001, 4000, 5433, ...).
 #                      N >= 1 = ports 10000+N*100 .. +12 (block 1: http://localhost:10100).
@@ -26,6 +27,7 @@ need() { command -v "$1" >/dev/null 2>&1 || die "$1 is not installed. $2"; }
 
 OPT_NAME=""
 OPT_BLOCK=""
+OPT_DB=""
 ENV_ONLY=0
 
 parse_args() {
@@ -36,6 +38,8 @@ parse_args() {
       --name=*) OPT_NAME="${1#--name=}" ;;
       --block) [ $# -ge 2 ] || die "--block needs a value"; OPT_BLOCK="$2"; shift ;;
       --block=*) OPT_BLOCK="${1#--block=}" ;;
+      --db) [ $# -ge 2 ] || die "--db needs a value"; OPT_DB="$2"; shift ;;
+      --db=*) OPT_DB="${1#--db=}" ;;
       *) die "Unknown option: $1 (see the top of setup.sh)" ;;
     esac
     shift
@@ -161,6 +165,11 @@ make_env() {
   local owner
   owner=$(name_claimed_by "$name")
   [ -z "$owner" ] || die "The Docker project name '$name' is already claimed by $owner (in $REGISTRY). Run again with --name <another-name>."
+
+  # Database name: lowercase letters, digits and _ only (safe in any SQL without quoting).
+  local db
+  db=$(printf '%s' "${OPT_DB:-$name}" | tr '[:upper:]' '[:lower:]' | sed -e 's/[^a-z0-9_]/_/g' -e 's/^[^a-z_]*//' -e 's/_\{2,\}/_/g' | cut -c1-63)
+  [ -n "$db" ] || die "Could not make a database name from '${OPT_DB:-$name}'. Pass --db <name> (letters, digits, _)."
   pick_block
 
   local P_HTTP P_FRONTEND P_BACKEND P_AI P_POSTGRES P_REDIS P_MEILI P_CHROMA site
@@ -202,8 +211,8 @@ SEED_ADMIN_EMAIL=admin@kdl.com
 SEED_ADMIN_PASSWORD=$(openssl rand -hex 16)
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=$pg
-POSTGRES_DB=kdl_db
-DATABASE_URL=postgresql://postgres:$pg@localhost:$P_POSTGRES/kdl_db
+POSTGRES_DB=$db
+DATABASE_URL=postgresql://postgres:$pg@localhost:$P_POSTGRES/$db
 REDIS_PASSWORD=$redis
 REDIS_URL=redis://:$redis@localhost:$P_REDIS
 MINIO_ROOT_USER=kdl_minio
@@ -225,7 +234,10 @@ EOF
   )
   say "Created .env with new random passwords. Never share or commit it."
   registry_record "$BLOCK" "$name"
-  say "Docker project '$name', port block $BLOCK: the app will be at $site (claimed in $REGISTRY)."
+  say "Docker project '$name', database '$db', port block $BLOCK (claimed in $REGISTRY)."
+  say "After docker compose up -d --build:"
+  say "  Installation wizard: http://localhost:$P_FRONTEND/install"
+  say "  Admin app:           http://localhost:$P_FRONTEND   Website (nginx): $site"
 }
 
 wait_for_backend() {
@@ -239,14 +251,14 @@ wait_for_backend() {
   die "The backend did not become healthy in 15 minutes. Run: docker compose logs backend"
 }
 
-# Lighter local footprint (memory caps, live preview on demand) so several projects fit on one
+# Lighter local footprint (memory caps) so several projects fit on one
 # machine. docker-compose.override.yml is git-ignored and never used by a server.
 make_override() {
   if [ -f docker-compose.override.yml ]; then
     say "docker-compose.override.yml already exists, leaving it as it is."
   elif [ -f docker-compose.override.example.yml ]; then
     cp docker-compose.override.example.yml docker-compose.override.yml
-    say "Created docker-compose.override.yml (local memory caps; live preview starts only when asked)."
+    say "Created docker-compose.override.yml (local memory caps)."
   fi
 }
 

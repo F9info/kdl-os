@@ -5,7 +5,7 @@ backend, frontend). Several stacks can run side by side on one machine if each o
 
 1. **its own Docker project name**,
 2. **its own port block**,
-3. the **lighter local override** (memory caps, live preview on demand).
+3. the **lighter local override** (memory caps).
 
 `./setup.sh` does all three when it creates `.env` for a new project. This page explains what it
 does, and how to fix an older project by hand.
@@ -26,6 +26,11 @@ one replaces the other's containers and opens its database. The name comes from,
 When you fork KDL OS for a client, setup.sh gives it the folder's name (e.g. `acme-crm`). It
 refuses a name that a different folder on this machine already uses. You may also change `name:`
 in the client repo's `docker-compose.yml` to the client's name.
+
+The **database name** (`POSTGRES_DB`, shown in the installer's Database step) is the project name
+with `-` turned into `_` (`acme_crm`), or what you pass with `./setup.sh --db <name>`. Projects
+made before this option use `kdl_db`; that is fine (each project has its own Postgres), and
+renaming it means a new, empty database.
 
 Known names on the F9 machine: `kdl-os`, `kdl-starter-kit` (EdMIUM — an older fork that kept the
 kit's name; never reuse it), `lexa-portal`.
@@ -52,7 +57,11 @@ Every published port comes from a `KDL_PORT_*` value in `.env`, with the classic
 
 setup.sh picks the first block whose 13 ports are all free: not listening now, and not claimed by
 any container (running or stopped) of any project. Force one with `./setup.sh --block 3`.
-The app is then at `http://localhost:<KDL_PORT_HTTP>` (block 0: `http://localhost`).
+Addresses (block 1 in brackets):
+
+- installation wizard: `http://localhost:<KDL_PORT_FRONTEND>/install` (`http://localhost:10101/install`)
+- admin app: `http://localhost:<KDL_PORT_FRONTEND>` (`http://localhost:10101`)
+- public website through nginx: `http://localhost:<KDL_PORT_HTTP>` (`http://localhost:10100`; block 0: `http://localhost`)
 
 **Changing the MinIO port needs a frontend rebuild** (`docker compose build frontend`): the
 browser's allowed image host (`NEXT_PUBLIC_IMAGE_HOSTS`) is baked in at build time.
@@ -65,10 +74,11 @@ Chroma values; its MinIO stays on 9000/9001, so run only one Path B project at a
 setup.sh copies `docker-compose.override.example.yml` to `docker-compose.override.yml`
 (git-ignored; Compose loads it automatically, on this machine only):
 
-- **site-preview** (the "Frontend view" live preview, ~190 MB) starts only when asked:
-  `docker compose --profile preview up -d site-preview` / `docker compose stop site-preview`.
 - **Memory caps** on every service, well above normal use, so one runaway service cannot starve
   the other projects.
+- site-preview is NOT made optional here: in KDL OS it is the public website nginx serves on `/`.
+  (Projects made with the first version of this template have `profiles: ["preview"]` on
+  site-preview in their override — delete those lines, then `docker compose up -d site-preview`.)
 
 ## Machine settings
 
