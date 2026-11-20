@@ -108,7 +108,9 @@ collect_taken_ports() {
     ids=$(docker ps -aq 2>/dev/null || true)
     [ -z "$ids" ] || claimed=$(docker inspect -f '{{range $p, $b := .HostConfig.PortBindings}}{{range $b}}{{.HostPort}} {{end}}{{end}}' $ids 2>/dev/null | tr ' ' '\n' || true)
   fi
-  TAKEN_PORTS=$(printf '%s\n%s\n' "$listening" "$claimed" | grep -E '^[0-9]+$' | sort -un | tr '\n' ' ')
+  # `|| true`: no ports at all (fresh server: no lsof, no containers) makes grep exit 1, which under
+  # `set -eo pipefail` used to stop the script with no message.
+  TAKEN_PORTS=$(printf '%s\n%s\n' "$listening" "$claimed" | { grep -E '^[0-9]+$' || true; } | sort -un | tr '\n' ' ')
 }
 block_free() {
   local k p
