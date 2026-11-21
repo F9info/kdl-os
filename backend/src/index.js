@@ -6,6 +6,7 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
+import { apiRateLimitMax } from './shared/utils/api-rate-limit.js';
 
 import { prisma } from './config/database.js';
 import { applyBlueprintsOnce } from './modules/user-management/shared/role-blueprints.js';
@@ -87,8 +88,8 @@ const limiter = rateLimit({
   // repeated automated verification runs was exhausting even 5000/15min and
   // 429ing real Publish/save requests, not just automated retries. There's
   // no real attacker to rate-limit against on a local dev stack, so this is
-  // effectively "off" in dev. Production's 100 is unaffected.
-  max: process.env.NODE_ENV === 'production' ? 100 : 50000,
+  // effectively "off" in dev. Production default 1000, override with API_RATE_LIMIT (api-rate-limit.js).
+  max: apiRateLimitMax(),
   standardHeaders: true,
   legacyHeaders: false,
 });
