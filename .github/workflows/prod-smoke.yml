@@ -1,0 +1,102 @@
+name: Production smoke (Linux)
+
+# Starts the full production stack (docker-compose.yml + docker-compose.prod.yml) on a fresh Linux
+# machine, the way docs/DEPLOY_SERVER.md does on a real server, and runs scripts/prod-smoke.sh.
+# Linux enforces file ownership and has no Docker Desktop port/host magic, so this catches what a Mac
+# never shows (the first server, 2026-11-20/21, hit several such problems). Weekly too, because
+# upstream images can disappear (minio/minio did).
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'docker-compose.yml'
+      - 'docker-compose.prod.yml'
+      - 'infra/nginx/**'
+      - 'backend/Dockerfile'
+      - 'frontend/Dockerfile'
+      - 'ai-services/Dockerfile'
+      - 'setup.sh'
+      - 'scripts/prod-smoke.sh'
+      - 'backend/src/index.js'
+      - 'backend/src/shared/services/storage/**'
+      - '.github/workflows/prod-smoke.yml'
+  pull_request:
+    paths:
+      - 'docker-compose.yml'
+      - 'docker-compose.prod.yml'
+      - 'infra/nginx/**'
+      - 'backend/Dockerfile'
+      - 'frontend/Dockerfile'
+      - 'ai-services/Dockerfile'
+      - 'setup.sh'
+      - 'scripts/prod-smoke.sh'
+      - 'backend/src/index.js'
+      - 'backend/src/shared/services/storage/**'
+      - '.github/workflows/prod-smoke.yml'
+  schedule:
+    - cron: '30 3 * * 1' # Mondays 03:30 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  prod-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      # A fresh server has no lsof and no containers (68ba597: setup.sh exited 1 with no message).
+      - name: setup.sh --env-only on a bare Linux image (no lsof, no Docker)
+        run: |
+          docker run --rm -v "$PWD:/repo:ro" alpine:3.20 sh -c '
+            apk add --no-cache bash openssl >/dev/null
+            mkdir /tmp/fresh && cp /repo/setup.sh /tmp/fresh/ && cd /tmp/fresh
+            KDL_REGISTRY=/tmp/reg ./setup.sh --env-only --block 0
+            test -s .env && echo ".env created on a bare image"'
+
+      - name: Create .env and a self-signed certificate (as on a server)
+        run: |
+          ./setup.sh --env-only --block 0
+          sed -i 's#^FRONTEND_URL=.*#FRONTEND_URL=https://localhost#; s#^CORS_ORIGIN=.*#CORS_ORIGIN=https://localhost#' .env
+          {
+            echo "IMAGE_TAG=ci-${GITHUB_SHA::7}"
+            echo "SMTP_HOST=smtp.example.invalid"
+            echo "SMTP_USER=pending"
+            echo "SMTP_PASS=pending"
+            echo "SMTP_FROM=no-reply@example.invalid"
+            echo "MINIO_PUBLIC_ENDPOINT=localhost"
+          } >> .env
+          mkdir -p infra/certs
+          openssl req -x509 -newkey rsa:2048 -nodes -days 2 -subj /CN=localhost \
+            -keyout infra/certs/privkey.pem -out infra/certs/fullchain.pem 2>/dev/null
+          # The checkout belongs to the runner user, not uid 100: the same situation as a real server.
+          ls -lan frontend/projects
+
+      - name: Build and start the production stack
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+          for i in $(seq 1 60); do
+            status=$(docker compose -f docker-compose.yml -f docker-compose.prod.yml ps backend --format '{{.Status}}')
+            case "$status" in *'(healthy)'*) echo "backend healthy"; exit 0 ;; esac
+            sleep 10
+          done
+          echo "backend not healthy after 10 minutes: $status"; exit 1
+
+      - name: Run scripts/prod-smoke.sh
+        run: scripts/prod-smoke.sh --fresh-install https://localhost
+
+      - name: Logs on failure
+        if: failure()
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.prod.yml ps -a
+          docker compose -f docker-compose.yml -f docker-compose.prod.yml logs --tail 80 backend nginx site-perms site-preview minio frontend
+
+      - name: Stop
+        if: always()
+        run: docker compose -f docker-compose.yml -f docker-compose.prod.yml down -v

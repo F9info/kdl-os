@@ -121,11 +121,16 @@ ports are the `KDL_PORT_*` lines in its `.env` (table in [docs/MULTI_PROJECT_LOC
 
 ## Production Run
 
+Step by step on a Linux server (VM, domain, firewall, certificate, `.env`, installer, updates):
+**[docs/DEPLOY_SERVER.md](docs/DEPLOY_SERVER.md)**.
+
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+scripts/prod-smoke.sh https://your-domain     # must end with "All production smoke checks passed"
 ```
 
-Production overrides: `restart: always`, `NODE_ENV: production`, no host ports exposed except Nginx :80.
+Production overrides: `restart: always`, `NODE_ENV: production`, no host ports exposed except nginx on
+80 (redirect to https) and 443.
 
 ---
 
