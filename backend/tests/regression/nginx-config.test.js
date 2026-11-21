@@ -54,6 +54,19 @@ describe.each([
   it('does not add a blanket CSP at the proxy (the apps set their own)', () => {
     expect(src).not.toMatch(/add_header Content-Security-Policy/);
   });
+
+  // Uploaded files: the backend mints presigned URLs against the public host, so the browser fetches
+  // https://<domain>/kdl-media/... and nginx passes it to MinIO. Read-only, and the Host header must be
+  // the one the URL was signed for, or MinIO rejects the signature.
+  it('serves the media bucket read-only from MinIO, keeping the signed Host', () => {
+    const m = src.match(/location \^~ \/kdl-media\/ \{([\s\S]*?)\n    \}/);
+    expect(m).not.toBeNull();
+    const loc = m[1];
+    expect(loc).toMatch(/limit_except GET HEAD \{\s+deny all;\s+\}/);
+    expect(loc).toMatch(/set \$minio_host minio:9000;/);
+    expect(loc).toMatch(/proxy_pass http:\/\/\$minio_host;/);
+    expect(loc).toMatch(/proxy_set_header Host \$http_host;/);
+  });
 });
 
 describe('nginx.prod.conf is the production edge', () => {
@@ -96,6 +109,13 @@ describe('docker-compose.prod.yml', () => {
     expect(compose).toMatch(/SEED_ADMIN_PASSWORD: \$\{SEED_ADMIN_PASSWORD:\?/);
     expect(compose).not.toMatch(/IMAGE_TAG:-latest/);
     expect(compose).not.toMatch(/kdl-dev-seed-password/);
+  });
+
+  it('mints media URLs for the public domain over https (not localhost:9002)', () => {
+    const backend = compose.slice(compose.indexOf('  backend:'), compose.indexOf('  frontend:'));
+    expect(backend).toMatch(/MINIO_PUBLIC_ENDPOINT: \$\{MINIO_PUBLIC_ENDPOINT:\?/);
+    expect(backend).toMatch(/MINIO_PUBLIC_PORT: "?\$\{MINIO_PUBLIC_PORT:-443\}"?/);
+    expect(backend).toMatch(/MINIO_PUBLIC_USE_SSL: "?\$\{MINIO_PUBLIC_USE_SSL:-true\}"?/);
   });
 
   it('uses real SMTP (no MailHog) and starts MailHog only with the dev profile', () => {

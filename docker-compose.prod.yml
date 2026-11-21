@@ -5,6 +5,7 @@
 #   IMAGE_TAG             a release version tag. Never `latest`: it is not reproducible.
 #   SEED_ADMIN_PASSWORD   12+ characters. There is no default admin password in production.
 #   SMTP_HOST SMTP_USER SMTP_PASS SMTP_FROM   real mail, for password reset (SMTP_PORT defaults to 587)
+#   MINIO_PUBLIC_ENDPOINT the site's domain (e.g. app.example.com), so uploaded files load in the browser
 # Optional:
 #   NGINX_CONF            default ./infra/nginx/nginx.prod.conf (TLS). Use ./infra/nginx/nginx.conf only when a load
 #                         balancer in front terminates TLS.
@@ -58,6 +59,11 @@ services:
       SMTP_USER: ${SMTP_USER:?SMTP_USER is required in production}
       SMTP_PASS: ${SMTP_PASS:?SMTP_PASS is required in production}
       SMTP_FROM: ${SMTP_FROM:?SMTP_FROM is required in production}
+      # The base file signs file URLs for localhost:9002 (a developer's machine). On a server they must
+      # point at the site itself: nginx serves /kdl-media/ from MinIO (infra/nginx/nginx.prod.conf).
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:?MINIO_PUBLIC_ENDPOINT is required in production (your domain, e.g. app.example.com)}
+      MINIO_PUBLIC_PORT: "${MINIO_PUBLIC_PORT:-443}"
+      MINIO_PUBLIC_USE_SSL: "${MINIO_PUBLIC_USE_SSL:-true}"
     ports: !reset []
 
   frontend:
