@@ -2,7 +2,7 @@
 /**
  * Finish the website setup on an installation that completed the installer before it did this itself
  * (before 2026-11-21): enable the modules of the chosen type (the website builder included), run the
- * Studio with its defaults (palette from the logo, fonts, layout, menu pages) and build the public site.
+ * Studio with its defaults (palette from the logo, fonts, layout, menu pages) and queue the public site build.
  * Safe to run again: finished steps are skipped. Changes nothing for a type without a website.
  *
  * Usage (production):
@@ -17,7 +17,7 @@ import { isInstalled } from '../src/shared/install/status.js';
 import { applyType, currentType } from '../src/shared/install/service.js';
 import { hasFrontend } from '../src/shared/install/app-types.js';
 import { completeStudioDefaults } from '../src/shared/install/studio-defaults.js';
-import { buildSite } from '../src/modules/template-engine/site/generator.js';
+import { enqueueInitialSiteBuild } from '../src/modules/template-engine/site/queue.js';
 import { getDefaultProjectId } from '../src/shared/default-project.js';
 import { loadManifestsOnly } from '../src/shared/modules/module-loader.js';
 
@@ -36,8 +36,14 @@ async function main() {
   console.log(`Modules for "${type}" enabled: ${modules.join(', ')}`);
   const r = await completeStudioDefaults({ log: (m) => console.log(m) });
   console.log(`Studio: ${r.status}${r.steps.length ? ` (${r.steps.join(', ')})` : ''}${r.reason ? ` - ${r.reason}` : ''}`);
-  const site = await buildSite(await getDefaultProjectId(prisma));
-  console.log(`Website built: ${site.slug} - ${site.pages} pages. Restart site-preview to serve it.`);
+  // Never build here: this is a separate process, and the backend's site-build worker may be writing the
+  // same folder (the Studio's website step queues a build). writeSite() deletes and recreates src/, and
+  // its lock is per process, so two writers left the site with missing files (next build: Module not
+  // found). Queue the build instead: the backend's single worker runs builds one at a time.
+  await enqueueInitialSiteBuild(await getDefaultProjectId(prisma));
+  console.log('Website build queued in the backend. Follow it with:');
+  console.log('  docker compose ... logs -f backend | grep site-build      (wait for "site-build default: N pages")');
+  console.log('then: docker compose ... restart site-preview');
   return 0;
 }
 

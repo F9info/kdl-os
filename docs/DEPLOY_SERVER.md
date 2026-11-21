@@ -132,10 +132,13 @@ Until the site is built `/` sends visitors to `/login`. Everything can be change
 
 ```bash
 $C exec backend node scripts/studio-defaults.js
-$C restart site-preview
+$C logs -f backend | grep site-build     # wait for "site-build default: N pages", then Ctrl+C
+$C restart site-preview                   # then $C logs -f site-preview until "Ready"
 ```
 
-It enables the website builder modules, runs the same Studio defaults and builds the site. Safe to repeat.
+It enables the website builder modules, runs the same Studio defaults and queues the site build in the
+backend (never build the site from a separate `exec` process while the backend may be building it: two
+writers leave the site with missing files and `next build` fails with *Module not found*). Safe to repeat.
 
 `/install` going to `/login` means the installation is already complete. To start over on a server
 that holds nothing yet: `$C down -v && $C up -d` (deletes all of this server's data). Deleting `.env`
