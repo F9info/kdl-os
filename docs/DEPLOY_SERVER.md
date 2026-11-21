@@ -16,7 +16,7 @@ Google Cloud console → **Compute Engine → VM instances → Create instance**
 | Setting | Value |
 |---|---|
 | Region | closest to your users (e.g. `asia-south1`, Mumbai) |
-| Machine | `e2-standard-4` (4 vCPU, 16 GB). Smaller machines run out of memory during the build. |
+| Machine | `e2-standard-4` (4 vCPU, 16 GB). Smaller machines run out of memory during the build (the virus scanner alone uses about 1-1.5 GB). |
 | Boot disk | Ubuntu 24.04 LTS, **30 GB** balanced disk. The default 10 GB fills up during the first build (`ENOSPC: no space left on device`). |
 | Firewall | tick **Allow HTTP traffic** and **Allow HTTPS traffic** |
 
@@ -114,8 +114,28 @@ scripts/prod-smoke.sh https://app.example.com
 ## 7. First-run installer
 
 Open `https://app.example.com/install`: company and logo, application type, admin account, then Launch.
-With a type that includes a website, the public site is built automatically right after Launch
-(a minute or two: watch `$C logs -f site-preview` for *Ready*). Until then `/` sends visitors to `/login`.
+Use a real logo image (PNG, JPG or SVG): the website colours are read from it.
+
+With a type that includes a website, the installer then finishes the website setup by itself, in the
+background (2-4 minutes; the virus scanner checks the logo first):
+
+- the Studio run with its defaults: Overview, Color Palette from the logo, fonts (Poppins headings,
+  Inter body), brand kit approved, header/footer layout, Website pages Home, About, Services, Contact
+  linked in the header menu (the steps of the Flow 4 guide, done for you);
+- the first build of the public site.
+
+Watch it with `$C logs -f backend | grep -iE "studio|site-build"` (ends with `site-build default: ... pages`).
+Then Frontend > Brands, Color Palette, Navigation, Layouts and Pages open normally, and `/` shows the site.
+Until the site is built `/` sends visitors to `/login`. Everything can be changed afterwards in the admin.
+
+**An installation completed before 2026-11-21** (Frontend screens say "Could not open ..."): run once
+
+```bash
+$C exec backend node scripts/studio-defaults.js
+$C restart site-preview
+```
+
+It enables the website builder modules, runs the same Studio defaults and builds the site. Safe to repeat.
 
 `/install` going to `/login` means the installation is already complete. To start over on a server
 that holds nothing yet: `$C down -v && $C up -d` (deletes all of this server's data). Deleting `.env`
@@ -148,3 +168,5 @@ database refuses.
 | `/` returned 502 before a website existed | redirects to `/login` |
 | website pages existed but no site was generated | the installer queues the first site build |
 | `minio/minio` image withdrawn | `cgr.dev/chainguard/minio` (b1cc70e) |
+| uploaded images had no URL and the logo's colours could not be read (no virus scanner, but production requires a clean scan) | production runs ClamAV; the backend waits for it |
+| Frontend > Brands / Color Palette / Navigation / Layouts / Pages: "Could not open ..." (website builder off, no Studio run) | the installer enables the builder and completes the Studio with defaults; `scripts/studio-defaults.js` for older installs |

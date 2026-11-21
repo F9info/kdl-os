@@ -1,3 +1,7 @@
+> **Since 2026-11-21 the installer does Steps 3-11 for you** when you choose a type with a website
+> (Admin + Frontend, Landing, Static or Multiple): the website builder is enabled and the Studio is
+> completed with these defaults. Use the steps below to change colours, fonts, menu pages or layouts.
+
 ## Step 1. Sign in
 > KDL OS must already be installed and running. If not, follow the **Installation** guide first (Admin > Documents > Installation).
 
