@@ -18,8 +18,12 @@ cd "$(dirname "$0")/.."
 FRESH=0
 [ "${1:-}" = --fresh-install ] && { FRESH=1; shift; }
 BASE="${1:-https://localhost}"
-COMPOSE=(docker compose -f docker-compose.yml -f docker-compose.prod.yml)
+# SMOKE_COMPOSE_FILES: other compose files, e.g. "-f docker-compose.yml" to check a local development stack.
+read -r -a _files <<< "${SMOKE_COMPOSE_FILES:--f docker-compose.yml -f docker-compose.prod.yml}"
+COMPOSE=(docker compose "${_files[@]}")
 FAILED=0
+# A real 64x64 PNG with four colour blocks: the Studio reads the palette from it (a 1x1 or broken PNG fails).
+base64_png() { printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAZUlEQVR42u3PIREAIRAAQDyGBDgEGYhDEorQg0yv35MBcW5ntsCmNr9Q5axQSUBAQEBAQEBAQEBAQEBAQEBAQEBAQEDgOfDvHKr2EUpAQEBAQEBAQEBAQEBAQEBAQEBAQEBA4NkFU5t1HunMUhYAAAAASUVORK5CYII=' | { base64 -d 2>/dev/null || base64 -D; }; }
 pass() { printf 'PASS  %s\n' "$*"; }
 fail() { printf 'FAIL  %s\n' "$*"; FAILED=1; }
 code() { curl -sk -o /dev/null -m 20 -w '%{http_code}' "$@"; }
@@ -30,7 +34,7 @@ if [ "$FRESH" = 1 ]; then
   if curl -sk -m 20 "$I/status" | grep -q '"installed":true'; then
     echo "Refusing --fresh-install: this installation is already complete."; exit 2
   fi
-  logo=$(mktemp); printf '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\rIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82' > "$logo"
+  logo=$(mktemp); base64_png > "$logo"
   lp=$(curl -sk -m 60 -F "file=@$logo;type=image/png" "$I/logo" | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"]["path"])' 2>/dev/null); rm -f "$logo"
   put() { curl -sk -m 600 -o /dev/null -w '%{http_code}' -H 'Content-Type: application/json' "$@"; }
   ok=1
@@ -47,21 +51,46 @@ if [ "$FRESH" = 1 ]; then
   for _ in $(seq 1 60); do c=$(code "$BASE/"); [ "$c" = 200 ] && break; sleep 10; done
   [ "$c" = 200 ] && pass "public website at / is up after install (first site build)" || fail "/ is $c 10 minutes after install, expected 200 (first site build? site-preview logs)"
 
-  # Frontend > Layouts / Pages / Color Palette / Brands open the website builder (template-engine).
-  # Same calls as the admin's StudioStageRedirect: sign in, start a run for the default project, finish INTAKE.
+  # The installer completes the Studio in the background before the first site build (studio-defaults.js):
+  # Frontend > Brands / Color Palette / Navigation / Layouts / Pages need it. Sign in as the admin and check
+  # what those screens read, the way StudioStageRedirect does (reuse the run, never start a second one).
   token=$(curl -sk -m 30 -H 'Content-Type: application/json' -d '{"email":"admin@smoke.test","password":"smokepass1"}' "$BASE/api/auth/login" \
     | python3 -c 'import json,sys; d=json.load(sys.stdin)["data"]; print(d.get("accessToken") or d.get("token") or "")' 2>/dev/null)
   auth=(-H "Authorization: Bearer $token")
   pid=$(curl -sk -m 30 "${auth[@]}" "$BASE/api/projects" | python3 -c 'import json,sys; print([p for p in json.load(sys.stdin)["data"] if p.get("is_default")][0]["id"])' 2>/dev/null)
-  run_json=$(printf '{"projectId":"%s"}' "$pid")
-  run=$(curl -sk -m 60 "${auth[@]}" -H 'Content-Type: application/json' -d "$run_json" "$BASE/api/template-engine/runs" \
-    | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"]["id"])' 2>/dev/null)
-  adv=000
-  [ -n "$run" ] && adv=$(curl -sk -m 60 -o /dev/null -w '%{http_code}' "${auth[@]}" -H "X-Project-Id: $pid" -X POST "$BASE/api/template-engine/runs/$run/stages/intake/advance")
-  case "$adv" in
-    2??) pass "website builder opens for the admin (Layouts, Pages)" ;;
-    *) fail "website builder did not open (token '${token:+yes}', project '$pid', run '$run', advance $adv; template-engine module enabled?)" ;;
-  esac
+  api() { curl -sk -m 60 "${auth[@]}" -H "X-Project-Id: $pid" "$@"; }
+  website=""
+  for _ in $(seq 1 30); do
+    website=$(api "$BASE/api/template-engine/runs?projectId=$pid" | python3 -c '
+import json,sys
+runs=json.load(sys.stdin)["data"]
+print(next((s["status"] for s in (runs[0]["stages"] if runs else []) if s["stage"]=="WEBSITE"), "none"))' 2>/dev/null)
+    [ "$website" = DONE ] && break; sleep 10
+  done
+  [ "$website" = DONE ] && pass "Studio completed by the installer (run reached Website)" || fail "Studio run Website stage is '$website' (backend logs: 'studio defaults')"
+  kit=$(api "$BASE/api/brand-kit/$pid" | python3 -c 'import json,sys; d=json.load(sys.stdin)["data"]; print(d["status"], len(((d.get("palette") or {}).get("colors")) or []))' 2>/dev/null)
+  case "$kit" in approved\ [1-9]*) pass "brand kit approved with a palette from the logo ($kit colours)" ;; *) fail "brand kit is '$kit', expected approved with colours (Color Palette)" ;; esac
+  layout=$(api "$BASE/api/projects/$pid/layout" | python3 -c 'import json,sys; print("yes" if json.load(sys.stdin).get("data") else "no")' 2>/dev/null)
+  [ "$layout" = yes ] && pass "header/footer layout saved (Layouts)" || fail "no site layout saved (Layouts)"
+  links=$(api "$BASE/api/menus" | python3 -c 'import json,sys; print(sum(len(m.get("items") or []) for m in json.load(sys.stdin)["data"]["items"] if m.get("key")=="header"))' 2>/dev/null)
+  [ "${links:-0}" -gt 0 ] 2>/dev/null && pass "header menu has $links links (Navigation)" || fail "header menu has no links (Navigation)"
+  pages=$(api "$BASE/api/page-builder?limit=100" | python3 -c 'import json,sys; print(len(json.load(sys.stdin)["data"]["items"]))' 2>/dev/null)
+  [ "${pages:-0}" -gt 0 ] 2>/dev/null && pass "$pages website pages (Pages)" || fail "no website pages (Pages)"
+  run=$(api "$BASE/api/template-engine/runs?projectId=$pid" | python3 -c 'import json,sys; r=json.load(sys.stdin)["data"]; print(r[0]["id"] if r else "")' 2>/dev/null)
+  runs_count=$(api "$BASE/api/template-engine/runs?projectId=$pid" | python3 -c 'import json,sys; print(len(json.load(sys.stdin)["data"]))' 2>/dev/null)
+  [ -n "$run" ] && [ "$runs_count" = 1 ] && pass "website builder opens for the admin (Brands, Color Palette, Layouts, Pages)" \
+    || fail "website builder: run '$run', $runs_count runs (expected exactly 1)"
+
+  # Media: an uploaded image gets a URL once the virus scan passes (production requires a CLEAN scan).
+  img=$(mktemp); base64_png > "$img"
+  mid=$(api -F "file=@$img;type=image/png;filename=smoke.png" "$BASE/api/media/upload/single" | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"]["media"][0]["id"])' 2>/dev/null); rm -f "$img"
+  murl=""
+  for _ in $(seq 1 24); do
+    murl=$(api "$BASE/api/media/$mid" | python3 -c 'import json,sys; d=json.load(sys.stdin)["data"]; d=d.get("media", d); print(d.get("url") or "")' 2>/dev/null)
+    [ -n "$murl" ] && break; sleep 5
+  done
+  [ -n "$murl" ] && [ "$(code "$murl")" = 200 ] && pass "Media upload is scanned and loads (${murl%%\?*})" \
+    || fail "uploaded media '$mid' has no working URL after 2 minutes (virus scanner running? CLAMAV_HOST)"
 fi
 
 # 1. Backend through nginx over https

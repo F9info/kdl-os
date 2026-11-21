@@ -61,6 +61,18 @@ export async function enqueueAllSiteBuilds() {
 // One job. Edit-triggered jobs only refresh a site that was generated already; `initial` (the
 // installer) may create it.
 export async function processSiteBuild(data) {
+  if (data.initial) {
+    // Before the first build: the Studio steps a person would do by hand (palette, fonts, layout, menu
+    // pages), so Frontend > Brands / Color Palette / Navigation / Layouts / Pages work and the site has
+    // its pages. Best effort: the site is built either way.
+    try {
+      const { completeStudioDefaults } = await import('../../../shared/install/studio-defaults.js');
+      const r = await completeStudioDefaults({ log: (m) => logger.info(m) });
+      logger.info(`studio defaults: ${r.status}${r.steps?.length ? ` (${r.steps.join(', ')})` : ''}${r.reason ? ` - ${r.reason}` : ''}`);
+    } catch (e) {
+      logger.error(`studio defaults failed: ${e.code ?? ''} ${e.message}`);
+    }
+  }
   const projectId = data.projectId ?? (data.initial ? await getDefaultProjectId(prisma) : null);
   if (!projectId) return 'skipped';
   const project = await prisma.project.findFirst({ where: { id: projectId, deleted_at: null } });

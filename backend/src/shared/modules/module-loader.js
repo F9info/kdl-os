@@ -34,40 +34,63 @@ export function checkDependencyIntegrity(enabledSlugs, manifests = loadedManifes
   return violations;
 }
 
-export async function loadModules(app) {
-  let entries;
+// One module folder's validated manifest, or null (logged) when it is missing or invalid.
+async function readManifest(entry) {
+  if (!entry.isDirectory()) return null;
+  const manifestPath = join(MODULES_DIR, entry.name, 'module.json');
+  if (!existsSync(manifestPath)) return null;
+
+  let raw;
   try {
-    entries = await readdir(MODULES_DIR, { withFileTypes: true });
-  } catch {
-    logger.warn('module-loader: modules directory not found, skipping');
-    return;
+    raw = JSON.parse(await readFile(manifestPath, 'utf8'));
+  } catch (err) {
+    logger.error(`module-loader: failed to parse ${manifestPath}: ${err.message}`);
+    return null;
   }
 
+  const parsed = manifestSchema.safeParse(raw);
+  if (!parsed.success) {
+    logger.error(`module-loader: invalid manifest for "${entry.name}": ${parsed.error.message}`);
+    return null;
+  }
+
+  const manifest = parsed.data;
+
+  if (manifest.slug !== entry.name) {
+    logger.error(`module-loader: manifest slug "${manifest.slug}" does not match folder "${entry.name}", skipping`);
+    return null;
+  }
+  return manifest;
+}
+
+async function moduleDirEntries() {
+  try {
+    return await readdir(MODULES_DIR, { withFileTypes: true });
+  } catch {
+    logger.warn('module-loader: modules directory not found, skipping');
+    return null;
+  }
+}
+
+/**
+ * Fills loadedManifests without mounting any routes: for maintenance scripts (scripts/studio-defaults.js)
+ * that call the module lifecycle outside the running server.
+ */
+export async function loadManifestsOnly() {
+  for (const entry of (await moduleDirEntries()) ?? []) {
+    const manifest = await readManifest(entry);
+    if (manifest) loadedManifests.set(manifest.slug, manifest);
+  }
+  return loadedManifests;
+}
+
+export async function loadModules(app) {
+  const entries = await moduleDirEntries();
+  if (!entries) return;
+
   for (const entry of entries) {
-    if (!entry.isDirectory()) continue;
-    const manifestPath = join(MODULES_DIR, entry.name, 'module.json');
-    if (!existsSync(manifestPath)) continue;
-
-    let raw;
-    try {
-      raw = JSON.parse(await readFile(manifestPath, 'utf8'));
-    } catch (err) {
-      logger.error(`module-loader: failed to parse ${manifestPath}: ${err.message}`);
-      continue;
-    }
-
-    const parsed = manifestSchema.safeParse(raw);
-    if (!parsed.success) {
-      logger.error(`module-loader: invalid manifest for "${entry.name}": ${parsed.error.message}`);
-      continue;
-    }
-
-    const manifest = parsed.data;
-
-    if (manifest.slug !== entry.name) {
-      logger.error(`module-loader: manifest slug "${manifest.slug}" does not match folder "${entry.name}", skipping`);
-      continue;
-    }
+    const manifest = await readManifest(entry);
+    if (!manifest) continue;
 
     loadedManifests.set(manifest.slug, manifest);
 

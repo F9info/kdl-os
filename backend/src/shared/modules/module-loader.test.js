@@ -3,7 +3,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { manifestSchema } from './manifest-schema.js';
-import { checkDependencyIntegrity } from './module-loader.js';
+import { checkDependencyIntegrity, loadManifestsOnly, loadedManifests } from './module-loader.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MODULES_DIR = join(__dirname, '../../modules');
@@ -87,5 +87,14 @@ describe('checkDependencyIntegrity — real manifests, no module-loader mock', (
     // A slug in enabledSlugs that has no manifest entry — should not error.
     const violations = checkDependencyIntegrity(['ghost-module'], realManifests);
     expect(violations).toHaveLength(0);
+  });
+});
+
+describe('loadManifestsOnly (maintenance scripts)', () => {
+  it('fills the module list from the real manifests without an app', async () => {
+    loadedManifests.clear();
+    const m = await loadManifestsOnly();
+    for (const slug of ['cms', 'template-engine', 'brand-kit', 'menus']) expect(m.has(slug)).toBe(true);
+    expect(m.get('template-engine').dependsOn).toContain('brand-kit');
   });
 });
