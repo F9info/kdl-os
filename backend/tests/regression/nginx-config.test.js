@@ -55,6 +55,17 @@ describe.each([
     expect(src).not.toMatch(/add_header Content-Security-Policy/);
   });
 
+  // A new server has no generated website yet: site-preview waits for one and nginx would answer 502
+  // at /. Only nginx's own upstream errors are redirected (no proxy_intercept_errors: the site's own
+  // 404/500 pages still reach the visitor).
+  it('sends / to the admin login while the public site is not running, instead of a 502', () => {
+    const site = src.slice(src.lastIndexOf('    location / {'));
+    expect(site).toMatch(/error_page 502 503 504 = @no_site;/);
+    expect(site).not.toMatch(/proxy_intercept_errors on/);
+    // Relative Location: behind a mapped port (localhost:10100) an absolute one would drop the port.
+    expect(src).toMatch(/location @no_site \{\s+absolute_redirect off;[^\n]*\s+return 302 \/login;\s+\}/);
+  });
+
   // Uploaded files: the backend mints presigned URLs against the public host, so the browser fetches
   // https://<domain>/kdl-media/... and nginx passes it to MinIO. Read-only, and the Host header must be
   // the one the URL was signed for, or MinIO rejects the signature.
@@ -106,6 +117,11 @@ describe('docker-compose.prod.yml', () => {
 
   it('requires an image tag and the first admin password, with no default for either', () => {
     expect(compose).toMatch(/\$\{IMAGE_TAG:\?/);
+    // The images CD publishes: ghcr.io/<owner/repo>/<service> (cd.yml), not the old kalamdreamlabs path.
+    for (const svc of ['backend', 'frontend', 'ai-services']) {
+      expect(compose).toContain(`image: ghcr.io/\${IMAGE_REPO:-f9info/kdl-os}/${svc}:\${IMAGE_TAG:?`);
+    }
+    expect(compose).not.toContain('kalamdreamlabs');
     expect(compose).toMatch(/SEED_ADMIN_PASSWORD: \$\{SEED_ADMIN_PASSWORD:\?/);
     expect(compose).not.toMatch(/IMAGE_TAG:-latest/);
     expect(compose).not.toMatch(/kdl-dev-seed-password/);
@@ -139,5 +155,45 @@ describe('docker-compose.prod.yml', () => {
   it('publishes only nginx, on 80 (redirect) and 443', () => {
     expect(compose).toMatch(/ports: !override\s+- "80:80"[^\n]*\s+- "443:443"/);
     expect((compose.match(/ports: !reset \[\]/g) ?? []).length).toBeGreaterThanOrEqual(8);
+  });
+});
+
+// Linux servers enforce file ownership on bind mounts (Docker Desktop on a Mac does not). The backend
+// (uid 100) writes generated sites into ./frontend/projects, which site-preview builds and serves, so
+// both run as uid 100:101 and a one-shot root step hands the folders to that user first.
+describe('generated-site folder ownership (Linux servers)', () => {
+  const base = readFileSync(new URL('../../../docker-compose.yml', import.meta.url), 'utf8');
+  const prodCompose = readFileSync(new URL('../../../docker-compose.prod.yml', import.meta.url), 'utf8');
+  const dockerfile = readFileSync(new URL('../../Dockerfile', import.meta.url), 'utf8');
+  const service = (src, name) => {
+    const start = src.indexOf(`\n  ${name}:\n`);
+    if (start < 0) return '';
+    const next = src.slice(start + 1).search(/\n  [a-z][a-z0-9-]*:\n|\nvolumes:/);
+    return src.slice(start, next < 0 ? undefined : start + 1 + next);
+  };
+
+  it('pins the backend user to uid 100, gid 101', () => {
+    expect(dockerfile).toMatch(/addgroup -S -g 101 nodejs && adduser -S -u 100 -G nodejs nodeuser/);
+  });
+
+  it('has a one-shot step that gives the site folders to 100:101', () => {
+    const perms = service(base, 'site-perms');
+    expect(perms).toMatch(/chown 100:101/);
+    expect(perms).toContain('./frontend/projects:/sites');
+    expect(perms).toContain('site_preview_modules:');
+    expect(perms).toMatch(/restart: "no"/);
+  });
+
+  it('runs site-preview as 100:101 and starts it and the backend after that step', () => {
+    const site = service(base, 'site-preview');
+    expect(site).toMatch(/user: "100:101"/);
+    expect(site).toMatch(/HOME: \/tmp/);
+    for (const name of ['site-preview', 'backend']) {
+      expect(service(base, name)).toMatch(/site-perms:\s+condition: service_completed_successfully/);
+    }
+  });
+
+  it('pins the site-perms image by digest in production', () => {
+    expect(service(prodCompose, 'site-perms')).toMatch(/image: node@sha256:[0-9a-f]{64}/);
   });
 });

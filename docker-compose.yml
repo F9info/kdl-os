@@ -164,6 +164,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      site-perms:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:4000/health"]
       interval: 10s
@@ -199,14 +201,36 @@ services:
   # Live preview of a generated project site (frontend/projects/<slug>) — the
   # "Frontend view" button in the Web app flow opens this. One project at a
   # time: set SITE_SLUG in .env to switch. Waits until the folder is generated.
+  # One-shot (runs as root, then exits): gives the generated-sites folder and the site's node_modules
+  # volume to uid 100:101, the backend's user, before the backend and site-preview start. On a Linux
+  # server a bind mount keeps the host owner, so without this the backend cannot write the site and
+  # site-preview leaves root-owned files the backend cannot replace. (A Mac never showed it.)
+  site-perms:
+    image: node:22-alpine
+    restart: "no"
+    user: "0:0"
+    volumes:
+      - ./frontend/projects:/sites
+      - site_preview_modules:/sites/${SITE_SLUG:-default}/node_modules
+    command: >
+      sh -c "mkdir -p /sites/${SITE_SLUG:-default}/node_modules
+      && chown 100:101 /sites
+      && chown -R 100:101 /sites/${SITE_SLUG:-default}"
+
   site-preview:
     image: node:22-alpine
     restart: unless-stopped
+    # Same user as the backend (see site-perms), so either can rewrite the other's files.
+    user: "100:101"
+    depends_on:
+      site-perms:
+        condition: service_completed_successfully
     working_dir: /sites/${SITE_SLUG:-default}
     volumes:
       - ./frontend/projects:/sites
       - site_preview_modules:/sites/${SITE_SLUG:-default}/node_modules
     environment:
+      HOME: /tmp # npm cache and Next.js telemetry need a writable home; uid 100 has none here
       NEXT_PUBLIC_API_URL: /api
       BACKEND_INTERNAL_URL: http://backend:4000
       FRONTEND_INTERNAL_URL: http://frontend:3000

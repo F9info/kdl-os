@@ -18,7 +18,9 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 RUN apk add --no-cache ffmpeg qpdf tesseract-ocr poppler-utils fontconfig font-dejavu \
-  && addgroup -S nodejs && adduser -S nodeuser -G nodejs && mkdir -p /app/logs && chown nodeuser:nodejs /app/logs
+  && addgroup -S -g 101 nodejs && adduser -S -u 100 -G nodejs nodeuser && mkdir -p /app/logs && chown nodeuser:nodejs /app/logs
+# uid 100 / gid 101 are what Alpine assigned before; pinned because docker-compose.yml (site-perms,
+# site-preview) relies on them for the shared generated-sites folder on Linux servers.
 # Media edit SVG rasterization (sharp/librsvg/pango) renders text with whatever
 # font-family the SVG specifies. Alpine only ships DejaVu, so common web-safe
 # family names (Arial, Helvetica, …) resolve to no font and render as boxes —
