@@ -187,6 +187,12 @@ export async function complete() {
     await logInstall('launch', 'info', `installation completed (${modules.length} modules)`);
     await setSetting(K.status, 'completed'); // last: everything above succeeded
     await redis.del('identity:raw', 'identity:app-config').catch(() => {});
+    // A type with a website: queue the first build of the default project's site, so / serves it
+    // without anyone opening the site generator. Best effort: the install is complete either way.
+    if (hasFrontend(type)) {
+      const { enqueueInitialSiteBuild } = await import('../../modules/template-engine/site/queue.js');
+      await enqueueInitialSiteBuild().catch((e) => logInstall('launch', 'warn', `first site build not queued: ${e.message}`));
+    }
     return { installed: true, app_type: type, modules, frontend: hasFrontend(type), summary: await buildSummary(type, modules, extra, demo) };
   } catch (err) {
     await setSetting(K.status, 'pending').catch(() => {});

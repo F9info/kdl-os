@@ -42,6 +42,8 @@ const manifests = new Map([
   ['theme-engine-ui', { slug: 'theme-engine-ui', name: 'TE', dependsOn: [] }],
 ]);
 vi.mock('../modules/module-loader.js', () => ({ loadedManifests: manifests }));
+const enqueueInitialSiteBuild = vi.fn(async () => {});
+vi.mock('../../modules/template-engine/site/queue.js', () => ({ enqueueInitialSiteBuild }));
 const lifecycle = { fail: null };
 vi.mock('../../modules/modules/service.js', () => ({
   installModule: vi.fn(async (slug) => {
@@ -72,6 +74,7 @@ beforeEach(() => {
   status.resetInstallCache();
   prisma.userRole.count.mockResolvedValue(1);
   settings.set('install.core', 'done'); // the Core installation step has run (see core.test.js for that step)
+  enqueueInitialSiteBuild.mockClear();
 });
 
 const png = Buffer.concat([Buffer.from([0x89]), Buffer.from('PNG\r\n\x1a\n'), Buffer.alloc(20)]);
@@ -129,6 +132,8 @@ describe('wizard', () => {
     expect(r).toMatchObject({ installed: true, frontend: true });
     expect(modules.get('cms')).toBe('ENABLED');
     expect(await status.isInstalled()).toBe(true);
+    // A new server otherwise has website pages but no generated site: / had nothing to serve.
+    expect(enqueueInitialSiteBuild).toHaveBeenCalledTimes(1);
     await expect(svc.saveCompany(company)).rejects.toThrow(/already complete/);
     await expect(svc.complete()).rejects.toThrow(/already complete/);
   });
@@ -137,6 +142,7 @@ describe('wizard', () => {
     await svc.saveType('admin-only');
     await svc.complete();
     expect(installed).toEqual([]);
+    expect(enqueueInitialSiteBuild).not.toHaveBeenCalled();
     expect(await status.isInstalled()).toBe(true);
   });
   it('installs the extras chosen on the Modules step, and reports a summary', async () => {
