@@ -134,6 +134,15 @@ describe('docker-compose.prod.yml', () => {
     expect(backend).toMatch(/MINIO_PUBLIC_USE_SSL: "?\$\{MINIO_PUBLIC_USE_SSL:-true\}"?/);
   });
 
+  it('runs the virus scanner and points the backend at it (uploads need a CLEAN scan in production)', () => {
+    const clam = compose.slice(compose.indexOf('  clamav:'), compose.indexOf('  meilisearch:'));
+    expect(clam).toMatch(/image: clamav\/clamav@sha256:[0-9a-f]{64}/);
+    expect(clam).toMatch(/profiles: !reset \[\]/);
+    const backend = compose.slice(compose.indexOf('  backend:'), compose.indexOf('  frontend:'));
+    expect(backend).toMatch(/CLAMAV_HOST: clamav/);
+    expect(backend).toMatch(/clamav:\s+condition: service_healthy/);
+  });
+
   it('uses real SMTP (no MailHog) and starts MailHog only with the dev profile', () => {
     expect(compose).toMatch(/mailhog:\s+profiles: \["dev"\]/);
     expect(compose).toMatch(/SMTP_HOST: \$\{SMTP_HOST:\?/);

@@ -33,6 +33,14 @@ services:
     restart: always
     ports: !reset []
 
+  # Virus scanner. Production only serves uploads with a CLEAN scan (media require_scan defaults on), so
+  # without it uploaded images got no URL and the Studio could not read the logo's colours.
+  clamav:
+    image: clamav/clamav@sha256:03f28e8ddca4284fa5c6bd6718e90d32b01b71d6a997b8947a06d7b17ff7e840 # clamav/clamav:1.4_base-debian
+    profiles: !reset []
+    restart: always
+    ports: !reset []
+
   meilisearch:
     image: getmeili/meilisearch@sha256:010341a778fe82592cff7a4f85d05eb89d2618141defea005616a476064fa56a # v1.7
     restart: always
@@ -66,6 +74,11 @@ services:
       MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:?MINIO_PUBLIC_ENDPOINT is required in production (your domain, e.g. app.example.com)}
       MINIO_PUBLIC_PORT: "${MINIO_PUBLIC_PORT:-443}"
       MINIO_PUBLIC_USE_SSL: "${MINIO_PUBLIC_USE_SSL:-true}"
+      CLAMAV_HOST: clamav
+    # The scan job retries for about 35 s; the scanner can take up to 3 minutes to load its signatures.
+    depends_on:
+      clamav:
+        condition: service_healthy
     ports: !reset []
 
   frontend:
