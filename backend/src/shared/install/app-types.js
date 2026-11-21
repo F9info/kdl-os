@@ -3,18 +3,20 @@
 // lifecycle (installModule/enableModule) pulls them in, and `frontend: true` is the umbrella `cms`
 // module, which seeds the demo website and the four landing pages itself.
 // The choice only sets the starting point: it can be changed later (Settings > Application).
+// Every type with a website also gets `template-engine` (the website builder): Frontend > Layouts, Pages,
+// Color Palette and Brands open it, and without it they failed on a new server.
 export const APP_TYPES = {
   landing: {
     name: 'Landing Page',
     description: 'One focused page to promote a product, service or campaign.',
     icon: 'Rocket',
-    modules: ['cms'],
+    modules: ['cms', 'template-engine'],
   },
   static: {
     name: 'Static Website',
     description: 'A multi-page website you design once and host anywhere.',
     icon: 'Globe',
-    modules: ['cms'],
+    modules: ['cms', 'template-engine'],
   },
   'web-app': {
     name: 'Web Application',
@@ -26,13 +28,13 @@ export const APP_TYPES = {
     name: 'Admin + Frontend Web Application',
     description: 'A public website together with the admin that runs it.',
     icon: 'LayoutDashboard',
-    modules: ['cms', 'forms'],
+    modules: ['cms', 'forms', 'template-engine'],
   },
   multi: {
     name: 'Multiple Websites / Landing Pages',
     description: 'Several sites or campaign pages managed from one admin.',
     icon: 'Layers',
-    modules: ['cms', 'page-builder-ui', 'theme-engine-ui'],
+    modules: ['cms', 'page-builder-ui', 'theme-engine-ui', 'template-engine'],
   },
   'admin-only': {
     name: 'Admin Only',

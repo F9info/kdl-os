@@ -21,6 +21,7 @@ const manifests = new Map(
     pay: { name: 'Payments', dependsOn: [], env: ['PAY_KEY_FOR_TEST'] },
     old: { name: 'Old', dependsOn: [], conflictsWith: ['forms'] },
     hidden: { name: 'Hidden', visibleInCatalog: false, dependsOn: [] },
+    'template-engine': { name: 'Templates', group: 'studio', description: 'Website builder', dependsOn: [] },
   }).map(([slug, m]) => [slug, { slug, ...m }])
 );
 vi.mock('../modules/module-loader.js', () => ({ loadedManifests: manifests }));
@@ -39,7 +40,7 @@ describe('moduleChoices', () => {
     rows.set('faq', 'ENABLED');
     const c = await moduleChoices('landing');
     expect(c.core.map((m) => m.slug)).toEqual(['auth']);
-    expect(c.included.map((m) => m.slug)).toEqual(['faq', 'cms']);
+    expect(c.included.map((m) => m.slug)).toEqual(['faq', 'cms', 'template-engine']);
     const cms = c.included.find((m) => m.slug === 'cms');
     expect(cms).toMatchObject({ description: 'Website', status: 'AVAILABLE' });
     expect(cms.dependsOn).toEqual([{ slug: 'faq', name: 'FAQ' }]); // core dependency (auth) is not listed

@@ -46,6 +46,22 @@ if [ "$FRESH" = 1 ]; then
   c=000
   for _ in $(seq 1 60); do c=$(code "$BASE/"); [ "$c" = 200 ] && break; sleep 10; done
   [ "$c" = 200 ] && pass "public website at / is up after install (first site build)" || fail "/ is $c 10 minutes after install, expected 200 (first site build? site-preview logs)"
+
+  # Frontend > Layouts / Pages / Color Palette / Brands open the website builder (template-engine).
+  # Same calls as the admin's StudioStageRedirect: sign in, start a run for the default project, finish INTAKE.
+  token=$(curl -sk -m 30 -H 'Content-Type: application/json' -d '{"email":"admin@smoke.test","password":"smokepass1"}' "$BASE/api/auth/login" \
+    | python3 -c 'import json,sys; d=json.load(sys.stdin)["data"]; print(d.get("accessToken") or d.get("token") or "")' 2>/dev/null)
+  auth=(-H "Authorization: Bearer $token")
+  pid=$(curl -sk -m 30 "${auth[@]}" "$BASE/api/projects" | python3 -c 'import json,sys; print([p for p in json.load(sys.stdin)["data"] if p.get("is_default")][0]["id"])' 2>/dev/null)
+  run_json=$(printf '{"projectId":"%s"}' "$pid")
+  run=$(curl -sk -m 60 "${auth[@]}" -H 'Content-Type: application/json' -d "$run_json" "$BASE/api/template-engine/runs" \
+    | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"]["id"])' 2>/dev/null)
+  adv=000
+  [ -n "$run" ] && adv=$(curl -sk -m 60 -o /dev/null -w '%{http_code}' "${auth[@]}" -H "X-Project-Id: $pid" -X POST "$BASE/api/template-engine/runs/$run/stages/intake/advance")
+  case "$adv" in
+    2??) pass "website builder opens for the admin (Layouts, Pages)" ;;
+    *) fail "website builder did not open (token '${token:+yes}', project '$pid', run '$run', advance $adv; template-engine module enabled?)" ;;
+  esac
 fi
 
 # 1. Backend through nginx over https

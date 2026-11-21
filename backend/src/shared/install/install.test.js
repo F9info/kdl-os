@@ -40,6 +40,7 @@ const manifests = new Map([
   ['page-builder-ui', { slug: 'page-builder-ui', name: 'PB', dependsOn: ['page-builder'] }],
   ['page-builder', { slug: 'page-builder', name: 'Page Builder', core: true, dependsOn: [] }],
   ['theme-engine-ui', { slug: 'theme-engine-ui', name: 'TE', dependsOn: [] }],
+  ['template-engine', { slug: 'template-engine', name: 'Templates', dependsOn: ['page-builder-ui', 'theme-engine-ui'] }],
 ]);
 vi.mock('../modules/module-loader.js', () => ({ loadedManifests: manifests }));
 const enqueueInitialSiteBuild = vi.fn(async () => {});
@@ -88,8 +89,15 @@ describe('app types', () => {
     expect(hasFrontend('web-app')).toBe(false);
   });
   it('resolves optional dependencies, skips core ones, deps first', () => {
-    expect(modulesFor('landing', manifests)).toEqual(['faq', 'menus', 'cms']);
-    expect(modulesFor('multi', manifests)).toEqual(['faq', 'menus', 'cms', 'page-builder-ui', 'theme-engine-ui']);
+    expect(modulesFor('landing', manifests)).toEqual(['faq', 'menus', 'cms', 'page-builder-ui', 'theme-engine-ui', 'template-engine']);
+    expect(modulesFor('multi', manifests)).toEqual(['faq', 'menus', 'cms', 'page-builder-ui', 'theme-engine-ui', 'template-engine']);
+  });
+  // Frontend > Layouts, Pages, Color Palette and Brands open the website builder (template-engine).
+  // Without it a new server showed "Could not open Layouts" (its API answered 404).
+  it('every type with a website enables the website builder; the others do not', () => {
+    for (const [key, t] of Object.entries(APP_TYPES)) {
+      expect(t.modules.includes('template-engine')).toBe(hasFrontend(key));
+    }
   });
   it('every type points at a real module manifest', async () => {
     const { readdirSync, readFileSync, existsSync } = await import('node:fs');
