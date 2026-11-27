@@ -25,7 +25,8 @@ import { AdminStep } from './AdminStep'
 import { CoreStep } from './CoreStep'
 
 const MAX_LOGO = 2 * 1024 * 1024
-const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp']
+const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml', 'image/tiff']
+const LOGO_ACCEPT = [...LOGO_TYPES, '.svg', '.tif', '.tiff'].join(',')
 const STEPS = [
   'Company',
   'Application type',
@@ -137,12 +138,14 @@ export function InstallWizard() {
     onSuccess: (r) => {
       setLogoPath(r.path)
       setLogoError('')
+      // TIFF is converted to PNG on the server and a browser cannot preview the original, so show the stored copy.
+      if (r.path.endsWith('.png')) setLogoPreview(r.url)
     },
   })
 
   const pickLogo = (file?: File) => {
     if (!file) return
-    if (!LOGO_TYPES.includes(file.type)) return setLogoError('Use a PNG, JPEG or WebP image.')
+    if (!LOGO_TYPES.includes(file.type) && !/\.(svg|tiff?)$/i.test(file.name)) return setLogoError('Use a PNG, JPEG, WebP, SVG or TIFF image.')
     if (file.size > MAX_LOGO) return setLogoError('The logo must be 2 MB or smaller.')
     setLogoError('')
     setLogoPreview(URL.createObjectURL(file))
@@ -238,13 +241,13 @@ export function InstallWizard() {
                   label="Company logo"
                   required
                   error={logoError || (touched && errors.logo) || undefined}
-                  hint="PNG, JPEG or WebP, up to 2 MB."
+                  hint="PNG, JPEG, WebP, SVG or TIFF, up to 2 MB."
                 >
                   <div>
                     <input
                       ref={fileRef}
                       type="file"
-                      accept={LOGO_TYPES.join(',')}
+                      accept={LOGO_ACCEPT}
                       className="sr-only"
                       aria-label="Company logo file"
                       onChange={(e) => pickLogo(e.target.files?.[0])}

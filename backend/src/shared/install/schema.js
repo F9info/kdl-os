@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { APP_TYPE_KEYS } from './app-types.js';
 
-const logoPath = z.string().trim().min(1, 'Company logo is required').max(500).regex(/^identity\/[A-Za-z0-9-]+\.(png|jpg|webp)$/, 'Upload the logo again');
+const logoPath = z.string().trim().min(1, 'Company logo is required').max(500).regex(/^identity\/[A-Za-z0-9-]+\.(png|jpg|webp|svg)$/, 'Upload the logo again');
 export const companySchema = z.object({
   body: z
     .object({

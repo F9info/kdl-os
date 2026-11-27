@@ -111,9 +111,22 @@ describe('app types', () => {
 describe('logo', () => {
   it('accepts a PNG by its bytes, rejects other content and big files', async () => {
     expect((await svc.saveLogo({ buffer: png, size: png.length, mimetype: 'text/plain' })).path).toMatch(/^identity\/.+\.png$/);
-    await expect(svc.saveLogo({ buffer: Buffer.from('<svg xmlns="x"></svg>'), size: 20 })).rejects.toThrow(/PNG, JPEG or WebP/);
+    await expect(svc.saveLogo({ buffer: Buffer.from('plain text, not an image'), size: 24 })).rejects.toThrow(/PNG, JPEG, WebP, SVG or TIFF/);
     await expect(svc.saveLogo({ buffer: png, size: 3 * 1024 * 1024 })).rejects.toThrow(/2 MB/);
     await expect(svc.saveLogo(undefined)).rejects.toThrow(/logo/);
+  });
+});
+
+describe('logo svg and tiff', () => {
+  it('sanitises SVG before storing it', async () => {
+    const dirty = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" onload="x()"><script>alert(1)</script><rect width="1" height="1"/></svg>');
+    const out = await svc.saveLogo({ buffer: dirty, size: dirty.length });
+    expect(out.path).toMatch(/^identity\/.+\.svg$/);
+  });
+  it('converts TIFF to PNG', async () => {
+    const sharp = (await import('sharp')).default;
+    const tif = await sharp({ create: { width: 4, height: 4, channels: 3, background: '#fff' } }).tiff().toBuffer();
+    expect((await svc.saveLogo({ buffer: tif, size: tif.length })).path).toMatch(/^identity\/.+\.png$/);
   });
 });
 

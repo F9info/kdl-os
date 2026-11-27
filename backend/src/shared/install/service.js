@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import sharp from 'sharp';
+import { sanitizeSvg } from '../../modules/media/svg-sanitizer.js';
 import { prisma } from '../../config/database.js';
 import { redis } from '../../config/redis.js';
 import * as storage from '../services/storage.service.js';
@@ -13,15 +15,22 @@ import { EXTRA_KEY, DEMO_CHOICE, readSelection, hasWebsite } from './modules.js'
 
 const fail = (message, status = 400, details) => Object.assign(new Error(message), { status, details });
 
-// Logo: PNG, JPEG or WebP, 2 MB. The type comes from the file's own bytes, not the name the browser
-// sent. SVG is not accepted here: served from the storage origin it could carry script, and the
-// sanitiser that makes it safe lives in the Brand Kit module, which is not installed yet.
+// Logo: PNG, JPEG, WebP, SVG or TIFF, 2 MB. The type comes from the file's own bytes, not the name the
+// browser sent. SVG is sanitised (script, event handlers, foreignObject, javascript: URIs removed) before
+// storage because it is served from the storage origin. TIFF is converted to PNG: browsers cannot show it.
 export const MAX_LOGO_BYTES = 2 * 1024 * 1024;
 export function sniffImage(buf) {
   if (buf.length > 12 && buf[0] === 0x89 && buf.toString('latin1', 1, 4) === 'PNG') return { ext: 'png', mime: 'image/png' };
   if (buf.length > 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return { ext: 'jpg', mime: 'image/jpeg' };
   if (buf.length > 12 && buf.toString('latin1', 0, 4) === 'RIFF' && buf.toString('latin1', 8, 12) === 'WEBP')
     return { ext: 'webp', mime: 'image/webp' };
+  if (buf.length > 8) {
+    const magic = buf.toString('latin1', 0, 4);
+    if (magic === 'II*\0' || magic === 'MM\0*') return { ext: 'tiff', mime: 'image/tiff' };
+  }
+  const head = buf.toString('utf8', 0, 2048).replace(/^\uFEFF/, '');
+  if (/^\s*(<\?xml[\s\S]*?\?>\s*)?(<!--[\s\S]*?-->\s*)*(<!DOCTYPE\s+svg[^>]*>\s*)?<svg[\s>]/i.test(head))
+    return { ext: 'svg', mime: 'image/svg+xml' };
   return null;
 }
 
@@ -29,9 +38,23 @@ export async function saveLogo(file) {
   if (!file) throw fail('Choose a logo image');
   if (file.size > MAX_LOGO_BYTES) throw fail('Logo must be 2 MB or smaller');
   const kind = sniffImage(file.buffer);
-  if (!kind) throw fail('Upload a PNG, JPEG or WebP image');
-  const path = `identity/${randomUUID()}.${kind.ext}`;
-  await storage.uploadFile({ ...file, mimetype: kind.mime }, path);
+  if (!kind) throw fail('Upload a PNG, JPEG, WebP, SVG or TIFF image');
+  let { ext, mime } = kind;
+  let buffer = file.buffer;
+  if (ext === 'svg') {
+    buffer = sanitizeSvg(buffer);
+    if (!/<svg[\s>]/i.test(buffer.toString('utf8'))) throw fail('That SVG could not be used. Upload another logo');
+  } else if (ext === 'tiff') {
+    try {
+      buffer = await sharp(buffer, { limitInputPixels: 50_000_000 }).png().toBuffer();
+    } catch {
+      throw fail('That TIFF could not be read. Upload another logo');
+    }
+    ext = 'png';
+    mime = 'image/png';
+  }
+  const path = `identity/${randomUUID()}.${ext}`;
+  await storage.uploadFile({ ...file, buffer, size: buffer.length, mimetype: mime }, path);
   return { path, url: await storage.getFileUrl(path) };
 }
 
