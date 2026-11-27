@@ -1,0 +1,6 @@
+# HTTPS for the GDG Vizag site. Caddy fetches and renews the certificate for SITE_DOMAIN automatically
+# (the domain's A record must point at this VM first). The frontend proxies /api to the backend itself.
+{$SITE_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy frontend:3000
+}

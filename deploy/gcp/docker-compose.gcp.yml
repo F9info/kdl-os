@@ -1,0 +1,77 @@
+# GDG Vizag on one Google Cloud VM. Used on top of the base file:
+#   docker compose -p gdg -f docker-compose.yml -f deploy/gcp/docker-compose.gcp.yml up -d
+# (deploy/gcp/compose.sh runs exactly that.)
+#
+# Runs only what the site needs: postgres, redis, meilisearch, backend, frontend, and Caddy in front for HTTPS.
+# Caddy gets and renews the Let's Encrypt certificate for SITE_DOMAIN by itself.
+# Nothing but Caddy (80/443) is reachable from outside.
+
+services:
+  postgres:
+    restart: always
+    ports: !reset []
+
+  redis:
+    restart: always
+    ports: !reset []
+
+  meilisearch:
+    restart: always
+    ports: !reset []
+
+  # Not used by the GDG site.
+  minio:
+    profiles: ["disabled"]
+  chromadb:
+    profiles: ["disabled"]
+  mailhog:
+    profiles: ["disabled"]
+  ai-services:
+    profiles: ["disabled"]
+  site-preview:
+    profiles: ["disabled"]
+  nginx:
+    profiles: ["disabled"]
+
+  backend:
+    restart: always
+    ports: !reset []
+    environment:
+      # Not "production" on purpose: production's API rate limit (100 requests / 15 min) is keyed on the
+      # proxy's address here, so every visitor would share it and the site would start failing with 429.
+      # Not "development" either: that enables test-only shortcuts (fixed OTP codes, verbose errors).
+      NODE_ENV: staging
+    volumes:
+      # Uploaded images (STORAGE_DRIVER=local), kept on the VM disk and in the nightly backup.
+      - ./backend/uploads:/app/uploads
+
+  frontend:
+    restart: always
+    build:
+      args:
+        # Baked in at build time (image allowlist + CSP). Rebuild the frontend after changing the domain.
+        NEXT_PUBLIC_IMAGE_HOSTS: "https:${SITE_DOMAIN:?SITE_DOMAIN is required in .env},https:res.cloudinary.com"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_IMAGE_HOSTS: "https:${SITE_DOMAIN},https:res.cloudinary.com"
+    ports: !reset []
+
+  caddy:
+    image: caddy:2.8-alpine
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN}
+    volumes:
+      - ./deploy/gcp/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,49 @@
+# Deploy the GDG Vizag site to its Google Cloud VM on every push to main of F9info/gdg-vizag.
+# The VM does the work (deploy/gcp/update.sh: git pull, rebuild, restart); this job only connects over SSH.
+#
+# Repository secrets (Settings -> Secrets and variables -> Actions):
+#   GCP_HOST      the VM's static external IP
+#   GCP_SSH_KEY   private key of the VM's "deploy" user (ci_deploy from the deploy bundle)
+#   GCP_HOST_KEY  optional: the VM's SSH host key line that server-setup.sh prints, to pin the server
+# Until GCP_HOST and GCP_SSH_KEY are set the job does nothing.
+name: Deploy to GCP
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-gcp
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.repository == 'F9info/gdg-vizag'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Deploy on the VM
+        env:
+          GCP_HOST: ${{ secrets.GCP_HOST }}
+          GCP_SSH_KEY: ${{ secrets.GCP_SSH_KEY }}
+          GCP_HOST_KEY: ${{ secrets.GCP_HOST_KEY }}
+        run: |
+          if [ -z "$GCP_HOST" ] || [ -z "$GCP_SSH_KEY" ]; then
+            echo "::warning::GCP_HOST and GCP_SSH_KEY secrets are not set yet, nothing was deployed."
+            exit 0
+          fi
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$GCP_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          if [ -n "$GCP_HOST_KEY" ]; then
+            printf '%s %s\n' "$GCP_HOST" "$GCP_HOST_KEY" > ~/.ssh/known_hosts
+            check=yes
+          else
+            check=accept-new
+          fi
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=$check -o ServerAliveInterval=30 \
+            "deploy@$GCP_HOST" "/opt/gdg/deploy/gcp/update.sh $GITHUB_SHA"
