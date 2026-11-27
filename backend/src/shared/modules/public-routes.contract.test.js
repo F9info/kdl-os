@@ -20,6 +20,9 @@ const ALLOWED = {
   'auth POST /forgot-password': 'password reset request',
   'auth POST /reset-password': 'password reset with emailed token',
   'forms POST /public/:slug/submit': 'visitor submits a form (validated, honeypot, rate limited)',
+  'gdg GET /devfest/public': 'DevFest edition for the website: only Shown speakers, sessions, sponsors and team (read only)',
+  'gdg POST /devfest/proposals/public':
+    'call for speakers form (validated, honeypot, rate limited, only while the edition takes proposals, 3 per email)',
   'membership GET /plans': 'public plan list for the website pricing page (read only)',
   'membership GET /join-form/:planSlug': 'public sign-up form definition (read only)',
   'membership POST /signup': 'member sign-up (validated, rate limited, creates a no-permission member account)',

@@ -103,3 +103,27 @@ describe('listSitemapEntries (T6.1)', () => {
     expect(prismaMock.templateEngineStage.findMany).not.toHaveBeenCalled();
   });
 });
+
+describe('section pages: "<section>/<page>"', () => {
+  const pages = { pgDevfest: { slug: 'devfest' }, pgSchedule: { slug: 'schedule' } };
+  beforeEach(() => {
+    prismaMock.templateEngineStage.findMany.mockResolvedValue([
+      { outputRef: { pageKeyToId: { devfest: 'pgDevfest', schedule: 'pgSchedule' } } },
+    ]);
+    prismaMock.builderPage.findFirst.mockImplementation(async ({ where: w }) => (w.id ? (pages[w.id] ?? null) : null));
+  });
+
+  it('serves the page under its section when both are pages of the site', async () => {
+    expect(await getPublishedBySiteKey('p1', 'devfest/schedule')).toEqual({ slug: 'schedule' });
+  });
+
+  it('refuses a section that is not a page', async () => {
+    expect(await getPublishedBySiteKey('p1', 'nothing/schedule')).toBeNull();
+  });
+
+  it('refuses a page that does not exist, deeper paths and /<section>/home', async () => {
+    expect(await getPublishedBySiteKey('p1', 'devfest/nothing')).toBeNull();
+    expect(await getPublishedBySiteKey('p1', 'devfest/schedule/x')).toBeNull();
+    expect(await getPublishedBySiteKey('p1', 'devfest/home')).toBeNull();
+  });
+});

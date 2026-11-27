@@ -378,3 +378,104 @@ export function CountUp({ end, suffix = '' }: { end: number; suffix?: string }) 
 /** Field helpers so every block declares its editable text the same way. */
 export const text = (label: string) => ({ type: 'text' as const, label })
 export const area = (label: string) => ({ type: 'textarea' as const, label })
+
+// ─── DevFest data (entered in Admin → GDG Chapter → DevFest) ─────────────────
+
+export interface DfSpeaker {
+  id: string
+  slug: string
+  name: string
+  photo: string
+  role: string
+  company: string
+  bio: string
+  links: Record<string, string>
+  badges: string[]
+  featured: boolean
+}
+export interface DfSession {
+  id: string
+  slug: string
+  title: string
+  abstract: string
+  kind: string
+  track: string
+  level: string
+  room: string
+  start: string | null
+  end: string | null
+  speakers: string[]
+  slides: string
+  video: string
+}
+export interface DfEdition {
+  year: number
+  name: string
+  theme: string
+  start: string | null
+  end: string | null
+  venue: string
+  address: string
+  map: string
+  tickets: string
+  cfp: string
+  cfpCloses: string | null
+  /** The call for speakers form takes proposals now. */
+  cfpOpen?: boolean
+  tracks: { name: string; color?: string }[]
+  stats: { label: string; value: string }[]
+  current: boolean
+}
+export interface DevfestData {
+  edition: DfEdition | null
+  editions: { year: number; name: string; current: boolean }[]
+  speakers: DfSpeaker[]
+  sessions: DfSession[]
+  sponsors: { id: string; name: string; logo: string; tier: string; url: string }[]
+  team: { id: string; name: string; role: string; photo: string; url: string }[]
+}
+
+const NO_DEVFEST: DevfestData = {
+  edition: null,
+  editions: [],
+  speakers: [],
+  sessions: [],
+  sponsors: [],
+  team: [],
+}
+
+/** One DevFest edition with its shown content: `year`, else the current edition. */
+export function useDevfestData(projectId?: string, year?: number) {
+  const q = useQuery({
+    queryKey: ['gdg-devfest-public', projectId ?? null, year ?? null],
+    queryFn: async () => {
+      const res = await api.get('/gdg/devfest/public', {
+        params: { project_id: projectId || undefined, year: year || undefined },
+      })
+      return res.data.data as DevfestData
+    },
+    staleTime: 60_000,
+    retry: 1,
+  })
+  return { ...(q.data ?? NO_DEVFEST), isLoading: q.isLoading }
+}
+
+/** "HH:MM" of an instant in Visakhapatnam time. */
+export const istTime = (iso: string) =>
+  new Intl.DateTimeFormat('en-GB', {
+    timeZone: TZ,
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(new Date(iso))
+/** "YYYY-MM-DD" of an instant in Visakhapatnam time. */
+export const istDay = (iso: string) =>
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date(iso))
+/** "{year}" in block text becomes the shown edition's year. */
+export const withYear = (s: string, year: number | string | undefined) =>
+  year ? s.replace(/\{year\}/g, String(year)) : s

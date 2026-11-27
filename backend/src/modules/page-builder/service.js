@@ -94,6 +94,13 @@ export const getPublishedBySiteKey = async (projectId, key, site) => {
     select,
   });
   if (bySlug) return bySlug;
+  // "<section>/<page>" (e.g. "devfest/schedule"): a page shown under a section of the site. Both the
+  // section and the page must be pages of this site, so /<anything>/<page> never invents a URL.
+  const parts = key.split('/');
+  if (parts.length === 2 && parts.every(Boolean) && parts[1] !== 'home') {
+    const section = await getPublishedBySiteKey(projectId, parts[0], site);
+    if (section) return getPublishedBySiteKey(projectId, parts[1], site);
+  }
   // The stage's "home" can point at a page that is no longer published (an old draft). The front page is
   // then the published page titled Home, so the site never loses its "/" and its shared header/footer.
   if (key === 'home' && (!site?.siteId || site.isDefault)) {

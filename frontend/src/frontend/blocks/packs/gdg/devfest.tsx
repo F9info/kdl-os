@@ -28,6 +28,8 @@ import {
   fmt,
   focus,
   initials,
+  istDay,
+  istTime,
   lines,
   prefersReducedMotion,
   sfx,
@@ -36,8 +38,11 @@ import {
   status,
   text,
   timeLabel,
+  useDevfestData,
   useGdgFeed,
   useNow,
+  withYear,
+  type DevfestData,
   type GdgEvent,
   type AnyBlock,
 } from './lib'
@@ -72,15 +77,42 @@ function linkify(source: string): ReactNode[] {
   return out
 }
 
-/** The chapter's DevFests (newest first) and the live or next one, as sync.js worked them out. */
+/**
+ * The chapter's DevFests (newest first) and the live or next one, as sync.js worked them out.
+ * The current edition from Admin → DevFest joins the list once it has a start date and the chapter
+ * feed has no DevFest for that year yet, so a date set in the admin shows everywhere at once.
+ */
 function useDevfests(projectId?: string) {
   const feed = useGdgFeed(projectId)
-  const devfests = useMemo(
-    () => feed.events.filter((e) => e.cat === 'DevFest' && !/core committee/i.test(e.title)),
-    [feed.events]
-  )
+  const { edition } = useDevfestData(projectId)
+  const chapterUrl = feed.chapter.url || CHAPTER_URL_FALLBACK
+  const devfests = useMemo(() => {
+    const list = feed.events.filter((e) => e.cat === 'DevFest' && !/core committee/i.test(e.title))
+    if (!edition?.start || list.some((e) => e.year === edition.year)) return list
+    const start = new Date(edition.start)
+    // No end set: treat it as a one-day event.
+    const end = edition.end ? new Date(edition.end) : new Date(+start + 9 * 3_600_000)
+    const own: GdgEvent = {
+      id: `edition-${edition.year}`,
+      title: edition.name,
+      start,
+      end,
+      venue: edition.venue,
+      type: 'In person',
+      img: '',
+      banner: '',
+      url: edition.tickets || chapterUrl,
+      page: '',
+      desc: edition.theme,
+      tags: [],
+      cat: 'DevFest',
+      featured: true,
+      year: edition.year,
+    }
+    return [own, ...list].sort((a, b) => +b.start - +a.start)
+  }, [feed.events, edition, chapterUrl])
   const next = useMemo(() => focus(devfests).e, [devfests])
-  return { ...feed, devfests, next, chapterUrl: feed.chapter.url || CHAPTER_URL_FALLBACK }
+  return { ...feed, devfests, next, chapterUrl }
 }
 
 // ─── Live card (FEED.renderCard) ─────────────────────────────────────────────
@@ -174,7 +206,9 @@ const GdgDevfestStatus: ComponentConfig<StatusProps> = {
     quietTitle: text('Title when nothing is scheduled'),
     quietText: text('Text when nothing is scheduled'),
     quietButton: text('Button when nothing is scheduled'),
-    ticketUrl: text('Ticket link (optional, overrides the event link)'),
+    ticketUrl: text(
+      "Ticket link (optional; else the edition's tickets link from Admin → DevFest, else the event link)"
+    ),
   },
   defaultProps: {
     loadingText: 'Checking DevFest dates…',
@@ -185,6 +219,7 @@ const GdgDevfestStatus: ComponentConfig<StatusProps> = {
   },
   render: function Render({ puck, ...p }) {
     const { devfests, isLoading, chapterUrl } = useDevfests(projectOf(puck))
+    const { edition } = useDevfestData(projectOf(puck))
     return (
       <Gdg>
         <section id="df-status" className="block df-status" aria-label="DevFest status">
@@ -196,8 +231,125 @@ const GdgDevfestStatus: ComponentConfig<StatusProps> = {
             quietText={p.quietText}
             quietButton={p.quietButton}
             chapterUrl={chapterUrl}
-            ticketUrl={p.ticketUrl || undefined}
+            ticketUrl={p.ticketUrl || edition?.tickets || undefined}
           />
+        </section>
+      </Gdg>
+    )
+  },
+}
+
+// ─── GdgDevfestTickets ───────────────────────────────────────────────────────
+// A ticket-shaped call to action: "Buy tickets" goes to the edition's ticket link (Admin → DevFest,
+// e.g. KonfHub), "RSVP" to the official GDG event page (synced chapter events, else the chapter).
+
+type TicketsProps = {
+  eyebrow: string
+  title: string
+  text: string
+  buyLabel: string
+  buyNote: string
+  soonLabel: string
+  soonNote: string
+  rsvpLabel: string
+  rsvpNote: string
+  daysLabel: string
+  ticketUrl: string
+  rsvpUrl: string
+}
+
+const GdgDevfestTickets: ComponentConfig<TicketsProps> = {
+  label: 'GDG DevFest Tickets',
+  fields: {
+    eyebrow: text('Small label on top'),
+    title: text('Title ({year} = the edition year)'),
+    text: area('Text'),
+    buyLabel: text('Buy button'),
+    buyNote: text('Under the buy button'),
+    soonLabel: text('Shown while no ticket link is set in Admin → DevFest'),
+    soonNote: text('Under "tickets open soon"'),
+    rsvpLabel: text('RSVP button'),
+    rsvpNote: text('Under the RSVP button'),
+    daysLabel: text('Countdown ({n} = days left)'),
+    ticketUrl: text("Ticket link (optional; else the edition's ticket link from Admin → DevFest)"),
+    rsvpUrl: text('RSVP link (optional; else the official GDG event page, else the chapter page)'),
+  },
+  defaultProps: {
+    eyebrow: 'Tickets · Seats are limited',
+    title: 'Get your DevFest Vizag {year} ticket',
+    text: 'Book your seat in under a minute, then RSVP on the official GDG event page so the chapter knows you are coming.',
+    buyLabel: 'Buy tickets now',
+    buyNote: 'Secure checkout on KonfHub',
+    soonLabel: 'Tickets open soon',
+    soonNote: 'RSVP on the GDG page to hear first when they open.',
+    rsvpLabel: 'RSVP on the GDG page',
+    rsvpNote: 'Official event page by Google Developer Groups',
+    daysLabel: '{n} days to go',
+    ticketUrl: '',
+    rsvpUrl: '',
+  },
+  render: function Render({ puck, ...p }) {
+    const pid = projectOf(puck)
+    const { edition } = useDevfestData(pid)
+    const { devfests, chapterUrl } = useDevfests(pid)
+    const now = useNow(60_000)
+    // RSVP goes to the official GDG event page, never to the admin edition's own entry.
+    const official = focus(
+      devfests.filter((e) => !e.id.startsWith('edition-')),
+      now
+    ).e
+    const buy = p.ticketUrl || edition?.tickets || ''
+    const rsvp = p.rsvpUrl || official?.url || chapterUrl
+    const start = edition?.start ? new Date(edition.start) : (official?.start ?? null)
+    const days = start ? Math.ceil((+start - +now) / 86_400_000) : null
+    const when = start
+      ? fmt(start, { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })
+      : ''
+    const where = edition?.venue || official?.venue || ''
+    return (
+      <Gdg>
+        <section id="tickets" className="block df-tickets" aria-labelledby="tickets-h">
+          <div className="ticket">
+            <div className="ticket-main">
+              <span className="ticket-eyebrow">{p.eyebrow}</span>
+              <h2 id="tickets-h">{withYear(p.title, edition?.year)}</h2>
+              <p>{p.text}</p>
+              {when || where ? (
+                <ul className="ticket-facts">
+                  {when ? <li>{when}</li> : null}
+                  {where ? <li>{where}</li> : null}
+                  {days !== null && days > 0 ? (
+                    <li className="ticket-days">{p.daysLabel.replace(/\{n\}/g, String(days))}</li>
+                  ) : null}
+                </ul>
+              ) : null}
+            </div>
+            <div className="ticket-stub">
+              {buy ? (
+                <>
+                  <a
+                    className="btn ticket-buy"
+                    href={buy}
+                    {...ext(buy)}
+                    onClick={() => sfx('tick')}
+                  >
+                    {p.buyLabel}
+                    <span aria-hidden="true">→</span>
+                  </a>
+                  <small>{p.buyNote}</small>
+                </>
+              ) : (
+                <>
+                  <span className="ticket-soon">{p.soonLabel}</span>
+                  <small>{p.soonNote}</small>
+                </>
+              )}
+              <a className="btn ticket-rsvp" href={rsvp} {...ext(rsvp)}>
+                {p.rsvpLabel}
+              </a>
+              <small>{p.rsvpNote}</small>
+            </div>
+          </div>
         </section>
       </Gdg>
     )
@@ -926,30 +1078,78 @@ const GdgDevfestTracks: ComponentConfig<TracksProps> = {
 type SpeakersProps = {
   title: string
   sub: string
+  announcedTitle: string
+  announcedSub: string
   railLabel: string
+  beforeAnnounce: 'past' | 'none'
   badge: string
   speakers: string
   noTalk: string
   noLinks: string
 }
 
+interface SpeakerCard {
+  name: string
+  role: string
+  photo: string
+  bio: string
+  talk: string
+  panel: boolean
+  level: string
+  badges: string[]
+  links: [string, string][]
+}
+
+/** Speaker cards from an edition entered in Admin → DevFest, with their talks from its sessions. */
+function cardsFrom(d: DevfestData): SpeakerCard[] {
+  return d.speakers.map((sp) => {
+    const talks = d.sessions.filter((x) => x.speakers.includes(sp.id) && x.kind !== 'break')
+    return {
+      name: sp.name,
+      role: [sp.role, sp.company].filter(Boolean).join(', '),
+      photo: sp.photo,
+      bio: sp.bio,
+      talk: talks.map((x) => x.title).join(' · '),
+      panel: talks.some((x) => x.kind === 'panel'),
+      level: talks.find((x) => x.level)?.level ?? '',
+      badges: sp.badges,
+      links: Object.entries(sp.links).filter(([k, v]) => k && /^https?:\/\//i.test(v)),
+    }
+  })
+}
+
 const GdgDevfestSpeakers: ComponentConfig<SpeakersProps> = {
   label: 'GDG DevFest Speakers',
   fields: {
-    title: text('Title'),
-    sub: area('Subtitle (links: [text](url))'),
-    railLabel: text('List name (screen readers)'),
-    badge: text('Badge on every speaker'),
+    title: text("Title before this year's speakers are announced ({year} = this year)"),
+    sub: area(
+      'Subtitle before the announcement ({past} = the earlier year shown; links: [text](url))'
+    ),
+    announcedTitle: text('Title once speakers are added in Admin → DevFest ({year})'),
+    announcedSub: area('Subtitle once speakers are announced (links: [text](url))'),
+    railLabel: text('List name (screen readers; {year} = the year shown)'),
+    beforeAnnounce: {
+      type: 'radio',
+      label: "Before this year's speakers are added in Admin → DevFest",
+      options: [
+        { label: 'Show the earlier year’s speakers', value: 'past' },
+        { label: 'Show only the coming-soon text', value: 'none' },
+      ],
+    },
+    badge: text('Badge when no speakers are in Admin → DevFest yet'),
     speakers: area(
-      'Speakers ("Name | Role | Talk | panel yes/no | Level | Label=link, Label=link")'
+      'Fallback speakers, used only when Admin → DevFest has none ("Name | Role | Talk | panel yes/no | Level | Label=link, Label=link")'
     ),
     noTalk: text('When a speaker has no talk'),
     noLinks: text('When a speaker has no links'),
   },
   defaultProps: {
-    title: '2026 speakers are coming soon',
-    sub: 'Want to speak? Reach out through the [GDG Vizag page](https://gdg.community.dev/gdg-vizag/). Meanwhile, here is who took the stage in 2023.',
-    railLabel: '2023 speakers, scroll sideways',
+    title: '{year} speakers are coming soon',
+    sub: 'Want to speak? Reach out through the [GDG Vizag page](https://gdg.community.dev/gdg-vizag/). Meanwhile, here is who took the stage in {past}.',
+    announcedTitle: 'DevFest Vizag {year} speakers',
+    announcedSub: 'Tap a speaker to see their talk and links.',
+    railLabel: '{year} speakers, scroll sideways',
+    beforeAnnounce: 'past',
     badge: 'DevFest Vizag 2023 speaker',
     speakers: [
       'Pawan Kumar | Lead Engineer, Frontier | App Evolution with LLM | yes',
@@ -968,21 +1168,42 @@ const GdgDevfestSpeakers: ComponentConfig<SpeakersProps> = {
     noTalk: 'Not published for this speaker.',
     noLinks: 'Talk level and social links appear here once speakers are announced.',
   },
-  render: function Render(p) {
+  render: function Render({ puck, ...p }) {
     const dlg = useRef<HTMLDialogElement>(null)
     const [open, setOpen] = useState<number | null>(null)
-    const speakers = lines(p.speakers, 6).map(([name, role, talk, panel, level, links]) => ({
-      name,
-      role,
-      talk,
-      panel: /^(yes|y|true|1)$/i.test(panel),
-      level,
-      links: links
-        .split(',')
-        .map((l) => l.split('=').map((x) => x.trim()))
-        .map(([k = '', v = '']) => [k, v] as [string, string])
-        .filter(([k, v]) => k && /^https?:\/\//i.test(v)),
-    }))
+    const pid = projectOf(puck)
+    const cur = useDevfestData(pid)
+    // Before this year's speakers are added, show the newest earlier edition that has speakers.
+    const thisYear = cur.edition?.year
+    const earlier = cur.editions.find((e) => thisYear !== undefined && e.year < thisYear)?.year
+    const past = useDevfestData(pid, !cur.speakers.length && earlier ? earlier : thisYear)
+    const announced = cur.speakers.length > 0
+    // 'none': nothing but the coming-soon text until this year's speakers are added.
+    const hideEarlier = !announced && p.beforeAnnounce === 'none'
+    const source = announced ? cur : !hideEarlier && past.speakers.length ? past : null
+    const shownYear = source?.edition?.year
+    const typed: SpeakerCard[] = lines(p.speakers, 6).map(
+      ([name, role, talk, panel, level, links]) => ({
+        name,
+        role,
+        photo: '',
+        bio: '',
+        talk,
+        panel: /^(yes|y|true|1)$/i.test(panel),
+        level,
+        badges: [],
+        links: links
+          .split(',')
+          .map((l) => l.split('=').map((x) => x.trim()))
+          .map(([k = '', v = '']) => [k, v] as [string, string])
+          .filter(([k, v]) => k && /^https?:\/\//i.test(v)),
+      })
+    )
+    const speakers = cur.isLoading || hideEarlier ? [] : source ? cardsFrom(source) : typed
+    const badge = source?.edition ? `${source.edition.name} speaker` : p.badge
+    const fill = (t: string) => withYear(t, thisYear).replace(/\{past\}/g, String(shownYear ?? ''))
+    const title = announced ? withYear(p.announcedTitle, thisYear) : fill(p.title)
+    const sub = announced ? p.announcedSub : fill(p.sub)
     const s = open === null ? null : speakers[open]
     useEffect(() => {
       if (s && dlg.current && !dlg.current.open) dlg.current.showModal()
@@ -991,10 +1212,16 @@ const GdgDevfestSpeakers: ComponentConfig<SpeakersProps> = {
       <Gdg>
         <section id="speakers" className="block bleed" aria-labelledby="spk-h">
           <div className="inner">
-            <h2 id="spk-h">{p.title}</h2>
-            <p className="sub">{linkify(p.sub)}</p>
+            <h2 id="spk-h">{title}</h2>
+            <p className="sub">{linkify(sub)}</p>
           </div>
-          <div className="rail" id="speaker-grid" tabIndex={0} aria-label={p.railLabel}>
+          <div
+            hidden={!speakers.length}
+            className="rail"
+            id="speaker-grid"
+            tabIndex={0}
+            aria-label={withYear(p.railLabel, shownYear ?? thisYear)}
+          >
             {speakers.map((sp, i) => {
               const [n, amp] = SHAPES[i % 4] ?? [8, 0.07]
               return (
@@ -1012,7 +1239,24 @@ const GdgDevfestSpeakers: ComponentConfig<SpeakersProps> = {
                     aria-hidden="true"
                   >
                     <path d={shapePath(n, amp)} />
-                    <text y="19">{initials(sp.name)}</text>
+                    {sp.photo ? (
+                      <>
+                        <clipPath id={`spk-clip-${i}`}>
+                          <path d={shapePath(n, amp)} transform="scale(0.94)" />
+                        </clipPath>
+                        <image
+                          href={sp.photo}
+                          x="-100"
+                          y="-100"
+                          width="200"
+                          height="200"
+                          preserveAspectRatio="xMidYMid slice"
+                          clipPath={`url(#spk-clip-${i})`}
+                        />
+                      </>
+                    ) : (
+                      <text y="19">{initials(sp.name)}</text>
+                    )}
                   </svg>
                   <h3>{sp.name}</h3>
                   <p>{sp.role}</p>
@@ -1042,10 +1286,14 @@ const GdgDevfestSpeakers: ComponentConfig<SpeakersProps> = {
                 <h3 id="spk-title">{s.name}</h3>
                 <p>{s.role}</p>
                 <div className="badges">
-                  <span>{p.badge}</span>
+                  <span>{badge}</span>
+                  {s.badges.map((b) => (
+                    <span key={b}>{b}</span>
+                  ))}
                   {s.panel ? <span>Panelist</span> : null}
                   {s.level ? <span>{s.level}</span> : null}
                 </div>
+                {s.bio ? <p className="bio">{s.bio}</p> : null}
                 <div className="talk">
                   <b>{s.talk ? 'Talk' : 'Talk details'}</b>
                   <span>{s.talk || p.noTalk}</span>
@@ -1081,6 +1329,8 @@ const GdgDevfestSpeakers: ComponentConfig<SpeakersProps> = {
 type AgendaProps = {
   title: string
   sub: string
+  liveSub: string
+  emptyText: string
   tracks: string
   sessions: string
   eventDate: string
@@ -1103,10 +1353,14 @@ const GdgDevfestAgenda: ComponentConfig<AgendaProps> = {
   label: 'GDG DevFest Agenda',
   fields: {
     title: text('Title'),
-    sub: area('Subtitle'),
-    tracks: area('Track filters (one per line; "All tracks" and "Starred" are added)'),
+    sub: area('Subtitle before sessions are added in Admin → DevFest'),
+    liveSub: area('Subtitle once sessions are added in Admin → DevFest'),
+    emptyText: area('Message in place of the agenda while there are no sessions'),
+    tracks: area(
+      'Fallback track filters, used only when the edition has none (one per line; "All tracks" and "Starred" are added)'
+    ),
     sessions: area(
-      'Sessions ("id | 09:00 | 10:00 | Title | Track | Note"; track "All" shows under every filter)'
+      'Fallback sessions, used only when Admin → DevFest has none ("id | 09:00 | 10:00 | Title | Track | Note"; track "All" shows under every filter)'
     ),
     eventDate: text('Event date (YYYY-MM-DD) when no DevFest is in the feed'),
     venue: text('Venue (when no DevFest is in the feed)'),
@@ -1119,21 +1373,11 @@ const GdgDevfestAgenda: ComponentConfig<AgendaProps> = {
   },
   defaultProps: {
     title: 'My DevFest agenda',
-    sub: 'Sample slots based on the 2025 format. Star what you want, then export it. Real sessions replace these when announced.',
-    tracks: 'AI and agents\nWeb\nCloud\nMobile\nStartups\nCareers',
-    sessions: [
-      'reg | 09:00 | 10:00 | Registration and welcome | All | Check in and pick up your badge.',
-      'key | 10:00 | 10:45 | Opening keynote | All | Welcome from the organizers and the year ahead.',
-      'ai1 | 11:00 | 11:45 | AI and agents session | AI and agents | Gemini and agentic apps, from demo to production.',
-      'web1 | 11:00 | 11:45 | Web session | Web | Modern web platform, performance and Firebase.',
-      'mob1 | 11:45 | 12:30 | Mobile session | Mobile | Flutter and Android craft.',
-      'cld1 | 11:45 | 12:30 | Cloud session | Cloud | Google Cloud and DevOps that scale.',
-      'pan | 12:30 | 14:00 | Careers panel and networking lunch | Careers | Speakers and builders on getting hired.',
-      'lab1 | 14:00 | 15:30 | Code lab: Agentic AI | AI and agents | Hands-on, bring your laptop.',
-      'lab2 | 14:00 | 15:30 | Code lab: Cloud skills boost | Cloud | Hands-on, bring your laptop.',
-      'stp | 15:45 | 16:30 | Startup stories | Startups | Founders on shipping and growth.',
-      'end | 16:30 | 17:30 | Wrap-up and group photo | All | Closing, swag and photos.',
-    ].join('\n'),
+    sub: 'The agenda is announced soon. Then star the sessions you want and add them to your calendar.',
+    liveSub: 'Star the sessions you want, then add them to your calendar.',
+    emptyText: 'Sessions and timings are published here once the speakers are confirmed.',
+    tracks: '',
+    sessions: '',
     eventDate: '',
     venue: '',
     calendarTitle: 'DevFest Vizag 2026',
@@ -1145,15 +1389,50 @@ const GdgDevfestAgenda: ComponentConfig<AgendaProps> = {
   },
   render: function Render({ puck, ...p }) {
     const { next } = useDevfests(projectOf(puck))
-    const SESSIONS = lines(p.sessions, 6).map(([id, s, e, title, track, note]) => ({
-      id,
-      s,
-      e,
-      title,
-      track,
-      note,
-    }))
-    const filters = ['All tracks', 'Starred', ...lines(p.tracks).map(([t]) => t)]
+    const df = useDevfestData(projectOf(puck))
+    const timed = df.sessions.filter((x) => x.start)
+    const live = timed.length > 0
+    const names = new Map(df.speakers.map((sp) => [sp.id, sp.name]))
+    const SESSIONS: {
+      id: string
+      d?: string
+      s: string
+      e: string
+      title: string
+      track: string
+      note: string
+    }[] = live
+      ? timed.map((x) => ({
+          id: x.slug || x.id,
+          d: istDay(x.start as string),
+          s: istTime(x.start as string),
+          e: istTime(x.end ?? (x.start as string)),
+          title: x.title,
+          track: x.track || 'All',
+          note:
+            [
+              x.speakers
+                .map((id) => names.get(id))
+                .filter(Boolean)
+                .join(', '),
+              x.room,
+            ]
+              .filter(Boolean)
+              .join(' · ') || x.abstract.slice(0, 160),
+        }))
+      : lines(p.sessions, 6).map(([id, s, e, title, track, note]) => ({
+          id,
+          s,
+          e,
+          title,
+          track,
+          note,
+        }))
+    const trackNames = df.edition?.tracks?.length
+      ? df.edition.tracks.map((t) => t.name)
+      : lines(p.tracks).map(([t]) => t)
+    const filters = ['All tracks', 'Starred', ...trackNames]
+    const empty = SESSIONS.length === 0
     const [stars, setStars] = useState<Set<string>>(() => new Set())
     const [filter, setFilter] = useState('All tracks')
     const [msg, setMsg] = useState<string | null>(null)
@@ -1172,12 +1451,14 @@ const GdgDevfestAgenda: ComponentConfig<AgendaProps> = {
       }
     }
     // The date comes from the next DevFest in the feed (as sync.js did), else from the block.
-    const day = next
-      ? dayKey(next.start)
-      : /^\d{4}-\d{2}-\d{2}/.test(p.eventDate)
-        ? p.eventDate.slice(0, 10)
-        : null
-    const venue = (next?.venue || p.venue || '').trim()
+    const day = df.edition?.start
+      ? istDay(df.edition.start)
+      : next
+        ? dayKey(next.start)
+        : /^\d{4}-\d{2}-\d{2}/.test(p.eventDate)
+          ? p.eventDate.slice(0, 10)
+          : null
+    const venue = (df.edition?.venue || next?.venue || p.venue || '').trim()
     const utc = (d: string, t: string) =>
       new Date(`${d}T${t}:00+05:30`)
         .toISOString()
@@ -1195,7 +1476,7 @@ const GdgDevfestAgenda: ComponentConfig<AgendaProps> = {
       if (!day) return setMsg(p.needDate)
       const q = new URLSearchParams({
         action: 'TEMPLATE',
-        text: p.calendarTitle,
+        text: df.edition?.name || p.calendarTitle,
         dates: `${utc(day, '09:00')}/${utc(day, '17:30')}`,
         details: p.calendarDetails,
         location: venue || 'Visakhapatnam, Andhra Pradesh',
@@ -1215,10 +1496,10 @@ const GdgDevfestAgenda: ComponentConfig<AgendaProps> = {
       picks.forEach((x) =>
         out.push(
           'BEGIN:VEVENT',
-          `UID:${x.id}-${day}@devfest-vizag`,
+          `UID:${x.id}-${x.d ?? day}@devfest-vizag`,
           `DTSTAMP:${stamp}`,
-          `DTSTART:${utc(day, x.s)}`,
-          `DTEND:${utc(day, x.e)}`,
+          `DTSTART:${utc(x.d ?? day, x.s)}`,
+          `DTEND:${utc(x.d ?? day, x.e)}`,
           `SUMMARY:${x.title}`,
           `DESCRIPTION:${x.note}`,
           `LOCATION:${venue || 'Visakhapatnam'}`,
@@ -1237,36 +1518,46 @@ const GdgDevfestAgenda: ComponentConfig<AgendaProps> = {
           <div className="sched">
             <div className="sched-side">
               <h2 id="sch-h">{p.title}</h2>
-              <p className="sub">{p.sub}</p>
-              <div className="filters" id="track-filters" role="group" aria-label="Filter by track">
-                {filters.map((f) => (
-                  <button
-                    key={f}
-                    type="button"
-                    aria-pressed={f === filter}
-                    onClick={() => {
-                      setFilter(f)
-                      sfx('tick')
-                    }}
-                  >
-                    {f}
-                  </button>
-                ))}
-              </div>
+              <p className="sub">{live ? p.liveSub : p.sub}</p>
+              {empty ? null : (
+                <div
+                  className="filters"
+                  id="track-filters"
+                  role="group"
+                  aria-label="Filter by track"
+                >
+                  {filters.map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      aria-pressed={f === filter}
+                      onClick={() => {
+                        setFilter(f)
+                        sfx('tick')
+                      }}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+              )}
               <div className="agenda-actions">
                 <button className="btn btn-sm" id="cal-google" type="button" onClick={google}>
                   {p.googleLabel}
                 </button>
-                <button className="btn btn-sm btn-tonal" id="cal-ics" type="button" onClick={ics}>
-                  {p.icsLabel}
-                </button>
+                {empty ? null : (
+                  <button className="btn btn-sm btn-tonal" id="cal-ics" type="button" onClick={ics}>
+                    {p.icsLabel}
+                  </button>
+                )}
               </div>
               <p className="note" id="agenda-note" role="status">
-                <span id="star-count">{stars.size} starred</span>
+                {empty ? null : <span id="star-count">{stars.size} starred</span>}
                 {msg ? ` ${msg}` : null}
               </p>
             </div>
-            <ol className="agenda" id="agenda">
+            {empty ? <p className="agenda-empty">{p.emptyText}</p> : null}
+            <ol className="agenda" id="agenda" hidden={empty}>
               {SESSIONS.map((x) => {
                 const starred = stars.has(x.id)
                 const show =
@@ -1304,6 +1595,7 @@ const GdgDevfestAgenda: ComponentConfig<AgendaProps> = {
 
 export const devfestComponents: Record<string, AnyBlock> = {
   GdgDevfestStatus,
+  GdgDevfestTickets,
   GdgDevfestAbout,
   GdgDevfestAudience,
   GdgDevfestEditions,

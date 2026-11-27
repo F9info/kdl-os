@@ -7417,11 +7417,23 @@
         "kind": "textarea",
         "tab": "content"
       },
+      "dateTbd": {
+        "kind": "text",
+        "tab": "content"
+      },
       "eventLine": {
         "kind": "text",
         "tab": "content"
       },
       "footerLine": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hereLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "herePlaceholder": {
         "kind": "text",
         "tab": "content"
       },
@@ -7453,12 +7465,183 @@
         "kind": "text",
         "tab": "content"
       },
+      "passNote": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "privacyNote": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "ringText": {
+        "kind": "text",
+        "tab": "content"
+      },
       "roles": {
         "kind": "textarea",
         "tab": "content"
       },
       "sub": {
         "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgBitFlip": {
+    "label": "GDG Bit Flip Game",
+    "fields": {
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "seconds": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sub": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgBugHunt": {
+    "label": "GDG Bug Hunt Game",
+    "fields": {
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "rounds": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "snippets": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sub": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgCallForSpeakers": {
+    "label": "GDG DevFest Call for Speakers",
+    "fields": {
+      "closedButton": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "closedHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "closedText": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "closedTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "consentText": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "lookFor": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "sub": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "thanksText": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "thanksTitle": {
+        "kind": "text",
         "tab": "content"
       },
       "title": {
@@ -7563,6 +7746,10 @@
         "kind": "text",
         "tab": "content"
       },
+      "emptyText": {
+        "kind": "textarea",
+        "tab": "content"
+      },
       "eventDate": {
         "kind": "text",
         "tab": "content"
@@ -7597,6 +7784,10 @@
       },
       "icsLabel": {
         "kind": "text",
+        "tab": "content"
+      },
+      "liveSub": {
+        "kind": "textarea",
         "tab": "content"
       },
       "needDate": {
@@ -7763,9 +7954,25 @@
   "GdgDevfestSpeakers": {
     "label": "GDG DevFest Speakers",
     "fields": {
+      "announcedSub": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "announcedTitle": {
+        "kind": "text",
+        "tab": "content"
+      },
       "badge": {
         "kind": "text",
         "tab": "content"
+      },
+      "beforeAnnounce": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "past",
+          "none"
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -7809,6 +8016,75 @@
       },
       "sub": {
         "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgDevfestSponsors": {
+    "label": "GDG DevFest Sponsors",
+    "fields": {
+      "ctaLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "ctaUrl": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "emptyText": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "sub": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "tierCommunity": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "tierGold": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "tierPartner": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "tierSilver": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "tierTitle": {
+        "kind": "text",
         "tab": "content"
       },
       "title": {
@@ -7862,6 +8138,124 @@
       },
       "ticketUrl": {
         "kind": "link",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgDevfestTeam": {
+    "label": "GDG DevFest Team",
+    "fields": {
+      "emptyText": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "sub": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "GdgDevfestTickets": {
+    "label": "GDG DevFest Tickets",
+    "fields": {
+      "buyLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "buyNote": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "daysLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "rsvpLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "rsvpNote": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "rsvpUrl": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "soonLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "soonNote": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "text": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "ticketUrl": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
         "tab": "content"
       }
     }
@@ -8373,6 +8767,14 @@
         "kind": "link",
         "tab": "content"
       },
+      "cfpMode": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "link",
+          "form"
+        ]
+      },
       "cfpOpenGo": {
         "kind": "text",
         "tab": "content"
@@ -8448,6 +8850,14 @@
       "noDeckNote": {
         "kind": "textarea",
         "tab": "content"
+      },
+      "showWtm": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "yes",
+          "no"
+        ]
       },
       "sponsorGo": {
         "kind": "text",
@@ -8803,6 +9213,51 @@
           false,
           true
         ]
+      }
+    }
+  },
+  "GdgTechSprint": {
+    "label": "GDG Tech Sprint Quiz",
+    "fields": {
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "questions": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "seconds": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "sub": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
       }
     }
   },

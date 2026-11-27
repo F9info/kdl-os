@@ -3,10 +3,11 @@
 // Community page blocks, ported from the GDG Vizag site (community.html + community.js, and the closed
 // states register.js shows once an event has ended). Live registration (teams, stages) is a later phase:
 // a hackathon card shows its closed state, or links out when `registerHref` is set.
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ComponentConfig } from '@puckeditor/core'
-import { Gdg, area, dateLabel, lines, text, useGdgFeed, type AnyBlock } from './lib'
+import { Gdg, area, dateLabel, lines, text, useDevfestData, useGdgFeed, type AnyBlock } from './lib'
 import { ext } from './chrome'
+import { CallForSpeakersPopup } from './cfp'
 
 // ─── Hackathon / event card ──────────────────────────────────────────────────
 
@@ -276,6 +277,8 @@ export const GdgWtm: ComponentConfig<WtmProps> = {
 
 type InvolvedProps = {
   title: string
+  cfpMode: 'link' | 'form'
+  showWtm: 'yes' | 'no'
   cfpTitle: string
   cfpText: string
   cfpGo: string
@@ -308,6 +311,22 @@ export const GdgInvolved: ComponentConfig<InvolvedProps> = {
   label: 'GDG Get Involved',
   fields: {
     title: text('Title'),
+    cfpMode: {
+      type: 'radio',
+      label: 'Call for speakers card',
+      options: [
+        { label: 'Opens the link below', value: 'link' },
+        { label: 'Opens the call for speakers form (Admin → DevFest)', value: 'form' },
+      ],
+    },
+    showWtm: {
+      type: 'radio',
+      label: 'Women Techmakers card',
+      options: [
+        { label: 'Show', value: 'yes' },
+        { label: 'Hide', value: 'no' },
+      ],
+    },
     cfpTitle: text('Speakers: title'),
     cfpText: area('Speakers: text'),
     cfpGo: text('Speakers: link label'),
@@ -337,6 +356,8 @@ export const GdgInvolved: ComponentConfig<InvolvedProps> = {
   },
   defaultProps: {
     title: 'Get involved',
+    cfpMode: 'link',
+    showWtm: 'yes',
     cfpTitle: 'Call for speakers',
     cfpText: "Share what you've built. Applications open before the event.",
     cfpGo: 'Notify me',
@@ -366,23 +387,58 @@ export const GdgInvolved: ComponentConfig<InvolvedProps> = {
     wtmGo: 'Learn more',
     wtmHref: 'https://www.youtube.com/@wtmvizag',
   },
-  render: function Render(p) {
+  render: function Render({ puck, ...p }) {
     const dlg = useRef<HTMLDialogElement>(null)
-    const cfpOpen = Boolean(p.cfpUrl)
+    const pid = puck?.metadata?.projectId as string | undefined
+    // "form": the card opens the call for speakers form; open or closed comes from Admin → DevFest.
+    const useForm = p.cfpMode === 'form'
+    const { edition } = useDevfestData(pid)
+    const [formOpen, setFormOpen] = useState(false)
+    useEffect(() => {
+      if (!useForm) return
+      const fromHash = () => window.location.hash === '#speak' && setFormOpen(true)
+      fromHash()
+      window.addEventListener('hashchange', fromHash)
+      return () => window.removeEventListener('hashchange', fromHash)
+    }, [useForm])
+    const cfpOpen = useForm ? Boolean(edition?.cfpOpen) : Boolean(p.cfpUrl)
     const cfpHref = cfpOpen ? p.cfpUrl : p.cfpHref
     const deckHref = p.deckUrl || p.contactHref
+    const cfpCard = (
+      <>
+        <h3>{p.cfpTitle}</h3>
+        <p id="cfp-text">{cfpOpen ? p.cfpOpenText : p.cfpText}</p>
+        <span className="go" id="cfp-go">
+          {cfpOpen ? p.cfpOpenGo : p.cfpGo}
+        </span>
+      </>
+    )
     return (
       <Gdg>
         <section id="involved" className="block" aria-labelledby="inv-h">
           <h2 id="inv-h">{p.title}</h2>
-          <div className="bento involve-grid">
-            <a className="tile t-blue link" id="cfp-link" href={cfpHref} {...ext(cfpHref)}>
-              <h3>{p.cfpTitle}</h3>
-              <p id="cfp-text">{cfpOpen ? p.cfpOpenText : p.cfpText}</p>
-              <span className="go" id="cfp-go">
-                {cfpOpen ? p.cfpOpenGo : p.cfpGo}
-              </span>
-            </a>
+          <div className={`bento involve-grid${p.showWtm === 'no' ? ' three' : ''}`}>
+            {useForm ? (
+              <button
+                className="tile t-blue link"
+                id="cfp-link"
+                type="button"
+                onClick={() => {
+                  setFormOpen(true)
+                  // Show the shareable address (…#speak) while the form is open.
+                  if (window.location.hash !== '#speak') {
+                    const { pathname, search } = window.location
+                    history.replaceState(null, '', `${pathname}${search}#speak`)
+                  }
+                }}
+              >
+                {cfpCard}
+              </button>
+            ) : (
+              <a className="tile t-blue link" id="cfp-link" href={cfpHref} {...ext(cfpHref)}>
+                {cfpCard}
+              </a>
+            )}
             <button
               className="tile t-yellow link"
               id="sponsor-open"
@@ -398,11 +454,13 @@ export const GdgInvolved: ComponentConfig<InvolvedProps> = {
               <p>{p.volunteerText}</p>
               <span className="go">{p.volunteerGo}</span>
             </a>
-            <a className="tile t-red link" href={p.wtmHref} {...ext(p.wtmHref)}>
-              <h3>{p.wtmTitle}</h3>
-              <p>{p.wtmText}</p>
-              <span className="go">{p.wtmGo}</span>
-            </a>
+            {p.showWtm === 'no' ? null : (
+              <a className="tile t-red link" href={p.wtmHref} {...ext(p.wtmHref)}>
+                <h3>{p.wtmTitle}</h3>
+                <p>{p.wtmText}</p>
+                <span className="go">{p.wtmGo}</span>
+              </a>
+            )}
           </div>
         </section>
         {/* Clicking the backdrop (the dialog element itself) closes it, as on the original site. */}
@@ -429,6 +487,17 @@ export const GdgInvolved: ComponentConfig<InvolvedProps> = {
             {p.deckUrl ? p.deckNote : p.noDeckNote}
           </p>
         </dialog>
+        {useForm ? (
+          <CallForSpeakersPopup
+            pid={pid}
+            open={formOpen}
+            onClose={() => {
+              setFormOpen(false)
+              if (window.location.hash === '#speak')
+                history.replaceState(null, '', window.location.pathname + window.location.search)
+            }}
+          />
+        ) : null}
       </Gdg>
     )
   },

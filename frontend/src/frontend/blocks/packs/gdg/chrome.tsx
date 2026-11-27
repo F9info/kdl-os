@@ -231,6 +231,10 @@ export const GdgHeader: ComponentConfig<HeaderProps> = {
             </svg>
           </button>
         </header>
+        {/* Member pages (login, account) have no page head under the floating header: keep them clear of it. */}
+        {pathname.startsWith('/membership') ? (
+          <div className="nav-spacer" aria-hidden="true" />
+        ) : null}
         <span id="main" />
       </Gdg>
     )

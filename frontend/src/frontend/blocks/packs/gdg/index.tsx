@@ -11,7 +11,10 @@ import { homeComponents } from './home'
 import { eventsComponents } from './events'
 import { communityComponents } from './community'
 import { devfestComponents } from './devfest'
+import { devfestDataComponents } from './devfest-data'
 import { playComponents } from './play'
+import { gameComponents } from './games'
+import { cfpComponents } from './cfp'
 
 // A block stored with only some props (pages created by the GDG chapter preset store none) still
 // renders its full default content: missing props fall back to the block's defaultProps.
@@ -39,7 +42,10 @@ const raw: Record<string, AnyBlock> = {
   ...eventsComponents,
   ...communityComponents,
   ...devfestComponents,
+  ...devfestDataComponents,
   ...playComponents,
+  ...gameComponents,
+  ...cfpComponents,
 }
 
 const components = Object.fromEntries(Object.entries(raw).map(([k, c]) => [k, withDefaults(c)]))

@@ -55,3 +55,175 @@ model ChapterSyncSetting {
 
   @@map("chapter_sync_settings")
 }
+
+// ─── DevFest ─────────────────────────────────────────────────────────────────
+// One edition per year. Speakers, sessions, sponsors and the team belong to an edition, so every
+// past year keeps its own content (the archive) and next year starts as a fresh edition.
+
+model DevfestEdition {
+  id            String    @id @default(cuid())
+  project_id    String
+  year          Int
+  name          String
+  theme         String?
+  start_date    DateTime?
+  end_date      DateTime?
+  venue         String?
+  venue_address String?
+  map_url       String?
+  ticket_url    String?
+  cfp_url       String?
+  cfp_closes    DateTime?
+  // Talk proposals are taken on the website while this is on and cfp_closes has not passed.
+  cfp_open      Boolean   @default(false)
+  // [{ name, color }] — the tracks sessions are filed under.
+  tracks        Json      @default("[]")
+  // [{ label, value }] — headline numbers (attendees, talks...).
+  stats         Json      @default("[]")
+  // The edition the website shows by default. One per project.
+  is_current    Boolean   @default(false)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  speakers DevfestSpeaker[]
+  sessions DevfestSession[]
+  sponsors DevfestSponsor[]
+  team     DevfestTeamMember[]
+  proposals DevfestProposal[]
+
+  @@unique([project_id, year])
+  @@map("devfest_editions")
+}
+
+model DevfestSpeaker {
+  id          String   @id @default(cuid())
+  project_id  String
+  edition_id  String
+  slug        String
+  name        String
+  photo_url   String?
+  role        String?
+  company     String?
+  bio         String?
+  // { label: url } — LinkedIn, X, GitHub, website...
+  links       Json     @default("{}")
+  badges      String[] @default([])
+  is_featured Boolean  @default(false)
+  is_visible  Boolean  @default(true)
+  sort_order  Int      @default(0)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  edition DevfestEdition @relation(fields: [edition_id], references: [id], onDelete: Cascade)
+
+  @@unique([edition_id, slug])
+  @@index([project_id])
+  @@map("devfest_speakers")
+}
+
+model DevfestSession {
+  id          String    @id @default(cuid())
+  project_id  String
+  edition_id  String
+  slug        String
+  title       String
+  abstract    String?
+  // talk | keynote | workshop | panel | break
+  kind        String    @default("talk")
+  // A track name from the edition, or "All" for sessions everyone attends.
+  track       String?
+  level       String?
+  room        String?
+  starts_at   DateTime?
+  ends_at     DateTime?
+  speaker_ids String[]  @default([])
+  slides_url  String?
+  video_url   String?
+  is_visible  Boolean   @default(true)
+  sort_order  Int       @default(0)
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  edition DevfestEdition @relation(fields: [edition_id], references: [id], onDelete: Cascade)
+
+  @@unique([edition_id, slug])
+  @@index([project_id])
+  @@map("devfest_sessions")
+}
+
+model DevfestSponsor {
+  id         String   @id @default(cuid())
+  project_id String
+  edition_id String
+  name       String
+  logo_url   String?
+  // title | gold | silver | community | partner
+  tier       String   @default("partner")
+  url        String?
+  is_visible Boolean  @default(true)
+  sort_order Int      @default(0)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  edition DevfestEdition @relation(fields: [edition_id], references: [id], onDelete: Cascade)
+
+  @@index([project_id])
+  @@map("devfest_sponsors")
+}
+
+model DevfestTeamMember {
+  id         String   @id @default(cuid())
+  project_id String
+  edition_id String
+  name       String
+  role       String?
+  photo_url  String?
+  url        String?
+  is_visible Boolean  @default(true)
+  sort_order Int      @default(0)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  edition DevfestEdition @relation(fields: [edition_id], references: [id], onDelete: Cascade)
+
+  @@index([project_id])
+  @@map("devfest_team_members")
+}
+
+// A talk proposal sent through the call for speakers form on the website. Organizers review it in
+// the admin; accepting it creates a (hidden) speaker and session in the same edition.
+model DevfestProposal {
+  id          String         @id @default(cuid())
+  project_id  String
+  edition_id  String
+  edition     DevfestEdition @relation(fields: [edition_id], references: [id], onDelete: Cascade)
+  name        String
+  email       String
+  phone       String?
+  city        String?
+  role        String?
+  company     String?
+  bio         String
+  photo_url   String?
+  linkedin    String?
+  website     String?
+  title       String
+  abstract    String
+  // talk | workshop | lightning | panel
+  format      String         @default("talk")
+  track       String?
+  level       String?
+  notes       String?
+  first_time  Boolean        @default(false)
+  // new | shortlisted | waitlist | accepted | rejected
+  status      String         @default("new")
+  review_note String?
+  speaker_id  String?
+  session_id  String?
+  created_at  DateTime       @default(now())
+  updated_at  DateTime       @updatedAt
+
+  @@index([edition_id, status])
+  @@index([edition_id, email])
+  @@map("devfest_proposals")
+}

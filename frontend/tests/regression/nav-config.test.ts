@@ -154,7 +154,6 @@ describe('navigation built from the real manifests', () => {
       'Modules',
       'Notifications',
       'Integrations',
-      'GDG Chapter',
     ])
   })
 
@@ -165,12 +164,14 @@ describe('navigation built from the real manifests', () => {
       'Access Control',
       'Settings',
       'Membership',
+      'GDG Chapter',
     ])
     const by = Object.fromEntries(model.groups.map((g) => [g.label, g.items.map((i) => i.label)]))
     expect(by['Media']).toEqual(['Library', 'AI Providers', 'Cloud Imports'])
     expect(by['Access Control']).toEqual(['Roles', 'Permissions', 'Activity Log'])
     expect(by['Admin Settings']).toEqual(['Identity', 'SEO', 'Themes'])
     expect(by['Settings']).toEqual(['Field Types', 'Field Categories', 'Custom Fields', 'Storage'])
+    expect(by['GDG Chapter']).toEqual(['Chapter events', 'DevFest'])
   })
 
   it('the CMS bundle (Content) owns the website parts and none of them leak to the top level', () => {

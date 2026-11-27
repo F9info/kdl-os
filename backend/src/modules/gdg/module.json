@@ -2,7 +2,7 @@
   "slug": "gdg",
   "name": "GDG Chapter",
   "version": "1.0.0",
-  "description": "Google Developer Groups chapter website kit: GDG page sections (coast hero, journey, organizers, events, community, DevFest overview/program/visit/play, chapter header and footer) for the page builder, plus chapter events entered by hand or synced from gdg.community.dev",
+  "description": "Google Developer Groups chapter website kit: GDG page sections (coast hero, journey, organizers, events, community, DevFest overview/program/visit/play, chapter header and footer) for the page builder, DevFest editions with their speakers, sessions, sponsors and team, plus chapter events entered by hand or synced from gdg.community.dev",
   "core": false,
   "group": "cms",
   "apiPrefix": "/api/gdg",
@@ -11,10 +11,24 @@
   ],
   "nav": [
     {
-      "label": "GDG Chapter",
+      "label": "Chapter events",
       "path": "/admin/gdg",
       "icon": "Ticket",
-      "permission": "gdg:view"
+      "permission": "gdg:view",
+      "group": "GDG Chapter",
+      "groupIcon": "Ticket",
+      "groupOrder": 46,
+      "order": 10
+    },
+    {
+      "label": "DevFest",
+      "path": "/admin/gdg/devfest",
+      "icon": "CalendarDays",
+      "permission": "gdg:view",
+      "group": "GDG Chapter",
+      "groupIcon": "Ticket",
+      "groupOrder": 46,
+      "order": 20
     }
   ],
   "dependsOn": [],
