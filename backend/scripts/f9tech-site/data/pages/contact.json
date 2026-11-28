@@ -1,0 +1,20 @@
+{
+  "slug": "contact",
+  "title": "Contact Us | F9 Technologies",
+  "description": "Discover F9 Info Technologies, located near Vizag, offering comprehensive IT solutions to drive your business growth and success",
+  "blocks": [
+    {
+      "type": "F9Contact",
+      "props": {
+        "title": "Contact Us",
+        "nameLabel": "Name",
+        "emailLabel": "Email",
+        "subjectLabel": "Subject",
+        "messageLabel": "Description",
+        "buttonLabel": "Contained",
+        "formSlug": "contact",
+        "halfKeys": "name,email"
+      }
+    }
+  ]
+}

@@ -24,6 +24,9 @@ export const updatePageSchema = z.object({
   status: z.enum(['DRAFT', 'PUBLISHED']).optional(),
   // null clears all page SEO; empty strings inside are cleaned away by the service.
   seo: seoSchema.nullable().optional(),
+  // Header/footer layouts from the layout library; null = use the project's default.
+  header_layout_id: z.string().min(1).nullable().optional(),
+  footer_layout_id: z.string().min(1).nullable().optional(),
 });
 
 // Body of POST /:id/publish: the content saved as part of publishing (all optional; defaults to

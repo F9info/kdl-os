@@ -8,7 +8,7 @@ vi.mock('../projects/onboarding.js', () => ({
   ONBOARDING_KEY: 'onboarding.frontend',
 }));
 
-const { default: seed } = await import('./seed.js');
+const { default: seed, seedOnEnable } = await import('./seed.js');
 const txWith = (value) => ({
   appSetting: {
     findUnique: vi.fn().mockResolvedValue(value === undefined ? null : { value }),
@@ -72,5 +72,43 @@ describe('CMS install seed: Frontend ships a ready demo', () => {
   it('any other error still fails the install (nothing half-created)', async () => {
     h.createStarterSite.mockRejectedValue(new Error('db down'));
     await expect(seed(txWith(undefined))).rejects.toThrow('db down');
+  });
+});
+
+describe('CMS enable top-up (seedOnEnable)', () => {
+  const txFor = (rows) => ({
+    appSetting: {
+      findUnique: vi.fn(async ({ where }) => rows[where.key] ?? null),
+      upsert: vi.fn().mockResolvedValue({}),
+    },
+  });
+
+  it('does nothing when the install already created the demo (a summary exists)', async () => {
+    const tx = txFor({ 'frontend.demo_summary': { value: '{}' } });
+    await seedOnEnable(tx);
+    expect(h.seedCmsSamples).not.toHaveBeenCalled();
+    expect(h.createStarterSite).not.toHaveBeenCalled();
+    expect(h.seedDemoLandingPages).not.toHaveBeenCalled();
+  });
+
+  it('creates the demo when the install could not (no summary yet), and records it', async () => {
+    const tx = txFor({});
+    await seedOnEnable(tx);
+    expect(h.createStarterSite).toHaveBeenCalledWith(tx, null, { withCms: true });
+    expect(h.seedDemoLandingPages).toHaveBeenCalledWith(tx, null);
+    expect(tx.appSetting.upsert).toHaveBeenCalledTimes(1);
+  });
+
+  it('respects an explicit "no" from the wizard', async () => {
+    const tx = txFor({ 'onboarding.frontend': { value: 'no' } });
+    await seedOnEnable(tx);
+    expect(h.createStarterSite).not.toHaveBeenCalled();
+  });
+
+  it('still waits quietly when there is no default project yet (409)', async () => {
+    h.createStarterSite.mockRejectedValue(Object.assign(new Error('no project'), { status: 409 }));
+    const tx = txFor({});
+    await expect(seedOnEnable(tx)).resolves.toBeUndefined();
+    expect(tx.appSetting.upsert).not.toHaveBeenCalled();
   });
 });

@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 // Design '1'-'4', or `custom:<id>` = a saved Section Builder block
 // (CustomBlockTemplate) chosen for that slot.
-const layoutVariant = z.string().regex(/^([1-5]|custom:[A-Za-z0-9_-]+)$/);
+const layoutVariant = z.string().regex(/^([1-5]|f9|landing:[1-4]|custom:[A-Za-z0-9_-]+)$/);
 
 // Canonical stage slugs per TEMPLATE_ENGINE_ARCH.md §3.
 export const DAG_STAGE_SLUGS = [

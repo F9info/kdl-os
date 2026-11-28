@@ -74,6 +74,8 @@ export async function getPreviewPage(token) {
       project_id: true,
       site_id: true,
       status: true,
+      header_layout_id: true,
+      footer_layout_id: true,
     },
   });
   if (!page) throw notFound();

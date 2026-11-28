@@ -1,0 +1,7 @@
+{
+  "_note": "Which blocks are the site's header and footer. One list for the editor, the publish checks and the page scaffold (frontend and backend both read this file), so a new header or footer block type is added here only.",
+  "start": ["ConstructionTopBar", "ConstructionHeader", "NavBar", "MedicalTopNav", "F9Header"],
+  "end": ["ConstructionFooter", "Footer", "F9Footer"],
+  "managedCategories": ["top-bar", "header", "bottombar"],
+  "scaffold": ["ConstructionTopBar", "ConstructionHeader", "ConstructionFooter"]
+}

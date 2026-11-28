@@ -24,7 +24,9 @@ ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a l
  'static-website': [(541, 304, 'Click here to start the conversion'), (300, 444, 'Click to set the sitemap address'), (300, 480, 'Click to set up forms')],
  'landing-pages': [(1336, 119, '<Click here to add a new landing page'), (420, 573, 'Click here to use this template'), (426, 617, 'Click View template to preview it')],
  'pages': [(385, 361, 'Click Edit to change this page'), (511, 361, 'Click Duplicate to copy it'), (1146, 230, '<Click here to generate content with AI')],
- 'navigation': [(408, 297, 'Click a tab: header or footer menu'), (870, 691, 'Click Add after typing a custom page name')],
+ 'navigation': [(408, 229, 'Click a tab: header or footer menu'), (870, 622, 'Click Add after typing a custom page name')],
+ 'layout-landing': [(489, 246, '<Pick Landing design 1 to 4 here'), (870, 270, 'Live preview, desktop, tablet and mobile')],
+ 'navigation-detail': [(733, 356, 'Add detail: creates this page\'s detail layout with 2 sample pages'), (469, 482, '<Every page has its own Add detail button')],
  'sections': [(550, 244, 'Click a section type to build it')],
  'membership': [(1336, 119, '<Click here to add a member'), (1174, 119, 'Export'), (160, 679, 'Click Members to see everyone')],
  'users': [(647, 174, 'Click here to search users'), (1336, 107, '<Click here to add a user'), (1140, 303, 'Click to edit')],
@@ -48,7 +50,6 @@ ANNOT = {  # image name -> [(x px, y px, label)] on the 1360x820 screenshot; a l
  'layouts-menu': [(190, 52, 'Click Layouts')],
  'layout-settings': [(880, 146, 'Click here to choose or build your header and footer')],
  'layout-pick': [(1506, 103, '<Switch this section on or off'), (700, 155, 'Ready-made designs: pick the one you like'), (1510, 540, '<Green tick = design in use'), (872, 571, 'Click Create new to design your own')],
- 'navigation-detail': [(706, 424, 'Click to add a Service detail page'), (428, 508, 'Click to add a Blog detail page'), (790, 691, '<Type a custom one, e.g. Event detail')],
  'detail-layout': [(722, 281, '<Click a Layout pill to edit that layout in the section builder'), (886, 255, 'Number of detail pages'), (790, 312, 'Click a number to edit one page; the arrow opens it live')],
  'detail-editor': [(245, 300, 'Click a section to add it to the layout'), (1070, 380, 'Click any text or picture to select it'), (1863, 62, '<Click Save')],
  'detail-list': [(1510, 41, '<Click Add new to create another page'), (1010, 222, '<Click the pencil to edit text and images'), (1179, 222, 'Click the bin to delete a page')],
@@ -568,6 +569,9 @@ KDL OS already has ready-made headers and footers. You can use them as they are.
 ![Layout settings](layout-settings)
 
 The **Layout** page lists each section (Top header, Header, Footer and more) with several designs. Use the switch on the right to turn a section on or off, and pick a design: the one with the green tick is in use. For each design you can click **View** to preview it, **Edit** to change it, or **Create new** to build your own from scratch. Then create the layout to apply it to every page. The header and footer of **Home** are shared by every public page.
+
+In **Layout library**, a header or footer can also use one of the four **Landing** designs (Landing design 1 to 4), the same look as a landing page's header and footer. Choose it in the **Design** list, then set its menu links, button, colours and fonts. Your logo, name, phone and contact details come from Identity.
+![Layout library: a Landing design](layout-landing)
 ![Layout: pick a design for each section](layout-pick)"""
 
 ST_TYPO = """## Step 0. Typography: choose the fonts
@@ -585,8 +589,8 @@ Click one card under **Button style** (Solid, Airy pill, Classic, Leaf, Outline,
 ST_DETAIL = """## Step 0. Detail pages: one layout for every detail page
 A detail page shows one item: one service, one blog post, one event, one sector. You do not build each by hand. Every item of a type shares one layout, and a page is created for each item.
 
-**A. Add the detail page types.** Open **Frontend > Navigation**. Click **Service detail**, **Blog detail**, **Portfolio detail**, **Team member** or **Job detail** to add them. For another type, type a name such as **Event detail** and click **Add**. Sector, Catalog and Work detail pages appear once you add entries in those content modules.
-![Navigation: add the detail pages](navigation-detail)
+**A. Add a detail layout to a page.** Not every client needs one: one client's Gallery is a single page, another's has a detail page for each album. So every page in **Frontend > Navigation** has its own **Add detail** button, inside the page's name, except Home. Click **Add detail** next to **Services** (or Blog, Gallery, Portfolio, Careers or any page you added). KDL OS creates a **Services Detail** layout with two sample pages (Sample Services 1 and 2) and adds it to the header menu. If one with that name already exists you get a message instead. Replace the sample pages with real ones in the steps below. Sector, Catalog and Work detail pages appear once you add entries in those content modules.
+![Navigation: Add detail on every page](navigation-detail)
 
 **B. Edit the layout.** Go back to **Layout settings** (Frontend > Brands > Web app). A pill called **Layout Service Detail** (or Layout Blog Detail, Layout Event Detail and so on) now appears for each type. Click the pill to open the section builder for that layout: change it once and every page of that type changes. The number on the pill is how many detail pages exist. Click a small number under the pill to edit one page's own content (title, text, images); the arrow opens that page live.
 ![Layout settings: the detail page layouts](detail-layout)"""
@@ -609,7 +613,7 @@ When you have finished, click **Save** at the top right. The badge at the top sh
 ![Editing the Home page in the section builder](page-editor)"""
 
 ST_NAV = """## Step 0. Choose the menu pages
-Open **Frontend > Navigation**. Click the page names you want in the menu (About, Services, Portfolio, Blog, Contact and so on), or type a custom page and click **Add**. Use the **Header menu** and **Footer menu** tabs. One page is created for every menu item, plus Home.
+Open **Frontend > Navigation**. Click the page names you want in the menu (About, Services, Portfolio, Blog, Contact and so on), or type a custom page and click **Add**. Use the **Header menu** and **Footer menu** tabs. One page is created for every menu item, plus Home. Pages that show one item each (a service, a blog post) are not in this list: add them with **Add detail** (see Detail pages below).
 ![Frontend > Navigation](navigation)"""
 
 ST_PAGES = """## Step 0. Edit and publish the pages

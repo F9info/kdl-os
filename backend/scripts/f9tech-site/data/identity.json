@@ -1,0 +1,18 @@
+{
+  "app_name": "F9 Info Technologies",
+  "company_name": "F9 Info Technologies Private Limited",
+  "app_title": "F9 Info Technologies | Digital Solutions Company",
+  "description": "F9 Info Technologies is a Global Digital Solutions Company that helps businesses ensure their success by harnessing the power of technology. Customised mobile app and web development, design, digital marketing and web services.",
+  "contact_email": "projects@f9tech.com",
+  "contact_phone": "+91 891 969 3567",
+  "contact_address": "Vinayagar Heights, Sampath Vinayaka TempleRoad\nWaltair Uplands, Opp. Kalyan Jewellers\nVisakhapatnam – 530003,\nAndhra Pradesh (INDIA)",
+  "copyright": "©{year} F9 Info Technologies Private Limited. All Rights Reserved",
+  "social_facebook": "https://www.facebook.com/f9tech",
+  "social_instagram": "https://www.instagram.com/f9tech",
+  "social_linkedin": "https://www.linkedin.com/company/f9-info-technologies",
+  "social_youtube": "https://www.youtube.com/@f9tech/videos",
+  "brand_primary": "",
+  "brand_secondary": "",
+  "logo_source": "src/logo.svg",
+  "_note": "brand_primary/secondary are left empty on purpose: identity colours override the ADMIN theme. The website palette lives in data/palette.json (theme platform webapp)."
+}

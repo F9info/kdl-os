@@ -3,8 +3,8 @@ import { authenticate } from '../../middleware/auth.js';
 import { requirePermission } from '../../middleware/permission.js';
 import { requireProject } from '../../middleware/project.js';
 import { validate } from '../../middleware/validate.js';
-import { createProjectSchema, updateProjectSchema, answerOnboardingSchema, saveLayoutSchema, siteIdentityParamsSchema, saveSiteIdentitySchema, workflowStepSchema, launchSchema } from './schema.js';
-import { handleGetLayout, handleSaveLayout, handleListSites, handleGetSiteIdentity, handleSaveSiteIdentity, handleGetOnboarding, handleAnswerOnboarding, handleList, handleGet, handleCreate, handleUpdate, handleDelete, handleWorkflowStep, handleLaunchCheck, handleLaunch } from './controller.js';
+import { createProjectSchema, updateProjectSchema, answerOnboardingSchema, saveLayoutSchema, listLayoutsSchema, createLayoutSchema, updateLayoutSchema, layoutIdSchema, deleteLayoutSchema, siteIdentityParamsSchema, saveSiteIdentitySchema, workflowStepSchema, launchSchema } from './schema.js';
+import { handleGetLayout, handleSaveLayout, handleListLayouts, handleCreateLayout, handleUpdateLayout, handleDuplicateLayout, handleDefaultLayout, handleDeleteLayout, handleListSites, handleGetSiteIdentity, handleSaveSiteIdentity, handleGetOnboarding, handleAnswerOnboarding, handleList, handleGet, handleCreate, handleUpdate, handleDelete, handleWorkflowStep, handleLaunchCheck, handleLaunch } from './controller.js';
 
 const router = Router();
 
@@ -19,6 +19,12 @@ router.get('/:id/sites/:siteId/identity', authenticate, requirePermission('proje
 router.put('/:id/sites/:siteId/identity', authenticate, requirePermission('projects', 'update'), validate(saveSiteIdentitySchema), handleSaveSiteIdentity);
 router.get('/:id/layout', authenticate, requirePermission('projects', 'view'), handleGetLayout);
 router.put('/:id/layout', authenticate, requirePermission('projects', 'update'), validate(saveLayoutSchema), handleSaveLayout);
+router.get('/:id/layouts', authenticate, requirePermission('projects', 'view'), validate(listLayoutsSchema), handleListLayouts);
+router.post('/:id/layouts', authenticate, requirePermission('projects', 'update'), validate(createLayoutSchema), handleCreateLayout);
+router.patch('/:id/layouts/:layoutId', authenticate, requirePermission('projects', 'update'), validate(updateLayoutSchema), handleUpdateLayout);
+router.post('/:id/layouts/:layoutId/duplicate', authenticate, requirePermission('projects', 'update'), validate(layoutIdSchema), handleDuplicateLayout);
+router.post('/:id/layouts/:layoutId/default', authenticate, requirePermission('projects', 'update'), validate(layoutIdSchema), handleDefaultLayout);
+router.delete('/:id/layouts/:layoutId', authenticate, requirePermission('projects', 'update'), validate(deleteLayoutSchema), handleDeleteLayout);
 router.post('/', authenticate, requirePermission('projects', 'create'), validate(createProjectSchema), handleCreate);
 router.patch('/:id', authenticate, requirePermission('projects', 'update'), validate(updateProjectSchema), handleUpdate);
 router.put('/:id/workflow', authenticate, requirePermission('projects', 'update'), requireProject((req) => req.params.id), validate(workflowStepSchema), handleWorkflowStep);

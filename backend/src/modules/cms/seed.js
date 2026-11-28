@@ -35,3 +35,11 @@ export default async function seed(tx) {
     create: { key: DEMO_SUMMARY_KEY, value, type: 'json', description: 'What the Frontend install created (demo site and landing pages)' },
   });
 }
+
+// Runs when Frontend is enabled. The install seed skips the demo when there was no default project yet (or the
+// owner said "no" at that time); this brings it in once the project exists. It does nothing when the demo was
+// already created at install (a summary is stored), so re-enabling never re-creates pages that were deleted.
+export async function seedOnEnable(client) {
+  if (await client.appSetting.findUnique({ where: { key: DEMO_SUMMARY_KEY } })) return;
+  await seed(client);
+}

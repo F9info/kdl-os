@@ -3,6 +3,9 @@
 Stable reference material moved out of the always-loaded `CLAUDE.md` (KDL-336) to cut
 per-run token cost. Read this on-demand when you need the folder map or DB schema.
 
+For the Frontend module (demo website, header and footer layouts, sections and the page builder, landing
+pages, detail layouts) and how to extend it, see [FRONTEND_MODULE.md](FRONTEND_MODULE.md).
+
 ---
 
 ## Folder Structure

@@ -1,0 +1,86 @@
+{
+  "slug": "home",
+  "title": "F9 Technologies",
+  "description": "",
+  "blocks": [
+    {
+      "type": "F9Hero",
+      "props": {
+        "lead": "WE SHAPE YOUR",
+        "highlight": "IDEAS",
+        "text": "Ideas don't make you a millionaire, the execution does. Every idea backed by an expert team can be made successful. Whether you have one great idea or 10, we would love to help.",
+        "image": "@img:src/images/laptop-phone.svg",
+        "imageIdea": "@img:src/images/idea.svg"
+      }
+    },
+    {
+      "type": "F9Welcome",
+      "props": {
+        "counterValue": "",
+        "counterLabel": "",
+        "image": "@img:src/images/14-logo.svg",
+        "title": "Delivering digital solutions to make businesses Agile, Scalable and Efficient",
+        "text": "F9 Info Technologies is a Global Digital Solutions Company that helps businesses ensure their success by harnessing the power of technology. We offer customised mobile app and web development services, we have strong expertise in design, digital marketing and web services. Our end-to-end services, from creating a design concept and planning the product development right through to launching the software, we ensure that our clients are always successful. We are proud to have delivered experience along with technology to over 1000 clients across the globe."
+      }
+    },
+    {
+      "type": "F9ServiceCards",
+      "props": {
+        "eyebrow": "",
+        "title": "Services",
+        "subtitle": "From Strategy to Results, We’ll be there from Start to End",
+        "cards": "Mobile App Development | We can help you build beautiful and functional android, ios and cross platform mobile apps for next generation business as per your requirement and within your budget. | @img:src/images/services/1.svg | Mobile App UI/UX Design ; Cross-platform App Development ; Progressive Web App Development ; Enterprise Mobility Solutions ; Maintenance and Support\nWeb App Development | Looking to scale your business? With us, you'll be able to create an integrated web presence to support your mobile apps, iot devices to save time and increase productivity. | @img:src/images/services/2.svg | Website Design and Development ; Ecommerce Development ; Custom Application Development ; CMS Development ; Maintenance and Support\nUi/Ux Design | User Interface and User Experience is key in developing a successful application. Our team of experts will help you create intiutive designs which will be loved by your customers and increase user engagement. | @img:src/images/services/3.svg | UI Design ; UX Design ; Interaction Design ; Prototyping ; Custom-tailored Designs\nGraphic Design | We create engaging content and meaningful experience for your target audience. | @img:src/images/services/4.svg | Illustrations ; Logo Design ; Icon Design ; Motion Graphics & Animations ; Creative Designs\nCloud Computing | Providing secured cloud computing solutions to host and maintain your data. | @img:src/images/services/5.svg | Cloud app development ; Cloud configuration ; Cloud integration ; Cloud server solutions ; Cloud migration\nDigital Marketing | Helping Businesses create a solid digital presence with targetted, expert-led marketing services.⁣⁣ | @img:src/images/services/6.svg | Search Engine Optimization (SEO) ; Social Media Marketing (SMM) ; Social Media Advertising ; App Store Optimization (ASO) ; Content Writing and Marketing\nProject Management | We can manage your project from end to end using agile methodologies to ensure that you're always on the right track. | @img:src/images/services/7.svg | Scope statement ; Schedule and timeline ; Resources planning ; Work breakdown structure ; Quality of the project\nBusiness Solutions | Based on your business needs we can suggest and integrate world class business solutions to make your business more profitable. | @img:src/images/services/8.svg | BI Ssolutions ; Corporate Email and United Communications ; Electronic Archives ; Portal Solutions and document flow ; DRaaS"
+      }
+    },
+    {
+      "type": "F9Expertise",
+      "props": {
+        "title": "Expertise",
+        "subtitle": "Need any help with these technologies? Give us a buzz",
+        "items": "Flutter | @img:src/images/expertise/1.svg\nReact | @img:src/images/expertise/2.svg\nNode.js | @img:src/images/expertise/3.svg\nType Script | @img:src/images/expertise/4.svg\nLaravel | @img:src/images/expertise/5.svg\nPHP | @img:src/images/expertise/6.svg\nMaterial 3 | @img:src/images/expertise/7.svg\nKeycloak | @img:src/images/expertise/8.svg\nCloud | @img:src/images/expertise/9.svg\nWordpress | @img:src/images/expertise/10.svg\nDrupal | @img:src/images/expertise/11.svg\nFirebase | @img:src/images/expertise/12.svg\nCSS3 | @img:src/images/expertise/13.svg\nHTML5 | @img:src/images/expertise/14.svg\nDart | @img:src/images/expertise/15.svg\nGithub | @img:src/images/expertise/16.svg"
+      }
+    },
+    {
+      "type": "F9Process",
+      "props": {
+        "title": "Our Development Process",
+        "subtitle": "We believe in developing with agility",
+        "image": "@img:src/images/development.svg",
+        "steps": "Backlog | All requirements will be finalised and kept in backlog. Ready to be moved into sprints. | @img:src/images/development/1.svg\nPlan | It’s time to break down  project requirements into theme, epics and user stories.⁣ | @img:src/images/development/2.svg\nDesign | We finalise the prototype as per our design requirement and move to next phase. | @img:src/images/development/3.svg\nDevelop | We convert the designs into functional features with our expertise. | @img:src/images/development/4.svg\nTesting | We lookout for bugs, or any technical glitches that may arise in the code. | @img:src/images/development/5.svg\nDeploy | We deploy the bug free code on secure servers via pipelines, ensuring its quality and stability. | @img:src/images/development/6.svg\nReview | The deployed application is tested with multiple test cases and documented. | @img:src/images/development/7.svg\nRelease | We present the working product or software to stakeholders and customers for use.. | @img:src/images/development/8.svg"
+      }
+    },
+    {
+      "type": "F9BusinessModel",
+      "props": {
+        "title": "Business Model",
+        "subtitle": "Choose the one that best fits for your next project",
+        "models": "Resource Model | Resource model allows you to have the benefit of an entire remote team, but with the control to meet deadlines, change directions, and create your product vision. The best part? You don't need to invest in infrastructure for the remote team. | @img:src/images/business/1.svg\nHour Model | Hourly Model is a fixed hourly engagement model, which means our team is willing to work on your project for any number of hours, based on the hourly rate. This engagement model ensures that you don't have to worry about spending unnecessary time on tasks which may not be required or desired. You can focus on what's important to you. | @img:src/images/business/2.svg\nFixed Scope Model | Fixed Scope Model is perfect if you know what you want and need. It makes it easier to give a straightforward estimate and follow through with the plan strictly. In this fixed scope model, there are only the features that are planned for the app. If a new feature is needed, it is added to the scope at a later date. | @img:src/images/business/3.svg\nPartnership Model | Do you have a great idea and a killer business plan, but not the technical knowledge or resource to implement it? We'll be your technical partner and we'll help you execute your project. We also partner with companies based out of India who are willing to outsource work to teams in India. | @img:src/images/business/4.svg"
+      }
+    },
+    {
+      "type": "F9LetsDiscuss",
+      "props": {
+        "title": "Let’s discuss your next Project",
+        "text": "We're eager to hear your plans and help you get started.",
+        "ctaLabel": "Talk to Expert",
+        "ctaHref": "/contact"
+      }
+    },
+    {
+      "type": "F9Portfolio",
+      "props": {
+        "title": "Portfolio",
+        "subtitle": "",
+        "items": "Vizag Profiles | Vizag Profiles is a Group of companies with over 25 years of experience in steel (handling, trading and manufacturing) Real estate and Logistics. The company has been able to set up its own unique brand and identity in the industry, which has led to unprecedented growth for the past few years. The website is a dynamic responsive webapplication to manage their group of companies. The web application built with API’s has the capability of future application integrations enabling the posibility of an integrated Mobile App. | @img:src/images/portfolio/1.svg |  | @img:src/images/portfolio/1a.svg\nVisakha Paramacity | India’s most successful public & private partnership project developed by Visakha Pharmacity Ltd, a joint venture company between Ramky Group & Andhra Pradesh Industrial Infrastructure Corporation (APIIC), a Govt. of Andhra Pradesh undertaking. The website is a dynamic webapplication to manage the company day to day affairs. It’s highly secure and dynamic enabling seamless integration and scalability to the company’s website. | @img:src/images/portfolio/2.svg |  | @img:src/images/portfolio/2a.svg\nF9 IT | Flutter boasts of a huge open source community with many packages at pub.dev. f9it.com website was formed after being inspired by the plugins created by developers worldwide, we believe in contributing to the open source community and this website is an attempt to make reaching out to our contributions easier. The website is built using flutter as frontend to showcase that flutter is growing and adapting to it is the way forward. | @img:src/images/portfolio/3.svg |  | @img:src/images/portfolio/3a.svg"
+      }
+    },
+    {
+      "type": "F9BlogTeasers",
+      "props": {
+        "eyebrow": "What’s new",
+        "title": "Web and Mobile discloseered lorem ipsum App Development Company",
+        "items": "Why flutter is the best choice for your app? | One of the most important things to consider when building a Flutter app is that you need to use only one codebase... |  | @img:src/images/blog/1.jpg\nAdvantages by single codebase in Flutter | Programming languages are an important part of app development. In this post, we will discuss the best programming languages and what they can do for you... |  | @img:src/images/blog/2.jpg\n5 Reasons why Apple devices are the ideal choice for you | Apple devices are the most popular in the world. Apple has a dedicated ecosystem of hardware and software that is built for all. Their ecosystem is built for all, with many different devices to choose from... |  | @img:src/images/blog/3.jpg"
+      }
+    }
+  ]
+}

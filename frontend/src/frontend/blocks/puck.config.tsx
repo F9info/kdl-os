@@ -6,6 +6,7 @@ import { construction } from './packs/construction'
 import { general } from './packs/general'
 import { landing } from './packs/landing'
 import { medical } from './packs/medical'
+import { f9tech } from './packs/f9tech'
 
 /**
  * KDL Page Builder — single source of truth for editor and public renderer.
@@ -28,7 +29,7 @@ const root: Config['root'] = {
   ),
 }
 
-const composed = composePacks(root, [general, construction, medical, composer, landing])
+const composed = composePacks(root, [general, construction, medical, composer, landing, f9tech])
 
 // Top Header/Header/Hero Slider each ship multiple selectable designs
 // (Insert-a-block picker: one card per design) — pulled into their own
@@ -40,7 +41,7 @@ const composed = composePacks(root, [general, construction, medical, composer, l
 const categoriesUnordered: NonNullable<Config['categories']> = {
   ...composed.categories,
   'top-bar': { title: 'Top Header', components: ['ConstructionTopBar'] },
-  header: { title: 'Header', components: ['ConstructionHeader', 'NavBar'] },
+  header: { title: 'Header', components: ['ConstructionHeader', 'NavBar', 'F9Header'] },
   hero: { title: 'Hero Slider', components: ['ConstructionHero'] },
 }
 

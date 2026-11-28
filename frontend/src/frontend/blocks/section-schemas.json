@@ -2,6 +2,14 @@
   "Button": {
     "label": "Button",
     "fields": {
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -54,6 +62,14 @@
           "sm",
           "md",
           "lg"
+        ]
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
         ]
       },
       "hideOnDesktop": {
@@ -141,6 +157,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -218,6 +242,14 @@
       "heading": {
         "kind": "text",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -365,6 +397,14 @@
   "ConstructionBlogPosts": {
     "label": "Blog Posts",
     "fields": {
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -471,6 +511,14 @@
           "muted"
         ]
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -532,6 +580,14 @@
       "heading": {
         "kind": "text",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -605,6 +661,14 @@
         "options": [
           "white",
           "muted"
+        ]
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
         ]
       },
       "hideOnDesktop": {
@@ -765,6 +829,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -863,6 +935,14 @@
         "kind": "list",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -915,6 +995,14 @@
         "options": [
           "white",
           "muted"
+        ]
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
         ]
       },
       "hideOnDesktop": {
@@ -995,6 +1083,14 @@
           "muted"
         ]
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -1055,6 +1151,14 @@
         "options": [
           "white",
           "muted"
+        ]
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
         ]
       },
       "hideOnDesktop": {
@@ -1163,6 +1267,14 @@
         "kind": "list",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -1225,6 +1337,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -1280,6 +1400,14 @@
         "options": [
           "white",
           "muted"
+        ]
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
         ]
       },
       "hideOnDesktop": {
@@ -1342,6 +1470,14 @@
         "options": [
           "white",
           "muted"
+        ]
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
         ]
       },
       "hideOnDesktop": {
@@ -1433,6 +1569,14 @@
       "faqs": {
         "kind": "list",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -1532,6 +1676,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -1626,6 +1778,14 @@
         "kind": "list",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -1708,6 +1868,14 @@
         "kind": "list",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -1765,6 +1933,14 @@
       "ctaLabel": {
         "kind": "text",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -1912,6 +2088,14 @@
         "kind": "link",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -2044,6 +2228,14 @@
       "group4Links": {
         "kind": "textarea",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -2209,6 +2401,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -2274,6 +2474,14 @@
       "heading": {
         "kind": "text",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -2432,6 +2640,14 @@
       "email": {
         "kind": "text",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -2673,6 +2889,14 @@
         "kind": "textarea",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -2907,6 +3131,14 @@
           "dark"
         ]
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -3007,6 +3239,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -3106,6 +3346,14 @@
         "kind": "textarea",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -3195,6 +3443,14 @@
       "heading": {
         "kind": "text",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -3302,6 +3558,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -3376,6 +3640,14 @@
   "ConstructionMissionVision": {
     "label": "Mission & Vision",
     "fields": {
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -3464,6 +3736,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -3544,6 +3824,14 @@
         "options": [
           "white",
           "muted"
+        ]
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
         ]
       },
       "hideOnDesktop": {
@@ -3680,6 +3968,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -3770,6 +4066,14 @@
   "ConstructionOurBrands": {
     "label": "Our Brands (Tabbed Categories)",
     "fields": {
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -3854,6 +4158,14 @@
   "ConstructionProcessSteps": {
     "label": "Process Steps (Horizontal)",
     "fields": {
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -3924,6 +4236,14 @@
         "options": [
           "white",
           "muted"
+        ]
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
         ]
       },
       "hideOnDesktop": {
@@ -4044,6 +4364,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -4104,6 +4432,14 @@
         "options": [
           "overlay",
           "card"
+        ]
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
         ]
       },
       "hideOnDesktop": {
@@ -4180,6 +4516,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -4254,6 +4598,14 @@
   "ConstructionProjectPhotoSlider": {
     "label": "Project Photo Slider",
     "fields": {
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -4319,6 +4671,14 @@
       "description": {
         "kind": "textarea",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -4397,6 +4757,14 @@
       "heading": {
         "kind": "text",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -4488,6 +4856,14 @@
   "ConstructionProjectsSlider": {
     "label": "Featured Projects Slider",
     "fields": {
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -4563,6 +4939,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -4616,6 +5000,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -4665,6 +5057,14 @@
       "complianceNote": {
         "kind": "textarea",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -4724,6 +5124,14 @@
   "ConstructionSectorDetailList": {
     "label": "Sector Detail List",
     "fields": {
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -4791,6 +5199,14 @@
       "heading": {
         "kind": "text",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -4927,6 +5343,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -4980,6 +5404,14 @@
       "featuredTitle": {
         "kind": "text",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -5050,6 +5482,14 @@
       "heading": {
         "kind": "text",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -5123,6 +5563,14 @@
         "options": [
           "white",
           "muted"
+        ]
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
         ]
       },
       "hideOnDesktop": {
@@ -5227,6 +5675,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -5271,6 +5727,14 @@
       "heading": {
         "kind": "text",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -5384,6 +5848,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -5437,6 +5909,14 @@
       "facebookHandle": {
         "kind": "text",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -5507,6 +5987,14 @@
       "heading": {
         "kind": "text",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -5613,6 +6101,14 @@
           "muted"
         ]
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -5681,6 +6177,16 @@
       "stats": {
         "kind": "list",
         "tab": "content"
+      },
+      "variant": {
+        "kind": "select",
+        "tab": "style",
+        "options": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
       }
     }
   },
@@ -5690,6 +6196,14 @@
       "brand": {
         "kind": "text",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -5734,6 +6248,14 @@
         "options": [
           "white",
           "muted"
+        ]
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
         ]
       },
       "hideOnDesktop": {
@@ -5882,6 +6404,14 @@
         "kind": "list",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -5954,6 +6484,14 @@
         "options": [
           "white",
           "muted"
+        ]
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
         ]
       },
       "hideOnDesktop": {
@@ -6058,6 +6596,14 @@
           "muted"
         ]
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -6110,6 +6656,14 @@
         "options": [
           "white",
           "muted"
+        ]
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
         ]
       },
       "hideOnDesktop": {
@@ -6294,6 +6848,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -6472,6 +7034,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -6556,6 +7126,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -6602,6 +7180,14 @@
   "ConstructionVideo": {
     "label": "Video",
     "fields": {
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -6667,6 +7253,14 @@
       "heading": {
         "kind": "text",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -6758,6 +7352,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -6815,6 +7417,14 @@
       "heading": {
         "kind": "text",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -6896,6 +7506,14 @@
         "options": [
           "white",
           "muted"
+        ]
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
         ]
       },
       "hideOnDesktop": {
@@ -6996,6 +7614,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -7086,6 +7712,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -7126,6 +7760,14 @@
           "2",
           "3",
           "4"
+        ]
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
         ]
       },
       "hideOnDesktop": {
@@ -7189,6 +7831,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -7215,9 +7865,1016 @@
       }
     }
   },
+  "F9About": {
+    "label": "F9 About",
+    "fields": {
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "image2": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "image3": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "intro1": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "intro2": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "intro3": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "values": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "valuesTitle": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "F9BlogTeasers": {
+    "label": "F9 Blog teasers",
+    "fields": {
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "items": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "moreLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "F9BusinessModel": {
+    "label": "F9 Business model",
+    "fields": {
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "models": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "subtitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "F9Contact": {
+    "label": "F9 Contact",
+    "fields": {
+      "formSlug": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "halfKeys": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "F9Expertise": {
+    "label": "F9 Expertise",
+    "fields": {
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "items": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "subtitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "F9Footer": {
+    "label": "F9 Footer",
+    "fields": {
+      "badges": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "bottomLinks": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "bottomMenuLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "decoImage": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "logoUrl": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "partnerLogos": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "socials": {
+        "kind": "textarea",
+        "tab": "content"
+      }
+    }
+  },
+  "F9Header": {
+    "label": "F9 Header",
+    "fields": {
+      "ctaLast": {
+        "kind": "select",
+        "tab": "content",
+        "options": [
+          "true",
+          "false"
+        ]
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "links": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "logoUrl": {
+        "kind": "image",
+        "tab": "content"
+      }
+    }
+  },
+  "F9Hero": {
+    "label": "F9 Hero",
+    "fields": {
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "highlight": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "imageIdea": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "lead": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "text": {
+        "kind": "textarea",
+        "tab": "content"
+      }
+    }
+  },
+  "F9Legal": {
+    "label": "F9 Legal text",
+    "fields": {
+      "body": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "effectiveDate": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "F9LetsDiscuss": {
+    "label": "F9 Let’s discuss",
+    "fields": {
+      "ctaHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "ctaLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "text": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "F9PageBanner": {
+    "label": "F9 Page banner",
+    "fields": {
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "text": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "F9Portfolio": {
+    "label": "F9 Portfolio",
+    "fields": {
+      "arrowLeft": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "arrowRight": {
+        "kind": "custom",
+        "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "items": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "subtitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "F9Process": {
+    "label": "F9 Development process",
+    "fields": {
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "steps": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "subtitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "F9ServiceCards": {
+    "label": "F9 Service cards",
+    "fields": {
+      "cards": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "cardsHref": {
+        "kind": "link",
+        "tab": "content"
+      },
+      "eyebrow": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "subtitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "F9ServicesList": {
+    "label": "F9 Services list",
+    "fields": {
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "items": {
+        "kind": "textarea",
+        "tab": "content"
+      }
+    }
+  },
+  "F9Sitemap": {
+    "label": "F9 Sitemap",
+    "fields": {
+      "groups": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "subtitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "F9Solutions": {
+    "label": "F9 Solutions",
+    "fields": {
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "items": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "subtitle": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
+  "F9Stats": {
+    "label": "F9 Stats",
+    "fields": {
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "items": {
+        "kind": "textarea",
+        "tab": "content"
+      }
+    }
+  },
+  "F9Welcome": {
+    "label": "F9 Welcome",
+    "fields": {
+      "counterLabel": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "counterValue": {
+        "kind": "text",
+        "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnDesktop": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnMobile": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "hideOnTablet": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
+      "image": {
+        "kind": "image",
+        "tab": "content"
+      },
+      "text": {
+        "kind": "textarea",
+        "tab": "content"
+      },
+      "title": {
+        "kind": "text",
+        "tab": "content"
+      }
+    }
+  },
   "FaqList": {
     "label": "FAQ list (CMS)",
     "fields": {
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -7267,6 +8924,14 @@
         "kind": "textarea",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -7315,6 +8980,14 @@
       "copyright": {
         "kind": "text",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -7374,6 +9047,14 @@
           "4"
         ]
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -7426,6 +9107,14 @@
           "left",
           "center",
           "right"
+        ]
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
         ]
       },
       "hideOnDesktop": {
@@ -7487,6 +9176,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -7539,6 +9236,14 @@
       "alt": {
         "kind": "text",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -7606,6 +9311,14 @@
           "fraunces",
           "playfair",
           "bricolage"
+        ]
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
         ]
       },
       "hideOnDesktop": {
@@ -7697,6 +9410,14 @@
           "bricolage"
         ]
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -7776,6 +9497,14 @@
           "fraunces",
           "playfair",
           "bricolage"
+        ]
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
         ]
       },
       "hideOnDesktop": {
@@ -7867,6 +9596,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -7956,6 +9693,14 @@
           "bricolage"
         ]
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -8037,6 +9782,14 @@
           "bricolage"
         ]
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -8104,6 +9857,14 @@
           "fraunces",
           "playfair",
           "bricolage"
+        ]
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
         ]
       },
       "hideOnDesktop": {
@@ -8187,6 +9948,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -8262,6 +10031,14 @@
           "fraunces",
           "playfair",
           "bricolage"
+        ]
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
         ]
       },
       "hideOnDesktop": {
@@ -8343,6 +10120,14 @@
           "fraunces",
           "playfair",
           "bricolage"
+        ]
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
         ]
       },
       "hideOnDesktop": {
@@ -8446,6 +10231,14 @@
         "kind": "textarea",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -8547,6 +10340,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -8633,6 +10434,14 @@
           "bricolage"
         ]
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -8714,6 +10523,14 @@
           "bricolage"
         ]
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -8793,6 +10610,14 @@
           "fraunces",
           "playfair",
           "bricolage"
+        ]
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
         ]
       },
       "hideOnDesktop": {
@@ -8888,6 +10713,14 @@
           "bricolage"
         ]
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -8973,6 +10806,14 @@
           "bricolage"
         ]
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -9044,6 +10885,14 @@
           "fraunces",
           "playfair",
           "bricolage"
+        ]
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
         ]
       },
       "hideOnDesktop": {
@@ -9135,6 +10984,14 @@
           "bricolage"
         ]
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -9197,6 +11054,14 @@
       "headline": {
         "kind": "text",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -9267,6 +11132,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -9316,6 +11189,14 @@
         "kind": "textarea",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -9339,6 +11220,10 @@
           false,
           true
         ]
+      },
+      "variant": {
+        "kind": "custom",
+        "tab": "style"
       }
     }
   },
@@ -9348,6 +11233,14 @@
       "departments": {
         "kind": "textarea",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -9394,6 +11287,14 @@
         "kind": "textarea",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -9435,6 +11336,14 @@
   "MedicalFAQ": {
     "label": "Medical FAQ",
     "fields": {
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -9504,6 +11413,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -9556,6 +11473,14 @@
       "headingLine2": {
         "kind": "text",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -9622,6 +11547,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -9663,6 +11596,14 @@
   "MedicalPatientTestimonials": {
     "label": "Patient Testimonials",
     "fields": {
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -9708,6 +11649,14 @@
   "MedicalServicesList": {
     "label": "Medical Services List",
     "fields": {
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -9764,6 +11713,14 @@
       "ctaLabel": {
         "kind": "text",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -9834,6 +11791,14 @@
         "kind": "text",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -9896,6 +11861,14 @@
         "kind": "slot",
         "tab": "content"
       },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -9934,6 +11907,14 @@
   "Spacer": {
     "label": "Spacer",
     "fields": {
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -9973,6 +11954,14 @@
   "StatsStrip": {
     "label": "Stats Strip",
     "fields": {
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
+      },
       "hideOnDesktop": {
         "kind": "toggle",
         "tab": "style",
@@ -10000,6 +11989,10 @@
       "stats": {
         "kind": "textarea",
         "tab": "content"
+      },
+      "variant": {
+        "kind": "custom",
+        "tab": "style"
       }
     }
   },
@@ -10025,6 +12018,14 @@
       "headline": {
         "kind": "textarea",
         "tab": "content"
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
+        ]
       },
       "hideOnDesktop": {
         "kind": "toggle",
@@ -10082,6 +12083,14 @@
           "left",
           "center",
           "right"
+        ]
+      },
+      "hidden": {
+        "kind": "toggle",
+        "tab": "style",
+        "options": [
+          false,
+          true
         ]
       },
       "hideOnDesktop": {

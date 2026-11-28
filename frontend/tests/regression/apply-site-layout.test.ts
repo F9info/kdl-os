@@ -57,4 +57,45 @@ describe('applySiteLayout', () => {
     expect(JSON.stringify(p)).toBe(copy)
     expect(applySiteLayout(null, { header: on('3') })).toBeNull()
   })
+
+  describe('Landing designs', () => {
+    const landingPage = () => ({
+      content: [
+        { type: 'ConstructionHeader', props: { id: 'h', variant: '1' } },
+        { type: 'LandingHeader', props: { id: 'lh', variant: '1', links: 'About|#about' } },
+        { type: 'ConstructionFooter', props: { id: 'f', variant: '1' } },
+        { type: 'LandingFooter', props: { id: 'lf', variant: '1' } },
+      ],
+    })
+
+    it('swaps the header and footer for the Landing blocks with the design number and settings', () => {
+      const out = applySiteLayout(landingPage(), {
+        header: { enabled: true, variant: 'landing:3', config: { ctaLabel: 'Call us' } },
+        footer: { enabled: true, variant: 'landing:2', config: { note: 'Hi' } },
+      })
+      expect(out.content[0]).toMatchObject({
+        type: 'LandingHeader',
+        props: { id: 'h', variant: '3', ctaLabel: 'Call us', ctaHref: '#contact' },
+      })
+      expect(out.content[1]).toMatchObject({
+        type: 'LandingHeader',
+        props: { variant: '3', links: 'About|#about', ctaLabel: 'Call us' },
+      })
+      expect(out.content[2]).toMatchObject({
+        type: 'LandingFooter',
+        props: { id: 'f', variant: '2', note: 'Hi' },
+      })
+      expect(out.content[3]).toMatchObject({ type: 'LandingFooter', props: { variant: '2' } })
+    })
+
+    it('leaves a landing page alone when the layout is not a Landing design', () => {
+      const p = landingPage()
+      const out = applySiteLayout(p, {
+        header: { enabled: true, variant: '4' },
+        footer: { enabled: true, variant: 'f9' },
+      })
+      expect(out.content[1]).toEqual(p.content[1])
+      expect(out.content[3]).toEqual(p.content[3])
+    })
+  })
 })

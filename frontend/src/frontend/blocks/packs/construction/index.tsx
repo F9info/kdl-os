@@ -616,6 +616,7 @@ type ConstructionProps = {
     phoneLabel: string
   }
   ConstructionStatsStrip: {
+    variant?: '1' | '2' | '3' | '4'
     stat1Value: string
     stat1Label: string
     stat2Value: string
@@ -7107,6 +7108,15 @@ const typedComponents: Config<ConstructionProps>['components'] = {
   ConstructionStatsStrip: {
     label: 'Stats & Experience Strip',
     fields: {
+      variant: {
+        type: 'select',
+        options: [
+          { label: 'Design 1 — Plain columns', value: '1' },
+          { label: 'Design 2 — Cards', value: '2' },
+          { label: 'Design 3 — Divided row', value: '3' },
+          { label: 'Design 4 — Accent bars', value: '4' },
+        ],
+      },
       stat1Value: { type: 'text' },
       stat1Label: { type: 'text' },
       stat2Value: { type: 'text' },
@@ -7133,6 +7143,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       },
     },
     defaultProps: {
+      variant: '1',
       stat1Value: '25+',
       stat1Label: 'Years in Business',
       stat2Value: '850+',
@@ -7145,6 +7156,7 @@ const typedComponents: Config<ConstructionProps>['components'] = {
       padding: 'md',
     },
     render: ({
+      variant,
       stats: rows_stats,
       stat1Value,
       stat1Label,
@@ -7173,6 +7185,69 @@ const typedComponents: Config<ConstructionProps>['components'] = {
         ],
         (it) => ({ value: it.value as typeof stat1Value, label: it.label as typeof stat1Label })
       ).filter((s) => s.value)
+      const valueCls = background === 'muted' ? 'text-primary' : 'text-highlight'
+      const labelCls = background === 'muted' ? 'text-body' : 'opacity-80'
+      const lineCls =
+        background === 'muted'
+          ? 'border-divider'
+          : background === 'accent'
+            ? 'border-primary-foreground/20'
+            : 'border-inverse-foreground/20'
+      // A page saved before designs existed has no variant: it keeps Design 1.
+      if (variant === '2')
+        return (
+          <section className={`${bgCls} ${padY[padding]}`}>
+            <div className={`${wrap} grid grid-cols-2 md:grid-cols-4 gap-4 text-center`}>
+              {stats.map((s, i) => (
+                <div key={i} className={`rounded-xl border ${lineCls} p-6`}>
+                  <p className={`text-3xl md:text-4xl font-extrabold mb-1 ${valueCls}`}>
+                    {s.value}
+                  </p>
+                  <p className={`text-sm font-medium ${labelCls}`}>{s.label}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )
+      if (variant === '3')
+        return (
+          <section className={`${bgCls} ${padY[padding]}`}>
+            <div className={`${wrap} flex flex-wrap items-stretch justify-center gap-y-8`}>
+              {stats.map((s, i) => (
+                <div
+                  key={i}
+                  className={`px-8 text-center md:border-l ${lineCls} md:first:border-l-0`}
+                >
+                  <p className={`text-3xl md:text-4xl font-extrabold mb-1 ${valueCls}`}>
+                    {s.value}
+                  </p>
+                  <p className={`text-sm font-medium ${labelCls}`}>{s.label}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )
+      if (variant === '4')
+        return (
+          <section className={`${bgCls} ${padY[padding]}`}>
+            <div className={`${wrap} grid grid-cols-2 md:grid-cols-4 gap-8 text-left`}>
+              {stats.map((s, i) => (
+                <div key={i}>
+                  <span
+                    className={`mb-3 block h-1 w-10 rounded ${background === 'muted' ? 'bg-primary' : 'bg-highlight'}`}
+                    aria-hidden="true"
+                  />
+                  <p
+                    className={`text-3xl md:text-4xl font-extrabold mb-1 ${background === 'muted' ? 'text-title' : ''}`}
+                  >
+                    {s.value}
+                  </p>
+                  <p className={`text-sm font-medium ${labelCls}`}>{s.label}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )
       return (
         <section className={`${bgCls} ${padY[padding]}`}>
           <div className={`${wrap} grid grid-cols-2 md:grid-cols-4 gap-8 text-center`}>
@@ -16964,6 +17039,7 @@ export const construction: ComponentPack = {
     ConstructionHeader: ['1', '2', '3', '4', '5'],
     ConstructionHero: ['1', '2', '3', '4'],
     ConstructionInnerBanner: ['1', '2', '3', '4'],
+    ConstructionStatsStrip: ['1', '2', '3', '4'],
     ConstructionFooter: ['1', '2', '3', '4', '5'],
     ConstructionSectorDetailList: ['1', '2', '3', '4'],
     ConstructionMissionVision: ['1', '2', '3', '4'],

@@ -224,6 +224,13 @@ describe('section schema checks (T7.1)', () => {
     expect(i.message).toMatch(/Hero is hidden on mobile, tablet and desktop/);
   });
 
+  it('a section switched off with Hide is a warning too', () => {
+    const [i] = run({ type: 'Hero', props: { id: 'h', hidden: true } });
+    expect(i).toMatchObject({ severity: 'warning', code: 'BLOCK_HIDDEN_EVERYWHERE', block_type: 'Hero' });
+    expect(i.message).toMatch(/Hero is hidden, so no visitor will see it/);
+    expect(run({ type: 'Hero', props: { id: 'h', hidden: false } })).toEqual([]);
+  });
+
   it('hidden on one or two devices, or false / missing flags, is fine', () => {
     for (const props of [
       { id: 'h', hideOnMobile: true },

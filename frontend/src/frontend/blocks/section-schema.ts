@@ -56,8 +56,8 @@ const STYLE_FIELD_KEYS = new Set([
  * is one of the exact names above, ends in "Color", starts with "show", or starts with `slider`
  * (carousel knobs) / `typo` (per-element font size/weight/colour). Every pack component names its
  * padding / background / align / variant / colour / visibility fields this way. The editor renders
- * `slider*` and `typo*` fields in their own collapsible groups. `hideOn*` (per-device visibility,
- * added to every block by device-visibility.tsx) is Style too.
+ * `slider*` and `typo*` fields in their own collapsible groups. `hideOn*` (per-device visibility)
+ * and `hidden` (the section's Show/Hide switch), both added to every block by device-visibility.tsx, are Style too.
  */
 export function isStyleField(key: string): boolean {
   return (
@@ -66,7 +66,8 @@ export function isStyleField(key: string): boolean {
     /^show[A-Z]/.test(key) ||
     /^slider/.test(key) ||
     /^typo/.test(key) ||
-    /^hideOn[A-Z]/.test(key)
+    /^hideOn[A-Z]/.test(key) ||
+    key === 'hidden'
   )
 }
 

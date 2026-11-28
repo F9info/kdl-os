@@ -13,6 +13,7 @@ import { useAdvanceStage, useTemplateEngineRuns } from '@/admin/hooks/useTemplat
 import { useWebsiteBrandContext } from '@/admin/hooks/useWebsiteBrandContext'
 import { saveSiteLayout, siteLayoutKey, useSiteLayout } from '@/admin/hooks/useSiteLayout'
 import { construction } from '@/frontend/blocks/packs/construction'
+import { f9tech } from '@/frontend/blocks/packs/f9tech'
 import { ComposerProjectContext } from '@/frontend/blocks/packs/composer/atoms'
 import { renderComposedBlock } from '@/frontend/blocks/packs/composer/render-composed-block'
 import {
@@ -41,6 +42,7 @@ type BlockRender = (props: Record<string, unknown>) => ReactNode
 const TOP_HEADER_CONFIG = construction.components.ConstructionTopBar!
 const HEADER_CONFIG = construction.components.ConstructionHeader!
 const FOOTER_CONFIG = construction.components.ConstructionFooter!
+const F9_COMPONENT = { header: f9tech.components.F9Header!, footer: f9tech.components.F9Footer! } as const
 
 const VARIANTS: Variant[] = ['1', '2', '3', '4', '5']
 
@@ -279,6 +281,39 @@ function SectionPicker({
               </div>
             </div>
           ))}
+          {section !== 'topHeader' && (
+            <div
+              className={cn(
+                'relative overflow-hidden rounded-md border',
+                state.variant === 'f9' && 'ring-2 ring-primary'
+              )}
+            >
+              {state.variant === 'f9' && (
+                <CheckCircle2 className="absolute right-1.5 top-1.5 z-10 h-5 w-5 rounded-full bg-white text-green-600" />
+              )}
+              <button
+                type="button"
+                aria-label="F9 Tech design"
+                onClick={() => onChange({ ...state, variant: 'f9' })}
+                className="block w-full text-left transition-colors hover:opacity-80"
+              >
+                <RenderPreview
+                  render={F9_COMPONENT[section].render as BlockRender}
+                  props={{
+                    ...F9_COMPONENT[section].defaultProps,
+                    ...state.config,
+                    puck: { isEditing: true, metadata: { projectId } },
+                  }}
+                  scale={cfg.tileScale}
+                />
+              </button>
+              <div className="flex items-center justify-center border-t bg-muted/30 p-1">
+                <span className="text-xs text-muted-foreground">
+                  F9 Tech · links, contact details and logo come from Navigation and Identity
+                </span>
+              </div>
+            </div>
+          )}
           {(customBlocks ?? []).map((b) => {
             const id = `custom:${b.id}` as const
             return (

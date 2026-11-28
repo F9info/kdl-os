@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { Config, CustomField } from '@puckeditor/core'
 import type { ComponentPack } from '../types'
-import { variantField } from '../variant-field'
+import { liveThumb, variantField } from '../variant-field'
 import { imageField } from '../image-field'
 import { InlineEditableText } from '../inline-editable-text'
 import { NavLinks, flatten, useNavItems } from './nav-items'
@@ -115,7 +115,7 @@ type GeneralProps = {
     ctaHref: string
     primaryColor: string
   }
-  StatsStrip: { stats: string }
+  StatsStrip: { variant: '1' | '2' | '3' | '4'; stats: string }
   FeatureCards: {
     variant: '1' | '2' | '3' | '4'
     sectionTitle: string
@@ -361,6 +361,80 @@ function NavBarVariantThumb({ variant }: { variant: string }) {
     </SketchBox>
   )
 }
+
+// ─── Stats strip: four designs, same content (one "value|label" line per figure) ─────────────
+const STATS_STRIP_DEFAULT = [
+  '25+|Years of experience',
+  '15K+|Happy customers',
+  '50+|Team members',
+  '30+|Projects delivered',
+].join('\n')
+const STATS_STRIP_VARIANT_LABELS: Record<string, string> = {
+  '1': 'Plain columns',
+  '2': 'Cards',
+  '3': 'Dark band',
+  '4': 'Divided row',
+}
+// A page saved before designs existed has no variant: it keeps Design 1.
+function StatsStripView({ variant, stats }: { variant?: string; stats: string }) {
+  const rows = parsePipeLines(stats, 2)
+  if (variant === '2')
+    return (
+      <div className="grid grid-cols-2 gap-4 px-6 py-12 md:grid-cols-4">
+        {rows.map(([value, label], i) => (
+          <div
+            key={i}
+            className="rounded-xl border border-border bg-surface p-6 text-center shadow-sm"
+          >
+            <div className="text-3xl font-bold text-primary">{value}</div>
+            <div className="mt-1 text-sm text-muted-foreground">{label}</div>
+          </div>
+        ))}
+      </div>
+    )
+  if (variant === '3')
+    return (
+      <div className="bg-inverse text-inverse-foreground">
+        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-6 py-12 md:grid-cols-4">
+          {rows.map(([value, label], i) => (
+            <div key={i} className="text-center">
+              <div className="text-3xl font-bold">{value}</div>
+              <div className="mt-1 text-sm opacity-80">{label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  if (variant === '4')
+    return (
+      <div className="mx-auto flex max-w-5xl flex-wrap items-stretch justify-center gap-y-8 px-6 py-12">
+        {rows.map(([value, label], i) => (
+          <div key={i} className="border-border px-8 text-left md:border-l md:first:border-l-0">
+            <span className="mb-2 block h-1 w-8 rounded bg-primary" aria-hidden="true" />
+            <div className="text-3xl font-bold text-title">{value}</div>
+            <div className="mt-1 text-sm text-muted-foreground">{label}</div>
+          </div>
+        ))}
+      </div>
+    )
+  return (
+    <div className="grid grid-cols-2 gap-6 px-6 py-12 md:grid-cols-4">
+      {rows.map(([value, label], i) => (
+        <div key={i} className="text-center">
+          <div className="text-3xl font-bold text-title">{value}</div>
+          <div className="mt-1 text-sm text-muted-foreground">{label}</div>
+        </div>
+      ))}
+    </div>
+  )
+}
+const StatsStripVariantThumb = liveThumb(
+  StatsStripView as (p: { variant: string; stats: string }) => ReactNode,
+  {
+    variant: '1',
+    stats: STATS_STRIP_DEFAULT,
+  }
+)
 
 const FEATURE_CARDS_VARIANT_LABELS: Record<string, string> = {
   '1': '3-column grid',
@@ -933,28 +1007,15 @@ const typedComponents: Config<GeneralProps>['components'] = {
   },
   StatsStrip: {
     label: 'Stats Strip',
-    fields: { stats: { type: 'textarea' } },
+    fields: {
+      variant: variantField(STATS_STRIP_VARIANT_LABELS, StatsStripVariantThumb),
+      stats: { type: 'textarea' },
+    },
     defaultProps: {
-      stats: [
-        '25+|Years of experience',
-        '15K+|Happy customers',
-        '50+|Team members',
-        '30+|Projects delivered',
-      ].join('\n'),
+      variant: '1',
+      stats: STATS_STRIP_DEFAULT,
     },
-    render: ({ stats }) => {
-      const rows = parsePipeLines(stats, 2)
-      return (
-        <div className="grid grid-cols-2 gap-6 px-6 py-12 md:grid-cols-4">
-          {rows.map(([value, label], i) => (
-            <div key={i} className="text-center">
-              <div className="text-3xl font-bold text-title">{value}</div>
-              <div className="mt-1 text-sm text-muted-foreground">{label}</div>
-            </div>
-          ))}
-        </div>
-      )
-    },
+    render: ({ variant, stats }) => <StatsStripView variant={variant} stats={stats} />,
   },
   FeatureCards: {
     label: 'Feature Cards',
@@ -1644,5 +1705,6 @@ export const general: ComponentPack = {
     FeatureCards: ['1', '2', '3', '4'],
     Footer: ['1', '2', '3', '4'],
     TaglineStrip: ['1', '2', '3', '4'],
+    StatsStrip: ['1', '2', '3', '4'],
   },
 }

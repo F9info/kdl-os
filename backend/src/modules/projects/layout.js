@@ -1,4 +1,5 @@
 import { prisma } from '../../config/database.js';
+import { syncDefaultsFromSelection } from './layout-presets.js';
 
 // Header/footer design picked on the Layout page, stored once per project (site_layouts) so every
 // device and teammate sees the same choice. API shape -> column.
@@ -28,5 +29,6 @@ export async function saveSiteLayout(projectId, patch) {
     update: data,
     create: { project_id: projectId, ...data },
   });
+  await syncDefaultsFromSelection(projectId, patch);
   return getSiteLayout(projectId);
 }

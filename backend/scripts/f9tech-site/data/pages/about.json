@@ -1,0 +1,34 @@
+{
+  "slug": "about",
+  "title": "About Us | F9 Technologies",
+  "description": "Reach out to Vizag's highly skilled and knowledgeable software expertise.",
+  "blocks": [
+    {
+      "type": "F9PageBanner",
+      "props": {
+        "title": "Building bridges between / companies and customers over 17 Years",
+        "text": "We at F9 make sure our clients and employees grow along with the growth of the company by providing a great and unique work-life culture in the industry. Our team works closely with our clients and always give importance to their preferences as not just delivering the product on time but to leave an impression on the user being easy to use and keeping in mind the interest of its users.",
+        "image": "@img:src/images/about.svg"
+      }
+    },
+    {
+      "type": "F9About",
+      "props": {
+        "intro1": "We are about providing the powerful solutions which are simple and effient which would help them with reaching their goals and building a realtionship with the help of good communication between the teams to provide long-term and updated solutions",
+        "intro2": "Providing futuristic applications with latest technologies for both mobile and web based applications in agile method, proper project management protocals and proper communication with our clients who are based in different locations all over the world",
+        "intro3": "",
+        "valuesTitle": "",
+        "values": "Passion\nEmployee Satisfaction\nIntegrity\nHumble\nCustomer Focused\nDiscipline\nCollaboration\nCommitment",
+        "image": "@img:src/images/v-1.svg",
+        "image2": "@img:src/images/v-2.svg",
+        "image3": "@img:src/images/v-3.svg"
+      }
+    },
+    {
+      "type": "F9Stats",
+      "props": {
+        "items": "Industry Experience | 17 Years\nTeam Strength | 20+\nAvg. years of Experience | 5+ Years\nClients | 500+\nWebsites Developed | 1000+"
+      }
+    }
+  ]
+}

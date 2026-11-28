@@ -13,9 +13,13 @@ export async function getDetailPageTypesForProject(projectId) {
       })
     ).map((i) => i.page_id)
   );
-  for (const [typeKey, type] of await listDetailPageTypesForProject(projectId)) {
+  const registered = await listDetailPageTypesForProject(projectId);
+  for (const [typeKey, type] of registered) {
     const entities = await type.listEntities(projectId);
     if (type.deletable && !entities.some((e) => linkedPageIds.has(e.detail_page_id))) continue;
+    // A type built into a module (catalog, sectors, work) is offered only while it has entries; with none,
+    // there is nothing to lay out, and its pill would be a leftover. Adding an entry brings it back.
+    if (!type.deletable && entities.length === 0) continue;
     const withPage = entities.find((e) => e.detail_page_id);
     const listHref = type.adminListPath(projectId);
     results.push({

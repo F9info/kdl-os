@@ -11,6 +11,7 @@ import { removePageFromMenus } from '../menus/site-menus.js';
 import { unregisterFromWebsiteStage } from '../template-engine/site/unregister-page.js';
 import { ensureDefaultSite } from '../projects/sites.js';
 import { getDefaultProjectId } from '../../shared/default-project.js';
+import { assertAssignable } from '../projects/layout-presets.js';
 import { assignRoutes, deriveRouteKey, hrefOfRoute } from '../../shared/page-routes.js';
 
 // The pages of one project. Slugs are unique per project, so every page query names its project.
@@ -25,6 +26,8 @@ export const listPages = async (projectId) => {
       status: true,
       updated_at: true,
       project_id: true,
+      header_layout_id: true,
+      footer_layout_id: true,
     },
   });
 };
@@ -59,7 +62,7 @@ export const getPublishedBySlug = async (slug) => {
   const rows = await prisma.builderPage.findMany({
     where: { slug, status: 'PUBLISHED', deleted_at: null },
     orderBy: { created_at: 'asc' },
-    select: { slug: true, title: true, data: true, seo: true, project_id: true, site_id: true },
+    select: { slug: true, title: true, data: true, seo: true, project_id: true, site_id: true, header_layout_id: true, footer_layout_id: true },
   });
   if (rows.length < 2) return rows[0] ?? null;
   const defaultId = await getDefaultProjectId(prisma);
@@ -75,7 +78,7 @@ const siteScope = (site) =>
 // page key the website stage recorded (slugified title). Falls back to a plain slug match.
 // `site` = { siteId, isDefault } from resolvePublicSite; it keeps one site's pages off another's host.
 export const getPublishedBySiteKey = async (projectId, key, site) => {
-  const select = { slug: true, title: true, data: true, seo: true, project_id: true, site_id: true };
+  const select = { slug: true, title: true, data: true, seo: true, project_id: true, site_id: true, header_layout_id: true, footer_layout_id: true };
   const live = { project_id: projectId, status: 'PUBLISHED', deleted_at: null, ...siteScope(site) };
   // The page's stored route key is its address (shared/page-routes.js). Oldest first, so the answer is stable
   // when old drafts share a key; only a published page is ever served.
@@ -156,6 +159,8 @@ export const updatePage = async (id, rawPatch, actorId) => {
   };
   const existing = await prisma.builderPage.findFirst({ where: { id, deleted_at: null } });
   if (!existing) throw Object.assign(new Error('Page not found'), { status: 404 });
+  await assertAssignable(existing.project_id, patch.header_layout_id, 'HEADER');
+  await assertAssignable(existing.project_id, patch.footer_layout_id, 'FOOTER');
 
   // A structural save on a template-bound instance writes through to the shared template (every
   // sibling instance re-resolves from it on next load), not this page's own row — that's what

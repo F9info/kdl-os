@@ -4,6 +4,7 @@ import type { ComponentConfig, Field } from '@puckeditor/core'
 // Per-device visibility for EVERY section. composePacks() wraps each registered block with
 // withDeviceVisibility(), so no block needs changing and a new block gets it for free.
 //
+//   hidden         the whole section off, on every device (the switch for "hide this section")
 //   hideOnMobile   under 768px         (Tailwind: below `md`)
 //   hideOnTablet   768px - 1023px      (`md` up to below `lg`)
 //   hideOnDesktop  1024px and wider    (`lg` and up)
@@ -22,19 +23,30 @@ export const DEVICES = [
 ] as const
 
 // Written out in full (not built from strings) so Tailwind's scanner generates every class.
-export const DEVICE_FIELDS: Record<string, Field> = Object.fromEntries(
-  DEVICES.map((d) => [
-    d.key,
-    {
-      type: 'radio',
-      label: `Hide on ${d.name} (${d.range})`,
-      options: [
-        { label: 'Show', value: false },
-        { label: 'Hide', value: true },
-      ],
-    } as Field,
-  ])
-)
+export const DEVICE_FIELDS: Record<string, Field> = {
+  // One switch for the whole section. The section keeps all its content, so showing it again brings it back.
+  hidden: {
+    type: 'radio',
+    label: 'Show or hide this section',
+    options: [
+      { label: 'Show', value: false },
+      { label: 'Hide', value: true },
+    ],
+  } as Field,
+  ...Object.fromEntries(
+    DEVICES.map((d) => [
+      d.key,
+      {
+        type: 'radio',
+        label: `Hide on ${d.name} (${d.range})`,
+        options: [
+          { label: 'Show', value: false },
+          { label: 'Hide', value: true },
+        ],
+      } as Field,
+    ])
+  ),
+}
 
 type Props = Record<string, unknown>
 
@@ -52,6 +64,22 @@ export function DeviceVisibility({
   isEditing: boolean
   children: ReactNode
 }) {
+  // The section switch: gone from the live page (and the exported site) altogether; in the editor it stays
+  // selectable, marked, so it can be shown again.
+  if (props.hidden === true) {
+    if (!isEditing) return null
+    return (
+      <div className="relative opacity-50 outline-dashed outline-2 -outline-offset-2 outline-slate-500/70">
+        <span
+          data-testid="section-hidden-badge"
+          className="pointer-events-none absolute right-2 top-2 z-10 rounded bg-slate-700 px-2 py-0.5 text-xs font-medium text-white"
+        >
+          Hidden: not shown on the website
+        </span>
+        {children}
+      </div>
+    )
+  }
   const hidden = hiddenDevices(props)
   if (hidden.length === 0) return <>{children}</>
 

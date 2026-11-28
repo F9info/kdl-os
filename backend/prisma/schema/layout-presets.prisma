@@ -1,0 +1,42 @@
+// Layout library: named, reusable header / footer layouts per project. A page can be assigned one; a page
+// without one uses the project's default of that kind; with no default, the project's single SiteLayout
+// selection (site-layout.prisma) still applies, so sites made before this table keep their look.
+//
+// `variant` and `config` have the same meaning as in a SiteLayout slot: variant is a built-in design ('1'-'5'),
+// 'f9', 'landing:1'-'landing:4' (the Landing header/footer designs) or custom:<custom block id>; config holds the design's own settings (strings).
+
+enum LayoutKind {
+  TOP_HEADER
+  HEADER
+  FOOTER
+}
+
+enum LayoutStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model LayoutPreset {
+  id         String       @id @default(cuid())
+  project_id String
+  kind       LayoutKind
+  name       String
+  // Only a PUBLISHED layout is shown on the live site; a DRAFT one can be previewed and assigned.
+  status     LayoutStatus @default(DRAFT)
+  // At most one default per (project, kind), kept by the service in a transaction.
+  is_default Boolean      @default(false)
+  variant    String
+  config     Json         @default("{}")
+  // Bumped when variant or config change.
+  version    Int          @default(1)
+  created_by String?
+  deleted_at DateTime?
+  created_at DateTime     @default(now())
+  updated_at DateTime     @updatedAt
+
+  header_pages BuilderPage[] @relation("PageHeaderLayout")
+  footer_pages BuilderPage[] @relation("PageFooterLayout")
+
+  @@index([project_id, kind])
+  @@map("layout_presets")
+}

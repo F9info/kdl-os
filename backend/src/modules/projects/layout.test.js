@@ -5,6 +5,8 @@ import request from 'supertest';
 const prismaMock = vi.hoisted(() => ({
   siteLayout: { findUnique: vi.fn(), upsert: vi.fn() },
   project: { findFirst: vi.fn() },
+  // Saving a design also keeps the project's default layout in step (layout-presets.js).
+  layoutPreset: { findFirst: vi.fn(async () => null), create: vi.fn(), update: vi.fn() },
 }));
 vi.mock('../../config/database.js', () => ({ prisma: prismaMock }));
 vi.mock('./onboarding.js', () => ({ getOnboarding: vi.fn(), answerOnboarding: vi.fn() }));

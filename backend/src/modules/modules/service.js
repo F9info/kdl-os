@@ -396,7 +396,23 @@ async function _enableSingle(slug, actorId, { resolveConflicts = false } = {}) {
     });
   }
 
+  await runEnableSeed(slug);
   return updated;
+}
+
+// A module's seed.js may also export `seedOnEnable(client)`: a safe top-up that runs every time the module
+// is enabled (not in the install transaction). It must be idempotent and cheap when there is nothing to do.
+// Example: Frontend (cms) retries its demo website when the install had no project to attach it to.
+// A failure here is logged and never blocks enabling the module.
+async function runEnableSeed(slug) {
+  const seedPath = join(MODULES_DIR, slug, 'seed.js');
+  if (!existsSync(seedPath)) return;
+  try {
+    const seedMod = await import(seedPath);
+    if (typeof seedMod.seedOnEnable === 'function') await seedMod.seedOnEnable(prisma);
+  } catch (err) {
+    console.error(`[modules] enable seed for "${slug}" failed: ${err.message}`);
+  }
 }
 
 export async function enableModule(slug, actorId, { resolveConflicts = false } = {}) {

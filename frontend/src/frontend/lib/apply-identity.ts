@@ -82,6 +82,14 @@ function contactMap(b: Block): Record<string, string> | null {
       copyright: 'copyright',
       ...socialProps('social', b.props?.variant === '5' ? SOCIALS_FB_IG_LI_YT : SOCIALS_FB_LI_IG_X),
     }
+  // Sections outside the Construction pack that show the company's details: the sample address, phone and
+  // email they ship with are replaced by what Identity holds (an empty Identity value keeps the page's own).
+  if (b.type === 'LandingContact')
+    return { address: 'contact_address', phone: 'contact_phone', email: 'contact_email' }
+  if (b.type === 'MedicalContactHours')
+    return { address: 'contact_address', phone: 'contact_phone', email: 'contact_email' }
+  if (b.type === 'MedicalAppointmentCTA') return { phoneNumber: 'contact_phone' }
+  if (b.type === 'MedicalTopNav') return { phone: 'contact_phone' }
   return null
 }
 

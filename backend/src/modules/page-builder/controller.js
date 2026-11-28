@@ -4,7 +4,7 @@ import { createPageSchema, updatePageSchema, publishPageSchema } from './schema.
 import * as service from './service.js';
 import { getDefaultProjectId } from '../../shared/default-project.js';
 import { prisma } from '../../config/database.js';
-import { getSiteLayout } from '../projects/layout.js';
+import { resolveLayoutForPage } from '../projects/layout-presets.js';
 import { resolvePublicSite } from '../projects/sites.js';
 import { getPublicSiteIdentity } from '../projects/site-identity.js';
 import { getPublicSeo, getSeoDefaults, saveSeoDefaults } from './seo.js';
@@ -33,11 +33,11 @@ export const getOne = async (req, res, next) => {
 // What rides along with a public page so visitors' browsers can finish rendering it: the project's
 // saved header/footer layout (T4.2), the site's identity overrides (T5.5) and the SEO for its <head>
 // (T6.1: `seo` = the page's own, `seoDefaults` = site-wide), each null when there is none.
-const withLayout = async ({ site_id: siteId, ...page }) => ({
+const withLayout = async ({ site_id: siteId, header_layout_id: headerLayoutId, footer_layout_id: footerLayoutId, ...page }) => ({
   ...page,
   // Links saved as /p/<slug> in the page and its layout are given the routes the site serves (shared/page-routes.js).
   data: await friendlyLinksFor(page.project_id, page.data),
-  layout: page.project_id ? await friendlyLinksFor(page.project_id, await getSiteLayout(page.project_id)) : null,
+  layout: page.project_id ? await friendlyLinksFor(page.project_id, await resolveLayoutForPage({ ...page, header_layout_id: headerLayoutId, footer_layout_id: footerLayoutId })) : null,
   identity: await getPublicSiteIdentity(siteId),
   ...(await getPublicSeo(page.seo)),
 });

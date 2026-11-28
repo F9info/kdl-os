@@ -54,6 +54,8 @@ async function snapshot() {
     const m = new Map();
     for (const { j } of rows) {
       const o = JSON.parse(j);
+      // The seeder runner's own ledger (what ran, when) changes on every run by design; it is not seeded data.
+      if (table_name === 'app_settings' && typeof o.key === 'string' && o.key.startsWith('seeders.')) continue;
       const key = o.id ?? o.key ?? o.slug ?? JSON.stringify(Object.values(o).slice(0, 3));
       const { updated_at, enabled_at, disabled_at, ...content } = o; // timestamps only: a no-op update still bumps them
       void updated_at; void enabled_at; void disabled_at;

@@ -87,3 +87,5 @@ Before submitting for code review, verify every item:
 - [ ] Frontend pages are wrapped in `<ModuleGuard slug="<slug>">` and nav comes from the manifest only (never add links to `AdminSidebar.tsx`; `tests/regression/nav-config.test.ts` fails on an unknown icon, a duplicate link or title, a link to a page that does not exist, or an unregistered permission)
 - [ ] Module works correctly when other non-core modules are disabled (no cross-module coupling)
 - [ ] Disable → re-enable round-trip leaves no orphaned DB state
+
+Frontend module internals and extension points (layouts, section designs, landing templates): [`docs/FRONTEND_MODULE.md`](FRONTEND_MODULE.md).

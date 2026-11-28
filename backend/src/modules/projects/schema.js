@@ -49,8 +49,11 @@ export const answerOnboardingSchema = z.object({
 
 const layoutSlot = z.object({
   enabled: z.boolean(),
-  // '1'-'5' (built-in designs) or custom:<id> (a saved Section Builder block); same rule as template-engine.
-  variant: z.string().regex(/^([1-5]|custom:[A-Za-z0-9_-]+)$/),
+  // '1'-'5' (built-in designs), 'f9' (the F9 Tech header/footer blocks) or custom:<id> (a saved Section Builder
+  // block); same rule as template-engine.
+  variant: z.string().regex(/^([1-5]|f9|landing:[1-4]|custom:[A-Za-z0-9_-]+)$/),
+  // Settings of the chosen design (the F9 blocks' props), kept with the layout so every page shares them.
+  config: z.record(z.string(), z.string()).optional(),
 });
 
 export const saveLayoutSchema = z.object({
@@ -103,4 +106,43 @@ export const workflowStepSchema = z.object({
 export const launchSchema = z.object({
   params: z.object({ id: z.string().min(1) }),
   body: z.object({ force: z.boolean().default(false) }).default({}),
+});
+
+// Layout library (header / footer / top header layouts). Same variant rule and config as a layout slot.
+const layoutVariant = z.string().regex(/^([1-5]|f9|landing:[1-4]|custom:[A-Za-z0-9_-]+)$/);
+const layoutConfig = z.record(z.string(), z.string());
+const layoutParams = z.object({ id: z.string().min(1), layoutId: z.string().min(1) });
+
+export const listLayoutsSchema = z.object({
+  params: z.object({ id: z.string().min(1) }),
+  query: z.object({ kind: z.enum(['TOP_HEADER', 'HEADER', 'FOOTER']).optional() }),
+});
+export const createLayoutSchema = z.object({
+  params: z.object({ id: z.string().min(1) }),
+  body: z
+    .object({
+      kind: z.enum(['TOP_HEADER', 'HEADER', 'FOOTER']),
+      name: z.string().trim().min(1).max(120),
+      variant: layoutVariant,
+      config: layoutConfig.optional(),
+      status: z.enum(['DRAFT', 'PUBLISHED']).optional(),
+    })
+    .strict(),
+});
+export const updateLayoutSchema = z.object({
+  params: layoutParams,
+  body: z
+    .object({
+      name: z.string().trim().min(1).max(120).optional(),
+      variant: layoutVariant.optional(),
+      config: layoutConfig.optional(),
+      status: z.enum(['DRAFT', 'PUBLISHED']).optional(),
+    })
+    .strict()
+    .refine((b) => Object.keys(b).length > 0, { message: 'Nothing to change' }),
+});
+export const layoutIdSchema = z.object({ params: layoutParams });
+export const deleteLayoutSchema = z.object({
+  params: layoutParams,
+  query: z.object({ force: z.enum(['true', 'false']).optional() }),
 });

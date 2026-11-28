@@ -1,0 +1,15 @@
+{
+  "note": "Website colours (theme-engine platform 'webapp'). Source: f9tech_react MUI theme (App.js) and color.scss.",
+  "platform": "webapp",
+  "mode": "light",
+  "quick": {
+    "brand_colors.primary_color": "#2B74E2",
+    "brand_colors.secondary_color": "#DE3730",
+    "brand_colors.accent_color": "#2B74E2",
+    "brand_colors.highlight_color": "#DE3730",
+    "surfaces.background_color": "#FFFFFF",
+    "text_interaction.text_primary": "#212121"
+  },
+  "headingFont": "Nunito Sans",
+  "bodyFont": "Roboto"
+}

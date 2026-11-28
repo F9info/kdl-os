@@ -1,0 +1,34 @@
+{
+  "header": [
+    { "label": "Home", "url": "/p/home", "page": "home" },
+    { "label": "Services", "url": "/p/services", "page": "services" },
+    { "label": "Solutions", "url": "/p/solutions", "page": "solutions" },
+    { "label": "About us", "url": "/p/about", "page": "about" },
+    { "label": "Blog", "url": "https://medium.com/@f9tech", "external": true },
+    { "label": "Contact us", "url": "/p/contact", "page": "contact" }
+  ],
+  "footer": [
+    { "label": "Services", "url": "/p/services", "page": "services", "children": [
+      { "label": "Mobile App Development", "url": "/p/services", "page": "services" },
+      { "label": "Web App Development", "url": "/p/services", "page": "services" },
+      { "label": "Digital Marketing", "url": "/p/services", "page": "services" },
+      { "label": "Graphic Designing", "url": "/p/services", "page": "services" },
+      { "label": "UI/UX Design", "url": "/p/services", "page": "services" },
+      { "label": "Business Solutions", "url": "/p/solutions", "page": "solutions" }
+    ] },
+    { "label": "Solutions", "url": "/p/solutions", "page": "solutions", "children": [
+      { "label": "F9 CRM", "url": "/p/solutions", "page": "solutions" },
+      { "label": "Association Management", "url": "/p/solutions", "page": "solutions" }
+    ] },
+    { "label": "Quick Links", "url": "/p/home", "page": "home", "children": [
+      { "label": "Open Source", "url": "https://github.com/F9info", "external": true },
+      { "label": "Flutter CMS", "url": "/p/solutions", "page": "solutions" },
+      { "label": "PR CMS", "url": "/p/solutions", "page": "solutions" }
+    ] },
+    { "label": "Legal", "url": "/p/terms", "page": "terms", "children": [
+      { "label": "Terms & Conditions", "url": "/p/terms", "page": "terms" },
+      { "label": "Privacy Policy", "url": "/p/privacy", "page": "privacy" },
+      { "label": "Sitemap", "url": "/p/sitemap", "page": "sitemap" }
+    ] }
+  ]
+}

@@ -9,6 +9,7 @@ import {
   Eye,
   EyeOff,
   ExternalLink,
+  FilePlus2,
   Globe,
   GripVertical,
   Link2Off,
@@ -23,6 +24,7 @@ import {
   type MenuItemNode as NavNode,
 } from '@/app/admin/menus/_tree'
 import api from '@/lib/axios'
+import { toast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
@@ -45,31 +47,24 @@ export interface DetailPageType {
   entities: { id: string; name: string; detail_page_id: string; publicPath: string }[]
 }
 
-// Mirrors the design prototype's Navigation step page suggestions.
+// Mirrors the design prototype's Navigation step page suggestions. Detail pages (service, product, blog...) are
+// not offered here: they come from each content type's own module, not from a generic page.
 const SUGGESTED_PAGES = [
   'Home',
   'About',
   'Services',
-  'Service detail',
   'Products',
-  'Product detail',
   'Pricing',
   'Portfolio',
-  'Portfolio detail',
   'Blog',
-  'Blog detail',
   'Team',
-  'Team member',
   'Careers',
-  'Job detail',
   'Gallery',
   'Testimonials',
   'Contact',
   'FAQ',
   'Privacy Policy',
   'Terms',
-  'Admin panel',
-  'Settings',
 ]
 
 // Content types with a real per-item module (registered via
@@ -249,6 +244,20 @@ export function NavigationStep({
   useEffect(() => {
     if (menu && !dirty) setTree(menu.items)
   }, [menu, dirty])
+
+  // "Add detail" on a page: a "<Page> Detail" layout with two sample pages, linked in the header menu (the
+  // server does all of it); it then shows in Layout settings as "Layout <Page> Detail".
+  async function addDetail(label: string) {
+    try {
+      await api.post('/detail-page-types', { project_id: projectId, name: label })
+      toast({ title: `${label} detail layout added with 2 sample pages` })
+      invalidate()
+      queryClient.invalidateQueries({ queryKey: ['detail-page-types', projectId] })
+    } catch (e) {
+      const msg = (e as { response?: { data?: { message?: string } } }).response?.data?.message
+      toast({ title: msg ?? 'Could not add the detail layout', variant: 'destructive' })
+    }
+  }
 
   const invalidate = () => {
     setDirty(false)
@@ -593,7 +602,7 @@ export function NavigationStep({
           }}
           style={{ marginLeft: (depth - 1) * 24 }}
           className={cn(
-            'flex items-center gap-1.5 rounded-md bg-primary py-1.5 pl-2 pr-1.5 text-xs font-semibold text-primary-foreground',
+            'flex flex-wrap items-center gap-1.5 rounded-md bg-primary py-1.5 pl-2 pr-1.5 text-xs font-semibold text-primary-foreground',
             isDropInside && 'ring-2 ring-primary ring-offset-1',
             dragId === node.id && 'opacity-40',
             !node.is_active && 'opacity-50'
@@ -611,7 +620,7 @@ export function NavigationStep({
             )}
           </button>
           <GripVertical className="h-3.5 w-3.5 shrink-0 cursor-grab opacity-70" />
-          <span className="flex-1 truncate">{node.label}</span>
+          <span className="min-w-[5rem] flex-1 truncate">{node.label}</span>
           {node.link_type === 'external' && (
             <ExternalLink className="h-3 w-3 shrink-0 opacity-70" />
           )}
@@ -810,20 +819,44 @@ export function NavigationStep({
               <div className="flex flex-wrap gap-2">
                 {[...SUGGESTED_PAGES, ...extras].map((name) => {
                   const on = selectedLabels.includes(name)
+                  // Every page can have a detail layout; which ones do depends on the client, so it is offered on all.
+                  const canAddDetail = name !== 'Home' && !/\bdetail$/i.test(name)
                   return (
-                    <button
+                    <span
                       key={name}
-                      type="button"
-                      disabled={isSavingNav}
-                      onClick={() => togglePage(name)}
                       className={cn(
-                        'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+                        'inline-flex items-center overflow-hidden rounded-full border text-xs font-semibold transition-colors',
                         on ? 'border-primary bg-primary/10 text-primary' : 'hover:bg-accent'
                       )}
                     >
-                      <span className="text-[11px]">{on ? '✓' : '+'}</span>
-                      {name}
-                    </button>
+                      <button
+                        type="button"
+                        disabled={isSavingNav}
+                        onClick={() => togglePage(name)}
+                        className="inline-flex items-center gap-1.5 py-2 pl-3.5 pr-3 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <span className="text-[11px]">{on ? '✓' : '+'}</span>
+                        {name}
+                      </button>
+                      {canAddDetail && (
+                        <button
+                          type="button"
+                          disabled={isSavingNav}
+                          aria-label={`Add detail for ${name}`}
+                          title={`Add a ${name} detail layout with two sample pages`}
+                          onClick={() => void addDetail(name)}
+                          className={cn(
+                            'inline-flex items-center gap-1 self-stretch border-l px-2.5 text-[11px] font-semibold disabled:cursor-not-allowed disabled:opacity-50',
+                            on
+                              ? 'border-primary/40 hover:bg-primary/20'
+                              : 'text-muted-foreground hover:bg-accent'
+                          )}
+                        >
+                          <FilePlus2 className="h-3 w-3" />
+                          Add detail
+                        </button>
+                      )}
+                    </span>
                   )
                 })}
                 {detailPageTypeStates.map((r) => (

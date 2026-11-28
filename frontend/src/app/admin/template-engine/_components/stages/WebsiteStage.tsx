@@ -141,7 +141,6 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
       }
     | null
     | undefined
-  const pages = Object.entries(outputRef?.pageKeyToId ?? {})
   // Every registered Details Page type (Sectors, Work, ... — see
   // backend/src/shared/detail-pages/registry.js) reports itself here: real
   // per-entity assembled pages that live in their own table, not
@@ -152,76 +151,12 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
     queryKey: ['detail-page-types', run.projectId],
     queryFn: () => fetchDetailPageTypes<DetailPageType>(run.projectId),
   })
-  // Live menu labels (header + footer): a plain "X Detail" nav-page pill is shown only while a
-  // menu item with that label exists — the menu is the source of truth for detail layouts.
-  const { data: menuLabels } = useQuery({
-    queryKey: ['detail-menu-labels', run.projectId],
-    queryFn: async () => {
-      type Node = { label: string; children?: Node[] }
-      const labels = new Set<string>()
-      const walk = (items: Node[] = []) =>
-        items.forEach((i) => {
-          labels.add(i.label.trim().toLowerCase())
-          walk(i.children)
-        })
-      for (const key of ['header', 'footer']) {
-        const r = await api.post('/menus/ensure', { project_id: run.projectId, key, name: key })
-        walk(r.data.data.menu.items)
-      }
-      return labels
-    },
-  })
   // Page slugs are deterministic (`te-{runId}-{key}`, set by the website
   // driver — see template-engine/drivers/index.js's `seedPages`), so the
   // real public Home URL can be computed here with no extra fetch. Prefers
   // the "home" key; falls back to whatever page exists first for a run
   // that genuinely has no Home page.
   const demoSiteHref = useSiteHomeHref(outputRef?.pageKeyToId)
-  // Older runs (before navigationPages existed) have no pageKeyToTitle —
-  // every key was its title lowercased then, so capitalizing the key alone
-  // still matches ('home' -> 'Home').
-  function pageLabel(key: string) {
-    return outputRef?.pageKeyToTitle?.[key] ?? key.charAt(0).toUpperCase() + key.slice(1)
-  }
-
-  // A custom nav page named "<Something> Detail" (e.g. "Work detail") has no
-  // real per-entry module behind it like Sectors does — it's one single
-  // assembled page — but it still gets its own Layout pill next to "Layout
-  // Sector detail", just pointing straight at that one page's own editor
-  // instead of a list of many.
-  // Same-titled pages ("Service Detail" x2) share one pill; its badge is how many there are.
-  const customDetailPageTypes = Object.values(
-    pages
-      .filter(([key]) => /\bdetail$/i.test(pageLabel(key)))
-      .reduce<
-        Record<
-          string,
-          {
-            label: string
-            count: number
-            sectionHref: string
-            listHref: string
-          }
-        >
-      >((acc, [key, id]) => {
-        const label = pageLabel(key)
-        const editHref = `/admin/template-engine/edit/${id}?projectId=${run.projectId}`
-        // Pill -> section builder of the first page; numbered badge -> /admin/<slug> pages table.
-        acc[label] = acc[label]
-          ? { ...acc[label], count: acc[label].count + 1 }
-          : {
-              label,
-              count: 1,
-              sectionHref: editHref,
-              listHref: `/admin/${label
-                .toLowerCase()
-                .replace(/[^a-z0-9]+/g, '-')
-                .replace(/^-+|-+$/g, '')}?projectId=${run.projectId}`,
-            }
-        return acc
-      }, {})
-  )
-
   function openWebApp() {
     // Fire-and-continue: the folder is (re)generated in the background while
     // the user moves on to Typography.
@@ -385,23 +320,6 @@ export function WebsiteStage({ run }: { run: TemplateEngineRun }) {
                     publicHref: e.publicPath,
                   })),
                 })),
-                ...customDetailPageTypes
-                  .filter(
-                    (c) =>
-                      menuLabels?.has(c.label.trim().toLowerCase()) &&
-                      !(detailPageTypes ?? []).some(
-                        (t) => t.label.toLowerCase() === c.label.toLowerCase()
-                      )
-                  )
-                  .map((c) => ({
-                    ...c,
-                    onDelete: () =>
-                      Promise.all(
-                        pages
-                          .filter(([k]) => pageLabel(k) === c.label)
-                          .map(([, id]) => api.delete(`/page-builder/${id}`))
-                      ),
-                  })),
               ]}
             />
           ) : webAppStep === 'navigation' ? (
@@ -1244,9 +1162,16 @@ function LayoutSettingsPanel({
           Toggle the header/footer and pick a design for every assembled page.
         </p>
       </div>
-      <Button size="sm" asChild>
-        <a href={editHref}>Create/Edit layout</a>
-      </Button>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <Button size="sm" asChild>
+          <a href={editHref}>Create/Edit layout</a>
+        </Button>
+        <Button size="sm" variant="outline" asChild>
+          <a href={`/admin/template-engine/projects/${projectId}/website/layouts`}>
+            Layout library
+          </a>
+        </Button>
+      </div>
       <div className="flex flex-wrap items-start justify-center gap-3">
         {availableDetailTypes.map((t) => (
           <div key={t.label} className="flex flex-col items-center gap-1.5">

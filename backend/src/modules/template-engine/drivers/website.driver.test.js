@@ -556,12 +556,11 @@ describe('website driver — navigationPages (KDL bug: Navigation-step selection
       .mockResolvedValueOnce({ id: 'page-home' })
       .mockResolvedValueOnce({ id: 'page-about' })
       .mockResolvedValueOnce({ id: 'page-services' })
-      .mockResolvedValueOnce({ id: 'page-service-detail' })
-      .mockResolvedValueOnce({ id: 'page-service-detail-2' })
+      .mockResolvedValueOnce({ id: 'page-case-studies' })
       .mockResolvedValueOnce({ id: 'page-contact' })
       .mockResolvedValueOnce({ id: 'page-faq' });
 
-    const navigationPages = ['Home', 'About', 'Services', 'Service detail', 'Contact', 'FAQ'];
+    const navigationPages = ['Home', 'About', 'Services', 'Case studies', 'Contact', 'FAQ'];
 
     const result = await getDriver('website').execute({
       run: makeRun(),
@@ -571,25 +570,24 @@ describe('website driver — navigationPages (KDL bug: Navigation-step selection
       navigationPages,
     });
 
-    // A lone "<X> detail" page is doubled ("Service detail" -> 2 pages).
-    expect(createPage).toHaveBeenCalledTimes(7);
-    expect(result.outputRef.pageIds).toHaveLength(7);
+    expect(createPage).toHaveBeenCalledTimes(6);
+    expect(result.outputRef.pageIds).toHaveLength(6);
     expect(result.outputRef.pageKeyToId).toMatchObject({
       home: 'page-home',
       about: 'page-about',
       services: 'page-services',
-      'service-detail': 'page-service-detail',
+      'case-studies': 'page-case-studies',
       contact: 'page-contact',
       faq: 'page-faq',
     });
     // The frontend's page grid displays pageKeyToTitle's value verbatim —
-    // it must keep the user's real title ('Service detail', 'FAQ'), not
-    // something re-derived from the slugified key ('Service-detail', 'Faq').
+    // it must keep the user's real title ('Case studies', 'FAQ'), not
+    // something re-derived from the slugified key ('Case-studies', 'Faq').
     expect(result.outputRef.pageKeyToTitle).toMatchObject({
       home: 'Home',
       about: 'About',
       services: 'Services',
-      'service-detail': 'Service detail',
+      'case-studies': 'Case studies',
       contact: 'Contact',
       faq: 'FAQ',
     });

@@ -1,9 +1,12 @@
 import { createElement, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { RenderBlock } from '@/admin/components/shared/RenderBlock'
 import { ComposerProjectContext } from '@/frontend/blocks/packs/composer/atoms'
 import { renderComposedBlock } from '@/frontend/blocks/packs/composer/render-composed-block'
 import { listCustomBlocks } from '@/frontend/blocks/packs/composer/custom-blocks-store'
 import { construction } from '@/frontend/blocks/packs/construction'
+import { f9tech } from '@/frontend/blocks/packs/f9tech'
+import { landing } from '@/frontend/blocks/packs/landing'
 import {
   footerOverrides,
   headerFooterOverrides,
@@ -19,6 +22,11 @@ type BlockRender = (props: Record<string, unknown>) => ReactNode
 const TOP_HEADER_CONFIG = construction.components.ConstructionTopBar!
 const HEADER_CONFIG = construction.components.ConstructionHeader!
 const FOOTER_CONFIG = construction.components.ConstructionFooter!
+const F9_HEADER = f9tech.components.F9Header!
+const F9_FOOTER = f9tech.components.F9Footer!
+const LANDING_HEADER = landing.components.LandingHeader!
+const LANDING_FOOTER = landing.components.LandingFooter!
+const landingNo = (variant: string) => /^landing:([1-4])$/.exec(variant)?.[1]
 
 /** The saved Section Builder block picked for a layout slot (variant
  *  `custom:<id>`), rendered live from the DB — null for a fixed design. */
@@ -82,21 +90,71 @@ export function useLayoutChrome(projectId: string | null): {
         }))
       : null,
     headerNode: selection.header.enabled
-      ? (customHeader ??
-        headerRender({
-          ...HEADER_CONFIG.defaultProps,
-          ...headerFooterOverrides(brand),
-          variant: selection.header.variant,
-          puck: { isEditing: true, metadata: { projectId } },
-        }))
+      ? landingNo(selection.header.variant)
+        ? createElement(RenderBlock, {
+            key: 'landing-header',
+            render: LANDING_HEADER.render as BlockRender,
+            props: {
+              ...LANDING_HEADER.defaultProps,
+              ...selection.header.config,
+              variant: landingNo(selection.header.variant),
+              puck: { isEditing: true, metadata: { projectId } },
+            },
+          })
+        : selection.header.variant === 'f9'
+          ? createElement(RenderBlock, {
+              key: 'f9-header',
+              render: F9_HEADER.render as BlockRender,
+              props: {
+                ...F9_HEADER.defaultProps,
+                ...selection.header.config,
+                puck: { isEditing: true, metadata: { projectId } },
+              },
+            })
+          : (customHeader ??
+            createElement(RenderBlock, {
+              key: 'construction-header',
+              render: headerRender,
+              props: {
+                ...HEADER_CONFIG.defaultProps,
+                ...headerFooterOverrides(brand),
+                variant: selection.header.variant,
+                puck: { isEditing: true, metadata: { projectId } },
+              },
+            }))
       : null,
     footerNode: selection.footer.enabled
-      ? (customFooter ??
-        footerRender({
-          ...FOOTER_CONFIG.defaultProps,
-          ...footerOverrides(brand),
-          variant: selection.footer.variant,
-        }))
+      ? landingNo(selection.footer.variant)
+        ? createElement(RenderBlock, {
+            key: 'landing-footer',
+            render: LANDING_FOOTER.render as BlockRender,
+            props: {
+              ...LANDING_FOOTER.defaultProps,
+              ...selection.footer.config,
+              variant: landingNo(selection.footer.variant),
+              puck: { isEditing: true, metadata: { projectId } },
+            },
+          })
+        : selection.footer.variant === 'f9'
+          ? createElement(RenderBlock, {
+              key: 'f9-footer',
+              render: F9_FOOTER.render as BlockRender,
+              props: {
+                ...F9_FOOTER.defaultProps,
+                ...selection.footer.config,
+                puck: { isEditing: true, metadata: { projectId } },
+              },
+            })
+          : (customFooter ??
+            createElement(RenderBlock, {
+              key: 'construction-footer',
+              render: footerRender,
+              props: {
+                ...FOOTER_CONFIG.defaultProps,
+                ...footerOverrides(brand),
+                variant: selection.footer.variant,
+              },
+            }))
       : null,
   }
 }

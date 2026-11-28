@@ -1,0 +1,31 @@
+{
+  "slug": "solutions",
+  "title": "Business Solutions | F9 Technologies",
+  "description": "Find out how F9Techs creative methodology is revolutionising business solutions in Vizag.",
+  "blocks": [
+    {
+      "type": "F9PageBanner",
+      "props": {
+        "title": "We design and develop / user centric SaaS products, web and mobile applications since 17 Years.",
+        "text": "We work hand in hand with our clinetele to create innovative solutions with powerful and efficient softwares.",
+        "image": "@img:src/images/solutions.png"
+      }
+    },
+    {
+      "type": "F9Solutions",
+      "props": {
+        "title": "Solutions",
+        "subtitle": "",
+        "items": "Association Management maintenance and support services count. | As a company, we believe that transparency is paramount and that consumers deserve to have the ability to make their own choices. That's why we're committed to contributing to the ONDC, a national initiative that aims at promoting open networks for all aspects of exchange of goods and services over digital networks. As a company, we believe that transparency is paramount and that consumers deserve to have the ability to make their own choices. That's why we're committed to contributing to the ONDC,\" | @img:src/images/offers/1.png | false | \nFlutter CMS the best Application Support | As a company, we believe that transparency is paramount and that consumers deserve to have the ability to make their own choices. That's why we're committed to contributing to the ONDC, a national initiative that aims at promoting open networks for all aspects of exchange of goods and services over digital networks. As a company, we believe that transparency is paramount and that consumers deserve to have the ability to make their own choices. That's why we're committed to contributing to the ONDC, | @img:src/images/offers/2.png | true | \nPR CMS maintenance and support services count. | As a company, we believe that transparency is paramount and that consumers deserve to have the ability to make their own choices. That's why we're committed to contributing to the ONDC, a national initiative that aims at promoting open networks for all aspects of exchange of goods and services over digital networks. As a company, we believe that transparency is paramount and that consumers deserve to have the ability to make their own choices. That's why we're committed to contributing to the ONDC,\" | @img:src/images/offers/3.png | false | \nF9 CRM the best Application Support | As a company, we believe that transparency is paramount and that consumers deserve to have the ability to make their own choices. That's why we're committed to contributing to the ONDC, a national initiative that aims at promoting open networks for all aspects of exchange of goods and services over digital networks. As a company, we believe that transparency is paramount and that consumers deserve to have the ability to make their own choices. That's why we're committed to contributing to the ONDC,\" | @img:src/images/offers/4.png | true | "
+      }
+    },
+    {
+      "type": "F9BlogTeasers",
+      "props": {
+        "eyebrow": "What’s new",
+        "title": "Web and Mobile discloseered lorem ipsum App Development Company",
+        "items": "Why flutter is the best choice for your app? | One of the most important things to consider when building a Flutter app is that you need to use only one codebase... |  | @img:src/images/blog/1.jpg\nAdvantages by single codebase in Flutter | Programming languages are an important part of app development. In this post, we will discuss the best programming languages and what they can do for you... |  | @img:src/images/blog/2.jpg\n5 Reasons why Apple devices are the ideal choice for you | Apple devices are the most popular in the world. Apple has a dedicated ecosystem of hardware and software that is built for all. Their ecosystem is built for all, with many different devices to choose from... |  | @img:src/images/blog/3.jpg"
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "forms": [
+    {
+      "name": "Contact Us",
+      "slug": "contact",
+      "fields": [
+        { "key": "name", "type": "text", "label": "Name", "required": true },
+        { "key": "email", "type": "email", "label": "Email", "required": true },
+        { "key": "subject", "type": "text", "label": "Subject", "required": false },
+        { "key": "description", "type": "textarea", "label": "Description", "required": true }
+      ],
+      "submit_label": "Submit",
+      "success_message": "Thank you. We will be in touch."
+    }
+  ]
+}

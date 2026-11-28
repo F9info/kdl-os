@@ -38,6 +38,8 @@ vi.mock('./schema.js', async () => {
   };
 });
 vi.mock('../projects/layout.js', () => ({ getSiteLayout: m.getSiteLayout }));
+// Which layout a page shows (assigned, default, project selection) has its own tests (projects/layout-presets.test.js).
+vi.mock('../projects/layout-presets.js', () => ({ resolveLayoutForPage: (page) => (page.project_id ? m.getSiteLayout(page.project_id) : null) }));
 vi.mock('../projects/sites.js', () => ({ resolvePublicSite: m.resolvePublicSite }));
 vi.mock('../projects/site-identity.js', () => ({ getPublicSiteIdentity: m.getPublicSiteIdentity }));
 vi.mock('./seo.js', () => ({ getPublicSeo: m.getPublicSeo, getSeoDefaults: vi.fn(), saveSeoDefaults: vi.fn() }));

@@ -1,6 +1,7 @@
 import { successResponse, errorResponse } from '../../shared/utils/response.js';
 import { getOnboarding, answerOnboarding } from './onboarding.js';
 import { getSiteLayout, saveSiteLayout } from './layout.js';
+import * as presets from './layout-presets.js';
 import { getSiteIdentityWithPreviews, saveSiteIdentity } from './site-identity.js';
 import { setWorkflowStep } from './workflow.js';
 import { checkLaunch, launchProject } from './launch.js';
@@ -148,3 +149,33 @@ export const handleLaunch = async (req, res, next) => {
     next(err);
   }
 };
+
+// ── Layout library ─────────────────────────────────────────────────────────────
+const layoutHandler = (fn, status = 200) => async (req, res, next) => {
+  try {
+    successResponse(res, await fn(req), status);
+  } catch (err) {
+    if (err.status) return errorResponse(res, err.message, err.status, err.pages !== undefined ? { pages: err.pages } : undefined);
+    next(err);
+  }
+};
+export const handleListLayouts = layoutHandler(async (req) => ({
+  items: await presets.listLayouts(req.params.id, req.validated?.query?.kind ?? req.query.kind),
+}));
+export const handleCreateLayout = layoutHandler(
+  async (req) => ({ layout: await presets.createLayout(req.params.id, req.validated.body, req.user?.id) }),
+  201
+);
+export const handleUpdateLayout = layoutHandler(async (req) => ({
+  layout: await presets.updateLayout(req.params.id, req.params.layoutId, req.validated.body),
+}));
+export const handleDuplicateLayout = layoutHandler(
+  async (req) => ({ layout: await presets.duplicateLayout(req.params.id, req.params.layoutId, req.user?.id) }),
+  201
+);
+export const handleDefaultLayout = layoutHandler(async (req) => ({
+  layout: await presets.setDefaultLayout(req.params.id, req.params.layoutId),
+}));
+export const handleDeleteLayout = layoutHandler(async (req) =>
+  presets.deleteLayout(req.params.id, req.params.layoutId, { force: (req.validated?.query?.force ?? req.query.force) === 'true' })
+);

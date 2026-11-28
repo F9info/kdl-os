@@ -90,11 +90,11 @@ describe('withDeviceVisibility', () => {
     render: ({ title }: { title: string }) => <h1>{title}</h1>,
   }
 
-  it('adds the three fields, keeps the existing ones and changes no default props', () => {
+  it('adds the section switch and the three device fields, keeps the existing ones and changes no default props', () => {
     const c = withDeviceVisibility(base as never) as typeof base & {
       fields: Record<string, unknown>
     }
-    expect(Object.keys(c.fields)).toEqual(['title', ...DEVICES.map((d) => d.key)])
+    expect(Object.keys(c.fields)).toEqual(['title', 'hidden', ...DEVICES.map((d) => d.key)])
     expect(c.defaultProps).toEqual({ title: 'Hi' }) // absent = shown: saved pages are untouched
   })
 
@@ -111,7 +111,11 @@ describe('withDeviceVisibility', () => {
       ...base,
       resolveFields: async () => ({ extra: { type: 'text' } }),
     } as never) as { resolveFields: () => Promise<Record<string, unknown>> }
-    expect(Object.keys(await c.resolveFields())).toEqual(['extra', ...DEVICES.map((d) => d.key)])
+    expect(Object.keys(await c.resolveFields())).toEqual([
+      'extra',
+      'hidden',
+      ...DEVICES.map((d) => d.key),
+    ])
   })
 
   it('each field is a Show/Hide radio whose values are real booleans (so the schema calls it a toggle)', () => {
@@ -131,5 +135,51 @@ describe('the real block library', () => {
       for (const d of DEVICES)
         expect(Object.keys(c.fields ?? {}), `${type} is missing ${d.key}`).toContain(d.key)
     for (const d of DEVICES) expect(isStyleField(d.key)).toBe(true)
+  })
+})
+
+describe('the section switch (hidden)', () => {
+  it('is a Show/Hide field on every block, next to the per-device ones', () => {
+    expect(DEVICE_FIELDS.hidden).toMatchObject({
+      type: 'radio',
+      label: 'Show or hide this section',
+    })
+    for (const [key, def] of Object.entries(config.components ?? {})) {
+      expect(Object.keys(def.fields ?? {}), key).toContain('hidden')
+    }
+  })
+
+  it('a hidden section is not rendered for visitors at all', () => {
+    const { container } = render(
+      <DeviceVisibility props={{ hidden: true }} isEditing={false}>
+        <Body />
+      </DeviceVisibility>
+    )
+    expect(screen.queryByTestId('body')).toBeNull()
+    // Nothing of the section is in the page (the test renderer adds its own script tag, which is not ours).
+    expect(container.querySelector('section')).toBeNull()
+    expect(container.textContent).not.toContain('content')
+  })
+
+  it('in the editor it stays on the canvas, marked, so it can be selected and shown again', () => {
+    render(
+      <DeviceVisibility props={{ hidden: true }} isEditing>
+        <Body />
+      </DeviceVisibility>
+    )
+    expect(screen.getByTestId('body')).toBeTruthy()
+    expect(screen.getByTestId('section-hidden-badge').textContent).toMatch(/Hidden/)
+  })
+
+  it('only the literal true hides; false, a string or missing leaves the section as it was', () => {
+    for (const hidden of [false, 'true', 1, null, undefined]) {
+      const { container, unmount } = render(
+        <DeviceVisibility props={{ hidden }} isEditing={false}>
+          <Body />
+        </DeviceVisibility>
+      )
+      expect(screen.getByTestId('body').parentElement).toBe(container)
+      unmount()
+    }
   })
 })

@@ -1,7 +1,3 @@
-> **Since 2026-11-21 the installer does Steps 3-11 for you** when you choose a type with a website
-> (Admin + Frontend, Landing, Static or Multiple): the website builder is enabled and the Studio is
-> completed with these defaults. Use the steps below to change colours, fonts, menu pages or layouts.
-
 ## Step 1. Sign in
 > KDL OS must already be installed and running. If not, follow the **Installation** guide first (Admin > Documents > Installation).
 
@@ -42,7 +38,7 @@ Click one card under **Button style** (Solid, Airy pill, Classic, Leaf, Outline,
 ![Website stage: Button style](button-styles)
 
 ## Step 10. Choose the menu pages
-Open **Frontend > Navigation**. Click the page names you want in the menu (About, Services, Portfolio, Blog, Contact and so on), or type a custom page and click **Add**. Use the **Header menu** and **Footer menu** tabs. One page is created for every menu item, plus Home.
+Open **Frontend > Navigation**. Click the page names you want in the menu (About, Services, Portfolio, Blog, Contact and so on), or type a custom page and click **Add**. Use the **Header menu** and **Footer menu** tabs. One page is created for every menu item, plus Home. Pages that show one item each (a service, a blog post) are not in this list: add them with **Add detail** (see Detail pages below).
 ![Frontend > Navigation](navigation)
 
 ## Step 11. Layouts: header and footer
@@ -53,13 +49,16 @@ KDL OS already has ready-made headers and footers. You can use them as they are.
 ![Layout settings](layout-settings)
 
 The **Layout** page lists each section (Top header, Header, Footer and more) with several designs. Use the switch on the right to turn a section on or off, and pick a design: the one with the green tick is in use. For each design you can click **View** to preview it, **Edit** to change it, or **Create new** to build your own from scratch. Then create the layout to apply it to every page. The header and footer of **Home** are shared by every public page.
+
+In **Layout library**, a header or footer can also use one of the four **Landing** designs (Landing design 1 to 4), the same look as a landing page's header and footer. Choose it in the **Design** list, then set its menu links, button, colours and fonts. Your logo, name, phone and contact details come from Identity.
+![Layout library: a Landing design](layout-landing)
 ![Layout: pick a design for each section](layout-pick)
 
 ## Step 12. Detail pages: one layout for every detail page
 A detail page shows one item: one service, one blog post, one event, one sector. You do not build each by hand. Every item of a type shares one layout, and a page is created for each item.
 
-**A. Add the detail page types.** Open **Frontend > Navigation**. Click **Service detail**, **Blog detail**, **Portfolio detail**, **Team member** or **Job detail** to add them. For another type, type a name such as **Event detail** and click **Add**. Sector, Catalog and Work detail pages appear once you add entries in those content modules.
-![Navigation: add the detail pages](navigation-detail)
+**A. Add a detail layout to a page.** Not every client needs one: one client's Gallery is a single page, another's has a detail page for each album. So every page in **Frontend > Navigation** has its own **Add detail** button, inside the page's name, except Home. Click **Add detail** next to **Services** (or Blog, Gallery, Portfolio, Careers or any page you added). KDL OS creates a **Services Detail** layout with two sample pages (Sample Services 1 and 2) and adds it to the header menu. If one with that name already exists you get a message instead. Replace the sample pages with real ones in the steps below. Sector, Catalog and Work detail pages appear once you add entries in those content modules.
+![Navigation: Add detail on every page](navigation-detail)
 
 **B. Edit the layout.** Go back to **Layout settings** (Frontend > Brands > Web app). A pill called **Layout Service Detail** (or Layout Blog Detail, Layout Event Detail and so on) now appears for each type. Click the pill to open the section builder for that layout: change it once and every page of that type changes. The number on the pill is how many detail pages exist. Click a small number under the pill to edit one page's own content (title, text, images); the arrow opens that page live.
 ![Layout settings: the detail page layouts](detail-layout)

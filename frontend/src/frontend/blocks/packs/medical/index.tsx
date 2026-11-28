@@ -96,6 +96,7 @@ type MedicalProps = {
     primaryColor: string
   }
   MedicalContactInfoCards: {
+    variant: '1' | '2' | '3' | '4'
     cells: string
   }
 }
@@ -2016,30 +2017,36 @@ const MedicalHeroSplit: Config<MedicalProps>['components']['MedicalHeroSplit'] =
 
 const INFO_ICONS = { phone: Phone, clock: Clock, location: MapPin, email: Mail } as const
 
-const MedicalContactInfoCards: Config<MedicalProps>['components']['MedicalContactInfoCards'] = {
-  label: 'Contact Info Cards',
-  fields: {
-    cells: { type: 'textarea' },
-  },
-  defaultProps: {
-    cells: [
-      'phone|Emergency Case|(123) 456 7890',
-      'clock|Opening Hours|Mon–Sat: 8:00–18:00',
-      'location|Location|123 Medical Street, NY',
-      'email|Email Us|info@yourbrand.com',
-    ].join('\n'),
-  },
-  render: ({ cells }) => {
-    const rows = parsePipeLines(cells, 3)
+const INFO_CARDS_VARIANT_LABELS: Record<string, string> = {
+  '1': 'Overlapping card row',
+  '2': 'Separate cards',
+  '3': 'Dark band',
+  '4': 'Accent list',
+}
+const INFO_CARDS_FALLBACK = {
+  variant: '1' as const,
+  cells: [
+    'phone|Emergency Case|(123) 456 7890',
+    'clock|Opening Hours|Mon–Sat: 8:00–18:00',
+    'location|Location|123 Medical Street, NY',
+    'email|Email Us|info@yourbrand.com',
+  ].join('\n'),
+}
+
+// A page saved before designs existed has no variant: it keeps Design 1.
+function infoCardsBody({ variant, cells }: MedicalProps['MedicalContactInfoCards']) {
+  const rows = parsePipeLines(cells, 3)
+  const iconOf = (icon: string) => INFO_ICONS[icon as keyof typeof INFO_ICONS] ?? Phone
+  if (variant === '2')
     return (
-      <div className="relative z-[3] -mt-10 px-6">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 rounded-2xl bg-card shadow-xl sm:grid-cols-2 md:grid-cols-4">
+      <div className="px-6 py-10">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
           {rows.map(([icon, title, subtitle], i) => {
-            const Icon = INFO_ICONS[icon as keyof typeof INFO_ICONS] ?? Phone
+            const Icon = iconOf(icon ?? '')
             return (
               <div
                 key={i}
-                className={`flex items-center gap-3 p-6 ${i < rows.length - 1 ? 'md:border-r md:border-divider' : ''}`}
+                className="flex items-center gap-3 rounded-2xl border border-divider bg-card p-5 shadow-sm"
               >
                 <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
                   <Icon size={20} />
@@ -2054,7 +2061,79 @@ const MedicalContactInfoCards: Config<MedicalProps>['components']['MedicalContac
         </div>
       </div>
     )
+  if (variant === '3')
+    return (
+      <div className="bg-inverse px-6 py-10 text-inverse-foreground">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
+          {rows.map(([icon, title, subtitle], i) => {
+            const Icon = iconOf(icon ?? '')
+            return (
+              <div key={i} className="flex items-center gap-3">
+                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-inverse-foreground/10">
+                  <Icon size={20} />
+                </div>
+                <div>
+                  <div className="font-semibold">{title}</div>
+                  <div className="text-sm opacity-80">{subtitle}</div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  if (variant === '4')
+    return (
+      <div className="px-6 py-10">
+        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-x-10 gap-y-6 sm:grid-cols-2">
+          {rows.map(([icon, title, subtitle], i) => {
+            const Icon = iconOf(icon ?? '')
+            return (
+              <div key={i} className="flex items-start gap-3 border-l-4 border-primary pl-4">
+                <Icon size={20} className="mt-0.5 shrink-0 text-primary" />
+                <div>
+                  <div className="font-semibold text-title">{title}</div>
+                  <div className="text-sm text-muted-foreground">{subtitle}</div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  return (
+    <div className="relative z-[3] -mt-10 px-6">
+      <div className="mx-auto grid max-w-6xl grid-cols-1 rounded-2xl bg-card shadow-xl sm:grid-cols-2 md:grid-cols-4">
+        {rows.map(([icon, title, subtitle], i) => {
+          const Icon = iconOf(icon ?? '')
+          return (
+            <div
+              key={i}
+              className={`flex items-center gap-3 p-6 ${i < rows.length - 1 ? 'md:border-r md:border-divider' : ''}`}
+            >
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                <Icon size={20} />
+              </div>
+              <div>
+                <div className="font-semibold text-title">{title}</div>
+                <div className="text-sm text-muted-foreground">{subtitle}</div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+const MedicalContactInfoCards: Config<MedicalProps>['components']['MedicalContactInfoCards'] = {
+  label: 'Contact Info Cards',
+  fields: {
+    variant: variantField(INFO_CARDS_VARIANT_LABELS, liveThumb(infoCardsBody, INFO_CARDS_FALLBACK)),
+    cells: { type: 'textarea' },
   },
+  defaultProps: INFO_CARDS_FALLBACK,
+  render: infoCardsBody,
 }
 
 // ─── Pack assembly ────────────────────────────────────────────────────────────
@@ -2096,5 +2175,6 @@ export const medical: ComponentPack = {
     MedicalInsuranceStrip: ['1', '2', '3', '4'],
     MedicalContactHours: ['1', '2', '3', '4'],
     MedicalFAQ: ['1', '2', '3', '4'],
+    MedicalContactInfoCards: ['1', '2', '3', '4'],
   },
 }

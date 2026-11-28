@@ -11,7 +11,6 @@
  *          collateral, website, preflight, export
  */
 
-import { ensureTwoDetailPages } from './ensure-two-detail-pages.js';
 import {
   getOrCreateKit,
   adoptIdentityLogo,
@@ -442,7 +441,7 @@ const websiteDriver = {
     // navigationPages existed every key WAS its title lowercased ('home' ->
     // 'Home'), so no one noticed the grid was deriving a label from the key
     // instead of storing the actual title anywhere. Multi-word/acronym
-    // titles ('Service detail', 'FAQ') expose that: slugified back they'd
+    // titles ('Case studies', 'FAQ') expose that: slugified back they'd
     // render 'Service-detail'/'Faq', not the title the user actually typed.
     const pageKeyToTitle = {};
     const pageIds = [];
@@ -453,7 +452,7 @@ const websiteDriver = {
       Array.isArray(navigationPages) ? navigationPages : [],
       run.projectId
     );
-    const seedPages = resolveSeedPages(ensureTwoDetailPages(filteredNavigationPages)).map(({ key, title }) => ({
+    const seedPages = resolveSeedPages(filteredNavigationPages).map(({ key, title }) => ({
       key,
       title,
       slug: `te-${run.id}-${key}`,

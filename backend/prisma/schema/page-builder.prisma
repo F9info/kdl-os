@@ -38,6 +38,12 @@ model BuilderPage {
   // Not unique on its own (old drafts can share "home"); shared/page-routes.js turns the keys of a site into
   // unique routes. Null only until the startup backfill has run.
   route_key   String?
+  // Header/footer layouts picked for this page from the layout library (layout-presets.prisma). Null = the
+  // project's default of that kind.
+  header_layout_id String?
+  header_layout    LayoutPreset? @relation("PageHeaderLayout", fields: [header_layout_id], references: [id], onDelete: SetNull)
+  footer_layout_id String?
+  footer_layout    LayoutPreset? @relation("PageFooterLayout", fields: [footer_layout_id], references: [id], onDelete: SetNull)
 
   versions PageVersion[]
 
@@ -47,6 +53,8 @@ model BuilderPage {
   @@index([site_id])
   @@index([template_id])
   @@index([project_id, route_key])
+  @@index([header_layout_id])
+  @@index([footer_layout_id])
   @@map("builder_pages")
 }
 

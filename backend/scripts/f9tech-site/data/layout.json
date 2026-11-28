@@ -1,0 +1,108 @@
+{
+  "_note": "Header/footer block settings shared by every page. Links, contact details, copyright and logo come live from the Menus module and Application Identity; only what has no other home is listed here.",
+  "header": {
+    "ctaLast": "true"
+  },
+  "footer": {
+    "bottomMenuLabel": "Legal",
+    "socials": [
+      {
+        "label": "LinkedIn",
+        "identityKey": "social_linkedin",
+        "icon": "@img:src/images/social/linkedin.svg"
+      },
+      {
+        "label": "Facebook",
+        "identityKey": "social_facebook",
+        "icon": "@img:src/images/social/facebook.svg"
+      },
+      {
+        "label": "Instagram",
+        "identityKey": "social_instagram",
+        "icon": "@img:src/images/social/instragram.svg"
+      },
+      {
+        "label": "GitHub",
+        "href": "https://github.com/F9info",
+        "icon": "@img:src/images/social/github.svg"
+      },
+      {
+        "label": "YouTube",
+        "identityKey": "social_youtube",
+        "icon": "@img:src/images/social/youtube.svg"
+      }
+    ],
+    "partnerLogos": [
+      {
+        "name": "KDL",
+        "image": "@img:src/images/footer/kdl.svg",
+        "href": "https://kalamdreamlabs.com/"
+      },
+      {
+        "name": "BNI",
+        "image": "@img:src/images/footer/bni.svg",
+        "href": "https://bni-visakhapatnam.in/en-IN/index"
+      },
+      {
+        "name": "CII",
+        "image": "@img:src/images/footer/cii.svg",
+        "href": "https://partnershipsummit.com/"
+      },
+      {
+        "name": "Vizag Startups",
+        "image": "@img:src/images/footer/vs.svg",
+        "href": "https://vizagstartups.in/"
+      }
+    ],
+    "badges": [
+      {
+        "image": "@img:src/images/footer/drmca.svg",
+        "href": "https://www.dmca.com/"
+      },
+      {
+        "image": "@img:src/images/footer/pro.svg",
+        "href": "https://www.copyscape.com/"
+      }
+    ],
+    "bottomLinks": [
+      {
+        "label": "BLOGS",
+        "href": "https://medium.com/@f9tech"
+      }
+    ],
+    "decoImage": "@img:src/images/footer-link.svg"
+  },
+  "pages": {
+    "order": [
+      "home",
+      "services",
+      "solutions",
+      "about",
+      "contact",
+      "terms",
+      "privacy",
+      "sitemap"
+    ],
+    "unpublishDemoSlugs": [
+      "faq",
+      "gallery",
+      "team",
+      "testimonials",
+      "products",
+      "work",
+      "sectors",
+      "case-studies"
+    ],
+    "titles": {
+      "home": "Home",
+      "services": "Services",
+      "solutions": "Solutions",
+      "about": "About",
+      "contact": "Contact",
+      "terms": "Terms",
+      "privacy": "Privacy",
+      "sitemap": "Sitemap"
+    },
+    "_note": "titles = admin page names; the URL key of a new page comes from its title. The page's SEO title is the long title in pages/<key>.json."
+  }
+}

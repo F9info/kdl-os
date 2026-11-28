@@ -89,3 +89,58 @@ describe('mergeIdentity (T5.5)', () => {
     expect(out.content[0]!.props).toMatchObject({ brand: 'Spring', logoUrl: '/p.png' })
   })
 })
+
+describe('company details on sections outside the Construction pack', () => {
+  const identity = {
+    contact_phone: '+91 891 969 3567',
+    contact_email: 'projects@f9tech.com',
+    contact_address: 'Vizag',
+  }
+  const content = [
+    {
+      type: 'LandingContact',
+      props: {
+        title: 'Talk',
+        address: '12 Sample St',
+        phone: '+91 98765 43210',
+        email: 'hello@example.com',
+      },
+    },
+    {
+      type: 'MedicalContactHours',
+      props: { address: 'Sample', phone: '000', email: 'info@clinicname.in', hours: 'Mon' },
+    },
+    { type: 'MedicalAppointmentCTA', props: { phoneNumber: '000', headline: 'Book' } },
+    { type: 'MedicalTopNav', props: { phone: '000', brand: 'X' } },
+  ]
+
+  it('Identity replaces the sample address, phone and email, and leaves the rest alone', () => {
+    const out = applyIdentity({ root: {}, content }, identity).content
+    expect(out[0]!.props).toMatchObject({
+      title: 'Talk',
+      address: 'Vizag',
+      phone: '+91 891 969 3567',
+      email: 'projects@f9tech.com',
+    })
+    expect(out[1]!.props).toMatchObject({
+      address: 'Vizag',
+      phone: '+91 891 969 3567',
+      email: 'projects@f9tech.com',
+      hours: 'Mon',
+    })
+    expect(out[2]!.props).toMatchObject({ phoneNumber: '+91 891 969 3567', headline: 'Book' })
+    expect(out[3]!.props).toMatchObject({ phone: '+91 891 969 3567' })
+  })
+
+  it('an empty Identity value never overrides what the page has', () => {
+    const out = applyIdentity(
+      { root: {}, content },
+      { contact_phone: '  ', contact_email: '' }
+    ).content
+    expect(out[0]!.props).toMatchObject({
+      address: '12 Sample St',
+      phone: '+91 98765 43210',
+      email: 'hello@example.com',
+    })
+  })
+})

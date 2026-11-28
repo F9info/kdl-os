@@ -2,6 +2,7 @@ import { prisma } from '../../config/database.js';
 import { cleanSeo } from './seo.js';
 import { SEO_TITLE_HINT, SEO_DESCRIPTION_HINT } from './seo-limits.js';
 import { getSectionSchemas } from '../../shared/section-schemas.js';
+import { layoutBlockTypes } from '../../shared/layout-chrome.js';
 
 // Pre-publish checks (T6.4). Two severities:
 //   error   = something is actually broken for visitors (empty page, image with no source, a link to
@@ -12,14 +13,8 @@ import { getSectionSchemas } from '../../shared/section-schemas.js';
 // The editor shows both before publishing; the server enforces the errors.
 
 // Header/footer blocks are managed on the Layout page, not part of the page's own content.
-const LAYOUT_BLOCKS = new Set([
-  'ConstructionTopBar',
-  'ConstructionHeader',
-  'NavBar',
-  'MedicalTopNav',
-  'ConstructionFooter',
-  'Footer',
-]);
+// The list is shared with the editor (shared/layout-chrome.js).
+const isLayoutBlock = (type) => layoutBlockTypes().has(type);
 
 // First path segments served by the app itself (module pages, auth, ...): not page keys.
 const APP_ROUTES = new Set([
@@ -109,9 +104,13 @@ export function schemaIssues(block, schemas) {
       ),
     ];
   const out = [];
-  // Hidden on mobile, tablet AND desktop (per-device visibility): nobody would ever see it.
+  // Switched off (the section's Hide switch), or hidden on mobile, tablet AND desktop: nobody would ever see it.
   const p = block.props ?? {};
-  if (p.hideOnMobile === true && p.hideOnTablet === true && p.hideOnDesktop === true)
+  if (p.hidden === true)
+    out.push(
+      issue('warning', 'BLOCK_HIDDEN_EVERYWHERE', `${schema.label ?? block.type} is hidden, so no visitor will see it.`, block)
+    );
+  else if (p.hideOnMobile === true && p.hideOnTablet === true && p.hideOnDesktop === true)
     out.push(
       issue(
         'warning',
@@ -156,7 +155,7 @@ export function schemaIssues(block, schemas) {
 export function validateContent(page, ctx) {
   const issues = [];
   const title = (page.title ?? '').trim();
-  const content = (page.data?.content ?? []).filter((b) => !LAYOUT_BLOCKS.has(b.type));
+  const content = (page.data?.content ?? []).filter((b) => !isLayoutBlock(b.type));
   const seo = cleanSeo(page.seo) ?? {};
 
   if (!title) issues.push(issue('error', 'TITLE_MISSING', 'The page has no title.'));

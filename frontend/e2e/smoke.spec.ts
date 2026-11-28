@@ -4,10 +4,18 @@ import { test, expect } from '@playwright/test'
 import { ADMIN } from './helpers/credentials'
 
 test.describe('Smoke Tests', () => {
-  test('root redirects to the login page', async ({ page }) => {
+  test('root shows the public website, or the login page on an admin-only install', async ({
+    page,
+  }) => {
+    // With the Frontend module installed "/" is the website's home page; without it "/" sends visitors to sign in.
     await page.goto('/')
-    await expect(page).toHaveURL(/\/login$/)
-    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible()
+    await expect(page).toHaveURL(/\/(login)?$/)
+    if (page.url().endsWith('/login')) {
+      await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible()
+    } else {
+      await expect(page.getByText('Application error')).toHaveCount(0)
+      await expect(page.locator('body')).not.toBeEmpty()
+    }
   })
 
   test('seeded super admin can log in and reach the dashboard', async ({ page }) => {

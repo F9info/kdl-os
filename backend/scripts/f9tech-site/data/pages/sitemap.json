@@ -1,0 +1,15 @@
+{
+  "slug": "sitemap",
+  "title": "Sitemap | F9 Info Technologies",
+  "description": "Browse all pages of F9 Info Technologies — services, solutions, about us, blog and more.",
+  "blocks": [
+    {
+      "type": "F9Sitemap",
+      "props": {
+        "title": "Sitemap",
+        "subtitle": "A complete directory of all pages on the F9 Info Technologies website.",
+        "groups": "Main Pages | Home=/ ; About Us=/about ; Contact Us=/contact ; Blog=https://medium.com/@f9tech\nServices | Mobile App Development=/services ; Web App Development=/services ; Digital Marketing=/services ; Graphic Designing=/services ; UI/UX Design=/services ; Business Solutions=/solutions\nSolutions | F9 CRM=/solutions ; Association Management=/solutions ; Flutter CMS=/solutions ; PR CMS=/solutions\nLegal | Terms & Conditions=/terms ; Privacy Policy=/privacy ; Sitemap=/sitemap\nFollow Us | LinkedIn=https://www.linkedin.com/company/f9-info-technologies ; YouTube=https://www.youtube.com/@f9tech/videos ; GitHub=https://github.com/F9info ; Instagram=https://www.instagram.com/f9tech ; Facebook=https://www.facebook.com/f9tech"
+      }
+    }
+  ]
+}

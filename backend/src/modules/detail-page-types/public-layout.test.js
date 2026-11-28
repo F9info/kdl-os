@@ -4,6 +4,7 @@ const getPublicEntry = vi.fn();
 const getSiteLayout = vi.fn();
 vi.mock('./entries.service.js', () => ({ getPublicEntry }));
 vi.mock('../projects/layout.js', () => ({ getSiteLayout }));
+vi.mock('../projects/layout-presets.js', () => ({ resolveLayoutForPage: ({ project_id }) => getSiteLayout(project_id) }));
 vi.mock('./service.js', () => ({ getDetailPageTypesForProject: vi.fn() }));
 vi.mock('../menus/service.js', () => ({ addDetailTypeToHeaderMenu: vi.fn() }));
 vi.mock('../../shared/default-project.js', () => ({ getDefaultProjectId: vi.fn(async () => 'p1') }));

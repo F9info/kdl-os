@@ -1,0 +1,13 @@
+{
+  "slug": "services",
+  "title": "Our Services | F9 Technologies",
+  "description": "Elevate your IT infrastructure with F9's professional services tailored for Vizag, ensuring reliability and efficiency.",
+  "blocks": [
+    {
+      "type": "F9ServicesList",
+      "props": {
+        "items": "Mobile App Development | @img:src/images/services/1.svg | Mobile App UI/UX Design ; Cross-platform App Development ; Progressive Web App Development ; Enterprise Mobility Solutions ; Maintenance and Support\nWeb App Development | @img:src/images/services/2.svg | Website Design and Development ; Ecommerce Development ; Custom Application Development ; CMS Development ; Maintenance and Support\nUi/Ux Design | @img:src/images/services/3.svg | UI Design ; UX Design ; Interaction Design ; Prototyping ; Custom-tailored Designs\nGraphic Design | @img:src/images/services/4.svg | Illustrations ; Logo Design ; Icon Design ; Motion Graphics & Animations ; Creative Designs\nCloud Computing | @img:src/images/services/5.svg | Cloud app development ; Cloud configuration ; Cloud integration ; Cloud server solutions ; Cloud migration\nDigital Marketing | @img:src/images/services/6.svg | Search Engine Optimization (SEO) ; Social Media Marketing (SMM) ; Social Media Advertising ; App Store Optimization (ASO) ; Content Writing and Marketing\nProject Management | @img:src/images/services/7.svg | Scope statement ; Schedule and timeline ; Resources planning ; Work breakdown structure ; Quality of the project\nBusiness Solutions | @img:src/images/services/8.svg | BI Ssolutions ; Corporate Email and United Communications ; Electronic Archives ; Portal Solutions and document flow ; DRaaS"
+      }
+    }
+  ]
+}

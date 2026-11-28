@@ -24,6 +24,7 @@ import { PublishChecksDialog } from '../../../page-builder/PublishChecks'
 import { PublishStatus } from '../../../page-builder/PublishControls'
 import { PreviewLinkButton } from '../../../page-builder/PreviewLink'
 import { useLayoutChrome } from '@/admin/hooks/useLayoutChrome'
+import layoutChrome from '@/frontend/blocks/layout-chrome.json'
 import { useAutosave, type AutosaveStatus } from '@/admin/hooks/useAutosave'
 
 // Top Header/Header/Footer are layout-managed — every page gets the same
@@ -35,14 +36,10 @@ import { useAutosave, type AutosaveStatus } from '@/admin/hooks/useAutosave'
 // let someone manually add a duplicate are hidden from "Add a section",
 // and on save they're spliced back in unchanged around whatever Puck
 // actually edited.
-const LAYOUT_START_BLOCK_TYPES = new Set([
-  'ConstructionTopBar',
-  'ConstructionHeader',
-  'NavBar',
-  'MedicalTopNav',
-])
-const LAYOUT_END_BLOCK_TYPES = new Set(['ConstructionFooter', 'Footer'])
-const LAYOUT_MANAGED_CATEGORY_KEYS = ['top-bar', 'header', 'bottombar']
+// Which blocks are the site's header and footer: one list shared with the publish checks and the page scaffold.
+const LAYOUT_START_BLOCK_TYPES = new Set<string>(layoutChrome.start)
+const LAYOUT_END_BLOCK_TYPES = new Set<string>(layoutChrome.end)
+const LAYOUT_MANAGED_CATEGORY_KEYS: string[] = layoutChrome.managedCategories
 
 function splitLayoutBlocks(content: ComponentData[]) {
   const startBlocks = content.filter((b) => LAYOUT_START_BLOCK_TYPES.has(b.type))

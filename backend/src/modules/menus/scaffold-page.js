@@ -1,8 +1,8 @@
 import { prisma } from '../../config/database.js';
 import { createPage, updatePage } from '../page-builder/service.js';
 import { slugify } from '../../shared/utils/slug.js';
+import { scaffoldChromeTypes } from '../../shared/layout-chrome.js';
 
-const CHROME = ['ConstructionTopBar', 'ConstructionHeader', 'ConstructionFooter'];
 const MAX_SLUG_TRIES = 50;
 
 // The project's own page that already carries the site chrome (top bar / header / footer).
@@ -74,7 +74,7 @@ export async function scaffoldPageForLabel(projectId, label, actorId) {
   const donor = (await findDonorContent(projectId)) ?? [];
   const banner = donor.find((b) => b.type === 'ConstructionInnerBanner');
   const content = [];
-  for (const type of CHROME) {
+  for (const type of scaffoldChromeTypes()) {
     const b = donor.find((x) => x.type === type);
     if (!b) continue;
     if (type === 'ConstructionFooter' && banner) {

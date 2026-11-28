@@ -6,8 +6,9 @@
 
 export type Variant = '1' | '2' | '3' | '4' | '5'
 
-/** Design '1'-'5', or `custom:<id>` = a saved Section Builder block. */
-export type SectionVariant = Variant | `custom:${string}`
+/** Design '1'-'5', 'f9' = the F9 Tech header/footer blocks, 'landing:1'-'landing:4' = the Landing header/footer designs, or `custom:<id>` = a saved Section Builder block. */
+export type SectionVariant =
+  Variant | 'f9' | `landing:${'1' | '2' | '3' | '4'}` | `custom:${string}`
 
 export function customBlockIdOf(variant: SectionVariant): string | null {
   return variant.startsWith('custom:') ? variant.slice(7) : null
@@ -16,6 +17,8 @@ export function customBlockIdOf(variant: SectionVariant): string | null {
 export interface SectionState {
   enabled: boolean
   variant: SectionVariant
+  /** Settings of the design (used by 'f9': the F9 block props), saved with the layout. */
+  config?: Record<string, string>
 }
 
 export interface LayoutSelection {
